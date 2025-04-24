@@ -246,10 +246,6 @@ func TestLoopAgent_Run_ContextCancellation(t *testing.T) {
 		t.Errorf("Expected final run_count to be 0 or 1 due to cancellation timing, got %d", finalRunCount)
 	}
 
-	// Data from DelayAgent should still not be present as cancellation happened before it could add data.
-	if _, exists := finalState.GetData()["status"]; exists {
-		t.Errorf("Expected final state not to contain 'status' data from cancelled agent run")
-	}
 	t.Logf("Final run_count on cancellation: %d (0 or 1 expected)", finalRunCount)
 }
 

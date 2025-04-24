@@ -27,3 +27,16 @@ type Agent interface {
 // Note: The previous Agent interface (with Handle(Event)) might need to be
 // renamed or refactored depending on how event handling and workflow execution
 // will coexist or be integrated. For now, we define the new one as requested.
+
+// NewStateWithData creates a new SimpleState initialized with the provided data map.
+func NewStateWithData(data map[string]any) State {
+	s := NewState()
+	if data != nil {
+		s.data = make(map[string]any, len(data))
+		for k, v := range data {
+			// TODO: Implement proper deep copy for complex value types if needed
+			s.data[k] = v
+		}
+	}
+	return s
+}
