@@ -8,13 +8,15 @@ import (
 	agentflow "kunalkushwaha/agentflow/internal/core"
 )
 
-// SequentialAgent executes a list of sub-agents one after another,
-// passing the output state of one agent as the input to the next.
-// If any sub-agent returns an error, the execution stops immediately,
-// and the error is returned along with the state from *before* the failing agent.
+// SequentialAgent runs a series of sub-agents one after another.
 type SequentialAgent struct {
+	name   string
 	agents []agentflow.Agent
-	name   string // Optional name for logging/identification
+}
+
+// Name returns the name of the sequential agent.
+func (a *SequentialAgent) Name() string {
+	return a.name
 }
 
 // NewSequentialAgent creates a new SequentialAgent.
