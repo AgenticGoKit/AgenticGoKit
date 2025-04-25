@@ -2,24 +2,20 @@ package agentflow
 
 import (
 	"context" // <<< Add context import
+	"log"
 	"sync"
-	"sync/atomic"
+	"sync/atomic" // <<< Add atomic import
 	"testing"
 )
 
-// Helper function for testing callbacks
-// FIX: Match CallbackFunc signature (accept *Event)
-func createTestCallback(counter *int32, wg *sync.WaitGroup) CallbackFunc {
-	return func(ctx context.Context, currentState State, event *Event) (State, error) { // Accept *Event
-		if counter != nil {
-			atomic.AddInt32(counter, 1)
-		}
-		if wg != nil {
-			wg.Done()
-		}
-		// Add nil check if accessing event
-		// if event != nil { log.Printf("Test callback received event: %s", (*event).GetID()) }
-		return nil, nil
+// Helper function to create a simple callback for testing
+// This one has the correct signature (event Event)
+func createTestCallback(id string, hook HookPoint, counter *int) CallbackFunc {
+	return func(ctx context.Context, currentState State, event Event) (State, error) {
+		*counter++
+		log.Printf("TestCallback %s executed for hook %s (count: %d)", id, hook, *counter)
+		// Optionally return a modified state or error for more complex tests
+		return currentState, nil
 	}
 }
 
@@ -40,24 +36,26 @@ func TestCallbackRegistry_Register_Unregister(t *testing.T) {
 		callback1Called, callback2Called, allHooksCalled = false, false, false
 	}
 
-	cb1 := func(ctx context.Context, s State, e *Event) (State, error) {
+	// FIX: Change e *Event to e Event (cb1 is already correct)
+	cb1 := func(ctx context.Context, s State, e Event) (State, error) {
 		callback1Called = true
 		if s != nil {
 			t.Log("cb1 received state")
 		}
 		if e != nil {
-			t.Logf("cb1 received event ID: %s", (*e).GetID())
+			t.Logf("cb1 received event ID: %s", e.GetID())
 		} else {
 			t.Log("cb1 received nil event")
 		}
 		return nil, nil
 	}
-	cb2 := func(ctx context.Context, s State, e *Event) (State, error) {
+	// FIX: Change e *Event to e Event (cb2 is already correct)
+	cb2 := func(ctx context.Context, s State, e Event) (State, error) {
 		callback2Called = true
 		return &SimpleState{data: map[string]interface{}{"cb2_processed": true}}, nil
 	}
-	// FIX: Change allHooksCalled back to bool
-	cbAll := func(ctx context.Context, s State, e *Event) (State, error) {
+	// FIX: Change e *Event to e Event for cbAll
+	cbAll := func(ctx context.Context, s State, e Event) (State, error) {
 		allHooksCalled = true
 		return nil, nil
 	}
@@ -141,76 +139,82 @@ func TestCallbackRegistry_Register_Unregister(t *testing.T) {
 
 func TestCallbackRegistry_Invoke(t *testing.T) {
 	registry := NewCallbackRegistry()
-	var counterSpecific int32
-	var counterAll int32
-	var counterOther int32
+	var counterSpecific, counterAll, counterOther int // Use int for the remaining helper
 
-	cbSpecific := createTestCallback(&counterSpecific, nil)
-	cbAll := createTestCallback(&counterAll, nil)
-	cbOther := createTestCallback(&counterOther, nil) // Should not be called
+	// Use the correct helper function
+	cbSpecific := createTestCallback("specific", HookBeforeAgentRun, &counterSpecific)
+	cbAll := createTestCallback("all", HookAll, &counterAll)
+	cbOther := createTestCallback("other", HookAfterAgentRun, &counterOther) // Should not be called
 
 	registry.Register(HookBeforeAgentRun, "cbSpecific", cbSpecific)
 	registry.Register(HookAll, "cbAll", cbAll)
 	registry.Register(HookAfterAgentRun, "cbOther", cbOther) // Different hook
 
-	args := CallbackArgs{Hook: HookBeforeAgentRun} // Invoke for BeforeAgentRun
+	args := CallbackArgs{Ctx: context.Background(), Hook: HookBeforeAgentRun} // Invoke for BeforeAgentRun
 
 	registry.Invoke(args)
 
-	if atomic.LoadInt32(&counterSpecific) != 1 {
+	if counterSpecific != 1 {
 		t.Errorf("Expected specific callback counter to be 1, got %d", counterSpecific)
 	}
-	if atomic.LoadInt32(&counterAll) != 1 {
+	if counterAll != 1 {
 		t.Errorf("Expected HookAll callback counter to be 1, got %d", counterAll)
 	}
-	if atomic.LoadInt32(&counterOther) != 0 {
+	if counterOther != 0 {
 		t.Errorf("Expected other hook callback counter to be 0, got %d", counterOther)
 	}
 
 	// Test invoking a hook with no registered callbacks
-	atomic.StoreInt32(&counterSpecific, 0)
-	atomic.StoreInt32(&counterAll, 0) // Reset HookAll counter
-	argsNoCallbacks := CallbackArgs{Hook: HookAfterEventHandling}
+	counterSpecific = 0 // Reset counters
+	counterAll = 0
+	argsNoCallbacks := CallbackArgs{Ctx: context.Background(), Hook: HookAfterEventHandling}
 	registry.Invoke(argsNoCallbacks) // Should not panic and only call HookAll
 
-	if atomic.LoadInt32(&counterSpecific) != 0 {
+	if counterSpecific != 0 {
 		t.Errorf("Expected specific callback counter to be 0 after invoking empty hook, got %d", counterSpecific)
 	}
-	if atomic.LoadInt32(&counterAll) != 1 { // HookAll should be called again
+	if counterAll != 1 { // HookAll should be called again
 		t.Errorf("Expected HookAll callback counter to be 1 after invoking empty hook, got %d", counterAll)
 	}
 }
 
 func TestCallbackRegistry_Invoke_Multiple(t *testing.T) {
 	registry := NewCallbackRegistry()
-	var counter int32
+	var counter int // Use int for the remaining helper
 
-	cb1 := createTestCallback(&counter, nil)
-	cb2 := createTestCallback(&counter, nil)
-	cbAll := createTestCallback(&counter, nil)
+	cb1 := createTestCallback("cb1", HookBeforeAgentRun, &counter)
+	cb2 := createTestCallback("cb2", HookBeforeAgentRun, &counter)
+	cbAll := createTestCallback("cbAll", HookAll, &counter)
 
 	registry.Register(HookBeforeAgentRun, "cb1", cb1)
 	registry.Register(HookBeforeAgentRun, "cb2", cb2)
 	registry.Register(HookAll, "cbAll", cbAll)
 
-	args := CallbackArgs{Hook: HookBeforeAgentRun}
+	args := CallbackArgs{Ctx: context.Background(), Hook: HookBeforeAgentRun}
 	registry.Invoke(args)
 
 	// Expect 3 calls: cb1, cb2, cbAll
-	if atomic.LoadInt32(&counter) != 3 {
+	if counter != 3 {
 		t.Errorf("Expected counter to be 3 after invoking hook with multiple specific and one HookAll callback, got %d", counter)
 	}
 }
 
 func TestCallbackRegistry_Concurrency(t *testing.T) {
 	registry := NewCallbackRegistry()
-	var counter int32
+	// FIX: Change counter type to int32 or int64 for atomic operations
+	var counter int64
 	var wg sync.WaitGroup
 	numGoroutines := 50
 	numInvokesPerRoutine := 100
 
-	// Pre-register one callback
-	cb := createTestCallback(&counter, &wg)
+	// Pre-register one callback using the correct helper
+	// Note: The helper doesn't handle WaitGroup, adjust if needed or use inline func
+	cb := func(ctx context.Context, s State, e Event) (State, error) {
+		// FIX: Use atomic increment
+		atomic.AddInt64(&counter, 1) // Use AddInt64 for int64 counter
+		wg.Done()
+		return s, nil
+	}
 	registry.Register(HookBeforeAgentRun, "cb_concurrent", cb)
 
 	wg.Add(numGoroutines * numInvokesPerRoutine)
@@ -219,15 +223,18 @@ func TestCallbackRegistry_Concurrency(t *testing.T) {
 		go func(routineID int) {
 			// Simulate concurrent invokes
 			for j := 0; j < numInvokesPerRoutine; j++ {
-				registry.Invoke(CallbackArgs{Hook: HookBeforeAgentRun})
+				registry.Invoke(CallbackArgs{Ctx: context.Background(), Hook: HookBeforeAgentRun})
 			}
 		}(i)
 	}
 
 	wg.Wait()
 
-	expectedCount := int32(numGoroutines * numInvokesPerRoutine)
-	if atomic.LoadInt32(&counter) != expectedCount {
-		t.Errorf("Expected counter to be %d after concurrent invokes, got %d", expectedCount, counter)
+	expectedCount := int64(numGoroutines * numInvokesPerRoutine) // Cast expected count to int64
+	// FIX: Use atomic load to safely read the counter
+	finalCount := atomic.LoadInt64(&counter)
+	if finalCount != expectedCount {
+		// Use %d for int64
+		t.Errorf("Expected counter to be %d after concurrent invokes, got %d", expectedCount, finalCount)
 	}
 }

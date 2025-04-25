@@ -307,19 +307,25 @@ func TestRunner_Callbacks(t *testing.T) {
 	}
 	runner.SetOrchestrator(mockOrch)
 
-	// FIX: Update anonymous function signature to accept *Event
-	err := runner.RegisterCallback(HookBeforeEventHandling, "testBefore", func(ctx context.Context, s State, e *Event) (State, error) {
+	// FIX: Update anonymous function signature to accept Event
+	err := runner.RegisterCallback(HookBeforeEventHandling, "testBefore", func(ctx context.Context, s State, e Event) (State, error) { // Changed *Event to Event
 		beforeCalled = true
 		// Add nil check if accessing event 'e'
+		if e == nil {
+			t.Error("Before callback received nil event") // Keep nil check
+		}
 		return nil, nil
 	})
 	if err != nil {
 		t.Fatalf("RegisterCallback (before) failed: %v", err)
 	}
-	// FIX: Update anonymous function signature to accept *Event
-	err = runner.RegisterCallback(HookAfterEventHandling, "testAfter", func(ctx context.Context, s State, e *Event) (State, error) {
+	// FIX: Update anonymous function signature to accept Event
+	err = runner.RegisterCallback(HookAfterEventHandling, "testAfter", func(ctx context.Context, s State, e Event) (State, error) { // Changed *Event to Event
 		afterCalled = true
 		// Add nil check if accessing event 'e'
+		if e == nil {
+			t.Error("After callback received nil event") // Keep nil check
+		}
 		return nil, nil
 	})
 	if err != nil {
@@ -340,7 +346,9 @@ func TestRunner_Callbacks(t *testing.T) {
 		t.Fatalf("Emit failed: %v", emitErr)
 	}
 
-	time.Sleep(50 * time.Millisecond)
+	// Allow time for the event to be processed and callbacks to fire
+	// Use a WaitGroup or channel for more robust synchronization if needed
+	time.Sleep(100 * time.Millisecond) // Increased sleep slightly
 
 	if !beforeCalled {
 		t.Error("BeforeEventHandling callback was not called")

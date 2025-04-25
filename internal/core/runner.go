@@ -271,7 +271,8 @@ func (r *RunnerImpl) loop(ctx context.Context) {
 			// --- Simulate processing ---
 			// FIX: Call registry.Invoke for before hook
 			if r.registry != nil {
-				beforeArgs := CallbackArgs{Ctx: ctx, Hook: HookBeforeEventHandling, Event: &event, CurrentState: nil} // Assuming state is not tracked here
+				// FIX: Pass 'event' directly, use 'State' field
+				beforeArgs := CallbackArgs{Ctx: ctx, Hook: HookBeforeEventHandling, Event: event, State: nil} // Assuming state is not tracked here
 				r.registry.Invoke(beforeArgs)
 			}
 
@@ -288,7 +289,8 @@ func (r *RunnerImpl) loop(ctx context.Context) {
 
 			// FIX: Call registry.Invoke for after hook
 			if r.registry != nil {
-				afterArgs := CallbackArgs{Ctx: ctx, Hook: HookAfterEventHandling, Event: &event, CurrentState: nil} // Assuming state is not tracked here
+				// FIX: Pass 'event' directly, use 'State' field
+				afterArgs := CallbackArgs{Ctx: ctx, Hook: HookAfterEventHandling, Event: event, State: nil} // Assuming state is not tracked here
 				r.registry.Invoke(afterArgs)
 			}
 			// --- End simulate processing ---

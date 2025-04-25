@@ -34,19 +34,18 @@ const (
 // CallbackArgs holds the arguments passed to a callback function.
 // Different hook points might populate different fields.
 type CallbackArgs struct {
-	Ctx          context.Context
-	Hook         HookPoint
-	Event        *Event // Pointer to the event being processed
-	CurrentState State  // The state *before* this callback invocation
-	Error        *error // Pointer to error (e.g., from dispatch or previous agent)
+	Ctx   context.Context
+	Hook  HookPoint
+	Event Event // Use the interface type directly
+	State State
 	// Add other relevant context as needed
 }
 
 // CallbackFunc defines the signature for callback functions.
 // It receives the context, the current state, and the event that triggered the hook.
 // It can optionally return a new State to replace the current one, or an error.
-// FIX: Accept pointer to Event to allow nil events
-type CallbackFunc func(ctx context.Context, currentState State, event *Event) (newState State, err error)
+// FIX: Accept Event interface type directly
+type CallbackFunc func(ctx context.Context, currentState State, event Event) (newState State, err error)
 
 // CallbackRegistration holds details about a registered callback.
 type CallbackRegistration struct {
@@ -137,23 +136,26 @@ func (r *CallbackRegistry) Invoke(args CallbackArgs) {
 
 	for _, reg := range combinedHooks {
 		//eventID := "nil"
-		var eventForCallback *Event // Variable to hold the event pointer for the callback
-		if args.Event != nil {
-			//eventID = (*args.Event).GetID() // Dereference for GetID
-			eventForCallback = args.Event // Use the original pointer for the callback
-		}
+		// FIX: Remove eventForCallback variable
+		// var eventForCallback *Event // Variable to hold the event pointer for the callback
+		// if args.Event != nil {
+		// 	//eventID = (*args.Event).GetID() // Dereference for GetID
+		// 	eventForCallback = args.Event // Use the original pointer for the callback
+		// }
 
 		//log.Printf("Invoking callback '%s' for hook '%s', event '%s'", reg.ID, args.Hook, eventID)
 
-		// Call the actual callback function, passing the pointer
-		returnedState, callbackErr := reg.CallbackFunc(args.Ctx, args.CurrentState, eventForCallback) // Pass pointer
+		// Call the actual callback function, passing the interface value directly
+		// FIX: Pass args.Event directly and use args.State
+		returnedState, callbackErr := reg.CallbackFunc(args.Ctx, args.State, args.Event) // Pass interface value
 		if callbackErr != nil {
 			log.Printf("Error executing callback '%s' for hook '%s': %v", reg.ID, args.Hook, callbackErr)
 			// Optionally: Store/aggregate errors? Stop invoking further callbacks?
 		}
 		if returnedState != nil {
 			log.Printf("Callback '%s' returned new state for hook '%s'.", reg.ID, args.Hook)
-			args.CurrentState = returnedState // Update state for subsequent callbacks in this invocation
+			// FIX: Use args.State
+			args.State = returnedState // Update state for subsequent callbacks in this invocation
 		}
 	}
 	// Note: The updated state (args.CurrentState) is not automatically propagated back

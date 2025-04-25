@@ -151,39 +151,23 @@ func NewTraceCallbacks(logger TraceLogger) map[HookPoint]CallbackFunc {
 	}
 
 	// Define functions matching CallbackFunc signature
-	beforeEventFunc := func(ctx context.Context, currentState State, event *Event) (State, error) {
-		if event == nil { // Add nil check
-			log.Println("Trace: BeforeEventHandling - Event is nil")
-			return currentState, nil
-		}
-		log.Printf("Trace: Hook=%s, EventID=%s, State=%v", HookBeforeEventHandling, (*event).GetID(), currentState)
+	beforeEventFunc := func(ctx context.Context, currentState State, event Event) (State, error) {
+		log.Printf("Trace: Hook=%s, EventID=%s, State=%v", HookBeforeEventHandling, event.GetID(), currentState)
 		return currentState, nil
 	}
 
-	afterEventFunc := func(ctx context.Context, currentState State, event *Event) (State, error) {
-		if event == nil { // Add nil check
-			log.Println("Trace: AfterEventHandling - Event is nil")
-			return currentState, nil
-		}
-		log.Printf("Trace: Hook=%s, EventID=%s, State=%v", HookAfterEventHandling, (*event).GetID(), currentState)
+	afterEventFunc := func(ctx context.Context, currentState State, event Event) (State, error) {
+		log.Printf("Trace: Hook=%s, EventID=%s, State=%v", HookAfterEventHandling, event.GetID(), currentState)
 		return currentState, nil
 	}
 
-	beforeAgentFunc := func(ctx context.Context, currentState State, event *Event) (State, error) {
-		if event == nil { // Add nil check
-			log.Println("Trace: BeforeAgentRun - Event is nil")
-			return currentState, nil
-		}
-		log.Printf("Trace: Hook=%s, EventID=%s, State=%v", HookBeforeAgentRun, (*event).GetID(), currentState)
+	beforeAgentFunc := func(ctx context.Context, currentState State, event Event) (State, error) {
+		log.Printf("Trace: Hook=%s, EventID=%s, State=%v", HookBeforeAgentRun, event.GetID(), currentState)
 		return currentState, nil
 	}
 
-	afterAgentFunc := func(ctx context.Context, currentState State, event *Event) (State, error) {
-		if event == nil { // Add nil check
-			log.Println("Trace: AfterAgentRun - Event is nil")
-			return currentState, nil
-		}
-		log.Printf("Trace: Hook=%s, EventID=%s, State=%v", HookAfterAgentRun, (*event).GetID(), currentState)
+	afterAgentFunc := func(ctx context.Context, currentState State, event Event) (State, error) {
+		log.Printf("Trace: Hook=%s, EventID=%s, State=%v", HookAfterAgentRun, event.GetID(), currentState)
 		return currentState, nil
 	}
 
