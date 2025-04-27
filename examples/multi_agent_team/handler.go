@@ -4,148 +4,215 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"sync"
-	"time"
 
 	agentflow "kunalkushwaha/agentflow/internal/core"
 	"kunalkushwaha/agentflow/internal/llm"
-	"kunalkushwaha/agentflow/internal/orchestrator"
+	"kunalkushwaha/agentflow/internal/tools"
 )
 
-// --- Agent Handler Adapter ---
-type AgentHandler struct {
-	agentName  string
-	agent      agentflow.Agent
-	runner     *agentflow.Runner
-	provider   llm.ModelProvider
-	agentNames []string
-	resultChan chan agentflow.State
-	wg         *sync.WaitGroup
+// --- Planner Handler ---
+type PlannerHandler struct {
+	plannerAgent *PlannerAgent // Embed or reference the agent logic
+	llmProvider  llm.ModelProvider
 }
 
-func NewAgentHandler(name string, agent agentflow.Agent, runner *agentflow.Runner, provider llm.ModelProvider, allAgentNames []string, resultChan chan agentflow.State, wg *sync.WaitGroup) *AgentHandler {
-	if provider == nil && name != SummarizerAgentName {
-		log.Printf("[%s Handler] Warning: LLM Provider is nil. Routing decisions will not use LLM.", name)
-	}
-	if resultChan == nil {
-		log.Fatalf("[%s Handler] Error: Result channel cannot be nil.", name)
-	}
-	return &AgentHandler{
-		agentName:  name,
-		agent:      agent,
-		runner:     runner,
-		provider:   provider,
-		agentNames: allAgentNames,
-		resultChan: resultChan,
-		wg:         wg,
+func NewPlannerHandler(provider llm.ModelProvider) *PlannerHandler {
+	return &PlannerHandler{
+		plannerAgent: NewPlannerAgent(provider), // Create the agent logic instance
+		llmProvider:  provider,
 	}
 }
 
-func (h *AgentHandler) Handle(event agentflow.Event) error {
-	defer h.wg.Done()
+func (h *PlannerHandler) Run(ctx context.Context, event agentflow.Event, state agentflow.State) (agentflow.AgentResult, error) {
+	log.Printf("PlannerHandler: Running for event %s (Session: %s)", event.GetID(), event.GetSessionID())
 
-	log.Printf("[%s Handler] Handling event %s", h.agentName, event.GetID())
-
-	// --- Convert event payload/metadata to initial agent state ---
-	initialState := agentflow.NewState()
-	originalEventID := ""
-	eventMeta := event.GetMetadata()
-	if id, ok := eventMeta["original_event_id"]; ok {
-		originalEventID = id
+	// FIX: Use event.GetData() and access the key
+	eventData := event.GetData()
+	userRequestVal, ok := eventData["user_request"]
+	if !ok {
+		err := fmt.Errorf("planner: missing 'user_request' in event data")
+		log.Printf("%v", err)
+		// Return error state
+		errState := agentflow.NewStateWithData(agentflow.EventData{"error": err.Error()})
+		errState.SetMeta(agentflow.RouteMetadataKey, FinalOutputAgent) // Route error to final output
+		errState.SetMeta(agentflow.SessionIDKey, event.GetSessionID()) // Preserve session
+		return agentflow.AgentResult{OutputState: errState}, err
+	}
+	userRequest, ok := userRequestVal.(string) // Assume string
+	if !ok {
+		err := fmt.Errorf("planner: 'user_request' data is not a string")
+		log.Printf("%v", err)
+		errState := agentflow.NewStateWithData(agentflow.EventData{"error": err.Error()})
+		errState.SetMeta(agentflow.RouteMetadataKey, FinalOutputAgent)
+		errState.SetMeta(agentflow.SessionIDKey, event.GetSessionID())
+		return agentflow.AgentResult{OutputState: errState}, err
 	}
 
-	if payload, ok := event.GetPayload().(map[string]interface{}); ok {
-		for k, v := range payload {
-			initialState.Set(k, v)
-		}
-	} else if state, ok := event.GetPayload().(agentflow.State); ok {
-		initialState = state.Clone()
-		stateMeta := initialState.GetMetadata()
-		if id, ok := stateMeta["original_event_id"]; ok {
-			originalEventID = id
-		}
-	} else {
-		log.Printf("[%s Handler] Warning: Unexpected payload type %T for event %s", h.agentName, event.GetPayload(), event.GetID())
-		initialState.Set("payload", event.GetPayload())
-	}
-
-	for k, v := range eventMeta {
-		initialState.SetMeta(k, v)
-	}
-
-	if originalEventID == "" {
-		originalEventID = event.GetID()
-	}
-	initialState.SetMeta("original_event_id", originalEventID)
-
-	// --- Run the Agent ---
-	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
-	defer cancel()
-
-	finalState, err := h.agent.Run(ctx, initialState)
+	// Call the planner agent's logic
+	plan, err := h.plannerAgent.Plan(ctx, userRequest)
 	if err != nil {
-		log.Printf("[%s Handler] Agent run returned an error for event %s: %v", h.agentName, event.GetID(), err)
-		errorState := agentflow.NewStateWithData(map[string]any{"handler_error": fmt.Sprintf("Agent %s failed: %v", h.agentName, err)})
-		if req, ok := initialState.Get("user_request"); ok {
-			errorState.Set("user_request", req)
-		}
-		h.sendResult(originalEventID, errorState)
-		return fmt.Errorf("agent run failed: %w", err)
+		log.Printf("PlannerHandler: Planner agent failed: %v", err)
+		errState := agentflow.NewStateWithData(agentflow.EventData{"error": fmt.Sprintf("Planner failed: %v", err)})
+		errState.SetMeta(agentflow.RouteMetadataKey, FinalOutputAgent)
+		errState.SetMeta(agentflow.SessionIDKey, event.GetSessionID()) // Preserve session
+		return agentflow.AgentResult{OutputState: errState}, err
 	}
 
-	log.Printf("[%s Handler] Agent run successful for event %s.", h.agentName, event.GetID())
+	log.Printf("PlannerHandler: Plan generated: %s", plan)
 
-	// Check if the agent *internally* recorded an error in the state
-	if agentErr, ok := finalState.Get("agent_error"); ok {
-		log.Printf("[%s Handler] Agent %s recorded an error in its state: %v. Ending flow.", h.agentName, h.agentName, agentErr)
-		h.sendResult(originalEventID, finalState)
-		return nil
+	// Prepare the next state for the researcher
+	nextStateData := agentflow.EventData{
+		"plan":         plan,
+		"user_request": userRequest, // Pass along original request
 	}
+	outputState := agentflow.NewStateWithData(nextStateData)
+	// Set routing metadata for the next step
+	outputState.SetMeta(agentflow.RouteMetadataKey, ResearcherAgentName)
+	outputState.SetMeta(agentflow.SessionIDKey, event.GetSessionID()) // Preserve session
 
-	// --- LLM-Based Routing Decision ---
-	if _, ok := finalState.Get("user_request"); !ok {
-		if req, ok := initialState.Get("user_request"); ok {
-			finalState.Set("user_request", req)
-		}
-	}
-
-	// Call the router function (defined in router.go)
-	nextAgent, err := determineNextAgentViaLLM(ctx, h.provider, finalState, h.agentName, h.agentNames)
-	if err != nil {
-		log.Printf("[%s Handler] Error determining next agent via LLM: %v. Ending flow.", h.agentName, err)
-		h.sendResult(originalEventID, finalState)
-		return nil
-	}
-
-	if nextAgent != "" && nextAgent != "DONE" {
-		// --- Emit Next Event ---
-		log.Printf("[%s Handler] LLM chose '%s' as the next agent.", h.agentName, nextAgent)
-		finalState.SetMeta(orchestrator.RouteMetadataKey, nextAgent)
-
-		nextEvent := &agentflow.SimpleEvent{
-			ID:       fmt.Sprintf("%s-next-%s", event.GetID(), nextAgent),
-			Payload:  finalState,
-			Metadata: finalState.GetMetadata(),
-		}
-		log.Printf("[%s Handler] Emitting next event %s for agent %s", h.agentName, nextEvent.GetID(), nextAgent)
-		h.wg.Add(1)
-		h.runner.Emit(nextEvent)
-	} else {
-		// --- Final Step Reached ---
-		log.Printf("[%s Handler] LLM decided flow is DONE after this agent.", h.agentName)
-		h.sendResult(originalEventID, finalState)
-	}
-
-	return nil
+	return agentflow.AgentResult{OutputState: outputState}, nil
 }
 
-// Helper function to send results to the SHARED channel
-func (h *AgentHandler) sendResult(originalEventID string, state agentflow.State) {
-	log.Printf("[%s Handler] Sending final state to shared results channel for %s.", h.agentName, originalEventID)
-	select {
-	case h.resultChan <- state:
-	// OK
-	default:
-		log.Printf("[%s Handler] Warning: Shared results channel was blocked or closed when trying to send state for %s.", h.agentName, originalEventID)
+// --- Researcher Handler ---
+type ResearcherHandler struct {
+	researchAgent *ResearchAgent // Embed or reference the agent logic
+	toolRegistry  *tools.ToolRegistry
+}
+
+func NewResearcherHandler(registry *tools.ToolRegistry) *ResearcherHandler {
+	return &ResearcherHandler{
+		researchAgent: NewResearchAgent(registry), // Create the agent logic instance
+		toolRegistry:  registry,
 	}
+}
+
+func (h *ResearcherHandler) Run(ctx context.Context, event agentflow.Event, state agentflow.State) (agentflow.AgentResult, error) {
+	log.Printf("ResearcherHandler: Running for event %s (Session: %s)", event.GetID(), event.GetSessionID())
+
+	// FIX: Use state.Get(key)
+	planVal, ok := state.Get("plan") // Get plan from incoming state
+	if !ok {
+		err := fmt.Errorf("researcher: missing 'plan' in state")
+		log.Printf("%v", err)
+		errState := agentflow.NewStateWithData(agentflow.EventData{"error": err.Error()})
+		errState.SetMeta(agentflow.RouteMetadataKey, FinalOutputAgent)
+		errState.SetMeta(agentflow.SessionIDKey, event.GetSessionID()) // Preserve session
+		return agentflow.AgentResult{OutputState: errState}, err
+	}
+	plan, ok := planVal.(string)
+	if !ok {
+		err := fmt.Errorf("researcher: 'plan' data is not a string")
+		log.Printf("%v", err)
+		errState := agentflow.NewStateWithData(agentflow.EventData{"error": err.Error()})
+		errState.SetMeta(agentflow.RouteMetadataKey, FinalOutputAgent)
+		errState.SetMeta(agentflow.SessionIDKey, event.GetSessionID())
+		return agentflow.AgentResult{OutputState: errState}, err
+	}
+
+	// Call the research agent's logic
+	researchResult, err := h.researchAgent.Research(ctx, plan)
+	if err != nil {
+		log.Printf("ResearcherHandler: Research agent failed: %v", err)
+		errState := agentflow.NewStateWithData(agentflow.EventData{"error": fmt.Sprintf("Researcher failed: %v", err)})
+		errState.SetMeta(agentflow.RouteMetadataKey, FinalOutputAgent)
+		errState.SetMeta(agentflow.SessionIDKey, event.GetSessionID()) // Preserve session
+		return agentflow.AgentResult{OutputState: errState}, err
+	}
+
+	log.Printf("ResearcherHandler: Research completed.") // Avoid logging potentially large result here
+
+	// Prepare the next state for the summarizer
+	// FIX: Use state.Get(key) for user_request
+	userRequestVal, ok := state.Get("user_request")
+	if !ok {
+		// Handle missing user_request if necessary, maybe default or error
+		log.Println("ResearcherHandler: Warning - 'user_request' missing from state.")
+		userRequestVal = "" // Default to empty string or handle as error? For now, empty.
+	}
+
+	nextStateData := agentflow.EventData{
+		"research_result": researchResult,
+		"user_request":    userRequestVal, // Pass along original request from state
+	}
+	outputState := agentflow.NewStateWithData(nextStateData)
+	// Set routing metadata for the next step
+	outputState.SetMeta(agentflow.RouteMetadataKey, SummarizerAgentName)
+	outputState.SetMeta(agentflow.SessionIDKey, event.GetSessionID()) // Preserve session
+
+	return agentflow.AgentResult{OutputState: outputState}, nil
+}
+
+// --- Summarizer Handler ---
+type SummarizerHandler struct {
+	summarizeAgent *SummarizeAgent // Embed or reference the agent logic
+	llmProvider    llm.ModelProvider
+}
+
+func NewSummarizerHandler(provider llm.ModelProvider) *SummarizerHandler {
+	return &SummarizerHandler{
+		summarizeAgent: NewSummarizeAgent(provider), // Create the agent logic instance
+		llmProvider:    provider,
+	}
+}
+
+func (h *SummarizerHandler) Run(ctx context.Context, event agentflow.Event, state agentflow.State) (agentflow.AgentResult, error) {
+	log.Printf("SummarizerHandler: Running for event %s (Session: %s)", event.GetID(), event.GetSessionID())
+
+	// FIX: Use state.Get(key)
+	researchResultVal, ok := state.Get("research_result") // Get result from incoming state
+	if !ok {
+		err := fmt.Errorf("summarizer: missing 'research_result' in state")
+		log.Printf("%v", err)
+		errState := agentflow.NewStateWithData(agentflow.EventData{"error": err.Error()})
+		errState.SetMeta(agentflow.RouteMetadataKey, FinalOutputAgent)
+		errState.SetMeta(agentflow.SessionIDKey, event.GetSessionID()) // Preserve session
+		return agentflow.AgentResult{OutputState: errState}, err
+	}
+	researchResult, ok := researchResultVal.(string)
+	if !ok {
+		err := fmt.Errorf("summarizer: 'research_result' data is not a string")
+		log.Printf("%v", err)
+		errState := agentflow.NewStateWithData(agentflow.EventData{"error": err.Error()})
+		errState.SetMeta(agentflow.RouteMetadataKey, FinalOutputAgent)
+		errState.SetMeta(agentflow.SessionIDKey, event.GetSessionID())
+		return agentflow.AgentResult{OutputState: errState}, err
+	}
+
+	// FIX: Use state.Get(key) for user_request
+	userRequestVal, ok := state.Get("user_request")
+	if !ok {
+		// Handle missing user_request if necessary, maybe default or error
+		log.Println("SummarizerHandler: Warning - 'user_request' missing from state.")
+		userRequestVal = "" // Default to empty string or handle as error
+	}
+	userRequest, ok := userRequestVal.(string)
+	if !ok {
+		// This case might occur if the default "" was set above, or if it was non-string in state
+		log.Println("SummarizerHandler: Warning - 'user_request' in state was not a string.")
+		userRequest = "" // Ensure it's a string for the agent call
+	}
+
+	// Call the summarize agent's logic
+	summary, err := h.summarizeAgent.Summarize(ctx, userRequest, researchResult)
+	if err != nil {
+		log.Printf("SummarizerHandler: Summarize agent failed: %v", err)
+		errState := agentflow.NewStateWithData(agentflow.EventData{"error": fmt.Sprintf("Summarizer failed: %v", err)})
+		errState.SetMeta(agentflow.RouteMetadataKey, FinalOutputAgent)
+		errState.SetMeta(agentflow.SessionIDKey, event.GetSessionID()) // Preserve session
+		return agentflow.AgentResult{OutputState: errState}, err
+	}
+
+	log.Printf("SummarizerHandler: Summarization completed.")
+
+	// Prepare the final output state
+	nextStateData := agentflow.EventData{
+		"summary":      summary,
+		"user_request": userRequest, // Include original request for context
+	}
+	outputState := agentflow.NewStateWithData(nextStateData)
+	// Set routing metadata for the final output step
+	outputState.SetMeta(agentflow.RouteMetadataKey, FinalOutputAgent)
+	outputState.SetMeta(agentflow.SessionIDKey, event.GetSessionID()) // Preserve session
+
+	return agentflow.AgentResult{OutputState: outputState}, nil
 }

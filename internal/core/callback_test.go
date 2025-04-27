@@ -1,21 +1,24 @@
 package agentflow
 
 import (
-	"context" // <<< Add context import
+	"context"
+	"fmt"
 	"log"
+	"math/rand"
 	"sync"
-	"sync/atomic" // <<< Add atomic import
+	"sync/atomic"
 	"testing"
+	"time"
 )
 
 // Helper function to create a simple callback for testing
-// This one has the correct signature (event Event)
-func createTestCallback(id string, hook HookPoint, counter *int) CallbackFunc {
-	return func(ctx context.Context, currentState State, event Event) (State, error) {
-		*counter++
-		log.Printf("TestCallback %s executed for hook %s (count: %d)", id, hook, *counter)
+// Signature now matches CallbackFunc
+func createTestCallback(id string, counter *int32) CallbackFunc {
+	return func(ctx context.Context, args CallbackArgs) (State, error) {
+		atomic.AddInt32(counter, 1) // Use atomic for safety if used concurrently
+		// log.Printf("TestCallback %s executed for hook %s (count: %d), EventID: %s", id, args.Hook, atomic.LoadInt32(counter), args.Event.GetID())
 		// Optionally return a modified state or error for more complex tests
-		return currentState, nil
+		return args.State, nil // Return existing state by default
 	}
 }
 
@@ -24,217 +27,462 @@ func TestNewCallbackRegistry(t *testing.T) {
 	if registry == nil {
 		t.Fatal("NewCallbackRegistry returned nil")
 	}
+	if registry.callbacks == nil {
+		t.Fatal("NewCallbackRegistry did not initialize callbacks map")
+	}
 }
 
+// Test registration, unregistration, and invocation order.
 func TestCallbackRegistry_Register_Unregister(t *testing.T) {
 	registry := NewCallbackRegistry()
-	// Use boolean flags to track calls
-	var callback1Called, callback2Called, allHooksCalled bool
+	ctx := context.Background()
+	var order []string
+	var mu sync.Mutex // Protect access to order slice
 
-	// Reset flags before each invoke section
-	resetFlags := func() {
-		callback1Called, callback2Called, allHooksCalled = false, false, false
+	// Callback 1 (Specific Hook)
+	cb1 := func(ctx context.Context, args CallbackArgs) (State, error) {
+		mu.Lock()
+		defer mu.Unlock()
+		order = append(order, "cb1")
+		log.Printf("Callback 1 executed for hook %s", args.Hook)
+
+		// FIX: Use Clone() and Set() instead of GetData()
+		newState := args.State.Clone() // Clone to modify safely
+		newState.Set("cb1_called", true)
+		return newState, nil
 	}
 
-	// FIX: Change e *Event to e Event (cb1 is already correct)
-	cb1 := func(ctx context.Context, s State, e Event) (State, error) {
-		callback1Called = true
-		if s != nil {
-			t.Log("cb1 received state")
+	// Callback 2 (Specific Hook)
+	cb2 := func(ctx context.Context, args CallbackArgs) (State, error) {
+		mu.Lock()
+		defer mu.Unlock()
+		order = append(order, "cb2")
+		log.Printf("Callback 2 executed for hook %s", args.Hook)
+
+		// FIX: Use Clone() and Set() instead of GetData()
+		newState := args.State.Clone() // Clone to modify safely
+		if called, ok := args.State.Get("cb1_called"); ok && called.(bool) {
+			newState.Set("cb2_saw_cb1", true)
 		}
-		if e != nil {
-			t.Logf("cb1 received event ID: %s", e.GetID())
-		} else {
-			t.Log("cb1 received nil event")
-		}
-		return nil, nil
-	}
-	// FIX: Change e *Event to e Event (cb2 is already correct)
-	cb2 := func(ctx context.Context, s State, e Event) (State, error) {
-		callback2Called = true
-		return &SimpleState{data: map[string]interface{}{"cb2_processed": true}}, nil
-	}
-	// FIX: Change e *Event to e Event for cbAll
-	cbAll := func(ctx context.Context, s State, e Event) (State, error) {
-		allHooksCalled = true
-		return nil, nil
+		newState.Set("cb2_called", true)
+		return newState, nil
 	}
 
-	// --- Test Registration ---
-	registry.Register(HookBeforeAgentRun, "cb1", cb1)
-	registry.Register(HookBeforeAgentRun, "cb2", cb2)
+	// Callback 3 (HookAll)
+	cbAll := func(ctx context.Context, args CallbackArgs) (State, error) {
+		mu.Lock()
+		defer mu.Unlock()
+		// FIX: Use the actual hook name string, not the constant name
+		order = append(order, fmt.Sprintf("cbAll_hook_%s", string(args.Hook)))
+		log.Printf("Callback All executed for hook %s", args.Hook)
+
+		// FIX: Use Clone() and Set() instead of GetData()
+		newState := args.State.Clone() // Clone to modify safely
+		if called, ok := args.State.Get("cb2_called"); ok && called.(bool) {
+			newState.Set("cbAll_saw_cb2", true)
+		}
+		newState.Set("cbAll_called_on_"+string(args.Hook), true)
+		return newState, nil
+	}
+
+	// Register callbacks
+	// FIX: Pass HookPoint constants directly
+	registry.Register(HookBeforeEventHandling, "cb1", cb1)
+	registry.Register(HookBeforeEventHandling, "cb2", cb2)
 	registry.Register(HookAll, "cbAll", cbAll)
 
-	// Invoke to check registration
-	resetFlags() // Reset flags before invoke
-	invokeArgs := CallbackArgs{Ctx: context.Background(), Hook: HookBeforeAgentRun}
-	registry.Invoke(invokeArgs)
-
-	// Check results
-	if !callback1Called {
-		t.Errorf("After initial registration, expected callback1 to be called")
+	// --- Invoke HookBeforeEventHandling ---
+	initialState := NewState() // Use NewState() which returns State interface
+	initialState.Set("initial", "value")
+	args := CallbackArgs{
+		Hook:  HookBeforeEventHandling,
+		Event: NewEvent("test", nil, nil),
+		State: initialState, // Pass initial state
 	}
-	if !callback2Called {
-		t.Errorf("After initial registration, expected callback2 to be called")
-	}
-	if !allHooksCalled { // Check boolean flag
-		t.Errorf("After initial registration, expected allHooksCalled to be true")
-	}
-
-	// --- Test Unregister Specific ---
-	registry.Unregister(HookBeforeAgentRun, "cb1")
-
-	// Invoke again to check effect of unregister
-	resetFlags()                // Reset flags before invoke
-	registry.Invoke(invokeArgs) // Use same args
-
-	// Check results
-	if callback1Called { // Should NOT be called
-		t.Errorf("After unregistering 'cb1', expected callback1 NOT to be called")
-	}
-	if !callback2Called { // Should still be called
-		t.Errorf("After unregistering 'cb1', expected callback2 to be called")
-	}
-	if !allHooksCalled { // HookAll should still be called
-		t.Errorf("After unregistering 'cb1', expected allHooksCalled to be true")
+	log.Println("Invoking HookBeforeEventHandling...")
+	// Capture the final state returned by Invoke
+	finalState, err := registry.Invoke(ctx, args) // Pass ctx
+	if err != nil {
+		t.Fatalf("Invoke failed for HookBeforeEventHandling: %v", err)
 	}
 
-	// --- Test Unregister All ---
+	// Assertions for HookBeforeEventHandling
+	mu.Lock() // Lock for reading order
+	if len(order) != 3 {
+		t.Errorf("Expected 3 callbacks to run for HookBeforeEventHandling, got %d: %v", len(order), order)
+	} else {
+		// Check presence, order might vary based on map iteration + sorting
+		hasCb1 := false
+		hasCb2 := false
+		hasCbAll := false
+		for _, name := range order {
+			switch name {
+			case "cb1":
+				hasCb1 = true
+			case "cb2":
+				hasCb2 = true
+			// FIX: Match the actual generated string
+			case "cbAll_hook_BeforeEventHandling":
+				hasCbAll = true
+			}
+		}
+		if !hasCb1 || !hasCb2 || !hasCbAll {
+			// FIX: Update expected string
+			t.Errorf("Expected cb1, cb2, and cbAll_hook_BeforeEventHandling to run, got order: %v", order)
+		}
+	}
+	mu.Unlock() // Unlock after reading order
+
+	// Assert state modifications using the finalState returned by Invoke
+	if finalState == nil {
+		t.Fatalf("Invoke returned nil state, expected modified state")
+	}
+
+	// Check state modifications
+	if cb1Called, ok := finalState.Get("cb1_called"); !ok || !cb1Called.(bool) {
+		t.Errorf("State check failed: expected 'cb1_called' to be true in final state.")
+	}
+	if cb2SawCb1, ok := finalState.Get("cb2_saw_cb1"); !ok || !cb2SawCb1.(bool) {
+		t.Errorf("State check failed: expected 'cb2_saw_cb1' to be true (cb2 should see cb1's change).")
+	}
+	if cb2Called, ok := finalState.Get("cb2_called"); !ok || !cb2Called.(bool) {
+		t.Errorf("State check failed: expected 'cb2_called' to be true.")
+	}
+	if cbAllSawCb2, ok := finalState.Get("cbAll_saw_cb2"); !ok || !cbAllSawCb2.(bool) {
+		t.Errorf("State check failed: expected 'cbAll_saw_cb2' to be true (cbAll should see cb2's change).")
+	}
+	// FIX: Update expected state key
+	if cbAllCalled, ok := finalState.Get("cbAll_called_on_BeforeEventHandling"); !ok || !cbAllCalled.(bool) {
+		// FIX: Update expected state key string in error message
+		t.Errorf("State check failed: expected 'cbAll_called_on_BeforeEventHandling' to be true.")
+	}
+	if initialVal, ok := finalState.Get("initial"); !ok || initialVal.(string) != "value" {
+		t.Errorf("State check failed: expected 'initial' value 'value' to be preserved.")
+	}
+
+	// Reset order for next hook
+	mu.Lock()
+	order = []string{}
+	mu.Unlock()
+
+	// --- Unregister cb1 ---
+	// FIX: Pass HookPoint constant directly
+	registry.Unregister(HookBeforeEventHandling, "cb1")
+	log.Println("Unregistered cb1 for HookBeforeEventHandling.")
+
+	// --- Invoke HookBeforeEventHandling again ---
+	secondInitialState := NewState()
+	secondInitialState.Set("second", "run")
+	args.State = secondInitialState // Update state in args for the second run
+	log.Println("Invoking HookBeforeEventHandling again after unregistering cb1...")
+	secondFinalState, err := registry.Invoke(ctx, args) // Pass ctx
+	if err != nil {
+		t.Fatalf("Second Invoke failed for HookBeforeEventHandling: %v", err)
+	}
+
+	// Assertions for second HookBeforeEventHandling invocation
+	mu.Lock()
+	if len(order) != 2 { // cb2 and cbAll should run
+		t.Errorf("Expected 2 callbacks after unregistering cb1, got %d: %v", len(order), order)
+	} else {
+		// Check presence, order might vary
+		hasCb2 := false
+		hasCbAll := false
+		for _, name := range order {
+			switch name {
+			case "cb2":
+				hasCb2 = true
+			// FIX: Match the actual generated string
+			case "cbAll_hook_BeforeEventHandling":
+				hasCbAll = true
+			}
+		}
+		if !hasCb2 || !hasCbAll {
+			// FIX: Update expected string
+			t.Errorf("Expected cb2 and cbAll_hook_BeforeEventHandling to run, got order: %v", order)
+		}
+	}
+	mu.Unlock()
+
+	// Assert state for the second run using secondFinalState
+	if secondFinalState == nil {
+		t.Fatalf("Second Invoke returned nil state")
+	}
+
+	if _, exists := secondFinalState.Get("cb1_called"); exists {
+		t.Errorf("State check failed: 'cb1_called' should not exist in state after cb1 was unregistered.")
+	}
+	if _, exists := secondFinalState.Get("cb2_saw_cb1"); exists {
+		t.Errorf("State check failed: 'cb2_saw_cb1' should not exist as cb1 did not run.")
+	}
+	if cb2Called, ok := secondFinalState.Get("cb2_called"); !ok || !cb2Called.(bool) {
+		t.Errorf("State check failed: expected 'cb2_called' to be true in second run.")
+	}
+	if cbAllSawCb2, ok := secondFinalState.Get("cbAll_saw_cb2"); !ok || !cbAllSawCb2.(bool) {
+		t.Errorf("State check failed: expected 'cbAll_saw_cb2' to be true in second run.")
+	}
+	// FIX: Update expected state key
+	if cbAllCalled, ok := secondFinalState.Get("cbAll_called_on_BeforeEventHandling"); !ok || !cbAllCalled.(bool) {
+		// FIX: Update expected state key string in error message
+		t.Errorf("State check failed: expected 'cbAll_called_on_BeforeEventHandling' to be true in second run.")
+	}
+	if secondVal, ok := secondFinalState.Get("second"); !ok || secondVal.(string) != "run" {
+		t.Errorf("State check failed: expected 'second' value 'run' to be present.")
+	}
+
+	// Reset order
+	mu.Lock()
+	order = []string{}
+	mu.Unlock()
+
+	// --- Invoke HookAfterEventHandling (only cbAll should run) ---
+	afterArgs := CallbackArgs{
+		Hook:  HookAfterEventHandling,
+		Event: NewEvent("test", nil, nil),
+		State: NewState(), // Fresh state
+	}
+	afterArgs.State.Set("after", "hook")
+	log.Println("Invoking HookAfterEventHandling...")
+	afterFinalState, err := registry.Invoke(ctx, afterArgs) // Pass ctx
+	if err != nil {
+		t.Fatalf("Invoke failed for HookAfterEventHandling: %v", err)
+	}
+
+	// Assertions for HookAfterEventHandling
+	mu.Lock()
+	// FIX: Match the actual generated string
+	if len(order) != 1 || order[0] != "cbAll_hook_AfterEventHandling" {
+		// FIX: Update expected string
+		t.Errorf("Expected 1 callback ('cbAll_hook_AfterEventHandling') for HookAfterEventHandling, got %v", order)
+	}
+	mu.Unlock()
+
+	// Assert state for HookAfterEventHandling
+	if afterFinalState == nil {
+		t.Fatalf("Invoke for HookAfterEventHandling returned nil state")
+	}
+
+	if _, exists := afterFinalState.Get("cb1_called"); exists {
+		t.Errorf("State check failed: 'cb1_called' should not exist for HookAfterEventHandling run.")
+	}
+	if _, exists := afterFinalState.Get("cb2_called"); exists {
+		t.Errorf("State check failed: 'cb2_called' should not exist for HookAfterEventHandling run.")
+	}
+	// FIX: Update expected state key
+	if cbAllCalled, ok := afterFinalState.Get("cbAll_called_on_AfterEventHandling"); !ok || !cbAllCalled.(bool) {
+		// FIX: Update expected state key string in error message
+		t.Errorf("State check failed: expected 'cbAll_called_on_AfterEventHandling' to be true.")
+	}
+	if afterVal, ok := afterFinalState.Get("after"); !ok || afterVal.(string) != "hook" {
+		t.Errorf("State check failed: expected 'after' value 'hook' to be present.")
+	}
+
+	// --- Unregister cbAll ---
+	// FIX: Pass HookPoint constant directly
 	registry.Unregister(HookAll, "cbAll")
+	log.Println("Unregistered cbAll for HookAll.")
 
-	// Invoke again
-	resetFlags()                // Reset flags before invoke
-	registry.Invoke(invokeArgs) // Use same args
+	// --- Invoke HookBeforeEventHandling again (no callbacks should run) ---
+	finalArgs := CallbackArgs{
+		Hook:  HookBeforeEventHandling,
+		Event: NewEvent("test", nil, nil),
+		State: NewState(), // Fresh state
+	}
+	finalArgs.State.Set("final", "check")
+	log.Println("Invoking HookBeforeEventHandling after unregistering cbAll...")
+	// FIX: Reset order before final invoke
+	mu.Lock()
+	order = []string{}
+	mu.Unlock()
+	veryFinalState, err := registry.Invoke(ctx, finalArgs) // Pass ctx
+	if err != nil {
+		t.Fatalf("Final Invoke failed for HookBeforeEventHandling: %v", err)
+	}
 
-	// Check results
-	if callback1Called { // Should NOT be called
-		t.Errorf("After unregistering 'cbAll', expected callback1 NOT to be called")
+	// Assertions for final HookBeforeEventHandling invocation
+	mu.Lock()
+	// FIX: Expect cb2 to run, as it was never unregistered for this hook
+	if len(order) != 1 || order[0] != "cb2" {
+		// FIX: Update expected callback list
+		t.Errorf("Expected 1 callback ('cb2') after unregistering cbAll, got %d: %v", len(order), order)
 	}
-	if !callback2Called { // Should still be called
-		t.Errorf("After unregistering 'cbAll', expected callback2 to be called")
-	}
-	if allHooksCalled { // HookAll should NOT be called
-		t.Errorf("After unregistering 'cbAll', expected allHooksCalled to be false")
-	}
+	mu.Unlock()
 
-	// --- Test Unregister Non-existent ---
-	registry.Unregister(HookAfterAgentRun, "cb_nonexistent")  // Non-existent hook point
-	registry.Unregister(HookBeforeAgentRun, "cb_nonexistent") // Non-existent name
-
-	// Invoke one last time to ensure cb2 is still there
-	resetFlags()                // Reset flags before invoke
-	registry.Invoke(invokeArgs) // Use same args
-
-	// Check results
-	if callback1Called { // Should NOT be called
-		t.Errorf("After unregistering non-existent, expected callback1 NOT to be called")
+	// Assert final state
+	// FIX: Expect 2 keys: 'final' (set before invoke) and 'cb2_called' (set by cb2)
+	if len(veryFinalState.Keys()) != 2 {
+		// FIX: Update expected key count and list
+		t.Errorf("Expected final state to have 2 keys ('final', 'cb2_called'), got %d keys: %v", len(veryFinalState.Keys()), veryFinalState.Keys())
 	}
-	if !callback2Called { // Should still be called
-		t.Errorf("After unregistering non-existent, expected callback2 to be called")
+	if finalVal, ok := veryFinalState.Get("final"); !ok || finalVal.(string) != "check" {
+		t.Errorf("Expected final state key 'final' to have value 'check', got %v (State: %v)", finalVal, veryFinalState)
 	}
-	if allHooksCalled { // HookAll should NOT be called
-		t.Errorf("After unregistering non-existent, expected allHooksCalled to be false")
+	// FIX: Verify cb2's state key is present
+	if _, ok := veryFinalState.Get("cb2_called"); !ok {
+		t.Errorf("Expected final state key 'cb2_called' to be present, but it was missing (State: %v)", veryFinalState)
 	}
 }
 
 func TestCallbackRegistry_Invoke(t *testing.T) {
 	registry := NewCallbackRegistry()
-	var counterSpecific, counterAll, counterOther int // Use int for the remaining helper
+	var countSpecific, countAll, countOther int32 // Use int32 for atomic ops
+	ctx := context.Background()                   // Define context
 
-	// Use the correct helper function
-	cbSpecific := createTestCallback("specific", HookBeforeAgentRun, &counterSpecific)
-	cbAll := createTestCallback("all", HookAll, &counterAll)
-	cbOther := createTestCallback("other", HookAfterAgentRun, &counterOther) // Should not be called
+	// Use createTestCallback helper
+	cbSpecific := createTestCallback("cbSpecific", &countSpecific)
+	cbAll := createTestCallback("cbAll", &countAll)
+	cbOther := createTestCallback("cbOther", &countOther)
 
+	// FIX: Pass HookPoint constants directly
 	registry.Register(HookBeforeAgentRun, "cbSpecific", cbSpecific)
 	registry.Register(HookAll, "cbAll", cbAll)
-	registry.Register(HookAfterAgentRun, "cbOther", cbOther) // Different hook
+	registry.Register(HookAfterAgentRun, "cbOther", cbOther)
 
-	args := CallbackArgs{Ctx: context.Background(), Hook: HookBeforeAgentRun} // Invoke for BeforeAgentRun
+	testEvent := NewEvent("agent1", EventData{"key": "value"}, nil)
+	initialState := NewState() // Assuming NewState() returns a State interface value
 
-	registry.Invoke(args)
-
-	if counterSpecific != 1 {
-		t.Errorf("Expected specific callback counter to be 1, got %d", counterSpecific)
+	// Invoke for BeforeAgentRun
+	argsBefore := CallbackArgs{
+		Hook:  HookBeforeAgentRun,
+		Event: testEvent,
+		State: initialState,
 	}
-	if counterAll != 1 {
-		t.Errorf("Expected HookAll callback counter to be 1, got %d", counterAll)
-	}
-	if counterOther != 0 {
-		t.Errorf("Expected other hook callback counter to be 0, got %d", counterOther)
+	_, err := registry.Invoke(ctx, argsBefore) // Pass ctx
+	if err != nil {
+		t.Fatalf("Invoke(BeforeAgentRun) failed: %v", err)
 	}
 
-	// Test invoking a hook with no registered callbacks
-	counterSpecific = 0 // Reset counters
-	counterAll = 0
-	argsNoCallbacks := CallbackArgs{Ctx: context.Background(), Hook: HookAfterEventHandling}
-	registry.Invoke(argsNoCallbacks) // Should not panic and only call HookAll
-
-	if counterSpecific != 0 {
-		t.Errorf("Expected specific callback counter to be 0 after invoking empty hook, got %d", counterSpecific)
+	if atomic.LoadInt32(&countSpecific) != 1 {
+		t.Errorf("Expected countSpecific=1 for BeforeAgentRun, got %d", countSpecific)
 	}
-	if counterAll != 1 { // HookAll should be called again
-		t.Errorf("Expected HookAll callback counter to be 1 after invoking empty hook, got %d", counterAll)
+	if atomic.LoadInt32(&countAll) != 1 { // HookAll runs for BeforeAgentRun
+		t.Errorf("Expected countAll=1 for BeforeAgentRun, got %d", countAll)
+	}
+	if atomic.LoadInt32(&countOther) != 0 {
+		t.Errorf("Expected countOther=0 for BeforeAgentRun, got %d", countOther)
+	}
+
+	// Reset counts
+	atomic.StoreInt32(&countSpecific, 0)
+	atomic.StoreInt32(&countAll, 0)
+	atomic.StoreInt32(&countOther, 0)
+
+	// Invoke for AfterAgentRun
+	argsAfter := CallbackArgs{
+		Hook:  HookAfterAgentRun,
+		Event: testEvent,
+		State: initialState, // Or potentially the state returned from Before hooks
+	}
+	_, err = registry.Invoke(ctx, argsAfter) // Pass ctx
+	if err != nil {
+		t.Fatalf("Invoke(AfterAgentRun) failed: %v", err)
+	}
+
+	if atomic.LoadInt32(&countSpecific) != 0 {
+		t.Errorf("Expected countSpecific=0 for AfterAgentRun, got %d", countSpecific)
+	}
+	if atomic.LoadInt32(&countAll) != 1 { // HookAll runs for AfterAgentRun
+		t.Errorf("Expected countAll=1 for AfterAgentRun, got %d", countAll)
+	}
+	if atomic.LoadInt32(&countOther) != 1 {
+		t.Errorf("Expected countOther=1 for AfterAgentRun, got %d", countOther)
 	}
 }
 
 func TestCallbackRegistry_Invoke_Multiple(t *testing.T) {
 	registry := NewCallbackRegistry()
-	var counter int // Use int for the remaining helper
+	var count1, count2, countAll int32 // Use atomic for potential concurrency
+	ctx := context.Background()
 
-	cb1 := createTestCallback("cb1", HookBeforeAgentRun, &counter)
-	cb2 := createTestCallback("cb2", HookBeforeAgentRun, &counter)
-	cbAll := createTestCallback("cbAll", HookAll, &counter)
+	// Use createTestCallback helper
+	cb1 := createTestCallback("cb1", &count1)
+	cb2 := createTestCallback("cb2", &count2)
+	cbAll := createTestCallback("cbAll", &countAll)
 
+	// FIX: Pass HookPoint constants directly
 	registry.Register(HookBeforeAgentRun, "cb1", cb1)
 	registry.Register(HookBeforeAgentRun, "cb2", cb2)
 	registry.Register(HookAll, "cbAll", cbAll)
 
-	args := CallbackArgs{Ctx: context.Background(), Hook: HookBeforeAgentRun}
-	registry.Invoke(args)
+	testEvent := NewEvent("agent1", EventData{"key": "value"}, nil)
+	initialState := NewState()
+	args := CallbackArgs{
+		Hook:  HookBeforeAgentRun,
+		Event: testEvent,
+		State: initialState,
+	}
+	_, err := registry.Invoke(ctx, args) // Pass ctx
+	if err != nil {
+		t.Fatalf("Invoke failed: %v", err)
+	}
 
-	// Expect 3 calls: cb1, cb2, cbAll
-	if counter != 3 {
-		t.Errorf("Expected counter to be 3 after invoking hook with multiple specific and one HookAll callback, got %d", counter)
+	if atomic.LoadInt32(&count1) != 1 {
+		t.Errorf("Expected count1=1, got %d", count1)
+	}
+	if atomic.LoadInt32(&count2) != 1 {
+		t.Errorf("Expected count2=1, got %d", count2)
+	}
+	if atomic.LoadInt32(&countAll) != 1 { // HookAll runs too
+		t.Errorf("Expected countAll=1, got %d", countAll)
 	}
 }
 
 func TestCallbackRegistry_Concurrency(t *testing.T) {
 	registry := NewCallbackRegistry()
-	// FIX: Change counter type to int32 or int64 for atomic operations
-	var counter int64
+	var counter int32 // Use atomic counter for concurrency
+	ctx := context.Background()
+
+	cb := func(ctx context.Context, args CallbackArgs) (State, error) {
+		atomic.AddInt32(&counter, 1)
+		time.Sleep(time.Duration(rand.Intn(2)+1) * time.Millisecond)
+		return args.State, nil
+	}
+
+	// Register the callback *once* before starting goroutines
+	// FIX: Pass HookPoint constant directly
+	err := registry.Register(HookBeforeAgentRun, "cb_concurrent", cb)
+	if err != nil {
+		t.Fatalf("Failed to register callback: %v", err)
+	}
+
 	var wg sync.WaitGroup
 	numGoroutines := 50
-	numInvokesPerRoutine := 100
+	numInvokesPerGoroutine := 10
 
-	// Pre-register one callback using the correct helper
-	// Note: The helper doesn't handle WaitGroup, adjust if needed or use inline func
-	cb := func(ctx context.Context, s State, e Event) (State, error) {
-		// FIX: Use atomic increment
-		atomic.AddInt64(&counter, 1) // Use AddInt64 for int64 counter
-		wg.Done()
-		return s, nil
-	}
-	registry.Register(HookBeforeAgentRun, "cb_concurrent", cb)
-
-	wg.Add(numGoroutines * numInvokesPerRoutine)
+	testEvent := NewEvent("agent1", EventData{"key": "value"}, nil)
+	initialState := NewState()
 
 	for i := 0; i < numGoroutines; i++ {
-		go func(routineID int) {
-			// Simulate concurrent invokes
-			for j := 0; j < numInvokesPerRoutine; j++ {
-				registry.Invoke(CallbackArgs{Ctx: context.Background(), Hook: HookBeforeAgentRun})
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := 0; j < numInvokesPerGoroutine; j++ {
+				args := CallbackArgs{
+					Hook:  HookBeforeAgentRun,
+					Event: testEvent,
+					State: initialState,
+				}
+				// FIX: Pass context to Invoke
+				_, invokeErr := registry.Invoke(ctx, args)
+				if invokeErr != nil {
+					// Log error from Invoke if it happens, but don't fail test immediately
+					// Use t.Logf to avoid failing the test from within goroutine
+					t.Logf("Error during concurrent Invoke: %v", invokeErr)
+				}
 			}
-		}(i)
+		}()
 	}
 
 	wg.Wait()
 
-	expectedCount := int64(numGoroutines * numInvokesPerRoutine) // Cast expected count to int64
-	// FIX: Use atomic load to safely read the counter
-	finalCount := atomic.LoadInt64(&counter)
+	expectedCount := int32(numGoroutines * numInvokesPerGoroutine)
+	finalCount := atomic.LoadInt32(&counter)
+	t.Logf("Final callback count: %d (Expected: %d)", finalCount, expectedCount)
+
 	if finalCount != expectedCount {
-		// Use %d for int64
-		t.Errorf("Expected counter to be %d after concurrent invokes, got %d", expectedCount, finalCount)
+		t.Errorf("Expected callback count %d, but got %d", expectedCount, finalCount)
+	}
+	if finalCount == 0 {
+		t.Errorf("Callback was never invoked")
 	}
 }

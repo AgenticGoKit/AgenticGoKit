@@ -7,6 +7,12 @@ import (
 	"github.com/google/uuid"
 )
 
+// SessionIDKey is the metadata key used for session tracking.
+const SessionIDKey = "session_id"
+
+// RouteMetadataKey is the metadata key used by RouteOrchestrator.
+const RouteMetadataKey = "route"
+
 // EventData holds the payload of an event.
 // Using map[string]any is more idiomatic than map[string]interface{}.
 type EventData map[string]any
@@ -17,8 +23,10 @@ type Event interface {
 	GetTimestamp() time.Time
 	GetTargetAgentID() string
 	GetSourceAgentID() string
-	GetData() EventData             // Returns the payload map
-	GetMetadata() map[string]string // Returns the metadata map
+	GetData() EventData                         // Returns the payload map
+	GetMetadata() map[string]string             // Returns the metadata map
+	GetSessionID() string                       // <<< ADDED
+	GetMetadataValue(key string) (string, bool) // <<< ADDED
 
 	// Mutators (Keep for flexibility, ensure thread-safety)
 	SetID(id string)
@@ -111,6 +119,28 @@ func (e *SimpleEvent) GetMetadata() map[string]string {
 		metadataCopy[k] = v
 	}
 	return metadataCopy // Return copy
+}
+
+// GetSessionID retrieves the session ID from metadata, returning empty if not found.
+func (e *SimpleEvent) GetSessionID() string {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+	if e.Metadata == nil {
+		return ""
+	}
+	// Assuming SessionIDKey is defined elsewhere or use a literal string
+	return e.Metadata[SessionIDKey] // Use the defined constant SessionIDKey
+}
+
+// GetMetadataValue retrieves a single metadata value by key.
+func (e *SimpleEvent) GetMetadataValue(key string) (string, bool) {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+	if e.Metadata == nil {
+		return "", false
+	}
+	val, ok := e.Metadata[key]
+	return val, ok
 }
 
 // --- Mutators (Implement interface methods) ---

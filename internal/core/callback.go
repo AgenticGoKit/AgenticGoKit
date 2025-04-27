@@ -7,45 +7,39 @@ import (
 	"sync"
 )
 
-// HookPoint defines specific moments in the agent/runner lifecycle where callbacks can be invoked.
+// HookPoint defines specific points in the execution flow where callbacks can be triggered.
 type HookPoint string
 
 const (
-	// Runner Hooks
-	HookBeforeEventHandling HookPoint = "BeforeEventHandling" // Before an event is routed to any handler
-	HookAfterEventHandling  HookPoint = "AfterEventHandling"  // After an event has been handled (or failed)
-
-	// Agent Hooks (invoked by Runner during handling)
-	HookBeforeAgentRun HookPoint = "BeforeAgentRun" // Before an agent's Run method is called
-	HookAfterAgentRun  HookPoint = "AfterAgentRun"  // After an agent's Run method completes (successfully or with error state)
-
-	// HookAll is a special value used to register a callback for all hook points.
-	// Note: The CallbackRegistry handles iterating through specific hooks when HookAll is used.
-	HookAll HookPoint = "AllHooks"
-
-	// TODO: Add more granular hooks later if needed:
-	// HookBeforeModelCall HookPoint = "BeforeModelCall"
-	// HookAfterModelCall  HookPoint = "AfterModelCall"
-	// HookBeforeToolCall  HookPoint = "BeforeToolCall"
-	// HookAfterToolCall   HookPoint = "AfterToolCall"
-	// HookOnStateChange   HookPoint = "OnStateChange" // Might be tricky to implement efficiently
+	// HookBeforeEventHandling is triggered before any processing of an incoming event begins.
+	HookBeforeEventHandling HookPoint = "BeforeEventHandling"
+	// HookAfterEventHandling is triggered after all processing for an event is complete.
+	HookAfterEventHandling HookPoint = "AfterEventHandling"
+	// HookBeforeAgentRun is triggered just before an agent's Run method is called.
+	HookBeforeAgentRun HookPoint = "BeforeAgentRun"
+	// HookAfterAgentRun is triggered just after an agent's Run method completes (successfully or with error).
+	HookAfterAgentRun HookPoint = "AfterAgentRun"
+	// FIX: Define HookAgentError
+	HookAgentError HookPoint = "AgentError" // Triggered specifically when an agent Run returns an error
+	HookAll        HookPoint = "AllHooks"   // Special hook for callbacks that run on all points
 )
 
-// CallbackArgs holds the arguments passed to a callback function.
-// Different hook points might populate different fields.
+// CallbackArgs encapsulates all arguments passed to a callback function.
 type CallbackArgs struct {
-	Ctx   context.Context
-	Hook  HookPoint
-	Event Event // Use the interface type directly
-	State State
-	// Add other relevant context as needed
+	Ctx         context.Context
+	Hook        HookPoint
+	Event       Event       // The event that triggered the hook
+	State       State       // The current state, can be modified by callbacks
+	AgentID     string      // ID of the agent involved (for agent-related hooks)
+	AgentResult AgentResult // Result of the agent execution (for AfterAgentRun, AgentError) // <<< RENAMED from Result
+	Output      AgentResult // <<< ADDED (Alias for AgentResult for consistency if needed elsewhere)
+	Error       error       // Error information (for AgentError)
 }
 
 // CallbackFunc defines the signature for callback functions.
-// It receives the context, the current state, and the event that triggered the hook.
+// It receives the context and all relevant arguments for the specific hook.
 // It can optionally return a new State to replace the current one, or an error.
-// FIX: Accept Event interface type directly
-type CallbackFunc func(ctx context.Context, currentState State, event Event) (newState State, err error)
+type CallbackFunc func(ctx context.Context, args CallbackArgs) (State, error)
 
 // CallbackRegistration holds details about a registered callback.
 type CallbackRegistration struct {
@@ -117,47 +111,62 @@ func (r *CallbackRegistry) Unregister(hook HookPoint, name string) {
 	log.Printf("Warning: Callback '%s' not found for hook '%s' during unregister", name, hook)
 }
 
-// Invoke calls all registered callbacks for a given hook point.
-// It passes necessary arguments like context, event, state, error.
-func (r *CallbackRegistry) Invoke(args CallbackArgs) {
+// Invoke calls all registered callbacks for a specific hook and HookAll.
+// It propagates the state between callbacks and returns the final state.
+func (r *CallbackRegistry) Invoke(ctx context.Context, args CallbackArgs) (State, error) {
 	r.mu.RLock()
-	// Get specific hooks and potentially 'AllHooks'
-	specificHooks := r.callbacks[args.Hook]
-	allHooks := r.callbacks[HookAll]
-	combinedHooks := append([]*CallbackRegistration{}, specificHooks...) // Create copy
-	combinedHooks = append(combinedHooks, allHooks...)
-	r.mu.RUnlock()
+	defer r.mu.RUnlock()
 
-	if len(combinedHooks) == 0 {
-		return // No callbacks for this hook
+	currentState := args.State
+	if currentState == nil {
+		currentState = &SimpleState{data: make(map[string]interface{})}
+		log.Printf("CallbackRegistry.Invoke: Initial state was nil, created new SimpleState for hook %s", args.Hook)
 	}
 
-	//log.Printf("Invoking %d callbacks for hook '%s'", len(combinedHooks), args.Hook)
+	// Get registrations for the specific hook and HookAll
+	hookRegistrations := r.callbacks[args.Hook]
+	allRegistrations := r.callbacks[HookAll]
 
-	for _, reg := range combinedHooks {
-		//eventID := "nil"
-		// FIX: Remove eventForCallback variable
-		// var eventForCallback *Event // Variable to hold the event pointer for the callback
-		// if args.Event != nil {
-		// 	//eventID = (*args.Event).GetID() // Dereference for GetID
-		// 	eventForCallback = args.Event // Use the original pointer for the callback
-		// }
-
-		//log.Printf("Invoking callback '%s' for hook '%s', event '%s'", reg.ID, args.Hook, eventID)
-
-		// Call the actual callback function, passing the interface value directly
-		// FIX: Pass args.Event directly and use args.State
-		returnedState, callbackErr := reg.CallbackFunc(args.Ctx, args.State, args.Event) // Pass interface value
-		if callbackErr != nil {
-			log.Printf("Error executing callback '%s' for hook '%s': %v", reg.ID, args.Hook, callbackErr)
-			// Optionally: Store/aggregate errors? Stop invoking further callbacks?
+	// Combine callbacks: specific first, then HookAll
+	// Extract the CallbackFunc from each registration
+	callbacksToRun := make([]CallbackFunc, 0, len(hookRegistrations)+len(allRegistrations))
+	for _, reg := range hookRegistrations {
+		if reg != nil { // Add nil check for safety
+			callbacksToRun = append(callbacksToRun, reg.CallbackFunc)
 		}
+	}
+	for _, reg := range allRegistrations {
+		if reg != nil { // Add nil check for safety
+			callbacksToRun = append(callbacksToRun, reg.CallbackFunc)
+		}
+	}
+
+	var lastErr error
+	// Iterate directly over the combined CallbackFunc slice
+	for _, callback := range callbacksToRun {
+		// Create args for this specific call, ensuring the latest state is passed
+		currentArgs := args
+		currentArgs.State = currentState // Pass the current state
+
+		// Simplified log - consider adding callback name if available/needed
+		log.Printf("CallbackRegistry.Invoke: Executing callback for hook %s", args.Hook)
+
+		returnedState, err := callback(ctx, currentArgs) // Call the function directly
+		if err != nil {
+			// Decide how to handle errors - log and continue, or stop?
+			log.Printf("CallbackRegistry.Invoke: Error executing callback for hook %s: %v", args.Hook, err)
+			lastErr = err // Store the last error
+		}
+
+		// Update currentState only if the callback returned a non-nil state
 		if returnedState != nil {
-			log.Printf("Callback '%s' returned new state for hook '%s'.", reg.ID, args.Hook)
-			// FIX: Use args.State
-			args.State = returnedState // Update state for subsequent callbacks in this invocation
+			log.Printf("CallbackRegistry.Invoke: Callback returned updated state for hook %s", args.Hook)
+			currentState = returnedState
+		} else {
+			log.Printf("CallbackRegistry.Invoke: Callback returned nil state for hook %s, state remains unchanged.", args.Hook)
 		}
 	}
-	// Note: The updated state (args.CurrentState) is not automatically propagated back
-	// to the caller (e.g., the Runner loop) unless the caller explicitly uses it.
+
+	log.Printf("CallbackRegistry.Invoke: Finished invoking callbacks for hook %s. Returning final state.", args.Hook)
+	return currentState, lastErr
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context" // Import context
 	"fmt"
 	"log"
 	"net/http"
@@ -19,7 +20,62 @@ const (
 	PlannerAgentName    = "planner"
 	ResearcherAgentName = "researcher"
 	SummarizerAgentName = "summarizer"
+	FinalOutputAgent    = "final_output" // A conceptual sink or final step
 )
+
+// Simple final output handler to log the result
+type FinalOutputHandler struct {
+	wg *sync.WaitGroup
+	mu sync.Mutex
+	// Store final results keyed by session ID
+	finalResults map[string]agentflow.State
+}
+
+func NewFinalOutputHandler(wg *sync.WaitGroup) *FinalOutputHandler {
+	return &FinalOutputHandler{
+		wg:           wg,
+		finalResults: make(map[string]agentflow.State),
+	}
+}
+
+func (h *FinalOutputHandler) Run(ctx context.Context, event agentflow.Event, state agentflow.State) (agentflow.AgentResult, error) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	sessionID := event.GetSessionID()
+	log.Printf("--- Final Output Handler ---")
+	log.Printf("Received final state for session %s:", sessionID)
+
+	// FIX: Use state.Get(key) instead of GetMust
+	summaryVal, _ := state.Get("summary")
+	errorVal, _ := state.Get("error")
+	log.Printf("State Data (Summary): %v", summaryVal)
+	log.Printf("State Data (Error): %v", errorVal)
+
+	// FIX: Use state.MetaKeys() and state.GetMeta(key) instead of GetAllMeta
+	log.Println("State Meta:")
+	for _, key := range state.MetaKeys() {
+		metaVal, _ := state.GetMeta(key)
+		log.Printf("  %s: %v", key, metaVal)
+	}
+	// log.Printf("State Meta: %+v", state.GetAllMeta()) // REMOVE THIS
+
+	h.finalResults[sessionID] = state // Store the final state
+	if h.wg != nil {
+		// This might be tricky if multiple events reach here.
+		// The WaitGroup should ideally track the completion of the *entire flow*
+		// rather than just individual handler runs.
+		// For simplicity, we might remove WG from this handler or rethink its usage.
+		// h.wg.Done() // Decrementing here assumes this is the absolute last step.
+	}
+	return agentflow.AgentResult{OutputState: state}, nil // Return the state, no further routing
+}
+
+func (h *FinalOutputHandler) GetFinalState(sessionID string) (agentflow.State, bool) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	state, found := h.finalResults[sessionID]
+	return state, found
+}
 
 func main() {
 	log.Println("Starting Multi-Agent Team Example...")
@@ -60,91 +116,128 @@ func main() {
 	}
 	log.Println("Tool Registry created and WebSearchTool registered.")
 
-	// 3. Create Agents (Defined in agents.go)
-	plannerAgent := NewPlannerAgent()
-	researchAgent := NewResearchAgent(toolRegistry)
-	summarizeAgent := NewSummarizeAgent(azureAdapter)
-	log.Println("Agents created (Planner, Researcher, Summarizer).")
+	// 3. Create Core Components
+	callbackRegistry := agentflow.NewCallbackRegistry() // Create registry
+	// TODO: Register callbacks if needed (e.g., for logging)
+	// callbackRegistry.Register(agentflow.HookAfterAgentRun, "logAgent", logAgentCallback)
 
-	// 4. Create Orchestrator & Runner
-	orchestratorImpl := orchestrator.NewRouteOrchestrator()
+	orchestratorImpl := orchestrator.NewRouteOrchestrator(callbackRegistry) // Pass registry
 	concurrency := runtime.NumCPU()
-	runner := agentflow.NewRunner(orchestratorImpl, concurrency)
+	runner := agentflow.NewRunner(concurrency)   // Pass queue size
+	runner.SetOrchestrator(orchestratorImpl)     // Set orchestrator
+	runner.SetCallbackRegistry(callbackRegistry) // Set registry
 	log.Printf("Runner & Route Orchestrator created (concurrency %d).", concurrency)
 
-	// Create ONE shared result channel BEFORE handlers
-	resultChan := make(chan agentflow.State, 1) // Buffer of 1 is important
+	// 4. Create Agent Handlers (Defined in handler.go, implementing agentflow.AgentHandler)
+	var wg sync.WaitGroup // WaitGroup to track completion of the *flow*
+	plannerHandler := NewPlannerHandler(azureAdapter)
+	researcherHandler := NewResearcherHandler(toolRegistry)
+	summarizerHandler := NewSummarizerHandler(azureAdapter)
+	finalOutputHandler := NewFinalOutputHandler(&wg) // Handler to receive the final result
 
-	// 5. Create Agent Handlers (Defined in handler.go) & Register
-	var wg sync.WaitGroup
-	agentNames := []string{PlannerAgentName, ResearcherAgentName, SummarizerAgentName}
-
-	// Pass the SAME resultChan to all handlers
-	plannerHandler := NewAgentHandler(PlannerAgentName, plannerAgent, runner, azureAdapter, agentNames, resultChan, &wg)
-	researcherHandler := NewAgentHandler(ResearcherAgentName, researchAgent, runner, azureAdapter, agentNames, resultChan, &wg)
-	summarizerHandler := NewAgentHandler(SummarizerAgentName, summarizeAgent, runner, azureAdapter, agentNames, resultChan, &wg)
-
-	runner.RegisterAgent(PlannerAgentName, plannerHandler)
-	runner.RegisterAgent(ResearcherAgentName, researcherHandler)
-	runner.RegisterAgent(SummarizerAgentName, summarizerHandler)
+	// 5. Register Handlers with Orchestrator
+	err = orchestratorImpl.RegisterAgent(PlannerAgentName, plannerHandler)
+	requireNoError(err, "Register Planner")
+	err = orchestratorImpl.RegisterAgent(ResearcherAgentName, researcherHandler)
+	requireNoError(err, "Register Researcher")
+	err = orchestratorImpl.RegisterAgent(SummarizerAgentName, summarizerHandler)
+	requireNoError(err, "Register Summarizer")
+	err = orchestratorImpl.RegisterAgent(FinalOutputAgent, finalOutputHandler) // Register final step
+	requireNoError(err, "Register FinalOutput")
 	log.Println("Agent Handlers created and registered.")
+
+	// 6. Start the Runner
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	runner.Start(ctx)                  // Pass context
+	time.Sleep(100 * time.Millisecond) // Allow runner to start
+	log.Println("Runner started.")
 
 	// --- Execution ---
 	// 1. Prepare the initial event
 	initialEventID := fmt.Sprintf("req-%d", time.Now().UnixNano())
-	eventPayload := map[string]interface{}{
-		"user_request": "Research about France and summarize it", // Example request
+	userRequest := "Research the recent developments in AI-powered code generation and summarize the key findings."
+	eventData := agentflow.EventData{
+		"user_request": userRequest,
 	}
-	eventMetadata := map[string]string{
-		orchestrator.RouteMetadataKey: PlannerAgentName, // Start with the Planner
-		"original_event_id":           initialEventID,
-		"user_request":                eventPayload["user_request"].(string),
+	eventMeta := map[string]string{
+		agentflow.RouteMetadataKey: PlannerAgentName, // Start with the Planner
+		agentflow.SessionIDKey:     initialEventID,   // Use SessionIDKey for tracking
 	}
-	event := &agentflow.SimpleEvent{
-		ID:       initialEventID,
-		Payload:  eventPayload,
-		Metadata: eventMetadata,
-	}
-	log.Printf("Initial event prepared: %s", event.GetID())
+	// Use agentflow.NewEvent
+	event := agentflow.NewEvent(PlannerAgentName, eventData, eventMeta)
+	event.SetID(initialEventID) // Set specific ID if needed, though SessionID is preferred for tracking flow
+	log.Printf("Initial event prepared: %s (Session: %s)", event.GetID(), event.GetSessionID())
 
 	// 2. Emit the initial event
 	log.Println("Emitting initial event to start the flow...")
-	wg.Add(1) // Add 1 for the *first* handler call (Planner)
-	runner.Emit(event)
+	// wg.Add(1) // Add wait group count *if* FinalOutputHandler uses it reliably
+	err = runner.Emit(event)
+	requireNoError(err, "Emit initial event")
 	log.Println("Initial event emitted.")
 
-	// 3. Wait for the final result
-	log.Println("Waiting for final result/error...")
+	// 3. Wait for the final result by checking the FinalOutputHandler
+	log.Println("Waiting for final result...")
 	var finalState agentflow.State
-	select {
-	case finalState = <-resultChan:
-		log.Println("Received final state.")
-	case <-time.After(180 * time.Second): // Timeout for the whole flow
-		log.Fatal("Timeout waiting for the multi-agent flow to complete.")
+	var found bool
+	timeout := time.After(180 * time.Second) // Timeout for the whole flow
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
+
+waitLoop:
+	for {
+		select {
+		case <-timeout:
+			log.Fatal("Timeout waiting for the multi-agent flow to complete.")
+			break waitLoop // Should not be reached due to log.Fatal
+		case <-ticker.C:
+			finalState, found = finalOutputHandler.GetFinalState(initialEventID)
+			if found {
+				log.Println("Final state found.")
+				break waitLoop
+			}
+			log.Println("Still waiting for final state...") // Optional progress log
+		case <-ctx.Done():
+			log.Printf("Context cancelled while waiting: %v", ctx.Err())
+			break waitLoop
+		}
 	}
 
 	// 4. Stop the runner
 	log.Println("Stopping runner...")
-	runner.Stop()
+	cancel()      // Cancel context first
+	runner.Stop() // Then stop runner
 	log.Println("Runner stopped.")
 
 	// --- Output ---
-	if finalState.GetData() == nil {
+	if !found || finalState == nil {
 		log.Fatal("Failed to get final state.")
 	}
 
-	// Check for errors first in the output
-	if handlerErr, ok := finalState.Get("handler_error"); ok {
-		log.Printf("Flow ended with handler error: %v", handlerErr)
-	} else if agentErr, ok := finalState.Get("agent_error"); ok {
-		log.Printf("Flow ended with agent error: %v", agentErr)
-	} else if summary, ok := finalState.Get("summary"); ok {
+	// Check for errors first in the output state
+	// FIX: Use finalState.Get(key) instead of GetMust
+	if errMsg, ok := finalState.Get("error"); ok && errMsg != nil {
+		log.Printf("Flow ended with error: %v", errMsg)
+	} else if summary, ok := finalState.Get("summary"); ok && summary != nil {
 		log.Println("Multi-agent flow successful.")
 		fmt.Println("\n--- Final Summary ---")
-		fmt.Println(summary)
+		fmt.Printf("%v\n", summary) // Use %v for safety
 		fmt.Println("---------------------")
 	} else {
 		log.Println("Flow ended, but no summary or known error found in final state.")
 	}
-	log.Printf("Final state data: %+v", finalState.GetData())
+
+	// FIX: Use finalState.Get(key) for logging
+	finalSummary, _ := finalState.Get("summary")
+	finalError, _ := finalState.Get("error")
+	log.Printf("Final state summary: %v", finalSummary)
+	log.Printf("Final state error: %v", finalError)
+	// log.Printf("Final state data: %+v", finalState.GetData()) // Avoid this
+}
+
+// Helper for checking registration errors
+func requireNoError(err error, step string) {
+	if err != nil {
+		log.Fatalf("Error during setup - %s: %v", step, err)
+	}
 }

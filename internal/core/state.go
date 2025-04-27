@@ -231,3 +231,14 @@ func NewStateWithData(data map[string]any) State {
 	}
 	return s // Return the concrete type *SimpleState, which satisfies the State interface
 }
+
+// NewSimpleState creates a new state instance with optional initial data.
+func NewSimpleState(initialData map[string]any) *SimpleState {
+	s := NewState()
+	if initialData != nil {
+		for k, v := range initialData {
+			s.data[k] = v
+		}
+	}
+	return s
+}

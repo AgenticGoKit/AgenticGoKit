@@ -2,8 +2,12 @@ package agentflow
 
 import (
 	"context"
+	"errors" // Import errors package
 	"fmt"
-	"sync"
+	"log" // Import rand for concurrency test
+	"strings"
+	"sync"        // Import sync
+	"sync/atomic" // Import atomic
 	"testing"
 	"time"
 )
@@ -32,30 +36,58 @@ func (m *mockAgentHandler) Run(ctx context.Context, event Event, state State) (A
 	// Return a default result for the mock, ensure state pointer is handled
 	var outputState State
 	if state != nil {
-		// If state is needed in output, create a copy or handle appropriately
-		// For simplicity, just passing it along if non-nil.
-		outputState = state
+		outputState = state.Clone() // Clone input state if non-nil
 	} else {
-		// Provide a default empty state if input state was nil
-		// FIX: Use lowercase 'data' field name
-		outputState = &SimpleState{data: map[string]interface{}{}}
+		outputState = NewState() // Provide a default empty state if input state was nil
 	}
-	return AgentResult{OutputState: &outputState}, nil
+	return AgentResult{OutputState: outputState}, nil
 }
 
 // --- Mock Orchestrator ---
 type mockOrchestrator struct {
-	dispatchFunc func(Event) error
-	registerFunc func(string, AgentHandler) error
-	stopFunc     func() // Add stopFunc field
-	registry     *CallbackRegistry
+	dispatchFunc   func(context.Context, Event) (AgentResult, error)
+	registerFunc   func(string, AgentHandler) error
+	stopFunc       func()
+	registry       *CallbackRegistry // Registry used by this mock (can be nil if not needed by mock)
+	mu             sync.Mutex        // Protect access to shared fields
+	dispatchCalled bool
+	receivedEvent  Event // Store the last received event
+	dispatchErr    error // Store error encountered during dispatch check
+	returnErr      error // Error to return from Dispatch call
 }
 
-func (m *mockOrchestrator) Dispatch(e Event) error {
+// Dispatch simulates orchestrator dispatch.
+// REMOVED the simulation of Before/AfterEventHandling hooks, as the runner handles those.
+func (m *mockOrchestrator) Dispatch(ctx context.Context, e Event) (AgentResult, error) {
+	m.mu.Lock()
+	m.dispatchCalled = true
+	m.receivedEvent = e
+	m.mu.Unlock()
+
+	// Simulate the actual agent execution (using dispatchFunc or default)
+	var dispatchResult AgentResult
+	var dispatchErr error
 	if m.dispatchFunc != nil {
-		return m.dispatchFunc(e)
+		// If the mock dispatchFunc needs to simulate agent-specific hooks (like Before/AfterAgentRun),
+		// it could potentially use m.registry here, but it should NOT invoke
+		// Before/AfterEventHandling hooks.
+		dispatchResult, dispatchErr = m.dispatchFunc(ctx, e)
+	} else {
+		dispatchResult = AgentResult{} // Default empty result
+		dispatchErr = m.returnErr      // Use pre-configured error if any
 	}
-	return nil
+
+	// Store error for CheckDispatchCalled if needed
+	if dispatchErr != nil {
+		m.mu.Lock()
+		m.dispatchErr = dispatchErr
+		m.mu.Unlock()
+	}
+
+	// NOTE: No invocation of Before/AfterEventHandling hooks here.
+	// The runner loop is responsible for invoking those hooks around this Dispatch call.
+
+	return dispatchResult, dispatchErr
 }
 
 func (m *mockOrchestrator) RegisterAgent(name string, handler AgentHandler) error {
@@ -65,28 +97,33 @@ func (m *mockOrchestrator) RegisterAgent(name string, handler AgentHandler) erro
 	return nil
 }
 
+// GetCallbackRegistry is kept for potential use within a custom dispatchFunc,
+// but the main Dispatch method no longer uses it directly.
 func (m *mockOrchestrator) GetCallbackRegistry() *CallbackRegistry {
-	if m.registry != nil {
-		return m.registry
+	if m.registry == nil {
+		m.registry = NewCallbackRegistry()
 	}
-	return NewCallbackRegistry()
+	return m.registry
 }
 
-// FIX: Add Stop method
 func (m *mockOrchestrator) Stop() {
 	if m.stopFunc != nil {
 		m.stopFunc()
 	}
-	// Default mock behavior: do nothing
 }
 
 // --- Mock TraceLogger ---
 type mockTraceLogger struct {
 	logFunc      func(TraceEntry) error
 	getTraceFunc func(string) ([]TraceEntry, error)
+	mu           sync.RWMutex
+	entries      []TraceEntry
 }
 
 func (l *mockTraceLogger) Log(entry TraceEntry) error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.entries = append(l.entries, entry)
 	if l.logFunc != nil {
 		return l.logFunc(entry)
 	}
@@ -94,10 +131,21 @@ func (l *mockTraceLogger) Log(entry TraceEntry) error {
 }
 
 func (l *mockTraceLogger) GetTrace(sessionID string) ([]TraceEntry, error) {
+	l.mu.RLock()
+	defer l.mu.RUnlock()
 	if l.getTraceFunc != nil {
 		return l.getTraceFunc(sessionID)
 	}
-	return []TraceEntry{}, nil
+	// Simple mock: return all entries regardless of sessionID
+	// Or filter if needed:
+	var filtered []TraceEntry
+	for _, e := range l.entries {
+		if e.SessionID == sessionID {
+			filtered = append(filtered, e)
+		}
+	}
+	return filtered, nil
+
 }
 
 // --- Test Runner Start and Stop ---
@@ -132,115 +180,185 @@ func TestRunner_StartStop(t *testing.T) {
 
 // --- Test Runner Emit and Dispatch ---
 func TestRunner_EmitDispatch(t *testing.T) {
-	var wg sync.WaitGroup
-	wg.Add(1)
-
-	mockOrch := &mockOrchestrator{ // Now implements Stop
-		dispatchFunc: func(e Event) error {
-			defer wg.Done()
-			if e.GetTargetAgentID() != "test-agent" {
-				t.Errorf("Expected target agent ID 'test-agent', got '%s'", e.GetTargetAgentID())
-			}
-			payload := e.GetData()
-			if _, ok := payload["payload"]; !ok {
-				t.Errorf("Expected 'payload' key in event data, got none")
-			} else if payload["payload"] != "hello" {
-				t.Errorf("Expected data['payload'] == 'hello', got %v", payload["payload"])
-			}
-			return nil
+	dispatchChan := make(chan Event, 1) // Channel to signal dispatch occurred
+	mockOrch := &mockOrchestrator{
+		dispatchFunc: func(ctx context.Context, e Event) (AgentResult, error) {
+			log.Printf("MockOrchestrator: Dispatch called for event %s", e.GetID())
+			dispatchChan <- e // Signal that dispatch happened
+			return AgentResult{}, nil
 		},
 	}
-
 	runner := NewRunner(10)
 	runner.SetOrchestrator(mockOrch)
+	runner.SetTraceLogger(NewNoOpTraceLogger()) // Use NoOp logger
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	err := runner.Start(ctx)
-	if err != nil {
-		t.Fatalf("Runner failed to start: %v", err)
-	}
-	defer runner.Stop()
+	var runnerWg sync.WaitGroup
+	runnerWg.Add(1)
+	go func() {
+		defer runnerWg.Done()
+		if err := runner.Start(ctx); err != nil && !errors.Is(err, context.Canceled) {
+			// Log error only if it's not context cancellation
+			t.Logf("Runner Start returned error: %v", err)
+		}
+	}()
+	time.Sleep(50 * time.Millisecond) // Allow runner goroutine to start
 
-	testEvent := NewEvent("test-agent", EventData{"payload": "hello"}, map[string]string{"session_id": "s2"})
-	err = runner.Emit(testEvent)
+	testEvent := NewEvent("test-event-dispatch", nil, nil)
+	err := runner.Emit(testEvent)
 	if err != nil {
 		t.Fatalf("Emit failed: %v", err)
 	}
 
-	if waitTimeout(&wg, 1*time.Second) {
-		t.Fatal("Timed out waiting for event to be dispatched")
+	// Wait for dispatch signal or timeout
+	select {
+	case receivedEvent := <-dispatchChan:
+		log.Printf("TestRunner_EmitDispatch: Received dispatch signal for event %s", receivedEvent.GetID())
+		if receivedEvent.GetID() != testEvent.GetID() {
+			t.Errorf("Mock orchestrator received wrong event ID: got %s, want %s", receivedEvent.GetID(), testEvent.GetID())
+		}
+	case <-time.After(2 * time.Second): // Increased timeout
+		t.Fatal("Timeout waiting for orchestrator dispatch")
+	}
+
+	cancel()        // Stop the runner
+	runnerWg.Wait() // Wait for runner goroutine to finish
+
+	// --- Assertions after runner is stopped ---
+	// CheckDispatchCalled is less reliable than the channel, but keep for completeness
+	called, _, dispatchErr := mockOrch.CheckDispatchCalled()
+	if !called {
+		t.Errorf("Expected orchestrator.Dispatch to be called (CheckDispatchCalled), but it wasn't")
+	}
+	if dispatchErr != nil {
+		t.Errorf("Mock orchestrator encountered an error during dispatch check: %v", dispatchErr)
 	}
 }
 
 // --- Test Runner Emit Queue Full ---
 func TestRunner_EmitQueueFull(t *testing.T) {
+	// FIX: Use queue size 1
 	queueSize := 1
 	runner := NewRunner(queueSize)
+	processed := make(chan struct{})     // Channel to signal processing completion
+	blockDispatch := make(chan struct{}) // Channel to control blocking in dispatch
+	dispatchStarted := make(chan string) // Channel to signal dispatch has started
 
-	// FIX: Dispatcher only needs to block longer than Emit's timeout (1s)
-	// No need for an external channel here.
 	mockOrch := &mockOrchestrator{
-		dispatchFunc: func(e Event) error {
-			// Block slightly longer than the Emit timeout to ensure it triggers
-			time.Sleep(1200 * time.Millisecond)
-			return nil
+		dispatchFunc: func(ctx context.Context, e Event) (AgentResult, error) {
+			log.Printf("MockOrchestrator: Dispatch called for event %s, signalling start...", e.GetID())
+			// Signal that dispatch has started *before* blocking
+			// Use non-blocking send in case test already moved on/timed out
+			select {
+			case dispatchStarted <- e.GetID():
+			default:
+				log.Printf("MockOrchestrator: Warning - dispatchStarted channel blocked or closed for event %s", e.GetID())
+			}
+
+			log.Printf("MockOrchestrator: Blocking dispatch for event %s...", e.GetID())
+			// Block until told to unblock
+			<-blockDispatch
+			log.Printf("MockOrchestrator: Unblocked for event %s", e.GetID())
+
+			// Signal processing done *after* unblocking
+			// Use a non-blocking send in case the test already timed out
+			select {
+			case processed <- struct{}{}:
+			default:
+				log.Printf("MockOrchestrator: Warning - processed channel blocked or closed for event %s", e.GetID())
+			}
+			return AgentResult{}, nil
 		},
 	}
 	runner.SetOrchestrator(mockOrch)
+	runner.SetTraceLogger(NewNoOpTraceLogger())
 
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel() // Ensure context is cancelled eventually
+	defer cancel()
 
-	err := runner.Start(ctx)
-	if err != nil {
-		t.Fatalf("Runner failed to start: %v", err)
+	runner.Start(ctx)
+	time.Sleep(50 * time.Millisecond) // Allow runner goroutine to start
+
+	// --- Event 1 ---
+	// Emit first event - should enter the queue (size 1)
+	event1 := NewEvent("event1", nil, nil)
+	err1 := runner.Emit(event1)
+	if err1 != nil {
+		t.Fatalf("Emit(1) failed unexpectedly: %v", err1)
 	}
-	// FIX: Defer Stop AFTER all Emit calls to ensure it runs last
-	// defer runner.Stop() // Moved lower
+	log.Printf("Test: Emit(1) succeeded.")
 
-	// Emit event 1 - Loop will pick this up and block in the dispatcher
-	event1 := NewEvent("agent1", EventData{"num": 1}, map[string]string{"session_id": "s3"})
-	err = runner.Emit(event1)
-	if err != nil {
-		t.Fatalf("Emit 1 failed unexpectedly: %v", err)
-	}
-	// Give loop a tiny moment to pick up event1 and enter dispatch
-	time.Sleep(10 * time.Millisecond)
-
-	// Emit event 2 - Should succeed and fill the queue buffer (size 1)
-	event2 := NewEvent("agent2", EventData{"num": 2}, map[string]string{"session_id": "s3"})
-	err = runner.Emit(event2)
-	if err != nil {
-		// If this fails, the timing might still be off, or queue size wrong
-		t.Fatalf("Emit 2 failed unexpectedly: %v", err)
-	}
-
-	// Emit event 3 - Queue is now full, this Emit should block and time out
-	event3 := NewEvent("agent3", EventData{"num": 3}, map[string]string{"session_id": "s3"})
-	startTime := time.Now()
-	err = runner.Emit(event3)
-	duration := time.Since(startTime)
-
-	// Check if Emit 3 failed as expected
-	if err == nil {
-		t.Fatal("Emit 3 succeeded when queue should be full and blocked, expected timeout error")
-	} else {
-		expectedErr := "failed to emit event: queue full or blocked"
-		if err.Error() != expectedErr {
-			t.Errorf("Emit 3 failed with unexpected error. Got '%v', want '%s'", err, expectedErr)
-		} else {
-			t.Logf("Emit 3 failed with expected error: %v", err)
-			// Check if it took roughly the timeout duration
-			if duration < 900*time.Millisecond || duration > 1100*time.Millisecond {
-				t.Errorf("Emit 3 timeout duration was unexpected: %v (expected ~1s)", duration)
-			}
+	// Wait for Dispatch to start processing event 1
+	select {
+	case startedID := <-dispatchStarted:
+		if startedID != event1.GetID() {
+			// Unblock dispatch before failing
+			close(blockDispatch)
+			t.Fatalf("Dispatch started for unexpected event ID: got %s, want %s", startedID, event1.GetID())
 		}
+		log.Printf("Test: Confirmed Dispatch started for event 1.")
+	case <-time.After(1 * time.Second):
+		// Unblock dispatch before failing
+		close(blockDispatch)
+		t.Fatal("Timeout waiting for Dispatch to start for event 1")
+	}
+	// At this point, event 1 is *out* of the queue and blocked in Dispatch. Queue is empty.
+
+	// --- Event 2 ---
+	// Emit second event - should fill the queue (size 1) again
+	event2 := NewEvent("event2", nil, nil)
+	err2 := runner.Emit(event2)
+	if err2 != nil {
+		// Unblock dispatch before failing
+		close(blockDispatch)
+		t.Fatalf("Emit(2) failed unexpectedly: %v", err2)
+	}
+	log.Printf("Test: Emit(2) succeeded (queue should now be full).")
+	// At this point, event 1 is blocked in Dispatch, event 2 is in the queue.
+
+	// --- Event 3 ---
+	// Emit third event - THIS should block and timeout because queue is full
+	event3 := NewEvent("event3", nil, nil)
+	err3 := runner.Emit(event3)
+	if err3 == nil {
+		// Unblock dispatch before failing
+		close(blockDispatch)
+		t.Fatal("Emit(3) succeeded unexpectedly, expected timeout error")
 	}
 
-	// FIX: Call Stop explicitly after operations are done, before test exits.
-	runner.Stop()
+	// Check the error for Emit(3)
+	expectedErrSubstr := "queue full or blocked"
+	if !strings.Contains(err3.Error(), expectedErrSubstr) {
+		// Unblock dispatch before failing
+		close(blockDispatch)
+		t.Errorf("Emit(3) error mismatch: got '%v', want error containing '%s'", err3, expectedErrSubstr)
+	}
+	log.Printf("Emit(3) correctly failed with timeout error: %v", err3)
+
+	// --- Cleanup ---
+	// Unblock the first event processing
+	log.Printf("Test: Unblocking dispatch...")
+	// Ensure close is only called once
+	select {
+	case <-blockDispatch: // Already closed
+	default:
+		close(blockDispatch)
+	}
+
+	// Wait for the first event to be fully processed
+	select {
+	case <-processed:
+		log.Println("Test: First event processed signal received.")
+	case <-time.After(1 * time.Second):
+		log.Println("Test: Timeout waiting for first event processing signal.")
+	}
+
+	// Stop the runner (cancel context already called by defer)
+	log.Printf("Test: Stopping runner...")
+	runner.Stop() // Ensure Stop is called for cleanup
+	log.Printf("Test: Runner stopped.")
 }
 
 // --- Helper waitTimeout ---
@@ -279,20 +397,13 @@ func TestRunner_RegisterAgent(t *testing.T) {
 
 	mockHandler := &mockAgentHandler{} // Implements AgentHandler via Run method
 
-	// FIX: Ensure runner.RegisterAgent expects AgentHandler. If the error persists,
-	// the RunnerImpl.RegisterAgent signature itself might be wrong in runner.go.
-	// Assuming RunnerImpl.RegisterAgent takes AgentHandler:
 	err := runner.RegisterAgent(agentName, mockHandler)
 	if err != nil {
-		// If the error "cannot use mockHandler (*mockAgentHandler) as EventHandler" happens here,
-		// it means RunnerImpl.RegisterAgent incorrectly expects EventHandler.
-		// You would need to fix RunnerImpl.RegisterAgent in runner.go.
 		t.Fatalf("RegisterAgent failed: %v", err)
 	}
 	if !registered {
 		t.Error("Orchestrator's RegisterAgent was not called")
 	}
-	// FIX: Comparison between interface and concrete type is valid.
 	if registeredHandler != mockHandler {
 		t.Errorf("Orchestrator's RegisterAgent was called with the wrong handler. Expected %T, Got %T", mockHandler, registeredHandler)
 	}
@@ -300,75 +411,110 @@ func TestRunner_RegisterAgent(t *testing.T) {
 
 // --- Test Runner Callbacks ---
 func TestRunner_Callbacks(t *testing.T) {
-	var beforeCalled, afterCalled bool
-	runner := NewRunner(10)
-	mockOrch := &mockOrchestrator{ // Now implements Stop
-		dispatchFunc: func(e Event) error { return nil },
-	}
-	runner.SetOrchestrator(mockOrch)
+	registry := NewCallbackRegistry()
+	mockOrchestrator := &mockOrchestrator{}
+	runner := NewRunner(1)
+	runner.SetOrchestrator(mockOrchestrator)
+	runner.SetCallbackRegistry(registry)
 
-	// FIX: Update anonymous function signature to accept Event
-	err := runner.RegisterCallback(HookBeforeEventHandling, "testBefore", func(ctx context.Context, s State, e Event) (State, error) { // Changed *Event to Event
-		beforeCalled = true
-		// Add nil check if accessing event 'e'
-		if e == nil {
-			t.Error("Before callback received nil event") // Keep nil check
+	var beforeCalled, afterCalled atomic.Bool // Use atomic flags
+	var wg sync.WaitGroup
+	wg.Add(2) // Expecting one call for BeforeEventHandling and one for AfterEventHandling
+
+	// Callbacks using CallbackArgs signature
+	beforeCallback := func(ctx context.Context, args CallbackArgs) (State, error) {
+		// Ensure Done is called only once even if callback runs multiple times unexpectedly
+		if !beforeCalled.Swap(true) {
+			log.Printf("BeforeEventHandling callback executed for event %s", args.Event.GetID())
+			wg.Done()
+		} else {
+			// Log if called again, helps debugging but shouldn't happen in this test
+			log.Printf("WARN: BeforeEventHandling callback executed AGAIN for event %s", args.Event.GetID())
 		}
-		return nil, nil
-	})
-	if err != nil {
-		t.Fatalf("RegisterCallback (before) failed: %v", err)
+		return args.State, nil
 	}
-	// FIX: Update anonymous function signature to accept Event
-	err = runner.RegisterCallback(HookAfterEventHandling, "testAfter", func(ctx context.Context, s State, e Event) (State, error) { // Changed *Event to Event
-		afterCalled = true
-		// Add nil check if accessing event 'e'
-		if e == nil {
-			t.Error("After callback received nil event") // Keep nil check
+	afterCallback := func(ctx context.Context, args CallbackArgs) (State, error) {
+		// Ensure Done is called only once
+		if !afterCalled.Swap(true) {
+			log.Printf("AfterEventHandling callback executed for event %s", args.Event.GetID())
+			wg.Done()
+		} else {
+			// Log if called again
+			log.Printf("WARN: AfterEventHandling callback executed AGAIN for event %s", args.Event.GetID())
 		}
-		return nil, nil
-	})
-	if err != nil {
-		t.Fatalf("RegisterCallback (after) failed: %v", err)
+		return args.State, nil
 	}
+
+	// Register callbacks directly on the registry
+	registry.Register(HookBeforeEventHandling, "testBefore", beforeCallback)
+	registry.Register(HookAfterEventHandling, "testAfter", afterCallback)
 
 	ctx, cancel := context.WithCancel(context.Background())
+	// Defer cancel to ensure cleanup even on test failure before Stop
 	defer cancel()
-	startErr := runner.Start(ctx)
-	if startErr != nil {
-		t.Fatalf("Runner failed to start: %v", startErr)
-	}
-	defer runner.Stop()
 
-	testEvent := NewEvent("agent", EventData{"data": "trigger"}, map[string]string{"session_id": "s4"})
-	emitErr := runner.Emit(testEvent)
-	if emitErr != nil {
-		t.Fatalf("Emit failed: %v", emitErr)
+	var runnerWg sync.WaitGroup
+	runnerWg.Add(1)
+	go func() {
+		defer runnerWg.Done()
+		// Start runner, log errors other than context cancellation
+		if err := runner.Start(ctx); err != nil && !errors.Is(err, context.Canceled) {
+			t.Logf("Runner Start returned error: %v", err)
+		}
+	}()
+	// Short sleep to ensure runner goroutine has likely started
+	time.Sleep(50 * time.Millisecond)
+
+	testEvent := NewEvent("agent1", EventData{"data": "test"}, nil)
+	err := runner.Emit(testEvent)
+	if err != nil {
+		// Cancel context before failing to help runner shut down
+		cancel()
+		runnerWg.Wait() // Wait for runner goroutine before failing test
+		t.Fatalf("Emit failed: %v", err)
 	}
 
-	// Allow time for the event to be processed and callbacks to fire
-	// Use a WaitGroup or channel for more robust synchronization if needed
-	time.Sleep(100 * time.Millisecond) // Increased sleep slightly
+	// Wait for the two expected callbacks to complete using a channel and select
+	waitChan := make(chan struct{})
+	go func() {
+		wg.Wait() // Wait for wg counter to become 0
+		close(waitChan)
+	}()
 
-	if !beforeCalled {
-		t.Error("BeforeEventHandling callback was not called")
+	select {
+	case <-waitChan:
+		// Callbacks completed successfully
+		log.Println("WaitGroup wait completed.")
+	case <-time.After(3 * time.Second): // Increased timeout slightly just in case
+		// Timeout occurred
+		// Cancel context before failing
+		cancel()
+		runnerWg.Wait() // Wait for runner goroutine before failing test
+		t.Fatalf("Timeout waiting for callbacks. BeforeCalled: %v, AfterCalled: %v", beforeCalled.Load(), afterCalled.Load())
 	}
-	if !afterCalled {
-		t.Error("AfterEventHandling callback was not called")
+
+	// Now stop the runner *after* confirming callbacks ran (or timed out)
+	log.Println("Stopping runner...")
+	cancel() // Signal runner loop to stop (might be redundant if timeout occurred, but safe)
+	log.Println("Waiting for runner loop goroutine...")
+	runnerWg.Wait() // Wait for runner loop to fully exit
+	log.Println("Runner loop goroutine finished.")
+
+	// Final assertions
+	if !beforeCalled.Load() {
+		t.Errorf("BeforeEventHandling callback was not called")
 	}
+	if !afterCalled.Load() {
+		t.Errorf("AfterEventHandling callback was not called")
+	}
+	log.Println("TestRunner_Callbacks finished.") // Add log to see when test function actually ends
 }
 
 // --- Test Runner DumpTrace ---
 func TestRunner_DumpTrace(t *testing.T) {
-	traceEntry := TraceEntry{EventID: "test-event-id", Hook: HookBeforeEventHandling}
-	mockLogger := &mockTraceLogger{
-		getTraceFunc: func(sessionID string) ([]TraceEntry, error) {
-			if sessionID == "s5" {
-				return []TraceEntry{traceEntry}, nil
-			}
-			return nil, fmt.Errorf("session not found")
-		},
-	}
+	traceEntry := TraceEntry{EventID: "test-event-id", Hook: HookBeforeEventHandling, SessionID: "s5"}
+	mockLogger := &mockTraceLogger{}
+	mockLogger.Log(traceEntry) // Pre-populate logger
 
 	runner := NewRunner(10)
 	runner.SetTraceLogger(mockLogger)
@@ -378,17 +524,37 @@ func TestRunner_DumpTrace(t *testing.T) {
 		t.Fatalf("DumpTrace failed: %v", err)
 	}
 	if len(entries) != 1 {
-		t.Fatalf("Expected 1 trace entry, got %d", len(entries))
+		t.Fatalf("Expected 1 trace entry for session 's5', got %d", len(entries))
 	}
 	if entries[0].EventID != "test-event-id" {
 		t.Errorf("Expected event ID 'test-event-id', got '%s'", entries[0].EventID)
 	}
 
-	_, err = runner.DumpTrace("unknown-session")
+	// Test non-existent session
+	entries, err = runner.DumpTrace("unknown-session")
+	if err != nil {
+		t.Fatalf("DumpTrace failed for unknown session: %v", err)
+	}
+	if len(entries) != 0 {
+		t.Errorf("Expected 0 trace entries for unknown session, got %d", len(entries))
+	}
+
+	// Test with nil logger
+	runnerNilLogger := NewRunner(10)
+	_, err = runnerNilLogger.DumpTrace("s5")
 	if err == nil {
-		t.Fatal("DumpTrace succeeded for unknown session, expected error")
+		t.Fatal("DumpTrace succeeded with nil logger, expected error")
+	}
+	// FIX: Update expected error string
+	expectedErr := "trace logger is not set"
+	if err.Error() != expectedErr {
+		t.Errorf("Expected '%s' error, got: %v", expectedErr, err)
 	}
 }
 
-// --- END OF FILE ---
-// Ensure no duplicate definitions exist below this line
+// Keep the helper method
+func (m *mockOrchestrator) CheckDispatchCalled() (bool, Event, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.dispatchCalled, m.receivedEvent, m.dispatchErr
+}

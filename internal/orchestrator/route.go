@@ -36,76 +36,115 @@ func NewRouteOrchestrator(registry *agentflow.CallbackRegistry) *RouteOrchestrat
 }
 
 // RegisterAgent adds an agent handler.
-func (o *RouteOrchestrator) RegisterAgent(agentID string, handler agentflow.AgentHandler) {
+// FIX: Ensure this method returns an error to match the agentflow.Orchestrator interface
+func (o *RouteOrchestrator) RegisterAgent(agentID string, handler agentflow.AgentHandler) error { // <<< MUST return error
 	o.mu.Lock()
 	defer o.mu.Unlock()
 	if handler == nil {
 		log.Printf("Warning: Attempted to register a nil handler for agent ID '%s'", agentID)
-		return
+		// FIX: Return an error for nil handler
+		return fmt.Errorf("cannot register a nil handler for agent ID '%s'", agentID)
+	}
+	if _, exists := o.handlers[agentID]; exists {
+		log.Printf("Warning: Overwriting handler for agent '%s'", agentID)
+		// Optionally return an error here if overwriting is disallowed
+		// return fmt.Errorf("agent '%s' already registered", agentID)
 	}
 	o.handlers[agentID] = handler
 	log.Printf("RouteOrchestrator: Registered agent '%s'", agentID)
+	return nil // <<< MUST return nil on success
 }
 
-// Dispatch routes the event to the appropriate handler based on TargetAgentID or metadata.
-func (o *RouteOrchestrator) Dispatch(event agentflow.Event) error {
+// Dispatch routes the event based on the RouteMetadataKey and executes the agent.
+// FIX: Update signature to return AgentResult, error
+func (o *RouteOrchestrator) Dispatch(ctx context.Context, event agentflow.Event) (agentflow.AgentResult, error) {
 	if event == nil {
-		// FIX: Use errors.New for static error messages
-		return errors.New("RouteOrchestrator: received nil event")
+		err := errors.New("cannot dispatch nil event")
+		return agentflow.AgentResult{Error: err.Error()}, err
 	}
 
-	targetAgentID := event.GetTargetAgentID()
+	o.mu.RLock() // Lock for reading handlers map
 
-	// Attempt to get target from metadata ONLY if explicit target is missing
-	if targetAgentID == "" {
-		// Ensure metadata is not nil before accessing it
-		metadata := event.GetMetadata()
-		if metadata != nil {
-			// Use the defined constant RouteMetadataKey if available, otherwise "route"
-			routeKey := RouteMetadataKey // Assuming RouteMetadataKey = "route" or similar
-			if routeMeta, ok := metadata[routeKey]; ok && routeMeta != "" {
-				targetAgentID = routeMeta
-			}
-		}
-		// DO NOT add any fallback to event type here.
+	// FIX: Use GetMetadataValue and constant
+	targetName, targetNameOK := event.GetMetadataValue(agentflow.RouteMetadataKey)
+	// FIX: Return specific error if routing key is missing
+	if !targetNameOK {
+		o.mu.RUnlock() // Unlock before returning
+		err := fmt.Errorf("missing routing key '%s' in event metadata (event %s)", agentflow.RouteMetadataKey, event.GetID())
+		log.Printf("RouteOrchestrator: Error - %v", err)
+		return agentflow.AgentResult{Error: err.Error()}, err
 	}
 
-	// log.Printf("DEBUG: targetAgentID before check is: '%s'", targetAgentID) // Keep for debugging if needed
-
-	// Check IMMEDIATELY after determining targetAgentID if it's still empty.
-	if targetAgentID == "" {
-		// Use the specific error message substring the test expects.
-		return errors.New("RouteOrchestrator: event has no target agent ID or route metadata key")
-	}
-
-	o.mu.RLock()
-	handler, exists := o.handlers[targetAgentID]
-	o.mu.RUnlock()
+	handler, exists := o.handlers[targetName]
+	o.mu.RUnlock() // Unlock after accessing handlers map
 
 	if !exists {
-		// This error should only occur if targetAgentID was found (non-empty), but no handler matches.
-		return fmt.Errorf("RouteOrchestrator: no handler registered for agent '%s'", targetAgentID)
+		err := fmt.Errorf("no agent handler registered for target '%s' (event %s)", targetName, event.GetID())
+		log.Printf("RouteOrchestrator: Error - %v", err)
+		return agentflow.AgentResult{Error: err.Error()}, err
 	}
 
-	// Proceed with dispatch if handler exists
-	// FIX: Use context.Background() for top-level context
-	ctx := context.Background()
-	// FIX: Create a new state for each dispatch if not passed in
-	state := agentflow.NewState() // Assuming state is managed per dispatch
+	// --- Agent Execution with Hooks ---
+	var agentResult agentflow.AgentResult
+	var agentErr error
+	// FIX: Initialize currentState as the interface type
+	var currentState agentflow.State = agentflow.NewState() // Example: Start with empty state
 
-	log.Printf("RouteOrchestrator: Dispatching event %s to handler for agent '%s'", event.GetID(), targetAgentID)
-	// FIX: Pass context and state to the handler's Run method
-	result, err := handler.Run(ctx, event, state) // Assuming Run takes ctx, event, state
-	if err != nil {
-		// FIX: Log the specific error from the handler
-		log.Printf("RouteOrchestrator: Error from handler '%s' processing event %s: %v", targetAgentID, event.GetID(), err)
-		// FIX: Wrap the handler error for context
-		return fmt.Errorf("handler '%s' failed processing event %s: %w", targetAgentID, event.GetID(), err) // Wrap error
+	// 1. Invoke BeforeAgentRun hooks
+	if o.registry != nil {
+		beforeArgs := agentflow.CallbackArgs{Ctx: ctx, Hook: agentflow.HookBeforeAgentRun, Event: event, State: currentState, AgentID: targetName}
+		// FIX: Assign returned state interface directly
+		newState, hookErr := o.registry.Invoke(ctx, beforeArgs) // Pass ctx
+		if hookErr != nil {
+			// Handle hook error appropriately - log, maybe return?
+			log.Printf("RouteOrchestrator: Error in BeforeAgentRun hooks for agent '%s': %v", targetName, hookErr)
+			// Decide if this should halt execution
+		}
+		if newState != nil { // Check if hook returned a new state
+			currentState = newState // Update currentState (which is agentflow.State)
+		}
 	}
 
-	// FIX: Log the result details using %+v
-	log.Printf("RouteOrchestrator: Successfully dispatched event %s to handler '%s'. Result: %+v", event.GetID(), targetAgentID, result)
-	return nil
+	// 2. Run the agent handler
+	log.Printf("RouteOrchestrator: Running agent '%s' for event %s", targetName, event.GetID())
+	agentResult, agentErr = handler.Run(ctx, event, currentState) // Pass context
+
+	// 3. Invoke AfterAgentRun hooks (always, even on error)
+	if o.registry != nil {
+		// FIX: Use the state returned by the agent *if* the agent didn't error, otherwise use the state *before* the agent ran.
+		// FIX: Declare stateForAfterHook as the interface type
+		var stateForAfterHook agentflow.State = currentState // Default to state before agent run
+		if agentErr == nil && agentResult.OutputState != nil {
+			// FIX: Assign returned state interface directly
+			stateForAfterHook = agentResult.OutputState // Use agent's output state (which is agentflow.State)
+		}
+
+		afterArgs := agentflow.CallbackArgs{
+			Ctx:         ctx,
+			Hook:        agentflow.HookAfterAgentRun, // Or HookAgentError if agentErr != nil
+			Event:       event,
+			State:       stateForAfterHook, // Pass the interface value
+			AgentID:     targetName,
+			AgentResult: agentResult, // Pass the full result
+			Error:       agentErr,    // Pass the agent error
+		}
+		if agentErr != nil {
+			afterArgs.Hook = agentflow.HookAgentError // Use specific hook on error
+		}
+
+		// FIX: Assign returned state interface directly (though often After hooks don't modify state)
+		finalStateFromHooks, hookErr := o.registry.Invoke(ctx, afterArgs) // Pass ctx
+		if hookErr != nil {
+			log.Printf("RouteOrchestrator: Error in %s hooks for agent '%s': %v", afterArgs.Hook, targetName, hookErr)
+		}
+		// Decide how to handle state changes from After hooks, if necessary.
+		// For simplicity, we might ignore state changes from After hooks unless specifically needed.
+		_ = finalStateFromHooks // Avoid unused variable error if not using the result
+	}
+	// --- End Agent Execution ---
+
+	// FIX: Return the captured agentResult and agentErr
+	return agentResult, agentErr
 }
 
 // GetCallbackRegistry returns the associated registry.

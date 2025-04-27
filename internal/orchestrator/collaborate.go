@@ -1,6 +1,8 @@
 package orchestrator
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"log"
 	"sync"
@@ -36,14 +38,11 @@ func (o *CollaborativeOrchestrator) RegisterAgent(agentID string, handler agentf
 }
 
 // Dispatch sends the event to all registered handlers concurrently.
-// It aggregates any errors returned by the handlers.
-func (o *CollaborativeOrchestrator) Dispatch(event agentflow.Event) []error {
-	// FIX: Add nil check for the event
+func (o *CollaborativeOrchestrator) Dispatch(ctx context.Context, event agentflow.Event) (agentflow.AgentResult, error) {
 	if event == nil {
 		log.Println("CollaborativeOrchestrator: Received nil event, skipping dispatch.")
-		// Return an error or an empty slice depending on desired behavior for nil events
-		// Returning an empty slice might be less surprising than returning an error.
-		return nil // Or return []error{fmt.Errorf("cannot dispatch nil event")}
+		err := errors.New("cannot dispatch nil event")
+		return agentflow.AgentResult{Error: err.Error()}, err
 	}
 
 	o.mu.RLock()
@@ -53,11 +52,13 @@ func (o *CollaborativeOrchestrator) Dispatch(event agentflow.Event) []error {
 
 	if len(handlersCopy) == 0 {
 		log.Printf("CollaborativeOrchestrator: No handlers registered, skipping dispatch for event ID %s", event.GetID())
-		return nil
+		return agentflow.AgentResult{}, nil
 	}
 
 	var wg sync.WaitGroup
-	errChan := make(chan error, len(handlersCopy))
+	// FIX: Use a mutex to protect the errors slice instead of a channel
+	var errs []error
+	var errsMu sync.Mutex
 	wg.Add(len(handlersCopy))
 
 	log.Printf("CollaborativeOrchestrator: Dispatching event ID %s to %d handlers", event.GetID(), len(handlersCopy))
@@ -65,46 +66,49 @@ func (o *CollaborativeOrchestrator) Dispatch(event agentflow.Event) []error {
 	for _, handler := range handlersCopy {
 		go func(h agentflow.EventHandler) {
 			defer wg.Done()
-			// FIX: Add nil check for handler as well (belt-and-suspenders)
 			if h == nil {
 				log.Printf("CollaborativeOrchestrator: Encountered nil handler during dispatch for event ID %s", event.GetID())
-				errChan <- fmt.Errorf("encountered nil handler")
+				errsMu.Lock()
+				errs = append(errs, fmt.Errorf("encountered nil handler"))
+				errsMu.Unlock()
 				return
 			}
-			// The type assertion check might be redundant if RegisterAgent prevents non-EventHandler types
-			if handlerWithHandle, ok := h.(interface{ Handle(agentflow.Event) error }); ok {
-				if err := handlerWithHandle.Handle(event); err != nil {
-					log.Printf("CollaborativeOrchestrator: Handler error for event ID %s: %v", event.GetID(), err)
-					errChan <- err
-				}
-			} else {
-				// This case should ideally not happen
-				errChan <- fmt.Errorf("handler does not implement Handle(Event) error")
+			// Assuming Handle doesn't need context for now.
+			if err := h.Handle(event); err != nil {
+				log.Printf("CollaborativeOrchestrator: Handler error for event ID %s: %v", event.GetID(), err)
+				errsMu.Lock()
+				errs = append(errs, err)
+				errsMu.Unlock()
 			}
 		}(handler)
 	}
 
 	wg.Wait()
-	close(errChan)
 
-	var errs []error
-	for err := range errChan {
-		errs = append(errs, err)
-	}
-
+	// FIX: Aggregate errors into a single error if any occurred
 	if len(errs) > 0 {
 		log.Printf("CollaborativeOrchestrator: Finished dispatch for event ID %s with %d errors", event.GetID(), len(errs))
+		// Simple aggregation: combine messages
+		errMsg := ""
+		for i, e := range errs {
+			if i > 0 {
+				errMsg += "; "
+			}
+			errMsg += e.Error()
+		}
+		aggErr := errors.New(errMsg)
+		// Return the aggregated error in both parts of the tuple
+		return agentflow.AgentResult{Error: aggErr.Error()}, aggErr
 	}
 
-	return errs
+	log.Printf("CollaborativeOrchestrator: Finished dispatch for event ID %s successfully", event.GetID())
+	return agentflow.AgentResult{}, nil // Return empty result and nil error on success
 }
 
-// DispatchAll sends the event to all registered handlers concurrently.
-// It's similar to Dispatch but might have different semantics (e.g., error handling).
-// Currently, it's identical to Dispatch. Consider merging or differentiating.
-func (o *CollaborativeOrchestrator) DispatchAll(event agentflow.Event) []error {
-	// For now, delegate to Dispatch. If different logic is needed, implement here.
-	return o.Dispatch(event)
+// DispatchAll needs the same signature update and logic adjustment
+func (o *CollaborativeOrchestrator) DispatchAll(ctx context.Context, event agentflow.Event) (agentflow.AgentResult, error) {
+	// For now, delegate to Dispatch.
+	return o.Dispatch(ctx, event)
 }
 
 // Stop is a placeholder for potential cleanup tasks.
