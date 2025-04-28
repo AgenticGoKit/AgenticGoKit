@@ -11,7 +11,7 @@ import (
 )
 
 // RouteMetadataKey is the key used in event metadata to specify a target handler name.
-const RouteMetadataKey = "route_to"
+const RouteMetadataKey = agentflow.RouteMetadataKey // Use the agentflow constant
 
 // RouteOrchestrator routes events to a single registered handler based on metadata.
 type RouteOrchestrator struct {
@@ -105,9 +105,21 @@ func (o *RouteOrchestrator) Dispatch(ctx context.Context, event agentflow.Event)
 		}
 	}
 
+	// <<< START FIX: Merge event data into the current state >>>
+	eventData := event.GetData()
+	if eventData != nil {
+		log.Printf("RouteOrchestrator: Merging event data into state for agent '%s'", targetName)
+		for key, value := range eventData {
+			// Avoid overwriting existing state keys from callbacks? Or allow event data to override?
+			// Current approach: Event data overrides. Adjust if needed.
+			currentState.Set(key, value)
+		}
+	}
+	// <<< END FIX >>>
+
 	// 2. Run the agent handler
-	log.Printf("RouteOrchestrator: Running agent '%s' for event %s", targetName, event.GetID())
-	agentResult, agentErr = handler.Run(ctx, event, currentState) // Pass context
+	log.Printf("RouteOrchestrator: Running agent '%s' for event %s with state keys: %v", targetName, event.GetID(), currentState.Keys()) // Log state keys
+	agentResult, agentErr = handler.Run(ctx, event, currentState)                                                                        // Pass context
 
 	// 3. Invoke AfterAgentRun hooks (always, even on error)
 	if o.registry != nil {
@@ -160,4 +172,28 @@ func (o *RouteOrchestrator) Stop() {
 	// o.mu.Lock()
 	// o.handlers = make(map[string]agentflow.AgentHandler)
 	// o.mu.Unlock()
+}
+
+// DispatchAll implements the Orchestrator interface but provides more graceful handling
+// for events without routing information.
+func (o *RouteOrchestrator) DispatchAll(ctx context.Context, event agentflow.Event) (agentflow.AgentResult, error) {
+	// Check if event has routing information
+	_, hasRouting := event.GetMetadataValue(agentflow.RouteMetadataKey)
+
+	if !hasRouting {
+		// Check if this might be an error event (special case handling)
+		if errorData, hasError := event.GetData()["error"]; hasError {
+			log.Printf("RouteOrchestrator: Processing error event %s without routing key", event.GetID())
+
+			// Special case for error events - create an empty result
+			return agentflow.AgentResult{
+				OutputState: agentflow.NewState(), // Empty but valid state
+				Error:       fmt.Sprintf("Error event processed: %v", errorData),
+			}, nil // Return nil error to break the cascade
+		}
+	}
+
+	// Otherwise, delegate to normal Dispatch
+	log.Printf("RouteOrchestrator: DispatchAll forwarding to Dispatch for event %s", event.GetID())
+	return o.Dispatch(ctx, event)
 }

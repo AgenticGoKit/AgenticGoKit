@@ -154,59 +154,6 @@ func (s *SlowSpyEventHandler) Handle(e agentflow.Event) error {
 	return s.SpyEventHandler.Handle(e) // Call embedded Handle
 }
 
-// SpyCollaborativeHandler is a mock EventHandler for testing CollaborativeOrchestrator.
-// It uses the EventHandler interface signature.
-type SpyCollaborativeHandler struct {
-	AgentName    string
-	HandleCalled bool
-	LastEvent    agentflow.Event
-	ReturnError  error
-	mu           sync.Mutex
-	eventCount   int
-	events       []string
-	failOn       string
-}
-
-// Handle implements the agentflow.EventHandler interface (without registry).
-func (h *SpyCollaborativeHandler) Handle(event agentflow.Event) error {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-
-	h.HandleCalled = true
-	h.LastEvent = event
-	h.eventCount++
-	if event != nil {
-		// FIX: Use GetID() method
-		eventID := event.GetID()
-		h.events = append(h.events, eventID)
-		if h.failOn != "" && eventID == h.failOn {
-			err := h.ReturnError
-			if err == nil {
-				// FIX: Use GetID() method
-				err = fmt.Errorf("handler '%s' failed deliberately for event '%s'", h.AgentName, event.GetID())
-			}
-			return err
-		}
-	}
-	return h.ReturnError
-}
-
-// EventCount returns the number of events handled (thread-safe).
-func (h *SpyCollaborativeHandler) EventCount() int {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	return h.eventCount
-}
-
-// GetEvents returns a copy of the handled event IDs (thread-safe).
-func (h *SpyCollaborativeHandler) GetEvents() []string {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	evts := make([]string, len(h.events))
-	copy(evts, h.events)
-	return evts
-}
-
 // --- SpyAgentHandler (implements AgentHandler) ---
 type SpyAgentHandler struct {
 	AgentName    string

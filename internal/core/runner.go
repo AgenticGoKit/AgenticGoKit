@@ -66,10 +66,11 @@ func NewRunner(queueSize int) *RunnerImpl {
 	if queueSize <= 0 {
 		queueSize = 100 // Default queue size
 	}
+	// FIX: Initialize registry here to avoid nil checks later
 	return &RunnerImpl{
 		queue:    make(chan Event, queueSize),
 		stopChan: make(chan struct{}),
-		// registry is initialized lazily or via SetCallbackRegistry
+		registry: NewCallbackRegistry(), // Initialize registry
 		// orchestrator is set via SetOrchestrator
 		// traceLogger is set via SetTraceLogger
 	}
@@ -128,26 +129,19 @@ func (r *RunnerImpl) GetCallbackRegistry() *CallbackRegistry {
 // RegisterCallback delegates to the registry.
 func (r *RunnerImpl) RegisterCallback(hook HookPoint, name string, cb CallbackFunc) error {
 	r.mu.RLock()
-	registry := r.registry
+	registry := r.registry // Registry is now guaranteed to be non-nil
 	r.mu.RUnlock()
-	if registry == nil {
-		return errors.New("callback registry is not set on the runner")
-	}
 	// FIX: Pass HookPoint directly, ensure argument order matches registry.Register signature
-	// Assuming signature is Register(hook HookPoint, name string, cb CallbackFunc)
 	return registry.Register(hook, name, cb)
 }
 
 // UnregisterCallback delegates to the registry.
 func (r *RunnerImpl) UnregisterCallback(hook HookPoint, name string) {
 	r.mu.RLock()
-	registry := r.registry
+	registry := r.registry // Registry is now guaranteed to be non-nil
 	r.mu.RUnlock()
-	if registry != nil {
-		// FIX: Pass HookPoint directly, ensure argument order matches registry.Unregister signature
-		// Assuming signature is Unregister(hook HookPoint, name string)
-		registry.Unregister(hook, name)
-	}
+	// FIX: Pass HookPoint directly, ensure argument order matches registry.Unregister signature
+	registry.Unregister(hook, name)
 }
 
 // RegisterAgent registers an AgentHandler with the underlying Orchestrator.
@@ -267,152 +261,265 @@ func (r *RunnerImpl) Stop() {
 
 // loop is the main event processing goroutine.
 func (r *RunnerImpl) loop(ctx context.Context) {
-	defer func() {
-		log.Println("Runner loop exiting...")
-		r.wg.Done()
-		log.Println("Runner loop: wg.Done() called.")
-	}()
-	log.Println("Runner loop started.")
-
+	defer r.wg.Done() // Ensure wg is decremented when loop exits
 	for {
 		select {
 		case <-ctx.Done():
-			log.Println("Runner loop: Main context cancelled.")
-			return
-		case <-r.stopChan:
-			log.Println("Runner loop: Stop signal received.")
-			return
-		case event, ok := <-r.queue:
-			if !ok {
-				log.Println("Runner loop: Queue channel closed.")
-				return
+			log.Println("Runner loop: Context cancelled. Exiting.")
+			return // Exit loop
+		case <-r.stopChan: // Listen for explicit stop signal
+			log.Println("Runner loop: Stop signal received. Exiting.")
+			return // Exit loop
+		case event := <-r.queue:
+			// FIX: Defer eventCancel call
+			eventCtx, eventCancel := context.WithCancel(ctx)
+			defer eventCancel() // Ensure context is cancelled when processing for this event finishes
+
+			// --- Session Handling ---
+			sessionID, _ := event.GetMetadataValue(SessionIDKey)
+			if sessionID == "" {
+				sessionID = event.GetID()
+				log.Printf("Runner loop: Warning - event %s missing session ID, using event ID as fallback.", event.GetID())
+				event.SetMetadata(SessionIDKey, sessionID)
 			}
-			log.Printf("Runner loop: Processing event %s...", event.GetID())
+			log.Printf("Runner loop: Processing event %s (session: %s)...", event.GetID(), sessionID)
 
-			eventCtx := ctx // Inherit main context for this event
-
-			// --- Start Event Processing ---
-			sessionID, _ := event.GetMetadataValue(SessionIDKey) // Correctly ignore bool if not needed here
-			log.Printf("Runner loop: Event %s belongs to session %s", event.GetID(), sessionID)
-
-			var currentState State = NewState() // Fresh state per event
+			// FIX: Initialize currentState explicitly as State interface type
+			var currentState State = NewState() // Use interface type
 
 			// --- Before Event Handling Callback ---
 			if r.registry != nil {
-				log.Printf("Runner: Invoking %s callbacks", HookBeforeEventHandling)
+				log.Println("Runner: Invoking BeforeEventHandling callbacks")
+				// FIX: Define callbackArgs before use
 				callbackArgs := CallbackArgs{
-					Hook:  HookBeforeEventHandling,
-					Event: event,
-					State: currentState,
+					Hook:    HookBeforeEventHandling,
+					Event:   event,
+					State:   currentState,
+					AgentID: "", // No specific agent yet
 				}
-				returnedState, err := r.registry.Invoke(eventCtx, callbackArgs)
+				// FIX: Check and handle error from Invoke
+				newState, err := r.registry.Invoke(eventCtx, callbackArgs)
 				if err != nil {
-					log.Printf("Runner: Error invoking %s callbacks: %v", HookBeforeEventHandling, err)
+					log.Printf("Runner loop: Error during BeforeEventHandling callbacks for event %s: %v. Skipping event.", event.GetID(), err)
+					continue // Skip to next event
 				}
-				if returnedState != nil {
-					currentState = returnedState
+				if newState != nil {
+					currentState = newState // Assign State interface to State interface variable
 				}
+				log.Println("CallbackRegistry.Invoke: Finished invoking callbacks for hook BeforeEventHandling.")
 			}
 
-			// --- Dispatch to Orchestrator ---
+			// --- Orchestration ---
+			var agentResult AgentResult
+			var agentErr error
+			var invokedAgentID string
+
+			// FIX: Get orchestrator safely
 			r.mu.RLock()
 			orchestrator := r.orchestrator
 			r.mu.RUnlock()
 
-			var agentResult AgentResult // Type definition needs verification
-			var agentErr error
-
 			if orchestrator != nil {
-				// Corrected Dispatch call: Pass only ctx and event
-				agentResult, agentErr = orchestrator.Dispatch(eventCtx, event) // Removed currentState
+				// --- Determine Target Agent ---
+				targetAgentID := "unknown" // Default
+				if routeKey, ok := event.GetMetadataValue(RouteMetadataKey); ok {
+					targetAgentID = routeKey
+				} else if event.GetTargetAgentID() != "" {
+					targetAgentID = event.GetTargetAgentID()
+				}
+				invokedAgentID = targetAgentID // Store the determined agent ID
+
+				// --- Before Agent Run Callback ---
+				if r.registry != nil {
+					log.Printf("Runner: Invoking %s callbacks for agent %s", HookBeforeAgentRun, invokedAgentID)
+					callbackArgs := CallbackArgs{
+						Hook:    HookBeforeAgentRun,
+						Event:   event,
+						State:   currentState, // Pass state *before* dispatch
+						AgentID: invokedAgentID,
+					}
+					newState, err := r.registry.Invoke(eventCtx, callbackArgs)
+					if err != nil {
+						log.Printf("Runner loop: Error during BeforeAgentRun callbacks for event %s, agent %s: %v", event.GetID(), invokedAgentID, err)
+						agentErr = fmt.Errorf("BeforeAgentRun callback failed: %w", err) // Set agentErr
+					} else {
+						if newState != nil {
+							currentState = newState // Assign State interface to State interface variable
+						}
+						log.Println("CallbackRegistry.Invoke: Finished invoking callbacks for hook BeforeAgentRun.")
+					}
+				}
+
+				// --- Dispatch (only if BeforeAgentRun didn't error) ---
+				if agentErr == nil {
+					log.Printf("Runner loop: Dispatching event %s to orchestrator...", event.GetID())
+					// FIX: Use the correct orchestrator variable
+					agentResult, agentErr = orchestrator.Dispatch(eventCtx, event)
+				}
+
+				// --- After Agent Run / Agent Error Callbacks ---
 				if agentErr != nil {
-					log.Printf("Runner loop: Error dispatching event %s: %v", event.GetID(), agentErr)
+					// Dispatch failed OR BeforeAgentRun failed
+					log.Printf("Runner loop: Error during agent execution/dispatch for event %s: %v", event.GetID(), agentErr)
 					// --- Agent Error Callback ---
 					if r.registry != nil {
-						log.Printf("Runner: Invoking %s callbacks", HookAgentError)
-						errorArgs := CallbackArgs{
-							Hook:  HookAgentError,
-							Event: event,
-							State: currentState,
-							Error: agentErr,
-							// AgentID is likely unknown here if Dispatch failed
-							// AgentResult might be nil or contain partial info
-							AgentResult: agentResult,
+						log.Printf("Runner: Invoking %s callbacks for agent %s", HookAgentError, invokedAgentID)
+						callbackArgs := CallbackArgs{
+							Hook:    HookAgentError,
+							Event:   event,
+							AgentID: invokedAgentID,
+							Error:   agentErr,
+							State:   currentState,
 						}
-						returnedState, err := r.registry.Invoke(eventCtx, errorArgs)
-						if err != nil {
-							log.Printf("Runner: Error invoking %s callbacks: %v", HookAgentError, err)
+						// FIX: Check and handle error from Invoke
+						newState, cbErr := r.registry.Invoke(eventCtx, callbackArgs)
+						if cbErr != nil {
+							log.Printf("Runner loop: Error during AgentError callback for event %s: %v", event.GetID(), cbErr)
 						}
-						if returnedState != nil {
-							currentState = returnedState
+						if newState != nil {
+							currentState = newState // Assign State interface to State interface variable
 						}
+						log.Println("CallbackRegistry.Invoke: Finished invoking callbacks for hook AgentError.")
 					}
 				} else {
-					// Dispatch successful (agentErr == nil)
-					// NOTE: We cannot access agentResult.OutputState or agentResult.AgentID
-					// because the type definition seems to lack them.
-					// How is the resulting state or the agent ID obtained?
-					// This logic might need revision based on the actual AgentResult structure
-					// and how the orchestrator communicates results.
-					// For now, we assume currentState might be modified *within* the orchestrator/agent
-					// or the AgentResult itself *is* the new state (needs type assertion).
-
+					// Dispatch successful
 					// --- After Agent Run Callback ---
 					if r.registry != nil {
-						// We don't know the AgentID from agentResult based on previous errors.
-						// Where does the AgentID come from after successful dispatch?
-						// Placeholder: Maybe the event contains it? Or Dispatch needs to return it?
-						invokedAgentID := "unknown_agent" // Placeholder! Needs correct source.
 						log.Printf("Runner: Invoking %s callbacks for agent %s", HookAfterAgentRun, invokedAgentID)
-
 						callbackArgs := CallbackArgs{
 							Hook:        HookAfterAgentRun,
 							Event:       event,
-							AgentID:     invokedAgentID, // Placeholder! Needs correct source.
-							AgentResult: agentResult,    // Pass the result we got
-							State:       currentState,   // Pass state *after* dispatch attempt
+							AgentID:     invokedAgentID,
+							AgentResult: agentResult,
+							// FIX: Ensure OutputState is treated as State interface
+							State: agentResult.OutputState, // Pass state *after* successful dispatch
 						}
-						returnedState, err := r.registry.Invoke(eventCtx, callbackArgs)
-						if err != nil {
-							log.Printf("Runner: Error invoking %s callbacks: %v", HookAfterAgentRun, err)
+						newState, cbErr := r.registry.Invoke(eventCtx, callbackArgs)
+						if cbErr != nil {
+							log.Printf("Runner loop: Error during AfterAgentRun callback for event %s: %v", event.GetID(), cbErr)
 						}
-						if returnedState != nil {
-							currentState = returnedState
+						if newState != nil {
+							// Assign State interface to State interface variable
+							agentResult.OutputState = newState
 						}
+						log.Println("CallbackRegistry.Invoke: Finished invoking callbacks for hook AfterAgentRun.")
 					}
 				}
 			} else {
 				log.Printf("Runner loop: Orchestrator is nil, cannot dispatch event %s", event.GetID())
 				agentErr = errors.New("orchestrator not configured")
+				invokedAgentID = "orchestrator" // Indicate orchestrator issue
 			}
 
 			// --- Process Agent Result ---
-			// Pass the agentResult and agentErr obtained from dispatch
-			r.processAgentResult(eventCtx, event, agentResult, agentErr)
+			r.processAgentResult(eventCtx, event, agentResult, agentErr, invokedAgentID)
 
 			// --- After Event Handling Callback ---
 			if r.registry != nil {
-				log.Printf("Runner: Invoking %s callbacks", HookAfterEventHandling)
+				log.Println("Runner: Invoking AfterEventHandling callbacks")
+				finalStateForEvent := currentState
+				if agentErr == nil && agentResult.OutputState != nil {
+					finalStateForEvent = agentResult.OutputState
+				}
 				callbackArgs := CallbackArgs{
-					Hook:        HookAfterEventHandling,
-					Event:       event,
-					State:       currentState, // Final state for this event
-					AgentResult: agentResult,  // Pass result obtained
-					Error:       agentErr,     // Pass error obtained
+					Hook:    HookAfterEventHandling,
+					Event:   event,
+					State:   finalStateForEvent,
+					AgentID: invokedAgentID,
+					Error:   agentErr,
 				}
-				returnedState, err := r.registry.Invoke(eventCtx, callbackArgs)
-				if err != nil {
-					log.Printf("Runner: Error invoking %s callbacks: %v", HookAfterEventHandling, err)
+				// FIX: Check and handle error from Invoke
+				_, cbErr := r.registry.Invoke(eventCtx, callbackArgs)
+				if cbErr != nil {
+					log.Printf("Runner loop: Error during AfterEventHandling callbacks for event %s: %v", event.GetID(), cbErr)
 				}
-				if returnedState != nil {
-					currentState = returnedState
-				}
+				log.Println("CallbackRegistry.Invoke: Finished invoking callbacks for hook AfterEventHandling.")
 			}
 
 			log.Printf("Runner loop finished processing event %s", event.GetID())
-		} // end select
-	} // end for
-} // end loop
+			// eventCancel() is called by defer at the top of the case block
+		}
+	}
+}
+
+// processAgentResult handles the outcome of an agent execution, potentially emitting new events.
+func (r *RunnerImpl) processAgentResult(ctx context.Context, originalEvent Event, result AgentResult, agentErr error, agentID string) {
+	sessionID, _ := originalEvent.GetMetadataValue(SessionIDKey)
+
+	if agentErr != nil {
+		log.Printf("Agent execution failed for event %s (session: %s) by agent %s: %v", originalEvent.GetID(), sessionID, agentID, agentErr)
+
+		// Optionally emit a failure event
+		failurePayload := EventData{
+			"original_event_id": originalEvent.GetID(),
+			"error":             agentErr.Error(),
+		}
+		failureMeta := map[string]string{
+			SessionIDKey:     sessionID,
+			"status":         "failure",
+			RouteMetadataKey: "error-handler", // Add this line
+		}
+		if agentID != "" && agentID != "unknown" {
+			failureMeta["failed_agent_id"] = agentID
+		}
+
+		failureEvent := NewEvent("", failurePayload, failureMeta)
+		failureEvent.SetSourceAgentID(agentID)
+
+		if err := r.Emit(failureEvent); err != nil {
+			log.Printf("Error emitting failure event for original event %s: %v", originalEvent.GetID(), err)
+		}
+	} else {
+		log.Printf("Agent execution successful for event %s (session: %s) by agent %s", originalEvent.GetID(), sessionID, agentID)
+
+		if result.OutputState != nil {
+			// Use State interface methods (Keys() and Get())
+			successPayload := make(EventData)
+			if result.OutputState.Keys() != nil {
+				for _, key := range result.OutputState.Keys() {
+					if value, ok := result.OutputState.Get(key); ok {
+						successPayload[key] = value
+					}
+				}
+			}
+
+			successMeta := map[string]string{
+				SessionIDKey: sessionID,
+				"status":     "success",
+			}
+
+			if targetAgent, hasRoute := originalEvent.GetMetadataValue(RouteMetadataKey); hasRoute {
+				// Preserve the original route if available
+				successMeta[RouteMetadataKey] = targetAgent
+			} else if agentID != "" && agentID != "unknown" {
+				// Use the agent that just processed the event as the route
+				successMeta[RouteMetadataKey] = agentID
+			} else {
+				// Default fallback route
+				successMeta[RouteMetadataKey] = "error-handler" // Use same handler for consistency
+			}
+
+			if result.OutputState.MetaKeys() != nil {
+				for _, key := range result.OutputState.MetaKeys() {
+					if value, ok := result.OutputState.GetMeta(key); ok {
+						if _, exists := successMeta[key]; !exists {
+							successMeta[key] = value
+						}
+					}
+				}
+			}
+
+			successEvent := NewEvent("", successPayload, successMeta)
+			successEvent.SetSourceAgentID(agentID)
+
+			if err := r.Emit(successEvent); err != nil {
+				log.Printf("Error emitting success event for original event %s: %v", originalEvent.GetID(), err)
+			}
+		} else {
+			log.Printf("Agent execution successful for event %s (session: %s) by agent %s, but no OutputState provided in AgentResult. No further event emitted.", originalEvent.GetID(), sessionID, agentID)
+		}
+	}
+}
 
 // DumpTrace retrieves trace entries.
 func (r *RunnerImpl) DumpTrace(sessionID string) ([]TraceEntry, error) {
@@ -424,88 +531,6 @@ func (r *RunnerImpl) DumpTrace(sessionID string) ([]TraceEntry, error) {
 		return nil, errors.New("trace logger is not set")
 	}
 	return logger.GetTrace(sessionID)
-}
-
-// processAgentResult handles the outcome of an agent execution, potentially emitting new events.
-// FIX: Added agentErr parameter
-func (r *RunnerImpl) processAgentResult(ctx context.Context, originalEvent Event, result AgentResult, agentErr error) {
-	// TODO: Add tracing spans if needed
-
-	// Use agentErr passed from the loop to determine success/failure
-	if agentErr != nil {
-		// Correct usage of GetMetadataValue
-		sessionID, _ := originalEvent.GetMetadataValue(SessionIDKey) // Assign both return values
-		log.Printf("Agent execution failed for event %s (session: %s): %v", originalEvent.GetID(), sessionID, agentErr)
-
-		// Optionally emit a failure event
-		failurePayload := EventData{
-			"original_event_id": originalEvent.GetID(),
-			"error":             agentErr.Error(), // Use agentErr
-		}
-		// Preserve session ID, potentially add AgentID if available in result even on error
-		failureMeta := map[string]string{
-			SessionIDKey: sessionID, // Use captured sessionID
-			"status":     "failure",
-		}
-		// if result.AgentID != "" { // Cannot access result.AgentID
-		// 	failureMeta["failed_agent_id"] = result.AgentID
-		// }
-
-		failureEvent := NewEvent("", failurePayload, failureMeta)
-		// Set source if known
-		// if result.AgentID != "" { // Cannot access result.AgentID
-		// 	failureEvent.SetSourceAgentID(result.AgentID)
-		// } else {
-		// Fallback if agent ID isn't known (e.g., orchestrator error before agent selection)
-		failureEvent.SetSourceAgentID("orchestrator_or_agent") // Generic source
-		// }
-
-		// Emit the failure event
-		if err := r.Emit(failureEvent); err != nil {
-			log.Printf("Error emitting failure event for original event %s: %v", originalEvent.GetID(), err)
-		}
-	} else {
-		// This block executes only if agentErr is nil
-		// Correct usage of GetMetadataValue
-		sessionID, _ := originalEvent.GetMetadataValue(SessionIDKey)                                                                        // Assign both return values
-		agentIDForResult := "unknown_agent"                                                                                                 // Placeholder! Still need source for AgentID
-		log.Printf("Agent execution successful for event %s (session: %s) by agent %s", originalEvent.GetID(), sessionID, agentIDForResult) // Using placeholder
-
-		// Optionally emit a success event or an event carrying the result state
-		successPayload := EventData{
-			"original_event_id": originalEvent.GetID(),
-			// Include output state data if needed and safe
-			// "output_data": result.OutputState.GetData(), // Cannot access result.OutputState
-		}
-		successMeta := map[string]string{
-			SessionIDKey: sessionID, // Use captured sessionID
-			"status":     "success",
-			"agent_id":   agentIDForResult, // Using placeholder
-		}
-		// Copy metadata from output state if necessary
-		// if result.OutputState != nil { // Cannot access result.OutputState
-		// 	if stateWithMeta, ok := result.OutputState.(interface{ GetMetadata() map[string]string }); ok {
-		// 		metaMap := stateWithMeta.GetMetadata()
-		// 		if metaMap != nil {
-		// 			for k, v := range metaMap {
-		// 				if _, exists := successMeta[k]; !exists { // Avoid overwriting core meta like sessionID, status
-		// 					successMeta[k] = v
-		// 				}
-		// 			}
-		// 		}
-		// 	} else {
-		// 		log.Printf("Warning: Output state type %T does not have GetMetadata method", result.OutputState)
-		// 	}
-		// }
-
-		successEvent := NewEvent("", successPayload, successMeta)
-		successEvent.SetSourceAgentID(agentIDForResult) // Using placeholder
-
-		// Emit the success event
-		if err := r.Emit(successEvent); err != nil {
-			log.Printf("Error emitting success event for original event %s: %v", originalEvent.GetID(), err)
-		}
-	}
 }
 
 // internal/core/runner.go (or a constants file)
