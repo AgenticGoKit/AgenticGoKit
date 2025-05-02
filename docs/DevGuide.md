@@ -1,7 +1,3 @@
-Of course! Here’s a clean, well-organized **Markdown** version of the **Agentflow Framework Developer Guide** you provided:
-
----
-
 # Agentflow Framework Developer Guide
 
 ## Overview
