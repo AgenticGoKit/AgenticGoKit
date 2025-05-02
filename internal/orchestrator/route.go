@@ -16,8 +16,14 @@ const RouteMetadataKey = agentflow.RouteMetadataKey // Use the agentflow constan
 // RouteOrchestrator routes events to a single registered handler based on metadata.
 type RouteOrchestrator struct {
 	handlers map[string]agentflow.AgentHandler
-	registry *agentflow.CallbackRegistry // Ensure this field exists
+	registry *agentflow.CallbackRegistry
+	emitter  EventEmitter // Interface for emitting events
 	mu       sync.RWMutex
+}
+
+// EventEmitter is an interface for components that can emit events
+type EventEmitter interface {
+	Emit(event agentflow.Event) error
 }
 
 // NewRouteOrchestrator creates a simple routing orchestrator.
@@ -155,13 +161,127 @@ func (o *RouteOrchestrator) Dispatch(ctx context.Context, event agentflow.Event)
 	}
 	// --- End Agent Execution ---
 
+	// --- Azure Best Practice: Ensure Routing Metadata Consistency ---
+	if agentErr == nil && agentResult.OutputState != nil {
+		// Check if routing metadata was set in the result state
+		if newRoute, hasNewRoute := agentResult.OutputState.GetMeta(RouteMetadataKey); hasNewRoute && newRoute != "" {
+			// Create new event with proper routing for the next stage
+			fixedEvent := o.EnsureProperRouting(event, agentResult)
+
+			// If routing has changed (EnsureProperRouting returns a different event)
+			if fixedEvent != event {
+				// Fix: Properly handle multiple return values
+				currentRoute, hasCurrentRoute := event.GetMetadataValue(RouteMetadataKey)
+				routeDisplay := "<none>"
+				if hasCurrentRoute {
+					routeDisplay = currentRoute
+				}
+
+				log.Printf("RouteOrchestrator: Processing route change from '%s' to '%s'",
+					routeDisplay, newRoute)
+
+				// Queue the new event for processing
+				// This requires access to a Runner or event emitter
+				// If runner is available as a field, use:
+				// if o.runner != nil {
+				//     if err := o.runner.Emit(fixedEvent); err != nil {
+				//         log.Printf("RouteOrchestrator: Failed to emit new event with updated routing: %v", err)
+				//     }
+				// }
+
+				// Alternative: Add a RunnerEmitter field to RouteOrchestrator for this purpose
+				if o.emitter != nil {
+					if err := o.emitter.Emit(fixedEvent); err != nil {
+						log.Printf("RouteOrchestrator: Failed to emit new event with updated routing: %v", err)
+					} else {
+						log.Printf("RouteOrchestrator: Successfully queued event with updated routing to '%s'", newRoute)
+					}
+				} else {
+					log.Printf("RouteOrchestrator: No emitter available to queue event with updated routing")
+				}
+			}
+		}
+	}
+	// --- End Azure Best Practice ---
+
 	// FIX: Return the captured agentResult and agentErr
 	return agentResult, agentErr
+}
+
+// Add this method right after the Dispatch method
+
+// EnsureProperRouting ensures that agent result state metadata is correctly reflected in event routing
+func (o *RouteOrchestrator) EnsureProperRouting(event agentflow.Event, result agentflow.AgentResult) agentflow.Event {
+	// Skip if there's no output state
+	if result.OutputState == nil {
+		return event
+	}
+
+	// Check if the agent specified a new route in its output state
+	newRoute, hasNewRoute := result.OutputState.GetMeta(RouteMetadataKey)
+	if !hasNewRoute || newRoute == "" {
+		return event // No routing change needed
+	}
+
+	// Get current routing from event metadata - FIX: Properly handle both return values
+	currentRoute, hasCurrentRoute := event.GetMetadataValue(RouteMetadataKey)
+	if !hasCurrentRoute {
+		currentRoute = "" // Default to empty string if not found
+		log.Printf("RouteOrchestrator: No routing metadata in current event, will create new event with route: %s", newRoute)
+	}
+
+	// Only create a new event if routing has changed
+	if currentRoute != newRoute {
+		log.Printf("RouteOrchestrator: Detected routing change from '%s' to '%s', creating new event",
+			currentRoute, newRoute)
+
+		// Get the data from the output state for the new event
+		stateData := make(map[string]interface{})
+		for _, key := range result.OutputState.Keys() {
+			if val, ok := result.OutputState.Get(key); ok {
+				stateData[key] = val
+			}
+		}
+
+		// Create new metadata, preserving session ID and other metadata
+		newMeta := make(map[string]string)
+		if meta := event.GetMetadata(); meta != nil {
+			for k, v := range meta {
+				newMeta[k] = v
+			}
+		}
+
+		// Set the new route
+		newMeta[RouteMetadataKey] = newRoute
+
+		// Create a new event with the updated routing
+		newEvent := agentflow.NewEvent(
+			newRoute,  // targetAgent
+			stateData, // data from output state
+			newMeta,   // metadata with updated route
+		)
+
+		// Preserve event ID chain for tracing
+		newEvent.SetID(fmt.Sprintf("%s-route-%s", event.GetID(), newRoute))
+
+		return newEvent
+	}
+
+	return event
 }
 
 // GetCallbackRegistry returns the associated registry.
 func (o *RouteOrchestrator) GetCallbackRegistry() *agentflow.CallbackRegistry {
 	return o.registry // Return the stored registry
+}
+
+// Add this method after GetCallbackRegistry
+// SetEmitter sets the event emitter for the orchestrator
+func (o *RouteOrchestrator) SetEmitter(emitter EventEmitter) {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	o.emitter = emitter
+	log.Println("RouteOrchestrator: Emitter configured successfully")
 }
 
 // Stop performs cleanup (currently none needed for RouteOrchestrator).

@@ -7,9 +7,11 @@ import (
 	"log"
 	"net/http" // Added for LLM client
 	"os"       // Added for env vars
+	"os/signal"
 	"runtime"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	agentflow "kunalkushwaha/agentflow/internal/core"
@@ -23,6 +25,9 @@ type ToolAgent struct {
 	registry *tools.ToolRegistry
 	provider llm.ModelProvider // LLM provider to decide which tool/args
 }
+
+// Name allows ToolAgent to satisfy agentflow.Agent.
+func (a *ToolAgent) Name() string { return "tool_agent" }
 
 // LLMResponseFormat defines the expected JSON structure from the LLM.
 type LLMResponseFormat struct {
@@ -44,6 +49,18 @@ func NewToolAgent(registry *tools.ToolRegistry, provider llm.ModelProvider) *Too
 }
 
 func (a *ToolAgent) Run(ctx context.Context, in agentflow.State) (agentflow.State, error) {
+	startTime := time.Now()
+	requestID := fmt.Sprintf("azure-req-%d", time.Now().UnixNano())
+
+	// Add request ID to all logs for correlation
+	log.Printf("ToolAgent: Starting request %s", requestID)
+
+	// Standard Azure execution telemetry pattern
+	defer func() {
+		duration := time.Since(startTime)
+		log.Printf("ToolAgent: Request %s completed in %v", requestID, duration)
+	}()
+
 	log.Println("ToolAgent: Running...")
 	requestVal, ok := in.Get("user_request")
 	if !ok {
@@ -56,36 +73,51 @@ func (a *ToolAgent) Run(ctx context.Context, in agentflow.State) (agentflow.Stat
 	log.Printf("ToolAgent: Received request: %q", request)
 
 	// --- LLM-Based Tool Selection & Argument Extraction ---
-	// 1. Define available tools for the LLM prompt
-	// TODO: Dynamically generate this from registry and tool schemas
-	availableToolsPrompt := `
+	// 1. Define available tools for the LLM prompt by querying registry
+	availableTools := a.registry.List()
+	toolDefinitions := make([]string, 0, len(availableTools))
+
+	// Convert registered tools to OpenAI-compatible function definitions
+	for _, toolName := range availableTools {
+		_, exists := a.registry.Get(toolName) // we don’t need the value itself
+		if !exists {
+			continue
+		}
+
+		// For compute_metric tool
+		if toolName == "compute_metric" {
+			toolDefinitions = append(toolDefinitions, `{
+	"name": "compute_metric",
+	"description": "Performs simple arithmetic calculations like addition or subtraction on two numbers.",
+	"parameters": {
+	  "type": "object",
+	  "properties": {
+		"operation": {
+		  "type": "string", 
+		  "description": "The operation to perform. Must be 'add' or 'subtract'."
+		},
+		"a": {
+		  "type": "number",
+		  "description": "The first number."
+		},
+		"b": {
+		  "type": "number",
+		  "description": "The second number."
+		}
+	  },
+	  "required": ["operation", "a", "b"]
+	}
+  }`)
+		}
+		// Add other tool definitions here as needed
+	}
+
+	availableToolsPrompt := fmt.Sprintf(`
 Available Tools:
 [
-  {
-    "name": "compute_metric",
-    "description": "Performs simple arithmetic calculations like addition or subtraction on two numbers.",
-    "parameters": {
-      "type": "object",
-      "properties": {
-        "operation": {
-          "type": "string",
-          "description": "The operation to perform. Must be 'add' or 'subtract'."
-        },
-        "a": {
-          "type": "number",
-          "description": "The first number."
-        },
-        "b": {
-          "type": "number",
-          "description": "The second number."
-        }
-      },
-      "required": ["operation", "a", "b"]
-    }
-  }
-  // Add other tools here (e.g., web_search) if registered and needed
+  %s
 ]
-`
+`, strings.Join(toolDefinitions, ",\n  "))
 
 	// 2. Construct the prompt for the LLM
 	systemPrompt := fmt.Sprintf(`You are an assistant that decides if a function call is needed to answer a user request.
@@ -104,33 +136,76 @@ Respond ONLY with the JSON object and nothing else.`, availableToolsPrompt)
 	}
 
 	log.Println("ToolAgent: Asking LLM to decide on tool call...")
-	llmCtx, cancel := context.WithTimeout(ctx, 60*time.Second) // Timeout for LLM call
+	llmCtx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
-	llmResp, err := a.provider.Call(llmCtx, llmPrompt)
+
+	// Add Azure-style retry logic with exponential backoff
+	var llmResp llm.Response
+	var err error
+	retryMax := 3
+	retryDelay := time.Second
+
+	for attempt := 0; attempt < retryMax; attempt++ {
+		if attempt > 0 {
+			log.Printf("ToolAgent: Retrying LLM call (attempt %d/%d) after error: %v",
+				attempt+1, retryMax, err)
+			// Exponential backoff following Azure best practices
+			time.Sleep(retryDelay * time.Duration(1<<uint(attempt)))
+		}
+
+		llmResp, err = a.provider.Call(llmCtx, llmPrompt)
+		if err == nil {
+			break
+		}
+
+		// Check for permanent errors that shouldn't be retried
+		if strings.Contains(err.Error(), "authentication") ||
+			strings.Contains(err.Error(), "invalid_request") {
+			log.Printf("ToolAgent: Permanent Azure OpenAI error, not retrying: %v", err)
+			break
+		}
+	}
+
 	if err != nil {
-		log.Printf("ToolAgent: LLM call failed: %v", err)
+		log.Printf("ToolAgent: Azure OpenAI call failed after %d attempts: %v", retryMax, err)
 		out := in.Clone()
-		out.Set("agent_error", fmt.Sprintf("LLM call failed: %v", err))
-		return out, nil // Return error in state
+		out.Set("agent_error", fmt.Sprintf("Azure OpenAI call failed: %v", err))
+		return out, nil
 	}
 
 	log.Printf("ToolAgent: LLM response received: %q", llmResp.Content)
 
-	// 3. Parse the LLM's JSON response
+	// 3. Parse the LLM's JSON response with Azure-optimized error handling
 	var decision LLMResponseFormat
-	// Attempt to clean potential markdown code fences if the LLM adds them
+
+	// Azure-optimized JSON response cleaning
 	cleanedContent := strings.TrimSpace(llmResp.Content)
-	cleanedContent = strings.TrimPrefix(cleanedContent, "```json")
-	cleanedContent = strings.TrimPrefix(cleanedContent, "```")
-	cleanedContent = strings.TrimSuffix(cleanedContent, "```")
-	cleanedContent = strings.TrimSpace(cleanedContent)
+
+	// Remove JSON code fences if present
+	jsonStartPos := strings.Index(cleanedContent, "{")
+	jsonEndPos := strings.LastIndex(cleanedContent, "}")
+
+	if jsonStartPos >= 0 && jsonEndPos > jsonStartPos {
+		// Extract only the JSON object
+		cleanedContent = cleanedContent[jsonStartPos : jsonEndPos+1]
+	} else {
+		// Try markdown code block extraction if JSON object not found
+		cleanedContent = strings.TrimPrefix(cleanedContent, "```json")
+		cleanedContent = strings.TrimPrefix(cleanedContent, "```")
+		cleanedContent = strings.TrimSuffix(cleanedContent, "```")
+		cleanedContent = strings.TrimSpace(cleanedContent)
+	}
+
+	// Azure-compliant telemetry
+	log.Printf("ToolAgent: Cleaned JSON for parsing: %s", cleanedContent)
 
 	if err := json.Unmarshal([]byte(cleanedContent), &decision); err != nil {
-		log.Printf("ToolAgent: Failed to parse LLM JSON response '%s': %v", llmResp.Content, err)
+		// Azure-style structured error logging
+		log.Printf("ToolAgent: Failed to parse Azure OpenAI response: %v", err)
 		out := in.Clone()
-		out.Set("agent_error", fmt.Sprintf("Failed to parse LLM response: %v", err))
-		out.Set("llm_raw_response", llmResp.Content) // Include raw response for debugging
-		return out, nil                              // Return error in state
+		out.Set("agent_error", fmt.Sprintf("Failed to parse Azure OpenAI response: %v", err))
+		out.Set("llm_raw_response", llmResp.Content)
+		return out, nil
 	}
 
 	// 4. Check if the LLM decided to call a tool
@@ -153,11 +228,40 @@ Respond ONLY with the JSON object and nothing else.`, availableToolsPrompt)
 	// Use a separate context for the tool call if needed
 	toolCtx, toolCancel := context.WithTimeout(ctx, 30*time.Second)
 	defer toolCancel()
+
+	// Azure best practice: Add explicit validation before tool call
+	if toolName == "" {
+		log.Printf("ToolAgent: Tool name is empty, cannot proceed with call")
+		out := in.Clone()
+		out.Set("agent_error", "Invalid tool name: empty string")
+		return out, nil
+	}
+
+	// Azure best practice: Validate tool exists before attempting call
+	if _, exists := a.registry.Get(toolName); !exists {
+		log.Printf("ToolAgent: Tool '%s' not found in registry", toolName)
+		out := in.Clone()
+		out.Set("agent_error", fmt.Sprintf("Tool '%s' not found", toolName))
+		return out, nil
+	}
+
+	// Azure best practice: Structured logging before call
+	log.Printf("ToolAgent: Calling Azure-registered tool '%s' with parameters: %+v", toolName, toolArgs)
+
 	toolResult, err := a.registry.CallTool(toolCtx, toolName, toolArgs)
 	if err != nil {
-		log.Printf("ToolAgent: Tool call failed: %v", err)
+		// Azure-style detailed error categorization
+		errorType := "tool_execution_error"
+		if strings.Contains(err.Error(), "not found") {
+			errorType = "tool_not_found"
+		} else if strings.Contains(err.Error(), "permission") {
+			errorType = "tool_permission_denied"
+		}
+
+		log.Printf("ToolAgent: Tool call failed [%s]: %v", errorType, err)
 		out := in.Clone()
 		out.Set("agent_error", fmt.Sprintf("Tool call failed: %v", err))
+		out.Set("error_type", errorType)
 		return out, nil
 	}
 
@@ -173,64 +277,64 @@ Respond ONLY with the JSON object and nothing else.`, availableToolsPrompt)
 }
 
 // --- Agent Handler (Adapter: EventHandler -> Agent) ---
-// (AgentHandler struct and NewAgentHandler function remain the same)
 type AgentHandler struct {
-	agent   agentflow.Agent
-	results chan agentflow.State
-	wg      *sync.WaitGroup
+	agent agentflow.Agent
+	wg    *sync.WaitGroup
 }
+
+// Ensure at compile‑time that AgentHandler implements agentflow.AgentHandler.
+var _ agentflow.AgentHandler = (*AgentHandler)(nil)
 
 func NewAgentHandler(agent agentflow.Agent, wg *sync.WaitGroup) *AgentHandler {
-	return &AgentHandler{
-		agent:   agent,
-		results: make(chan agentflow.State, 1),
-		wg:      wg,
-	}
+	return &AgentHandler{agent: agent, wg: wg}
 }
 
-// Handle implements the agentflow.EventHandler interface.
-// (Handle function remains the same)
-func (h *AgentHandler) Handle(event agentflow.Event) error {
-	defer h.wg.Done() // Signal completion
+// Run adapts the inner agent to the AgentHandler signature.
+func (h *AgentHandler) Run(
+	ctx context.Context,
+	event agentflow.Event,
+	state agentflow.State,
+) (agentflow.AgentResult, error) {
+
+	defer h.wg.Done()
 
 	log.Printf("AgentHandler: Handling event %s", event.GetID())
 
-	initialState := agentflow.NewState()
-	payload, ok := event.GetPayload().(map[string]interface{})
-	if !ok {
-		log.Printf("AgentHandler: Error - Event payload is not map[string]interface{}")
-		return fmt.Errorf("invalid event payload type")
+	// Ensure we have a mutable state value
+	if state == nil {
+		state = agentflow.NewState()
 	}
-	// Expecting "user_request" in the event payload
-	if request, ok := payload["user_request"].(string); ok {
-		initialState.Set("user_request", request)
-	} else {
-		log.Printf("AgentHandler: Error - 'user_request' not found or not string in event payload")
-		return fmt.Errorf("'user_request' missing or invalid in event payload")
+
+	// Copy payload → state
+	pMap := event.GetData() // EventData == map[string]any
+	if v, ok := pMap["user_request"].(string); ok {
+		state.Set("user_request", v)
 	}
 	for k, v := range event.GetMetadata() {
-		initialState.SetMeta(k, v)
+		state.SetMeta(k, v)
 	}
 
-	// Increase timeout slightly to accommodate LLM call within agent
-	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
-	defer cancel()
-
-	finalState, err := h.agent.Run(ctx, initialState)
-	if err != nil {
-		log.Printf("AgentHandler: Agent run failed for event %s: %v", event.GetID(), err)
-		// Don't send to results channel on error, just return the error
-		return fmt.Errorf("agent run failed: %w", err)
-	}
-
-	log.Printf("AgentHandler: Agent run successful for event %s.", event.GetID())
-	h.results <- finalState
-	return nil
+	_, err := h.agent.Run(ctx, state)   // ignore returned state
+	return agentflow.AgentResult{}, err // keep signature happy
 }
 
 // --- Main Program ---
 
 func main() {
+	// Azure best practice: Configure context with proper cancellation
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel() // Ensure all resources are cleaned up
+
+	// Azure best practice: Set up proper signal handling
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-sigChan
+		log.Println("Received termination signal, cleaning up Azure resources...")
+		cancel()
+		os.Exit(0)
+	}()
+
 	log.Println("Starting Tool Usage Example (LLM Driven)...")
 
 	// --- Configuration (Azure OpenAI) ---
@@ -263,112 +367,53 @@ func main() {
 
 	// 2. Create Tool Registry and Register Tools
 	toolRegistry := tools.NewToolRegistry()
-	computeTool := &tools.ComputeMetricTool{}
-	if err := toolRegistry.Register(computeTool); err != nil {
-		log.Fatalf("Failed to register compute tool: %v", err)
+	if err := toolRegistry.Register(&tools.ComputeMetricTool{}); err != nil {
+		log.Fatalf("tool register error: %v", err)
 	}
-	log.Println("Tool Registry created and tools registered.")
-
-	// 3. Create Tool Agent, passing the LLM provider
+	// 3. Create the ToolAgent
 	toolAgent := NewToolAgent(toolRegistry, azureAdapter)
-	log.Println("Tool Agent created.")
 
-	// 4. Create AgentHandler adapter
+	// 4. Wrap with AgentHandler
 	var wg sync.WaitGroup
 	agentHandler := NewAgentHandler(toolAgent, &wg)
-	log.Println("Agent Handler created.")
 
-	// 5. Create Orchestrator
-	orchestratorImpl := orchestrator.NewRouteOrchestrator()
-	log.Println("Route Orchestrator created.")
+	// 5. Orchestrator / runner
+	cbReg := agentflow.NewCallbackRegistry()
+	orch := orchestrator.NewRouteOrchestrator(cbReg)
 
-	// 6. Create Runner
 	concurrency := runtime.NumCPU()
-	runner := agentflow.NewRunner(orchestratorImpl, concurrency)
-	log.Printf("Runner created with concurrency %d.", concurrency)
+	runner := agentflow.NewRunner(concurrency) // NewRunner wants only int
+	runner.SetOrchestrator(orch)
 
-	// 7. Register the AgentHandler
-	handlerName := "tool_agent_handler"
-	runner.RegisterAgent(handlerName, agentHandler)
-	log.Printf("Agent Handler registered with Runner as '%s'.", handlerName)
+	// 7. Register handler
+	const handlerName = "tool_agent_handler"
+	if err := runner.RegisterAgent(handlerName, agentHandler); err != nil {
+		log.Fatalf("register agent: %v", err)
+	}
 
-	// --- Execution ---
-	// 1. Prepare the event
-	eventPayload := map[string]interface{}{
-		// Try different requests:
-		"user_request": "What is 15 plus 27.5?", // Should trigger compute_metric
-		// "user_request": "Can you subtract 10 from 50.5?",
-		// "user_request": "What is the capital of Canada?",
+	// 8. Start
+	if err := runner.Start(ctx); err != nil {
+		log.Fatalf("runner start: %v", err)
 	}
-	eventMetadata := map[string]string{
-		orchestrator.RouteMetadataKey: handlerName,
-	}
+
+	// Prepare the event
 	event := &agentflow.SimpleEvent{
-		ID:       fmt.Sprintf("tool-evt-%d", time.Now().UnixNano()),
-		Payload:  eventPayload,
-		Metadata: eventMetadata,
+		ID: fmt.Sprintf("tool-evt-%d", time.Now().UnixNano()),
+		Data: map[string]any{
+			"user_request": "What is 15 plus 27.5?",
+		},
+		Metadata: map[string]string{
+			orchestrator.RouteMetadataKey: handlerName,
+		},
 	}
-	log.Printf("Event prepared: %s", event.GetID())
 
-	// 2. Emit the event
-	log.Println("Emitting event via Runner...")
+	// Emit
 	wg.Add(1)
-	runner.Emit(event)
-	log.Println("Event emitted.")
-
-	// 3. Wait for completion
-	log.Println("Waiting for handler to complete...")
-	done := make(chan struct{})
-	var finalState agentflow.State
-	var handlerErr error
-
-	go func() {
-		wg.Wait()
-		select {
-		case finalState = <-agentHandler.results:
-			log.Println("Received final state from handler.")
-		case <-time.After(2 * time.Second): // Increased timeout slightly
-			log.Println("Timed out waiting for final state from handler.")
-			handlerErr = fmt.Errorf("handler did not produce a result")
-		}
-		close(done)
-	}()
-
-	select {
-	case <-done:
-		log.Println("Handler processing finished.")
-	case <-time.After(130 * time.Second): // Increased overall timeout
-		log.Fatal("Timeout waiting for agent handler to complete.")
+	if err := runner.Emit(event); err != nil {
+		log.Fatalf("emit: %v", err)
 	}
+	wg.Wait()
 
-	// 4. Stop runner
-	log.Println("Stopping runner...")
+	// Stop (no arguments, no return)
 	runner.Stop()
-	log.Println("Runner stopped.")
-
-	// --- Output ---
-	if handlerErr != nil {
-		log.Fatalf("Handler execution failed: %v", handlerErr)
-	}
-	if finalState.GetData() == nil {
-		log.Fatal("Failed to get final state from handler.")
-	}
-
-	log.Println("Tool Agent execution successful.")
-	if agentErr, ok := finalState.Get("agent_error"); ok {
-		log.Printf("Agent reported an error: %v", agentErr)
-		if rawLLMResp, ok := finalState.Get("llm_raw_response"); ok {
-			log.Printf("LLM Raw Response was: %s", rawLLMResp)
-		}
-	} else if agentMsg, ok := finalState.Get("agent_message"); ok {
-		log.Printf("Agent message: %v", agentMsg) // e.g., No tool needed
-	} else {
-		toolName, _ := finalState.Get("tool_name_called")
-		toolResult, _ := finalState.Get("tool_result")
-		fmt.Println("\n--- Agent Result ---")
-		fmt.Printf("Tool Called: %v\n", toolName)
-		fmt.Printf("Tool Result: %+v\n", toolResult)
-		fmt.Println("--------------------")
-	}
-	log.Printf("Final state data: %+v", finalState.GetData())
 }

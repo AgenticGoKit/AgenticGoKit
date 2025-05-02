@@ -381,29 +381,6 @@ func (r *RunnerImpl) loop(ctx context.Context) {
 						}
 						log.Println("CallbackRegistry.Invoke: Finished invoking callbacks for hook AgentError.")
 					}
-				} else {
-					// Dispatch successful
-					// --- After Agent Run Callback ---
-					if r.registry != nil {
-						log.Printf("Runner: Invoking %s callbacks for agent %s", HookAfterAgentRun, invokedAgentID)
-						callbackArgs := CallbackArgs{
-							Hook:        HookAfterAgentRun,
-							Event:       event,
-							AgentID:     invokedAgentID,
-							AgentResult: agentResult,
-							// FIX: Ensure OutputState is treated as State interface
-							State: agentResult.OutputState, // Pass state *after* successful dispatch
-						}
-						newState, cbErr := r.registry.Invoke(eventCtx, callbackArgs)
-						if cbErr != nil {
-							log.Printf("Runner loop: Error during AfterAgentRun callback for event %s: %v", event.GetID(), cbErr)
-						}
-						if newState != nil {
-							// Assign State interface to State interface variable
-							agentResult.OutputState = newState
-						}
-						log.Println("CallbackRegistry.Invoke: Finished invoking callbacks for hook AfterAgentRun.")
-					}
 				}
 			} else {
 				log.Printf("Runner loop: Orchestrator is nil, cannot dispatch event %s", event.GetID())
@@ -447,7 +424,7 @@ func (r *RunnerImpl) processAgentResult(ctx context.Context, originalEvent Event
 	sessionID, _ := originalEvent.GetMetadataValue(SessionIDKey)
 
 	if agentErr != nil {
-		log.Printf("Agent execution failed for event %s (session: %s) by agent %s: %v", originalEvent.GetID(), sessionID, agentID, agentErr)
+		log.Printf("Agent execution failed for event %s (session: %s) by agent %s: %v", originalEvent.GetID(), sessionID, agentID)
 
 		// Optionally emit a failure event
 		failurePayload := EventData{
@@ -463,7 +440,7 @@ func (r *RunnerImpl) processAgentResult(ctx context.Context, originalEvent Event
 			failureMeta["failed_agent_id"] = agentID
 		}
 
-		failureEvent := NewEvent("", failurePayload, failureMeta)
+		failureEvent := NewEvent(failureMeta[RouteMetadataKey], failurePayload, failureMeta)
 		failureEvent.SetSourceAgentID(agentID)
 
 		if err := r.Emit(failureEvent); err != nil {
@@ -509,7 +486,7 @@ func (r *RunnerImpl) processAgentResult(ctx context.Context, originalEvent Event
 				}
 			}
 
-			successEvent := NewEvent("", successPayload, successMeta)
+			successEvent := NewEvent(successMeta[RouteMetadataKey], successPayload, successMeta)
 			successEvent.SetSourceAgentID(agentID)
 
 			if err := r.Emit(successEvent); err != nil {

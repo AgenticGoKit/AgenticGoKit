@@ -19,7 +19,34 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// JSON structs for trace deserialization - moved to package level for reuse
+// This follows Azure best practices for modular code organization
+type JSONState struct {
+	Data map[string]interface{} `json:"data"`
+	Meta map[string]string      `json:"meta"`
+}
+
+type JSONAgentResult struct {
+	OutputState *JSONState `json:"output_state,omitempty"` // ← matches trace JSON
+	Error       string     `json:"error,omitempty"`
+}
+
+type JSONTraceEntry struct {
+	Timestamp     time.Time        `json:"timestamp"`
+	Type          string           `json:"type"`
+	EventID       string           `json:"event_id"`
+	SessionID     string           `json:"session_id"`
+	AgentID       string           `json:"agent_id"`
+	State         *JSONState       `json:"state"`
+	AgentResult   *JSONAgentResult `json:"agent_result,omitempty"`
+	Hook          string           `json:"hook"`
+	Error         string           `json:"error,omitempty"`
+	TargetAgentID string           `json:"target_agent_id,omitempty"`
+	SourceAgentID string           `json:"source_agent_id,omitempty"`
+}
+
 var filterAgent string // Variable to hold the filter flag value
+var flowOnlyFlag bool  // Flag to show only agent flow without state details
 
 // traceCmd represents the trace command
 var traceCmd = &cobra.Command{
@@ -30,7 +57,11 @@ named <sessionID>.trace.json in the current directory) and displays it.`,
 	Args: cobra.ExactArgs(1), // Requires exactly one argument: sessionID
 	Run: func(cmd *cobra.Command, args []string) {
 		sessionID := args[0]
-		displayTrace(sessionID, filterAgent)
+		if flowOnlyFlag {
+			displayAgentFlow(sessionID, filterAgent)
+		} else {
+			displayTrace(sessionID, filterAgent)
+		}
 	},
 }
 
@@ -39,6 +70,9 @@ func init() {
 
 	// Add --filter flag (only supporting agent=<name> for now)
 	traceCmd.Flags().StringVar(&filterAgent, "filter", "", "Filter trace entries (e.g., agent=<name>)")
+
+	// Add --flow-only flag to show only the flow between agents
+	traceCmd.Flags().BoolVar(&flowOnlyFlag, "flow-only", false, "Show only the flow of requests between agents")
 }
 
 func displayTrace(sessionID, filter string) {
@@ -49,16 +83,63 @@ func displayTrace(sessionID, filter string) {
 	// Read the trace file
 	data, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error reading trace file '%s': %v\n", filePath, err)
+		fmt.Fprintf(os.Stderr, "Error reading trace file: %v\n", err)
 		os.Exit(1)
 	}
 
-	// Unmarshal JSON data
-	var traceEntries []agentflow.TraceEntry
-	err = json.Unmarshal(data, &traceEntries)
+	// Unmarshal JSON data into intermediate struct
+	var jsonEntries []JSONTraceEntry
+	err = json.Unmarshal(data, &jsonEntries)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error parsing trace file '%s': %v\n", filePath, err)
+		fmt.Fprintf(os.Stderr, "Error parsing trace data: %v\n", err)
 		os.Exit(1)
+	}
+
+	// Convert to agentflow.TraceEntry
+	var traceEntries []agentflow.TraceEntry
+	for _, je := range jsonEntries {
+		entry := agentflow.TraceEntry{
+			Timestamp: je.Timestamp,
+			EventID:   je.EventID,
+			SessionID: je.SessionID,
+			AgentID:   je.AgentID,
+			Hook:      agentflow.HookPoint(je.Hook),
+			Error:     je.Error,
+		}
+
+		// Convert State
+		if je.State != nil {
+			state := agentflow.NewState()
+			for k, v := range je.State.Data {
+				state.Set(k, v)
+			}
+			for k, v := range je.State.Meta {
+				state.SetMeta(k, v)
+			}
+			entry.State = state
+		}
+
+		// Convert AgentResult if present
+		if je.AgentResult != nil {
+			agentResult := &agentflow.AgentResult{
+				Error: je.AgentResult.Error,
+			}
+
+			if je.AgentResult.OutputState != nil {
+				outputState := agentflow.NewState()
+				for k, v := range je.AgentResult.OutputState.Data {
+					outputState.Set(k, v)
+				}
+				for k, v := range je.AgentResult.OutputState.Meta {
+					outputState.SetMeta(k, v)
+				}
+				agentResult.OutputState = outputState
+			}
+
+			entry.AgentResult = agentResult
+		}
+
+		traceEntries = append(traceEntries, entry)
 	}
 
 	// Apply filters
@@ -70,13 +151,9 @@ func displayTrace(sessionID, filter string) {
 
 	if filterAgentName != "" {
 		for _, entry := range traceEntries {
-			// Include if AgentName matches or if AgentName is nil (e.g., event hooks)
-			if entry.AgentName != nil && *entry.AgentName == filterAgentName {
+			// Update: Use AgentID instead of AgentName
+			if entry.AgentID == filterAgentName {
 				filteredEntries = append(filteredEntries, entry)
-			} else if entry.AgentName == nil && (entry.Hook == agentflow.HookBeforeEventHandling || entry.Hook == agentflow.HookAfterEventHandling) {
-				// Optionally include event-level hooks even when filtering by agent?
-				// Let's exclude them for now for a stricter filter.
-				// filteredEntries = append(filteredEntries, entry)
 			}
 		}
 	} else {
@@ -84,42 +161,52 @@ func displayTrace(sessionID, filter string) {
 	}
 
 	if len(filteredEntries) == 0 {
-		fmt.Println("No trace entries found", func() string {
-			if filterAgentName != "" {
-				return fmt.Sprintf("for agent '%s'.", filterAgentName)
-			}
-			return "."
-		}())
-
+		var agentFilterMsg string
+		if filterAgentName != "" {
+			agentFilterMsg = " for agent '" + filterAgentName + "'"
+		}
+		fmt.Println("No trace entries found" + agentFilterMsg + " in session " + sessionID)
 		return
 	}
 
 	// Print trace table
-	fmt.Printf("Trace for Session: %s\n", sessionID)
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(w, "TIMESTAMP\tHOOK/ACTION\tAGENT\tINPUT\tOUTPUT\tERROR")
-	fmt.Fprintln(w, "---------\t-----------\t-----\t-----\t------\t-----")
+	fmt.Printf("Trace for session %s:\n", sessionID)
+	w := tabwriter.NewWriter(os.Stdout, 0, 2, 1, ' ', 0)
+	fmt.Fprintf(w, "TIMESTAMP\tHOOK\tAGENT\tINPUT\tOUTPUT\tERROR\n")
 
 	for _, entry := range filteredEntries {
 		ts := entry.Timestamp.Format(time.RFC3339)
 		hook := string(entry.Hook)
-		agent := safeAgentNameCLI(entry.AgentName)
 
-		// Assign Input and Output pointers directly to the interface variables
-		var inputState agentflow.State
-		if entry.Input != nil { // entry.Input is *SimpleState
-			inputState = entry.Input // <<< Assign the pointer directly (*SimpleState implements State)
-		}
-		var outputState agentflow.State
-		if entry.Output != nil { // entry.Output is *SimpleState
-			outputState = entry.Output // <<< Assign the pointer directly (*SimpleState implements State)
+		// Update: Use AgentID instead of AgentName
+		agent := entry.AgentID
+		if agent == "" {
+			agent = "-"
 		}
 
-		input := stateSummary(inputState)   // Pass the interface value (which holds *SimpleState or nil)
-		output := stateSummary(outputState) // Pass the interface value (which holds *SimpleState or nil)
-		errorMsg := safeErrorMsgCLI(entry.Error)
+		// Update: Handle State and AgentResult appropriately
+		var input, output string
+		var errMsg string
 
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\n", ts, hook, agent, input, output, errorMsg)
+		// For input, use State
+		input = stateSummary(entry.State)
+
+		// For output, use AgentResult.OutputState if available
+		if entry.AgentResult != nil && entry.AgentResult.OutputState != nil {
+			output = stateSummary(entry.AgentResult.OutputState)
+		} else {
+			output = "-"
+		}
+
+		// For error, convert string to *string for safeErrorMsgCLI
+		if entry.Error != "" {
+			errCopy := entry.Error
+			errMsg = safeErrorMsgCLI(&errCopy)
+		} else {
+			errMsg = "-"
+		}
+
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\n", ts, hook, agent, input, output, errMsg)
 	}
 	w.Flush()
 }
@@ -140,27 +227,179 @@ func safeErrorMsgCLI(errMsg *string) string {
 }
 
 // stateSummary provides a brief summary of state for table view
-// Change parameter type from *agentflow.State to agentflow.State
 func stateSummary(s agentflow.State) string {
-	if s == nil { // Check if the interface itself is nil
-		return "-"
+	if s == nil {
+		return "-" // Return dash for nil state
 	}
+
 	// Use the Keys() method defined in the State interface
-	keys := s.Keys() // <<< Use Keys() method from the interface
+	keys := s.Keys()
 	if len(keys) == 0 {
-		return "{}"
+		return "{}" // Return empty braces for empty state
 	}
 
-	// Sort keys for consistent output (optional but nice)
+	// Sort keys for consistent output
 	sort.Strings(keys)
+
 	// Show first few keys for brevity
-	const maxKeysToShow = 3
-	displayKeys := keys
-	ellipsis := ""
-	if len(keys) > maxKeysToShow {
-		displayKeys = keys[:maxKeysToShow]
-		ellipsis = ",..."
+	maxKeys := 3
+	if len(keys) > maxKeys {
+		keys = keys[:maxKeys]
 	}
 
-	return fmt.Sprintf("{%s%s}", strings.Join(displayKeys, ","), ellipsis)
+	var parts []string
+	for _, key := range keys {
+		if val, ok := s.Get(key); ok {
+			// Format key-value pairs
+			parts = append(parts, fmt.Sprintf("%s:%v", key, val))
+		}
+	}
+
+	summary := strings.Join(parts, ", ")
+	if len(keys) > maxKeys {
+		summary += ", ..."
+	}
+
+	return "{" + summary + "}"
+}
+
+// Enhance displayAgentFlow to better show next routes by analyzing agent state metadata
+func displayAgentFlow(sessionID, filter string) {
+	// Construct filename
+	filename := fmt.Sprintf("%s.trace.json", sessionID)
+	filePath := filepath.Join(".", filename)
+
+	// Read and parse the trace file
+	data, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error reading trace file: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Unmarshal JSON data - now JSONTraceEntry is available at package level
+	var jsonEntries []JSONTraceEntry
+	err = json.Unmarshal(data, &jsonEntries)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error parsing trace data: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Using the same intermediate struct from displayTrace
+	// ... (same JSON struct definitions) ...
+
+	// Convert to a sequence of agent interactions
+	type AgentFlowEntry struct {
+		Timestamp time.Time
+		Agent     string
+		NextAgent string
+		EventID   string
+		Hook      string // <- new: keep hook name for display
+	}
+
+	var flowEntries []AgentFlowEntry
+
+	// Process entries to extract flow information
+	// Update extracting next route from trace entries
+	for _, je := range jsonEntries {
+		// Only focus on AfterAgentRun hooks as they contain the routing decision
+		if je.Hook != string(agentflow.HookAfterAgentRun) {
+			continue
+		}
+
+		// Extract route metadata from trace entry's state
+		nextAgent := "-"
+
+		// 2a. try state / agent‑result meta (unchanged)
+		if je.State != nil && je.State.Meta != nil {
+			if route, ok := je.State.Meta[string(agentflow.RouteMetadataKey)]; ok && route != "" {
+				nextAgent = route
+			}
+		}
+		if nextAgent == "-" && je.AgentResult != nil && je.AgentResult.OutputState != nil &&
+			je.AgentResult.OutputState.Meta != nil {
+			if route, ok := je.AgentResult.OutputState.Meta[string(agentflow.RouteMetadataKey)]; ok && route != "" {
+				nextAgent = route
+			}
+		}
+
+		// 2b. if still unknown, fall back to the explicit JSON field
+		if nextAgent == "-" && je.TargetAgentID != "" {
+			nextAgent = je.TargetAgentID
+		}
+
+		flowEntries = append(flowEntries, AgentFlowEntry{
+			Timestamp: je.Timestamp,
+			Agent:     je.AgentID,
+			NextAgent: nextAgent,
+			EventID:   je.EventID,
+			Hook:      je.Hook, // capture hook
+		})
+	}
+
+	if len(flowEntries) == 0 {
+		fmt.Println("No agent flow data found for session " + sessionID)
+		return
+	}
+
+	// Sort by timestamp to ensure chronological order
+	sort.Slice(flowEntries, func(i, j int) bool {
+		return flowEntries[i].Timestamp.Before(flowEntries[j].Timestamp)
+	})
+
+	// Print the flow
+	fmt.Printf("Agent request flow for session %s:\n\n", sessionID)
+
+	w := tabwriter.NewWriter(os.Stdout, 0, 2, 1, ' ', 0)
+	fmt.Fprintf(w, "TIME\tAGENT\tNEXT\tHOOK\tEVENT ID\n") // added HOOK column
+
+	for _, entry := range flowEntries {
+		timeStr := entry.Timestamp.Format("15:04:05.000")
+
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
+			timeStr,
+			entry.Agent,
+			entry.NextAgent, // unchanged
+			entry.Hook,      // new column value
+			shortenID(entry.EventID))
+	}
+	w.Flush()
+
+	// Print a basic sequence diagram
+	fmt.Println("\nSequence diagram:")
+	fmt.Println("----------------")
+
+	// Keep track of unique agents to create columns
+	agents := make(map[string]bool)
+	for _, e := range flowEntries {
+		agents[e.Agent] = true
+		if e.NextAgent != "-" {
+			agents[e.NextAgent] = true
+		}
+	}
+
+	// Create a list of unique agents
+	var agentList []string
+	for a := range agents {
+		agentList = append(agentList, a)
+	}
+	sort.Strings(agentList)
+
+	// Print the sequence
+	for i, entry := range flowEntries {
+		fmt.Printf("%d. %s → ", i+1, entry.Agent)
+		if entry.NextAgent != "-" {
+			fmt.Printf("%s\n", entry.NextAgent)
+		} else {
+			fmt.Println("(end)")
+		}
+	}
+
+}
+
+// Add this helper function to shorten event IDs for display
+func shortenID(id string) string {
+	if len(id) <= 8 {
+		return id
+	}
+	return id[:8] + "..."
 }

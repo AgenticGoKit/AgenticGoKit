@@ -2,15 +2,14 @@ package main
 
 import (
 	"context"
-	"encoding/json" // Import encoding/json for trace dumping
+	"encoding/json"
 	"fmt"
-	"io/ioutil" // Import io/ioutil for writing trace to file
 	"log"
-	"os"        // Import os for signal handling
-	"os/signal" // Import os/signal
-	"runtime"   // Import runtime
+	"os"
+	"os/signal"
+	"runtime"
 	"sync"
-	"syscall" // Import syscall for signal handling
+	"syscall"
 	"time"
 
 	agentflow "kunalkushwaha/agentflow/internal/core"
@@ -21,9 +20,9 @@ import (
 type MemoryAgent struct {
 	id         string
 	mu         sync.RWMutex
-	memory     map[string]agentflow.EventData // Store data per event ID
-	cbRegistry *agentflow.CallbackRegistry    // For potential future event emission
-	wg         *sync.WaitGroup                // Optional: For tracking completion
+	memory     map[string]agentflow.EventData
+	cbRegistry *agentflow.CallbackRegistry
+	wg         *sync.WaitGroup
 }
 
 // NewMemoryAgent creates a new MemoryAgent.
@@ -31,7 +30,7 @@ func NewMemoryAgent(id string, registry *agentflow.CallbackRegistry, wg *sync.Wa
 	return &MemoryAgent{
 		id:         id,
 		memory:     make(map[string]agentflow.EventData),
-		cbRegistry: registry, // Store registry
+		cbRegistry: registry,
 		wg:         wg,
 	}
 }
@@ -39,13 +38,13 @@ func NewMemoryAgent(id string, registry *agentflow.CallbackRegistry, wg *sync.Wa
 // Run implements the agentflow.AgentHandler interface.
 func (a *MemoryAgent) Run(ctx context.Context, event agentflow.Event, state agentflow.State) (agentflow.AgentResult, error) {
 	if a.wg != nil {
-		defer a.wg.Done() // Signal completion if WaitGroup is used
+		defer a.wg.Done()
 	}
+
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
 	eventID := event.GetID()
-	// FIX: Use GetData() instead of GetPayload()
 	eventData := event.GetData()
 
 	log.Printf("MemoryAgent [%s]: Received event %s with data: %v", a.id, eventID, eventData)
@@ -53,16 +52,14 @@ func (a *MemoryAgent) Run(ctx context.Context, event agentflow.Event, state agen
 	// Store the data associated with the event ID
 	a.memory[eventID] = eventData
 
-	// Example: Optionally trigger another event via callback
-	// if someCondition {
-	//     nextEvent := agentflow.NewEvent(...)
-	//     // FIX: Use correct CallbackArgs fields
-	//     args := agentflow.CallbackArgs{ Hook: agentflow.HookAfterAgentRun, Event: nextEvent, Ctx: ctx, State: state }
-	//     a.cbRegistry.Invoke(args)
-	// }
+	// Process the state (in a real agent this could be more complex)
+	outputState := state.Clone()
+	outputState.Set("processed_by", a.id)
+	outputState.Set("processed_at", time.Now().Format(time.RFC3339))
 
-	// Return an empty result, indicating success without state modification
-	return agentflow.AgentResult{}, nil
+	return agentflow.AgentResult{
+		OutputState: outputState,
+	}, nil
 }
 
 // GetData retrieves stored data for a specific event ID.
@@ -81,34 +78,98 @@ func main() {
 	// 1. Setup Core Components
 	callbackRegistry := agentflow.NewCallbackRegistry()
 	orchestratorImpl := orchestrator.NewRouteOrchestrator(callbackRegistry)
-	runner := agentflow.NewRunner(runtime.NumCPU()) // Use multiple workers
+	runner := agentflow.NewRunner(runtime.NumCPU())
 
 	// Create and set TraceLogger
 	traceLogger := agentflow.NewInMemoryTraceLogger()
-	// FIX: SetTraceLogger does not return an error to check here
 	runner.SetTraceLogger(traceLogger)
 	log.Println("InMemoryTraceLogger created and set.")
 
 	// Set the Orchestrator for the Runner
-	// FIX: SetOrchestrator does not return an error to check here
 	runner.SetOrchestrator(orchestratorImpl)
 	log.Println("Runner, Logger & RouteOrchestrator created and linked.")
 
 	// --- Register Callbacks ---
-	// Create the trace logging callback
-	traceCallback := agentflow.CreateTraceCallback(traceLogger)
+	// Register trace callback for all hooks
+	callbackRegistry.Register(agentflow.HookAll, "traceLogger",
+		func(ctx context.Context, args agentflow.CallbackArgs) (agentflow.State, error) {
+			// Try to extract session ID from multiple sources
+			var sessionID string
 
-	// Register the trace callback for relevant hooks
-	runner.RegisterCallback(agentflow.HookBeforeEventHandling, agentflow.TraceCallbackName, traceCallback)
-	runner.RegisterCallback(agentflow.HookAfterEventHandling, agentflow.TraceCallbackName, traceCallback)
-	runner.RegisterCallback(agentflow.HookBeforeAgentRun, agentflow.TraceCallbackName, traceCallback)
-	runner.RegisterCallback(agentflow.HookAfterAgentRun, agentflow.TraceCallbackName, traceCallback)
-	log.Println("Trace callback registered for hooks.")
+			// 1. First try state metadata
+			if sid, ok := args.State.GetMeta(agentflow.SessionIDKey); ok && sid != "" {
+				sessionID = sid
+				log.Printf("Trace callback: Found session ID in state metadata: %s", sessionID)
+			} else if args.Event != nil {
+				// 2. Fall back to event metadata if available
+				if meta := args.Event.GetMetadata(); meta != nil {
+					if sid, ok := meta[agentflow.SessionIDKey]; ok && sid != "" {
+						sessionID = sid
+						log.Printf("Trace callback: Found session ID in event metadata: %s", sessionID)
+
+						// Add to state metadata for future use
+						args.State.SetMeta(agentflow.SessionIDKey, sid)
+					}
+				}
+			}
+
+			// If still no session ID, generate a warning
+			if sessionID == "" {
+				log.Printf("Trace callback: No session ID found in metadata")
+				sessionID = "session-" + args.Event.GetID() // Use event ID as fallback
+			}
+
+			entry := agentflow.TraceEntry{
+				Hook:      args.Hook,
+				Timestamp: time.Now(),
+				State:     args.State,
+				SessionID: sessionID, // This will now be correctly set
+			}
+
+			if args.AgentID != "" {
+				entry.AgentID = args.AgentID
+			}
+
+			if args.Output.OutputState != nil {
+				entry.AgentResult = &args.Output
+			}
+
+			if args.Output.Error != "" {
+				errMsg := args.Output.Error
+				entry.Error = errMsg
+			}
+
+			log.Printf("Logging trace entry with SessionID: %s, Hook: %s, AgentID: %s",
+				sessionID, string(args.Hook), args.AgentID)
+
+			// Log the entry with the corrected session ID
+			if err := traceLogger.Log(entry); err != nil {
+				log.Printf("Error logging trace entry: %v", err)
+			}
+			return args.State, nil
+		})
+	log.Println("Trace callback registered for all hooks.")
+
+	// After registering the callback
+	log.Printf("Verifying trace logger and callback registration...")
+	testEntry := agentflow.TraceEntry{
+		Hook:      agentflow.HookBeforeAgentRun,
+		Timestamp: time.Now(),
+		SessionID: "test-session",
+	}
+	if err := traceLogger.Log(testEntry); err != nil {
+		log.Printf("Warning: Trace logger test failed: %v", err)
+	} else {
+		log.Printf("Trace logger test succeeded")
+		testTrace, _ := traceLogger.GetTrace("test-session")
+		log.Printf("Retrieved %d test entries", len(testTrace))
+	}
+
 	// --------------------------
 
 	// 2. Setup Agent & Register
 	const memoryAgentName = "memory-agent-1"
-	var wg sync.WaitGroup // WaitGroup for handler completion
+	var wg sync.WaitGroup
 
 	memoryAgent := NewMemoryAgent(memoryAgentName, callbackRegistry, &wg)
 
@@ -121,9 +182,9 @@ func main() {
 
 	// 3. Start the Runner's processing loop
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel() // Ensure context is cancelled on exit
+	defer cancel()
 
-	wg.Add(1) // Add for the runner goroutine itself
+	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		log.Println("Runner starting...")
@@ -141,36 +202,42 @@ func main() {
 	sessionID := fmt.Sprintf("session-%d", time.Now().Unix())
 	log.Printf("Using Session ID for this run: %s", sessionID)
 
-	eventIDs := []string{} // Store IDs for later retrieval
+	eventIDs := []string{}
 
 	for i := 1; i <= numEvents; i++ {
 		eventID := fmt.Sprintf("event-%d-for-%s", i, sessionID)
-		eventIDs = append(eventIDs, eventID) // Store the ID
+		eventIDs = append(eventIDs, eventID)
 
 		eventData := agentflow.EventData{
 			"message": fmt.Sprintf("Data for event %d", i),
 			"index":   i,
 		}
-		// Route event to the memory agent using metadata
+
 		eventMetadata := map[string]string{
 			orchestrator.RouteMetadataKey: memoryAgentName,
-			agentflow.SessionIDKey:        sessionID, // Include session ID for tracing
+			agentflow.SessionIDKey:        sessionID,
 		}
+
 		event := agentflow.NewEvent(
-			"", // No target ID needed when using RouteMetadataKey
+			"",
 			eventData,
 			eventMetadata,
 		)
-		event.SetID(eventID) // Override generated ID for predictability
+		event.SetID(eventID)
 
+		log.Printf("Event %s has session ID %s in metadata",
+			eventID, eventMetadata[agentflow.SessionIDKey])
 		log.Printf("Dispatching event %s...", event.GetID())
-		wg.Add(1) // Increment WaitGroup *before* dispatching for the agent's Run method
-		dispatchErr := orchestratorImpl.Dispatch(event)
+		wg.Add(1)
+		result, dispatchErr := orchestratorImpl.Dispatch(ctx, event)
 		if dispatchErr != nil {
 			log.Printf("Error dispatching event %s: %v", event.GetID(), dispatchErr)
-			wg.Done() // Decrement if dispatch fails immediately
+			wg.Done()
 		}
-		time.Sleep(50 * time.Millisecond) // Small delay for clearer logs
+
+		_ = result
+
+		time.Sleep(50 * time.Millisecond)
 	}
 
 	// 5. Wait for graceful shutdown signal
@@ -178,7 +245,6 @@ func main() {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
-	// Wait for signal or context cancellation (e.g., if runner fails)
 	select {
 	case sig := <-sigChan:
 		log.Printf("Received signal: %v. Shutting down...", sig)
@@ -187,14 +253,14 @@ func main() {
 	}
 
 	// 6. Initiate shutdown
-	cancel() // Signal runner and other components to stop
+	cancel()
 
 	// Wait for handlers and runner to finish
 	log.Println("Waiting for active handlers and runner to complete...")
-	waitTimeout := 10 * time.Second // Timeout for waiting
+	waitTimeout := 10 * time.Second
 	done := make(chan struct{})
 	go func() {
-		wg.Wait() // Wait for runner and agent Run calls
+		wg.Wait()
 		close(done)
 	}()
 
@@ -205,7 +271,7 @@ func main() {
 		log.Println("Warning: Timeout waiting for components to shut down.")
 	}
 
-	// 7. Verify stored data (optional)
+	// 7. Verify stored data
 	fmt.Println("\n--- Stored Data Verification ---")
 	for _, eventID := range eventIDs {
 		data, found := memoryAgent.GetData(eventID)
@@ -218,10 +284,13 @@ func main() {
 	fmt.Println("------------------------------")
 
 	// --- Dump Trace ---
-	log.Println("Retrieving trace via runner for session:", sessionID)
-	finalTrace, traceErr := runner.DumpTrace(sessionID)
+	log.Println("Retrieving trace via tracer for session:", sessionID)
+	log.Printf("About to retrieve trace for session ID: %s", sessionID)
+	finalTrace, traceErr := traceLogger.GetTrace(sessionID)
+	log.Printf("Retrieved %d trace entries for session ID: %s",
+		len(finalTrace), sessionID)
 	if traceErr != nil {
-		log.Printf("Error retrieving trace via runner: %v", traceErr)
+		log.Printf("Error retrieving trace: %v", traceErr)
 	} else {
 		// --- Write Trace to File ---
 		traceFilename := fmt.Sprintf("%s.trace.json", sessionID)
@@ -229,19 +298,17 @@ func main() {
 		if jsonErr != nil {
 			log.Printf("Error marshaling trace to JSON: %v", jsonErr)
 		} else {
-			writeErr := ioutil.WriteFile(traceFilename, traceJSON, 0644) // Use io/ioutil or os.WriteFile
+			writeErr := os.WriteFile(traceFilename, traceJSON, 0644)
 			if writeErr != nil {
 				log.Printf("Error writing trace file '%s': %v", traceFilename, writeErr)
 			} else {
 				log.Printf("Trace written to %s", traceFilename)
 			}
 		}
-		// --- End Write Trace to File ---
 
-		// Still print to console as well
+		// Print to console
 		fmt.Println("\n--- Trace Dump (Console) ---")
 		if jsonErr != nil {
-			// Fallback print if JSON failed
 			for _, entry := range finalTrace {
 				fmt.Printf("%+v\n", entry)
 			}
@@ -250,7 +317,6 @@ func main() {
 		}
 		fmt.Println("--- End Trace Dump (Console) ---")
 	}
-	// ------------------
 
 	log.Println("Memory Agent Example finished.")
 }
