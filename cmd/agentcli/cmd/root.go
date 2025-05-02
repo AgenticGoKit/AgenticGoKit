@@ -9,16 +9,25 @@ import (
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "agentcli",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
+	Short: "Command-line interface for inspecting and analyzing AgentFlow executions",
+	Long: `AgentFlow CLI provides tools for inspecting, visualizing, and troubleshooting 
+agent executions and interactions within the AgentFlow framework.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	// Run: func(cmd *cobra.Command, args []string) { },
+Key capabilities:
+  * Trace visualization - View execution traces with detailed agent flows
+  * Sequence diagrams - See agent interactions in chronological order
+  * Condensed routes - View simplified linear agent execution paths
+  * Per-event analysis - Examine individual event flows and requeue patterns
+
+Examples:
+  # View a basic trace with all details
+  agentcli trace <session-id>
+
+  # View only the agent flow for a session
+  agentcli trace --flow-only <session-id>
+
+  # Filter trace to see only a specific agent's activity
+  agentcli trace --filter <agent-name> <session-id>`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

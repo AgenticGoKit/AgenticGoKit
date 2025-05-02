@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil" // Use io/ioutil for simplicity, replace with io and os if preferred
+	"maps"
 	"os"
 	"path/filepath"
 	"sort" // Add sort import
@@ -23,8 +24,8 @@ import (
 // JSON structs for trace deserialization - moved to package level for reuse
 // This follows Azure best practices for modular code organization
 type JSONState struct {
-	Data map[string]interface{} `json:"data"`
-	Meta map[string]string      `json:"meta"`
+	Data map[string]interface{} `json:"data,omitempty"` // Add omitempty
+	Meta map[string]string      `json:"meta,omitempty"` // Add omitempty
 }
 
 type JSONAgentResult struct {
@@ -58,6 +59,8 @@ type AgentFlowEntry struct {
 
 var filterAgent string // Variable to hold the filter flag value
 var flowOnlyFlag bool  // Flag to show only agent flow without state details
+var verboseFlag bool   // Flag to show full state details
+var debugFlag bool     // Flag to show raw JSON structure for debugging
 
 // traceCmd represents the trace command
 var traceCmd = &cobra.Command{
@@ -84,7 +87,15 @@ func init() {
 
 	// Add --flow-only flag to show only the flow between agents
 	traceCmd.Flags().BoolVar(&flowOnlyFlag, "flow-only", false, "Show only the flow of requests between agents")
+
+	// Add --verbose flag to show full state details
+	traceCmd.Flags().BoolVar(&verboseFlag, "verbose", false, "Show full state details (warning: can produce very large output)")
+
+	// Add debug flag for showing raw JSON structure
+	traceCmd.Flags().BoolVar(&debugFlag, "debug", false, "Show raw JSON structure for debugging")
 }
+
+// Update the displayTrace function with better table formatting
 
 func displayTrace(sessionID, filter string) {
 	// Construct filename
@@ -118,15 +129,51 @@ func displayTrace(sessionID, filter string) {
 			Error:     je.Error,
 		}
 
-		// Convert State
-		if je.State != nil {
+		// Extract data from direct state (rare in this trace format but handle it)
+		if je.State != nil && je.State.Data != nil {
 			state := agentflow.NewState()
 			for k, v := range je.State.Data {
-				state.Set(k, v)
+				if v != nil {
+					state.Set(k, v)
+				}
 			}
-			for k, v := range je.State.Meta {
-				state.SetMeta(k, v)
+			if je.State.Meta != nil {
+				for k, v := range je.State.Meta {
+					if v != "" {
+						state.SetMeta(k, v)
+					}
+				}
 			}
+			entry.State = state
+		}
+
+		// IMPORTANT: Also extract from agent_result.output_state
+		// This is where most of the real state data lives!
+		if je.AgentResult != nil && je.AgentResult.OutputState != nil {
+			// Create new state if needed, or use existing
+			state := entry.State
+			if state == nil {
+				state = agentflow.NewState()
+			}
+
+			// Add data from output_state
+			if je.AgentResult.OutputState.Data != nil {
+				for k, v := range je.AgentResult.OutputState.Data {
+					if v != nil {
+						state.Set(k, v)
+					}
+				}
+			}
+
+			// Add meta from output_state
+			if je.AgentResult.OutputState.Meta != nil {
+				for k, v := range je.AgentResult.OutputState.Meta {
+					if v != "" {
+						state.SetMeta(k, v)
+					}
+				}
+			}
+
 			entry.State = state
 		}
 
@@ -180,46 +227,177 @@ func displayTrace(sessionID, filter string) {
 		return
 	}
 
-	// Print trace table
-	fmt.Printf("Trace for session %s:\n", sessionID)
-	w := tabwriter.NewWriter(os.Stdout, 0, 2, 1, ' ', 0)
-	fmt.Fprintf(w, "TIMESTAMP\tHOOK\tAGENT\tINPUT\tOUTPUT\tERROR\n")
+	// Print trace table with improved formatting
+	fmt.Printf("Trace for session %s:\n\n", sessionID)
 
-	for _, entry := range filteredEntries {
-		ts := entry.Timestamp.Format(time.RFC3339)
-		hook := string(entry.Hook)
+	// Use box-drawing characters for table borders
+	if !verboseFlag {
+		printFormattedTable(filteredEntries)
+	} else {
+		printVerboseTable(filteredEntries)
+	}
 
-		// Update: Use AgentID instead of AgentName
-		agent := entry.AgentID
-		if agent == "" {
-			agent = "-"
+	// Add debug output in displayTrace if needed
+	if debugFlag && len(jsonEntries) > 0 {
+		fmt.Println("\nSample entry JSON structure:")
+		sampleBytes, _ := json.MarshalIndent(jsonEntries[0], "", "  ")
+		fmt.Println(string(sampleBytes))
+	}
+
+	// Add this after converting JSONTraceEntry to TraceEntry in displayTrace
+
+	// Debug state extraction
+	if debugFlag {
+		fmt.Println("\nState Data Debug:")
+		for i, je := range jsonEntries[:3] { // Just the first 3 for brevity
+			fmt.Printf("Entry %d (%s - %s):\n", i, je.Hook, je.AgentID)
+
+			// Check direct state
+			if je.State != nil && je.State.Data != nil {
+				fmt.Printf("  Direct state keys: %v\n", maps.Keys(je.State.Data))
+			} else {
+				fmt.Println("  No direct state data")
+			}
+
+			// Check agent result state
+			if je.AgentResult != nil && je.AgentResult.OutputState != nil {
+				fmt.Printf("  Result state keys: %v\n", maps.Keys(je.AgentResult.OutputState.Data))
+			} else {
+				fmt.Println("  No result state data")
+			}
 		}
+	}
+}
 
-		// Update: Handle State and AgentResult appropriately
-		var input, output string
-		var errMsg string
+// Add these new helper functions for table display
 
-		// For input, use State
-		input = stateSummary(entry.State)
+// printFormattedTable prints a visually appealing boxed table with proper truncation
+func printFormattedTable(entries []agentflow.TraceEntry) {
+	// Define column widths for balanced display
+	const (
+		timeWidth  = 19 // Fixed width for timestamp (15:04:05.000)
+		hookWidth  = 25
+		agentWidth = 16
+		stateWidth = 40
+		errorWidth = 30
+	)
 
-		// For output, use AgentResult.OutputState if available
-		if entry.AgentResult != nil && entry.AgentResult.OutputState != nil {
-			output = stateSummary(entry.AgentResult.OutputState)
-		} else {
-			output = "-"
-		}
+	// Print table header with box-drawing characters
+	fmt.Println("┌" + strings.Repeat("─", timeWidth) + "┬" +
+		strings.Repeat("─", hookWidth) + "┬" +
+		strings.Repeat("─", agentWidth) + "┬" +
+		strings.Repeat("─", stateWidth) + "┬" +
+		strings.Repeat("─", errorWidth) + "┐")
 
-		// For error, convert string to *string for safeErrorMsgCLI
+	fmt.Printf("│ %-*s │ %-*s │ %-*s │ %-*s │ %-*s │\n",
+		timeWidth-2, "TIMESTAMP",
+		hookWidth-2, "HOOK",
+		agentWidth-2, "AGENT",
+		stateWidth-2, "STATE",
+		errorWidth-2, "ERROR")
+
+	fmt.Println("├" + strings.Repeat("─", timeWidth) + "┼" +
+		strings.Repeat("─", hookWidth) + "┼" +
+		strings.Repeat("─", agentWidth) + "┼" +
+		strings.Repeat("─", stateWidth) + "┼" +
+		strings.Repeat("─", errorWidth) + "┤")
+
+	// Print each row
+	for _, entry := range entries {
+		timeStr := entry.Timestamp.Format("15:04:05.000")
+		hook := truncateString(string(entry.Hook), hookWidth-2)
+		agent := truncateString(entry.AgentID, agentWidth-2)
+
+		// Format state summary
+		stateSummaryText := truncateString(stateSummary(entry.State), stateWidth-2)
+
+		// Format error message
+		var errorText string
 		if entry.Error != "" {
-			errCopy := entry.Error
-			errMsg = safeErrorMsgCLI(&errCopy)
+			errorText = truncateString(entry.Error, errorWidth-2)
+		} else if entry.AgentResult != nil && entry.AgentResult.Error != "" {
+			errorText = truncateString(entry.AgentResult.Error, errorWidth-2)
 		} else {
-			errMsg = "-"
+			errorText = "-"
 		}
 
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\n", ts, hook, agent, input, output, errMsg)
+		fmt.Printf("│ %-*s │ %-*s │ %-*s │ %-*s │ %-*s │\n",
+			timeWidth-2, timeStr,
+			hookWidth-2, hook,
+			agentWidth-2, agent,
+			stateWidth-2, stateSummaryText,
+			errorWidth-2, errorText)
+	}
+
+	fmt.Println("└" + strings.Repeat("─", timeWidth) + "┴" +
+		strings.Repeat("─", hookWidth) + "┴" +
+		strings.Repeat("─", agentWidth) + "┴" +
+		strings.Repeat("─", stateWidth) + "┴" +
+		strings.Repeat("─", errorWidth) + "┘")
+}
+
+// truncateString shortens a string to fit within width and adds ellipsis if needed
+func truncateString(s string, width int) string {
+	if len(s) <= width {
+		return s
+	}
+
+	if width <= 3 {
+		return "..."[:width]
+	}
+
+	return s[:width-3] + "..."
+}
+
+// printVerboseTable displays full details with potential line wrapping
+func printVerboseTable(entries []agentflow.TraceEntry) {
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+	fmt.Fprintln(w, "TIMESTAMP\tHOOK\tAGENT\tSTATE\tERROR")
+	fmt.Fprintln(w, "---------\t----\t-----\t-----\t-----")
+
+	for _, entry := range entries {
+		ts := entry.Timestamp.Format("15:04:05.000")
+		hook := string(entry.Hook)
+		agent := entry.AgentID
+
+		// Full state data
+		stateText := verboseStateSummary(entry.State)
+
+		// Full error
+		errorText := "-"
+		if entry.Error != "" {
+			errorText = entry.Error
+		} else if entry.AgentResult != nil && entry.AgentResult.Error != "" {
+			errorText = entry.AgentResult.Error
+		}
+
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
+			ts, hook, agent, stateText, errorText)
 	}
 	w.Flush()
+}
+
+// verboseStateSummary provides a complete state dump for verbose mode
+func verboseStateSummary(s agentflow.State) string {
+	if s == nil {
+		return "-"
+	}
+
+	keys := s.Keys()
+	if len(keys) == 0 {
+		return "{}"
+	}
+
+	sort.Strings(keys)
+	var parts []string
+
+	for _, key := range keys {
+		if val, ok := s.Get(key); ok {
+			parts = append(parts, fmt.Sprintf("%s:%v", key, val))
+		}
+	}
+
+	return "{" + strings.Join(parts, ", ") + "}"
 }
 
 // Helper functions for CLI display
@@ -261,17 +439,45 @@ func stateSummary(s agentflow.State) string {
 	var parts []string
 	for _, key := range keys {
 		if val, ok := s.Get(key); ok {
-			// Format key-value pairs
-			parts = append(parts, fmt.Sprintf("%s:%v", key, val))
+			// Format key-value pairs with truncation for large values
+			parts = append(parts, fmt.Sprintf("%s:%s", key, formatStateValue(val)))
 		}
 	}
 
 	summary := strings.Join(parts, ", ")
-	if len(keys) > maxKeys {
+	if len(s.Keys()) > maxKeys {
 		summary += ", ..."
 	}
 
 	return "{" + summary + "}"
+}
+
+// formatStateValue formats a value for display in the CLI with length constraints
+func formatStateValue(val interface{}) string {
+	const maxLen = 30 // Maximum length for displayed strings
+
+	if val == nil {
+		return "null"
+	}
+
+	switch v := val.(type) {
+	case string:
+		if len(v) > maxLen {
+			return fmt.Sprintf("\"%s\"... (%d chars)", v[:maxLen], len(v))
+		}
+		return fmt.Sprintf("\"%s\"", v)
+	case map[string]interface{}:
+		return fmt.Sprintf("{...} (%d keys)", len(v))
+	case []interface{}:
+		return fmt.Sprintf("[...] (%d items)", len(v))
+	default:
+		// For other types, use standard formatting but limit length
+		s := fmt.Sprintf("%v", v)
+		if len(s) > maxLen {
+			return fmt.Sprintf("%s... (%d chars)", s[:maxLen], len(s))
+		}
+		return s
+	}
 }
 
 // Enhance displayAgentFlow to better show next routes by analyzing agent state metadata
