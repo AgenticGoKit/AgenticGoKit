@@ -53,6 +53,7 @@ type AgentFlowEntry struct {
 	NextAgent string
 	EventID   string
 	Hook      string
+	Kind      string // "", "requeue", "retry"
 }
 
 var filterAgent string // Variable to hold the filter flag value
@@ -329,12 +330,31 @@ func displayAgentFlow(sessionID, filter string) {
 			nextAgent = je.TargetAgentID
 		}
 
+		kind := ""
+		// Check for two types of requeues:
+		// 1. Direct self-dispatch in this hop
+		if nextAgent != "-" && nextAgent == je.AgentID {
+			if je.AgentResult != nil && je.AgentResult.Error != "" {
+				kind = "retry"
+			} else {
+				kind = "requeue"
+			}
+			// 2. Event was created by the same agent - indicates a requeue
+		} else if je.SourceAgentID != "" && je.SourceAgentID == je.AgentID {
+			if je.AgentResult != nil && je.AgentResult.Error != "" {
+				kind = "retry"
+			} else {
+				kind = "requeue"
+			}
+		}
+
 		flowEntries = append(flowEntries, AgentFlowEntry{
 			Timestamp: je.Timestamp,
 			Agent:     je.AgentID,
 			NextAgent: nextAgent,
 			EventID:   je.EventID,
-			Hook:      je.Hook, // capture hook
+			Hook:      je.Hook,
+			Kind:      kind,
 		})
 	}
 
@@ -459,11 +479,17 @@ func displayAgentFlow(sessionID, filter string) {
 
 		fmt.Printf("\n[%s]\n", label)
 		for _, e := range entries {
-			if e.NextAgent == "-" || e.NextAgent == e.Agent {
-				fmt.Printf("%s → (end)\n", e.Agent)
+			var tail string
+			if e.NextAgent == "-" {
+				tail = "(end)"
 			} else {
-				fmt.Printf("%s → %s\n", e.Agent, e.NextAgent)
+				tail = e.NextAgent // show even self‑dispatch explicitly
 			}
+			line := fmt.Sprintf("%s → %s", e.Agent, tail)
+			if e.Kind != "" {
+				line += "  [" + e.Kind + "]"
+			}
+			fmt.Println(line)
 		}
 	}
 }
