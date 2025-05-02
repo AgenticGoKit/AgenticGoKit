@@ -7,6 +7,41 @@ Of course! Here’s a clean, well-organized **Markdown** version of the **Agentf
 ## Overview
 Agentflow is a Go framework for building AI agent systems. It provides core abstractions for event-based workflows, agent coordination, and tracing capabilities. This guide will help you understand the key components and how to use them effectively.
 
+```mermaid
+graph TD
+    Client[Client Application] -->|Emit Event| Runner
+    Runner -->|Dispatch| Orchestrator
+    
+    Orchestrator -->|Route| RouteOrchestrator
+    Orchestrator -->|Collaborate| CollaborativeOrchestrator
+    
+    RouteOrchestrator -->|Run| Agent1[Agent A]
+    RouteOrchestrator -->|Run| Agent2[Agent B]
+    
+    CollaborativeOrchestrator -->|Run Parallel| Agent1
+    CollaborativeOrchestrator -->|Run Parallel| Agent2
+    
+    Agent1 -.->|Use| Tools
+    Agent1 -.->|Use| LLM[ModelProvider]
+    Agent2 -.->|Use| Tools
+    Agent2 -.->|Use| LLM
+    
+    Runner -.->|Hook Events| CallbackRegistry
+    CallbackRegistry -.->|Register| TraceLogger
+    
+    subgraph "Workflow Agents"
+        SequentialAgent
+        ParallelAgent
+        LoopAgent
+    end
+    
+    Runner -.->|Store State| SessionStore
+    
+    style Runner fill:#f9f,stroke:#333
+    style Orchestrator fill:#bbf,stroke:#333
+    style TraceLogger fill:#bfb,stroke:#333
+```
+
 ---
 
 ## Core Components

@@ -264,6 +264,34 @@ AgentFlow is under active development. Below is the current status of features b
 
 
 #### Agent Workflows
+```mermaid
+graph TD
+    subgraph "Sequential Agent"
+        SeqAgent[SequentialAgent] --> Seq1[Agent 1]
+        Seq1 --> Seq2[Agent 2]
+        Seq2 --> Seq3[Agent 3]
+    end
+    
+    subgraph "Parallel Agent"
+        ParAgent[ParallelAgent] --> Par1[Agent 1]
+        ParAgent --> Par2[Agent 2]
+        ParAgent --> Par3[Agent 3]
+        Par1 -->|Merge Results| ParResult[Aggregated Result]
+        Par2 -->|Merge Results| ParResult
+        Par3 -->|Merge Results| ParResult
+    end
+    
+    subgraph "Loop Agent"
+        LoopAgent --> SubAgent[Agent]
+        SubAgent -->|Condition False| LoopAgent
+        SubAgent -->|Condition True| LoopResult[Final Result]
+        SubAgent -->|Max Iterations| LoopResult
+    end
+    
+    style SeqAgent fill:#f9f,stroke:#333
+    style ParAgent fill:#bbf,stroke:#333
+    style LoopAgent fill:#bfb,stroke:#333
+  ```
 - **Deterministic Workflow Agents**: Implementation of workflow patterns
   - **Sequential Agent**: Ordered execution with state propagation
   - **Parallel Agent**: Concurrent execution with result aggregation
