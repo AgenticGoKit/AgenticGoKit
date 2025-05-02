@@ -4,39 +4,23 @@ import (
 	"context"
 )
 
-// Agent represents a unit of work within a workflow.
-// It receives an input State, performs an operation potentially using context,
-// and returns an output State or an error.
-//
-// Example Usage:
-//
-//	type MyAgent struct { /* ... fields ... */ }
-//
-//	func (a *MyAgent) Run(ctx context.Context, in State) (State, error) {
-//	    // Access input data: data := in.GetData()
-//	    // Perform work...
-//	    // Check context cancellation: if ctx.Err() != nil { return in, ctx.Err() }
-//	    // Create output state: out := in.Clone()
-//	    // Modify output data: out.SetData("result", "some value")
-//	    return out, nil
-//	}
+// Agent defines the interface for any component that can process a State.
 type Agent interface {
-	Run(ctx context.Context, in State) (out State, err error)
+	// Run processes the input State and returns an output State or an error.
+	// The context can be used for cancellation or deadlines.
+	Run(ctx context.Context, inputState State) (State, error)
+	// Name returns the unique identifier name of the agent.
+	Name() string
 }
 
 // Note: The previous Agent interface (with Handle(Event)) might need to be
 // renamed or refactored depending on how event handling and workflow execution
 // will coexist or be integrated. For now, we define the new one as requested.
 
-// NewStateWithData creates a new SimpleState initialized with the provided data map.
-func NewStateWithData(data map[string]any) State {
-	s := NewState()
-	if data != nil {
-		s.data = make(map[string]any, len(data))
-		for k, v := range data {
-			// TODO: Implement proper deep copy for complex value types if needed
-			s.data[k] = v
-		}
-	}
-	return s
+// AgentHandler defines the interface for executing agent logic.
+type AgentHandler interface {
+	Run(ctx context.Context, event Event, state State) (AgentResult, error)
+	// It should NOT have a Handle method here.
 }
+
+// ... other agent related code ...

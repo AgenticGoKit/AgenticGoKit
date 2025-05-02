@@ -17,19 +17,28 @@ Sprint 4 focuses on **Memory & Artifact Management**, delivering both short-term
 
 ---
 
-## 2. Vector Memory with Pinecone & PgVector
+## 2. Vector Memory with Weaviate & PgVector
 
-**Story:** Enable long-term retrieval via vector similarity search.
+**Story:** Enable long-term memory and context retrieval via vector similarity search using open-source and local-first tools (Weaviate and PgVector).
 
-| Task                                                                 | Deliverable                                                                          | Acceptance Criteria                                                                                   |
-|----------------------------------------------------------------------|--------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
-| 2.1 Define `VectorMemory` interface                                  | Methods: `Store(id, embedding, metadata)`, `Query(embedding, topK)`                  | Interface documented; returns typed results and errors                                                |
-| 2.2 Pinecone driver                                                  | Implementation using Pinecone Go client                                              | Respects API rate limits; handles errors/retries; passes integration tests against Pinecone sandbox   |
-| 2.3 PgVector driver                                                  | Implementation using `github.com/jackc/pgx`                                          | Creates/queries `vector` columns; SQL migrations included                                               |
-| 2.4 Mock tests                                                       | In-process mocks for both drivers                                                    | Tests validate serialization of embeddings and metadata; error paths exercised                        |
+| Task ID | Task Description                             | Deliverable                                                                         | Acceptance Criteria                                                                                      |
+|---------|----------------------------------------------|-------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------|
+| 2.1     | Define `VectorMemory` interface              | Interface with methods: `Store(id, embedding, metadata)`, `Query(embedding, topK)` | Interface covers core use cases; clear method contracts; unit-testable signatures                       |
+| 2.2     | Implement Weaviate Driver                    | `weaviate_memory.go` using Weaviate Go client SDK                                  | Correctly stores and queries vectors; handles schema setup and metadata; integration test with Docker   |
+| 2.3     | Implement PgVector Driver                    | `pgvector_memory.go` using `github.com/jackc/pgx`                                  | Creates `vector` column; stores embeddings with metadata; top-k query implemented with cosine distance   |
+| 2.4     | Add Fallback Memory Abstraction (Priority)   | Memory abstraction layer to route between Weaviate and PgVector                    | Configurable via `config.yaml`; fallback if one driver fails; mock tests validate fallback path         |
+| 2.5     | Add Integration Tests with Docker Compose    | Compose setup for Postgres + Weaviate sandbox                                      | Run `make test-memory` spins up infra, loads embeddings, performs queries; test assertions passed       |
+| 2.6     | Add Mock Implementations for Testing         | `mock_memory.go` with mock `Store`, `Query`, and error injection                   | Unit tests for agents/toolchains use this to simulate memory injection, latency, and partial failures   |
+| 2.7     | Document Usage and Schema in `docs/memory.md`| Markdown file with schema examples, diagrams, and usage tips                       | Shows when to use Weaviate vs PgVector; CLI/Docker commands to run services locally                    |
 
 ---
 
+### 💡 Notes:
+- **Weaviate Go SDK** is very ergonomic and supports hybrid search (BM25 + vectors), great for structured queries too.
+- You'll want to make sure **metadata schema in Weaviate** is flexible enough to support tool calls, session context, or agent identity tagging.
+- **PgVector** works better if local/offline is a priority. It’s ideal for deployments where Postgres is already in use.
+
+----
 ## 3. Artifact Service
 
 **Story:** Manage file artifacts (logs, images, PDFs) with versioning and metadata.

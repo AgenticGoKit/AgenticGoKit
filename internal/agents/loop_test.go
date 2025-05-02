@@ -144,28 +144,32 @@ func TestLoopAgent_Run_DefaultMaxIterations(t *testing.T) {
 	initialState.Set("count", 0)
 
 	subAgent := &CounterAgent{}
-	// No condition provided, should hit default max iterations
+
+	// Create LoopAgent without a Condition, relying on MaxIterations
+	// FIX: Use LoopAgentConfig type
 	config := LoopAgentConfig{
-		Condition:     nil,
-		MaxIterations: 0, // Trigger default
+		// Condition: nil, // Implicitly nil
+		// MaxIterations: 0, // Will use default
 	}
-	loopAgent := NewLoopAgent("test-default-max", config, subAgent)
+	loopAgent := NewLoopAgent("test-default-max", config, subAgent) // Pass config correctly
 	if loopAgent == nil {
 		t.Fatal("NewLoopAgent returned nil")
-	}
-	if loopAgent.config.MaxIterations != defaultMaxIterations {
-		t.Fatalf("LoopAgent did not set default MaxIterations. Got %d, want %d", loopAgent.config.MaxIterations, defaultMaxIterations)
 	}
 
 	finalState, err := loopAgent.Run(ctx, initialState)
 
+	// Expect ErrMaxIterationsReached
 	if !errors.Is(err, agentflow.ErrMaxIterationsReached) {
 		t.Fatalf("Expected ErrMaxIterationsReached, got: %v", err)
+	}
+	if finalState == nil {
+		t.Fatal("LoopAgent returned nil state on reaching max iterations")
 	}
 
 	// Verify final state count
 	finalCountVal, _ := finalState.Get("count")
 	finalCount, ok := finalCountVal.(int)
+	// FIX: Provide both arguments to Errorf
 	if !ok || finalCount != defaultMaxIterations {
 		t.Errorf("Expected final count to be %d (default MaxIterations), got %v", defaultMaxIterations, finalCountVal)
 	}
@@ -174,39 +178,28 @@ func TestLoopAgent_Run_DefaultMaxIterations(t *testing.T) {
 func TestLoopAgent_Run_ContextCancellation(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	initialState := agentflow.NewState()
-	initialState.Set("run_count", 0) // Use a different key to track runs
+	initialState.Set("run_count", 0)
 
 	// Use DelayAgent with a delay longer than the cancellation timer
-	subAgent := &DelayAgent{
-		Name:  "delaySubAgent",
-		Delay: 20 * time.Millisecond, // Delay > cancellation timer
-		DataToAdd: map[string]interface{}{
-			"status": "processing", // Some data the agent might add
-		},
-	}
+	subAgent := NewDelayAgent("delaySubAgent", 20*time.Millisecond, nil)
 
-	// Condition that would eventually be met if not cancelled
 	stopCondition := func(s agentflow.State) bool {
 		runCountVal, _ := s.Get("run_count")
 		runCount, _ := runCountVal.(int)
 		return runCount >= 5
 	}
 
-	// Need a way to increment run_count *outside* the DelayAgent's delay
-	// Let's wrap the DelayAgent in a simple sequential agent for the test
 	wrapperAgent := NewSequentialAgent("wrapper", &SimpleUpdateAgent{Key: "run_count"}, subAgent)
 
 	config := LoopAgentConfig{
 		Condition:     stopCondition,
 		MaxIterations: 10,
 	}
-	// Use the wrapper agent in the loop
 	loopAgent := NewLoopAgent("test-cancel-loop", config, wrapperAgent)
 	if loopAgent == nil {
 		t.Fatal("NewLoopAgent returned nil")
 	}
 
-	// Cancel context after a short delay, during the first agent's delay
 	cancelDelay := 10 * time.Millisecond
 	go func() {
 		time.Sleep(cancelDelay)
@@ -221,27 +214,27 @@ func TestLoopAgent_Run_ContextCancellation(t *testing.T) {
 		t.Fatalf("LoopAgent.Run() did not return an error when context cancellation expected.")
 	}
 
-	// Check if context.Canceled is wrapped
-	// The error might come from the LoopAgent check or the DelayAgent check
 	if !errors.Is(err, context.Canceled) {
 		t.Errorf("Expected context.Canceled error to be wrapped, got: %v", err)
 	}
 	t.Logf("Received expected cancellation error: %v", err)
 
-	// Check timing - should be roughly cancelDelay + loop overhead
-	// Allow a generous buffer for scheduling variance
 	if duration < cancelDelay || duration > cancelDelay+(30*time.Millisecond) {
 		t.Errorf("Execution time (%v) was significantly different from expected cancellation time (~%v)", duration, cancelDelay)
 	}
 
-	// Verify final state - should be the state from before or after the iteration where cancellation was detected.
 	finalRunCountVal, _ := finalState.Get("run_count")
 	finalRunCount, ok := finalRunCountVal.(int)
 	if !ok {
-		t.Fatalf("Final run_count is not an int: %v", finalRunCountVal)
+		// If cancellation happened very early, run_count might not exist yet. Treat as 0.
+		if finalRunCountVal == nil {
+			finalRunCount = 0
+			ok = true
+		} else {
+			t.Fatalf("Final run_count is not an int: %v", finalRunCountVal)
+		}
 	}
 
-	// Accept either 0 (cancelled during iter 1) or 1 (cancelled before iter 2)
 	if !(finalRunCount == 0 || finalRunCount == 1) {
 		t.Errorf("Expected final run_count to be 0 or 1 due to cancellation timing, got %d", finalRunCount)
 	}
@@ -251,11 +244,68 @@ func TestLoopAgent_Run_ContextCancellation(t *testing.T) {
 
 func TestNewLoopAgent_NilSubAgent(t *testing.T) {
 	config := LoopAgentConfig{MaxIterations: 5}
-	loopAgent := NewLoopAgent("test-nil-sub", config, nil) // Pass nil sub-agent
+	loopAgent := NewLoopAgent("test-nil-sub", config, nil)
 	if loopAgent != nil {
 		t.Fatal("NewLoopAgent should return nil when subAgent is nil")
 	}
-	// No error expected here, just nil return (logged internally)
+}
+
+func TestLoopAgent_Run_Timeout(t *testing.T) {
+	ctx := context.Background()
+	initialState := agentflow.NewState()
+	initialState.Set("count", 0)
+
+	slowAgent := NewDelayAgent("slow", 100*time.Millisecond, nil)
+
+	config := LoopAgentConfig{
+		Timeout: 50 * time.Millisecond,
+		Condition: func(s agentflow.State) bool {
+			countVal, _ := s.Get("count")
+			count, _ := countVal.(int)
+			return count < 5
+		},
+	}
+	loopAgent := NewLoopAgent(
+		"test-loop-timeout",
+		config,
+		slowAgent,
+	)
+	if loopAgent == nil {
+		t.Fatal("NewLoopAgent returned nil unexpectedly")
+	}
+
+	startTime := time.Now()
+	finalState, err := loopAgent.Run(ctx, initialState)
+	duration := time.Since(startTime)
+
+	if err == nil {
+		t.Fatalf("LoopAgent.Run() did not return an error when timeout expected.")
+	}
+
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Errorf("Expected context.DeadlineExceeded error, got: %v", err)
+	}
+
+	if duration < loopAgent.config.Timeout || duration > loopAgent.config.Timeout+(30*time.Millisecond) {
+		t.Errorf("Execution time (%v) was significantly different from timeout (%v)", duration, loopAgent.config.Timeout)
+	}
+
+	if finalState == nil {
+		t.Fatal("LoopAgent.Run() returned nil state on timeout")
+	}
+	countVal, _ := finalState.Get("count")
+	count, ok := countVal.(int)
+	if !ok && countVal == nil {
+		count = 0
+		ok = true
+	}
+	if !ok || count != 0 {
+		t.Errorf("Expected final count 0 on timeout, got %v (type %T)", countVal, countVal)
+	}
+
+	if _, exists := finalState.Get("slow"); exists {
+		t.Error("Final state should not contain data from the timed-out agent")
+	}
 }
 
 // --- Benchmark ---

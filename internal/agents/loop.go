@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	agentflow "kunalkushwaha/agentflow/internal/core"
 )
 
 // defaultMaxIterations is the default limit if LoopAgentConfig.MaxIterations is not set.
-const defaultMaxIterations = 10
+const defaultMaxIterations = 100
 
 // ConditionFunc is a function type used by LoopAgent to determine if the loop should stop.
 // It receives the current state *after* a sub-agent run and returns true to stop the loop,
@@ -29,14 +30,16 @@ type LoopAgentConfig struct {
 	// from the last successful iteration.
 	// If 0 or negative, it defaults to defaultMaxIterations (10).
 	MaxIterations int
+	// Timeout is the maximum duration for the entire loop execution. 0 means no timeout.
+	Timeout time.Duration
 }
 
-// LoopAgent repeatedly executes a single sub-agent until a condition is met,
-// an error occurs, the context is cancelled, or a maximum number of iterations is reached.
+// LoopAgent repeatedly executes a sub-agent until a condition is met,
+// max iterations are reached, or the context is cancelled.
 type LoopAgent struct {
+	name     string
 	subAgent agentflow.Agent
 	config   LoopAgentConfig
-	name     string // Optional name for logging/identification
 }
 
 // NewLoopAgent creates a new LoopAgent.
@@ -59,9 +62,15 @@ func NewLoopAgent(name string, config LoopAgentConfig, subAgent agentflow.Agent)
 		config: LoopAgentConfig{ // Store potentially modified config
 			Condition:     config.Condition,
 			MaxIterations: maxIter,
+			Timeout:       config.Timeout,
 		},
 		name: name,
 	}
+}
+
+// Name returns the name of the loop agent.
+func (a *LoopAgent) Name() string {
+	return a.name
 }
 
 // Run executes the sub-agent in a loop according to the configuration.
@@ -78,23 +87,34 @@ func (l *LoopAgent) Run(ctx context.Context, initialState agentflow.State) (agen
 	var err error
 	iteration := 0
 
+	var loopCtx context.Context
+	var cancel context.CancelFunc
+
+	// Apply overall loop timeout if configured
+	if l.config.Timeout > 0 {
+		loopCtx, cancel = context.WithTimeout(ctx, l.config.Timeout)
+	} else {
+		loopCtx, cancel = context.WithCancel(ctx) // Still allow cancellation from parent ctx
+	}
+	defer cancel() // Ensure cancellation propagates
+
 	for iteration < l.config.MaxIterations {
 		iteration++
 		//log.Printf("LoopAgent '%s': Starting iteration %d/%d.", l.name, iteration, l.config.MaxIterations)
 
 		// Check for context cancellation before running the sub-agent
 		select {
-		case <-ctx.Done():
+		case <-loopCtx.Done():
 			log.Printf("LoopAgent '%s': Context cancelled before iteration %d.", l.name, iteration)
 			// Return the state from the *previous* successful iteration
-			return currentState, fmt.Errorf("LoopAgent '%s': context cancelled: %w", l.name, ctx.Err())
+			return currentState, fmt.Errorf("LoopAgent '%s': context cancelled: %w", l.name, loopCtx.Err())
 		default:
 			// Context is not cancelled, proceed
 		}
 
 		// Clone state for the sub-agent run
 		inputState := currentState.Clone()
-		outputState, agentErr := l.subAgent.Run(ctx, inputState)
+		outputState, agentErr := l.subAgent.Run(loopCtx, inputState)
 
 		if agentErr != nil {
 			err = fmt.Errorf("LoopAgent '%s': error in sub-agent during iteration %d: %w", l.name, iteration, agentErr)

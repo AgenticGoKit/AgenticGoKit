@@ -1,11 +1,19 @@
 package agentflow
 
-// Orchestrator defines the strategy for dispatching an event to handlers.
+import "context"
+
+// Orchestrator defines the interface for routing events to agents.
 type Orchestrator interface {
-	// RegisterAgent adds an event handler to the orchestrator. (Method name kept for consistency, but type changed)
-	RegisterAgent(name string, handler EventHandler) // Use EventHandler
-	// Dispatch sends the event according to the orchestration strategy.
-	Dispatch(event Event)
-	// Stop allows the orchestrator to clean up resources if needed.
+	// Dispatch routes an event to the appropriate agent(s).
+	// FIX: Add context and return AgentResult, error
+	Dispatch(ctx context.Context, event Event) (AgentResult, error)
+
+	// RegisterAgent associates an agent name with its handler.
+	RegisterAgent(name string, handler AgentHandler) error
+
+	// GetCallbackRegistry returns the associated callback registry.
+	GetCallbackRegistry() *CallbackRegistry
+
+	// Stop allows the orchestrator to clean up resources.
 	Stop()
 }

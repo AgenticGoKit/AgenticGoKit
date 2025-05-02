@@ -40,4 +40,8 @@
 
 ---
 
-These tasks are structured for easy copy-&-paste into your project management tool, with clear deliverables and acceptance criteria to guide development, testing, and documentation in Sprint 5.
+
+-----
+Improve agentcli run command.
+
+CLI Change (Yaegi): agentcli run <agent_source.go> <agent_type_name> --data '...' would use the Yaegi interpreter to load the .go file, find the agent type/constructor, instantiate it (passing bridged dependencies), and execute its Run method via the interpreter.

@@ -1,8 +1,9 @@
 package agents
 
 import (
-	"context"
-	"fmt"
+	"context" // Ensure errors is imported
+	"fmt"     // Ensure log is imported
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -14,58 +15,83 @@ import (
 // SpyAgent is a simple agent for testing sequential flow.
 // It records the input state's data and can be configured to return an error.
 type SpyAgent struct {
-	Name        string
+	name        string // FIX: Rename field to lowercase 'name'
 	ReturnError error
 	InputData   map[string]interface{} // Records the data map of the input state
 }
 
+// NewSpyAgent creates a new SpyAgent.
+func NewSpyAgent(name string) *SpyAgent {
+	return &SpyAgent{name: name} // FIX: Initialize lowercase 'name'
+}
+
+// Name returns the name of the spy agent.
+func (s *SpyAgent) Name() string {
+	return s.name // FIX: Return lowercase 'name' field
+}
+
 func (s *SpyAgent) Run(ctx context.Context, inputState agentflow.State) (agentflow.State, error) {
-	s.InputData = inputState.GetData() // Record input data
+	s.InputData = make(map[string]interface{})
+	for _, key := range inputState.Keys() {
+		if val, ok := inputState.Get(key); ok {
+			s.InputData[key] = val
+		}
+	}
 
 	if s.ReturnError != nil {
-		return inputState, s.ReturnError // Return input state on error
+		// Wrap the error for context
+		return inputState, fmt.Errorf("agent '%s' failed: %w", s.name, s.ReturnError) // FIX: Use s.name
 	}
 
 	// Modify the state for the next agent
 	outputState := inputState.Clone()
-	newData := fmt.Sprintf("processed_by_%s", s.Name)
-	outputState.Set(s.Name, newData)          // Add agent-specific data
-	outputState.Set("last_processed", s.Name) // Overwrite who processed last
+	// FIX: Use s.name in fmt.Sprintf and Set calls
+	newData := fmt.Sprintf("processed_by_%s", s.name)
+	outputState.Set(s.name, newData)          // Add agent-specific data using its name as key
+	outputState.Set("last_processed", s.name) // Overwrite who processed last
 
 	return outputState, nil
 }
 
-// DelayAgent is a simple agent that adds data to the state after a delay.
-// Used for testing parallel execution, timeouts, and cancellations.
+// DelayAgent simulates work by delaying and optionally returns an error.
 type DelayAgent struct {
-	Name        string
+	name        string // FIX: Rename field to lowercase 'name'
 	Delay       time.Duration
 	ReturnError error
-	RunCount    atomic.Int32           // Track how many times Run was actually invoked
-	DataToAdd   map[string]interface{} // Data to add/overwrite in the state
+	RunCount    atomic.Int64 // Track how many times Run was entered
 }
 
-func (d *DelayAgent) Run(ctx context.Context, inputState agentflow.State) (agentflow.State, error) {
-	d.RunCount.Add(1)
+// NewDelayAgent creates a new DelayAgent.
+func NewDelayAgent(name string, delay time.Duration, returnError error) *DelayAgent {
+	return &DelayAgent{ // FIX: Initialize lowercase 'name'
+		name:        name,
+		Delay:       delay,
+		ReturnError: returnError,
+	}
+}
+
+// Name returns the name of the delay agent.
+func (a *DelayAgent) Name() string {
+	return a.name // FIX: Return lowercase 'name' field
+}
+
+// Run implements the agentflow.Agent interface for DelayAgent.
+func (a *DelayAgent) Run(ctx context.Context, input agentflow.State) (agentflow.State, error) {
+	a.RunCount.Add(1)
 	select {
-	case <-time.After(d.Delay):
-		// Delay completed
-		if d.ReturnError != nil {
-			return inputState, d.ReturnError // Return input state on error
+	case <-time.After(a.Delay):
+		if a.ReturnError != nil {
+			// FIX: Use a.name
+			return nil, fmt.Errorf("agent '%s' failed: %w", a.name, a.ReturnError)
 		}
-		outputState := inputState.Clone()
-		if d.DataToAdd != nil {
-			for k, v := range d.DataToAdd {
-				outputState.Set(k, v)
-			}
-		} else {
-			// Default behavior if DataToAdd is nil
-			outputState.Set(d.Name, fmt.Sprintf("processed_by_%s", d.Name))
-		}
-		return outputState, nil
+		output := input.Clone()
+		// FIX: Use a.name in Set calls and string formatting
+		output.Set(a.name, "processed_by_"+a.name)
+		output.SetMeta(a.name+"_meta", "meta_from_"+a.name)
+		return output, nil
 	case <-ctx.Done():
-		// Context cancelled during delay
-		return inputState, fmt.Errorf("agent %s cancelled during delay: %w", d.Name, ctx.Err())
+		// FIX: Use a.name
+		return nil, fmt.Errorf("agent '%s' cancelled: %w", a.name, ctx.Err())
 	}
 }
 
@@ -74,6 +100,11 @@ func (d *DelayAgent) Run(ctx context.Context, inputState agentflow.State) (agent
 type CounterAgent struct {
 	FailOnCount int // If > 0, return an error when count reaches this value
 	ReturnError error
+}
+
+// Name returns the name of the counter agent.
+func (c *CounterAgent) Name() string {
+	return "CounterAgent" // Or make it configurable if needed
 }
 
 func (c *CounterAgent) Run(ctx context.Context, inputState agentflow.State) (agentflow.State, error) {
@@ -85,27 +116,39 @@ func (c *CounterAgent) Run(ctx context.Context, inputState agentflow.State) (age
 	outputState.Set("count", count)
 
 	if c.FailOnCount > 0 && count == c.FailOnCount {
-		if c.ReturnError == nil {
-			c.ReturnError = fmt.Errorf("counter agent failed deliberately at count %d", count)
+		err := c.ReturnError
+		if err == nil {
+			err = fmt.Errorf("counter agent failed deliberately at count %d", count)
 		}
-		// Return state *before* the failing increment for consistency in tests
-		return inputState, c.ReturnError
+		// Wrap error with agent name
+		return inputState, fmt.Errorf("agent '%s' error: %w", c.Name(), err)
 	}
 
 	return outputState, nil
 }
 
-// NoOpAgent does nothing, used for benchmarking overhead.
+// NoOpAgent does nothing, used for benchmarking minimal overhead.
 type NoOpAgent struct{}
 
-func (n *NoOpAgent) Run(ctx context.Context, inputState agentflow.State) (agentflow.State, error) {
-	return inputState, nil // Pass state through
+// Name returns the name of the no-op agent.
+func (a *NoOpAgent) Name() string {
+	return "NoOpAgent"
+}
+
+// Run implements the agentflow.Agent interface for NoOpAgent.
+func (a *NoOpAgent) Run(ctx context.Context, input agentflow.State) (agentflow.State, error) {
+	return input, nil // Return input state immediately
 }
 
 // SimpleUpdateAgent increments a specific key in the state immediately.
 // Used for LoopAgent cancellation test setup.
 type SimpleUpdateAgent struct {
 	Key string
+}
+
+// Name returns the name of the simple update agent.
+func (a *SimpleUpdateAgent) Name() string {
+	return fmt.Sprintf("SimpleUpdateAgent(%s)", a.Key) // More descriptive name
 }
 
 func (a *SimpleUpdateAgent) Run(ctx context.Context, inputState agentflow.State) (agentflow.State, error) {
@@ -115,4 +158,60 @@ func (a *SimpleUpdateAgent) Run(ctx context.Context, inputState agentflow.State)
 	count++
 	outputState.Set(a.Key, count)
 	return outputState, nil
+}
+
+// MockAgent for testing purposes
+type MockAgent struct {
+	NameVal      string
+	RunFunc      func(ctx context.Context, inputState agentflow.State) (agentflow.State, error) // Adjusted signature
+	RunCallCount int
+	mu           sync.Mutex
+}
+
+// Name returns the name of the mock agent.
+func (m *MockAgent) Name() string {
+	if m.NameVal == "" {
+		return "MockAgent"
+	}
+	return m.NameVal
+}
+
+func (m *MockAgent) Run(ctx context.Context, inputState agentflow.State) (agentflow.State, error) {
+	m.mu.Lock()
+	m.RunCallCount++
+	m.mu.Unlock()
+	if m.RunFunc != nil {
+		// FIX: Use Keys() and Get() to access data if needed by RunFunc logic
+		// Example: Log input data
+		// for _, key := range inputState.Keys() {
+		//  val, _ := inputState.Get(key)
+		//  fmt.Printf("MockAgent %s received input %s: %v\n", m.NameVal, key, val)
+		// }
+		return m.RunFunc(ctx, inputState)
+	}
+	// Default behavior: return input state
+	return inputState, nil
+}
+
+func (m *MockAgent) GetRunCallCount() int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.RunCallCount
+}
+
+// Helper to create a simple state for testing
+// Use agentflow.State and agentflow.NewState
+func createState(data map[string]any, meta map[string]string) agentflow.State {
+	s := agentflow.NewState()
+	if data != nil {
+		for k, v := range data {
+			s.Set(k, v)
+		}
+	}
+	if meta != nil {
+		for k, v := range meta {
+			s.SetMeta(k, v)
+		}
+	}
+	return s
 }
