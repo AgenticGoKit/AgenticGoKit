@@ -154,5 +154,142 @@ registry.Register(&tools.ComputeMetricTool{})
 // Use the registry in an agent
 agent := &ToolAgent{registry: registry}
 ```
+
+## AgentCLI - Command Line Tooling
+
+Agentflow includes a powerful command-line interface tool (`agentcli`) that provides diagnostic capabilities for monitoring and debugging agent workflows.
+
+### Installation
+
+```bash
+# Build and install the CLI tool
+go install ./cmd/agentcli
+```
+Key Commands
+
+## Trace Inspection
+The trace command visualizes execution traces for debugging agent workflows:
+```bash
+# View complete trace with all details
+agentcli trace <sessionID>
+
+# View only the flow between agents (simplified view)
+agentcli trace --flow-only <sessionID>
+
+# Filter trace entries for a specific agent
+agentcli trace --filter agent=researcher <sessionID>
+
+# Show detailed state information (verbose mode)
+agentcli trace --verbose <sessionID>
+
+# Debug raw JSON structure
+agentcli trace --debug <sessionID>
+```
+### Features
+- Table Visualization: Formats trace data in clear, structured tables
+- Flow Analysis: Shows the sequence of agent interactions
+- Filtering: Focus on specific agents or events
+- State Inspection: Examine state transitions between agents
+- Error Analysis: Quickly identify and diagnose failures
+
+### Example Output
+```bash
+┌───────────────────┬────────────────┬────────────────┬──────────────────────────────┬────────────────────────────────────────┐
+│ TIMESTAMP         │ HOOK           │ AGENT          │ STATE                        │ ERROR                                  │
+├───────────────────┼────────────────┼────────────────┼──────────────────────────────┼────────────────────────────────────────┤
+│ 13:20:37.976      │ BeforeEvent... │                │ {user_request: "Research...  │ -                                      │
+│ 13:20:37.977      │ BeforeAgentRun │ planner        │ {user_request: "Research...  │ -                                      │
+│ 13:20:43.867      │ AfterAgentRun  │ planner        │ {plan: "1. Research recen... │ -                                      │
+│ 13:20:43.869      │ AfterEventH... │ planner        │ {plan: "1. Research recen... │ -                                      │
+└───────────────────┴────────────────┴────────────────┴──────────────────────────────┴────────────────────────────────────────┘
+```
+
+for flow only
+```bash
+TIME         AGENT        NEXT         HOOK          EVENT ID
+16:20:49.670 planner      researcher   AfterAgentRun req-1746...
+16:20:49.671 researcher   summarizer   AfterAgentRun req-1746...
+16:20:59.130 planner      researcher   AfterAgentRun 5b0b5e18...
+16:21:03.875 summarizer   final_output AfterAgentRun req-1746...
+16:21:04.879 researcher   summarizer   AfterAgentRun 5b0b5e18...
+16:21:05.883 final_output final_output AfterAgentRun req-1746...
+
+Sequence diagram:
+----------------
+1. planner → researcher
+2. researcher → summarizer
+3. planner → researcher
+4. summarizer → final_output
+5. researcher → summarizer
+6. final_output → final_output
+
+Condensed route:
+planner → researcher → summarizer → final_output
+
+Per‑event sequence diagrams:
+-----------------------------
+
+[req-1746…]
+planner → researcher
+researcher → summarizer
+summarizer → final_output
+final_output → final_output  [requeue]
+
+[5b0b5e18]
+planner → researcher  [requeue]
+researcher → summarizer
+```
+
+## Project Status
+
+AgentFlow is under active development. Below is the current status of features based on our project roadmap.
+
+### ✅ Completed Features
+
+#### Core Infrastructure
+- **Event System**: Uniform event interface with ID, payload, and metadata
+- **Runner Service**: Core event processing with agent registration and event emission
+- **Orchestration Modes**: 
+  - Route Orchestrator for single-agent routing
+  - Collaborate Orchestrator for parallel processing
+
+#### Observability
+- **Tracing System**: Comprehensive trace logging for all agent interactions
+- **CLI Tool**: Command-line interface for trace inspection and visualization
+- **Callback Hooks**: Pre and post execution hooks for all lifecycle events
+
+#### LLM Integration
+- **ModelProvider Interface**: Abstraction for different LLM backends
+- **Azure OpenAI Adapter**: Integration with Azure OpenAI Service
+
+
+#### Agent Workflows
+- **Deterministic Workflow Agents**: Implementation of workflow patterns
+  - **Sequential Agent**: Ordered execution with state propagation
+  - **Parallel Agent**: Concurrent execution with result aggregation
+  - **Loop Agent**: Condition-based iteration with safety limits
+
+#### Tool Integration
+- **Tool Registry**: Framework for registering and invoking agent tools
+
+### 🚧 In Progress
+
+#### Tool Integration
+- **Built-in Tools**: Implementation of common tools like web search
+
+### 📋 Upcoming Features
+
+#### Memory Systems
+- **Session Storage**: In-memory conversation state management
+- **Vector Memory**: Long-term storage with embedding-based retrieval
+- **Artifact Management**: File storage service for agent outputs
+
+#### API & Deployment
+- **REST API**: HTTP endpoints for event submission and state retrieval
+- **Developer UI**: Web dashboard for trace visualization
+- **Containerization**: Docker and Helm support for Kubernetes deployment
+
+See our [detailed roadmap](docs/ROADMAP.md) for more information on the development timeline.
+
 ## License
 This project is licensed under the MIT License
