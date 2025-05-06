@@ -26,79 +26,28 @@ go get github.com/kunalkushwaha/agentflow@latest
 package main
 
 import (
-    "context"
-    "fmt"
-    "log"
-    "time"
+	"log"
+	"time"
 
-    agentflow "kunalkushwaha/agentflow/internal/core"
-    "kunalkushwaha/agentflow/internal/orchestrator"
+	agentflow "kunalkushwaha/agentflow/internal/core"
+	"kunalkushwaha/agentflow/internal/factory"
 )
 
+// MinimalAgent is a very simple agent
+type MinimalAgent struct{}
+
+func (a *MinimalAgent) Run(ctx agentflow.Context, event agentflow.Event, state agentflow.State) (agentflow.AgentResult, error) {
+	log.Println("Minimal agent ran")
+	return agentflow.AgentResult{}, nil
+}
+
 func main() {
-    // Create an orchestrator and runner
-    orch := orchestrator.NewRouteOrchestrator()
-    runner := agentflow.NewRunner(orch, 10) // 10-event queue
-
-    // Create a simple agent
-    agent := &SimpleAgent{}
-    
-    // Register the agent
-    if err := runner.RegisterAgent("simple_agent", agent); err != nil {
-        log.Fatalf("Failed to register agent: %v", err)
-    }
-    
-    // Set up tracing
-    traceLogger := agentflow.NewInMemoryTraceLogger()
-    runner.SetTraceLogger(traceLogger)
-    agentflow.RegisterTraceHooks(runner.CallbackRegistry(), traceLogger)
-    
-    // Start the runner
-    ctx, cancel := context.WithCancel(context.Background())
-    defer cancel()
-    
-    runner.Start()
-    
-    // Create and emit an event
-    sessionID := fmt.Sprintf("session-%d", time.Now().UnixNano())
-    event := agentflow.NewEvent(
-        "my_event",
-        map[string]interface{}{"message": "Hello Agentflow!"},
-        map[string]string{
-            "route": "simple_agent",
-            "session_id": sessionID,
-        },
-    )
-    
-    runner.Emit(event)
-    
-    // Wait for processing
-    time.Sleep(1 * time.Second)
-    
-    // Dump the trace
-    trace, _ := runner.DumpTrace(sessionID)
-    fmt.Printf("Trace: %+v\n", trace)
-}
-
-// SimpleAgent implements the Agent interface
-type SimpleAgent struct{}
-
-func (a *SimpleAgent) Name() string {
-    return "simple_agent"
-}
-
-func (a *SimpleAgent) Run(ctx context.Context, state agentflow.State) (agentflow.State, error) {
-    // Get input from state
-    input, _ := state.Get("message")
-    
-    // Process input
-    output := fmt.Sprintf("Processed: %v", input)
-    
-    // Create new state with output
-    newState := state.Clone()
-    newState.Set("response", output)
-    
-    return newState, nil
+	agent := &MinimalAgent{}
+	runner := factory.NewRunnerBuilder().RegisterAgent("minimal", agent).BuildOrPanic()
+	runner.Start()
+	runner.Emit(agentflow.NewEvent("test", nil, nil))
+	time.Sleep(1 * time.Second)
+	runner.Stop()
 }
 ```
 ## Project Structure
