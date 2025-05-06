@@ -10,6 +10,8 @@ import (
 	agentflow "kunalkushwaha/agentflow/internal/core"
 	"kunalkushwaha/agentflow/internal/llm"
 	"kunalkushwaha/agentflow/internal/orchestrator"
+	"kunalkushwaha/agentflow/internal/factory/trace"
+	"kunalkushwaha/agentflow/internal/workflow"
 )
 
 // RunnerBuilder simplifies the creation of an AgentFlow runner with appropriate components
@@ -25,7 +27,7 @@ type RunnerBuilder struct {
 // NewRunnerBuilder creates a new builder for constructing runners
 func NewRunnerBuilder() *RunnerBuilder {
 	return &RunnerBuilder{
-		queueSize:        10, // Default queue size
+		queueSize: 10, // Default queue size; provides a reasonable buffer for concurrent events.
 		orchestratorType: "route",
 		agentHandlers:    make(map[string]agentflow.AgentHandler),
 	}
@@ -75,7 +77,7 @@ func (b *RunnerBuilder) Build() (agentflow.Runner, error) {
 		runner.SetTraceLogger(b.traceLogger)
 
 		// Register callbacks for tracing
-		registerTraceCallbacks(b.callbackRegistry, b.traceLogger)
+		trace.RegisterTraceCallbacks(b.callbackRegistry, b.traceLogger)
 	}
 
 	// Create and set orchestrator
@@ -155,55 +157,31 @@ func (a *runnerAdapter) UnregisterCallback(hook agentflow.HookPoint, name string
 
 }
 
-// Helper function for registering trace callbacks
-func registerTraceCallbacks(registry *agentflow.CallbackRegistry, logger agentflow.TraceLogger) {
-	// Register common trace hooks using proper HookPoint type
-	// Using the actual method names and hook points from agentflow
-	registry.Register(agentflow.HookBeforeEventHandling, "trace_before_event",
-		func(ctx context.Context, args agentflow.CallbackArgs) (agentflow.State, error) {
-			// Extract session ID
-			sessionID := getSessionID(args.Event)
-
-			// Log trace in a safe way that handles potential nil values
-			logTrace(logger, "before_event", sessionID, args.Event, args.AgentID, nil, args.Error)
-
-			return args.State, nil
-		})
-
-	// Add other hooks following the same pattern
-	// ...
+// NewSequentialAgentHandler creates a sequential agent handler.
+func NewSequentialAgentHandler(handlers ...agentflow.AgentHandler) agentflow.AgentHandler {
+	return &workflow.SequentialAgent{
+		Handlers: handlers,
+	}
 }
 
-// Safe helper for logging traces, matching the actual TraceLogger interface
-func logTrace(logger agentflow.TraceLogger, entryType, sessionID string,
-	event agentflow.Event, agentID string, result *agentflow.AgentResult, err error) {
-
-	// Create trace entry with only the fields that actually exist in TraceEntry
-	entry := agentflow.TraceEntry{
-		SessionID: sessionID,
-		EventID:   event.GetID(),
-		AgentID:   agentID,
-		Type:      entryType,
+// NewParallelAgentHandler creates a parallel agent handler.
+func NewParallelAgentHandler(handlers ...agentflow.AgentHandler) agentflow.AgentHandler {
+	return &workflow.ParallelAgent{
+		Handlers: handlers,
 	}
-
-	// Handle error info if present
-	if err != nil {
-		errorStr := err.Error()
-		entry.Error = errorStr
-	}
-
-	// Use the correct method name on the TraceLogger interface
-	// The error shows AddEntry doesn't exist, so using Log instead
-	logger.Log(entry) // Changed from logger.AddEntry(entry)
 }
 
-// Safe helper to get session ID from an event
-func getSessionID(event agentflow.Event) string {
-	sessionID, ok := event.GetMetadataValue(agentflow.SessionIDKey)
-	if !ok || sessionID == "" {
-		return event.GetID() // Fallback to event ID
+// NewLoopAgentHandler creates a loop agent handler.
+// The condition handler determines whether to continue looping based on its AgentResult.
+// The loop handler is the agent executed in each iteration.
+func NewLoopAgentHandler(conditionHandler agentflow.AgentHandler, loopHandler agentflow.AgentHandler) agentflow.AgentHandler {
+	return &workflow.LoopAgent{
+		ConditionHandler: conditionHandler,
+		LoopHandler:      loopHandler,
 	}
-	return sessionID
+}
+	a.impl.UnregisterCallback(hook, name)
+
 }
 
 // AzureLLMBuilder simplifies configuration of Azure OpenAI services following best practices
@@ -219,12 +197,13 @@ type AzureLLMBuilder struct {
 // NewAzureLLMBuilder creates a builder for Azure OpenAI integration
 func NewAzureLLMBuilder() *AzureLLMBuilder {
 	return &AzureLLMBuilder{
-		apiVersion: "2023-12-01-preview", // Default to recent API version
+		apiVersion: "2023-12-01-preview", // Default to a recent API version that supports various features
 	}
 }
 
 // FromEnvironment loads configuration from environment variables (best practice)
 func (b *AzureLLMBuilder) FromEnvironment() *AzureLLMBuilder {
+	// Required environment variables: AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_KEY, AZURE_OPENAI_DEPLOYMENT_ID, AZURE_OPENAI_EMBEDDING_DEPLOYMENT
 	b.endpoint = os.Getenv("AZURE_OPENAI_ENDPOINT")
 	b.apiKey = os.Getenv("AZURE_OPENAI_API_KEY")
 	b.chatDeployment = os.Getenv("AZURE_OPENAI_DEPLOYMENT_ID")
@@ -285,6 +264,9 @@ func (b *AzureLLMBuilder) Build() (llm.ModelProvider, error) {
 	}
 	if !b.useAzureADAuth && b.apiKey == "" {
 		return nil, fmt.Errorf("missing Azure OpenAI API key")
+	}
+	if b.embeddingDeployment == "" {
+		return nil, fmt.Errorf("missing Azure OpenAI embedding deployment ID")
 	}
 
 	// Configure adapter with the correct field names
@@ -378,25 +360,18 @@ type LLMAgentHandler struct {
 
 // Fix the LLMAgentHandler implementation to use the correct response field names
 func (a *LLMAgentHandler) Run(ctx context.Context, event agentflow.Event, state agentflow.State) (agentflow.AgentResult, error) {
-	startTime := time.Now()
-
-	// Extract query from event
-	queryObj, exists := event.GetData()["query"]
-	if !exists {
-		return agentflow.AgentResult{
-			Error:     "missing query in event data",
-			StartTime: startTime,
-			EndTime:   time.Now(),
-		}, fmt.Errorf("missing query in event data")
+	// Concatenate all string data from the event to form the prompt, ignoring nil values
+	var combinedPrompt string
+	for k, v := range event.GetData() {
+		if s, ok := v.(string); ok {
+			combinedPrompt += fmt.Sprintf("%s: %s\n", k, s)
+		}
 	}
-
-	query, ok := queryObj.(string)
-	if !ok {
+	if combinedPrompt == "" {
 		return agentflow.AgentResult{
-			Error:     "query is not a string",
-			StartTime: startTime,
-			EndTime:   time.Now(),
-		}, fmt.Errorf("query is not a string")
+			Error: "No string data found in event for LLM prompt",
+			StartTime: time.Now(),
+		}, fmt.Errorf("missing query in event data")
 	}
 
 	// Create timeout context
@@ -406,7 +381,7 @@ func (a *LLMAgentHandler) Run(ctx context.Context, event agentflow.Event, state 
 	// Create prompt
 	prompt := llm.Prompt{
 		System: a.systemPrompt,
-		User:   query,
+		User: combinedPrompt,
 		Parameters: llm.ModelParameters{
 			Temperature: ptrTo(a.temperature),
 			MaxTokens:   ptrTo(a.maxTokens),
@@ -418,27 +393,49 @@ func (a *LLMAgentHandler) Run(ctx context.Context, event agentflow.Event, state 
 	if err != nil {
 		return agentflow.AgentResult{
 			Error:     fmt.Sprintf("LLM error: %v", err),
-			StartTime: startTime,
 			EndTime:   time.Now(),
 		}, err
-	}
+	}	// Create output state using correct field names
 
 	// Create output state using correct field names
 	outputState := state.Clone()
 	outputState.Set("answer", response.Content)
 	outputState.Set("tokens_used", response.Usage.TotalTokens)
 
-	// Fix: Only set model field if it exists in the Response struct
-	// Use the field name that actually exi
 
 	// Return result
-	endTime := time.Now()
 	return agentflow.AgentResult{
 		OutputState: outputState,
-		StartTime:   startTime,
-		EndTime:     endTime,
+		StartTime:   time.Now(), // Set start time here
+		EndTime: time.Now(), // Calculate end time here
 		Duration:    endTime.Sub(startTime),
 	}, nil
+}
+
+// executeLLMCall performs a single LLM call with the given context and prompt.
+func (a *LLMAgentHandler) executeLLMCall(ctx context.Context, prompt llm.Prompt) (llm.Response, error) {
+	return a.llmProvider.Call(ctx, prompt)
+}
+
+// applyExponentialBackoff pauses execution based on the attempt number for exponential backoff.
+func (a *LLMAgentHandler) applyExponentialBackoff(ctx context.Context, attempt int, retryDelay time.Duration) error {
+	select {
+	case <-time.After(retryDelay * time.Duration(1<<uint(attempt-1))):
+		// Exponential backoff
+		return nil
+	case <-ctx.Done():
+		return fmt.Errorf("context cancelled during retry delay: %w", ctx.Err())
+	}
+}
+
+// shouldRetry checks if a retry should be attempted based on the context and attempt number.
+func (a *LLMAgentHandler) shouldRetry(ctx context.Context, attempt, maxRetries int) bool {
+	return attempt < maxRetries && ctx.Err() == nil
+}
+
+// logRetry logs a message indicating a retry attempt.
+func (a *LLMAgentHandler) logRetry(attempt, maxRetries int) {
+	log.Printf("Retrying LLM call (attempt %d/%d)", attempt+1, maxRetries)
 }
 
 // callLLMWithRetry calls the LLM with exponential backoff retry
@@ -449,25 +446,19 @@ func (a *LLMAgentHandler) callLLMWithRetry(ctx context.Context, prompt llm.Promp
 	maxRetries := 3
 	retryDelay := 1 * time.Second
 
-	for attempt := 0; attempt < maxRetries; attempt++ {
+	for attempt := 0; a.shouldRetry(ctx, attempt, maxRetries); attempt++ {
 		if attempt > 0 {
-			select {
-			case <-time.After(retryDelay * time.Duration(1<<uint(attempt-1))):
-				// Exponential backoff
-			case <-ctx.Done():
-				return llm.Response{}, fmt.Errorf("context cancelled during retry: %w", ctx.Err())
+			if err := a.applyExponentialBackoff(ctx, attempt, retryDelay); err != nil {
+				return llm.Response{}, err
 			}
-			log.Printf("Retrying LLM call (attempt %d/%d)", attempt+1, maxRetries)
+			a.logRetry(attempt, maxRetries)
 		}
-
-		response, lastErr = a.llmProvider.Call(ctx, prompt)
-		if lastErr == nil {
-			return response, nil
-		}
-
-		// Check if we should stop retrying
+		response, lastErr = a.executeLLMCall(ctx, prompt)
 		if ctx.Err() != nil {
 			return llm.Response{}, fmt.Errorf("context cancelled: %w", ctx.Err())
+		}
+		if lastErr == nil {
+			return response, nil
 		}
 	}
 
