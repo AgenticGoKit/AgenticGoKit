@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"sync"
 	"time"
 
@@ -31,7 +30,7 @@ type Runner interface {
 	UnregisterCallback(hook HookPoint, name string)
 
 	// Start begins the event processing loop (non-blocking).
-	Start()
+	Start(ctx context.Context) error
 
 	// Stop gracefully shuts down the runner, waiting for active processing to complete.
 	Stop()
@@ -89,7 +88,7 @@ func (r *RunnerImpl) SetOrchestrator(o Orchestrator) {
 	defer r.mu.Unlock()
 	// FIX: Use 'started' field
 	if r.started {
-		log.Println("Warning: Attempted to set orchestrator while runner is running.")
+		Logger().Warn().Msg("Attempted to set orchestrator while runner is running.")
 		return
 	}
 	r.orchestrator = o
@@ -101,7 +100,7 @@ func (r *RunnerImpl) SetTraceLogger(logger TraceLogger) {
 	defer r.mu.Unlock()
 	// FIX: Use 'started' field
 	if r.started {
-		log.Println("Warning: Attempted to set trace logger while runner is running.")
+		Logger().Warn().Msg("Attempted to set trace logger while runner is running.")
 		return
 	}
 	r.traceLogger = logger
@@ -163,14 +162,12 @@ func (r *RunnerImpl) Emit(event Event) error {
 	// FIX: Use 'started' field
 	if !r.started {
 		r.mu.RUnlock()
-		// TEMP LOG
-		log.Printf("DEBUG: Emit failed for event %s: runner not running", event.GetID())
+		Logger().Debug().Str("event_id", event.GetID()).Msg("Emit failed: runner not running")
 		return errors.New("runner is not running")
 	}
 	r.mu.RUnlock()
 
-	// TEMP LOG
-	log.Printf("DEBUG: Emit attempting to queue event %s...", event.GetID())
+	Logger().Debug().Str("event_id", event.GetID()).Msg("Emit attempting to queue event")
 
 	// Timeout for trying to queue the event
 	timeout := 1 * time.Second // Configurable?
@@ -179,16 +176,13 @@ func (r *RunnerImpl) Emit(event Event) error {
 
 	select {
 	case r.queue <- event:
-		// TEMP LOG
-		log.Printf("DEBUG: Emit successfully queued event %s", event.GetID())
+		Logger().Debug().Str("event_id", event.GetID()).Msg("Emit successfully queued event")
 		return nil
 	case <-ctx.Done():
-		// TEMP LOG
-		log.Printf("DEBUG: Emit timed out for event %s", event.GetID())
+		Logger().Debug().Str("event_id", event.GetID()).Msg("Emit timed out")
 		return fmt.Errorf("failed to emit event: queue full or blocked")
 	case <-r.stopChan: // Check if runner stopped while waiting
-		// TEMP LOG
-		log.Printf("DEBUG: Emit failed for event %s: runner stopped while waiting to queue", event.GetID())
+		Logger().Debug().Str("event_id", event.GetID()).Msg("Emit failed: runner stopped while waiting to queue")
 		return errors.New("runner stopped while emitting")
 	}
 }
@@ -213,7 +207,7 @@ func (r *RunnerImpl) Start(ctx context.Context) error {
 	r.wg.Add(1)                      // Increment waitgroup for the loop goroutine
 	r.mu.Unlock()
 
-	log.Println("Runner started.")
+	Logger().Info().Msg("Runner started.")
 	// Launch the main processing loop
 	go r.loop(ctx) // Pass the main context
 
@@ -224,39 +218,36 @@ func (r *RunnerImpl) Start(ctx context.Context) error {
 // Stop signals the runner to stop processing events and waits for it to finish.
 func (r *RunnerImpl) Stop() {
 	r.mu.Lock()
-	log.Println("Runner Stop: Acquired lock")
+	Logger().Debug().Msg("Runner Stop: Acquired lock")
 	if !r.started {
-		log.Println("Runner Stop: Already stopped, released lock.")
+		Logger().Info().Msg("Runner Stop: Already stopped, released lock.")
 		r.mu.Unlock()
 		return
 	}
 
-	log.Println("Runner Stop: Setting started=false and closing stopChan...")
+	Logger().Debug().Msg("Runner Stop: Setting started=false and closing stopChan...")
 	r.started = false
 	// Close stopChan *before* unlocking to ensure loop sees it if it checks started flag
 	close(r.stopChan) // Signal the loop to exit
-	log.Println("Runner Stop: stopChan closed.")
+	Logger().Debug().Msg("Runner Stop: stopChan closed.")
 
 	// Unlock *before* waiting to avoid deadlocks if loop needs the lock (e.g., for registry/orchestrator)
 	r.mu.Unlock()
-	log.Println("Runner Stop: Released lock, waiting for loop goroutine (wg.Wait)...")
+	Logger().Debug().Msg("Runner Stop: Released lock, waiting for loop goroutine (wg.Wait)...")
 
 	// Wait for the loop goroutine to finish processing any in-flight event and exit
 	r.wg.Wait()
-	log.Println("Runner Stop: Loop goroutine finished (wg.Wait returned).")
+	Logger().Debug().Msg("Runner Stop: Loop goroutine finished (wg.Wait returned).")
 
 	// Stop the orchestrator after the loop has fully finished
 	r.mu.RLock()
 	orchestrator := r.orchestrator
 	r.mu.RUnlock()
 	if orchestrator != nil {
-		log.Println("Runner Stop: Stopping orchestrator...")
-		// Assuming orchestrator has a Stop method - add if needed
-		// orchestrator.Stop()
-		log.Println("Runner Stop: Orchestrator stopped (or stop not implemented).")
+		Logger().Debug().Msg("Runner Stop: Stopping orchestrator...")
 	}
 
-	log.Println("Runner Stop: Completed.")
+	Logger().Info().Msg("Runner Stop: Completed.")
 }
 
 // loop is the main event processing goroutine.
@@ -265,10 +256,10 @@ func (r *RunnerImpl) loop(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			log.Println("Runner loop: Context cancelled. Exiting.")
+			Logger().Debug().Msg("Runner loop: Context cancelled. Exiting.")
 			return // Exit loop
 		case <-r.stopChan: // Listen for explicit stop signal
-			log.Println("Runner loop: Stop signal received. Exiting.")
+			Logger().Debug().Msg("Runner loop: Stop signal received. Exiting.")
 			return // Exit loop
 		case event := <-r.queue:
 			// FIX: Defer eventCancel call
@@ -279,17 +270,17 @@ func (r *RunnerImpl) loop(ctx context.Context) {
 			sessionID, _ := event.GetMetadataValue(SessionIDKey)
 			if sessionID == "" {
 				sessionID = event.GetID()
-				log.Printf("Runner loop: Warning - event %s missing session ID, using event ID as fallback.", event.GetID())
+				Logger().Warn().Str("event_id", event.GetID()).Msg("Runner loop: Warning - event missing session ID, using event ID as fallback.")
 				event.SetMetadata(SessionIDKey, sessionID)
 			}
-			log.Printf("Runner loop: Processing event %s (session: %s)...", event.GetID(), sessionID)
+			Logger().Debug().Str("event_id", event.GetID()).Str("session_id", sessionID).Msg("Runner loop: Processing event")
 
 			// FIX: Initialize currentState explicitly as State interface type
 			var currentState State = NewState() // Use interface type
 
 			// --- Before Event Handling Callback ---
 			if r.registry != nil {
-				log.Println("Runner: Invoking BeforeEventHandling callbacks")
+				Logger().Debug().Msg("Runner: Invoking BeforeEventHandling callbacks")
 				// FIX: Define callbackArgs before use
 				callbackArgs := CallbackArgs{
 					Hook:    HookBeforeEventHandling,
@@ -300,13 +291,13 @@ func (r *RunnerImpl) loop(ctx context.Context) {
 				// FIX: Check and handle error from Invoke
 				newState, err := r.registry.Invoke(eventCtx, callbackArgs)
 				if err != nil {
-					log.Printf("Runner loop: Error during BeforeEventHandling callbacks for event %s: %v. Skipping event.", event.GetID(), err)
+					Logger().Error().Str("event_id", event.GetID()).Err(err).Msg("Runner loop: Error during BeforeEventHandling callbacks. Skipping event.")
 					continue // Skip to next event
 				}
 				if newState != nil {
 					currentState = newState // Assign State interface to State interface variable
 				}
-				log.Println("CallbackRegistry.Invoke: Finished invoking callbacks for hook BeforeEventHandling.")
+				Logger().Debug().Msg("CallbackRegistry.Invoke: Finished invoking callbacks for hook BeforeEventHandling.")
 			}
 
 			// --- Orchestration ---
@@ -331,7 +322,7 @@ func (r *RunnerImpl) loop(ctx context.Context) {
 
 				// --- Before Agent Run Callback ---
 				if r.registry != nil {
-					log.Printf("Runner: Invoking %s callbacks for agent %s", HookBeforeAgentRun, invokedAgentID)
+					Logger().Debug().Str("agent_id", invokedAgentID).Msgf("Runner: Invoking %s callbacks", HookBeforeAgentRun)
 					callbackArgs := CallbackArgs{
 						Hook:    HookBeforeAgentRun,
 						Event:   event,
@@ -340,19 +331,19 @@ func (r *RunnerImpl) loop(ctx context.Context) {
 					}
 					newState, err := r.registry.Invoke(eventCtx, callbackArgs)
 					if err != nil {
-						log.Printf("Runner loop: Error during BeforeAgentRun callbacks for event %s, agent %s: %v", event.GetID(), invokedAgentID, err)
+						Logger().Error().Str("event_id", event.GetID()).Str("agent_id", invokedAgentID).Err(err).Msg("Runner loop: Error during BeforeAgentRun callbacks")
 						agentErr = fmt.Errorf("BeforeAgentRun callback failed: %w", err) // Set agentErr
 					} else {
 						if newState != nil {
 							currentState = newState // Assign State interface to State interface variable
 						}
-						log.Println("CallbackRegistry.Invoke: Finished invoking callbacks for hook BeforeAgentRun.")
+						Logger().Debug().Msg("CallbackRegistry.Invoke: Finished invoking callbacks for hook BeforeAgentRun.")
 					}
 				}
 
 				// --- Dispatch (only if BeforeAgentRun didn't error) ---
 				if agentErr == nil {
-					log.Printf("Runner loop: Dispatching event %s to orchestrator...", event.GetID())
+					Logger().Debug().Str("event_id", event.GetID()).Msg("Runner loop: Dispatching event to orchestrator")
 					// FIX: Use the correct orchestrator variable
 					agentResult, agentErr = orchestrator.Dispatch(eventCtx, event)
 				}
@@ -360,10 +351,10 @@ func (r *RunnerImpl) loop(ctx context.Context) {
 				// --- After Agent Run / Agent Error Callbacks ---
 				if agentErr != nil {
 					// Dispatch failed OR BeforeAgentRun failed
-					log.Printf("Runner loop: Error during agent execution/dispatch for event %s: %v", event.GetID(), agentErr)
+					Logger().Error().Str("event_id", event.GetID()).Err(agentErr).Msg("Runner loop: Error during agent execution/dispatch")
 					// --- Agent Error Callback ---
 					if r.registry != nil {
-						log.Printf("Runner: Invoking %s callbacks for agent %s", HookAgentError, invokedAgentID)
+						Logger().Debug().Str("agent_id", invokedAgentID).Msgf("Runner: Invoking %s callbacks", HookAgentError)
 						callbackArgs := CallbackArgs{
 							Hook:    HookAgentError,
 							Event:   event,
@@ -374,16 +365,16 @@ func (r *RunnerImpl) loop(ctx context.Context) {
 						// FIX: Check and handle error from Invoke
 						newState, cbErr := r.registry.Invoke(eventCtx, callbackArgs)
 						if cbErr != nil {
-							log.Printf("Runner loop: Error during AgentError callback for event %s: %v", event.GetID(), cbErr)
+							Logger().Error().Str("event_id", event.GetID()).Err(cbErr).Msg("Runner loop: Error during AgentError callback")
 						}
 						if newState != nil {
 							currentState = newState // Assign State interface to State interface variable
 						}
-						log.Println("CallbackRegistry.Invoke: Finished invoking callbacks for hook AgentError.")
+						Logger().Debug().Msg("CallbackRegistry.Invoke: Finished invoking callbacks for hook AgentError.")
 					}
 				}
 			} else {
-				log.Printf("Runner loop: Orchestrator is nil, cannot dispatch event %s", event.GetID())
+				Logger().Error().Str("event_id", event.GetID()).Msg("Runner loop: Orchestrator is nil, cannot dispatch event")
 				agentErr = errors.New("orchestrator not configured")
 				invokedAgentID = "orchestrator" // Indicate orchestrator issue
 			}
@@ -393,7 +384,7 @@ func (r *RunnerImpl) loop(ctx context.Context) {
 
 			// --- After Event Handling Callback ---
 			if r.registry != nil {
-				log.Println("Runner: Invoking AfterEventHandling callbacks")
+				Logger().Debug().Msg("Runner: Invoking AfterEventHandling callbacks")
 				finalStateForEvent := currentState
 				if agentErr == nil && agentResult.OutputState != nil {
 					finalStateForEvent = agentResult.OutputState
@@ -408,12 +399,12 @@ func (r *RunnerImpl) loop(ctx context.Context) {
 				// FIX: Check and handle error from Invoke
 				_, cbErr := r.registry.Invoke(eventCtx, callbackArgs)
 				if cbErr != nil {
-					log.Printf("Runner loop: Error during AfterEventHandling callbacks for event %s: %v", event.GetID(), cbErr)
+					Logger().Error().Str("event_id", event.GetID()).Err(cbErr).Msg("Runner loop: Error during AfterEventHandling callbacks")
 				}
-				log.Println("CallbackRegistry.Invoke: Finished invoking callbacks for hook AfterEventHandling.")
+				Logger().Debug().Msg("CallbackRegistry.Invoke: Finished invoking callbacks for hook AfterEventHandling.")
 			}
 
-			log.Printf("Runner loop finished processing event %s", event.GetID())
+			Logger().Debug().Str("event_id", event.GetID()).Msg("Runner loop finished processing event")
 			// eventCancel() is called by defer at the top of the case block
 		}
 	}
@@ -424,7 +415,12 @@ func (r *RunnerImpl) processAgentResult(ctx context.Context, originalEvent Event
 	sessionID, _ := originalEvent.GetMetadataValue(SessionIDKey)
 
 	if agentErr != nil {
-		log.Printf("Agent execution failed for event %s (session: %s) by agent %s: %v", originalEvent.GetID(), sessionID, agentID)
+		Logger().Error().
+			Str("event_id", originalEvent.GetID()).
+			Str("session_id", sessionID).
+			Str("agent_id", agentID).
+			Err(agentErr).
+			Msg("Agent execution failed")
 
 		// Optionally emit a failure event
 		failurePayload := EventData{
@@ -444,56 +440,61 @@ func (r *RunnerImpl) processAgentResult(ctx context.Context, originalEvent Event
 		failureEvent.SetSourceAgentID(agentID)
 
 		if err := r.Emit(failureEvent); err != nil {
-			log.Printf("Error emitting failure event for original event %s: %v", originalEvent.GetID(), err)
+			Logger().Error().
+				Str("event_id", originalEvent.GetID()).
+				Err(err).
+				Msg("Error emitting failure event")
 		}
 	} else {
-		log.Printf("Agent execution successful for event %s (session: %s) by agent %s", originalEvent.GetID(), sessionID, agentID)
+		Logger().Debug().
+			Str("event_id", originalEvent.GetID()).
+			Str("session_id", sessionID).
+			Str("agent_id", agentID).
+			Msg("Agent execution successful")
 
 		if result.OutputState != nil {
-			// Use State interface methods (Keys() and Get())
-			successPayload := make(EventData)
-			if result.OutputState.Keys() != nil {
+			// Only emit a new event if the route is present and non-empty
+			route, hasRoute := result.OutputState.GetMeta(RouteMetadataKey)
+			if hasRoute && route != "" {
+				successPayload := make(EventData)
 				for _, key := range result.OutputState.Keys() {
-					if value, ok := result.OutputState.Get(key); ok {
-						successPayload[key] = value
+					if val, ok := result.OutputState.Get(key); ok {
+						successPayload[key] = val
 					}
 				}
-			}
 
-			successMeta := map[string]string{
-				SessionIDKey: sessionID,
-				"status":     "success",
-			}
-
-			if targetAgent, hasRoute := originalEvent.GetMetadataValue(RouteMetadataKey); hasRoute {
-				// Preserve the original route if available
-				successMeta[RouteMetadataKey] = targetAgent
-			} else if agentID != "" && agentID != "unknown" {
-				// Use the agent that just processed the event as the route
-				successMeta[RouteMetadataKey] = agentID
-			} else {
-				// Default fallback route
-				successMeta[RouteMetadataKey] = "error-handler" // Use same handler for consistency
-			}
-
-			if result.OutputState.MetaKeys() != nil {
+				successMeta := make(map[string]string)
 				for _, key := range result.OutputState.MetaKeys() {
-					if value, ok := result.OutputState.GetMeta(key); ok {
-						if _, exists := successMeta[key]; !exists {
-							successMeta[key] = value
-						}
+					if val, ok := result.OutputState.GetMeta(key); ok {
+						successMeta[key] = val
 					}
 				}
-			}
+				successMeta[SessionIDKey] = sessionID
+				successMeta["status"] = "success"
 
-			successEvent := NewEvent(successMeta[RouteMetadataKey], successPayload, successMeta)
-			successEvent.SetSourceAgentID(agentID)
-
-			if err := r.Emit(successEvent); err != nil {
-				log.Printf("Error emitting success event for original event %s: %v", originalEvent.GetID(), err)
+				successEvent := NewEvent(
+					route, // Set the target agent if you want, or leave "" for orchestrator to decide
+					successPayload,
+					successMeta,
+				)
+				successEvent.SetSourceAgentID(agentID)
+				if err := r.Emit(successEvent); err != nil {
+					Logger().Error().
+						Str("event_id", originalEvent.GetID()).
+						Err(err).
+						Msg("Error emitting success event")
+				}
+			} else {
+				Logger().Debug().
+					Str("event_id", originalEvent.GetID()).
+					Msg("No route present in OutputState after agent execution; not emitting further event.")
 			}
 		} else {
-			log.Printf("Agent execution successful for event %s (session: %s) by agent %s, but no OutputState provided in AgentResult. No further event emitted.", originalEvent.GetID(), sessionID, agentID)
+			Logger().Debug().
+				Str("event_id", originalEvent.GetID()).
+				Str("session_id", sessionID).
+				Str("agent_id", agentID).
+				Msg("Agent execution successful, but no OutputState provided in AgentResult. No further event emitted.")
 		}
 	}
 }

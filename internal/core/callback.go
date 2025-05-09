@@ -3,7 +3,6 @@ package agentflow
 import (
 	"context"
 	"fmt"
-	"log"
 	"sync"
 )
 
@@ -90,7 +89,10 @@ func (r *CallbackRegistry) Register(hook HookPoint, name string, cb CallbackFunc
 	}
 
 	r.callbacks[hook] = append(r.callbacks[hook], registration)
-	log.Printf("Callback '%s' registered for hook '%s'", name, hook)
+	Logger().Debug().
+		Str("callback", name).
+		Str("hook", string(hook)).
+		Msg("Callback registered")
 	return nil
 }
 
@@ -104,11 +106,17 @@ func (r *CallbackRegistry) Unregister(hook HookPoint, name string) {
 		if reg.ID == name {
 			// Remove the element
 			r.callbacks[hook] = append(hooks[:i], hooks[i+1:]...)
-			log.Printf("Callback '%s' unregistered from hook '%s'", name, hook)
+			Logger().Info().
+				Str("callback", name).
+				Str("hook", string(hook)).
+				Msg("Callback unregistered")
 			return
 		}
 	}
-	log.Printf("Warning: Callback '%s' not found for hook '%s' during unregister", name, hook)
+	Logger().Warn().
+		Str("callback", name).
+		Str("hook", string(hook)).
+		Msg("Callback not found during unregister")
 }
 
 // Invoke calls all registered callbacks for a specific hook and HookAll.
@@ -120,7 +128,9 @@ func (r *CallbackRegistry) Invoke(ctx context.Context, args CallbackArgs) (State
 	currentState := args.State
 	if currentState == nil {
 		currentState = &SimpleState{data: make(map[string]interface{})}
-		log.Printf("CallbackRegistry.Invoke: Initial state was nil, created new SimpleState for hook %s", args.Hook)
+		Logger().Warn().
+			Str("hook", string(args.Hook)).
+			Msg("Initial state was nil, created new SimpleState")
 	}
 
 	// Get registrations for the specific hook and HookAll
@@ -148,25 +158,35 @@ func (r *CallbackRegistry) Invoke(ctx context.Context, args CallbackArgs) (State
 		currentArgs := args
 		currentArgs.State = currentState // Pass the current state
 
-		// Simplified log - consider adding callback name if available/needed
-		log.Printf("CallbackRegistry.Invoke: Executing callback for hook %s", args.Hook)
+		Logger().Debug().
+			Str("hook", string(args.Hook)).
+			Msg("Executing callback")
 
 		returnedState, err := callback(ctx, currentArgs) // Call the function directly
 		if err != nil {
 			// Decide how to handle errors - log and continue, or stop?
-			log.Printf("CallbackRegistry.Invoke: Error executing callback for hook %s: %v", args.Hook, err)
+			Logger().Error().
+				Str("hook", string(args.Hook)).
+				Err(err).
+				Msg("Error executing callback")
 			lastErr = err // Store the last error
 		}
 
 		// Update currentState only if the callback returned a non-nil state
 		if returnedState != nil {
-			log.Printf("CallbackRegistry.Invoke: Callback returned updated state for hook %s", args.Hook)
+			Logger().Debug().
+				Str("hook", string(args.Hook)).
+				Msg("Callback returned updated state")
 			currentState = returnedState
 		} else {
-			log.Printf("CallbackRegistry.Invoke: Callback returned nil state for hook %s, state remains unchanged.", args.Hook)
+			Logger().Debug().
+				Str("hook", string(args.Hook)).
+				Msg("Callback returned nil state, state remains unchanged")
 		}
 	}
 
-	log.Printf("CallbackRegistry.Invoke: Finished invoking callbacks for hook %s. Returning final state.", args.Hook)
+	Logger().Debug().
+		Str("hook", string(args.Hook)).
+		Msg("Finished invoking callbacks, returning final state")
 	return currentState, lastErr
 }

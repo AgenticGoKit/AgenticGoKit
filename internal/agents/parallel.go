@@ -3,7 +3,6 @@ package agents
 import (
 	"context"
 	"fmt"
-	"log"
 	"sync"
 	"time"
 
@@ -33,7 +32,10 @@ func NewParallelAgent(name string, config ParallelAgentConfig, agents ...agentfl
 			validAgents = append(validAgents, agent)
 		} else {
 			// Log a warning if a nil agent is skipped
-			log.Printf("Warning: ParallelAgent '%s' received a nil agent at index %d, skipping.", name, i)
+			agentflow.Logger().Warn().
+				Str("parallel_agent", name).
+				Int("index", i).
+				Msg("ParallelAgent: received a nil agent, skipping.")
 		}
 	}
 	return &ParallelAgent{
@@ -51,7 +53,9 @@ func (a *ParallelAgent) Name() string {
 // Run executes all sub-agents in parallel.
 func (a *ParallelAgent) Run(ctx context.Context, initialState agentflow.State) (agentflow.State, error) {
 	if len(a.agents) == 0 {
-		log.Printf("ParallelAgent '%s': No sub-agents to run.", a.name)
+		agentflow.Logger().Warn().
+			Str("parallel_agent", a.name).
+			Msg("ParallelAgent: No sub-agents to run.")
 		return initialState.Clone(), nil
 	}
 
@@ -80,18 +84,27 @@ func (a *ParallelAgent) Run(ctx context.Context, initialState agentflow.State) (
 			select {
 			case <-runCtx.Done():
 				if err == nil {
-					// FIX: Use ag.Name() instead of agentflow.AgentName(ag)
 					err = fmt.Errorf("agent '%s' cancelled: %w", ag.Name(), runCtx.Err())
 				}
-				log.Printf("ParallelAgent '%s': Context done for agent %d (%s): %v", a.name, idx, ag.Name(), runCtx.Err())
+				agentflow.Logger().Warn().
+					Str("parallel_agent", a.name).
+					Int("agent_index", idx).
+					Str("agent_name", ag.Name()).
+					Err(runCtx.Err()).
+					Msg("ParallelAgent: Context done for agent")
 				errChan <- err
 				return
 			default:
 			}
 
 			if err != nil {
-				// Add agent name to the error for better context if not already present
 				err = fmt.Errorf("agent '%s' error: %w", ag.Name(), err)
+				agentflow.Logger().Error().
+					Str("parallel_agent", a.name).
+					Int("agent_index", idx).
+					Str("agent_name", ag.Name()).
+					Err(err).
+					Msg("ParallelAgent: Agent error")
 				errChan <- err
 				return
 			}
@@ -117,7 +130,6 @@ func (a *ParallelAgent) Run(ctx context.Context, initialState agentflow.State) (
 				continue
 			}
 			mergeMutex.Lock()
-			// FIX: Use mergedState.Merge(result)
 			mergedState.Merge(result)
 			mergeMutex.Unlock()
 
@@ -126,7 +138,7 @@ func (a *ParallelAgent) Run(ctx context.Context, initialState agentflow.State) (
 				errChan = nil
 				continue
 			}
-			mergeMutex.Lock() // Protect collectedErrors as well, just in case
+			mergeMutex.Lock()
 			collectedErrors = append(collectedErrors, err)
 			mergeMutex.Unlock()
 		}
@@ -134,7 +146,10 @@ func (a *ParallelAgent) Run(ctx context.Context, initialState agentflow.State) (
 
 	if len(collectedErrors) > 0 {
 		multiErr := agentflow.NewMultiError(collectedErrors)
-		log.Printf("ParallelAgent '%s': Finished with errors: %v", a.name, multiErr)
+		agentflow.Logger().Error().
+			Str("parallel_agent", a.name).
+			Err(multiErr).
+			Msg("ParallelAgent: Finished with errors")
 		return mergedState, multiErr
 	}
 

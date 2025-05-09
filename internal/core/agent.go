@@ -23,4 +23,11 @@ type AgentHandler interface {
 	// It should NOT have a Handle method here.
 }
 
+// AgentHandlerFunc allows using a function as an AgentHandler.
+type AgentHandlerFunc func(ctx context.Context, event Event, state State) (AgentResult, error)
+
+func (f AgentHandlerFunc) Run(ctx context.Context, event Event, state State) (AgentResult, error) {
+	return f(ctx, event, state)
+}
+
 // ... other agent related code ...
