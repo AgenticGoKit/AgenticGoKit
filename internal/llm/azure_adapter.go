@@ -8,10 +8,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http" // For HTTP requests
 	"strings"  // For SSE parsing
 	"time"     // For HTTP client timeout
+
+	agentflow "kunalkushwaha/agentflow/internal/core"
 )
 
 // --- API Specific Structs ---
@@ -276,8 +277,7 @@ func (a *AzureOpenAIAdapter) Stream(ctx context.Context, prompt Prompt) (<-chan 
 			// Check for context cancellation during processing
 			select {
 			case <-ctx.Done():
-				log.Printf("Azure stream context cancelled during SSE processing")
-				// Send context error? Or just stop? Let's just stop.
+				agentflow.Logger().Warn().Msg("Azure stream context cancelled during SSE processing")
 				return
 			default:
 				// continue processing
@@ -291,8 +291,10 @@ func (a *AzureOpenAIAdapter) Stream(ctx context.Context, prompt Prompt) (<-chan 
 
 				var chunk azureChatCompletionsStreamChunk
 				if err := json.Unmarshal([]byte(data), &chunk); err != nil {
-					log.Printf("Error decoding stream chunk JSON: %v, data: %s", err, data)
-					// Send error on channel and stop
+					agentflow.Logger().Error().
+						Err(err).
+						Str("data", data).
+						Msg("Error decoding stream chunk JSON")
 					tokenChan <- Token{Error: fmt.Errorf("stream decode error: %w", err)}
 					return
 				}
@@ -304,15 +306,16 @@ func (a *AzureOpenAIAdapter) Stream(ctx context.Context, prompt Prompt) (<-chan 
 						select {
 						case tokenChan <- Token{Content: contentDelta}:
 						case <-ctx.Done():
-							log.Printf("Azure stream context cancelled during token send")
+							agentflow.Logger().Warn().Msg("Azure stream context cancelled during token send")
 							return
 						}
 					}
 					// TODO: Could potentially capture finish_reason from the last chunk here
 				}
 			} else {
-				// Log unexpected lines?
-				log.Printf("Unexpected SSE line: %s", line)
+				agentflow.Logger().Warn().
+					Str("line", line).
+					Msg("Unexpected SSE line")
 			}
 		}
 
@@ -320,7 +323,9 @@ func (a *AzureOpenAIAdapter) Stream(ctx context.Context, prompt Prompt) (<-chan 
 		if err := scanner.Err(); err != nil {
 			// Don't send if context was cancelled, as that's the likely cause
 			if ctx.Err() == nil {
-				log.Printf("Error reading stream body: %v", err)
+				agentflow.Logger().Error().
+					Err(err).
+					Msg("Error reading stream body")
 				tokenChan <- Token{Error: fmt.Errorf("stream read error: %w", err)}
 			}
 		}

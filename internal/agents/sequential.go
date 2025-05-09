@@ -3,7 +3,6 @@ package agents
 import (
 	"context"
 	"fmt"
-	"log"
 
 	agentflow "kunalkushwaha/agentflow/internal/core"
 )
@@ -25,7 +24,10 @@ func NewSequentialAgent(name string, agents ...agentflow.Agent) *SequentialAgent
 	validAgents := make([]agentflow.Agent, 0, len(agents))
 	for i, agent := range agents {
 		if agent == nil {
-			log.Printf("Warning: SequentialAgent '%s' received a nil agent at index %d, skipping.", name, i)
+			agentflow.Logger().Warn().
+				Str("sequential_agent", name).
+				Int("index", i).
+				Msg("SequentialAgent: received a nil agent, skipping.")
 			continue
 		}
 		validAgents = append(validAgents, agent)
@@ -41,7 +43,9 @@ func NewSequentialAgent(name string, agents ...agentflow.Agent) *SequentialAgent
 // Execution halts immediately if a sub-agent returns an error or if the context is cancelled.
 func (s *SequentialAgent) Run(ctx context.Context, initialState agentflow.State) (agentflow.State, error) {
 	if len(s.agents) == 0 {
-		log.Printf("SequentialAgent '%s': No sub-agents to run.", s.name)
+		agentflow.Logger().Warn().
+			Str("sequential_agent", s.name).
+			Msg("SequentialAgent: No sub-agents to run.")
 		return initialState, nil // Return input state if no agents
 	}
 
@@ -52,7 +56,10 @@ func (s *SequentialAgent) Run(ctx context.Context, initialState agentflow.State)
 		// Check for context cancellation before running each sub-agent
 		select {
 		case <-ctx.Done():
-			log.Printf("SequentialAgent '%s': Context cancelled before running agent %d.", s.name, i)
+			agentflow.Logger().Warn().
+				Str("sequential_agent", s.name).
+				Int("agent_index", i).
+				Msg("SequentialAgent: Context cancelled before running agent.")
 			return nextState, fmt.Errorf("SequentialAgent '%s': context cancelled: %w", s.name, ctx.Err())
 		default:
 			// Context is not cancelled, proceed
@@ -67,7 +74,11 @@ func (s *SequentialAgent) Run(ctx context.Context, initialState agentflow.State)
 		outputState, agentErr := agent.Run(ctx, inputState)
 		if agentErr != nil {
 			err = fmt.Errorf("SequentialAgent '%s': error in sub-agent %d: %w", s.name, i, agentErr)
-			log.Printf("%v", err) // Log the error
+			agentflow.Logger().Error().
+				Str("sequential_agent", s.name).
+				Int("agent_index", i).
+				Err(agentErr).
+				Msg("SequentialAgent: Error in sub-agent.")
 			// Return the state *before* the error occurred and the error itself
 			return nextState, err
 		}

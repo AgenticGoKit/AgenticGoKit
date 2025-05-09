@@ -2,7 +2,6 @@ package agentflow
 
 import (
 	"encoding/json"
-	"log"
 	"time"
 )
 
@@ -36,11 +35,10 @@ func (r *AgentResult) MarshalJSON() ([]byte, error) {
 	// Marshal the map
 	jsonData, err := json.Marshal(jsonDataMap)
 	if err != nil {
-		log.Printf("MarshalJSON (map): Error during json.Marshal: %v", err)
+		Logger().Error().Err(err).Msg("MarshalJSON (map): Error during json.Marshal")
 		return jsonData, err
 	}
 
-	// log.Printf("DEBUG MarshalJSON (map) output: %s", string(jsonData)) // Optional debug
 	return jsonData, nil
 }
 
@@ -48,14 +46,14 @@ func (r *AgentResult) MarshalJSON() ([]byte, error) {
 func (r *AgentResult) UnmarshalJSON(data []byte) error {
 	var raw map[string]json.RawMessage
 	if err := json.Unmarshal(data, &raw); err != nil {
-		log.Printf("Unmarshal error (raw map): %v", err)
+		Logger().Error().Err(err).Msg("Unmarshal error (raw map)")
 		return err
 	}
 
 	if rawOutputState, ok := raw["output_state"]; ok && string(rawOutputState) != "null" {
 		var concreteState SimpleState
 		if err := json.Unmarshal(rawOutputState, &concreteState); err != nil {
-			log.Printf("Unmarshal error (output_state into SimpleState): %v", err)
+			Logger().Error().Err(err).Msg("Unmarshal error (output_state into SimpleState)")
 			return err
 		}
 		r.OutputState = &concreteState
@@ -65,21 +63,21 @@ func (r *AgentResult) UnmarshalJSON(data []byte) error {
 
 	if rawError, ok := raw["error"]; ok {
 		if err := json.Unmarshal(rawError, &r.Error); err != nil {
-			log.Printf("Unmarshal error (error): %v", err)
+			Logger().Error().Err(err).Msg("Unmarshal error (error)")
 			return err
 		}
 	}
 
 	if rawStartTime, ok := raw["start_time"]; ok {
 		if err := json.Unmarshal(rawStartTime, &r.StartTime); err != nil {
-			log.Printf("Unmarshal error (start_time): %v", err)
+			Logger().Error().Err(err).Msg("Unmarshal error (start_time)")
 			return err
 		}
 	}
 
 	if rawEndTime, ok := raw["end_time"]; ok {
 		if err := json.Unmarshal(rawEndTime, &r.EndTime); err != nil {
-			log.Printf("Unmarshal error (end_time): %v", err)
+			Logger().Error().Err(err).Msg("Unmarshal error (end_time)")
 			return err
 		}
 	}
@@ -87,12 +85,14 @@ func (r *AgentResult) UnmarshalJSON(data []byte) error {
 	if rawDurationMs, ok := raw["duration_ms"]; ok {
 		var durationMs int64
 		if err := json.Unmarshal(rawDurationMs, &durationMs); err != nil {
-			log.Printf("Unmarshal error (duration_ms): %v --- Raw: %s", err, string(rawDurationMs))
+			Logger().Error().Err(err).
+				Str("raw", string(rawDurationMs)).
+				Msg("Unmarshal error (duration_ms)")
 			return err
 		}
 		r.Duration = time.Duration(durationMs) * time.Millisecond
 	} else {
-		log.Printf("UnmarshalJSON (manual): duration_ms field not found in JSON")
+		Logger().Warn().Msg("UnmarshalJSON (manual): duration_ms field not found in JSON")
 		r.Duration = 0
 	}
 

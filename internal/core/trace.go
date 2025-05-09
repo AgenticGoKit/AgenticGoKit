@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"sort"
@@ -72,7 +71,9 @@ func stateToSimpleStatePtr(s State) *SimpleState {
 	}
 	// Fallback: Try to marshal/unmarshal or create a basic representation
 	// For now, return nil if not *SimpleState
-	log.Printf("Warning: Trace logger received state of type %T, expected *SimpleState", s)
+	Logger().Warn().
+		Str("state_type", fmt.Sprintf("%T", s)).
+		Msg("Trace logger received state of unexpected type, expected *SimpleState")
 	return nil
 }
 
@@ -226,7 +227,8 @@ func (l *InMemoryTraceLogger) Log(entry TraceEntry) error {
 	sessionID := entry.SessionID
 	if sessionID == "" {
 		sessionID = "default_session" // Or handle as an error?
-		log.Println("Warning: Trace entry logged without SessionID, using 'default_session'")
+		Logger().Warn().
+			Msg("Trace entry logged without SessionID, using 'default_session'")
 		entry.SessionID = sessionID
 	}
 
@@ -292,7 +294,7 @@ const TraceCallbackName = "CoreTraceLoggerCallback"
 // NewTraceCallbacks creates a set of standard callback functions for tracing.
 func NewTraceCallbacks(logger TraceLogger) map[HookPoint]CallbackFunc {
 	if logger == nil {
-		log.Println("Warning: NewTraceCallbacks received nil logger, tracing disabled.")
+		Logger().Warn().Msg("NewTraceCallbacks received nil logger, tracing disabled.")
 		return map[HookPoint]CallbackFunc{}
 	}
 
@@ -499,7 +501,9 @@ func createTraceCallback(logger TraceLogger) CallbackFunc {
 
 		sessionID, ok := args.Event.GetMetadataValue(SessionIDKey)
 		if !ok || sessionID == "" {
-			log.Printf("Warning: Cannot log trace entry for event %s, missing or empty session ID.", args.Event.GetID())
+			Logger().Warn().
+				Str("event_id", args.Event.GetID()).
+				Msg("Cannot log trace entry, missing or empty session ID.")
 			return args.State, nil
 		}
 
@@ -530,7 +534,9 @@ func createTraceCallback(logger TraceLogger) CallbackFunc {
 		}
 
 		if err := logger.Log(entry); err != nil {
-			log.Printf("Error logging trace entry: %v", err)
+			Logger().Error().
+				Err(err).
+				Msg("Error logging trace entry")
 		}
 		// Return the state that should proceed
 		// FIX: Check AgentResult.OutputState for the definitive state after agent run
@@ -544,7 +550,7 @@ func createTraceCallback(logger TraceLogger) CallbackFunc {
 // RegisterTraceHooks registers the necessary callbacks for tracing.
 func RegisterTraceHooks(registry *CallbackRegistry, logger TraceLogger) {
 	if registry == nil || logger == nil {
-		log.Println("Warning: Cannot register trace hooks, registry or logger is nil.")
+		Logger().Warn().Msg("Cannot register trace hooks, registry or logger is nil.")
 		return
 	}
 	traceCallback := createTraceCallback(logger)
@@ -554,5 +560,5 @@ func RegisterTraceHooks(registry *CallbackRegistry, logger TraceLogger) {
 	registry.Register(HookBeforeAgentRun, "traceBeforeAgent", traceCallback)
 	registry.Register(HookAfterAgentRun, "traceAfterAgent", traceCallback)
 	registry.Register(HookAgentError, "traceAgentError", traceCallback)
-	log.Println("Registered trace hooks.")
+	Logger().Debug().Msg("Registered trace hooks.")
 }

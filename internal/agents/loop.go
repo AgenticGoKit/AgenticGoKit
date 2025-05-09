@@ -3,7 +3,6 @@ package agents
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	agentflow "kunalkushwaha/agentflow/internal/core"
@@ -19,19 +18,9 @@ type ConditionFunc func(currentState agentflow.State) bool
 
 // LoopAgentConfig holds configuration for the LoopAgent.
 type LoopAgentConfig struct {
-	// Condition is evaluated after each successful sub-agent run.
-	// If it returns true, the loop stops successfully, returning the current state.
-	// If nil, the loop will only stop if the sub-agent errors, the context is cancelled,
-	// or MaxIterations is reached.
-	Condition ConditionFunc
-	// MaxIterations provides a safety limit on the number of times the sub-agent is run.
-	// If this limit is reached and the Condition (if provided) has not returned true,
-	// the loop terminates and returns ErrMaxIterationsReached along with the state
-	// from the last successful iteration.
-	// If 0 or negative, it defaults to defaultMaxIterations (10).
+	Condition     ConditionFunc
 	MaxIterations int
-	// Timeout is the maximum duration for the entire loop execution. 0 means no timeout.
-	Timeout time.Duration
+	Timeout       time.Duration
 }
 
 // LoopAgent repeatedly executes a sub-agent until a condition is met,
@@ -47,19 +36,24 @@ type LoopAgent struct {
 // It applies the default MaxIterations if the provided value is invalid.
 func NewLoopAgent(name string, config LoopAgentConfig, subAgent agentflow.Agent) *LoopAgent {
 	if subAgent == nil {
-		log.Printf("Error: LoopAgent '%s' requires a non-nil subAgent.", name)
+		agentflow.Logger().Error().
+			Str("agent", name).
+			Msg("LoopAgent requires a non-nil subAgent.")
 		return nil // Cannot create a loop agent without a sub-agent
 	}
 
 	maxIter := config.MaxIterations
 	if maxIter <= 0 {
 		maxIter = defaultMaxIterations
-		log.Printf("LoopAgent '%s': MaxIterations not specified or invalid, defaulting to %d.", name, maxIter)
+		agentflow.Logger().Warn().
+			Str("agent", name).
+			Int("default_max_iterations", defaultMaxIterations).
+			Msg("LoopAgent: MaxIterations not specified or invalid, defaulting to defaultMaxIterations.")
 	}
 
 	return &LoopAgent{
 		subAgent: subAgent,
-		config: LoopAgentConfig{ // Store potentially modified config
+		config: LoopAgentConfig{
 			Condition:     config.Condition,
 			MaxIterations: maxIter,
 			Timeout:       config.Timeout,
@@ -74,16 +68,8 @@ func (a *LoopAgent) Name() string {
 }
 
 // Run executes the sub-agent in a loop according to the configuration.
-// In each iteration:
-// 1. Checks for context cancellation.
-// 2. Clones the current state.
-// 3. Runs the sub-agent with the cloned state.
-// 4. If the sub-agent errors or context is cancelled during run, returns the state *before* that iteration and the error.
-// 5. If successful, updates the current state with the sub-agent's output.
-// 6. Evaluates the Condition function (if provided) with the new state. If true, returns the current state and nil error.
-// 7. If MaxIterations is reached, returns the current state and ErrMaxIterationsReached.
 func (l *LoopAgent) Run(ctx context.Context, initialState agentflow.State) (agentflow.State, error) {
-	currentState := initialState // Start with the initial state
+	currentState := initialState
 	var err error
 	iteration := 0
 
@@ -94,19 +80,25 @@ func (l *LoopAgent) Run(ctx context.Context, initialState agentflow.State) (agen
 	if l.config.Timeout > 0 {
 		loopCtx, cancel = context.WithTimeout(ctx, l.config.Timeout)
 	} else {
-		loopCtx, cancel = context.WithCancel(ctx) // Still allow cancellation from parent ctx
+		loopCtx, cancel = context.WithCancel(ctx)
 	}
-	defer cancel() // Ensure cancellation propagates
+	defer cancel()
 
 	for iteration < l.config.MaxIterations {
 		iteration++
-		//log.Printf("LoopAgent '%s': Starting iteration %d/%d.", l.name, iteration, l.config.MaxIterations)
+		agentflow.Logger().Debug().
+			Str("agent", l.name).
+			Int("iteration", iteration).
+			Int("max_iterations", l.config.MaxIterations).
+			Msg("LoopAgent: Starting iteration.")
 
 		// Check for context cancellation before running the sub-agent
 		select {
 		case <-loopCtx.Done():
-			log.Printf("LoopAgent '%s': Context cancelled before iteration %d.", l.name, iteration)
-			// Return the state from the *previous* successful iteration
+			agentflow.Logger().Warn().
+				Str("agent", l.name).
+				Int("iteration", iteration).
+				Msg("LoopAgent: Context cancelled before iteration.")
 			return currentState, fmt.Errorf("LoopAgent '%s': context cancelled: %w", l.name, loopCtx.Err())
 		default:
 			// Context is not cancelled, proceed
@@ -118,8 +110,11 @@ func (l *LoopAgent) Run(ctx context.Context, initialState agentflow.State) (agen
 
 		if agentErr != nil {
 			err = fmt.Errorf("LoopAgent '%s': error in sub-agent during iteration %d: %w", l.name, iteration, agentErr)
-			log.Printf("%v", err)
-			// Return the state *before* the error occurred and the error itself
+			agentflow.Logger().Error().
+				Str("agent", l.name).
+				Int("iteration", iteration).
+				Err(agentErr).
+				Msg("LoopAgent: Error in sub-agent during iteration.")
 			return currentState, err
 		}
 
@@ -130,14 +125,19 @@ func (l *LoopAgent) Run(ctx context.Context, initialState agentflow.State) (agen
 		if l.config.Condition != nil {
 			stop := l.config.Condition(currentState)
 			if stop {
-				//log.Printf("LoopAgent '%s': Condition met at iteration %d. Stopping loop.", l.name, iteration)
+				agentflow.Logger().Info().
+					Str("agent", l.name).
+					Int("iteration", iteration).
+					Msg("LoopAgent: Condition met, stopping loop.")
 				return currentState, nil // Condition met, loop succeeded
 			}
 		}
 	}
 
 	// If loop finished due to reaching max iterations without condition being met
-	log.Printf("LoopAgent '%s': Reached max iterations (%d) without condition being met.", l.name, l.config.MaxIterations)
-	// Return the state from the last successful iteration and the specific error
+	agentflow.Logger().Warn().
+		Str("agent", l.name).
+		Int("max_iterations", l.config.MaxIterations).
+		Msg("LoopAgent: Reached max iterations without condition being met.")
 	return currentState, agentflow.ErrMaxIterationsReached
 }
