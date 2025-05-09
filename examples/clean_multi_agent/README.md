@@ -6,21 +6,21 @@ This example demonstrates how to implement a multi-agent workflow using the Agen
 The example implements a research pipeline with four specialized agents:
 ```mermaid
 graph LR
-    Client[Client Application] -->|1. Emit Initial Event| Runner
+    Client[Client Application] -->|1 - Emit Initial Event| Runner
     
-    Runner -->|2. Route to Planner| PlannerAgent
-    PlannerAgent -->|3. Generate Plan| LLM1[Azure OpenAI]
-    PlannerAgent -->|4. Return Result| Runner
+    Runner -->|2 - Route to Planner| PlannerAgent
+    PlannerAgent -->|3 - Generate Plan| LLM1[Azure OpenAI]
+    PlannerAgent -->|4 - Return Result| Runner
     
-    Runner -->|5. Route to Researcher| ResearcherAgent
-    ResearcherAgent -->|6. Use Search Tool| WebSearch[Web Search Tool]
-    ResearcherAgent -->|7. Return Research| Runner
+    Runner -->|5 - Route to Researcher| ResearcherAgent
+    ResearcherAgent -->|6 - Use Search Tool| WebSearch[Web Search Tool]
+    ResearcherAgent -->|7 - Return Research| Runner
     
-    Runner -->|8. Route to Summarizer| SummarizerAgent
-    SummarizerAgent -->|9. Summarize Research| LLM2[Azure OpenAI]
-    SummarizerAgent -->|10. Return Summary| Runner
+    Runner -->|8 - Route to Summarizer| SummarizerAgent
+    SummarizerAgent -->|9 - Summarize Research| LLM2[Azure OpenAI]
+    SummarizerAgent -->|10 - Return Summary| Runner
     
-    Runner -->|11. Route to Final Output| FinalOutputHandler
+    Runner -->|11 - Route to Final Output| FinalOutputHandler
     
     TraceLogger -.->|Record All Steps| CLI[AgentCLI Visualization]
     

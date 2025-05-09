@@ -21,35 +21,71 @@ Agentflow is a Go framework for building AI agent systems. It provides core abst
 ```bash
 go get github.com/kunalkushwaha/agentflow@latest
 ```
-## Quick Start
+
+## Quick Start (with Factory)
+
 ```go
-package main
-
+// See more in [DevGuide.md](docs/DevGuide.md#quick-start-with-factory)
 import (
-	"log"
-	"time"
-
-	agentflow "kunalkushwaha/agentflow/internal/core"
-	"kunalkushwaha/agentflow/internal/factory"
+    "context"
+    "kunalkushwaha/agentflow/internal/core"
+    "kunalkushwaha/agentflow/internal/factory"
 )
 
-// MinimalAgent is a very simple agent
-type MinimalAgent struct{}
-
-func (a *MinimalAgent) Run(ctx agentflow.Context, event agentflow.Event, state agentflow.State) (agentflow.AgentResult, error) {
-	log.Println("Minimal agent ran")
-	return agentflow.AgentResult{}, nil
-}
-
 func main() {
-	agent := &MinimalAgent{}
-	runner := factory.NewRunnerBuilder().RegisterAgent("minimal", agent).BuildOrPanic()
-	runner.Start()
-	runner.Emit(agentflow.NewEvent("test", nil, nil))
-	time.Sleep(1 * time.Second)
-	runner.Stop()
+    agents := map[string]agentflow.AgentHandler{
+        "echo": agentflow.AgentHandlerFunc(
+            func(ctx context.Context, event agentflow.Event, state agentflow.State) (agentflow.AgentResult, error) {
+                state.Set("echo", event.GetData()["message"])
+                return agentflow.AgentResult{OutputState: state}, nil
+            }),
+    }
+    runner := factory.NewRunnerWithConfig(factory.RunnerConfig{
+        Agents: agents,
+    })
+    runner.Start(context.Background())
+    runner.Emit(core.NewEvent("echo", core.EventData{"message": "hello"}, nil))
+    // ...wait, then runner.Stop()
 }
 ```
+
+## When to Use Factory Functions
+
+- Use the factory for most production and prototype workflows.
+- Use manual setup only if you need custom callback wiring, advanced orchestrator logic, or deep integration with external systems.
+
+## Adding Custom Callbacks with Factory
+
+You can register custom callbacks after creating the runner:
+
+```go
+runner := factory.NewRunnerWithConfig(factory.RunnerConfig{Agents: agents})
+registry := runner.GetCallbackRegistry()
+registry.Register(agentflow.HookAfterAgentRun, "myCustomLogger", myCallbackFunc)
+```
+
+## Error Handler Agent
+
+The factory will register a default "error-handler" agent if not provided. To override, add your own to the `Agents` map with the key `"error-handler"`.
+
+## Troubleshooting / FAQ
+
+- **My agent isn't called?**
+  - Check that your event's metadata includes the correct `RouteMetadataKey`.
+- **How do I see the trace?**
+  - Use `runner.DumpTrace(sessionID)` or the `agentcli trace` command. See [Tracing Guide](docs/TracingGuide.md).
+- **How do I add more tools/LLMs?**
+  - Use `factory.NewDefaultToolRegistry()` and `factory.NewDefaultLLMAdapter()` or register your own.
+
+## See Also
+- [Multi-Agent Example](examples/multi_agent/)
+- [Clean Multi-Agent Example](examples/clean_multi_agent/)
+- [Factory Implementation](internal/factory/agent_factory.go)
+- [Developer Guide](docs/DevGuide.md)
+- [Tracing Guide](docs/TracingGuide.md)
+- [Architecture Overview](docs/Architecture.md)
+- [Project Roadmap](docs/ROADMAP.md)
+
 ## Project Structure
 
 ```
@@ -67,10 +103,12 @@ agentflow/
 ├── docs/                   # Documentation
 └── benchmarks/             # Performance benchmarks
 ```
+
 ## Documentation
-- Developer Guide - Comprehensive guide to using the framework
-- Tracing Guide - Details on the tracing system
-- Architecture - High-level architecture overview
+- [Developer Guide](docs/DevGuide.md) - Comprehensive guide to using the framework
+- [Tracing Guide](docs/TracingGuide.md) - Details on the tracing system
+- [Architecture Overview](docs/Architecture.md) - High-level architecture overview
+- [Project Roadmap](docs/ROADMAP.md) - Development timeline and upcoming features
 
 ## LLM Integration
 Agentflow provides a unified interface for different LLM backends:
