@@ -26,7 +26,7 @@ func (a *OpenAIAgent) Run(ctx context.Context, event agentflow.Event, state agen
 		return agentflow.AgentResult{}, errors.New("user_prompt is missing or invalid in the event payload")
 	}
 
-	response, err := a.adapter.Complete(ctx, systemPrompt, userPrompt)
+	response, err := a.adapter.Call(ctx, systemPrompt+"\n"+userPrompt)
 	if err != nil {
 		return agentflow.AgentResult{}, err
 	}
