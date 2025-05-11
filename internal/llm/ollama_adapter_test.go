@@ -9,13 +9,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestOllamaAdapter_Complete(t *testing.T) {
+func TestOllamaAdapter_Call(t *testing.T) {
 	tests := []struct {
 		name           string
 		responseBody   string
 		responseStatus int
-		systemPrompt   string
-		userPrompt     string
+		prompt         Prompt
 		expectedResult string
 		expectedError  string
 	}{
@@ -23,8 +22,10 @@ func TestOllamaAdapter_Complete(t *testing.T) {
 			name:           "Valid prompt returns response containing expected substring",
 			responseBody:   `{"message": {"content": "The answer to 2+2 is 4."}}`,
 			responseStatus: http.StatusOK,
-			systemPrompt:   "System message",
-			userPrompt:     "What is 2+2?",
+			prompt: Prompt{
+				System: "System message",
+				User:   "What is 2+2?",
+			},
 			expectedResult: "4", // Check for substring in the result
 			expectedError:  "",
 		},
@@ -32,10 +33,12 @@ func TestOllamaAdapter_Complete(t *testing.T) {
 			name:           "Empty prompt is invalid",
 			responseBody:   "",
 			responseStatus: http.StatusBadRequest,
-			systemPrompt:   "",
-			userPrompt:     "",
+			prompt: Prompt{
+				System: "",
+				User:   "",
+			},
 			expectedResult: "",
-			expectedError:  "both systemPrompt and userPrompt cannot be empty",
+			expectedError:  "both system and user prompts cannot be empty",
 		},
 	}
 
@@ -54,7 +57,7 @@ func TestOllamaAdapter_Complete(t *testing.T) {
 				temperature: 0.7,
 			}
 
-			result, err := adapter.Complete(context.Background(), tt.systemPrompt, tt.userPrompt)
+			result, err := adapter.Call(context.Background(), tt.prompt)
 
 			if tt.expectedError != "" {
 				assert.EqualError(t, err, tt.expectedError)
@@ -63,9 +66,9 @@ func TestOllamaAdapter_Complete(t *testing.T) {
 			}
 
 			if tt.expectedResult != "" {
-				assert.Contains(t, result, tt.expectedResult)
+				assert.Contains(t, result.Content, tt.expectedResult)
 			} else {
-				assert.Equal(t, tt.expectedResult, result)
+				assert.Equal(t, tt.expectedResult, result.Content)
 			}
 		})
 	}

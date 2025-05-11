@@ -40,13 +40,12 @@ func NewOpenAIAdapter(apiKey, model string, maxTokens int, temperature float32) 
 	}, nil
 }
 
-// Complete sends a prompt to OpenAI's API and returns the completion.
-func (o *OpenAIAdapter) Complete(ctx context.Context, systemPrompt string, userPrompt string) (string, error) {
-	if systemPrompt == "" && userPrompt == "" {
-		return "", errors.New("both systemPrompt and userPrompt cannot be empty")
+// Call sends a prompt to OpenAI's API and returns the response.
+func (o *OpenAIAdapter) Call(ctx context.Context, prompt string) (string, error) {
+	if prompt == "" {
+		return "", errors.New("prompt cannot be empty")
 	}
 
-	prompt := systemPrompt + "\n" + userPrompt
 	requestBody, err := json.Marshal(map[string]interface{}{
 		"model":       o.model,
 		"prompt":      prompt,
@@ -90,4 +89,59 @@ func (o *OpenAIAdapter) Complete(ctx context.Context, systemPrompt string, userP
 	}
 
 	return response.Choices[0].Text, nil
+}
+
+// Stream streams responses from OpenAI's API.
+func (o *OpenAIAdapter) Stream(ctx context.Context, prompt string, callback func(string) error) error {
+	// Implementation for streaming responses (if supported by OpenAI API)
+	return errors.New("streaming not implemented")
+}
+
+// Embeddings fetches embeddings for a given input from OpenAI's API.
+func (o *OpenAIAdapter) Embeddings(ctx context.Context, input string) ([]float32, error) {
+	if input == "" {
+		return nil, errors.New("input cannot be empty")
+	}
+
+	requestBody, err := json.Marshal(map[string]interface{}{
+		"model": o.model,
+		"input": input,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/embeddings", bytes.NewBuffer(requestBody))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+o.apiKey)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := ioutil.ReadAll(resp.Body)
+		return nil, errors.New("OpenAI API error: " + string(body))
+	}
+
+	var response struct {
+		Data []struct {
+			Embedding []float32 `json:"embedding"`
+		} `json:"data"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		return nil, err
+	}
+
+	if len(response.Data) == 0 {
+		return nil, errors.New("no embeddings returned")
+	}
+
+	return response.Data[0].Embedding, nil
 }

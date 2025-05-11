@@ -1,0 +1,74 @@
+[
+  {
+    "timestamp": "2025-05-10T00:29:41.6142438+09:00",
+    "type": "",
+    "event_id": "",
+    "session_id": "session-1746804581",
+    "agent_id": "memory-agent-1",
+    "state": {
+      "data": {
+        "index": 1,
+        "message": "Data for event 1"
+      },
+      "meta": {
+        "session_id": "session-1746804581"
+      }
+    },
+    "hook": "BeforeAgentRun"
+  },
+  {
+    "timestamp": "2025-05-10T00:29:41.6206578+09:00",
+    "type": "",
+    "event_id": "",
+    "session_id": "session-1746804581",
+    "agent_id": "memory-agent-1",
+    "state": {
+      "data": {
+        "index": 1,
+        "message": "Data for event 1",
+        "processed_at": "2025-05-10T00:29:41+09:00",
+        "processed_by": "memory-agent-1"
+      },
+      "meta": {
+        "session_id": "session-1746804581"
+      }
+    },
+    "hook": "AfterAgentRun"
+  },
+  {
+    "timestamp": "2025-05-10T00:29:41.6747008+09:00",
+    "type": "",
+    "event_id": "",
+    "session_id": "session-1746804581",
+    "agent_id": "memory-agent-1",
+    "state": {
+      "data": {
+        "index": 2,
+        "message": "Data for event 2"
+      },
+      "meta": {
+        "session_id": "session-1746804581"
+      }
+    },
+    "hook": "BeforeAgentRun"
+  },
+  {
+    "timestamp": "2025-05-10T00:29:41.6807603+09:00",
+    "type": "",
+    "event_id": "",
+    "session_id": "session-1746804581",
+    "agent_id": "memory-agent-1",
+    "state": {
+      "data": {
+        "index": 2,
+        "message": "Data for event 2",
+        "processed_at": "2025-05-10T00:29:41+09:00",
+        "processed_by": "memory-agent-1"
+      },
+      "meta": {
+        "session_id": "session-1746804581"
+      }
+    },
+    "hook": "AfterAgentRun"
+  }
+]
