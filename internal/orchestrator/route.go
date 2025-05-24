@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"sync"
 
-	agentflow "kunalkushwaha/agentflow/internal/core"
+	agentflow "github.com/kunalkushwaha/agentflow/internal/core"
 )
 
 // RouteMetadataKey is the key used in event metadata to specify a target handler name.

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	agentflow "kunalkushwaha/agentflow/internal/core"
+	agentflow "github.com/kunalkushwaha/agentflow/internal/core"
 )
 
 // defaultMaxIterations is the default limit if LoopAgentConfig.MaxIterations is not set.

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"kunalkushwaha/agentflow/internal/llm" // Keep importing the package under test
+	"github.com/kunalkushwaha/agentflow/internal/llm" // Keep importing the package under test
 )
 
 // Helper to get Azure Adapter for benchmarks, skipping if not configured

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"sync"
 
-	agentflow "kunalkushwaha/agentflow/internal/core"
+	agentflow "github.com/kunalkushwaha/agentflow/internal/core"
 )
 
 // CollaborativeOrchestrator dispatches events to all registered handlers concurrently.

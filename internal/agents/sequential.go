@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	agentflow "kunalkushwaha/agentflow/internal/core"
+	agentflow "github.com/kunalkushwaha/agentflow/internal/core"
 )
 
 // SequentialAgent runs a series of sub-agents one after another.

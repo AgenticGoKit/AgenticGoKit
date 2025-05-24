@@ -10,9 +10,8 @@ import (
 	"sync"
 	"time"
 
-	agentflow "kunalkushwaha/agentflow/internal/core"
-	"kunalkushwaha/agentflow/internal/llm"
-	"kunalkushwaha/agentflow/internal/orchestrator"
+	agentflow "github.com/kunalkushwaha/agentflow/core"
+	"github.com/kunalkushwaha/agentflow/internal/llm"
 )
 
 // Define constants matching those in the runner
@@ -185,9 +184,8 @@ func main() {
 		log.Fatalf("Failed to register callback: %v", err)
 	}
 	log.Println("Callback registered.")
-
 	// Use RouteOrchestrator which requires the registry
-	orchestratorImpl := orchestrator.NewRouteOrchestrator(callbackRegistry)
+	orchestratorImpl := agentflow.NewRouteOrchestrator(callbackRegistry)
 	concurrency := runtime.NumCPU()
 	// Create runner and link orchestrator
 	runner := agentflow.NewRunner(concurrency)

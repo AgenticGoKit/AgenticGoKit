@@ -7,9 +7,8 @@ import (
 	"os"
 	"time"
 
-	agentflow "kunalkushwaha/agentflow/internal/core"
-	"kunalkushwaha/agentflow/internal/factory"
-	"kunalkushwaha/agentflow/internal/llm"
+	agentflow "github.com/kunalkushwaha/agentflow/core"
+	"github.com/kunalkushwaha/agentflow/internal/llm"
 )
 
 // OpenAIAgent implements agentflow.AgentHandler
@@ -52,8 +51,7 @@ func main() {
 	agents := map[string]agentflow.AgentHandler{
 		"openai": &OpenAIAgent{adapter: adapter},
 	}
-
-	runner := factory.NewRunnerWithConfig(factory.RunnerConfig{
+	runner := agentflow.NewRunnerWithConfig(agentflow.RunnerConfig{
 		Agents: agents,
 	})
 

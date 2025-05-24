@@ -45,9 +45,36 @@ graph TD
 ```go
 import (
     "context"
-    "kunalkushwaha/agentflow/internal/core"
-    "kunalkushwaha/agentflow/internal/factory"
+    agentflow "github.com/kunalkushwaha/agentflow/core"
 )
+
+func main() {
+    // Create agents map
+    agents := map[string]agentflow.AgentHandler{
+        "example-agent": &MyAgent{},
+    }
+
+    // Create runner with configuration
+    runner := agentflow.NewRunnerWithConfig(agentflow.RunnerConfig{
+        Agents:    agents,
+        QueueSize: 100,
+    })
+
+    // Start the runner
+    ctx := context.Background()
+    if err := runner.Start(ctx); err != nil {
+        panic(err)
+    }
+    defer runner.Stop()
+
+    // Create and emit an event
+    eventData := agentflow.EventData{"message": "Hello World"}
+    metadata := map[string]string{agentflow.RouteMetadataKey: "example-agent"}
+    event := agentflow.NewEvent("example-agent", eventData, metadata)
+    
+    runner.Emit(event)
+}
+```
 
 func main() {
     agents := map[string]agentflow.AgentHandler{
@@ -309,10 +336,7 @@ AgentFlow now supports a modern, concise setup for multi-agent workflows using f
 
 ```go
 import (
-    "kunalkushwaha/agentflow/internal/core"
-    "kunalkushwaha/agentflow/internal/factory"
-    "kunalkushwaha/agentflow/internal/llm"
-    "kunalkushwaha/agentflow/internal/tools"
+    agentflow "github.com/kunalkushwaha/agentflow/core"
 )
 
 func main() {

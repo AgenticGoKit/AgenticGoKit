@@ -10,11 +10,9 @@ import (
 	"sync"
 	"time"
 
-	agentflow "kunalkushwaha/agentflow/internal/core"
-
-	"kunalkushwaha/agentflow/internal/factory"
-	"kunalkushwaha/agentflow/internal/llm"
-	"kunalkushwaha/agentflow/internal/tools"
+	agentflow "github.com/kunalkushwaha/agentflow/core"
+	"github.com/kunalkushwaha/agentflow/internal/llm"
+	"github.com/kunalkushwaha/agentflow/internal/tools"
 )
 
 const (
@@ -58,7 +56,7 @@ func main() {
 
 	// --- Agent Handlers ---
 	plannerHandler := NewPlannerHandler(azureAdapter)
-	researcherHandler := NewResearcherHandler(*toolRegistry, llmAdapter)
+	researcherHandler := NewResearcherHandler(toolRegistry, llmAdapter)
 	summarizerHandler := NewSummarizerHandler(azureAdapter, llmAdapter)
 	finalOutputHandler := NewFinalOutputHandler(&wg)
 
@@ -69,9 +67,8 @@ func main() {
 		SummarizerAgentName: summarizerHandler,
 		FinalOutputAgent:    finalOutputHandler,
 	}
-
-	// --- Create runner using factory ---
-	runner := factory.NewRunnerWithConfig(factory.RunnerConfig{
+	// --- Create runner using public factory ---
+	runner := agentflow.NewRunnerWithConfig(agentflow.RunnerConfig{
 		QueueSize: 2,
 		Agents:    agents,
 	})

@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	agentflow "kunalkushwaha/agentflow/internal/core"
+	agentflow "github.com/kunalkushwaha/agentflow/internal/core"
 )
 
 // --- Common Test Helper Agents ---

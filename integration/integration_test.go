@@ -7,8 +7,7 @@ import (
 	"testing"
 	"time"
 
-	agentflow "kunalkushwaha/agentflow/internal/core"
-	"kunalkushwaha/agentflow/internal/orchestrator"
+	agentflow "github.com/kunalkushwaha/agentflow/core"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -23,9 +22,8 @@ func TestBasicEndToEndFlow(t *testing.T) {
 
 	// Ensure runner uses our callback registry
 	runner.SetCallbackRegistry(callbackRegistry)
-
 	// Create route orchestrator with the callback registry
-	orch := orchestrator.NewRouteOrchestrator(callbackRegistry)
+	orch := agentflow.NewRouteOrchestrator(callbackRegistry)
 	runner.SetOrchestrator(orch)
 
 	// Add a route terminator callback to prevent infinite loops
@@ -159,7 +157,7 @@ func TestMultipleAgentsSequentialRouting(t *testing.T) {
 	runner := agentflow.NewRunner(1)
 	callbackRegistry := agentflow.NewCallbackRegistry()
 	runner.SetCallbackRegistry(callbackRegistry)
-	orch := orchestrator.NewRouteOrchestrator(callbackRegistry)
+	orch := agentflow.NewRouteOrchestrator(callbackRegistry)
 	runner.SetOrchestrator(orch)
 
 	var finalState agentflow.State
@@ -219,7 +217,7 @@ func TestAgentErrorTriggersErrorHandler(t *testing.T) {
 	runner := agentflow.NewRunner(1)
 	callbackRegistry := agentflow.NewCallbackRegistry()
 	runner.SetCallbackRegistry(callbackRegistry)
-	orch := orchestrator.NewRouteOrchestrator(callbackRegistry)
+	orch := agentflow.NewRouteOrchestrator(callbackRegistry)
 	runner.SetOrchestrator(orch)
 
 	var errorHandlerCalled bool
@@ -262,7 +260,7 @@ func TestSessionStatePersistence(t *testing.T) {
 	runner := agentflow.NewRunner(1)
 	callbackRegistry := agentflow.NewCallbackRegistry()
 	runner.SetCallbackRegistry(callbackRegistry)
-	orch := orchestrator.NewRouteOrchestrator(callbackRegistry)
+	orch := agentflow.NewRouteOrchestrator(callbackRegistry)
 	runner.SetOrchestrator(orch)
 
 	var lastState agentflow.State

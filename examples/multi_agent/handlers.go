@@ -6,9 +6,9 @@ import (
 	"log"
 	"sync"
 
-	agentflow "kunalkushwaha/agentflow/internal/core"
-	"kunalkushwaha/agentflow/internal/llm"
-	"kunalkushwaha/agentflow/internal/tools"
+	agentflow "github.com/kunalkushwaha/agentflow/core"
+	"github.com/kunalkushwaha/agentflow/internal/llm"
+	"github.com/kunalkushwaha/agentflow/internal/tools"
 )
 
 // --- Planner Handler ---
@@ -54,11 +54,11 @@ func (h *PlannerHandler) Run(ctx context.Context, event agentflow.Event, state a
 
 // --- Researcher Handler ---
 type ResearcherHandler struct {
-	tools tools.ToolRegistry
+	tools *tools.ToolRegistry
 	llm   llm.LLMAdapter
 }
 
-func NewResearcherHandler(tools tools.ToolRegistry, llm llm.LLMAdapter) *ResearcherHandler {
+func NewResearcherHandler(tools *tools.ToolRegistry, llm llm.LLMAdapter) *ResearcherHandler {
 	return &ResearcherHandler{
 		tools: tools,
 		llm:   llm,

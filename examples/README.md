@@ -2,6 +2,13 @@
 
 This directory contains a variety of examples demonstrating how to use the `AgentFlow` framework for building intelligent, event-driven workflows. Each example showcases different features and use cases of the framework, ranging from simple single-agent setups to complex multi-agent workflows.
 
+## Import Path
+
+All examples use the public AgentFlow API:
+```go
+import agentflow "github.com/kunalkushwaha/agentflow/core"
+```
+
 ## Examples Overview
 
 ### [Minimal Example](./minimal-example/README.md)

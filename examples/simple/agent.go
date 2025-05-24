@@ -8,8 +8,8 @@ import (
 	"os"
 	"time"
 
-	agentflow "kunalkushwaha/agentflow/internal/core"
-	"kunalkushwaha/agentflow/internal/llm"
+	agentflow "github.com/kunalkushwaha/agentflow/core"
+	"github.com/kunalkushwaha/agentflow/internal/llm"
 )
 
 // ChatAgent uses a ModelProvider to respond to user prompts.
