@@ -16,7 +16,7 @@ import (
 	"text/tabwriter"
 	"time"
 
-	agentflow "kunalkushwaha/agentflow/internal/core" // Import core types
+	agentflow "github.com/kunalkushwaha/agentflow/core" // Import core types
 
 	"github.com/spf13/cobra"
 )
@@ -98,9 +98,26 @@ func init() {
 // Update the displayTrace function with better table formatting
 
 func displayTrace(sessionID, filter string) {
-	// Construct filename
-	filename := fmt.Sprintf("%s.trace.json", sessionID)
-	filePath := filepath.Join(".", filename) // Look in current directory
+	// Extract actual session ID from path if provided
+	actualSessionID := filepath.Base(sessionID)
+	if strings.HasSuffix(actualSessionID, ".trace.json") {
+		actualSessionID = strings.TrimSuffix(actualSessionID, ".trace.json")
+	}
+
+	// Construct filename - check if sessionID is already a path
+	var filePath string
+	if strings.Contains(sessionID, string(filepath.Separator)) || strings.Contains(sessionID, "/") {
+		// sessionID contains path, use it directly
+		if strings.HasSuffix(sessionID, ".trace.json") {
+			filePath = sessionID
+		} else {
+			filePath = sessionID + ".trace.json"
+		}
+	} else {
+		// sessionID is just the ID, construct path
+		filename := fmt.Sprintf("%s.trace.json", sessionID)
+		filePath = filepath.Join(".", filename)
+	}
 
 	// Read the trace file
 	data, err := ioutil.ReadFile(filePath)
@@ -223,12 +240,11 @@ func displayTrace(sessionID, filter string) {
 		if filterAgentName != "" {
 			agentFilterMsg = " for agent '" + filterAgentName + "'"
 		}
-		fmt.Println("No trace entries found" + agentFilterMsg + " in session " + sessionID)
+		fmt.Println("No trace entries found" + agentFilterMsg + " in session " + actualSessionID)
 		return
 	}
-
 	// Print trace table with improved formatting
-	fmt.Printf("Trace for session %s:\n\n", sessionID)
+	fmt.Printf("Trace for session %s:\n\n", actualSessionID)
 
 	// Use box-drawing characters for table borders
 	if !verboseFlag {
@@ -482,9 +498,26 @@ func formatStateValue(val interface{}) string {
 
 // Enhance displayAgentFlow to better show next routes by analyzing agent state metadata
 func displayAgentFlow(sessionID, filter string) {
-	// Construct filename
-	filename := fmt.Sprintf("%s.trace.json", sessionID)
-	filePath := filepath.Join(".", filename)
+	// Extract actual session ID from path if provided
+	actualSessionID := filepath.Base(sessionID)
+	if strings.HasSuffix(actualSessionID, ".trace.json") {
+		actualSessionID = strings.TrimSuffix(actualSessionID, ".trace.json")
+	}
+
+	// Construct filename - check if sessionID is already a path
+	var filePath string
+	if strings.Contains(sessionID, string(filepath.Separator)) || strings.Contains(sessionID, "/") {
+		// sessionID contains path, use it directly
+		if strings.HasSuffix(sessionID, ".trace.json") {
+			filePath = sessionID
+		} else {
+			filePath = sessionID + ".trace.json"
+		}
+	} else {
+		// sessionID is just the ID, construct path
+		filename := fmt.Sprintf("%s.trace.json", sessionID)
+		filePath = filepath.Join(".", filename)
+	}
 
 	// collect hop entries here
 	var flowEntries []AgentFlowEntry
@@ -506,12 +539,11 @@ func displayAgentFlow(sessionID, filter string) {
 
 	// Using the same intermediate struct from displayTrace
 	// ... (same JSON struct definitions) ...
-
 	// Process entries to extract flow information
 	// Update extracting next route from trace entries
 	for _, je := range jsonEntries {
-		// Only focus on AfterAgentRun hooks as they contain the routing decision
-		if je.Hook != string(agentflow.HookAfterAgentRun) {
+		// Only focus on AfterEventHandling and AfterAgentRun hooks as they contain the routing decision
+		if je.Hook != "AfterEventHandling" && je.Hook != "AfterAgentRun" {
 			continue
 		}
 
@@ -520,13 +552,13 @@ func displayAgentFlow(sessionID, filter string) {
 
 		// 2a. try state / agent‑result meta (unchanged)
 		if je.State != nil && je.State.Meta != nil {
-			if route, ok := je.State.Meta[string(agentflow.RouteMetadataKey)]; ok && route != "" {
+			if route, ok := je.State.Meta["route"]; ok && route != "" {
 				nextAgent = route
 			}
 		}
 		if nextAgent == "-" && je.AgentResult != nil && je.AgentResult.OutputState != nil &&
 			je.AgentResult.OutputState.Meta != nil {
-			if route, ok := je.AgentResult.OutputState.Meta[string(agentflow.RouteMetadataKey)]; ok && route != "" {
+			if route, ok := je.AgentResult.OutputState.Meta["route"]; ok && route != "" {
 				nextAgent = route
 			}
 		}
@@ -563,9 +595,8 @@ func displayAgentFlow(sessionID, filter string) {
 			Kind:      kind,
 		})
 	}
-
 	if len(flowEntries) == 0 {
-		fmt.Println("No agent flow data found for session " + sessionID)
+		fmt.Println("No agent flow data found for session " + actualSessionID)
 		return
 	}
 
@@ -575,7 +606,7 @@ func displayAgentFlow(sessionID, filter string) {
 	})
 
 	// Print the flow
-	fmt.Printf("Agent request flow for session %s:\n\n", sessionID)
+	fmt.Printf("Agent request flow for session %s:\n\n", actualSessionID)
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 2, 1, ' ', 0)
 	fmt.Fprintf(w, "TIME\tAGENT\tNEXT\tHOOK\tEVENT ID\n") // added HOOK column

@@ -14,10 +14,9 @@ import (
 	"syscall"
 	"time"
 
-	agentflow "kunalkushwaha/agentflow/internal/core"
-	"kunalkushwaha/agentflow/internal/llm" // Added LLM import
-	"kunalkushwaha/agentflow/internal/orchestrator"
-	"kunalkushwaha/agentflow/internal/tools"
+	agentflow "github.com/kunalkushwaha/agentflow/core"
+	"github.com/kunalkushwaha/agentflow/internal/llm" // Added LLM import
+	"github.com/kunalkushwaha/agentflow/internal/tools"
 )
 
 // --- Tool Using Agent (implements agentflow.Agent) ---
@@ -376,10 +375,9 @@ func main() {
 	// 4. Wrap with AgentHandler
 	var wg sync.WaitGroup
 	agentHandler := NewAgentHandler(toolAgent, &wg)
-
 	// 5. Orchestrator / runner
 	cbReg := agentflow.NewCallbackRegistry()
-	orch := orchestrator.NewRouteOrchestrator(cbReg)
+	orch := agentflow.NewRouteOrchestrator(cbReg)
 
 	concurrency := runtime.NumCPU()
 	runner := agentflow.NewRunner(concurrency) // NewRunner wants only int
@@ -401,9 +399,8 @@ func main() {
 		ID: fmt.Sprintf("tool-evt-%d", time.Now().UnixNano()),
 		Data: map[string]any{
 			"user_request": "What is 15 plus 27.5?",
-		},
-		Metadata: map[string]string{
-			orchestrator.RouteMetadataKey: handlerName,
+		}, Metadata: map[string]string{
+			agentflow.RouteMetadataKey: handlerName,
 		},
 	}
 

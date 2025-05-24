@@ -1,4 +1,4 @@
-module kunalkushwaha/agentflow
+module github.com/kunalkushwaha/agentflow
 
 go 1.23.0
 

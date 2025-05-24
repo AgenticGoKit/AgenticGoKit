@@ -12,8 +12,7 @@ import (
 	"syscall"
 	"time"
 
-	agentflow "kunalkushwaha/agentflow/internal/core"
-	"kunalkushwaha/agentflow/internal/orchestrator"
+	agentflow "github.com/kunalkushwaha/agentflow/core"
 )
 
 // MemoryAgent demonstrates a simple agent that stores received data in memory.
@@ -74,10 +73,9 @@ func (a *MemoryAgent) GetData(eventID string) (agentflow.EventData, bool) {
 
 func main() {
 	log.Println("Starting Memory Agent Example...")
-
 	// 1. Setup Core Components
 	callbackRegistry := agentflow.NewCallbackRegistry()
-	orchestratorImpl := orchestrator.NewRouteOrchestrator(callbackRegistry)
+	orchestratorImpl := agentflow.NewRouteOrchestrator(callbackRegistry)
 	runner := agentflow.NewRunner(runtime.NumCPU())
 
 	// Create and set TraceLogger
@@ -88,7 +86,6 @@ func main() {
 	// Set the Orchestrator for the Runner
 	runner.SetOrchestrator(orchestratorImpl)
 	log.Println("Runner, Logger & RouteOrchestrator created and linked.")
-
 	// --- Register Callbacks ---
 	// Register trace callback for all hooks
 	callbackRegistry.Register(agentflow.HookAll, "traceLogger",
@@ -120,6 +117,7 @@ func main() {
 			}
 
 			entry := agentflow.TraceEntry{
+				EventID:   args.Event.GetID(),
 				Hook:      args.Hook,
 				Timestamp: time.Now(),
 				State:     args.State,
@@ -130,12 +128,12 @@ func main() {
 				entry.AgentID = args.AgentID
 			}
 
-			if args.Output.OutputState != nil {
-				entry.AgentResult = &args.Output
+			if args.AgentResult.OutputState != nil {
+				entry.AgentResult = &args.AgentResult
 			}
 
-			if args.Output.Error != "" {
-				errMsg := args.Output.Error
+			if args.Error != nil {
+				errMsg := args.Error.Error()
 				entry.Error = errMsg
 			}
 
@@ -212,10 +210,9 @@ func main() {
 			"message": fmt.Sprintf("Data for event %d", i),
 			"index":   i,
 		}
-
 		eventMetadata := map[string]string{
-			orchestrator.RouteMetadataKey: memoryAgentName,
-			agentflow.SessionIDKey:        sessionID,
+			agentflow.RouteMetadataKey: memoryAgentName,
+			agentflow.SessionIDKey:     sessionID,
 		}
 
 		event := agentflow.NewEvent(

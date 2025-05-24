@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	agentflow "kunalkushwaha/agentflow/internal/core"
+	agentflow "github.com/kunalkushwaha/agentflow/internal/core"
 )
 
 // --- Test Helper Agents ---

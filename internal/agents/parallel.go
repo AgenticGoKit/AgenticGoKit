@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	agentflow "kunalkushwaha/agentflow/internal/core"
+	agentflow "github.com/kunalkushwaha/agentflow/internal/core"
 )
 
 // ParallelAgentConfig holds configuration for ParallelAgent.

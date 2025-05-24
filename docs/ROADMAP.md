@@ -173,4 +173,100 @@ Below is a 6-sprint, 12-week roadmap that breaks your architecture into epics an
 
 ---
 
-This breakdown gives your PM clear epics and actionable user stories tied to each sprint, ensuring developers can pick up well-scoped tasks and deliver incremental value every two weeks.
+## MCP Integration (Proposed Sprint)
+
+**Epic**: Add support for Model Context Protocol (MCP) tools to enhance the framework's tool ecosystem and context management capabilities.
+
+1. **User Story**: As a developer, I want to define an `MCPTool` interface to standardize MCP tool integration.
+   **Acceptance Criteria**:
+   - Define `MCPTool` interface with methods for tool invocation and configuration.
+   - Unit tests for the interface implementation.
+
+2. **User Story**: As a developer, I want to extend the `ToolRegistry` to support MCP tools.
+   **Acceptance Criteria**:
+   - Add methods to register and retrieve MCP tools.
+   - Ensure compatibility with existing tools.
+
+3. **User Story**: As a developer, I want an adapter to wrap MCP tools for seamless integration.
+   **Acceptance Criteria**:
+   - Implement an `MCPToolAdapter` to bridge MCP tools with the framework.
+   - Unit tests for adapter functionality.
+
+4. **User Story**: As a developer, I want to manage MCP-specific context using the `State` interface.
+   **Acceptance Criteria**:
+   - Add methods to get and set MCP context in `State`.
+   - Ensure context is passed correctly during tool invocation.
+
+5. **User Story**: As a developer, I want tracing hooks for MCP tool invocations to ensure observability.
+   **Acceptance Criteria**:
+   - Add tracing hooks for MCP tool calls.
+   - Log inputs, outputs, and errors for each invocation.
+
+6. **User Story**: As a developer, I want an example workflow demonstrating MCP tool usage.
+   **Acceptance Criteria**:
+   - Create a new example in the `examples/mcp_tool/` folder.
+   - Document the workflow in the `examples README`.
+
+7. **User Story**: As a developer, I want to discover MCP servers dynamically to register their tools.
+   **Acceptance Criteria**:
+   - Implement an `MCPServerDiscovery` interface for discovering MCP servers.
+   - Provide implementations for mDNS-based discovery and static configuration.
+   - Unit tests for discovery mechanisms.
+
+8. **User Story**: As a developer, I want to query discovered MCP servers for available tools.
+   **Acceptance Criteria**:
+   - Implement an `MCPClient` to query MCP servers for tool information.
+   - Ensure compatibility with the `ToolRegistry` for dynamic registration.
+   - Integration tests for querying and registering tools.
+
+9. **User Story**: As a developer, I want to dynamically register tools from discovered MCP servers.
+   **Acceptance Criteria**:
+   - Extend the `ToolRegistry` to support dynamic registration of MCP tools.
+   - Add an adapter for invoking tools from MCP servers.
+   - Unit tests for dynamic registration and invocation.
+
+10. **User Story**: As a developer, I want tracing hooks for MCP server discovery and tool registration.
+    **Acceptance Criteria**:
+    - Add tracing hooks to log discovered servers and registered tools.
+    - Integration tests for tracing functionality.
+
+11. **User Story**: As a developer, I want an example workflow demonstrating MCP server discovery and tool usage.
+    **Acceptance Criteria**:
+    - Create a new example in the `examples/mcp_discovery/` folder.
+    - Document the workflow in the `examples README`.
+
+---
+
+## RAG Integration (Proposed Sprint)
+
+**Epic**: Add support for Retrieval-Augmented Generation (RAG) to enhance the framework's ability to combine retrieval mechanisms with generative AI models.
+
+1. **User Story**: As a developer, I want to define a `Retriever` interface to standardize retrieval operations.
+   **Acceptance Criteria**:
+   - Define `Retriever` interface with methods for querying and retrieving documents.
+   - Unit tests for the interface implementation.
+
+2. **User Story**: As a developer, I want to implement retriever backends for popular systems like Pinecone and Elasticsearch.
+   **Acceptance Criteria**:
+   - Implement `PineconeRetriever` and `ElasticsearchRetriever`.
+   - Integration tests for each backend.
+
+3. **User Story**: As a developer, I want a `RAGAgent` that combines retrieval and generation workflows.
+   **Acceptance Criteria**:
+   - Implement `RAGAgent` to query retrievers and pass retrieved context to LLMs.
+   - Unit tests for the agent's logic.
+
+4. **User Story**: As a developer, I want to extend the `State` interface to manage retrieved context.
+   **Acceptance Criteria**:
+   - Add methods to store and retrieve RAG-specific context in `State`.
+   - Ensure compatibility with existing agents.
+
+5. **User Story**: As a developer, I want tracing hooks for RAG workflows to ensure observability.
+   **Acceptance Criteria**:
+   - Add tracing hooks to log retrieval queries, results, and LLM outputs.
+   - Integration tests for tracing functionality.
+
+6. **User Story**: As a developer, I want an example workflow demonstrating RAG usage.
+   **Acceptance Criteria**:
+   - Create a new example in the `examples/rag_workflow/` folder.
+   - Document the workflow in the `examples README`.

@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	agentflow "kunalkushwaha/agentflow/internal/core"
-	"kunalkushwaha/agentflow/internal/factory"
+	"github.com/kunalkushwaha/agentflow/core"
+	agentflow "github.com/kunalkushwaha/agentflow/core"
 )
 
 // MinimalAgent implements agentflow.AgentHandler
@@ -24,18 +24,17 @@ func main() {
 		"minimal": &MinimalAgent{},
 	}
 
-	runner := factory.NewRunnerWithConfig(factory.RunnerConfig{
+	runner := agentflow.NewRunnerWithConfig(agentflow.RunnerConfig{
 		Agents: agents,
 	})
 
 	runner.Start(context.Background())
 	defer runner.Stop()
-
 	// Emit an event routed to the "minimal" agent
-	runner.Emit(agentflow.NewEvent(
+	runner.Emit(core.NewEvent(
 		"test",
 		nil,
-		map[string]string{agentflow.RouteMetadataKey: "minimal"},
+		map[string]string{core.RouteMetadataKey: "minimal"},
 	))
 
 	// Give the agent time to run

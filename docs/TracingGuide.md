@@ -66,6 +66,52 @@ AgentFlow intentionally records two `BeforeAgentRun` entries per execution:
 
 Add tracing in **3 simple steps**:
 
+### Using AgentFlow as a Library
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "time"
+    
+    agentflow "github.com/kunalkushwaha/agentflow/core"
+)
+
+func main() {
+    // 1. Create a trace logger
+    traceLogger := agentflow.NewInMemoryTraceLogger()
+
+    // 2. Create runner with tracing
+    runner := agentflow.NewRunnerWithConfig(agentflow.RunnerConfig{
+        Agents:      agents,
+        QueueSize:   10,
+        TraceLogger: traceLogger, // Set trace logger during creation
+    })
+
+    // 3. Tracing is automatically enabled
+    // No additional setup required!
+
+    // Optional: Access traces programmatically
+    sessionID := "your-session-id"
+    traces, err := runner.DumpTrace(sessionID)
+    if err != nil {
+        fmt.Printf("Error getting traces: %v\n", err)
+    } else {
+        fmt.Printf("Found %d trace entries\n", len(traces))
+        for _, trace := range traces {
+            fmt.Printf("  %s: %s - Agent: %s\n", 
+                trace.Timestamp.Format("15:04:05.000"),
+                trace.Type, 
+                trace.AgentID)
+        }
+    }
+}
+```
+
+### Legacy Setup (for internal development)
+
 ```go
 // 1. Create a trace logger
 traceLogger := agentflow.NewInMemoryTraceLogger()
@@ -127,20 +173,34 @@ agentcli trace --filter <agent-name> <session-id>
 
 ## Best Practices
 
-### 1. Enable Full Tracing in Development
+### 1. Enable Full Tracing in Development (Library Usage)
 
 ```go
-traceLogger := agentflow.NewInMemoryTraceLogger()
-runner.SetTraceLogger(traceLogger)
-agentflow.RegisterTraceHooks(callbackRegistry, traceLogger)
+import agentflow "github.com/kunalkushwaha/agentflow/core"
+
+func main() {
+    traceLogger := agentflow.NewInMemoryTraceLogger()
+    
+    runner := agentflow.NewRunnerWithConfig(agentflow.RunnerConfig{
+        Agents:      agents,
+        QueueSize:   10,
+        TraceLogger: traceLogger,
+    })
+    
+    // Tracing is automatically enabled
+}
 ```
 
 ### 2. Use File-Based Tracing in Production
 
 ```go
 traceLogger := agentflow.NewFileTraceLogger("./traces")
-runner.SetTraceLogger(traceLogger)
-agentflow.RegisterTraceHooks(callbackRegistry, traceLogger)
+
+runner := agentflow.NewRunnerWithConfig(agentflow.RunnerConfig{
+    Agents:      agents,
+    QueueSize:   100,
+    TraceLogger: traceLogger,
+})
 ```
 
 ### 3. Maintain Consistent Session IDs
@@ -197,12 +257,57 @@ Example:
 
 ### Custom Trace Loggers
 
-Implement the `TraceLogger` interface:
+Implement the `TraceLogger` interface for custom tracing solutions:
 
 ```go
-type TraceLogger interface {
-    Log(entry TraceEntry) error
-    GetTrace(sessionID string) ([]TraceEntry, error)
+package main
+
+import (
+    "encoding/json"
+    "os"
+    
+    agentflow "github.com/kunalkushwaha/agentflow/core"
+)
+
+// CustomTraceLogger implements TraceLogger interface
+type CustomTraceLogger struct {
+    filename string
+}
+
+func NewCustomTraceLogger(filename string) *CustomTraceLogger {
+    return &CustomTraceLogger{filename: filename}
+}
+
+func (t *CustomTraceLogger) Log(entry agentflow.TraceEntry) error {
+    // Your custom logging logic
+    data, err := json.Marshal(entry)
+    if err != nil {
+        return err
+    }
+    
+    file, err := os.OpenFile(t.filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+    if err != nil {
+        return err
+    }
+    defer file.Close()
+    
+    _, err = file.Write(append(data, '\n'))
+    return err
+}
+
+func (t *CustomTraceLogger) GetTrace(sessionID string) ([]agentflow.TraceEntry, error) {
+    // Your custom trace retrieval logic
+    return nil, nil
+}
+
+// Usage
+func main() {
+    customLogger := NewCustomTraceLogger("custom-traces.log")
+    
+    runner := agentflow.NewRunnerWithConfig(agentflow.RunnerConfig{
+        Agents:      agents,
+        TraceLogger: customLogger,
+    })
 }
 ```
 

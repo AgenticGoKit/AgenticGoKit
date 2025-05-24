@@ -7,7 +7,7 @@ import (
 	"log"
 	"strings"
 
-	agentflow "kunalkushwaha/agentflow/internal/core" // Import core types
+	agentflow "github.com/kunalkushwaha/agentflow/internal/core" // Import core types
 
 	"github.com/weaviate/weaviate-go-client/v4/weaviate"
 	"github.com/weaviate/weaviate-go-client/v4/weaviate/auth"
@@ -95,16 +95,15 @@ func (m *WeaviateMemory) ensureClassExists(ctx context.Context, dimensions int) 
 			"distance": "cosine", // Common distance metric for embeddings
 			// Other HNSW parameters (efConstruction, maxConnections, ef) can be tuned
 		},
-		Properties: []*models.Property{
-			{
-				Name:        "item_id", // Store our internal ID separately
-				DataType:    []string{string(schema.DataTypeText)},
-				Description: "The unique ID provided by Agentflow",
-				// Index this field for potential filtering later
-				IndexFilterable: true,
-				IndexSearchable: false, // Not typically needed for search
-			},
-			// We will store other metadata dynamically within the object properties
+		Properties: []*models.Property{{
+			Name:        "item_id", // Store our internal ID separately
+			DataType:    []string{string(schema.DataTypeText)},
+			Description: "The unique ID provided by Agentflow",
+			// Index this field for potential filtering later
+			IndexFilterable: &[]bool{true}[0],
+			IndexSearchable: &[]bool{false}[0], // Not typically needed for search
+		},
+		// We will store other metadata dynamically within the object properties
 		},
 	}
 
@@ -185,7 +184,7 @@ func (m *WeaviateMemory) Store(ctx context.Context, id string, embedding []float
 
 // deleteByID attempts to delete an object based on the custom 'item_id' property.
 func (m *WeaviateMemory) deleteByID(ctx context.Context, itemID string) error {
-	where := filters.NewWhere().
+	where := filters.Where().
 		WithPath([]string{"item_id"}).
 		WithOperator(filters.Equal).
 		WithValueText(itemID)
@@ -207,8 +206,8 @@ func (m *WeaviateMemory) deleteByID(ctx context.Context, itemID string) error {
 			if len(result.Results.Objects) > 0 {
 				// Find first error message
 				for _, obj := range result.Results.Objects {
-					if obj.Errors != nil {
-						errMsg = fmt.Sprintf("%s - first error: %s", errMsg, obj.Errors.Error)
+					if obj.Errors != nil && len(obj.Errors.Error) > 0 {
+						errMsg = fmt.Sprintf("%s - first error: %s", errMsg, obj.Errors.Error[0].Message)
 						break
 					}
 				}
@@ -331,12 +330,10 @@ func (m *WeaviateMemory) Query(ctx context.Context, embedding []float32, topK in
 func (m *WeaviateMemory) sanitizePropertyName(key string) string {
 	// Replace invalid characters with underscore
 	sanitized := strings.Builder{}
-	validStart := false
 	for i, r := range key {
 		if i == 0 {
 			if r >= 'a' && r <= 'z' {
 				sanitized.WriteRune(r)
-				validStart = true
 			} else {
 				// Prepend if first char is invalid
 				sanitized.WriteString("prop_")

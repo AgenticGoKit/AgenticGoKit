@@ -6,8 +6,8 @@ import (
 	"log"
 	"time"
 
-	agentflow "kunalkushwaha/agentflow/internal/core"
-	"kunalkushwaha/agentflow/internal/llm"
+	agentflow "github.com/kunalkushwaha/agentflow/core"
+	"github.com/kunalkushwaha/agentflow/internal/llm"
 )
 
 // OllamaAgent implements agentflow.AgentHandler

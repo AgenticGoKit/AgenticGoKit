@@ -11,10 +11,9 @@ import (
 	"sync"
 	"time"
 
-	agentflow "kunalkushwaha/agentflow/internal/core"
-	"kunalkushwaha/agentflow/internal/llm"
-	"kunalkushwaha/agentflow/internal/orchestrator"
-	"kunalkushwaha/agentflow/internal/tools"
+	agentflow "github.com/kunalkushwaha/agentflow/core"
+	"github.com/kunalkushwaha/agentflow/internal/llm"
+	"github.com/kunalkushwaha/agentflow/internal/tools"
 )
 
 const (
@@ -93,10 +92,8 @@ func main() {
 	// 		}
 
 	// 		return args.State, nil
-	// 	})
-
-	// --- 4. Create Orchestrator and Runner ---
-	orchestratorImpl := orchestrator.NewRouteOrchestrator(callbackRegistry)
+	// 	})	// --- 4. Create Orchestrator and Runner ---
+	orchestratorImpl := agentflow.NewRouteOrchestrator(callbackRegistry)
 	runner := agentflow.NewRunner(2) // Using 2 for concurrency - simple example
 	runner.SetOrchestrator(orchestratorImpl)
 	runner.SetCallbackRegistry(callbackRegistry)
@@ -111,7 +108,7 @@ func main() {
 	// --- 6. Create Agent Handlers ---
 	var wg sync.WaitGroup
 	plannerHandler := NewPlannerHandler(azureAdapter)
-	researcherHandler := NewResearcherHandler(*toolRegistry, llmAdapter)
+	researcherHandler := NewResearcherHandler(toolRegistry, llmAdapter)
 	summarizerHandler := NewSummarizerHandler(azureAdapter, llmAdapter)
 	finalOutputHandler := NewFinalOutputHandler(&wg)
 
@@ -191,7 +188,7 @@ func main() {
 // 	return counts
 // }
 
-func mustRegisterAgent(orchestrator *orchestrator.RouteOrchestrator, name string, handler agentflow.AgentHandler) {
+func mustRegisterAgent(orchestrator *agentflow.RouteOrchestrator, name string, handler agentflow.AgentHandler) {
 	if err := orchestrator.RegisterAgent(name, handler); err != nil {
 		log.Fatalf("Failed to register %s agent: %v", name, err)
 	}

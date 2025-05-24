@@ -38,11 +38,85 @@ Whether you're prototyping a single-agent application or orchestrating a complex
 
 ### Installation
 
+Add AgentFlow to your Go project:
+
 ```bash
 go get github.com/kunalkushwaha/agentflow@latest
 ```
 
-### Running Your First Example
+### Quick Start - Using as a Library
+
+Create a simple agent workflow in your Go project:
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+    "time"
+
+    agentflow "github.com/kunalkushwaha/agentflow/core"
+)
+
+// SimpleAgent implements agentflow.AgentHandler
+type SimpleAgent struct {
+    name string
+}
+
+func (a *SimpleAgent) Run(ctx context.Context, event agentflow.Event, state agentflow.State) (agentflow.AgentResult, error) {
+    agentflow.Logger().Info().
+        Str("agent", a.name).
+        Str("event_id", event.GetID()).
+        Msg("Processing event")
+
+    // Create output state with response
+    outputState := agentflow.NewState()
+    outputState.Set("processed_by", a.name)
+    outputState.Set("timestamp", time.Now().Format(time.RFC3339))
+
+    return agentflow.AgentResult{
+        OutputState: outputState,
+        StartTime:   time.Now(),
+        EndTime:     time.Now(),
+        Duration:    time.Millisecond * 10,
+    }, nil
+}
+
+func main() {
+    // Create agents
+    agents := map[string]agentflow.AgentHandler{
+        "processor": &SimpleAgent{name: "ProcessorAgent"},
+    }
+
+    // Create and start runner
+    runner := agentflow.NewRunnerWithConfig(agentflow.RunnerConfig{
+        Agents:    agents,
+        QueueSize: 10,
+    })
+
+    ctx := context.Background()
+    if err := runner.Start(ctx); err != nil {
+        log.Fatalf("Failed to start runner: %v", err)
+    }
+    defer runner.Stop()
+
+    // Create and emit event
+    eventData := agentflow.EventData{"message": "Hello AgentFlow!"}
+    metadata := map[string]string{agentflow.RouteMetadataKey: "processor"}
+    event := agentflow.NewEvent("processor", eventData, metadata)
+
+    if err := runner.Emit(event); err != nil {
+        log.Fatalf("Failed to emit event: %v", err)
+    }
+
+    time.Sleep(time.Second * 2) // Wait for processing
+    fmt.Println("AgentFlow library test completed successfully!")
+}
+```
+
+### Running the Examples
 
 1. Clone the repository:
    ```bash
@@ -98,8 +172,9 @@ We welcome contributions from the community! Here's how you can get involved:
 agentflow/
 ├── cmd/
 │   └── agentcli/           # CLI tools for trace inspection
-├── internal/               # Core framework code
-│   ├── core/               # Core abstractions (Event, State, Runner)
+├── core/                   # Public API - Core abstractions (Event, State, Runner, AgentHandler)
+├── internal/               # Internal framework implementation
+│   ├── core/               # Internal core logic
 │   ├── orchestrator/       # Orchestration strategies
 │   ├── agents/             # Workflow agent implementations
 │   ├── llm/                # LLM adapters and interfaces
@@ -107,16 +182,22 @@ agentflow/
 │   └── memory/             # Memory and session services
 ├── examples/               # Example implementations
 ├── docs/                   # Documentation
-└── benchmarks/             # Performance benchmarks
+└── integration/            # Integration tests and benchmarks
 ```
 
-### Folder Descriptions
+### Key Packages
 
-- **cmd/**: Contains CLI tools like `agentcli` for trace inspection.
-- **internal/**: Core framework components, including agents, orchestrators, and LLM adapters.
-- **examples/**: Ready-to-run examples demonstrating various use cases.
-- **docs/**: Comprehensive documentation for developers and contributors.
-- **benchmarks/**: Performance benchmarks for different components.
+- **`core/`**: **PUBLIC API** - Import this package in your applications (`github.com/kunalkushwaha/agentflow/core`)
+- **`internal/`**: Internal implementation details (not importable by external projects)
+- **`examples/`**: Ready-to-run examples demonstrating various use cases
+- **`docs/`**: Comprehensive documentation for developers and contributors
+
+### Import Path
+
+For external projects, use:
+```go
+import agentflow "github.com/kunalkushwaha/agentflow/core"
+```
 
 ## Documentation
 
