@@ -196,6 +196,57 @@ The factory will register a default "error-handler" agent if not provided. To ov
 
 ---
 
+## Command-Line Interface (agentcli)
+
+AgentFlow includes a command-line interface, `agentcli`, to help with development and project management tasks.
+
+### Scaffolding with `agentcli create`
+
+The `agentcli create` command initializes a new AgentFlow project with a standard directory structure and placeholder Go files, allowing you to quickly get started.
+
+**Purpose**:
+To bootstrap a new AgentFlow project, setting up a consistent structure for your agent development.
+
+**Basic Usage**:
+```bash
+agentcli create [flags]
+```
+
+**Flags**:
+*   `--agentName string` (shorthand `-n`): Specifies the name of the agent and the root project directory to be created. (Default: "my-agent")
+*   `--numAgents int` (shorthand `-a`): Determines the number of primary agent configurations to generate. (Default: 1)
+    *   If `1`, an `agent.go` file is created in the root project directory (`<agentName>/agent.go`).
+    *   If greater than `1`, numbered subdirectories (e.g., `agent1/`, `agent2/`) are created within the project directory, each containing its own `agent.go` file (e.g., `<agentName>/agent1/agent.go`).
+*   `--responsibleAI`: If set, includes a placeholder `responsible_ai/agent.go` for implementing Responsible AI checks.
+*   `--errorHandler`: If set, includes a placeholder `error_handler/agent.go` for implementing custom error handling logic.
+
+**Example**:
+```bash
+agentcli create --agentName myExampleAgent --numAgents 2 --responsibleAI
+```
+
+**Generated Structure (for the example above)**:
+```
+myExampleAgent/
+├── main.go                 # Main application entry point
+├── agent1/                 # Directory for the first agent
+│   └── agent.go            # Placeholder for Agent1 logic
+├── agent2/                 # Directory for the second agent
+│   └── agent.go            # Placeholder for Agent2 logic
+└── responsible_ai/         # Directory for Responsible AI agent
+    └── agent.go            # Placeholder for ResponsibleAIAgent logic
+```
+*(Note: If `--errorHandler` was also specified, an `error_handler/agent.go` directory and file would also be present.)*
+
+**Next Steps**:
+After running the command, you can navigate into your new project directory:
+```bash
+cd myExampleAgent
+```
+Then, start implementing your specific agent logic in the generated `.go` files. You can also begin integrating your agents within `main.go`.
+
+---
+
 ## Troubleshooting / FAQ
 
 - **My agent isn't called?**

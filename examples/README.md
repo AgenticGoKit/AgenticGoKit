@@ -81,3 +81,12 @@ import agentflow "github.com/kunalkushwaha/agentflow/core"
 - **Tool Integration**: Learn from the [Tools Example](./tools/README.md).
 
 For more details, refer to the [AgentFlow documentation](../docs/DevGuide.md).
+
+---
+
+# Code Changes
+
+The following code changes were made to update the examples to reference only the public core LLM API:
+
+- Updated any LLM usage to use the public core API (`core.NewOpenAIAdapter`, `core.ModelProvider`, etc.).
+- Removed or updated any references to `internal/llm`.

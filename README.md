@@ -26,7 +26,7 @@ Whether you're prototyping a single-agent application or orchestrating a complex
 - **Tool Ecosystem**: Extend agent capabilities with function tool registry.
 - **Observability**: Comprehensive tracing and callback hooks at key lifecycle points.
 - **Memory Management**: Both short-term session storage and long-term vector-based memory.
-- **CLI Support**: Built-in command-line tools for trace inspection and debugging.
+- **CLI Support**: Built-in command-line tools, including `agentcli create` for project scaffolding (e.g., `agentcli create --agentName myNewAgent`) and utilities for trace inspection and debugging.
 
 ## Getting Started
 
@@ -162,7 +162,8 @@ We welcome contributions from the community! Here's how you can get involved:
 
 ### Development Tips
 
-- Use the `agentcli` CLI tool for debugging and trace inspection.
+- Use `agentcli create --agentName myProject` to quickly scaffold a new AgentFlow project.
+- Use the other `agentcli` CLI sub-commands for debugging and trace inspection.
 - Explore the `examples` folder to understand how different components work together.
 - Refer to the [Developer Guide](docs/DevGuide.md) for in-depth documentation.
 
@@ -177,7 +178,6 @@ agentflow/
 │   ├── core/               # Internal core logic
 │   ├── orchestrator/       # Orchestration strategies
 │   ├── agents/             # Workflow agent implementations
-│   ├── llm/                # LLM adapters and interfaces
 │   ├── tools/              # Tool registry and implementations
 │   └── memory/             # Memory and session services
 ├── examples/               # Example implementations

@@ -30,6 +30,7 @@ package main
 import (
     "context"
     "log"
+    "time"
     agentflow "github.com/kunalkushwaha/agentflow/core"
 )
 
@@ -67,3 +68,18 @@ func main() {
 - [Library Integration Guide](../docs/agentflow_library_integration.md)
 - [Architecture Overview](../docs/Architecture.md)
 - [Examples](../examples/README.md)
+
+## LLM Integration
+
+To integrate with LLMs, use the public core API:
+
+```go
+import "github.com/kunalkushwaha/agentflow/core"
+
+adapter := core.NewOpenAIAdapter("your-api-key")
+model := core.ModelProvider(adapter)
+
+// Use model in your agent...
+```
+
+Refer to the [LLM Integration Guide](../docs/LLMIntegration.md) for detailed instructions.
