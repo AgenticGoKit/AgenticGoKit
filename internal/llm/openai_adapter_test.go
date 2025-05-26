@@ -20,11 +20,19 @@ func TestOpenAIAdapter_Call(t *testing.T) {
 		require.NoError(t, err)
 
 		ctx := context.Background()
-		response, err := adapter.Call(ctx, "User prompt")
+		prompt := Prompt{
+			System: "Test system",
+			User:   "User prompt",
+			Parameters: ModelParameters{
+				Temperature: floatPtr(0.7),
+				MaxTokens:   int32Ptr(50),
+			},
+		}
+		response, err := adapter.Call(ctx, prompt)
 
 		// Assertions
 		assert.NoError(t, err)
-		assert.NotEmpty(t, response)
+		assert.NotEmpty(t, response.Content)
 	})
 
 	t.Run("Empty prompt", func(t *testing.T) {
@@ -37,11 +45,12 @@ func TestOpenAIAdapter_Call(t *testing.T) {
 		require.NoError(t, err)
 
 		ctx := context.Background()
-		response, err := adapter.Call(ctx, "")
+		prompt := Prompt{System: "", User: "", Parameters: ModelParameters{}}
+		response, err := adapter.Call(ctx, prompt)
 
 		// Assertions
 		assert.Error(t, err)
-		assert.Empty(t, response)
+		assert.Empty(t, response.Content)
 	})
 }
 
@@ -56,7 +65,8 @@ func TestOpenAIAdapter_Embeddings(t *testing.T) {
 		require.NoError(t, err)
 
 		ctx := context.Background()
-		embeddings, err := adapter.Embeddings(ctx, "Test input")
+		inputs := []string{"Test input"}
+		embeddings, err := adapter.Embeddings(ctx, inputs)
 
 		// Assertions
 		assert.NoError(t, err)
@@ -74,10 +84,12 @@ func TestOpenAIAdapter_Embeddings(t *testing.T) {
 		require.NoError(t, err)
 
 		ctx := context.Background()
-		embeddings, err := adapter.Embeddings(ctx, "")
+		inputs := []string{}
+		embeddings, err := adapter.Embeddings(ctx, inputs)
 
 		// Assertions
-		assert.Error(t, err)
-		assert.Nil(t, embeddings)
+		assert.NoError(t, err)
+		assert.NotNil(t, embeddings)
+		assert.Equal(t, 0, len(embeddings))
 	})
 }

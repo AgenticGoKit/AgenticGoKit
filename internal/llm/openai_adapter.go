@@ -9,7 +9,7 @@ import (
 	"net/http"
 )
 
-// OpenAIAdapter implements the LLMAdapter interface for OpenAI's API.
+// OpenAIAdapter implements the ModelProvider interface for OpenAI's API.
 type OpenAIAdapter struct {
 	apiKey      string
 	model       string
@@ -40,25 +40,35 @@ func NewOpenAIAdapter(apiKey, model string, maxTokens int, temperature float32) 
 	}, nil
 }
 
-// Call sends a prompt to OpenAI's API and returns the response.
-func (o *OpenAIAdapter) Call(ctx context.Context, prompt string) (string, error) {
-	if prompt == "" {
-		return "", errors.New("prompt cannot be empty")
+// Call implements the ModelProvider interface for a single request/response.
+func (o *OpenAIAdapter) Call(ctx context.Context, prompt Prompt) (Response, error) {
+	userPrompt := prompt.User
+	if userPrompt == "" {
+		return Response{}, errors.New("user prompt cannot be empty")
+	}
+
+	maxTokens := o.maxTokens
+	if prompt.Parameters.MaxTokens != nil {
+		maxTokens = int(*prompt.Parameters.MaxTokens)
+	}
+	temperature := o.temperature
+	if prompt.Parameters.Temperature != nil {
+		temperature = *prompt.Parameters.Temperature
 	}
 
 	requestBody, err := json.Marshal(map[string]interface{}{
 		"model":       o.model,
-		"prompt":      prompt,
-		"max_tokens":  o.maxTokens,
-		"temperature": o.temperature,
+		"prompt":      userPrompt,
+		"max_tokens":  maxTokens,
+		"temperature": temperature,
 	})
 	if err != nil {
-		return "", err
+		return Response{}, err
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/completions", bytes.NewBuffer(requestBody))
 	if err != nil {
-		return "", err
+		return Response{}, err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+o.apiKey)
@@ -66,46 +76,70 @@ func (o *OpenAIAdapter) Call(ctx context.Context, prompt string) (string, error)
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return "", err
+		return Response{}, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
-		return "", errors.New("OpenAI API error: " + string(body))
+		return Response{}, errors.New("OpenAI API error: " + string(body))
 	}
 
 	var response struct {
 		Choices []struct {
-			Text string `json:"text"`
+			Text         string `json:"text"`
+			FinishReason string `json:"finish_reason"`
 		} `json:"choices"`
+		Usage struct {
+			PromptTokens     int `json:"prompt_tokens"`
+			CompletionTokens int `json:"completion_tokens"`
+			TotalTokens      int `json:"total_tokens"`
+		} `json:"usage"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return "", err
+		return Response{}, err
 	}
 
 	if len(response.Choices) == 0 {
-		return "", errors.New("no completion choices returned")
+		return Response{}, errors.New("no completion choices returned")
 	}
 
-	return response.Choices[0].Text, nil
+	return Response{
+		Content: response.Choices[0].Text,
+		Usage: UsageStats{
+			PromptTokens:     response.Usage.PromptTokens,
+			CompletionTokens: response.Usage.CompletionTokens,
+			TotalTokens:      response.Usage.TotalTokens,
+		},
+		FinishReason: response.Choices[0].FinishReason,
+	}, nil
 }
 
-// Stream streams responses from OpenAI's API.
-func (o *OpenAIAdapter) Stream(ctx context.Context, prompt string, callback func(string) error) error {
-	// Implementation for streaming responses (if supported by OpenAI API)
-	return errors.New("streaming not implemented")
+// Stream implements the ModelProvider interface for streaming responses.
+func (o *OpenAIAdapter) Stream(ctx context.Context, prompt Prompt) (<-chan Token, error) {
+	ch := make(chan Token)
+	go func() {
+		defer close(ch)
+		// For now, just call Call and send the whole response as one token (OpenAI API v1/completions does not support streaming for completions endpoint)
+		resp, err := o.Call(ctx, prompt)
+		if err != nil {
+			ch <- Token{Error: err}
+			return
+		}
+		ch <- Token{Content: resp.Content}
+	}()
+	return ch, nil
 }
 
-// Embeddings fetches embeddings for a given input from OpenAI's API.
-func (o *OpenAIAdapter) Embeddings(ctx context.Context, input string) ([]float32, error) {
-	if input == "" {
-		return nil, errors.New("input cannot be empty")
+// Embeddings implements the ModelProvider interface for generating embeddings.
+func (o *OpenAIAdapter) Embeddings(ctx context.Context, texts []string) ([][]float64, error) {
+	if len(texts) == 0 {
+		return [][]float64{}, nil
 	}
 
 	requestBody, err := json.Marshal(map[string]interface{}{
 		"model": o.model,
-		"input": input,
+		"input": texts,
 	})
 	if err != nil {
 		return nil, err
@@ -132,16 +166,21 @@ func (o *OpenAIAdapter) Embeddings(ctx context.Context, input string) ([]float32
 
 	var response struct {
 		Data []struct {
-			Embedding []float32 `json:"embedding"`
+			Embedding []float64 `json:"embedding"`
 		} `json:"data"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, err
 	}
 
-	if len(response.Data) == 0 {
-		return nil, errors.New("no embeddings returned")
+	if len(response.Data) != len(texts) {
+		return nil, errors.New("number of embeddings returned does not match input")
 	}
 
-	return response.Data[0].Embedding, nil
+	embeddings := make([][]float64, len(texts))
+	for i, item := range response.Data {
+		embeddings[i] = item.Embedding
+	}
+
+	return embeddings, nil
 }

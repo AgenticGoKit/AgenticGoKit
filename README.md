@@ -178,7 +178,6 @@ agentflow/
 │   ├── core/               # Internal core logic
 │   ├── orchestrator/       # Orchestration strategies
 │   ├── agents/             # Workflow agent implementations
-│   ├── llm/                # LLM adapters and interfaces
 │   ├── tools/              # Tool registry and implementations
 │   └── memory/             # Memory and session services
 ├── examples/               # Example implementations
