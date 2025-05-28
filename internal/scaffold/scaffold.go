@@ -115,7 +115,7 @@ func NewAgent%d(llmProvider agentflow.ModelProvider) *Agent%dHandler {
 
 // Run implements the agentflow.AgentHandler interface
 func (a *Agent%dHandler) Run(ctx context.Context, event agentflow.Event, state agentflow.State) (agentflow.AgentResult, error) {
-	fmt.Printf("Agent%d processing event: %s\n", event.GetID())
+	fmt.Printf("Agent%d processing event: %%s\n", event.GetID())
 	
 	// Get input from event payload or state
 	var message interface{}
@@ -128,17 +128,21 @@ func (a *Agent%dHandler) Run(ctx context.Context, event agentflow.Event, state a
 		message = "No message provided"
 	}
 	
+	fmt.Printf("Agent%d received message: %%v\n", message)
+	
 	// Create LLM prompt
 	prompt := agentflow.Prompt{
 		System: "You are Agent%d. Process the given input and provide a helpful response.",
-		User:   fmt.Sprintf("Input: %v", message),
+		User:   fmt.Sprintf("Input: %%v", message),
 	}
 	
 	// Call LLM
 	response, err := a.llm.Call(ctx, prompt)
 	if err != nil {
-		return agentflow.AgentResult{}, fmt.Errorf("Agent%d LLM call failed: %w", err)
+		return agentflow.AgentResult{}, fmt.Errorf("Agent%d LLM call failed: %%w", err)
 	}
+	
+	fmt.Printf("Agent%d LLM response: %%s\n", response.Content)
 	
 	// Create output state
 	outputState := agentflow.NewState()
@@ -151,11 +155,12 @@ func (a *Agent%dHandler) Run(ctx context.Context, event agentflow.Event, state a
 			outputState.Set(key, value)
 		}
 	}
-		fmt.Printf("Agent%d completed processing\n")
+	
+	fmt.Printf("Agent%d completed processing\n")
 	
 	return agentflow.AgentResult{OutputState: outputState}, nil
 }
-`, agentNum, agentNum, agentNum, agentNum, agentNum, agentNum, agentNum, agentNum, agentNum, agentNum, agentNum, agentNum, agentNum)
+`, agentNum, agentNum, agentNum, agentNum, agentNum, agentNum, agentNum, agentNum, agentNum, agentNum, agentNum, agentNum, agentNum, agentNum, agentNum, agentNum, agentNum) // 17 arguments
 
 	filePath := filepath.Join(dir, filename)
 	if err := os.WriteFile(filePath, []byte(content), 0644); err != nil {
@@ -200,17 +205,21 @@ func (a *ResponsibleAIHandler) Run(ctx context.Context, event agentflow.Event, s
 		content = "No content to check"
 	}
 	
+	fmt.Printf("ResponsibleAI checking content: %%v\n", content)
+	
 	// Create LLM prompt for responsible AI checking
 	prompt := agentflow.Prompt{
 		System: "You are a responsible AI assistant. Check the given content for safety, bias, and compliance with ethical AI guidelines. Respond with 'SAFE' if content is appropriate, or 'UNSAFE: reason' if not.",
-		User:   fmt.Sprintf("Content to check: %v", content),
+		User:   fmt.Sprintf("Content to check: %%v", content),
 	}
 	
 	// Call LLM
 	response, err := a.llm.Call(ctx, prompt)
 	if err != nil {
-		return agentflow.AgentResult{}, fmt.Errorf("ResponsibleAI LLM call failed: %w", err)
+		return agentflow.AgentResult{}, fmt.Errorf("ResponsibleAI LLM call failed: %%w", err)
 	}
+	
+	fmt.Printf("ResponsibleAI result: %%s\n", response.Content)
 	
 	// Create output state
 	outputState := agentflow.NewState()
@@ -273,17 +282,21 @@ func (a *ErrorHandlerAgent) Run(ctx context.Context, event agentflow.Event, stat
 		errorInfo = "No error information available"
 	}
 	
+	fmt.Printf("Error Handler analyzing: %%v\n", errorInfo)
+	
 	// Create LLM prompt for error handling
 	prompt := agentflow.Prompt{
 		System: "You are an error handling assistant. Analyze the given error and provide helpful suggestions for resolution.",
-		User:   fmt.Sprintf("Error to analyze: %v", errorInfo),
+		User:   fmt.Sprintf("Error to analyze: %%v", errorInfo),
 	}
 	
 	// Call LLM
 	response, err := a.llm.Call(ctx, prompt)
 	if err != nil {
-		return agentflow.AgentResult{}, fmt.Errorf("Error Handler LLM call failed: %w", err)
+		return agentflow.AgentResult{}, fmt.Errorf("Error Handler LLM call failed: %%w", err)
 	}
+	
+	fmt.Printf("Error Handler analysis: %%s\n", response.Content)
 	
 	// Create output state
 	outputState := agentflow.NewState()
@@ -403,7 +416,8 @@ func createMainGoContent(projectName, provider string, numAgents int, responsibl
 	model := os.Getenv("OLLAMA_MODEL")
 	if model == "" {
 		model = "llama2"
-	}	llmProvider, err := agentflow.NewOllamaAdapter(baseURL, model, 1000, 0.7)
+	}
+	llmProvider, err := agentflow.NewOllamaAdapter(baseURL, model, 1000, 0.7)
 	if err != nil {
 		log.Fatalf("Failed to create Ollama adapter: %v", err)
 	}`
@@ -414,7 +428,7 @@ func createMainGoContent(projectName, provider string, numAgents int, responsibl
 
 	var agentRegistrations string
 	if numAgents == 1 {
-		agentRegistrations = `	agents["agent"] = NewAgent(llmProvider)`
+		agentRegistrations = `	agents["agent1"] = NewAgent1(llmProvider)`
 	} else {
 		for i := 1; i <= numAgents; i++ {
 			agentRegistrations += fmt.Sprintf(`	agents["agent%d"] = NewAgent%d(llmProvider)
@@ -458,9 +472,19 @@ func (m *MockProvider) Stream(ctx context.Context, prompt agentflow.Prompt) (<-c
 	}()
 	return ch, nil
 }
+
+// Embeddings implements the agentflow.ModelProvider interface for MockProvider.
+func (m *MockProvider) Embeddings(ctx context.Context, texts []string) ([][]float64, error) {
+	// Mock implementation for Embeddings
+	// Return a slice of nil or empty float64 slices, one for each input text
+	embeddings := make([][]float64, len(texts))
+	for i := range texts {
+		embeddings[i] = []float64{} // Or nil, depending on desired mock behavior
+	}
+	return embeddings, nil
+}
 `
 	}
-
 	return fmt.Sprintf(`package main
 
 import (
@@ -485,21 +509,22 @@ func main() {
 
 	// Start the runner
 	if err := runner.Start(ctx); err != nil {
-		log.Fatalf("Failed to start runner: %v", err)
+		log.Fatalf("Failed to start runner: %%v", err)
 	}
 	defer runner.Stop()
-
+	
 	// Create initial event
 	event := agentflow.NewEvent("agent1", agentflow.EventData{
 		"message": "Welcome to the multi-agent system",
-	}, map[string]string{"session_id": "demo-session"})
-
-	// Emit the event to start processing
+	}, map[string]string{
+		"session_id": "demo-session",
+		"route":      "agent1",
+	})	// Emit the event to start processing
 	if err := runner.Emit(event); err != nil {
-		log.Fatalf("Error emitting event: %v", err)
+		log.Fatalf("Error emitting event: %%v", err)
 	}
-
-	fmt.Printf("Multi-agent system '%s' is running...\n", "%s")
+	
+	fmt.Println("Multi-agent system '%s' is running...")
 	fmt.Println("Check the logs for agent processing details.")
 }
 `, imports, mockProviderCode, providerSetup, agentRegistrations, projectName)
