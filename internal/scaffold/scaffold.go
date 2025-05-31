@@ -16,7 +16,7 @@ func CreateAgentProject(agentName string, numAgents int, responsibleAI bool, err
 	fmt.Printf("Created directory: %s\n", agentName)
 
 	// Create go.mod file
-	goModContent := fmt.Sprintf("module %s\n\ngo 1.21\n\nrequire github.com/kunalkushwaha/agentflow v0.1.0\n", agentName)
+	goModContent := fmt.Sprintf("module %s\n\ngo 1.21\n\nrequire github.com/kunalkushwaha/agentflow v0.1.1\n", agentName)
 	goModPath := filepath.Join(agentName, "go.mod")
 	if err := os.WriteFile(goModPath, []byte(goModContent), 0644); err != nil {
 		return fmt.Errorf("failed to create go.mod: %w", err)
