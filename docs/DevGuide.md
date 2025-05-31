@@ -158,6 +158,68 @@ type Runner interface {
 
 ---
 
+## Scaffolding vs Manual Setup
+
+### Scaffolded Projects (Recommended)
+
+**Use `agentcli create` when:**
+- ✅ Starting a new AgentFlow project
+- ✅ You want modern best practices out-of-the-box  
+- ✅ You need LLM integration with multiple providers
+- ✅ You want comprehensive error handling patterns
+- ✅ You need configuration-driven setup
+- ✅ You want immediate functionality and examples
+
+**Benefits:**
+- **Zero boilerplate**: Ready-to-run multi-agent workflows
+- **Modern patterns**: Uses latest factory functions and APIs
+- **Configuration management**: Centralized `agentflow.toml` setup
+- **Error resilience**: Specialized error handlers included
+- **Session tracking**: Built-in session management and correlation
+- **LLM integration**: Pre-configured for OpenAI, Azure, Ollama, or Mock providers
+- **Documentation**: Comprehensive comments explaining patterns
+
+### Manual Setup
+
+**Use manual setup when:**
+- ✅ You need custom orchestrator logic
+- ✅ You're integrating AgentFlow into existing applications
+- ✅ You need fine-grained control over component wiring
+- ✅ You're building specialized or experimental workflows
+- ✅ You need custom callback registration patterns
+
+**Manual setup example:**
+```go
+// Advanced manual setup for custom requirements
+orch := orchestrator.NewRouteOrchestrator()
+runner := agentflow.NewRunner(orch, 100)
+cb := agentflow.NewCallbackRegistry()
+traceLogger := agentflow.NewInMemoryTraceLogger()
+
+// Custom callback registration
+cb.Register(agentflow.HookBeforeAgentRun, "custom-validator", myValidator)
+cb.Register(agentflow.HookAfterAgentRun, "custom-metrics", myMetrics)
+
+agentflow.RegisterTraceHooks(cb, traceLogger)
+runner.CallbackRegistry().Merge(cb)
+
+// Manual agent registration with custom logic
+runner.RegisterAgent("my-agent", &MyCustomAgent{})
+```
+
+### Migration Path
+
+**From Manual to Scaffolded:**
+1. Generate new project: `agentcli create --interactive`
+2. Copy your agent logic into generated agent files
+3. Update configuration in `agentflow.toml`
+4. Leverage generated error handlers and patterns
+
+**From Scaffolded to Manual:**
+1. Copy the factory setup from generated `main.go`
+2. Extract components for custom wiring
+3. Add custom orchestrator or callback logic as needed
+
 ## When to Use Factory Functions
 
 - Use the factory for most production and prototype workflows.
@@ -186,6 +248,29 @@ AgentFlow will register a default "error-handler" agent if not provided. To over
 ## Command-Line Interface (agentcli)
 
 AgentFlow includes a powerful command-line interface, `agentcli`, to help with development and project management tasks.
+
+### Quick Reference
+
+| Command | Purpose | Example |
+|---------|---------|---------|
+| `agentcli create` | Generate new AgentFlow project | `agentcli create -a 2 -p openai` |
+| `agentcli create -i` | Interactive project creation | `agentcli create --interactive` |
+| `agentcli create --help` | Show all available options | `agentcli create --help` |
+
+**Common Workflows:**
+```bash
+# Quick start with default settings
+agentcli create
+
+# Production-ready project with OpenAI
+agentcli create -a 3 -p openai --with-error-agent
+
+# Local development with Ollama
+agentcli create -a 2 -p ollama
+
+# Interactive setup (recommended for first-time users)
+agentcli create --interactive
+```
 
 ### Scaffolding with `agentcli create`
 
@@ -237,60 +322,507 @@ agentcli create --agents 3 --provider azure --with-error-agent
 
 **Generated Project Structure**:
 ```
-my-agent/
-├── go.mod                      # Go module definition
-├── main.go                     # Main application with AgentFlow setup
-├── agent1/
-│   └── agent.go               # First agent implementation
-├── agent2/
-│   └── agent.go               # Second agent implementation (if --agents > 1)
-├── agent3/
-│   └── agent.go               # Third agent implementation (if --agents > 2)
-└── error_handler/             # If --with-error-agent is specified
-    └── agent.go               # Error handling agent
+my-agentflow-project/
+├── go.mod                           # Go module with AgentFlow v0.1.1 dependency
+├── go.sum                           # Go module checksums
+├── main.go                          # Main application with modern AgentFlow patterns
+├── agentflow.toml                   # Configuration file for LLM providers and routing
+├── README.md                        # Project documentation and usage instructions
+├── agent1.go                        # First agent implementation with LLM integration
+├── agent2.go                        # Second agent implementation (if --agents > 1)
+├── responsible_ai.go                # Responsible AI content safety agent
+├── error_handler.go                 # Generic error handling agent
+├── validation_error_handler.go      # Specialized validation error handler
+├── timeout_error_handler.go         # Specialized timeout error handler  
+├── critical_error_handler.go        # Specialized critical error handler
+├── workflow_finalizer.go            # Workflow completion detection agent
+└── workflows/                       # Directory for workflow-related files
+    └── (workflow configurations)
 ```
 
 **Generated Features**:
-- **Modern AgentFlow Setup**: Uses `NewRunnerWithConfig` with proper tracing
-- **LLM Integration**: Pre-configured for selected provider (OpenAI, Azure, Ollama, or Mock)
-- **Error Handling**: Comprehensive error handling patterns
-- **Tracing**: Built-in trace logging setup
-- **Session Management**: Proper session ID handling
-- **State Management**: Examples of state cloning and metadata usage
-- **Circuit Breaker**: Basic resilience patterns
-- **Documentation**: Comments explaining AgentFlow concepts
+- **Modern Factory Pattern**: Uses `core.NewRunnerFromWorkingDir()` and `core.NewProviderFromWorkingDir()` for automatic setup
+- **Configuration-Driven Setup**: `agentflow.toml` file handles LLM provider configuration and error routing
+- **Sequential Agent Workflow**: Implements agent1 → agent2 → responsible_ai → workflow_finalizer pattern
+- **LLM Integration**: Pre-configured for selected provider with proper initialization patterns
+- **Comprehensive Error Handling**: Specialized error handlers for validation, timeout, and critical errors
+- **Session Management**: Automatic session ID generation and proper workflow tracking
+- **WaitGroup Pattern**: Proper workflow completion detection using sync.WaitGroup
+- **State Management**: Proper state cloning and metadata handling examples
+- **Automatic Tracing**: Built-in trace logging with session support
+- **Responsible AI**: Content safety and ethical checks integration
+- **Modern Import Patterns**: Uses public core package APIs for better compatibility
+- **Command-Line Interface**: Supports `-m` flag for message input and interactive prompts
+- **Workflow Finalizer**: Automatic workflow completion detection and cleanup
 
 **Provider-Specific Configuration**:
 
+The generated `agentflow.toml` configuration file handles all LLM provider setup:
+
 *OpenAI Provider*:
-- Sets up OpenAI client with API key configuration
-- Includes example prompts and model parameters
-- Shows streaming and standard completions
+```toml
+name = "Multi-Agent System"
+version = "1.0.0"
+log_level = "info"
+
+[provider]
+type = "openai"
+api_key = "your-openai-api-key"
+model = "gpt-4"
+max_tokens = 150
+temperature = 0.7
+
+[error_routing]
+validation_errors = "validation-error-handler"
+timeout_errors = "timeout-error-handler"
+critical_errors = "critical-error-handler"
+default_error_handler = "error_handler"
+```
 
 *Azure Provider*:
-- Configures Azure OpenAI endpoints
-- Includes deployment name setup
-- Shows both chat and embedding usage
+```toml
+name = "Multi-Agent System"
+version = "1.0.0"
+log_level = "info"
+
+[provider]
+type = "azure"
+api_key = "your-azure-api-key"
+endpoint = "https://your-resource.openai.azure.com"
+deployment = "your-deployment-name"
+api_version = "2023-12-01-preview"
+model = "gpt-4"
+max_tokens = 150
+temperature = 0.7
+
+[error_routing]
+validation_errors = "validation-error-handler"
+timeout_errors = "timeout-error-handler"
+critical_errors = "critical-error-handler"
+default_error_handler = "error_handler"
+```
 
 *Ollama Provider*:
-- Sets up local Ollama integration
-- Includes model selection examples
-- Shows local LLM usage patterns
+```toml
+name = "Multi-Agent System"
+version = "1.0.0"
+log_level = "info"
+
+[provider]
+type = "ollama"
+host = "http://localhost:11434"
+model = "llama3.2:3b"
+temperature = 0.7
+
+[error_routing]
+validation_errors = "validation-error-handler"
+timeout_errors = "timeout-error-handler"
+critical_errors = "critical-error-handler"
+default_error_handler = "error_handler"
+```
 
 *Mock Provider*:
-- Provides testing-friendly mock implementations
-- Includes deterministic responses for development
-- Shows how to extend for custom providers
+```toml
+name = "Multi-Agent System"
+version = "1.0.0"
+log_level = "info"
+
+[provider]
+type = "mock"
+
+[error_routing]
+validation_errors = "validation-error-handler"
+timeout_errors = "timeout-error-handler"
+critical_errors = "critical-error-handler"
+default_error_handler = "error_handler"
+```
 
 **Next Steps**:
 After running the command:
 ```bash
-cd my-agent
+cd my-agentflow-project
 go mod tidy
-go run main.go
+go run . -m "Hello from AgentFlow!"
 ```
 
-The generated project includes comprehensive examples and is ready to run immediately.
+The generated project includes:
+- **Immediate functionality**: Ready-to-run multi-agent workflow
+- **Interactive mode**: Prompts for input if no `-m` flag provided
+- **Comprehensive logging**: INFO level logging with detailed agent execution traces
+- **Session tracking**: Automatic session ID generation for workflow correlation
+- **Error resilience**: Specialized error handlers for different failure scenarios
+- **Workflow completion**: Automatic detection and cleanup when workflow finishes
+
+**Example Output**:
+```
+4:35PM INF Starting multi-agent system...
+4:35PM INF Using message from -m flag input="Hello from AgentFlow!"
+4:35PM INF Loaded AgentFlow configuration config_name="Multi-Agent System" config_provider=mock
+4:35PM INF Runner started.
+4:35PM INF Emitting initial event to start workflow session_id=session-20250531-163537
+4:35PM INF Waiting for multi-agent workflow to complete...
+
+=== WORKFLOW RESULTS ===
+Processing completed by agent chain: agent1 → agent2 → responsible_ai
+Final analysis: Sentiment analysis reveals positive sentiment with high confidence.
+Next steps recommended based on processing results.
+=========================
+
+4:35PM INF Workflow completed, shutting down... session_id=session-20250531-163537
+```
+
+**Customization**:
+- **Agent Logic**: Modify agent files to implement your specific business logic
+- **LLM Prompts**: Update system prompts in agent implementations
+- **Workflow Routing**: Adjust routing logic in `agentflow.toml` error routing section
+- **Provider Settings**: Update `agentflow.toml` with your API keys and model preferences
+- **Error Handling**: Customize specialized error handlers for your use cases
+
+### Troubleshooting Scaffolded Projects
+
+**Common Issues and Solutions:**
+
+**Issue: "undefined: NewAgent1" compilation error**
+```bash
+# Solution: Ensure you're using the correct AgentFlow version
+go mod tidy
+go get github.com/kunalkushwaha/agentflow@v0.1.1
+```
+
+**Issue: "Failed to initialize LLM provider" runtime error**
+```bash
+# Solution: Update agentflow.toml with valid configuration
+# For OpenAI: Add your API key
+[provider]
+type = "openai"
+api_key = "sk-your-api-key-here"
+
+# For Ollama: Ensure Ollama is running locally
+ollama serve  # Start Ollama server
+ollama pull llama3.2:3b  # Pull required model
+```
+
+**Issue: No output or stuck workflow**
+```bash
+# Solution: Check configuration and routing
+# Verify agent names match between main.go and agentflow.toml
+# Enable debug logging in agentflow.toml:
+log_level = "debug"
+```
+
+**Issue: Import errors**
+```bash
+# Solution: Ensure correct module structure
+# Check that go.mod has correct module name
+# Run: go mod tidy
+# Verify all agent files are in same package (main)
+```
+
+**Performance Tips:**
+- **Mock Provider**: Use `type = "mock"` in `agentflow.toml` for fast development/testing
+- **Debug Logging**: Set `log_level = "debug"` to see detailed execution flow
+- **Session Tracking**: Use session IDs from logs to correlate workflow execution
+- **Provider Switching**: Easily switch between providers by updating `agentflow.toml`
+
+---
+
+## Generated Project Architecture
+
+The `agentcli create` command generates projects that follow modern AgentFlow best practices and patterns. Understanding the generated architecture helps you build upon and customize the scaffold effectively.
+
+### Modern Factory-Based Setup
+
+Generated projects use the latest factory pattern for zero-boilerplate setup:
+
+```go
+// main.go - Modern AgentFlow initialization
+func main() {
+    ctx := context.Background()
+    
+    // Configure logging level
+    core.SetLogLevel(core.INFO)
+    logger := core.Logger()
+    
+    // Initialize LLM provider from agentflow.toml
+    llmProvider, err := core.NewProviderFromWorkingDir()
+    if err != nil {
+        logger.Error().Err(err).Msg("Failed to initialize LLM provider")
+        os.Exit(1)
+    }
+    
+    // Create agents map with dependency injection
+    agents := map[string]core.AgentHandler{
+        "agent1": NewAgent1(llmProvider),
+        "agent2": NewAgent2(llmProvider),
+        "responsible_ai": NewResponsibleAIHandler(llmProvider),
+        "error_handler": NewErrorHandler(llmProvider),
+        "validation-error-handler": NewValidationErrorHandler(llmProvider),
+        "timeout-error-handler": NewTimeoutErrorHandler(llmProvider),
+        "critical-error-handler": NewCriticalErrorHandler(llmProvider),
+        "workflow_finalizer": NewWorkflowFinalizer(&wg),
+    }
+    
+    // Factory-based runner creation - automatically wires everything
+    runner := core.NewRunnerFromWorkingDir(agents)
+    
+    // Session-based workflow execution
+    sessionID := "session-" + time.Now().Format("20060102-150405")
+    // ... workflow execution
+}
+```
+
+### Agent Implementation Patterns
+
+Generated agents follow consistent patterns for LLM integration and error handling:
+
+```go
+// agent1.go - Example generated agent structure
+type Agent1Handler struct {
+    llm agentflow.ModelProvider
+}
+
+func NewAgent1(llmProvider agentflow.ModelProvider) *Agent1Handler {
+    return &Agent1Handler{llm: llmProvider}
+}
+
+func (a *Agent1Handler) Run(ctx context.Context, event agentflow.Event, state agentflow.State) (agentflow.AgentResult, error) {
+    startTime := time.Now()
+    logger := agentflow.Logger()
+    
+    // Extract input data with fallback handling
+    eventData := event.GetData()
+    var inputToProcess interface{}
+    var systemPrompt string
+    
+    if msg, ok := eventData["message"]; ok {
+        inputToProcess = msg
+        systemPrompt = "You are Agent1. Process this user input and provide a concise analysis."
+    } else if prevOutput, ok := eventData["agent_output"]; ok {
+        inputToProcess = prevOutput
+        systemPrompt = "You are Agent1. Analyze the output from the previous agent."
+    } else {
+        inputToProcess = "No input provided"
+        systemPrompt = "You are Agent1. Provide a default response."
+    }
+    
+    // LLM processing with error handling
+    prompt := fmt.Sprintf("%s\n\nInput: %v", systemPrompt, inputToProcess)
+    response, err := a.llm.Complete(ctx, prompt, agentflow.CompletionOptions{
+        MaxTokens:   150,
+        Temperature: 0.7,
+    })
+    
+    if err != nil {
+        return agentflow.AgentResult{}, fmt.Errorf("LLM completion failed: %w", err)
+    }
+    
+    // State management with proper cloning
+    outputState := state.Clone()
+    outputState.Set("agent1_output", response)
+    outputState.Set("agent1_processed", true)
+    outputState.Set("processing_timestamp", time.Now().Format(time.RFC3339))
+    
+    // Route to next agent in workflow
+    outputState.SetMeta(agentflow.RouteMetadataKey, "agent2")
+    
+    return agentflow.AgentResult{
+        OutputState: outputState,
+        StartTime:   startTime,
+        EndTime:     time.Now(),
+        Duration:    time.Since(startTime),
+    }, nil
+}
+```
+
+### Configuration-Driven Architecture
+
+The `agentflow.toml` file centralizes all configuration:
+
+```toml
+# Project metadata
+name = "Multi-Agent System"
+version = "1.0.0"
+log_level = "info"
+
+# LLM provider configuration
+[provider]
+type = "ollama"  # or "openai", "azure", "mock"
+host = "http://localhost:11434"
+model = "llama3.2:3b"
+temperature = 0.7
+
+# Error routing configuration
+[error_routing]
+validation_errors = "validation-error-handler"
+timeout_errors = "timeout-error-handler" 
+critical_errors = "critical-error-handler"
+default_error_handler = "error_handler"
+```
+
+### Specialized Error Handler Architecture
+
+Generated projects include specialized error handlers for different failure scenarios:
+
+**Validation Error Handler**: Handles input validation failures
+```go
+// validation_error_handler.go
+func (v *ValidationErrorHandler) Run(ctx context.Context, event agentflow.Event, state agentflow.State) (agentflow.AgentResult, error) {
+    // Classify validation error type
+    // Provide corrective guidance
+    // Route for retry or escalation
+}
+```
+
+**Timeout Error Handler**: Manages processing timeouts
+```go
+// timeout_error_handler.go  
+func (t *TimeoutErrorHandler) Run(ctx context.Context, event agentflow.Event, state agentflow.State) (agentflow.AgentResult, error) {
+    // Implement retry logic with backoff
+    // Escalate persistent timeouts
+    // Maintain processing state
+}
+```
+
+**Critical Error Handler**: Handles system-level failures
+```go
+// critical_error_handler.go
+func (c *CriticalErrorHandler) Run(ctx context.Context, event agentflow.Event, state agentflow.State) (agentflow.AgentResult, error) {
+    // Log critical error details
+    // Trigger alerts or notifications
+    // Initiate graceful shutdown if needed
+}
+```
+
+### Workflow Completion Pattern
+
+The generated `workflow_finalizer.go` implements proper workflow completion detection:
+
+```go
+// workflow_finalizer.go
+type WorkflowFinalizerHandler struct {
+    wg *sync.WaitGroup
+}
+
+func (w *WorkflowFinalizerHandler) Run(ctx context.Context, event agentflow.Event, state agentflow.State) (agentflow.AgentResult, error) {
+    // Aggregate workflow results
+    // Perform cleanup operations
+    // Signal workflow completion
+    w.wg.Done() // Release main goroutine
+    
+    outputState := state.Clone()
+    outputState.Set("workflow_completed", true)
+    outputState.Set("completion_time", time.Now().Format(time.RFC3339))
+    
+    return agentflow.AgentResult{
+        OutputState: outputState,
+    }, nil
+}
+```
+
+### Sequential Workflow Pattern
+
+Generated projects implement a standard sequential workflow:
+
+1. **Initial Event** → `agent1` (Primary processing)
+2. **Agent1 Output** → `agent2` (Secondary analysis)  
+3. **Agent2 Output** → `responsible_ai` (Safety checks)
+4. **Responsible AI Output** → `workflow_finalizer` (Completion)
+
+This pattern provides:
+- **Clear data flow**: Each agent processes and enriches the state
+- **Error resilience**: Failures at any stage route to appropriate error handlers
+- **Traceability**: Complete execution trace with session correlation
+- **Extensibility**: Easy to add new agents or modify routing logic
+
+### Dependencies and Module Structure
+
+Generated `go.mod` uses the latest AgentFlow version:
+
+```go
+module my-agentflow-project
+
+go 1.23.0
+
+require github.com/kunalkushwaha/agentflow v0.1.1
+
+require (
+    github.com/BurntSushi/toml v1.5.0 // Configuration parsing
+    github.com/google/uuid v1.6.0     // Session ID generation
+    github.com/rs/zerolog v1.34.0     // Structured logging
+    // Additional dependencies...
+)
+```
+
+This architecture provides a robust foundation for building sophisticated multi-agent AI systems with AgentFlow.
+
+### Best Practices for Scaffolded Projects
+
+**Development Workflow:**
+1. **Start with Mock Provider**: Use `type = "mock"` for rapid development and testing
+2. **Enable Debug Logging**: Set `log_level = "debug"` during development
+3. **Test Agent Logic**: Use the `-m` flag to test different input scenarios
+4. **Iterate on Prompts**: Refine system prompts in agent implementations
+5. **Configure Production Provider**: Switch to OpenAI/Azure/Ollama for production
+
+**Code Organization:**
+```go
+// Keep agent logic focused and single-purpose
+func (a *Agent1Handler) Run(ctx context.Context, event agentflow.Event, state agentflow.State) (agentflow.AgentResult, error) {
+    // 1. Input validation and extraction
+    // 2. LLM processing with error handling  
+    // 3. State management with proper cloning
+    // 4. Route to next agent
+    // 5. Return structured result
+}
+```
+
+**Configuration Management:**
+- **Environment Variables**: Use environment variables for sensitive data like API keys
+- **Provider Switching**: Maintain separate `agentflow.toml` files for different environments
+- **Error Routing**: Customize error routing in configuration rather than hard-coding
+
+**Testing Strategies:**
+```bash
+# Test with different providers
+go run . -m "test input" # Uses configured provider
+AGENTFLOW_PROVIDER=mock go run . -m "test input" # Force mock provider
+
+# Test error scenarios
+go run . -m "trigger_validation_error"
+go run . -m "trigger_timeout_error"  
+
+# Test with debug logging
+echo 'log_level = "debug"' >> agentflow.toml
+go run . -m "debug test"
+```
+
+**Production Deployment:**
+- **API Key Management**: Store API keys in environment variables or secure key management
+- **Monitoring**: Use session IDs for workflow correlation and monitoring
+- **Error Handling**: Customize error handlers for your specific failure scenarios
+- **Scaling**: Use file-based trace logging for production monitoring
+
+**Extension Patterns:**
+```go
+// Add new agents to the workflow
+agents := map[string]core.AgentHandler{
+    // ...existing agents...
+    "data_validator":    NewDataValidatorAgent(llmProvider),
+    "result_formatter":  NewResultFormatterAgent(llmProvider),
+    "notification_sender": NewNotificationAgent(),
+}
+
+// Update routing in agentflow.toml
+[error_routing]
+data_validation_errors = "data_validator"
+formatting_errors = "result_formatter"
+```
+
+**Performance Optimization:**
+- **Provider Selection**: Choose provider based on latency/cost requirements
+- **Token Management**: Monitor and optimize token usage in prompts
+- **Caching**: Implement response caching for repeated similar requests
+- **Parallel Processing**: Use collaborative orchestrator for independent agent processing
 
 ---
 
@@ -440,7 +972,7 @@ func (a *ResponsibleAIAgent) Run(ctx context.Context, event agentflow.Event, sta
 }
 ```
 
-### Advanced Tracing and Observability
+### Enhanced Tracing and Observability
 
 Enhanced tracing capabilities for debugging and monitoring:
 
@@ -1294,198 +1826,200 @@ When using `RouteOrchestrator`, all events must include the routing metadata key
 To handle events without routing information gracefully, implement one of these approaches:
 
 ```go
-// Always include routing information when using RouteOrchestrator
-event.SetMeta(agentflow.RouteMetadataKey, "my-agent")
-
-// Or use CollaborativeOrchestrator to avoid routing requirements
-orch := orchestrator.NewCollaborativeOrchestrator()
+// ❌ This will cause routing errors
+event := agentflow.NewEvent("test", agentflow.EventData{
+    "message": "Hello",
+}, map[string]string{
+    // Missing agentflow.RouteMetadataKey
+})
 ```
 
----
-
-## Best Practices
-
-- Always **provide session IDs** for tracking related events.
-- **Handle errors** from agents properly to prevent cascading failures.
-- Use **context cancellation** to manage timeouts and abort operations when necessary.
-- **Clean up resources** by calling `runner.Stop()` when shutting down.
-- **Register trace hooks** to aid in debugging and monitoring.
-- **Clone states** when modifying them to avoid unexpected side effects between components.
-
----
-
-## Working with State
-
-The [State](http://_vscodecontentref_/2) interface provides a thread-safe container for data passing between components. Always use its methods rather than direct map access:
-
+#### Solution: Always Provide Routing Information
 ```go
-// Getting data from state
-valueObj, exists := state.Get("key")
-if exists {
-    value, ok := valueObj.(string)
-    if ok {
-        // Use value
+// ✅ Correct approach with route metadata
+event := agentflow.NewEvent("test", agentflow.EventData{
+    "message": "Hello",
+}, map[string]string{
+    agentflow.RouteMetadataKey: "target-agent",
+    agentflow.SessionIDKey:     "session-123",
+})
+```
+
+#### Alternative: Use Collaborative Orchestrator
+```go
+// ✅ Alternative: Use collaborative orchestrator that doesn't require routing
+collabOrch := agentflow.NewCollaborativeOrchestrator(agentflow.NewCallbackRegistry())
+runner := agentflow.NewRunnerWithConfig(agentflow.RunnerConfig{
+    Agents:       agents,
+    Orchestrator: collabOrch, // All agents receive every event
+})
+```
+
+#### Graceful Routing Error Handling
+```go
+// Custom error handler for routing failures
+type RoutingErrorHandler struct{}
+
+func (h *RoutingErrorHandler) Run(ctx context.Context, event agentflow.Event, state agentflow.State) (agentflow.AgentResult, error) {
+    // Log routing error details
+    agentflow.Logger().Warn().
+        Str("event_id", event.GetID()).
+        Str("missing_route", "true").
+        Msg("Event received without proper routing information")
+    
+    outputState := state.Clone()
+    outputState.Set("error_type", "routing_error")
+    outputState.Set("error_message", "No routing information provided")
+    outputState.Set("suggested_action", "Add agentflow.RouteMetadataKey to event metadata")
+    
+    return agentflow.AgentResult{
+        OutputState: outputState,
+        StartTime:   time.Now(),
+        EndTime:     time.Now(),
+        Duration:    time.Millisecond,
+    }, nil
+}
+
+// Register the routing error handler
+agents := map[string]agentflow.AgentHandler{
+    "routing-error-handler": &RoutingErrorHandler{},
+    // ...other agents
+}
+```
+
+#### Dynamic Route Resolution
+```go
+// Smart routing agent that can determine routes dynamically
+type SmartRoutingAgent struct {
+    routingRules map[string]string
+}
+
+func (a *SmartRoutingAgent) Run(ctx context.Context, event agentflow.Event, state agentflow.State) (agentflow.AgentResult, error) {
+    // Analyze event content to determine appropriate route
+    eventData := event.GetData()
+    
+    var targetAgent string
+    if msgType, exists := eventData["type"]; exists {
+        if route, found := a.routingRules[fmt.Sprintf("%v", msgType)]; found {
+            targetAgent = route
+        } else {
+            targetAgent = "default-handler"
+        }
     }
-}
-
-// Setting data in state
-state.Set("key", "new value")
-
-// Getting metadata
-metaValue, exists := state.GetMeta("meta_key")
-
-// Setting metadata
-state.SetMeta("meta_key", "meta_value")
-
-// Always clone state before modifying
-newState := state.Clone()
-newState.Set("key", "modified value")
-
-// Merge states
-targetState.Merge(sourceState)
-```
-
----
-
-## Working with AgentResult
-
-`AgentResult` encapsulates the outcome of agent execution:
-
-```go
-type AgentResult struct {
-    OutputState State       // State to pass to next component
-    Error       string      // Error message (if any)
-    StartTime   time.Time   // When agent execution started
-    EndTime     time.Time   // When agent execution ended
-    Duration    time.Duration // Total processing time
+    
+    outputState := state.Clone()
+    outputState.SetMeta(agentflow.RouteMetadataKey, targetAgent)
+    outputState.Set("auto_routed", true)
+    outputState.Set("target_agent", targetAgent)
+    
+    return agentflow.AgentResult{
+        OutputState: outputState,
+        StartTime:   time.Now(),
+        EndTime:     time.Now(),
+        Duration:    time.Millisecond,
+    }, nil
 }
 ```
 
 ---
 
-## Workflow Agents
+## 2. Interface Distinctions: Agent vs AgentHandler
 
-Agentflow provides specialized agents for common workflow patterns:
+Understanding the difference between `Agent` and `AgentHandler` interfaces is crucial for proper implementation:
 
-### SequentialAgent
-
-Executes a series of sub-agents in order, passing state from one to the next:
-
+### Agent Interface (Legacy/Simple)
 ```go
-agent1 := &FirstAgent{}
-agent2 := &SecondAgent{}
-agent3 := &ThirdAgent{}
-
-seqAgent := agents.NewSequentialAgent("workflow", agent1, agent2, agent3)
-result, err := seqAgent.Run(ctx, initialState)
-```
-
-### ParallelAgent
-
-Executes multiple sub-agents concurrently, aggregating their results:
-
-```go
-config := agents.ParallelAgentConfig{
-    Timeout: 30 * time.Second, // Optional timeout
+type Agent interface {
+    Run(ctx context.Context, in State) (State, error)
+    Name() string
 }
-parallelAgent := agents.NewParallelAgent("parallel-workflow", config, 
-                                         agent1, agent2, agent3)
-result, err := parallelAgent.Run(ctx, initialState)
 ```
 
-### LoopAgent
+**Use Cases:**
+- Simple state transformations
+- Legacy compatibility
+- When you don't need event metadata
+- Basic sequential processing
 
-Executes a sub-agent repeatedly until a condition is met or a maximum number of iterations is reached:
-
+**Example Implementation:**
 ```go
-// Define condition to stop the loop
-stopCondition := func(s agentflow.State) bool {
-    countVal, ok := s.Get("count")
-    if !ok {
-        return false
+type SimpleCalculatorAgent struct {
+    name string
+}
+
+func (a *SimpleCalculatorAgent) Name() string {
+    return a.name
+}
+
+func (a *SimpleCalculatorAgent) Run(ctx context.Context, state agentflow.State) (agentflow.State, error) {
+    // Only has access to state, not event details
+    x, _ := state.Get("x")
+    y, _ := state.Get("y")
+    
+    if xVal, ok := x.(float64); ok {
+        if yVal, ok := y.(float64); ok {
+            result := xVal + yVal
+            state.Set("result", result)
+        }
     }
-    count, ok := countVal.(int)
-    return ok && count >= 5  // Stop after 5 iterations
+    
+    return state, nil
 }
-
-config := agents.LoopAgentConfig{
-    Condition:     stopCondition,
-    MaxIterations: 10, // Safety limit
-}
-
-loopAgent := agents.NewLoopAgent("loop-workflow", config, subAgent)
-result, err := loopAgent.Run(ctx, initialState)
 ```
 
----
-
-## Azure OpenAI Agent
-
-### Creating an Azure OpenAI Agent
-Implement the `AgentHandler` interface to create an agent that uses Azure OpenAI for processing queries.
-
+### AgentHandler Interface (Modern/Recommended)
 ```go
-// AzureOpenAIAgent implements AgentHandler interface for answering queries
-type AzureOpenAIAgent struct {
-    llmProvider llm.ModelProvider
-    systemPrompt string
+type AgentHandler interface {
+    Run(ctx context.Context, event Event, state State) (AgentResult, error)
+}
+```
+
+**Use Cases:**
+- Modern AgentFlow applications
+- When you need event metadata and routing
+- Complex workflows with tracing
+- Error handling and performance monitoring
+
+**Example Implementation:**
+```go
+type AdvancedCalculatorAgent struct {
+    name string
 }
 
-// NewAzureOpenAIAgent creates a new Azure-powered agent
-func NewAzureOpenAIAgent(provider llm.ModelProvider, systemPrompt string) *AzureOpenAIAgent {
-    return &AzureOpenAIAgent{
-        llmProvider: provider,
-        systemPrompt: systemPrompt,
-    }
-}
-
-// Run processes the event using Azure OpenAI
-func (a *AzureOpenAIAgent) Run(ctx context.Context, event agentflow.Event, state agentflow.State) (agentflow.AgentResult, error) {
+func (a *AdvancedCalculatorAgent) Run(ctx context.Context, event agentflow.Event, state agentflow.State) (agentflow.AgentResult, error) {
     startTime := time.Now()
     
-    // Extract query from event
-    queryObj, exists := event.GetData()["query"]
-    if (!exists) {
-        return agentflow.AgentResult{
-            Error: "missing query in event data",
-            StartTime: startTime,
-            EndTime: time.Now(),
-        }, errors.New("missing query in event data")
+    // Access to both event data and state
+    eventData := event.GetData()
+    operation, exists := eventData["operation"]
+    if !exists {
+        return agentflow.AgentResult{}, fmt.Errorf("operation not specified in event")
     }
     
-    query, ok := queryObj.(string)
-    if (!ok) {
-        return agentflow.AgentResult{
-            Error: "query is not a string",
-            StartTime: startTime,
-            EndTime: time.Now(),
-        }, errors.New("query is not a string")
-    }
+    // Get session information
+    sessionID, _ := event.GetMetadataValue(agentflow.SessionIDKey)
     
-    // Create prompt
-    prompt := llm.Prompt{
-        System: a.systemPrompt,
-        User:   query,
-        Parameters: llm.ModelParameters{
-            Temperature: ptrTo(float32(0.7)),
-            MaxTokens:   ptrTo(int32(1000)),
-        },
-    }
-    
-    // Call Azure OpenAI
-    response, err := a.llmProvider.Call(ctx, prompt)
-    if (err != nil) {
-        return agentflow.AgentResult{
-            Error: fmt.Sprintf("LLM error: %v", err),
-            StartTime: startTime,
-            EndTime: time.Now(),
-        }, err
-    }
-    
-    // Create output state with response
+    // Clone state to avoid mutations
     outputState := state.Clone()
-    outputState.Set("answer", response.Content)
-    outputState.Set("tokens_used", response.Usage.TotalTokens)
+    
+    // Perform calculation based on operation
+    switch fmt.Sprintf("%v", operation) {
+    case "add":
+        result := a.performAddition(eventData)
+        outputState.Set("result", result)
+        outputState.Set("operation_performed", "addition")
+    case "multiply":
+        result := a.performMultiplication(eventData)
+        outputState.Set("result", result)
+        outputState.Set("operation_performed", "multiplication")
+    default:
+        return agentflow.AgentResult{}, fmt.Errorf("unsupported operation: %v", operation)
+    }
+    
+    // Add execution metadata
+    outputState.Set("processed_by", a.name)
+    outputState.Set("session_id", sessionID)
+    outputState.Set("timestamp", time.Now().Format(time.RFC3339))
     
     endTime := time.Now()
     
@@ -1497,29 +2031,1371 @@ func (a *AzureOpenAIAgent) Run(ctx context.Context, event agentflow.Event, state
     }, nil
 }
 
-// Helper for creating pointers to values
-func ptrTo[T any](v T) *T {
-    return &v
+func (a *AdvancedCalculatorAgent) performAddition(data agentflow.EventData) float64 {
+    x, _ := data["x"].(float64)
+    y, _ := data["y"].(float64)
+    return x + y
+}
+
+func (a *AdvancedCalculatorAgent) performMultiplication(data agentflow.EventData) float64 {
+    x, _ := data["x"].(float64)
+    y, _ := data["y"].(float64)
+    return x * y
+}
+```
+
+### Converting Between Interfaces
+
+**Agent to AgentHandler Adapter:**
+```go
+// AgentHandlerFunc allows using functions as AgentHandlers
+type AgentToHandlerAdapter struct {
+    agent agentflow.Agent
+}
+
+func (a *AgentToHandlerAdapter) Run(ctx context.Context, event agentflow.Event, state agentflow.State) (agentflow.AgentResult, error) {
+    startTime := time.Now()
+    
+    // Convert AgentHandler call to Agent call
+    resultState, err := a.agent.Run(ctx, state)
+    if err != nil {
+        return agentflow.AgentResult{}, err
+    }
+    
+    return agentflow.AgentResult{
+        OutputState: resultState,
+        StartTime:   startTime,
+        EndTime:     time.Now(),
+        Duration:    time.Since(startTime),
+    }, nil
+}
+
+// Utility function to convert Agent to AgentHandler
+func WrapAgent(agent agentflow.Agent) agentflow.AgentHandler {
+    return &AgentToHandlerAdapter{agent: agent}
+}
+```
+
+### Migration Guidelines
+
+**When to use Agent:**
+- ✅ Simple, stateless transformations
+- ✅ Legacy code compatibility
+- ✅ Testing and prototyping
+- ❌ Production workflows requiring tracing
+- ❌ Complex error handling scenarios
+
+**When to use AgentHandler:**
+- ✅ Production applications
+- ✅ Complex workflows with routing
+- ✅ When you need event metadata
+- ✅ Performance monitoring and tracing
+- ✅ Modern AgentFlow features
+
+---
+
+## 3. State Management Best Practices
+
+State management is critical for multi-agent workflows. Follow these patterns for safe and efficient state handling:
+
+### State Cloning Patterns
+
+#### Always Clone Before Modification
+```go
+func (a *MyAgent) Run(ctx context.Context, event agentflow.Event, state agentflow.State) (agentflow.AgentResult, error) {
+    // ✅ ALWAYS clone state before modifications
+    outputState := state.Clone()
+    
+    // Safe to modify cloned state
+    outputState.Set("processed", true)
+    outputState.Set("agent", "MyAgent")
+    
+    return agentflow.AgentResult{
+        OutputState: outputState,
+    }, nil
+}
+```
+
+#### ❌ Anti-pattern: Direct State Modification
+```go
+func (a *BadAgent) Run(ctx context.Context, event agentflow.Event, state agentflow.State) (agentflow.AgentResult, error) {
+    // ❌ DON'T modify input state directly
+    state.Set("modified", true) // This affects other agents!
+    
+    return agentflow.AgentResult{OutputState: state}, nil
+}
+```
+
+### State Threading Patterns
+
+#### Sequential State Building
+```go
+type SequentialProcessorAgent struct{}
+
+func (a *SequentialProcessorAgent) Run(ctx context.Context, event agentflow.Event, state agentflow.State) (agentflow.AgentResult, error) {
+    outputState := state.Clone()
+    
+    // Build state sequentially
+    step1Result := a.processStep1(event.GetData())
+    outputState.Set("step1_result", step1Result)
+    
+    step2Result := a.processStep2(step1Result)
+    outputState.Set("step2_result", step2Result)
+    
+    finalResult := a.processStep3(step2Result)
+    outputState.Set("final_result", finalResult)
+    
+    // Add processing metadata
+    outputState.Set("steps_completed", 3)
+    outputState.Set("processing_chain", []string{"step1", "step2", "step3"})
+    
+    return agentflow.AgentResult{
+        OutputState: outputState,
+    }, nil
+}
+```
+
+#### State Accumulation Pattern
+```go
+type AccumulatorAgent struct{}
+
+func (a *AccumulatorAgent) Run(ctx context.Context, event agentflow.Event, state agentflow.State) (agentflow.AgentResult, error) {
+    outputState := state.Clone()
+    
+    // Safely accumulate values
+    currentSum, exists := outputState.Get("running_sum")
+    if !exists {
+        currentSum = 0.0
+    }
+    
+    newValue, exists := event.GetData()["value"]
+    if exists {
+        if val, ok := newValue.(float64); ok {
+            if sum, ok := currentSum.(float64); ok {
+                outputState.Set("running_sum", sum+val)
+                
+                // Track accumulation history
+                history, _ := outputState.Get("accumulation_history")
+                if histList, ok := history.([]float64); ok {
+                    outputState.Set("accumulation_history", append(histList, val))
+                } else {
+                    outputState.Set("accumulation_history", []float64{val})
+                }
+            }
+        }
+    }
+    
+    return agentflow.AgentResult{
+        OutputState: outputState,
+    }, nil
+}
+```
+
+### State Validation Patterns
+
+#### Type-Safe State Access
+```go
+type TypeSafeAgent struct{}
+
+func (a *TypeSafeAgent) Run(ctx context.Context, event agentflow.Event, state agentflow.State) (agentflow.AgentResult, error) {
+    outputState := state.Clone()
+    
+    // Helper function for type-safe state access
+    getStringValue := func(key string) (string, error) {
+        value, exists := outputState.Get(key)
+        if !exists {
+            return "", fmt.Errorf("key %s not found in state", key)
+        }
+        if str, ok := value.(string); ok {
+            return str, nil
+        }
+        return "", fmt.Errorf("key %s is not a string", key)
+    }
+    
+    getIntValue := func(key string) (int, error) {
+        value, exists := outputState.Get(key)
+        if !exists {
+            return 0, fmt.Errorf("key %s not found in state", key)
+        }
+        if i, ok := value.(int); ok {
+            return i, nil
+        }
+        return 0, fmt.Errorf("key %s is not an int", key)
+    }
+    
+    // Use type-safe accessors
+    username, err := getStringValue("username")
+    if err != nil {
+        return agentflow.AgentResult{}, err
+    }
+    
+    count, err := getIntValue("count")
+    if err != nil {
+        count = 0 // Default value
+    }
+    
+    // Process with type safety
+    outputState.Set("processed_user", username)
+    outputState.Set("incremented_count", count+1)
+    
+    return agentflow.AgentResult{
+        OutputState: outputState,
+    }, nil
+}
+```
+
+### State Merging Strategies
+
+#### Controlled State Merging
+```go
+type StateMergerAgent struct{}
+
+func (a *StateMergerAgent) Run(ctx context.Context, event agentflow.Event, state agentflow.State) (agentflow.AgentResult, error) {
+    outputState := state.Clone()
+    
+    // Get additional state from event
+    if additionalData, exists := event.GetData()["merge_state"]; exists {
+        if stateMap, ok := additionalData.(map[string]interface{}); ok {
+            // Controlled merging with conflict resolution
+            for key, value := range stateMap {
+                existing, hasExisting := outputState.Get(key)
+                
+                if hasExisting {
+                    // Conflict resolution strategy
+                    resolved := a.resolveConflict(key, existing, value)
+                    outputState.Set(key, resolved)
+                } else {
+                    // No conflict, safe to add
+                    outputState.Set(key, value)
+                }
+            }
+        }
+    }
+    
+    return agentflow.AgentResult{
+        OutputState: outputState,
+    }, nil
+}
+
+func (a *StateMergerAgent) resolveConflict(key string, existing, new interface{}) interface{} {
+    // Example conflict resolution strategies
+    switch key {
+    case "timestamp":
+        // Always use newer timestamp
+        return new
+    case "count":
+        // Sum numeric values
+        if existingInt, ok := existing.(int); ok {
+            if newInt, ok := new.(int); ok {
+                return existingInt + newInt
+            }
+        }
+    case "tags":
+        // Merge arrays
+        if existingSlice, ok := existing.([]string); ok {
+            if newSlice, ok := new.([]string); ok {
+                return append(existingSlice, newSlice...)
+            }
+        }
+    }
+    
+    // Default: keep existing value
+    return existing
 }
 ```
 
 ---
 
-## Conclusion
-The Agentflow framework provides a **flexible foundation** for building agent-based systems in Go.  
-By understanding the core components and how they interact, you can create **sophisticated workflows** for your AI applications.
+## 4. AgentResult Structure and Usage Guide
+
+The `AgentResult` structure is the standard return type for `AgentHandler` implementations. Understanding its proper usage is essential for building robust agents.
+
+### AgentResult Structure
+```go
+type AgentResult struct {
+    OutputState State         // State to pass to next component
+    Error       string        // Error message (if any)
+    StartTime   time.Time     // When agent execution started
+    EndTime     time.Time     // When agent execution ended
+    Duration    time.Duration // Total processing time
+}
+```
+
+### Proper AgentResult Construction
+
+#### Standard Success Pattern
+```go
+func (a *MyAgent) Run(ctx context.Context, event agentflow.Event, state agentflow.State) (agentflow.AgentResult, error) {
+    startTime := time.Now()
+    
+    // Your agent logic here
+    outputState := state.Clone()
+    outputState.Set("result", "processed successfully")
+    
+    endTime := time.Now()
+    
+    return agentflow.AgentResult{
+        OutputState: outputState,
+        StartTime:   startTime,
+        EndTime:     endTime,
+        Duration:    endTime.Sub(startTime),
+    }, nil
+}
+```
+
+#### Error Handling Pattern
+```go
+func (a *MyAgent) Run(ctx context.Context, event agentflow.Event, state agentflow.State) (agentflow.AgentResult, error) {
+    startTime := time.Now()
+    
+    // Attempt processing
+    result, err := a.processData(event.GetData())
+    if err != nil {
+        // Return AgentResult with error details for tracing
+        return agentflow.AgentResult{
+            OutputState: state.Clone(), // Return clean state copy
+            Error:       err.Error(),   // Include error for tracing
+            StartTime:   startTime,
+            EndTime:     time.Now(),
+            Duration:    time.Since(startTime),
+        }, err // Also return error for flow control
+    }
+    
+    outputState := state.Clone()
+    outputState.Set("result", result)
+    
+    endTime := time.Now()
+    
+    return agentflow.AgentResult{
+        OutputState: outputState,
+        StartTime:   startTime,
+        EndTime:     endTime,
+        Duration:    endTime.Sub(startTime),
+    }, nil
+}
+```
+
+### Performance Monitoring with AgentResult
+
+#### Detailed Performance Tracking
+```go
+type PerformanceTrackingAgent struct{}
+
+func (a *PerformanceTrackingAgent) Run(ctx context.Context, event agentflow.Event, state agentflow.State) (agentflow.AgentResult, error) {
+    startTime := time.Now()
+    
+    // Track different phases
+    preprocessStart := time.Now()
+    preprocessedData := a.preprocessData(event.GetData())
+    preprocessDuration := time.Since(preprocessStart)
+    
+    processStart := time.Now()
+    result, err := a.processData(preprocessedData)
+    processDuration := time.Since(processStart)
+    
+    postprocessStart := time.Now()
+    finalResult := a.postprocessData(result)
+    postprocessDuration := time.Since(postprocessStart)
+    
+    if err != nil {
+        return agentflow.AgentResult{
+            OutputState: state.Clone(),
+            Error:       err.Error(),
+            StartTime:   startTime,
+            EndTime:     time.Now(),
+            Duration:    time.Since(startTime),
+        }, err
+    }
+    
+    outputState := state.Clone()
+    outputState.Set("result", finalResult)
+    
+    // Add performance metrics to state
+    outputState.Set("performance_metrics", map[string]interface{}{
+        "preprocess_duration_ms":  preprocessDuration.Milliseconds(),
+        "process_duration_ms":     processDuration.Milliseconds(),
+        "postprocess_duration_ms": postprocessDuration.Milliseconds(),
+        "total_duration_ms":       time.Since(startTime).Milliseconds(),
+    })
+    
+    endTime := time.Now()
+    
+    return agentflow.AgentResult{
+        OutputState: outputState,
+        StartTime:   startTime,
+        EndTime:     endTime,
+        Duration:    endTime.Sub(startTime),
+    }, nil
+}
+```
+
+#### AgentResult Analysis Utilities
+
+##### Performance Analysis Helper
+```go
+// Utility function to analyze AgentResult performance
+func AnalyzeAgentPerformance(results []agentflow.AgentResult) {
+    if len(results) == 0 {
+        fmt.Println("No results to analyze")
+        return
+    }
+    
+    var totalDuration time.Duration
+    var maxDuration time.Duration
+    var minDuration time.Duration = time.Hour // Initialize to large value
+    
+    for _, result := range results {
+        totalDuration += result.Duration
+        if result.Duration > maxDuration {
+            maxDuration = result.Duration
+        }
+        if result.Duration < minDuration {
+            minDuration = result.Duration
+        }
+    }
+    
+    avgDuration := totalDuration / time.Duration(len(results))
+    
+    fmt.Printf("Performance Analysis:\n")
+    fmt.Printf("  Total Results: %d\n", len(results))
+    fmt.Printf("  Average Duration: %v\n", avgDuration)
+    fmt.Printf("  Min Duration: %v\n", minDuration)
+    fmt.Printf("  Max Duration: %v\n", maxDuration)
+    fmt.Printf("  Total Duration: %v\n", totalDuration)
+}
+```
+
+##### Error Rate Analysis
+```go
+func AnalyzeErrorRates(results []agentflow.AgentResult) {
+    totalResults := len(results)
+    if totalResults == 0 {
+        fmt.Println("No results to analyze")
+        return
+    }
+    
+    errorCount := 0
+    errorTypes := make(map[string]int)
+    
+    for _, result := range results {
+        if result.Error != "" {
+            errorCount++
+            // Categorize errors
+            if strings.Contains(result.Error, "timeout") {
+                errorTypes["timeout"]++
+            } else if strings.Contains(result.Error, "validation") {
+                errorTypes["validation"]++
+            } else if strings.Contains(result.Error, "network") {
+                errorTypes["network"]++
+            } else {
+                errorTypes["other"]++
+            }
+        }
+    }
+    
+    successRate := float64(totalResults-errorCount) / float64(totalResults) * 100
+    
+    fmt.Printf("Error Analysis:\n")
+    fmt.Printf("  Total Results: %d\n", totalResults)
+    fmt.Printf("  Successful: %d\n", totalResults-errorCount)
+    fmt.Printf("  Errors: %d\n", errorCount)
+    fmt.Printf("  Success Rate: %.2f%%\n", successRate)
+    
+    if errorCount > 0 {
+        fmt.Printf("  Error Breakdown:\n")
+        for errorType, count := range errorTypes {
+            percentage := float64(count) / float64(errorCount) * 100
+            fmt.Printf("    %s: %d (%.1f%%)\n", errorType, count, percentage)
+        }
+    }
+}
+```
 
 ---
 
-## Summary of Updates
+## 5. Workflow Agents Documentation
 
-The [DevGuide.md](http://_vscodecontentref_/3) needs these key additions and updates:
+AgentFlow provides specialized workflow agents for common patterns: Sequential, Parallel, and Loop agents.
 
-1. Error handling guidance for events without routing information
-2. Clarification on the distinction between Agent and AgentHandler interfaces
-3. Best practices for State manipulation and cloning
-4. Documentation on the AgentResult structure and its usage
-5. Section on the available workflow agents (Sequential, Parallel, Loop)
-6. Improved Runner setup with context handling and proper shutdown
-7. Ensuring all code examples use the latest API signatures
-8. Factory function approach for runner setup with example and migration notes.
+### SequentialAgent
+
+Executes a series of agents in order, passing state from one to the next.
+
+#### Basic Usage
+```go
+import "github.com/kunalkushwaha/agentflow/internal/agents"
+
+// Create individual agents
+validateAgent := &ValidationAgent{}
+processAgent := &ProcessingAgent{}
+finalizeAgent := &FinalizationAgent{}
+
+// Create sequential workflow
+seqAgent := agents.NewSequentialAgent("data-pipeline", 
+    validateAgent, 
+    processAgent, 
+    finalizeAgent,
+)
+
+// Use in runner
+runner := agentflow.NewRunnerWithConfig(agentflow.RunnerConfig{
+    Agents: map[string]agentflow.AgentHandler{
+        "data-pipeline": seqAgent,
+    },
+})
+```
+
+#### Advanced Sequential Agent with Error Handling
+```go
+type EnhancedSequentialAgent struct {
+    name     string
+    agents   []agentflow.Agent
+    stopOnError bool
+}
+
+func NewEnhancedSequentialAgent(name string, stopOnError bool, agents ...agentflow.Agent) *EnhancedSequentialAgent {
+    return &EnhancedSequentialAgent{
+        name:        name,
+        agents:      agents,
+        stopOnError: stopOnError,
+    }
+}
+
+func (a *EnhancedSequentialAgent) Run(ctx context.Context, event agentflow.Event, state agentflow.State) (agentflow.AgentResult, error) {
+    startTime := time.Now()
+    currentState := state.Clone()
+    
+    // Track execution results
+    var executionResults []map[string]interface{}
+    
+    for i, agent := range a.agents {
+        stepStart := time.Now()
+        
+        // Execute agent
+        resultState, err := agent.Run(ctx, currentState)
+        stepDuration := time.Since(stepStart)
+        
+        // Record step execution
+        stepResult := map[string]interface{}{
+            "agent_index":    i,
+            "agent_name":     agent.Name(),
+            "duration_ms":    stepDuration.Milliseconds(),
+            "success":        err == nil,
+        }
+        
+        if err != nil {
+            stepResult["error"] = err.Error()
+            executionResults = append(executionResults, stepResult)
+            
+            if a.stopOnError {
+                // Stop on first error
+                currentState.Set("sequential_error", err.Error())
+                currentState.Set("failed_at_step", i)
+                break
+            } else {
+                // Continue with original state
+                continue
+            }
+        }
+        
+        // Update state for next agent
+        currentState = resultState
+        executionResults = append(executionResults, stepResult)
+    }
+    
+    // Add execution metadata
+    currentState.Set("sequential_execution_results", executionResults)
+    currentState.Set("total_steps", len(a.agents))
+    
+    return agentflow.AgentResult{
+        OutputState: currentState,
+        StartTime:   startTime,
+        EndTime:     time.Now(),
+        Duration:    time.Since(startTime),
+    }, nil
+}
+```
+
+### ParallelAgent
+
+Executes multiple agents concurrently and aggregates their results.
+
+#### Basic Parallel Execution
+```go
+import "github.com/kunalkushwaha/agentflow/internal/agents"
+
+// Create parallel agents
+agent1 := &DataAnalysisAgent{}
+agent2 := &SentimentAnalysisAgent{}
+agent3 := &KeywordExtractionAgent{}
+
+// Configure parallel execution
+config := agents.ParallelAgentConfig{
+    Timeout:         30 * time.Second,
+    FailFast:        false, // Continue even if some agents fail
+    AggregateErrors: true,  // Collect all errors
+}
+
+parallelAgent := agents.NewParallelAgent("content-analysis", config,
+    agent1,
+    agent2, 
+    agent3,
+)
+
+// Use in workflow
+runner := agentflow.NewRunnerWithConfig(agentflow.RunnerConfig{
+    Agents: map[string]agentflow.AgentHandler{
+        "content-analysis": parallelAgent,
+    },
+})
+```
+
+#### Custom Parallel Agent with Result Aggregation
+```go
+type AggregatingParallelAgent struct {
+    name      string
+    agents    []agentflow.Agent
+    timeout   time.Duration
+    aggregator func([]agentflow.State) agentflow.State
+}
+
+func NewAggregatingParallelAgent(name string, timeout time.Duration, aggregator func([]agentflow.State) agentflow.State, agents ...agentflow.Agent) *AggregatingParallelAgent {
+    return &AggregatingParallelAgent{
+        name:       name,
+        agents:     agents,
+        timeout:    timeout,
+        aggregator: aggregator,
+    }
+}
+
+func (a *AggregatingParallelAgent) Run(ctx context.Context, event agentflow.Event, state agentflow.State) (agentflow.AgentResult, error) {
+    startTime := time.Now()
+    
+    // Create timeout context
+    timeoutCtx, cancel := context.WithTimeout(ctx, a.timeout)
+    defer cancel()
+    
+    // Channel to collect results
+    type agentResult struct {
+        index int
+        state agentflow.State
+        err   error
+        duration time.Duration
+    }
+    
+    results := make(chan agentResult, len(a.agents))
+    
+    // Launch agents concurrently
+    for i, agent := range a.agents {
+        go func(idx int, ag agentflow.Agent) {
+            agentStart := time.Now()
+            resultState, err := ag.Run(timeoutCtx, state.Clone())
+            results <- agentResult{
+                index:    idx,
+                state:    resultState,
+                err:      err,
+                duration: time.Since(agentStart),
+            }
+        }(i, agent)
+    }
+    
+    // Collect results
+    var successStates []agentflow.State
+    var errors []error
+    var executionTimes []time.Duration
+    
+    for i := 0; i < len(a.agents); i++ {
+        select {
+        case result := <-results:
+            executionTimes = append(executionTimes, result.duration)
+            if result.err != nil {
+                errors = append(errors, result.err)
+            } else {
+                successStates = append(successStates, result.state)
+            }
+        case <-timeoutCtx.Done():
+            errors = append(errors, fmt.Errorf("agent execution timed out"))
+        }
+    }
+    
+    // Aggregate successful results
+    var finalState agentflow.State
+    if len(successStates) > 0 && a.aggregator != nil {
+        finalState = a.aggregator(successStates)
+    } else {
+        finalState = state.Clone()
+    }
+    
+    // Add execution metadata
+    finalState.Set("parallel_execution_stats", map[string]interface{}{
+        "total_agents":     len(a.agents),
+        "successful_agents": len(successStates),
+        "failed_agents":    len(errors),
+        "execution_times":  executionTimes,
+        "total_duration":   time.Since(startTime),
+    })
+    
+    // Handle errors
+    if len(errors) > 0 {
+        errorMessages := make([]string, len(errors))
+        for i, err := range errors {
+            errorMessages[i] = err.Error()
+        }
+        finalState.Set("parallel_errors", errorMessages)
+    }
+    
+    return agentflow.AgentResult{
+        OutputState: finalState,
+        StartTime:   startTime,
+        EndTime:     time.Now(),
+        Duration:    time.Since(startTime),
+    }, nil
+}
+```
+
+### LoopAgent
+
+Executes an agent repeatedly until a condition is met or maximum iterations reached.
+
+#### Basic Loop Pattern
+```go
+import "github.com/kunalkushwaha/agentflow/internal/agents"
+
+// Define stop condition
+stopCondition := func(state agentflow.State) bool {
+    if count, exists := state.Get("iteration_count"); exists {
+        if c, ok := count.(int); ok {
+            return c >= 5 // Stop after 5 iterations
+        }
+    }
+    return false
+}
+
+// Configure loop agent
+config := agents.LoopAgentConfig{
+    Condition:     stopCondition,
+    MaxIterations: 10, // Safety limit
+    Timeout:       time.Minute,
+}
+
+// Agent to loop
+iterativeAgent := &DataRefinementAgent{}
+
+loopAgent := agents.NewLoopAgent("iterative-refinement", config, iterativeAgent)
+
+// Use in workflow
+runner := agentflow.NewRunnerWithConfig(agentflow.RunnerConfig{
+    Agents: map[string]agentflow.AgentHandler{
+        "iterative-refinement": loopAgent,
+    },
+})
+```
+
+#### Advanced Loop Agent with Convergence Detection
+```go
+type ConvergenceLoopAgent struct {
+    name            string
+    agent           agentflow.Agent
+    maxIterations   int
+    convergenceFunc func(prev, current agentflow.State) bool
+    timeout         time.Duration
+}
+
+func NewConvergenceLoopAgent(name string, agent agentflow.Agent, maxIter int, timeout time.Duration, convergenceFunc func(prev, current agentflow.State) bool) *ConvergenceLoopAgent {
+    return &ConvergenceLoopAgent{
+        name:            name,
+        agent:           agent,
+        maxIterations:   maxIter,
+        convergenceFunc: convergenceFunc,
+        timeout:         timeout,
+    }
+}
+
+func (a *ConvergenceLoopAgent) Run(ctx context.Context, event agentflow.Event, state agentflow.State) (agentflow.AgentResult, error) {
+    startTime := time.Now()
+    
+    // Create timeout context
+    timeoutCtx, cancel := context.WithTimeout(ctx, a.timeout)
+    defer cancel()
+    
+    currentState := state.Clone()
+    var previousState agentflow.State
+    iteration := 0
+    
+    // Track iteration history
+    var iterationHistory []map[string]interface{}
+    
+    for iteration < a.maxIterations {
+        iterationStart := time.Now()
+        
+        // Check timeout
+        select {
+        case <-timeoutCtx.Done():
+            return agentflow.AgentResult{
+                OutputState: currentState,
+                Error:       "loop timed out",
+                StartTime:   startTime,
+                EndTime:     time.Now(),
+                Duration:    time.Since(startTime),
+            }, fmt.Errorf("loop execution timed out after %d iterations", iteration)
+        default:
+        }
+        
+        // Store previous state for convergence check
+        if iteration > 0 {
+            previousState = currentState.Clone()
+        }
+        
+        // Execute agent
+        resultState, err := a.agent.Run(timeoutCtx, currentState)
+        iterationDuration := time.Since(iterationStart)
+        
+        iteration++
+        
+        // Record iteration
+        iterationRecord := map[string]interface{}{
+            "iteration":    iteration,
+            "duration_ms":  iterationDuration.Milliseconds(),
+            "success":      err == nil,
+        }
+        
+        if err != nil {
+            iterationRecord["error"] = err.Error()
+            iterationHistory = append(iterationHistory, iterationRecord)
+            
+            // Add loop metadata
+            currentState.Set("loop_iterations", iteration)
+            currentState.Set("loop_error", err.Error())
+            currentState.Set("iteration_history", iterationHistory)
+            
+            return agentflow.AgentResult{
+                OutputState: currentState,
+                Error:       err.Error(),
+                StartTime:   startTime,
+                EndTime:     time.Now(),
+                Duration:    time.Since(startTime),
+            }, err
+        }
+        
+        currentState = resultState
+        iterationHistory = append(iterationHistory, iterationRecord)
+        
+        // Check convergence (after first iteration)
+        if iteration > 1 && a.convergenceFunc != nil && a.convergenceFunc(previousState, currentState) {
+            currentState.Set("converged", true)
+            currentState.Set("convergence_iteration", iteration)
+            break
+        }
+    }
+    
+    // Add final loop metadata
+    currentState.Set("loop_iterations", iteration)
+    currentState.Set("max_iterations_reached", iteration >= a.maxIterations)
+    currentState.Set("iteration_history", iterationHistory)
+    
+    return agentflow.AgentResult{
+        OutputState: currentState,
+        StartTime:   startTime,
+        EndTime:     time.Now(),
+        Duration:    time.Since(startTime),
+    }, nil
+}
+```
+
+#### Common Loop Patterns
+
+**Numerical Convergence:**
+```go
+func numericalConvergence(threshold float64) func(prev, current agentflow.State) bool {
+    return func(prev, current agentflow.State) bool {
+        prevVal, prevExists := prev.Get("result")
+        currVal, currExists := current.Get("result")
+        
+        if !prevExists || !currExists {
+            return false
+        }
+        
+        if prevFloat, ok := prevVal.(float64); ok {
+            if currFloat, ok := currVal.(float64); ok {
+                return math.Abs(currFloat-prevFloat) < threshold
+            }
+        }
+        
+        return false
+    }
+}
+```
+
+**List Stabilization:**
+```go
+func listStabilization() func(prev, current agentflow.State) bool {
+    return func(prev, current agentflow.State) bool {
+        prevList, prevExists := prev.Get("items")
+        currList, currExists := current.Get("items")
+        
+        if !prevExists || !currExists {
+            return false
+        }
+        
+        // Compare lists for equality
+        if prevSlice, ok := prevList.([]interface{}); ok {
+            if currSlice, ok := currList.([]interface{}); ok {
+                if len(prevSlice) != len(currSlice) {
+                    return false
+                }
+                
+                for i, item := range prevSlice {
+                    if item != currSlice[i] {
+                        return false
+                    }
+                }
+                return true
+            }
+        }
+        
+        return false
+    }
+}
+```
+
+---
+
+## 6. Improved Runner Setup with Context Handling
+
+Proper runner setup with context management is crucial for production applications. Here's the comprehensive guide:
+
+### Basic Runner Lifecycle Management
+
+#### Standard Setup Pattern
+```go
+func setupProductionRunner() error {
+    // Create agents
+    agents := map[string]agentflow.AgentHandler{
+        "processor":     NewProcessorAgent(),
+        "validator":     NewValidatorAgent(),
+        "error-handler": NewErrorHandlerAgent(),
+    }
+    
+    // Create runner with production configuration
+    runner := agentflow.NewRunnerWithConfig(agentflow.RunnerConfig{
+        Agents:      agents,
+        QueueSize:   1000, // Large queue for production
+        TraceLogger: agentflow.NewFileTraceLogger("./logs/traces"),
+    })
+    
+    // Create cancellable context for graceful shutdown
+    ctx, cancel := context.WithCancel(context.Background())
+    
+    // Setup graceful shutdown
+    c := make(chan os.Signal, 1)
+    signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+    
+    go func() {
+        <-c
+        fmt.Println("Received shutdown signal, stopping runner...")
+        cancel()
+    }()
+    
+    // Start runner
+    if err := runner.Start(ctx); err != nil {
+        return fmt.Errorf("failed to start runner: %w", err)
+    }
+    
+    // Wait for context cancellation
+    <-ctx.Done()
+    
+    // Stop runner gracefully
+    fmt.Println("Stopping runner...")
+    runner.Stop()
+    fmt.Println("Runner stopped successfully")
+    
+    return nil
+}
+```
+
+### Advanced Context Management
+
+#### Context with Timeout and Cancellation
+```go
+type RunnerManager struct {
+    runner        agentflow.Runner
+    cancel        context.CancelFunc
+    shutdownChan  chan struct{}
+    errorChan     chan error
+}
+
+func NewRunnerManager(agents map[string]agentflow.AgentHandler) *RunnerManager {
+    runner := agentflow.NewRunnerWithConfig(agentflow.RunnerConfig{
+        Agents:      agents,
+        QueueSize:   500,
+        TraceLogger: agentflow.NewInMemoryTraceLogger(),
+    })
+    
+    return &RunnerManager{
+        runner:       runner,
+        shutdownChan: make(chan struct{}),
+        errorChan:    make(chan error, 1),
+    }
+}
+
+func (rm *RunnerManager) Start() error {
+    // Create context with timeout for startup
+    startupCtx, startupCancel := context.WithTimeout(context.Background(), 30*time.Second)
+    defer startupCancel()
+    
+    // Create main context for runner operation
+    mainCtx, cancel := context.WithCancel(context.Background())
+    rm.cancel = cancel
+    
+    // Start runner with startup timeout
+    if err := rm.runner.Start(startupCtx); err != nil {
+        return fmt.Errorf("runner startup failed: %w", err)
+    }
+    
+    // Monitor runner in separate goroutine
+    go rm.monitorRunner(mainCtx)
+    
+    return nil
+}
+
+func (rm *RunnerManager) monitorRunner(ctx context.Context) {
+    defer close(rm.shutdownChan)
+    
+    // Setup signal handling
+    sigChan := make(chan os.Signal, 1)
+    signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+    
+    // Monitor for shutdown conditions
+    select {
+    case <-ctx.Done():
+        rm.errorChan <- ctx.Err()
+    case sig := <-sigChan:
+        rm.errorChan <- fmt.Errorf("received signal: %s", sig)
+    }
+    
+    // Graceful shutdown
+    rm.gracefulShutdown()
+}
+
+func (rm *RunnerManager) gracefulShutdown() {
+    fmt.Println("Initiating graceful shutdown...")
+    
+    // Create shutdown timeout
+    shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+    defer cancel()
+    
+    // Stop runner
+    done := make(chan struct{})
+    go func() {
+        rm.runner.Stop()
+        close(done)
+    }()
+    
+    // Wait for shutdown or timeout
+    select {
+    case <-done:
+        fmt.Println("Runner stopped successfully")
+    case <-shutdownCtx.Done():
+        fmt.Println("Shutdown timeout reached, forcing stop")
+    }
+}
+
+func (rm *RunnerManager) Wait() error {
+    <-rm.shutdownChan
+    select {
+    case err := <-rm.errorChan:
+        return err
+    default:
+        return nil
+    }
+}
+
+func (rm *RunnerManager) Shutdown() {
+    if rm.cancel != nil {
+        rm.cancel()
+    }
+}
+```
+
+### Health Monitoring and Metrics
+
+#### Runner Health Check System
+```go
+type HealthChecker struct {
+    runner        agentflow.Runner
+    healthPort    int
+    metricsPort   int
+    checkInterval time.Duration
+}
+
+func NewHealthChecker(runner agentflow.Runner, healthPort, metricsPort int) *HealthChecker {
+    return &HealthChecker{
+        runner:        runner,
+        healthPort:    healthPort,
+        metricsPort:   metricsPort,
+        checkInterval: 30 * time.Second,
+    }
+}
+
+func (hc *HealthChecker) Start(ctx context.Context) error {
+    // Start health check HTTP server
+    healthMux := http.NewServeMux()
+    healthMux.HandleFunc("/health", hc.healthHandler)
+    healthMux.HandleFunc("/ready", hc.readinessHandler)
+    
+    healthServer := &http.Server{
+        Addr:    fmt.Sprintf(":%d", hc.healthPort),
+        Handler: healthMux,
+    }
+    
+    // Start metrics HTTP server
+    metricsMux := http.NewServeMux()
+    metricsMux.HandleFunc("/metrics", hc.metricsHandler)
+    
+    metricsServer := &http.Server{
+        Addr:    fmt.Sprintf(":%d", hc.metricsPort),
+        Handler: metricsMux,
+    }
+    
+    // Start servers in goroutines
+    go func() {
+        if err := healthServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+            fmt.Printf("Health server error: %v\n", err)
+        }
+    }()
+    
+    go func() {
+        if err := metricsServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+            fmt.Printf("Metrics server error: %v\n", err)
+        }
+    }()
+    
+    // Start periodic health checks
+    go hc.runPeriodicChecks(ctx)
+    
+    // Shutdown servers when context is cancelled
+    go func() {
+        <-ctx.Done()
+        
+        shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+        defer cancel()
+        
+        healthServer.Shutdown(shutdownCtx)
+        metricsServer.Shutdown(shutdownCtx)
+    }()
+    
+    return nil
+}
+
+func (hc *HealthChecker) healthHandler(w http.ResponseWriter, r *http.Request) {
+    health := hc.checkRunnerHealth()
+    
+    w.Header().Set("Content-Type", "application/json")
+    
+    if health.Healthy {
+        w.WriteHeader(http.StatusOK)
+    } else {
+        w.WriteHeader(http.StatusServiceUnavailable)
+    }
+    
+    json.NewEncoder(w).Encode(health)
+}
+
+func (hc *HealthChecker) readinessHandler(w http.ResponseWriter, r *http.Request) {
+    readiness := hc.checkRunnerReadiness()
+    
+    w.Header().Set("Content-Type", "application/json")
+    
+    if readiness.Ready {
+        w.WriteHeader(http.StatusOK)
+    } else {
+        w.WriteHeader(http.StatusServiceUnavailable)
+    }
+    
+    json.NewEncoder(w).Encode(readiness)
+}
+
+func (hc *HealthChecker) metricsHandler(w http.ResponseWriter, r *http.Request) {
+    metrics := hc.collectMetrics()
+    
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusOK)
+    
+    json.NewEncoder(w).Encode(metrics)
+}
+
+type HealthStatus struct {
+    Healthy   bool      `json:"healthy"`
+    Timestamp time.Time `json:"timestamp"`
+    Details   map[string]interface{} `json:"details"`
+}
+
+type ReadinessStatus struct {
+    Ready     bool      `json:"ready"`
+    Timestamp time.Time `json:"timestamp"`
+    Checks    map[string]bool `json:"checks"`
+}
+
+type Metrics struct {
+    Timestamp        time.Time              `json:"timestamp"`
+    EventsProcessed  int64                  `json:"events_processed"`
+    AgentExecutions  map[string]int64       `json:"agent_executions"`
+    AverageLatency   map[string]float64     `json:"average_latency_ms"`
+    ErrorRates       map[string]float64     `json:"error_rates"`
+}
+
+func (hc *HealthChecker) checkRunnerHealth() HealthStatus {
+    details := make(map[string]interface{})
+    healthy := true
+    
+    // Check if runner is responding
+    // This would typically involve pinging the runner or checking internal state
+    details["runner_responsive"] = true
+    
+    // Check queue status (if accessible)
+    details["queue_status"] = "normal"
+    
+    // Add more health checks as needed
+    
+    return HealthStatus{
+        Healthy:   healthy,
+        Timestamp: time.Now(),
+        Details:   details,
+    }
+}
+
+func (hc *HealthChecker) checkRunnerReadiness() ReadinessStatus {
+    checks := make(map[string]bool)
+    
+    // Check if runner is started
+    checks["runner_started"] = true
+    
+    // Check if agents are registered
+    checks["agents_registered"] = true
+    
+    // Check dependencies (databases, external services, etc.)
+    checks["dependencies_available"] = true
+    
+    // Overall readiness
+    ready := true
+    for _, check := range checks {
+        if !check {
+            ready = false
+            break
+        }
+    }
+    
+    return ReadinessStatus{
+        Ready:     ready,
+        Timestamp: time.Now(),
+        Checks:    checks,
+    }
+}
+
+func (hc *HealthChecker) collectMetrics() Metrics {
+    // Collect metrics from runner and trace logger
+    // This would typically involve accessing internal counters
+    
+    return Metrics{
+        Timestamp:       time.Now(),
+        EventsProcessed: 0, // Get from runner
+        AgentExecutions: make(map[string]int64),
+        AverageLatency:  make(map[string]float64),
+        ErrorRates:      make(map[string]float64),
+    }
+}
+
+func (hc *HealthChecker) runPeriodicChecks(ctx context.Context) {
+    ticker := time.NewTicker(hc.checkInterval)
+    defer ticker.Stop()
+    
+    for {
+        select {
+        case <-ctx.Done():
+            return
+        case <-ticker.C:
+            health := hc.checkRunnerHealth()
+            if !health.Healthy {
+                fmt.Printf("Health check failed at %v: %+v\n", health.Timestamp, health.Details)
+            }
+        }
+    }
+}
+```
+
+### Production Runner Template
+
+#### Complete Production Setup
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+    "os"
+    "os/signal"
+    "syscall"
+    "time"
+    
+    agentflow "github.com/kunalkushwaha/agentflow/core"
+)
+
+func main() {
+    // Load configuration and create provider
+    provider, err := agentflow.NewProviderFromWorkingDir()
+    if err != nil {
+        log.Printf("Warning: Could not load LLM provider: %v", err)
+    }
+    
+    // Create agents
+    agents := map[string]agentflow.AgentHandler{
+        "input-processor":  NewInputProcessorAgent(),
+        "llm-analyzer":     NewLLMAnalyzerAgent(provider),
+        "result-formatter": NewResultFormatterAgent(),
+        "error-handler":    NewProductionErrorHandlerAgent(),
+    }
+    
+    // Create runner using factory
+    runner := agentflow.NewRunnerFromWorkingDir(agents)
+    
+    // Setup graceful shutdown
+    ctx, cancel := context.WithCancel(context.Background())
+    defer cancel()
+    
+    // Start runner
+    if err := runner.Start(ctx); err != nil {
+        log.Fatalf("Failed to start runner: %v", err)
+    }
+    
+    // Setup signal handling
+    c := make(chan os.Signal, 1)
+    signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+    
+    log.Println("AgentFlow application started. Press Ctrl+C to stop.")
+    
+    // Wait for shutdown signal
+    <-c
+    log.Println("Shutting down...")
+    
+    // Graceful shutdown with timeout
+    shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
+    defer shutdownCancel()
+    
+    done := make(chan bool, 1)
+    go func() {
+        cancel() // Cancel main context
+        runner.Stop()
+        done <- true
+    }()
+    
+    select {
+    case <-done:
+        log.Println("Shutdown completed successfully")
+    case <-shutdownCtx.Done():
+        log.Println("Shutdown timed out")
+    }
+}
+```
+
+This completes the first 6 of the 8 requested documentation sections. Would you like me to continue with sections 7 and 8?

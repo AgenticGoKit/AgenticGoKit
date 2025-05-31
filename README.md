@@ -26,7 +26,9 @@ Whether you're prototyping a single-agent application or orchestrating a complex
 - **Tool Ecosystem**: Extend agent capabilities with function tool registry.
 - **Observability**: Comprehensive tracing and callback hooks at key lifecycle points.
 - **Memory Management**: Both short-term session storage and long-term vector-based memory.
-- **CLI Support**: Built-in command-line tools, including `agentcli create` for project scaffolding (e.g., `agentcli create --agentName myNewAgent`) and utilities for trace inspection and debugging.
+- **Project Scaffolding**: Built-in `agentcli create` command generates production-ready multi-agent projects with modern patterns.
+- **Configuration Management**: Centralized `agentflow.toml` for LLM providers, error routing, and system settings.
+- **Error Resilience**: Specialized error handlers for validation, timeout, and critical failures.
 
 ## Getting Started
 
@@ -149,27 +151,70 @@ Get started quickly with the AgentFlow CLI to scaffold new projects:
 go get github.com/kunalkushwaha/agentflow@latest
 
 # Create a new multi-agent project
-agentcli create myproject --agents 3 --provider openai --with-error-agent
+agentcli create myproject --agents 2 --provider ollama
 
-# Or use interactive mode to be prompted for options
+# Or use interactive mode for guided setup
 agentcli create --interactive
 
 # Navigate to your new project
 cd myproject
 
-# Run your project
-go run .
+# Run your project with a test message
+go run . -m "Hello from AgentFlow!"
 ```
 
-The `agentcli create` command generates a complete project structure with:
-- Multi-agent implementations
-- Configuration files (including `agentflow.toml`)
-- Error handling agents (optional)
-- Responsible AI agents (optional)
-- README with setup instructions
-- Example workflows
+The `agentcli create` command generates a modern project structure with:
+- **Sequential workflow**: agent1 → agent2 → responsible_ai → workflow_finalizer
+- **Configuration file**: `agentflow.toml` for LLM provider and error routing setup
+- **Specialized error handlers**: validation, timeout, and critical error handling
+- **LLM integration**: Pre-configured for OpenAI, Azure, Ollama, or Mock providers
+- **Session management**: Automatic session tracking and workflow correlation
+- **Modern patterns**: Uses latest factory functions and AgentFlow v0.1.1 APIs
+- **Immediate functionality**: Ready-to-run with comprehensive logging and tracing
 
-Supported providers: `openai`, `azure`, `ollama`, `mock`
+**Example output:**
+```
+4:35PM INF Starting multi-agent system...
+4:35PM INF Using message from -m flag input="Hello from AgentFlow!"
+4:35PM INF Loaded AgentFlow configuration config_provider=ollama
+4:35PM INF Emitting initial event to start workflow session_id=session-20250531-163537
+=== WORKFLOW RESULTS ===
+Processing completed by agent chain with sentiment analysis and safety checks.
+=========================
+4:35PM INF Workflow completed, shutting down...
+```
+
+**Supported providers**: `openai`, `azure`, `ollama`, `mock`  
+**Generated files**: `main.go`, `agentflow.toml`, agent files, error handlers, `workflow_finalizer.go`
+
+## AgentCLI Commands
+
+The AgentFlow CLI provides powerful scaffolding and development tools:
+
+### Project Creation
+```bash
+# Basic project with default settings
+agentcli create myproject
+
+# Customize number of agents and provider
+agentcli create myproject --agents 3 --provider azure
+
+# Interactive mode for guided setup
+agentcli create --interactive
+
+# Available flags:
+#   --agents, -a        Number of agents to create (default: 2)
+#   --provider, -p      LLM provider (openai, azure, ollama, mock)
+#   --interactive, -i   Interactive setup mode
+```
+
+### Generated Project Features
+- **Modern Architecture**: Uses AgentFlow v0.1.1 with factory patterns
+- **Zero Configuration**: Works immediately with mock provider
+- **LLM Ready**: Pre-configured for production LLM providers
+- **Error Resilience**: Comprehensive error handling and recovery
+- **Workflow Patterns**: Sequential agent chains with proper completion detection
+- **Session Tracking**: Built-in correlation and tracing support
 
 ## Contributing to AgentFlow
 
@@ -201,10 +246,12 @@ We welcome contributions from the community! Here's how you can get involved:
 
 ### Development Tips
 
-- Use `agentcli create --agentName myProject` to quickly scaffold a new AgentFlow project.
-- Use the other `agentcli` CLI sub-commands for debugging and trace inspection.
-- Explore the `examples` folder to understand how different components work together.
-- Refer to the [Developer Guide](docs/DevGuide.md) for in-depth documentation.
+- Use `agentcli create --interactive` to quickly scaffold a new AgentFlow project with guided setup
+- Use `agentcli create myproject --provider ollama` for local development without API keys
+- Explore the generated `agentflow.toml` file to understand configuration options
+- Check generated agent files for modern AgentFlow patterns and LLM integration examples
+- Use the generated error handlers as templates for custom error handling logic
+- Refer to the [Developer Guide](docs/DevGuide.md) for in-depth documentation and advanced patterns
 
 ## Project Structure
 
