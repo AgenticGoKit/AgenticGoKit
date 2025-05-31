@@ -43,11 +43,12 @@ type Runner interface {
 
 // RunnerImpl implements the Runner interface.
 type RunnerImpl struct {
-	queue        chan Event
-	orchestrator Orchestrator
-	registry     *CallbackRegistry
-	traceLogger  TraceLogger
-	tracer       trace.Tracer
+	queue             chan Event
+	orchestrator      Orchestrator
+	registry          *CallbackRegistry
+	traceLogger       TraceLogger
+	tracer            trace.Tracer
+	errorRouterConfig *ErrorRouterConfig
 
 	stopOnce sync.Once
 	stopChan chan struct{}
@@ -95,6 +96,27 @@ func (r *RunnerImpl) SetTraceLogger(logger TraceLogger) {
 		return
 	}
 	r.traceLogger = logger
+}
+
+// SetErrorRouterConfig assigns the error router configuration to the runner.
+func (r *RunnerImpl) SetErrorRouterConfig(config *ErrorRouterConfig) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.started {
+		Logger().Warn().Msg("Attempted to set error router config while runner is running.")
+		return
+	}
+	r.errorRouterConfig = config
+}
+
+// getErrorRouterConfig returns the error router configuration or default if not set.
+func (r *RunnerImpl) getErrorRouterConfig() *ErrorRouterConfig {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	if r.errorRouterConfig != nil {
+		return r.errorRouterConfig
+	}
+	return DefaultErrorRouterConfig()
 }
 
 // GetTraceLogger returns the runner's trace logger.
@@ -361,7 +383,6 @@ func (r *RunnerImpl) loop(ctx context.Context) {
 // processAgentResult handles the outcome of an agent execution, potentially emitting new events.
 func (r *RunnerImpl) processAgentResult(ctx context.Context, originalEvent Event, result AgentResult, agentErr error, agentID string) {
 	sessionID, _ := originalEvent.GetMetadataValue(SessionIDKey)
-
 	if agentErr != nil {
 		Logger().Error().
 			Str("event_id", originalEvent.GetID()).
@@ -370,27 +391,15 @@ func (r *RunnerImpl) processAgentResult(ctx context.Context, originalEvent Event
 			Err(agentErr).
 			Msg("Agent execution failed")
 
-		failurePayload := EventData{
-			"original_event_id": originalEvent.GetID(),
-			"error":             agentErr.Error(),
-		}
-		failureMeta := map[string]string{
-			SessionIDKey:     sessionID,
-			"status":         "failure",
-			RouteMetadataKey: "error-handler",
-		}
-		if agentID != "" && agentID != "unknown" {
-			failureMeta["failed_agent_id"] = agentID
-		}
-
-		failureEvent := NewEvent(failureMeta[RouteMetadataKey], failurePayload, failureMeta)
-		failureEvent.SetSourceAgentID(agentID)
+		// Use enhanced error routing system
+		errorRouterConfig := r.getErrorRouterConfig()
+		failureEvent := CreateEnhancedErrorEvent(originalEvent, agentID, agentErr, errorRouterConfig)
 
 		if err := r.Emit(failureEvent); err != nil {
 			Logger().Error().
 				Str("event_id", originalEvent.GetID()).
 				Err(err).
-				Msg("Error emitting failure event")
+				Msg("Error emitting enhanced failure event")
 		}
 	} else {
 		Logger().Debug().
