@@ -1,0 +1,390 @@
+// Package core provides configuration loading for AgentFlow.
+package core
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"time"
+
+	"github.com/BurntSushi/toml"
+)
+
+// Config represents the AgentFlow configuration structure
+type Config struct {
+	AgentFlow struct {
+		Name     string `toml:"name"`
+		Version  string `toml:"version"`
+		Provider string `toml:"provider"`
+	} `toml:"agent_flow"`
+
+	Logging struct {
+		Level  string `toml:"level"`
+		Format string `toml:"format"`
+	} `toml:"logging"`
+
+	Runtime struct {
+		MaxConcurrentAgents int `toml:"max_concurrent_agents"`
+		TimeoutSeconds      int `toml:"timeout_seconds"`
+	} `toml:"runtime"`
+
+	// Error routing configuration
+	ErrorRouting struct {
+		Enabled              bool                     `toml:"enabled"`
+		MaxRetries           int                      `toml:"max_retries"`
+		RetryDelayMs         int                      `toml:"retry_delay_ms"`
+		EnableCircuitBreaker bool                     `toml:"enable_circuit_breaker"`
+		ErrorHandlerName     string                   `toml:"error_handler_name"`
+		CategoryHandlers     map[string]string        `toml:"category_handlers"`
+		SeverityHandlers     map[string]string        `toml:"severity_handlers"`
+		CircuitBreaker       CircuitBreakerConfigToml `toml:"circuit_breaker"`
+		Retry                RetryConfigToml          `toml:"retry"`
+	} `toml:"error_routing"`
+
+	Providers map[string]map[string]interface{} `toml:"providers"`
+}
+
+// CircuitBreakerConfigToml represents circuit breaker configuration in TOML
+type CircuitBreakerConfigToml struct {
+	FailureThreshold int `toml:"failure_threshold"`
+	SuccessThreshold int `toml:"success_threshold"`
+	TimeoutMs        int `toml:"timeout_ms"`
+	ResetTimeoutMs   int `toml:"reset_timeout_ms"`
+	HalfOpenMaxCalls int `toml:"half_open_max_calls"`
+}
+
+// RetryConfigToml represents retry configuration in TOML
+type RetryConfigToml struct {
+	MaxRetries    int     `toml:"max_retries"`
+	BaseDelayMs   int     `toml:"base_delay_ms"`
+	MaxDelayMs    int     `toml:"max_delay_ms"`
+	BackoffFactor float64 `toml:"backoff_factor"`
+	EnableJitter  bool    `toml:"enable_jitter"`
+}
+
+// LoadConfig loads configuration from the specified TOML file path
+func LoadConfig(path string) (*Config, error) {
+	// Check if file exists
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return nil, fmt.Errorf("configuration file not found: %s", path)
+	}
+
+	// Read the file
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read configuration file %s: %w", path, err)
+	}
+
+	// Parse TOML
+	var config Config
+	if err := toml.Unmarshal(data, &config); err != nil {
+		return nil, fmt.Errorf("failed to parse TOML configuration: %w", err)
+	}
+
+	// Set defaults if not specified
+	if config.Logging.Level == "" {
+		config.Logging.Level = "info"
+	}
+	if config.Logging.Format == "" {
+		config.Logging.Format = "json"
+	}
+	if config.Runtime.MaxConcurrentAgents == 0 {
+		config.Runtime.MaxConcurrentAgents = 10
+	}
+	if config.Runtime.TimeoutSeconds == 0 {
+		config.Runtime.TimeoutSeconds = 30
+	}
+
+	return &config, nil
+}
+
+// LoadConfigFromWorkingDir loads agentflow.toml from the current working directory
+func LoadConfigFromWorkingDir() (*Config, error) {
+	wd, err := os.Getwd()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get working directory: %w", err)
+	}
+
+	configPath := filepath.Join(wd, "agentflow.toml")
+	return LoadConfig(configPath)
+}
+
+// InitializeProvider creates a ModelProvider based on the configuration
+func (c *Config) InitializeProvider() (ModelProvider, error) {
+	provider := c.AgentFlow.Provider
+	if provider == "" {
+		return nil, fmt.Errorf("no provider specified in configuration")
+	}
+
+	// Get provider-specific configuration
+	providerConfig, exists := c.Providers[provider]
+	if !exists {
+		return nil, fmt.Errorf("no configuration found for provider: %s", provider)
+	}
+
+	switch provider {
+	case "openai":
+		return c.initializeOpenAIProvider(providerConfig)
+	case "azure":
+		return c.initializeAzureProvider(providerConfig)
+	case "ollama":
+		return c.initializeOllamaProvider(providerConfig)
+	default:
+		return nil, fmt.Errorf("unsupported provider: %s", provider)
+	}
+}
+
+// initializeOpenAIProvider creates an OpenAI provider from configuration
+func (c *Config) initializeOpenAIProvider(config map[string]interface{}) (ModelProvider, error) {
+	// First try to get from config, then fall back to environment variables
+	apiKey := c.getStringValue(config, "api_key")
+	if apiKey == "" {
+		apiKey = os.Getenv("OPENAI_API_KEY")
+		if apiKey == "" {
+			return nil, fmt.Errorf("OpenAI API key not found in configuration or OPENAI_API_KEY environment variable")
+		}
+	}
+
+	model := c.getStringValue(config, "model")
+	if model == "" {
+		model = "gpt-4o"
+	}
+
+	maxTokens := c.getIntValue(config, "max_tokens")
+	if maxTokens == 0 {
+		maxTokens = 1000
+	}
+
+	temperature := c.getFloatValue(config, "temperature")
+	if temperature == 0 {
+		temperature = 0.7
+	}
+
+	return NewOpenAIAdapter(apiKey, model, maxTokens, float32(temperature))
+}
+
+// initializeAzureProvider creates an Azure OpenAI provider from configuration
+func (c *Config) initializeAzureProvider(config map[string]interface{}) (ModelProvider, error) {
+	// Try to get from config, then fall back to environment variables
+	apiKey := c.getStringValue(config, "api_key")
+	if apiKey == "" {
+		apiKey = os.Getenv("AZURE_OPENAI_API_KEY")
+		if apiKey == "" {
+			return nil, fmt.Errorf("Azure OpenAI API key not found in configuration or AZURE_OPENAI_API_KEY environment variable")
+		}
+	}
+
+	endpoint := c.getStringValue(config, "endpoint")
+	if endpoint == "" {
+		endpoint = os.Getenv("AZURE_OPENAI_ENDPOINT")
+		if endpoint == "" {
+			return nil, fmt.Errorf("Azure OpenAI endpoint not found in configuration or AZURE_OPENAI_ENDPOINT environment variable")
+		}
+	}
+
+	chatDeployment := c.getStringValue(config, "chat_deployment")
+	if chatDeployment == "" {
+		chatDeployment = os.Getenv("AZURE_OPENAI_CHAT_DEPLOYMENT")
+		if chatDeployment == "" {
+			return nil, fmt.Errorf("Azure OpenAI chat deployment not found in configuration or AZURE_OPENAI_CHAT_DEPLOYMENT environment variable")
+		}
+	}
+
+	embeddingDeployment := c.getStringValue(config, "embedding_deployment")
+	if embeddingDeployment == "" {
+		embeddingDeployment = os.Getenv("AZURE_OPENAI_EMBEDDING_DEPLOYMENT")
+		if embeddingDeployment == "" {
+			embeddingDeployment = "text-embedding-ada-002" // default
+		}
+	}
+
+	return NewAzureOpenAIAdapter(AzureOpenAIAdapterOptions{
+		Endpoint:            endpoint,
+		APIKey:              apiKey,
+		ChatDeployment:      chatDeployment,
+		EmbeddingDeployment: embeddingDeployment,
+	})
+}
+
+// initializeOllamaProvider creates an Ollama provider from configuration
+func (c *Config) initializeOllamaProvider(config map[string]interface{}) (ModelProvider, error) {
+	baseURL := c.getStringValue(config, "base_url")
+	if baseURL == "" {
+		baseURL = os.Getenv("OLLAMA_BASE_URL")
+		if baseURL == "" {
+			baseURL = "http://localhost:11434"
+		}
+	}
+
+	model := c.getStringValue(config, "model")
+	if model == "" {
+		model = os.Getenv("OLLAMA_MODEL")
+		if model == "" {
+			model = "llama3.2:latest"
+		}
+	}
+
+	maxTokens := c.getIntValue(config, "max_tokens")
+	if maxTokens == 0 {
+		maxTokens = 1000
+	}
+
+	temperature := c.getFloatValue(config, "temperature")
+	if temperature == 0 {
+		temperature = 0.7
+	}
+
+	return NewOllamaAdapter(baseURL, model, maxTokens, float32(temperature))
+}
+
+// Helper methods to safely extract values from the configuration map
+func (c *Config) getStringValue(config map[string]interface{}, key string) string {
+	if val, exists := config[key]; exists {
+		if str, ok := val.(string); ok {
+			return str
+		}
+	}
+	return ""
+}
+
+func (c *Config) getIntValue(config map[string]interface{}, key string) int {
+	if val, exists := config[key]; exists {
+		switch v := val.(type) {
+		case int:
+			return v
+		case int64:
+			return int(v)
+		case float64:
+			return int(v)
+		}
+	}
+	return 0
+}
+
+func (c *Config) getFloatValue(config map[string]interface{}, key string) float64 {
+	if val, exists := config[key]; exists {
+		switch v := val.(type) {
+		case float64:
+			return v
+		case int:
+			return float64(v)
+		case int64:
+			return float64(v)
+		}
+	}
+	return 0
+}
+
+// GetLogLevel returns the logging level from configuration
+func (c *Config) GetLogLevel() LogLevel {
+	switch c.Logging.Level {
+	case "debug":
+		return DEBUG
+	case "info":
+		return INFO
+	case "warn":
+		return WARN
+	case "error":
+		return ERROR
+	default:
+		return INFO
+	}
+}
+
+// ApplyLoggingConfig applies the logging configuration
+func (c *Config) ApplyLoggingConfig() {
+	SetLogLevel(c.GetLogLevel())
+}
+
+// GetErrorRoutingConfig converts TOML configuration to runtime ErrorRouterConfig
+func (c *Config) GetErrorRoutingConfig() *ErrorRouterConfig {
+	if !c.ErrorRouting.Enabled {
+		return nil
+	}
+
+	config := &ErrorRouterConfig{
+		MaxRetries:           c.ErrorRouting.MaxRetries,
+		RetryDelayMs:         c.ErrorRouting.RetryDelayMs,
+		EnableCircuitBreaker: c.ErrorRouting.EnableCircuitBreaker,
+		ErrorHandlerName:     c.ErrorRouting.ErrorHandlerName,
+		CategoryHandlers:     make(map[string]string),
+		SeverityHandlers:     make(map[string]string),
+	}
+
+	// Set defaults if not specified
+	if config.MaxRetries == 0 {
+		config.MaxRetries = 3
+	}
+	if config.RetryDelayMs == 0 {
+		config.RetryDelayMs = 1000
+	}
+
+	// Copy category handlers
+	for category, handler := range c.ErrorRouting.CategoryHandlers {
+		config.CategoryHandlers[category] = handler
+	}
+
+	// Copy severity handlers
+	for severity, handler := range c.ErrorRouting.SeverityHandlers {
+		config.SeverityHandlers[severity] = handler
+	}
+
+	return config
+}
+
+// GetCircuitBreakerConfig converts TOML configuration to runtime CircuitBreakerConfig
+func (c *Config) GetCircuitBreakerConfig() *CircuitBreakerConfig {
+	cb := &c.ErrorRouting.CircuitBreaker
+
+	config := &CircuitBreakerConfig{
+		FailureThreshold:   cb.FailureThreshold,
+		SuccessThreshold:   cb.SuccessThreshold,
+		Timeout:            time.Duration(cb.TimeoutMs) * time.Millisecond,
+		MaxConcurrentCalls: cb.HalfOpenMaxCalls,
+	}
+
+	// Set defaults if not specified
+	if config.FailureThreshold == 0 {
+		config.FailureThreshold = 5
+	}
+	if config.SuccessThreshold == 0 {
+		config.SuccessThreshold = 3
+	}
+	if config.Timeout == 0 {
+		config.Timeout = 30 * time.Second
+	}
+	if config.MaxConcurrentCalls == 0 {
+		config.MaxConcurrentCalls = 3
+	}
+
+	return config
+}
+
+// GetRetryConfig converts TOML configuration to runtime RetryPolicy
+func (c *Config) GetRetryConfig() *RetryPolicy {
+	r := &c.ErrorRouting.Retry
+
+	config := &RetryPolicy{
+		MaxRetries:    r.MaxRetries,
+		InitialDelay:  time.Duration(r.BaseDelayMs) * time.Millisecond,
+		MaxDelay:      time.Duration(r.MaxDelayMs) * time.Millisecond,
+		BackoffFactor: r.BackoffFactor,
+		Jitter:        r.EnableJitter,
+	}
+
+	// Set defaults if not specified
+	if config.MaxRetries == 0 {
+		config.MaxRetries = 3
+	}
+	if config.InitialDelay == 0 {
+		config.InitialDelay = 1000 * time.Millisecond
+	}
+	if config.MaxDelay == 0 {
+		config.MaxDelay = 30 * time.Second
+	}
+	if config.BackoffFactor == 0 {
+		config.BackoffFactor = 2.0
+	}
+
+	return config
+}
