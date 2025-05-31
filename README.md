@@ -71,8 +71,17 @@ func (a *SimpleAgent) Run(ctx context.Context, event agentflow.Event, state agen
         Str("event_id", event.GetID()).
         Msg("Processing event")
 
-    // Create output state with response
-    outputState := agentflow.NewState()
+    // Get data from event
+    eventData := event.GetData()
+    message, ok := eventData["message"]
+    if !ok {
+        message = "No message provided"
+    }
+
+    // Process the message
+    response := fmt.Sprintf("%s processed: %v", a.name, message)    // Create output state with response
+    outputState := state.Clone()
+    outputState.Set("response", response)
     outputState.Set("processed_by", a.name)
     outputState.Set("timestamp", time.Now().Format(time.RFC3339))
 
@@ -85,15 +94,20 @@ func (a *SimpleAgent) Run(ctx context.Context, event agentflow.Event, state agen
 }
 
 func main() {
+    // Set logging level
+    agentflow.SetLogLevel(agentflow.INFO)
+
     // Create agents
     agents := map[string]agentflow.AgentHandler{
         "processor": &SimpleAgent{name: "ProcessorAgent"},
     }
 
-    // Create and start runner
+    // Create and start runner with optional tracing
+    traceLogger := agentflow.NewInMemoryTraceLogger()
     runner := agentflow.NewRunnerWithConfig(agentflow.RunnerConfig{
-        Agents:    agents,
-        QueueSize: 10,
+        Agents:      agents,
+        QueueSize:   10,
+        TraceLogger: traceLogger, // Enable tracing
     })
 
     ctx := context.Background()
@@ -104,7 +118,10 @@ func main() {
 
     // Create and emit event
     eventData := agentflow.EventData{"message": "Hello AgentFlow!"}
-    metadata := map[string]string{agentflow.RouteMetadataKey: "processor"}
+    metadata := map[string]string{
+        agentflow.RouteMetadataKey: "processor",
+        agentflow.SessionIDKey:     "session-123",
+    }
     event := agentflow.NewEvent("processor", eventData, metadata)
 
     if err := runner.Emit(event); err != nil {
@@ -112,25 +129,47 @@ func main() {
     }
 
     time.Sleep(time.Second * 2) // Wait for processing
+    
+    // Optional: Retrieve and display trace
+    traces, err := runner.DumpTrace("session-123")
+    if err == nil && len(traces) > 0 {
+        fmt.Printf("Trace captured %d entries\n", len(traces))
+    }
+    
     fmt.Println("AgentFlow library test completed successfully!")
 }
 ```
 
-### Running the Examples
+### Quick Start - Using AgentCLI
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/kunalkushwaha/agentflow.git
-   cd agentflow
-   ```
+Get started quickly with the AgentFlow CLI to scaffold new projects:
 
-2. Navigate to the `examples` folder and choose an example to run:
-   ```bash
-   cd examples/multi_agent
-   go run main.go
-   ```
+```bash
+# Install AgentCLI (if not already available)
+go get github.com/kunalkushwaha/agentflow@latest
 
-3. Explore the [examples README](examples/README.md) for more use cases.
+# Create a new multi-agent project
+agentcli create myproject --agents 3 --provider openai --with-error-agent
+
+# Or use interactive mode to be prompted for options
+agentcli create --interactive
+
+# Navigate to your new project
+cd myproject
+
+# Run your project
+go run .
+```
+
+The `agentcli create` command generates a complete project structure with:
+- Multi-agent implementations
+- Configuration files (including `agentflow.toml`)
+- Error handling agents (optional)
+- Responsible AI agents (optional)
+- README with setup instructions
+- Example workflows
+
+Supported providers: `openai`, `azure`, `ollama`, `mock`
 
 ## Contributing to AgentFlow
 
