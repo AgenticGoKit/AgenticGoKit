@@ -1,10 +1,12 @@
 package mcp
 
 import (
+	"context"
 	"fmt"
 	"sync"
+	"time"
 
-	"github.com/kunalkushwaha/agentflow/internal/mcp/client/mark3labs"
+	"github.com/kunalkushwaha/agentflow/internal/mcp/bridge"
 )
 
 // ClientFactory implements MCPClientFactory interface
@@ -69,16 +71,7 @@ func (f *ClientFactory) DefaultClient() string {
 func (f *ClientFactory) registerDefaultClients() {
 	// Register mark3labs implementation
 	f.RegisterClient("mark3labs", func(config map[string]interface{}) (MCPClient, error) {
-		client, err := mark3labs.NewMark3LabsClient(config)
-		if err != nil {
-			return nil, err
-		}
-		// Since mark3labs returns interface{} to avoid import cycle,
-		// we need to assert it implements MCPClient when the actual implementation is ready
-		if mcpClient, ok := client.(MCPClient); ok {
-			return mcpClient, nil
-		}
-		return nil, fmt.Errorf("mark3labs client does not implement MCPClient interface")
+		return NewMark3LabsBridge(config)
 	})
 
 	// Register custom implementation (placeholder for future)
@@ -113,4 +106,191 @@ func GetSupportedClients() []string {
 // GetDefaultClient returns the default client type
 func GetDefaultClient() string {
 	return globalFactory.DefaultClient()
+}
+
+// NewMark3LabsBridge creates a new bridge to the mark3labs client
+// This avoids import cycles by using a separate bridge package
+func NewMark3LabsBridge(config map[string]interface{}) (MCPClient, error) {
+	return NewMark3LabsClientWrapper(config)
+}
+
+// Mark3LabsClientWrapper implements MCPClient by wrapping the mark3labs bridge
+type Mark3LabsClientWrapper struct {
+	bridge *bridge.Mark3LabsBridge
+	config ServerConfig
+}
+
+// NewMark3LabsClientWrapper creates a new wrapper around the mark3labs bridge
+func NewMark3LabsClientWrapper(config map[string]interface{}) (MCPClient, error) {
+	bridge := bridge.NewMark3LabsBridge()
+	wrapper := &Mark3LabsClientWrapper{
+		bridge: bridge,
+	}
+
+	// Convert config map to ServerConfig
+	serverConfig, err := convertMapToServerConfig(config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert config: %w", err)
+	}
+	wrapper.config = serverConfig
+
+	return wrapper, nil
+}
+
+// Implement MCPClient interface methods
+
+func (w *Mark3LabsClientWrapper) Connect(ctx context.Context, config ServerConfig) error {
+	// Convert MCPClient ServerConfig to bridge ServerConfig
+	bridgeConfig := bridge.BridgeServerConfig{
+		ID:         config.ID,
+		Name:       config.Name,
+		Type:       config.Type,
+		ClientType: config.ClientType,
+		Connection: bridge.BridgeConnectionConfig{
+			Transport:   config.Connection.Transport,
+			Command:     config.Connection.Command,
+			Environment: config.Connection.Environment,
+			Headers:     config.Connection.Headers,
+			Address:     config.Connection.Address,
+		},
+		Enabled: config.Enabled,
+	}
+
+	w.config = config
+	return w.bridge.Connect(ctx, bridgeConfig)
+}
+
+func (w *Mark3LabsClientWrapper) Disconnect(ctx context.Context) error {
+	return w.bridge.Disconnect(ctx)
+}
+
+func (w *Mark3LabsClientWrapper) IsConnected() bool {
+	return w.bridge.IsConnected()
+}
+
+func (w *Mark3LabsClientWrapper) Ping(ctx context.Context) error {
+	return w.bridge.Ping(ctx)
+}
+
+func (w *Mark3LabsClientWrapper) GetServerInfo(ctx context.Context) (*ServerInfo, error) {
+	info, err := w.bridge.GetServerInfo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var lastSeen time.Time
+	if info.LastSeen != nil {
+		lastSeen = *info.LastSeen
+	}
+
+	return &ServerInfo{
+		ID:       info.ID,
+		Name:     info.Name,
+		Version:  info.Version,
+		Status:   ConnectionStatus(info.Status),
+		LastSeen: lastSeen,
+		Capabilities: ServerCapabilities{
+			Tools:     info.Capabilities.Tools,
+			Resources: info.Capabilities.Resources,
+			Prompts:   info.Capabilities.Prompts,
+			Logging:   info.Capabilities.Logging,
+			Features:  info.Capabilities.Features,
+		},
+		Metadata: info.Metadata,
+	}, nil
+}
+
+func (w *Mark3LabsClientWrapper) GetCapabilities(ctx context.Context) (*ServerCapabilities, error) {
+	caps, err := w.bridge.GetCapabilities(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ServerCapabilities{
+		Tools:     caps.Tools,
+		Resources: caps.Resources,
+		Prompts:   caps.Prompts,
+		Logging:   caps.Logging,
+		Features:  caps.Features,
+	}, nil
+}
+
+func (w *Mark3LabsClientWrapper) ListTools(ctx context.Context) ([]ToolMetadata, error) {
+	tools, err := w.bridge.ListTools(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	mcpTools := make([]ToolMetadata, len(tools))
+	for i, tool := range tools {
+		mcpTools[i] = ToolMetadata{
+			Name:        tool.Name,
+			Description: tool.Description,
+			Schema:      tool.InputSchema,
+			ServerID:    w.config.ID,
+			Tags:        []string{},
+			Annotations: make(map[string]interface{}),
+		}
+	}
+
+	return mcpTools, nil
+}
+
+func (w *Mark3LabsClientWrapper) CallTool(ctx context.Context, request ToolCallRequest) (*ToolCallResult, error) {
+	bridgeRequest := bridge.BridgeToolCallRequest{
+		Name:      request.Name,
+		Arguments: request.Arguments,
+		ServerID:  request.ServerID,
+		Context:   request.Context,
+	}
+
+	result, err := w.bridge.CallTool(ctx, bridgeRequest)
+	if err != nil {
+		return nil, err
+	}
+
+	mcpContent := make([]ContentBlock, len(result.Content))
+	for i, content := range result.Content {
+		mcpContent[i] = ContentBlock{
+			Type:     content.Type,
+			Content:  content.Content,
+			MimeType: content.MimeType,
+			Metadata: make(map[string]interface{}),
+		}
+	}
+
+	return &ToolCallResult{
+		Content:   mcpContent,
+		IsError:   result.IsError,
+		ErrorCode: result.ErrorCode,
+		Metadata:  result.Metadata,
+	}, nil
+}
+
+func (w *Mark3LabsClientWrapper) ListResources(ctx context.Context) ([]ResourceMetadata, error) {
+	// mark3labs bridge doesn't implement resources yet
+	return []ResourceMetadata{}, nil
+}
+
+func (w *Mark3LabsClientWrapper) ReadResource(ctx context.Context, uri string) (*ResourceContent, error) {
+	// mark3labs bridge doesn't implement resources yet
+	return nil, fmt.Errorf("resources not implemented in mark3labs bridge")
+}
+
+func (w *Mark3LabsClientWrapper) ListPrompts(ctx context.Context) ([]PromptMetadata, error) {
+	// mark3labs bridge doesn't implement prompts yet
+	return []PromptMetadata{}, nil
+}
+
+func (w *Mark3LabsClientWrapper) GetPrompt(ctx context.Context, name string, args map[string]interface{}) (*PromptResult, error) {
+	// mark3labs bridge doesn't implement prompts yet
+	return nil, fmt.Errorf("prompts not implemented in mark3labs bridge")
+}
+
+func (w *Mark3LabsClientWrapper) SetNotificationHandler(handler NotificationHandler) {
+	// mark3labs bridge doesn't implement notifications yet
+}
+
+func (w *Mark3LabsClientWrapper) SetErrorHandler(handler ErrorHandler) {
+	// mark3labs bridge doesn't implement error handlers yet
 }

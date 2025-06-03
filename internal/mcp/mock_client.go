@@ -298,6 +298,45 @@ func convertMapToServerConfig(config map[string]interface{}) (ServerConfig, erro
 		serverConfig.ClientType = "mock"
 	}
 
+	// Parse connection configuration
+	if connConfig, ok := config["connection"].(map[string]interface{}); ok {
+		var connectionConfig ConnectionConfig
+
+		if transport, ok := connConfig["transport"].(string); ok {
+			connectionConfig.Transport = transport
+		}
+
+		if command, ok := connConfig["command"].([]interface{}); ok {
+			stringCommand := make([]string, len(command))
+			for i, v := range command {
+				stringCommand[i] = fmt.Sprintf("%v", v)
+			}
+			connectionConfig.Command = stringCommand
+		}
+
+		if env, ok := connConfig["environment"].(map[string]interface{}); ok {
+			envMap := make(map[string]string)
+			for k, v := range env {
+				envMap[k] = fmt.Sprintf("%v", v)
+			}
+			connectionConfig.Environment = envMap
+		}
+
+		if headers, ok := connConfig["headers"].(map[string]interface{}); ok {
+			headerMap := make(map[string]string)
+			for k, v := range headers {
+				headerMap[k] = fmt.Sprintf("%v", v)
+			}
+			connectionConfig.Headers = headerMap
+		}
+
+		if address, ok := connConfig["address"].(string); ok {
+			connectionConfig.Address = address
+		}
+
+		serverConfig.Connection = connectionConfig
+	}
+
 	serverConfig.Enabled = true
 	serverConfig.Timeout = 30 * time.Second
 

@@ -361,8 +361,16 @@ func (m *DefaultMCPServerManager) runAutoDiscovery() {
 
 func (m *DefaultMCPServerManager) runHealthChecking() {
 	for {
+		m.mu.RLock()
+		ticker := m.healthTicker
+		m.mu.RUnlock()
+
+		if ticker == nil {
+			return // Health checking was stopped
+		}
+
 		select {
-		case <-m.healthTicker.C:
+		case <-ticker.C:
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			m.HealthCheck(ctx)
 			cancel()
