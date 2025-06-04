@@ -37,6 +37,11 @@ func main() {
 		log.Printf("Multiple servers example failed: %v", err)
 	}
 
+	// Example 5: Agent using MCP Tool
+	if err := agentWithMCPDemo(); err != nil {
+		log.Printf("Agent MCP demo failed: %v", err)
+	}
+
 	fmt.Println("\nAll examples completed. Press Ctrl+C to exit.")
 
 	// Wait for interrupt signal
@@ -293,6 +298,73 @@ func multipleServersExample() error {
 	// Check servers after removal
 	remainingServers := integration.ListServers()
 	fmt.Printf("✓ Servers after removal: %d\n", len(remainingServers))
+
+	return nil
+}
+
+// agentWithMCPDemo demonstrates an agent using an MCP tool via the ToolRegistry
+func agentWithMCPDemo() error {
+	fmt.Println("\n--- Example 5: Agent using MCP Tool ---")
+
+	// Create a ToolRegistry and MCP integration
+	toolRegistry := tools.NewToolRegistry()
+	config := mcp.MCPIntegrationConfig{
+		ClientType:    "mock",
+		HealthCheck:   false,
+		AutoDiscovery: false,
+	}
+	integration, err := mcp.NewMCPIntegrationWithRegistry(toolRegistry, config)
+	if err != nil {
+		return fmt.Errorf("failed to create integration: %w", err)
+	}
+	defer func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		integration.Shutdown(ctx)
+	}()
+
+	// Add a mock MCP server
+	serverConfig := mcp.ServerConfig{
+		ID:         "agent-mcp-server",
+		Name:       "Agent MCP Server",
+		Type:       "mock",
+		ClientType: "mock",
+		Enabled:    true,
+		Connection: mcp.ConnectionConfig{
+			Transport: "stdio",
+		},
+	}
+	if err := integration.AddServer(serverConfig); err != nil {
+		return fmt.Errorf("failed to add server: %w", err)
+	}
+
+	// Refresh tools to ensure MCP tools are registered
+	ctx := context.Background()
+	if err := integration.RefreshTools(ctx); err != nil {
+		return fmt.Errorf("failed to refresh tools: %w", err)
+	}
+
+	// List all available tools
+	allTools := toolRegistry.List()
+	fmt.Printf("Available tools (%d):\n", len(allTools))
+	for _, tool := range allTools {
+		fmt.Printf("  - %s\n", tool.Name())
+	}
+
+	if len(allTools) == 0 {
+		fmt.Println("No tools available.")
+		return nil
+	}
+
+	// Call the first available tool with dummy args
+	toolToCall := allTools[0]
+	fmt.Printf("\nCalling tool: %s\n", toolToCall.Name())
+	result, err := toolToCall.Call(ctx, map[string]any{"example": "test"})
+	if err != nil {
+		fmt.Printf("Tool call failed: %v\n", err)
+	} else {
+		fmt.Printf("Tool call result: %+v\n", result)
+	}
 
 	return nil
 }
