@@ -1,0 +1,87 @@
+# AgentFlow Configuration Example with MCP Integration
+# This file demonstrates how to configure AgentFlow with MCP (Model Context Protocol) support
+
+[agent_flow]
+name = "AgentFlow with MCP"
+version = "1.0.0"
+provider = "openai"  # or "azure", "ollama", etc.
+
+[logging]
+level = "info"        # debug, info, warn, error
+format = "json"       # json, text
+
+[runtime]
+max_concurrent_agents = 10
+timeout_seconds = 30
+
+# MCP (Model Context Protocol) Configuration
+[mcp]
+enabled = true                    # Enable/disable MCP integration
+enable_discovery = true           # Auto-discover MCP servers
+discovery_timeout_ms = 10000      # Discovery timeout (10 seconds)
+connection_timeout_ms = 30000     # Connection timeout (30 seconds)
+max_retries = 3                   # Max connection retry attempts
+retry_delay_ms = 1000             # Delay between retries (1 second)
+enable_caching = true             # Enable tool result caching
+cache_timeout_ms = 300000         # Cache timeout (5 minutes)
+max_connections = 10              # Maximum concurrent MCP connections
+
+# Ports to scan during server discovery
+scan_ports = [8080, 8081, 8090, 8100, 3000, 3001, 8811]
+
+# MCP Server Configurations
+[[mcp.servers]]
+name = "docker-tools"
+type = "tcp"
+host = "host.docker.internal"
+port = 8811
+enabled = true
+
+[[mcp.servers]]
+name = "local-file-tools"
+type = "stdio"
+command = "node /path/to/mcp-file-server.js"
+enabled = false  # Disabled by default
+
+[[mcp.servers]]
+name = "web-tools"
+type = "websocket"
+host = "localhost"
+port = 8090
+enabled = false  # Disabled by default
+
+# Error Routing Configuration (existing AgentFlow feature)
+[error_routing]
+enabled = true
+max_retries = 3
+retry_delay_ms = 1000
+enable_circuit_breaker = true
+error_handler_name = "default"
+
+[error_routing.circuit_breaker]
+failure_threshold = 5
+success_threshold = 3
+timeout_ms = 30000
+reset_timeout_ms = 60000
+half_open_max_calls = 3
+
+[error_routing.retry]
+max_retries = 3
+base_delay_ms = 1000
+max_delay_ms = 10000
+backoff_factor = 2.0
+enable_jitter = true
+
+# Provider configurations (existing AgentFlow feature)
+[providers.openai]
+api_key = "${OPENAI_API_KEY}"
+model = "gpt-4"
+temperature = 0.7
+max_tokens = 2000
+
+[providers.azure]
+api_key = "${AZURE_OPENAI_API_KEY}"
+endpoint = "${AZURE_OPENAI_ENDPOINT}"
+model = "gpt-4"
+temperature = 0.7
+max_tokens = 2000

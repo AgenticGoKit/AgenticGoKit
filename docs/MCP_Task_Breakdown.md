@@ -154,13 +154,13 @@
 **Estimated Time**: 2.5 days  
 
 **Tasks**:
-- [ ] Create `core/mcp_agent.go`
-- [ ] Implement `Agent` interface
-- [ ] Add LLM integration for tool selection
-- [ ] Implement execution workflow
-- [ ] Add error handling
-- [ ] Create comprehensive tests
-- [ ] Performance optimization
+- [x] Create `core/mcp_agent.go`
+- [x] Implement `Agent` interface
+- [x] Add LLM integration for tool selection
+- [x] Implement execution workflow
+- [x] Add error handling
+- [x] Create comprehensive tests
+- [x] Performance optimization
 
 **Definition of Done**:
 - [x] Agent implements core Agent interface
@@ -171,7 +171,7 @@
 
 **Dependencies**: Tasks 1.2, 1.3, 2.1  
 **Assignee**: ___________  
-**Due Date**: ___________  
+**Due Date**: ___________
 
 ---
 
@@ -181,11 +181,11 @@
 **Estimated Time**: 1 day  
 
 **Tasks**:
-- [ ] Modify `internal/factory/agent_factory.go`
-- [ ] Update tool registration workflow
-- [ ] Add MCP tool discovery
-- [ ] Create migration guide
-- [ ] Test backwards compatibility
+- [x] Modify `internal/factory/agent_factory.go`
+- [x] Update tool registration workflow
+- [x] Add MCP tool discovery
+- [x] Create migration guide
+- [x] Test backwards compatibility
 
 **Definition of Done**:
 - [x] MCP tools appear in unified registry

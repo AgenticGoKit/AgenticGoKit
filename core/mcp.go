@@ -36,9 +36,8 @@ type MCPManager interface {
 // It extends the basic Agent interface with MCP-specific capabilities.
 type MCPAgent interface {
 	Agent
-
 	// MCP-specific methods
-	SelectTools(ctx context.Context, query string, context State) ([]string, error)
+	SelectTools(ctx context.Context, query string, stateContext State) ([]string, error)
 	ExecuteTools(ctx context.Context, tools []MCPToolExecution) ([]MCPToolResult, error)
 	GetAvailableMCPTools() []MCPToolInfo
 }
@@ -148,4 +147,24 @@ type MCPServerMetrics struct {
 	AverageLatency   time.Duration `json:"average_latency"`
 	LastActivity     time.Time     `json:"last_activity"`
 	ConnectionUptime time.Duration `json:"connection_uptime"`
+}
+
+// FunctionTool defines the interface for a callable tool that agents can use.
+type FunctionTool interface {
+	// Name returns the unique identifier for the tool.
+	Name() string
+	// Call executes the tool's logic with the given arguments.
+	Call(ctx context.Context, args map[string]any) (map[string]any, error)
+}
+
+// FunctionToolRegistry defines the interface for managing function tools.
+type FunctionToolRegistry interface {
+	// Register adds a tool to the registry.
+	Register(tool FunctionTool) error
+	// Get retrieves a tool by name.
+	Get(name string) (FunctionTool, bool)
+	// List returns all registered tool names.
+	List() []string
+	// CallTool executes a tool by name with the given arguments.
+	CallTool(ctx context.Context, name string, args map[string]any) (map[string]any, error)
 }
