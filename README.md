@@ -29,6 +29,83 @@ Whether you're prototyping a single-agent application or orchestrating a complex
 - **Project Scaffolding**: Built-in `agentcli create` command generates production-ready multi-agent projects with modern patterns.
 - **Configuration Management**: Centralized `agentflow.toml` for LLM providers, error routing, and system settings.
 - **Error Resilience**: Specialized error handlers for validation, timeout, and critical failures.
+- **MCP Integration**: Full Model Context Protocol support for dynamic tool discovery and multi-server connections.
+
+## 🔧 Model Context Protocol (MCP) Integration
+
+AgentFlow provides comprehensive MCP integration, enabling your agents to dynamically discover and use external tools from multiple MCP servers. This powerful feature allows agents to access real-time data, perform web searches, interact with databases, and much more.
+
+### Quick MCP Setup (30 seconds)
+
+```go
+import "github.com/kunalkushwaha/agentflow/core"
+
+// 1. Initialize MCP with auto-discovery
+core.QuickStartMCP()
+
+// 2. Create MCP-aware agent  
+agent, err := core.NewMCPAgent("research-agent", llmProvider)
+
+// 3. Agent automatically discovers and uses available tools
+state := core.NewState()
+state.Set("query", "search for latest AI developments")
+result, err := agent.Run(ctx, state)
+```
+
+### MCP Features
+
+- **🔍 Dynamic Tool Discovery**: Automatically find and connect to MCP servers
+- **🔗 Multi-Server Support**: Connect to multiple tool providers simultaneously  
+- **⚡ Intelligent Caching**: Cache tool results for enhanced performance
+- **🏗️ Production Ready**: Connection pooling, retries, load balancing, metrics
+- **🤖 LLM Integration**: Agents intelligently select appropriate tools using LLM reasoning
+- **📊 Comprehensive Monitoring**: Health checks, metrics, and observability
+
+### MCP Usage Patterns
+
+#### **Level 1: Basic MCP**
+```go
+// Simple setup with defaults
+core.QuickStartMCP()
+agent, _ := core.NewMCPAgent("agent", llmProvider)
+```
+
+#### **Level 2: MCP + Caching**  
+```go
+// Enhanced performance with caching
+core.InitializeMCPWithCache(mcpConfig, cacheConfig)
+agent, _ := core.NewMCPAgentWithCache("agent", llmProvider)
+```
+
+#### **Level 3: Production MCP**
+```go
+// Enterprise-grade with all features
+core.InitializeProductionMCP(ctx, productionConfig) 
+agent, _ := core.NewProductionMCPAgent("agent", llmProvider, productionConfig)
+```
+
+### MCP Documentation
+
+- **[📖 MCP API Usage Guide](docs/MCP_API_Usage_Guide.md)** - Complete integration guide with examples
+- **[⚡ MCP Quick Reference](docs/MCP_API_Quick_Reference.md)** - Developer cheat sheet  
+- **[🔄 MCP Migration Guide](docs/MCP_API_Migration_Guide.md)** - Upgrade from previous versions
+- **[🏗️ MCP Examples](examples/mcp_integration/)** - Working examples and demos
+
+### MCP Server Configuration
+
+Configure multiple MCP servers for different capabilities:
+
+```go
+config := core.DefaultMCPConfig()
+config.Servers = []core.MCPServerConfig{
+    {Name: "web-tools", Type: "tcp", Host: "localhost", Port: 8811},      // Web search & scraping
+    {Name: "data-tools", Type: "tcp", Host: "localhost", Port: 8812},     // Database & APIs  
+    {Name: "ai-tools", Type: "stdio", Command: "ai-server", Args: []string{"--config", "ai.yaml"}}, // AI services
+}
+```
+
+**Supported Protocols**: TCP, STDIO, WebSocket  
+**Production Features**: Connection pooling, automatic retries, health monitoring, load balancing
 
 ## Getting Started
 
@@ -44,6 +121,56 @@ Add AgentFlow to your Go project:
 
 ```bash
 go get github.com/kunalkushwaha/agentflow@latest
+```
+
+### Quick Start - MCP-Enabled Agent
+
+Create an intelligent agent that can use external tools via MCP:
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+
+    "github.com/kunalkushwaha/agentflow/core"
+)
+
+func main() {
+    // 1. Initialize MCP (discovers tools automatically)
+    if err := core.QuickStartMCP(); err != nil {
+        log.Fatal(err)
+    }
+    defer core.ShutdownMCP()
+
+    // 2. Create your LLM provider
+    llmProvider := &YourLLMProvider{} // OpenAI, Ollama, etc.
+
+    // 3. Create MCP-aware agent
+    agent, err := core.NewMCPAgent("research-agent", llmProvider)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // 4. Agent intelligently selects and uses tools
+    ctx := context.Background()
+    state := core.NewState()
+    state.Set("query", "find latest information about Go programming")
+    
+    result, err := agent.Run(ctx, state)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Printf("Research results: %v\n", result.Get("findings"))
+    
+    // Agent automatically used appropriate tools like:
+    // - web_search for finding articles
+    // - content_fetch for retrieving full articles  
+    // - summarize for creating concise summaries
+}
 ```
 
 ### Quick Start - Using as a Library
@@ -166,6 +293,7 @@ go run . -m "Hello from AgentFlow!"
 The `agentcli create` command generates a modern project structure with:
 - **Sequential workflow**: agent1 → agent2 → responsible_ai → workflow_finalizer
 - **Configuration file**: `agentflow.toml` for LLM provider and error routing setup
+- **MCP Integration**: Pre-configured MCP servers and tool discovery (when `--mcp` flag used)
 - **Specialized error handlers**: validation, timeout, and critical error handling
 - **LLM integration**: Pre-configured for OpenAI, Azure, Ollama, or Mock providers
 - **Session management**: Automatic session tracking and workflow correlation
@@ -199,12 +327,17 @@ agentcli create myproject
 # Customize number of agents and provider
 agentcli create myproject --agents 3 --provider azure
 
+# Create MCP-enabled project with tool integration (coming soon)
+agentcli create myproject --mcp --tools web,data,ai
+
 # Interactive mode for guided setup
 agentcli create --interactive
 
 # Available flags:
 #   --agents, -a        Number of agents to create (default: 2)
 #   --provider, -p      LLM provider (openai, azure, ollama, mock)
+#   --mcp              Enable MCP integration (coming soon)
+#   --tools            MCP tool categories to include (coming soon)
 #   --interactive, -i   Interactive setup mode
 ```
 
@@ -212,6 +345,7 @@ agentcli create --interactive
 - **Modern Architecture**: Uses AgentFlow v0.1.1 with factory patterns
 - **Zero Configuration**: Works immediately with mock provider
 - **LLM Ready**: Pre-configured for production LLM providers
+- **MCP Integration**: Optionally includes MCP tool discovery and multi-server setup
 - **Error Resilience**: Comprehensive error handling and recovery
 - **Workflow Patterns**: Sequential agent chains with proper completion detection
 - **Session Tracking**: Built-in correlation and tracing support
@@ -274,6 +408,10 @@ agentflow/
 ### Key Packages
 
 - **`core/`**: **PUBLIC API** - Import this package in your applications (`github.com/kunalkushwaha/agentflow/core`)
+  - `core/mcp.go`: Complete MCP integration API (interfaces, factories, configuration)
+  - `core/mcp_agent.go`: MCP-aware agent implementation
+  - `core/agent.go`: Core agent abstractions
+  - `core/factory.go`: Agent and runner factories
 - **`internal/`**: Internal implementation details (not importable by external projects)
 - **`examples/`**: Ready-to-run examples demonstrating various use cases
 - **`docs/`**: Comprehensive documentation for developers and contributors
@@ -287,10 +425,23 @@ import agentflow "github.com/kunalkushwaha/agentflow/core"
 
 ## Documentation
 
+### Core Framework
 - [Developer Guide](docs/DevGuide.md): Comprehensive guide to using the framework.
 - [Tracing Guide](docs/TracingGuide.md): Details on the tracing system.
 - [Architecture Overview](docs/Architecture.md): High-level architecture overview.
 - [Project Roadmap](docs/ROADMAP.md): Development timeline and upcoming features.
+
+### MCP Integration (Model Context Protocol)
+- **[📖 MCP API Usage Guide](docs/MCP_API_Usage_Guide.md)**: Complete integration guide with examples
+- **[⚡ MCP Quick Reference](docs/MCP_API_Quick_Reference.md)**: Developer cheat sheet for rapid development
+- **[🔄 MCP Migration Guide](docs/MCP_API_Migration_Guide.md)**: Upgrade guide from previous versions
+- **[🏗️ MCP Technical Design](docs/MCP_Public_API_Design.md)**: Technical architecture and design decisions
+- **[📚 Complete Documentation Index](docs/README.md)**: Full documentation navigation
+
+### Examples & Tutorials
+- **[🚀 MCP Examples](examples/mcp_integration/)**: Working MCP integration examples
+- **[🤖 MCP Agent Demo](examples/mcp_agent_demo/)**: Agent-focused MCP usage
+- **[🏭 MCP Production Setup](examples/mcp_production_demo/)**: Enterprise-ready configuration
 
 ## Architecture Overview
 

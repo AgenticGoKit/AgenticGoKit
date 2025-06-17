@@ -40,8 +40,10 @@ type Config struct {
 		CircuitBreaker       CircuitBreakerConfigToml `toml:"circuit_breaker"`
 		Retry                RetryConfigToml          `toml:"retry"`
 	} `toml:"error_routing"`
-
 	Providers map[string]map[string]interface{} `toml:"providers"`
+
+	// MCP configuration
+	MCP MCPConfigToml `toml:"mcp"`
 }
 
 // CircuitBreakerConfigToml represents circuit breaker configuration in TOML
@@ -60,6 +62,31 @@ type RetryConfigToml struct {
 	MaxDelayMs    int     `toml:"max_delay_ms"`
 	BackoffFactor float64 `toml:"backoff_factor"`
 	EnableJitter  bool    `toml:"enable_jitter"`
+}
+
+// MCPConfigToml represents MCP configuration in TOML format
+type MCPConfigToml struct {
+	Enabled           bool                  `toml:"enabled"`
+	EnableDiscovery   bool                  `toml:"enable_discovery"`
+	DiscoveryTimeout  int                   `toml:"discovery_timeout_ms"`
+	ScanPorts         []int                 `toml:"scan_ports"`
+	ConnectionTimeout int                   `toml:"connection_timeout_ms"`
+	MaxRetries        int                   `toml:"max_retries"`
+	RetryDelay        int                   `toml:"retry_delay_ms"`
+	EnableCaching     bool                  `toml:"enable_caching"`
+	CacheTimeout      int                   `toml:"cache_timeout_ms"`
+	MaxConnections    int                   `toml:"max_connections"`
+	Servers           []MCPServerConfigToml `toml:"servers"`
+}
+
+// MCPServerConfigToml represents individual MCP server configuration in TOML
+type MCPServerConfigToml struct {
+	Name    string `toml:"name"`
+	Type    string `toml:"type"` // tcp, stdio, docker, websocket
+	Host    string `toml:"host,omitempty"`
+	Port    int    `toml:"port,omitempty"`
+	Command string `toml:"command,omitempty"` // for stdio transport
+	Enabled bool   `toml:"enabled"`
 }
 
 // LoadConfig loads configuration from the specified TOML file path
@@ -93,6 +120,33 @@ func LoadConfig(path string) (*Config, error) {
 	}
 	if config.Runtime.TimeoutSeconds == 0 {
 		config.Runtime.TimeoutSeconds = 30
+	}
+
+	// Set MCP defaults if not specified
+	if !config.MCP.Enabled {
+		// If no MCP config provided, set reasonable defaults but keep disabled
+		config.MCP.Enabled = false
+	}
+	if config.MCP.DiscoveryTimeout == 0 {
+		config.MCP.DiscoveryTimeout = 10000 // 10 seconds in ms
+	}
+	if config.MCP.ConnectionTimeout == 0 {
+		config.MCP.ConnectionTimeout = 30000 // 30 seconds in ms
+	}
+	if config.MCP.MaxRetries == 0 {
+		config.MCP.MaxRetries = 3
+	}
+	if config.MCP.RetryDelay == 0 {
+		config.MCP.RetryDelay = 1000 // 1 second in ms
+	}
+	if config.MCP.CacheTimeout == 0 {
+		config.MCP.CacheTimeout = 300000 // 5 minutes in ms
+	}
+	if config.MCP.MaxConnections == 0 {
+		config.MCP.MaxConnections = 10
+	}
+	if len(config.MCP.ScanPorts) == 0 {
+		config.MCP.ScanPorts = []int{8080, 8081, 8090, 8100, 3000, 3001, 8811}
 	}
 
 	return &config, nil
@@ -387,4 +441,39 @@ func (c *Config) GetRetryConfig() *RetryPolicy {
 	}
 
 	return config
+}
+
+// ToMCPConfig converts MCPConfigToml to the runtime MCPConfig
+func (c *MCPConfigToml) ToMCPConfig() MCPConfig {
+	config := MCPConfig{
+		EnableDiscovery:   c.EnableDiscovery,
+		DiscoveryTimeout:  time.Duration(c.DiscoveryTimeout) * time.Millisecond,
+		ScanPorts:         c.ScanPorts,
+		ConnectionTimeout: time.Duration(c.ConnectionTimeout) * time.Millisecond,
+		MaxRetries:        c.MaxRetries,
+		RetryDelay:        time.Duration(c.RetryDelay) * time.Millisecond,
+		EnableCaching:     c.EnableCaching,
+		CacheTimeout:      time.Duration(c.CacheTimeout) * time.Millisecond,
+		MaxConnections:    c.MaxConnections,
+		Servers:           make([]MCPServerConfig, len(c.Servers)),
+	}
+
+	// Convert server configurations
+	for i, server := range c.Servers {
+		config.Servers[i] = MCPServerConfig{
+			Name:    server.Name,
+			Type:    server.Type,
+			Host:    server.Host,
+			Port:    server.Port,
+			Command: server.Command,
+			Enabled: server.Enabled,
+		}
+	}
+
+	return config
+}
+
+// GetMCPConfig returns the MCP configuration from the main config
+func (c *Config) GetMCPConfig() MCPConfig {
+	return c.MCP.ToMCPConfig()
 }

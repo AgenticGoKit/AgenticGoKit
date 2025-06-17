@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
 )
 
 // OllamaAdapter implements the LLMAdapter interface for Ollama's API.
@@ -20,8 +21,9 @@ type OllamaAdapter struct {
 
 // NewOllamaAdapter creates a new OllamaAdapter instance.
 func NewOllamaAdapter(apiKey, model string, maxTokens int, temperature float32) (*OllamaAdapter, error) {
+	// API key is optional for local Ollama instances
 	if apiKey == "" {
-		return nil, errors.New("API key cannot be empty")
+		apiKey = "local" // Set a default value for local usage
 	}
 	if model == "" {
 		model = "gemma3:latest" // Replace with Ollama's default model
@@ -60,9 +62,10 @@ func (o *OllamaAdapter) Call(ctx context.Context, prompt Prompt) (Response, erro
 	if err != nil {
 		return Response{}, fmt.Errorf("failed to marshal request body: %w", err)
 	}
-
-	// Make the HTTP request
-	client := &http.Client{}
+	// Make the HTTP request with timeout
+	client := &http.Client{
+		Timeout: 30 * time.Second, // Add 30 second timeout
+	}
 	req, err := http.NewRequestWithContext(ctx, "POST", "http://localhost:11434/api/chat", bytes.NewBuffer(payload))
 	if err != nil {
 		return Response{}, fmt.Errorf("failed to create HTTP request: %w", err)

@@ -356,6 +356,8 @@ func RegisterTraceHooks(registry *CallbackRegistry, logger TraceLogger) error {
 	if err != nil {
 		return fmt.Errorf("failed to register after event trace hook: %w", err)
 	}
-
 	return nil
 }
+
+// TODO: Add MCP-enabled factory functions here once the infrastructure is implemented
+// These will be moved from internal packages to provide a clean public API

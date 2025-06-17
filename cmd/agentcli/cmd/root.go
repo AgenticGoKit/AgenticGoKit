@@ -9,8 +9,8 @@ import (
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "agentcli",
-	Short: "Command-line interface for inspecting and analyzing AgentFlow executions",
-	Long: `AgentFlow CLI provides tools for inspecting, visualizing, and troubleshooting 
+	Short: "Command-line interface for inspecting and managing AgentFlow executions",
+	Long: `AgentFlow CLI provides comprehensive tools for inspecting, visualizing, and managing 
 agent executions and interactions within the AgentFlow framework.
 
 Key capabilities:
@@ -18,6 +18,8 @@ Key capabilities:
   * Sequence diagrams - See agent interactions in chronological order
   * Condensed routes - View simplified linear agent execution paths
   * Per-event analysis - Examine individual event flows and requeue patterns
+  * MCP management - Manage Model Context Protocol servers and tools
+  * Cache management - Monitor and optimize MCP tool result caches
 
 Examples:
   # View a basic trace with all details
@@ -27,7 +29,16 @@ Examples:
   agentcli trace --flow-only <session-id>
 
   # Filter trace to see only a specific agent's activity
-  agentcli trace --filter <agent-name> <session-id>`,
+  agentcli trace --filter <agent-name> <session-id>
+
+  # List connected MCP servers
+  agentcli mcp servers
+
+  # View cache statistics
+  agentcli cache stats
+
+  # Clear specific caches
+  agentcli cache clear --server web-service`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
