@@ -11,11 +11,14 @@ import (
 
 // Global MCP manager instance and registry
 var (
-	globalMCPManager      MCPManager
-	globalMCPRegistry     FunctionToolRegistry
-	mcpManagerMutex       sync.RWMutex
-	mcpRegistryMutex      sync.RWMutex
-	mcpManagerInitialized bool
+	globalMCPManager        MCPManager
+	globalMCPRegistry       FunctionToolRegistry
+	globalCacheManager      MCPCacheManager
+	mcpManagerMutex         sync.RWMutex
+	mcpRegistryMutex        sync.RWMutex
+	cacheManagerMutex       sync.RWMutex
+	mcpManagerInitialized   bool
+	cacheManagerInitialized bool
 )
 
 // InitializeMCPManager initializes the global MCP manager with the provided configuration.

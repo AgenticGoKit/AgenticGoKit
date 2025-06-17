@@ -14,11 +14,12 @@ import (
 // MCPAwareAgent is an intelligent agent that leverages MCP tools for task execution.
 // It uses LLM integration to select appropriate tools and execute them in the right sequence.
 type MCPAwareAgent struct {
-	name        string
-	llmProvider LLMProvider
-	mcpManager  MCPManager
-	config      MCPAgentConfig
-	logger      *zerolog.Logger
+	name         string
+	llmProvider  LLMProvider
+	mcpManager   MCPManager
+	cacheManager MCPCacheManager
+	config       MCPAgentConfig
+	logger       *zerolog.Logger
 }
 
 // MCPAgentConfig holds configuration for MCP-aware agents.
@@ -37,6 +38,10 @@ type MCPAgentConfig struct {
 	UseToolDescriptions  bool   `toml:"use_tool_descriptions"`
 	ToolSelectionPrompt  string `toml:"tool_selection_prompt"`
 	ResultInterpretation bool   `toml:"result_interpretation"`
+
+	// Cache settings
+	EnableCaching bool           `toml:"enable_caching"`
+	CacheConfig   MCPCacheConfig `toml:"cache"`
 }
 
 // DefaultMCPAgentConfig returns a default configuration for MCP agents.
@@ -51,6 +56,8 @@ func DefaultMCPAgentConfig() MCPAgentConfig {
 		UseToolDescriptions:  true,
 		ToolSelectionPrompt:  DefaultToolSelectionPrompt,
 		ResultInterpretation: true,
+		EnableCaching:        true,
+		CacheConfig:          DefaultMCPCacheConfig(),
 	}
 }
 
@@ -75,12 +82,20 @@ Respond with only a JSON array of tool names, for example: ["search", "fetch_con
 func NewMCPAwareAgent(name string, llmProvider LLMProvider, mcpManager MCPManager, config MCPAgentConfig) *MCPAwareAgent {
 	logger := GetLogger().With().Str("component", "mcp_agent").Str("name", name).Logger()
 
+	// Initialize cache manager if caching is enabled
+	var cacheManager MCPCacheManager
+	if config.EnableCaching {
+		// Create a cache manager with the provided config and MCP manager
+		cacheManager = createCacheManagerForAgentWithManager(config.CacheConfig, mcpManager)
+	}
+
 	return &MCPAwareAgent{
-		name:        name,
-		llmProvider: llmProvider,
-		mcpManager:  mcpManager,
-		config:      config,
-		logger:      &logger,
+		name:         name,
+		llmProvider:  llmProvider,
+		mcpManager:   mcpManager,
+		cacheManager: cacheManager,
+		config:       config,
+		logger:       &logger,
 	}
 }
 
@@ -251,16 +266,34 @@ func (a *MCPAwareAgent) executeToolsParallel(ctx context.Context, tools []MCPToo
 	return a.executeToolsSequential(ctx, tools)
 }
 
-// executeSingleTool executes a single MCP tool.
+// executeSingleTool executes a single MCP tool with caching support.
 func (a *MCPAwareAgent) executeSingleTool(ctx context.Context, tool MCPToolExecution) (MCPToolResult, error) {
-	// This would call the actual MCP tool execution
-	// For now, we'll create a placeholder implementation
-	// The actual implementation would involve calling the MCP manager's tool execution
-
 	a.logger.Debug().
 		Str("tool", tool.ToolName).
 		Interface("args", tool.Arguments).
 		Msg("Executing MCP tool")
+
+	// If caching is enabled, use the cache manager
+	if a.config.EnableCaching && a.cacheManager != nil {
+		// Execute with cache - the cache manager accepts MCPToolExecution directly
+		result, err := a.cacheManager.ExecuteWithCache(ctx, tool)
+		if err != nil {
+			return MCPToolResult{}, fmt.Errorf("cached tool execution failed: %w", err)
+		}
+
+		return result, nil
+	}
+
+	// Fallback to direct execution without caching
+	return a.executeToolDirect(ctx, tool)
+}
+
+// executeToolDirect executes a tool directly without caching.
+func (a *MCPAwareAgent) executeToolDirect(ctx context.Context, tool MCPToolExecution) (MCPToolResult, error) {
+	// This would call the actual MCP tool execution through the manager
+	// For now, we'll create a placeholder implementation
+	// The actual implementation would involve calling the MCP manager's tool execution
+
 	// Simulate tool execution (replace with actual MCP tool call)
 	result := MCPToolResult{
 		ToolName: tool.ToolName,
@@ -575,4 +608,96 @@ func (a *MCPAwareAgent) updateStateWithResults(inputState State, results []MCPTo
 	}
 
 	return outputState
+}
+
+// createCacheManagerForAgentWithManager creates a cache manager for an agent with MCP manager.
+func createCacheManagerForAgentWithManager(config MCPCacheConfig, mcpManager MCPManager) MCPCacheManager {
+	// Return nil if caching is disabled
+	if !config.Enabled {
+		return nil
+	}
+
+	// Create an executor with the actual MCP manager
+	executor := newAgentToolExecutor(mcpManager)
+
+	// Try to create the internal cache manager using the factory pattern
+	if createInternalCacheManager != nil {
+		if cacheManager, err := createInternalCacheManager(config, executor); err == nil {
+			return cacheManager
+		}
+	}
+
+	// Fallback: return nil if cache manager creation fails
+	return nil
+}
+
+// createCacheManagerForAgent creates a cache manager for an agent.
+func createCacheManagerForAgent(config MCPCacheConfig) MCPCacheManager {
+	// Return nil if caching is disabled
+	if !config.Enabled {
+		return nil
+	}
+
+	// Create a simple executor for the cache manager (without MCP manager)
+	executor := &agentToolExecutor{}
+
+	// Try to create the internal cache manager using the factory pattern
+	if createInternalCacheManager != nil {
+		if cacheManager, err := createInternalCacheManager(config, executor); err == nil {
+			return cacheManager
+		}
+	}
+
+	// Fallback: return nil and log that caching is disabled
+	// In a real implementation, we might want to return a no-op cache manager
+	return nil
+}
+
+// agentToolExecutor is a simple executor that can be used with the cache manager.
+type agentToolExecutor struct {
+	mcpManager MCPManager
+}
+
+// newAgentToolExecutor creates a new agent tool executor.
+func newAgentToolExecutor(mcpManager MCPManager) *agentToolExecutor {
+	return &agentToolExecutor{
+		mcpManager: mcpManager,
+	}
+}
+
+// ExecuteTool implements MCPToolExecutor interface.
+func (e *agentToolExecutor) ExecuteTool(ctx context.Context, execution MCPToolExecution) (MCPToolResult, error) {
+	// Use the actual MCP manager if available
+	if e.mcpManager != nil {
+		// This would call the actual MCP manager to execute the tool
+		// For now, we'll use a placeholder since ExecuteTool is not part of the current MCPManager interface
+		// In the future, we can extend the MCPManager interface to include tool execution
+	}
+
+	// Fallback to placeholder implementation
+	return MCPToolResult{
+		ToolName: execution.ToolName,
+		Success:  true,
+		Content: []MCPContent{
+			{
+				Type: "text",
+				Text: fmt.Sprintf("Mock result for %s", execution.ToolName),
+			},
+		},
+	}, nil
+}
+
+// Internal factory function for cache manager creation.
+// This will be set by the internal package during initialization.
+var createInternalCacheManager func(MCPCacheConfig, MCPToolExecutor) (MCPCacheManager, error)
+
+// MCPToolExecutor interface for cache manager integration.
+type MCPToolExecutor interface {
+	ExecuteTool(ctx context.Context, execution MCPToolExecution) (MCPToolResult, error)
+}
+
+// SetCacheManagerFactory sets the internal cache manager factory function.
+// This is called by the internal/mcp package during initialization.
+func SetCacheManagerFactory(factory func(MCPCacheConfig, MCPToolExecutor) (MCPCacheManager, error)) {
+	createInternalCacheManager = factory
 }
