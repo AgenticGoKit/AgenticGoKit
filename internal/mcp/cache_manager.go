@@ -216,6 +216,11 @@ func (cm *CacheManager) Close() error {
 	return nil
 }
 
+// Shutdown cleanly shuts down the cache manager and all cache instances.
+func (cm *CacheManager) Shutdown() error {
+	return cm.Close()
+}
+
 // NoOpCache implements MCPCache with no-op operations for when caching is disabled.
 type NoOpCache struct{}
 

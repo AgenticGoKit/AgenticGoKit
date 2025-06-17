@@ -15,7 +15,7 @@ import (
 // It uses LLM integration to select appropriate tools and execute them in the right sequence.
 type MCPAwareAgent struct {
 	name         string
-	llmProvider  LLMProvider
+	llmProvider  ModelProvider
 	mcpManager   MCPManager
 	cacheManager MCPCacheManager
 	config       MCPAgentConfig
@@ -79,8 +79,8 @@ Please analyze the request and context, then respond with a JSON array of tool n
 Respond with only a JSON array of tool names, for example: ["search", "fetch_content", "summarize"]`
 
 // NewMCPAwareAgent creates a new MCP-aware agent.
-func NewMCPAwareAgent(name string, llmProvider LLMProvider, mcpManager MCPManager, config MCPAgentConfig) *MCPAwareAgent {
-	logger := GetLogger().With().Str("component", "mcp_agent").Str("name", name).Logger()
+func NewMCPAwareAgent(name string, llmProvider ModelProvider, mcpManager MCPManager, config MCPAgentConfig) *MCPAwareAgent {
+	logger := Logger().With().Str("component", "mcp_agent").Str("name", name).Logger()
 
 	// Initialize cache manager if caching is enabled
 	var cacheManager MCPCacheManager
