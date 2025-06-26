@@ -1,10 +1,11 @@
 # AgentFlow Documentation
 
-Welcome to the AgentFlow documentation! This guide helps you build intelligent agent workflows with Model Context Protocol (MCP) integration.
+Welcome to the AgentFlow documentation! This guide helps you build intelligent agent workflows with the unified agent builder system and Model Context Protocol (MCP) integration.
 
 ## 🚀 Getting Started
 
-- **[Quick Start Guide](../README.md)** - Get AgentFlow running in minutes
+- **[Quick Start Guide](../README.md)** - Get AgentFlow running in minutes with CLI scaffolding
+- **[CLI Project Generation](CLI_Scaffolding_Guide.md)** - Generate complete projects with `agentcli create`
 - **[MCP API Quick Reference](MCP_API_Quick_Reference.md)** - 30-second MCP setup
 - **[MCP API Usage Guide](MCP_API_Usage_Guide.md)** - Complete MCP integration guide
 

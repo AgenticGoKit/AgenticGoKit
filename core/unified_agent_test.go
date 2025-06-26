@@ -249,7 +249,6 @@ func TestUnifiedAgent_String(t *testing.T) {
 
 	// Since map iteration order is not guaranteed, we need to check if both expected variations are valid
 	alternative := "UnifiedAgent{name=string-test, capabilities=[llm metrics]}"
-
 	if str != expected && str != alternative {
 		t.Errorf("Expected string representation to be '%s' or '%s', got '%s'", expected, alternative, str)
 	}

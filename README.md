@@ -4,32 +4,43 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/kunalkushwaha/agentflow)
 
-
-AgentFlow is a Go framework for building AI agent systems. It provides core abstractions for event-based workflows, agent coordination, and tracing capabilities, enabling the creation of sophisticated multi-agent applications.
+AgentFlow is a modern Go framework for building AI agent systems with unified capability-based composition. It provides powerful abstractions for event-driven workflows, agent orchestration, and comprehensive observability, enabling rapid development of sophisticated multi-agent applications.
 
 ## Why AgentFlow?
 
 AgentFlow is designed for developers who want to:
-- Build intelligent, event-driven workflows.
-- Integrate multiple agents and tools into a cohesive system.
-- Leverage LLMs (Large Language Models) like OpenAI, Azure OpenAI, and Ollama.
-- Create modular, extensible, and observable AI systems.
+- **Build with Modern Patterns**: Unified agent builder with capability-based composition
+- **Scale Intelligently**: Event-driven workflows with full orchestration support  
+- **Integrate Seamlessly**: LLMs (OpenAI, Azure, Ollama, Anthropic) and MCP tool ecosystems
+- **Deploy Confidently**: Production-ready scaffolding with built-in error handling and observability
+- **Develop Rapidly**: CLI tool generates working multi-agent projects in seconds
 
-Whether you're prototyping a single-agent application or orchestrating a complex multi-agent workflow, AgentFlow provides the tools and abstractions to get started quickly.
+Whether you're prototyping a single intelligent agent or orchestrating complex multi-agent workflows, AgentFlow provides enterprise-grade tools and abstractions to accelerate development.
 
-## Features
+## ✨ Key Features
 
-- **Event-driven Architecture**: Process events through configurable orchestration patterns.
-- **Multi-modal Orchestration**: Choose between route (single-agent) or collaborate (multi-agent) execution modes.
-- **Deterministic Workflow Agents**: Build pipelines with SequentialAgent, ParallelAgent, and LoopAgent.
-- **LLM Integration**: Abstract any LLM backend via unified ModelProvider interface (Azure OpenAI, OpenAI, Ollama).
-- **Tool Ecosystem**: Extend agent capabilities with function tool registry.
-- **Observability**: Comprehensive tracing and callback hooks at key lifecycle points.
-- **Memory Management**: Both short-term session storage and long-term vector-based memory.
-- **Project Scaffolding**: Built-in `agentcli create` command generates production-ready multi-agent projects with modern patterns.
-- **Configuration Management**: Centralized `agentflow.toml` for LLM providers, error routing, and system settings.
-- **Error Resilience**: Specialized error handlers for validation, timeout, and critical failures.
-- **MCP Integration**: Full Model Context Protocol support for dynamic tool discovery and multi-server connections.
+### **🏗️ Unified Agent Builder System**
+- **Capability Composition**: Mix and match LLM, MCP, Cache, Metrics, and custom capabilities
+- **Flexible Architecture**: Build simple agents or complex multi-capability systems
+- **Type-Safe Configuration**: Compile-time validation of agent configurations
+
+### **🚀 Production-Ready CLI Scaffolding**
+- **Instant Project Generation**: `agentcli create` generates working multi-agent projects
+- **🧠 MCP-Aware Agents**: Generated agents automatically discover tools and let LLM decide usage
+- **Full Orchestration**: Complete agent chains with automatic routing and error handling
+- **Modern Configuration**: Unified `agentflow.toml` with provider-specific settings
+
+### **🔗 Advanced Orchestration**
+- **Event-Driven Architecture**: Full Runner + RouteOrchestrator pattern
+- **Multi-Agent Workflows**: Seamless routing between specialized agents  
+- **Session Management**: Built-in state management and workflow tracking
+
+### **🛠️ Enterprise Features**
+- **Error Resilience**: Specialized handlers for validation, timeout, and critical failures
+- **Observability**: Comprehensive tracing, metrics, and callback hooks
+- **MCP Integration**: Full Model Context Protocol support for dynamic tool discovery
+- **Memory Systems**: Short-term state and long-term vector-based memory
+- **Configuration Management**: Environment-aware settings with validation
 
 ## 🔧 Model Context Protocol (MCP) Integration
 
@@ -292,24 +303,33 @@ go run . -m "Hello from AgentFlow!"
 
 The `agentcli create` command generates a modern project structure with:
 - **Sequential workflow**: agent1 → agent2 → responsible_ai → workflow_finalizer
-- **Configuration file**: `agentflow.toml` for LLM provider and error routing setup
-- **MCP Integration**: Pre-configured MCP servers and tool discovery (when `--mcp` flag used)
+- **Configuration file**: `agentflow.toml` for LLM provider and MCP server setup
+- **MCP Integration**: **Production-ready MCP servers with tool discovery and execution**
+- **LLM-Driven Tools**: **Agents automatically discover tools and let LLM decide usage**
 - **Specialized error handlers**: validation, timeout, and critical error handling
 - **LLM integration**: Pre-configured for OpenAI, Azure, Ollama, or Mock providers
 - **Session management**: Automatic session tracking and workflow correlation
 - **Modern patterns**: Uses latest factory functions and AgentFlow v0.1.1 APIs
 - **Immediate functionality**: Ready-to-run with comprehensive logging and tracing
 
-**Example output:**
+**Example output with MCP integration:**
 ```
-4:35PM INF Starting multi-agent system...
-4:35PM INF Using message from -m flag input="Hello from AgentFlow!"
-4:35PM INF Loaded AgentFlow configuration config_provider=ollama
-4:35PM INF Emitting initial event to start workflow session_id=session-20250531-163537
+11:20AM INF Starting unified multi-agent system...
+11:20AM INF MCP manager initialized successfully
+11:20AM INF Successfully connected to Docker MCP server
+11:20AM INF Successfully discovered tools from MCP server server=docker tool_count=3
+11:20AM INF Available MCP tool tool_name=docker description="use the docker cli"
+11:20AM INF Available MCP tool tool_name=search description="Search DuckDuckGo..."
+11:20AM INF Available MCP tool tool_name=fetch_content description="Fetch webpage content..."
+11:20AM INF Runner started.
+11:20AM INF MCP Tools discovered agent=agent1 tool_count=3
+11:20AM INF Executing LLM-requested tools agent=agent1 tool_calls=1
+11:20AM INF Executing tool as requested by LLM agent=agent1 tool_name=search
+11:20AM INF Tool execution successful agent=agent1 tool_name=search
 === WORKFLOW RESULTS ===
-Processing completed by agent chain with sentiment analysis and safety checks.
+Based on the latest search results, here are the key developments in AI...
 =========================
-4:35PM INF Workflow completed, shutting down...
+11:20AM INF Multi-agent system completed
 ```
 
 **Supported providers**: `openai`, `azure`, `ollama`, `mock`  
@@ -327,8 +347,11 @@ agentcli create myproject
 # Customize number of agents and provider
 agentcli create myproject --agents 3 --provider azure
 
-# Create MCP-enabled project with tool integration (coming soon)
-agentcli create myproject --mcp --tools web,data,ai
+# Create MCP-enabled project with production tool integration
+agentcli create myproject --mcp-production
+
+# Enable MCP with caching for enhanced performance  
+agentcli create myproject --mcp --cache
 
 # Interactive mode for guided setup
 agentcli create --interactive
@@ -336,10 +359,46 @@ agentcli create --interactive
 # Available flags:
 #   --agents, -a        Number of agents to create (default: 2)
 #   --provider, -p      LLM provider (openai, azure, ollama, mock)
-#   --mcp              Enable MCP integration (coming soon)
-#   --tools            MCP tool categories to include (coming soon)
+#   --mcp              Enable MCP integration with basic features
+#   --mcp-production   Enable production MCP with all enterprise features  
+#   --cache            Enable caching for MCP tool results
+#   --metrics          Enable metrics and monitoring
 #   --interactive, -i   Interactive setup mode
 ```
+
+## 🤖 MCP-Aware Agent Generation
+
+AgentFlow's CLI generates **truly intelligent agents** that can discover and use external tools dynamically. Unlike traditional hard-coded integrations, AgentFlow agents let the LLM make smart decisions about tool usage.
+
+### How MCP-Aware Agents Work
+
+1. **🔍 Tool Discovery**: Agents automatically connect to MCP servers and discover available tools
+2. **📋 Schema Presentation**: Tool descriptions and schemas are presented to the LLM in prompts  
+3. **🧠 LLM Decision Making**: The LLM analyzes the user query and decides which tools (if any) to use
+4. **⚡ Dynamic Execution**: Selected tools are executed via MCP protocol with LLM-provided arguments
+5. **🔄 Result Integration**: Tool results are incorporated into the final agent response
+
+### Example: Smart Tool Selection
+
+```bash
+# Agent analyzes query and chooses appropriate tools
+./myproject -m "search for latest Docker tutorials"
+# → LLM chooses 'search' tool with query="latest Docker tutorials"
+
+./myproject -m "list running containers"  
+# → LLM chooses 'docker' tool with args=["ps"]
+
+./myproject -m "explain quantum computing"
+# → LLM uses no tools, provides direct explanation
+```
+
+### Generated Agent Capabilities
+
+**🧠 Intelligent Tool Selection**: No hard-coded rules - LLM decides which tools are relevant  
+**📊 Multiple Tool Support**: Can use multiple tools in sequence to answer complex queries  
+**🔄 Dynamic Arguments**: LLM constructs proper tool arguments based on user context  
+**🛡️ Error Resilience**: Graceful handling of tool failures with fallback responses  
+**📝 Rich Integration**: Tool results seamlessly integrated into natural language responses
 
 ### Generated Project Features
 - **Modern Architecture**: Uses AgentFlow v0.1.1 with factory patterns
