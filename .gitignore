@@ -67,7 +67,6 @@ examples/*/main
 examples/*/main.exe
 
 # CLI tool executable
-agentcli
 agentcli.exe
 
 # Backup files
