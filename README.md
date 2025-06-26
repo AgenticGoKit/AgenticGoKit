@@ -7,7 +7,7 @@
 
 **The Go SDK for building production-ready multi-agent AI systems**
 
-AgentFlow makes it incredibly simple to build, deploy, and scale AI agent workflows in Go. From a single intelligent agent to complex multi-agent orchestrations, AgentFlow provides the tools you need to ship AI applications that work reliably in production.
+AgentFlow makes it incredibly simple to build and prototype AI agent workflows in Go. From a single intelligent agent to complex multi-agent orchestrations, AgentFlow provides the SDK foundation and scaffolding you need to develop AI applications with production-ready patterns.
 
 ## What Makes AgentFlow Special?
 
