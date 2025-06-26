@@ -22,10 +22,12 @@ AgentFlow makes it incredibly simple to build, deploy, and scale AI agent workfl
 
 ## Perfect for
 
-**Startups**: Build AI-powered products without the complexity  
-**Enterprises**: Scale agent workflows with confidence and observability  
-**Researchers**: Prototype multi-agent systems rapidly  
-**Developers**: Focus on business logic, not infrastructure  
+> **⚠️ Alpha Stage**: AgentFlow has production-grade features but APIs are rapidly evolving. Use for prototyping and research while we stabilize for production.
+
+**Researchers**: Prototype multi-agent systems with enterprise-grade patterns  
+**Developers**: Learn production-ready agent architectures and build proof-of-concepts  
+**Experimenters**: Test multi-agent workflows with built-in observability and error handling  
+**Early Adopters**: Explore cutting-edge agent frameworks with production features  
 
 ## Quick Start (30 seconds)
 
@@ -360,9 +362,6 @@ runner.RegisterCallback(core.HookAfterAgentRun, myCallback)
     go run . -m "health check" --validate
 ```
 
-### **Deployment Ready**
-Generated projects include Docker configurations and cloud deployment guides for AWS, GCP, and Azure.
-
 ## Join the AgentFlow Community
 
 ### **Contributing**
@@ -383,10 +382,9 @@ go test ./...
 - **[GitHub](https://github.com/kunalkushwaha/agentflow)** - Star the project!
 
 ### **Roadmap**
-- **Q1 2025**: WebAssembly agent runtime
-- **Q2 2025**: Visual workflow designer  
-- **Q3 2025**: Distributed agent clusters
-- **Q4 2025**: Multi-modal agent support
+- **Multi-modal agent support**: Enable agents to work with text, images, audio, and other data types
+- **Distributed agent clusters**: Scale agent workflows across multiple machines and networks
+- **Docker configurations and cloud deployment guides**: Simplified deployment tooling
 
 ## **Built by Developer, for Developers**
 
