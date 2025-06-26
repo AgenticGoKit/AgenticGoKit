@@ -3,9 +3,7 @@
 [![Go Version](https://img.shields.io/badge/go-1.21+-blue.svg)](https://golang.org/doc/devel/release.html)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![GitHub Stars](https://img.shields.io/github/stars/kunalkushwaha/agentflow?style=social)](https://github.com/kunalkushwaha/agentflow)
-[![Go Re## Production Features
-
-### **Enterprise Ready**t Card](https://goreportcard.com/badge/github.com/kunalkushwaha/agentflow)](https://goreportcard.com/report/github.com/kunalkushwaha/agentflow)
+[![Go Report Card](https://goreportcard.com/badge/github.com/kunalkushwaha/agentflow)](https://goreportcard.com/report/github.com/kunalkushwaha/agentflow)
 
 **The Go SDK for building production-ready multi-agent AI systems**
 
