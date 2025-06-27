@@ -14,6 +14,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"net"
 	"sort"
@@ -318,8 +319,6 @@ type ProductionCircuitBreakerConfig struct {
 	MetricsEnabled      bool          `toml:"metrics_enabled"`
 	NotificationEnabled bool          `toml:"notification_enabled"`
 }
-
-
 
 // ==========================================
 // SECTION 3: DATA TYPES (~150 lines)
@@ -968,9 +967,9 @@ func LoadMCPConfigFromTOML(path string) (MCPConfig, error) {
 	Logger().Warn().
 		Str("path", path).
 		Msg("TOML configuration loading not implemented, using default config")
-	
+
 	config := DefaultMCPConfig()
-	
+
 	// Add a basic server configuration for demo purposes
 	if len(config.Servers) == 0 {
 		config.Servers = []MCPServerConfig{
@@ -983,7 +982,7 @@ func LoadMCPConfigFromTOML(path string) (MCPConfig, error) {
 			},
 		}
 	}
-	
+
 	return config, nil
 }
 
@@ -1130,7 +1129,7 @@ func initializeProductionMetrics(config MetricsConfig) error {
 	// TODO: Implement actual metrics collection with Prometheus
 	// This would include:
 	// - Request/response counters
-	// - Latency histograms  
+	// - Latency histograms
 	// - Error rate tracking
 	// - Tool usage statistics
 	// - Connection pool metrics
@@ -1144,19 +1143,19 @@ func initializeProductionMetrics(config MetricsConfig) error {
 func ProductionMCPConfig(config ProductionConfig) MCPConfig {
 	// Convert production config to basic MCP config
 	mcpConfig := DefaultMCPConfig()
-	
+
 	// Apply production settings
 	mcpConfig.ConnectionTimeout = config.ConnectionPool.ConnectionTimeout
 	mcpConfig.MaxRetries = config.RetryPolicy.MaxAttempts
 	mcpConfig.RetryDelay = config.RetryPolicy.BaseDelay
 	mcpConfig.MaxConnections = config.ConnectionPool.MaxConnections
-	
+
 	// Enable caching if configured
 	if config.Cache.Type != "" {
 		mcpConfig.EnableCaching = true
 		mcpConfig.CacheTimeout = config.Cache.TTL
 	}
-	
+
 	return mcpConfig
 }
 
@@ -1164,14 +1163,14 @@ func ProductionMCPConfig(config ProductionConfig) MCPConfig {
 func ProductionCacheConfig(config CacheConfig) MCPCacheConfig {
 	// Convert production cache config to MCP cache config
 	cacheConfig := DefaultMCPCacheConfig()
-	
+
 	// Apply production cache settings
 	cacheConfig.Enabled = config.Type != ""
 	cacheConfig.DefaultTTL = config.TTL
 	cacheConfig.MaxSize = int64(config.MaxSize)
 	cacheConfig.Backend = config.Type
 	cacheConfig.CleanupInterval = config.CleanupInterval
-	
+
 	// Configure Redis if enabled
 	if config.Redis.Enabled {
 		cacheConfig.Backend = "redis"
@@ -1179,7 +1178,7 @@ func ProductionCacheConfig(config CacheConfig) MCPCacheConfig {
 		cacheConfig.BackendConfig["redis_password"] = config.Redis.Password
 		cacheConfig.BackendConfig["redis_db"] = fmt.Sprintf("%d", config.Redis.Database)
 	}
-	
+
 	return cacheConfig
 }
 
@@ -1187,19 +1186,19 @@ func ProductionCacheConfig(config CacheConfig) MCPCacheConfig {
 func ProductionAgentConfig(config ProductionConfig) MCPAgentConfig {
 	// Convert production config to agent config
 	agentConfig := DefaultMCPAgentConfig()
-	
+
 	// Apply production agent settings
 	agentConfig.EnableCaching = config.Cache.Type != ""
 	agentConfig.ExecutionTimeout = config.HealthCheck.Timeout * 2 // Allow 2x health check timeout
 	agentConfig.MaxRetries = config.RetryPolicy.MaxAttempts
 	agentConfig.MaxToolsPerExecution = 10 // Higher limit for production
-	
+
 	// Enable more sophisticated settings for production
 	agentConfig.ParallelExecution = true
 	agentConfig.RetryFailedTools = true
 	agentConfig.UseToolDescriptions = true
 	agentConfig.ResultInterpretation = true
-	
+
 	return agentConfig
 }
 
@@ -1648,22 +1647,23 @@ func (c *realMCPCache) TTL(ctx context.Context, key MCPCacheKey) (time.Duration,
 	return remaining, nil
 }
 
-func (c *realMCPCache) Stats(ctx context.Context) (MCPCacheStats, error) {	c.mu.RLock()
+func (c *realMCPCache) Stats(ctx context.Context) (MCPCacheStats, error) {
+	c.mu.RLock()
 	defer c.mu.RUnlock()
-	
+
 	return MCPCacheStats{
-		HitCount:    0, // Would need to track this in real implementation
-		MissCount:   0, // Would need to track this in real implementation
-		HitRate:     0.0,
-		TotalKeys:   int(len(c.data)),
-		TotalSize:   0, // Would need to calculate actual memory usage
+		HitCount:  0, // Would need to track this in real implementation
+		MissCount: 0, // Would need to track this in real implementation
+		HitRate:   0.0,
+		TotalKeys: int(len(c.data)),
+		TotalSize: 0, // Would need to calculate actual memory usage
 	}, nil
 }
 
 func (c *realMCPCache) Cleanup(ctx context.Context) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	// Remove expired entries
 	now := time.Now()
 	for key, result := range c.data {
@@ -1671,14 +1671,14 @@ func (c *realMCPCache) Cleanup(ctx context.Context) error {
 			delete(c.data, key)
 		}
 	}
-	
+
 	return nil
 }
 
 func (c *realMCPCache) Close() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	// Clear all data
 	c.data = make(map[string]*MCPCachedResult)
 	return nil
@@ -1957,20 +1957,20 @@ func createRealFunctionToolRegistry() FunctionToolRegistry {
 func (r *realFunctionToolRegistry) Register(tool FunctionTool) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	
+
 	if tool == nil {
 		return fmt.Errorf("tool cannot be nil")
 	}
-	
+
 	name := tool.Name()
 	if name == "" {
 		return fmt.Errorf("tool name cannot be empty")
 	}
-	
+
 	if _, exists := r.tools[name]; exists {
 		return fmt.Errorf("tool %s already registered", name)
 	}
-	
+
 	r.tools[name] = tool
 	Logger().Info().Str("tool", name).Msg("Registered function tool")
 	return nil
@@ -1979,7 +1979,7 @@ func (r *realFunctionToolRegistry) Register(tool FunctionTool) error {
 func (r *realFunctionToolRegistry) Get(name string) (FunctionTool, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	
+
 	tool, exists := r.tools[name]
 	return tool, exists
 }
@@ -1987,12 +1987,12 @@ func (r *realFunctionToolRegistry) Get(name string) (FunctionTool, bool) {
 func (r *realFunctionToolRegistry) List() []string {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	
+
 	names := make([]string, 0, len(r.tools))
 	for name := range r.tools {
 		names = append(names, name)
 	}
-	
+
 	return names
 }
 
@@ -2000,11 +2000,11 @@ func (r *realFunctionToolRegistry) CallTool(ctx context.Context, name string, ar
 	r.mu.RLock()
 	tool, exists := r.tools[name]
 	r.mu.RUnlock()
-	
+
 	if !exists {
 		return nil, fmt.Errorf("tool %s not found", name)
 	}
-	
+
 	result, err := tool.Call(ctx, args)
 	if err != nil {
 		Logger().Error().
@@ -2013,11 +2013,11 @@ func (r *realFunctionToolRegistry) CallTool(ctx context.Context, name string, ar
 			Msg("Tool execution failed")
 		return nil, fmt.Errorf("tool execution failed: %w", err)
 	}
-	
+
 	Logger().Debug().
 		Str("tool", name).
 		Msg("Tool executed successfully")
-	
+
 	return result, nil
 }
 
@@ -2044,21 +2044,21 @@ func (t *mcpFunctionTool) Call(ctx context.Context, args map[string]any) (map[st
 	if !ok {
 		return nil, fmt.Errorf("manager does not support tool execution")
 	}
-	
+
 	result, err := realManager.executeTool(ctx, t.toolInfo.Name, args)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	if !result.Success {
 		return nil, fmt.Errorf("tool execution failed: %s", result.Error)
 	}
-	
+
 	// Convert MCPContent to simple map
 	response := make(map[string]any)
 	response["success"] = result.Success
 	response["duration"] = result.Duration.String()
-	
+
 	if len(result.Content) > 0 {
 		content := make([]map[string]any, len(result.Content))
 		for i, c := range result.Content {
@@ -2072,7 +2072,7 @@ func (t *mcpFunctionTool) Call(ctx context.Context, args map[string]any) (map[st
 		}
 		response["content"] = content
 	}
-	
+
 	return response, nil
 }
 
@@ -2103,4 +2103,205 @@ func init() {
 	Logger().Debug().Msg("Core MCP package initialized")
 }
 
+// ==========================================
+// SECTION: MCP UTILITY FUNCTIONS FOR AGENTS
+// ==========================================
 
+// FormatToolsPromptForLLM creates a prompt section describing available MCP tools with their schemas
+// This function formats MCP tool information into a comprehensive prompt that helps LLMs
+// understand what tools are available and how to use them according to their schemas.
+func FormatToolsPromptForLLM(tools []MCPToolInfo) string {
+	if len(tools) == 0 {
+		return ""
+	}
+
+	prompt := "\n\nAvailable MCP tools:\n"
+	for _, tool := range tools {
+		prompt += fmt.Sprintf("\n**%s**: %s\n", tool.Name, tool.Description)
+
+		// Include the schema information from MCP discovery
+		if tool.Schema != nil && len(tool.Schema) > 0 {
+			prompt += "Schema: "
+			schemaStr := FormatSchemaForLLM(tool.Schema)
+			prompt += schemaStr + "\n"
+		}
+	}
+
+	prompt += `
+To use a tool, you MUST respond with a tool call in this exact JSON format:
+TOOL_CALL{"name": "tool_name", "args": {arguments_according_to_schema}}
+
+When a user asks you to search for something, use the search tool.
+When a user asks you to fetch web content, use the fetch_content tool.
+When a user asks about Docker, use the docker tool.
+
+Important:
+- Use the exact parameter names and types specified in each tool's schema
+- Make tool calls immediately when they would help answer the user's question
+- If the user specifically asks you to use a tool, you MUST use it
+
+Example for a search (replace with actual search terms):
+TOOL_CALL{"name": "search", "args": {"query": "search terms here", "max_results": 10}}
+
+Use these tools to provide comprehensive and accurate responses.`
+
+	return prompt
+}
+
+// FormatSchemaForLLM converts a tool schema map to a readable string format for the LLM
+// This function takes a JSON schema from MCP tool discovery and formats it in a way
+// that LLMs can easily understand and use to make proper tool calls.
+func FormatSchemaForLLM(schema map[string]interface{}) string {
+	if schema == nil {
+		return "No schema available"
+	}
+
+	var result strings.Builder
+
+	// Handle the "type" field
+	if schemaType, ok := schema["type"].(string); ok {
+		result.WriteString(fmt.Sprintf("Type: %s", schemaType))
+	}
+
+	// Handle "properties" field (for object types)
+	if properties, ok := schema["properties"].(map[string]interface{}); ok {
+		result.WriteString("\nParameters:\n")
+		for propName, propDetails := range properties {
+			if propMap, ok := propDetails.(map[string]interface{}); ok {
+				propType := "unknown"
+				if t, exists := propMap["type"]; exists {
+					if typeStr, ok := t.(string); ok {
+						propType = typeStr
+					}
+				}
+
+				description := ""
+				if desc, exists := propMap["description"]; exists {
+					if descStr, ok := desc.(string); ok {
+						description = fmt.Sprintf(" - %s", descStr)
+					}
+				}
+
+				result.WriteString(fmt.Sprintf("  - %s (%s)%s\n", propName, propType, description))
+			}
+		}
+	}
+
+	// Handle "required" field
+	if required, ok := schema["required"].([]interface{}); ok {
+		if len(required) > 0 {
+			result.WriteString("Required parameters: ")
+			for i, req := range required {
+				if reqStr, ok := req.(string); ok {
+					if i > 0 {
+						result.WriteString(", ")
+					}
+					result.WriteString(reqStr)
+				}
+			}
+			result.WriteString("\n")
+		}
+	}
+
+	return result.String()
+}
+
+// ParseLLMToolCalls extracts tool calls from LLM response content
+// This function parses TOOL_CALL{} patterns from LLM responses and does NOT add
+// any hardcoded auto-detection logic. It trusts the LLM to make proper tool calls
+// based on the provided MCP schemas.
+func ParseLLMToolCalls(content string) []map[string]interface{} {
+	var toolCalls []map[string]interface{}
+
+	// Debug: Log what we're trying to parse
+	logger := Logger()
+	logger.Debug().Str("content", content).Msg("Parsing tool calls from LLM response")
+
+	// Parse TOOL_CALL{...} patterns from LLM response
+	parts := strings.Split(content, "TOOL_CALL")
+	for i := 1; i < len(parts); i++ {
+		part := parts[i]
+		logger.Debug().Str("part", part).Msg("Processing TOOL_CALL part")
+
+		if strings.HasPrefix(part, "{") {
+			// Find the closing brace
+			braceCount := 0
+			endIndex := -1
+			for j, char := range part {
+				if char == '{' {
+					braceCount++
+				} else if char == '}' {
+					braceCount--
+					if braceCount == 0 {
+						endIndex = j
+						break
+					}
+				}
+			}
+
+			if endIndex > 0 {
+				jsonStr := part[:endIndex+1]
+				logger.Debug().Str("json_str", jsonStr).Msg("Extracted JSON string")
+
+				// Parse the JSON string
+				toolCall := ParseToolCallJSON(jsonStr)
+				logger.Debug().Interface("parsed_tool_call", toolCall).Msg("Parsed tool call")
+
+				if len(toolCall) > 0 {
+					toolCalls = append(toolCalls, toolCall)
+				}
+			}
+		}
+	}
+
+	// NO AUTO-DETECTION: The LLM should decide when to use tools based on the provided schemas
+	// Trust the LLM to make proper tool calls when needed according to the MCP tool schemas
+	logger.Debug().Interface("final_tool_calls", toolCalls).Msg("Final parsed tool calls")
+	return toolCalls
+}
+
+// ParseToolCallJSON is a robust JSON parser for tool calls
+// This function attempts to parse JSON using the standard library first,
+// then falls back to a simple parser for malformed JSON from LLMs.
+func ParseToolCallJSON(jsonStr string) map[string]interface{} {
+	result := make(map[string]interface{})
+
+	// Try to parse as proper JSON first
+	if err := json.Unmarshal([]byte(jsonStr), &result); err == nil {
+		return result
+	}
+
+	// Fall back to simple parsing if JSON unmarshal fails
+	// Remove outer braces
+	jsonStr = strings.Trim(jsonStr, "{}")
+
+	// Split by commas (simple approach)
+	parts := strings.Split(jsonStr, ",")
+
+	for _, part := range parts {
+		if strings.Contains(part, ":") {
+			keyValue := strings.SplitN(part, ":", 2)
+			if len(keyValue) == 2 {
+				key := strings.Trim(keyValue[0], " \"")
+				value := strings.Trim(keyValue[1], " \"")
+
+				// Try to parse nested objects for args
+				if key == "args" && strings.HasPrefix(value, "{") && strings.HasSuffix(value, "}") {
+					argsMap := ParseToolCallJSON(value)
+					result[key] = argsMap
+				} else {
+					result[key] = value
+				}
+			}
+		}
+	}
+
+	return result
+}
+
+// init function to automatically set up real MCP implementation when available
+func init() {
+	// This will be called when the core package is initialized
+	// If the factory package is available, it will register itself
+	Logger().Debug().Msg("Core MCP package initialized")
+}

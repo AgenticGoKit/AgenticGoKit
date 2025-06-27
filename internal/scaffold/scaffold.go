@@ -43,7 +43,7 @@ func CreateAgentProjectFromConfig(config ProjectConfig) error {
 	fmt.Printf("Created directory: %s\n", config.Name)
 
 	// Create go.mod file
-	goModContent := fmt.Sprintf("module %s\n\ngo 1.21\n\nrequire github.com/kunalkushwaha/agentflow v0.1.1\n", config.Name)
+	goModContent := fmt.Sprintf("module %s\n\ngo 1.21\n\nrequire github.com/kunalkushwaha/agentflow v0.2.0\n", config.Name)
 	goModPath := filepath.Join(config.Name, "go.mod")
 	if err := os.WriteFile(goModPath, []byte(goModContent), 0644); err != nil {
 		return fmt.Errorf("failed to create go.mod: %w", err)
@@ -153,7 +153,7 @@ func CreateAgentProjectOld(agentName string, numAgents int, responsibleAI bool, 
 	fmt.Printf("Created directory: %s\n", agentName)
 
 	// Create go.mod file
-	goModContent := fmt.Sprintf("module %s\n\ngo 1.21\n\nrequire github.com/kunalkushwaha/agentflow v0.1.1\n", agentName)
+	goModContent := fmt.Sprintf("module %s\n\ngo 1.21\n\nrequire github.com/kunalkushwaha/agentflow v0.2.0\n", agentName)
 	goModPath := filepath.Join(agentName, "go.mod")
 	if err := os.WriteFile(goModPath, []byte(goModContent), 0644); err != nil {
 		return fmt.Errorf("failed to create go.mod: %w", err)
@@ -278,81 +278,15 @@ func createAgentFile(dir, filename string, agentNum int, totalAgents int, hasRAI
 	%s`, routingComment)
 	}
 
-	// Build content dynamically to avoid template escaping issues
+	// Build content dynamically using core MCP functions - simplified legacy version
 	var content strings.Builder
 
 	content.WriteString("package main\n\n")
 	content.WriteString("import (\n")
 	content.WriteString("\t\"context\"\n")
-	content.WriteString("\t\"fmt\"\n")
-	content.WriteString("\t\"strings\"\n\n")
+	content.WriteString("\t\"fmt\"\n\n")
 	content.WriteString("\tagentflow \"github.com/kunalkushwaha/agentflow/core\"\n")
 	content.WriteString(")\n\n")
-
-	// Add helper functions for MCP tool usage
-	content.WriteString("// isToolRelevant checks if a tool might be relevant to the user query\n")
-	content.WriteString("func isToolRelevant(userQuery, toolName, toolDescription string) bool {\n")
-	content.WriteString("\tuserQueryLower := strings.ToLower(userQuery)\n")
-	content.WriteString("\ttoolNameLower := strings.ToLower(toolName)\n")
-	content.WriteString("\ttoolDescLower := strings.ToLower(toolDescription)\n")
-	content.WriteString("\t\n")
-	content.WriteString("\t// Check for direct tool name mentions\n")
-	content.WriteString("\tif strings.Contains(userQueryLower, toolNameLower) {\n")
-	content.WriteString("\t\treturn true\n")
-	content.WriteString("\t}\n")
-	content.WriteString("\t\n")
-	content.WriteString("\t// Check for keyword matches in tool description\n")
-	content.WriteString("\tcommonKeywords := []string{\"docker\", \"container\", \"image\", \"search\", \"fetch\", \"web\", \"http\", \"api\", \"file\", \"directory\", \"system\", \"command\"}\n")
-	content.WriteString("\tfor _, keyword := range commonKeywords {\n")
-	content.WriteString("\t\tif strings.Contains(userQueryLower, keyword) && strings.Contains(toolDescLower, keyword) {\n")
-	content.WriteString("\t\t\treturn true\n")
-	content.WriteString("\t\t}\n")
-	content.WriteString("\t}\n")
-	content.WriteString("\t\n")
-	content.WriteString("\treturn false\n")
-	content.WriteString("}\n\n")
-
-	content.WriteString("// buildToolArguments creates reasonable arguments for a tool based on the user query\n")
-	content.WriteString("func buildToolArguments(toolName, userQuery string) map[string]interface{} {\n")
-	content.WriteString("\targs := make(map[string]interface{})\n")
-	content.WriteString("\ttoolNameLower := strings.ToLower(toolName)\n")
-	content.WriteString("\tuserQueryLower := strings.ToLower(userQuery)\n")
-	content.WriteString("\t\n")
-	content.WriteString("\t// Docker-specific tool arguments\n")
-	content.WriteString("\tif strings.Contains(toolNameLower, \"docker\") {\n")
-	content.WriteString("\t\tif strings.Contains(toolNameLower, \"ps\") || strings.Contains(toolNameLower, \"list\") {\n")
-	content.WriteString("\t\t\t// For docker ps/list commands, typically no args needed\n")
-	content.WriteString("\t\t\targs[\"args\"] = []string{}\n")
-	content.WriteString("\t\t} else if strings.Contains(toolNameLower, \"images\") {\n")
-	content.WriteString("\t\t\t// For docker images command\n")
-	content.WriteString("\t\t\targs[\"args\"] = []string{}\n")
-	content.WriteString("\t\t} else {\n")
-	content.WriteString("\t\t\t// General docker command, try to extract args from query\n")
-	content.WriteString("\t\t\targs[\"args\"] = []string{}\n")
-	content.WriteString("\t\t}\n")
-	content.WriteString("\t}\n")
-	content.WriteString("\t\n")
-	content.WriteString("\t// Search/fetch tool arguments\n")
-	content.WriteString("\tif strings.Contains(toolNameLower, \"search\") {\n")
-	content.WriteString("\t\t// Extract search query from user input\n")
-	content.WriteString("\t\targs[\"query\"] = userQuery\n")
-	content.WriteString("\t\targs[\"max_results\"] = 5\n")
-	content.WriteString("\t} else if strings.Contains(toolNameLower, \"fetch\") {\n")
-	content.WriteString("\t\t// For fetch tools, might need a URL - use a placeholder if not found\n")
-	content.WriteString("\t\tif strings.Contains(userQueryLower, \"http\") {\n")
-	content.WriteString("\t\t\t// Try to extract URL from query (simplified)\n")
-	content.WriteString("\t\t\twords := strings.Fields(userQuery)\n")
-	content.WriteString("\t\t\tfor _, word := range words {\n")
-	content.WriteString("\t\t\t\tif strings.HasPrefix(word, \"http\") {\n")
-	content.WriteString("\t\t\t\t\targs[\"url\"] = word\n")
-	content.WriteString("\t\t\t\t\tbreak\n")
-	content.WriteString("\t\t\t\t}\n")
-	content.WriteString("\t\t\t}\n")
-	content.WriteString("\t\t}\n")
-	content.WriteString("\t}\n")
-	content.WriteString("\t\n")
-	content.WriteString("\treturn args\n")
-	content.WriteString("}\n\n")
 
 	// Type definition
 	content.WriteString(fmt.Sprintf("// Agent%dHandler represents the %d agent handler\n", agentNum, agentNum))
@@ -365,6 +299,7 @@ func createAgentFile(dir, filename string, agentNum int, totalAgents int, hasRAI
 	content.WriteString(fmt.Sprintf("func NewAgent%d(llmProvider agentflow.ModelProvider) *Agent%dHandler {\n", agentNum, agentNum))
 	content.WriteString(fmt.Sprintf("\treturn &Agent%dHandler{llm: llmProvider}\n", agentNum))
 	content.WriteString("}\n\n")
+
 	// Run method
 	content.WriteString("// Run implements the agentflow.AgentHandler interface\n")
 	content.WriteString(fmt.Sprintf("func (a *Agent%dHandler) Run(ctx context.Context, event agentflow.Event, state agentflow.State) (agentflow.AgentResult, error) {\n", agentNum))
@@ -496,81 +431,15 @@ func createUnifiedAgentFile(config ProjectConfig, filename string, agentNum int)
 	%s`, routingComment)
 	}
 
-	// Build content dynamically to avoid template escaping issues
+	// Build content dynamically using core MCP functions
 	var content strings.Builder
 
 	content.WriteString("package main\n\n")
 	content.WriteString("import (\n")
 	content.WriteString("\t\"context\"\n")
-	content.WriteString("\t\"fmt\"\n")
-	content.WriteString("\t\"strings\"\n\n")
+	content.WriteString("\t\"fmt\"\n\n")
 	content.WriteString("\tagentflow \"github.com/kunalkushwaha/agentflow/core\"\n")
 	content.WriteString(")\n\n")
-
-	// Add helper functions for MCP tool usage
-	content.WriteString("// isToolRelevant checks if a tool might be relevant to the user query\n")
-	content.WriteString("func isToolRelevant(userQuery, toolName, toolDescription string) bool {\n")
-	content.WriteString("\tuserQueryLower := strings.ToLower(userQuery)\n")
-	content.WriteString("\ttoolNameLower := strings.ToLower(toolName)\n")
-	content.WriteString("\ttoolDescLower := strings.ToLower(toolDescription)\n")
-	content.WriteString("\t\n")
-	content.WriteString("\t// Check for direct tool name mentions\n")
-	content.WriteString("\tif strings.Contains(userQueryLower, toolNameLower) {\n")
-	content.WriteString("\t\treturn true\n")
-	content.WriteString("\t}\n")
-	content.WriteString("\t\n")
-	content.WriteString("\t// Check for keyword matches in tool description\n")
-	content.WriteString("\tcommonKeywords := []string{\"docker\", \"container\", \"image\", \"search\", \"fetch\", \"web\", \"http\", \"api\", \"file\", \"directory\", \"system\", \"command\"}\n")
-	content.WriteString("\tfor _, keyword := range commonKeywords {\n")
-	content.WriteString("\t\tif strings.Contains(userQueryLower, keyword) && strings.Contains(toolDescLower, keyword) {\n")
-	content.WriteString("\t\t\treturn true\n")
-	content.WriteString("\t\t}\n")
-	content.WriteString("\t}\n")
-	content.WriteString("\t\n")
-	content.WriteString("\treturn false\n")
-	content.WriteString("}\n\n")
-
-	content.WriteString("// buildToolArguments creates reasonable arguments for a tool based on the user query\n")
-	content.WriteString("func buildToolArguments(toolName, userQuery string) map[string]interface{} {\n")
-	content.WriteString("\targs := make(map[string]interface{})\n")
-	content.WriteString("\ttoolNameLower := strings.ToLower(toolName)\n")
-	content.WriteString("\tuserQueryLower := strings.ToLower(userQuery)\n")
-	content.WriteString("\t\n")
-	content.WriteString("\t// Docker-specific tool arguments\n")
-	content.WriteString("\tif strings.Contains(toolNameLower, \"docker\") {\n")
-	content.WriteString("\t\tif strings.Contains(toolNameLower, \"ps\") || strings.Contains(toolNameLower, \"list\") {\n")
-	content.WriteString("\t\t\t// For docker ps/list commands, typically no args needed\n")
-	content.WriteString("\t\t\targs[\"args\"] = []string{}\n")
-	content.WriteString("\t\t} else if strings.Contains(toolNameLower, \"images\") {\n")
-	content.WriteString("\t\t\t// For docker images command\n")
-	content.WriteString("\t\t\targs[\"args\"] = []string{}\n")
-	content.WriteString("\t\t} else {\n")
-	content.WriteString("\t\t\t// General docker command, try to extract args from query\n")
-	content.WriteString("\t\t\targs[\"args\"] = []string{}\n")
-	content.WriteString("\t\t}\n")
-	content.WriteString("\t}\n")
-	content.WriteString("\t\n")
-	content.WriteString("\t// Search/fetch tool arguments\n")
-	content.WriteString("\tif strings.Contains(toolNameLower, \"search\") {\n")
-	content.WriteString("\t\t// Extract search query from user input\n")
-	content.WriteString("\t\targs[\"query\"] = userQuery\n")
-	content.WriteString("\t\targs[\"max_results\"] = 5\n")
-	content.WriteString("\t} else if strings.Contains(toolNameLower, \"fetch\") {\n")
-	content.WriteString("\t\t// For fetch tools, might need a URL - use a placeholder if not found\n")
-	content.WriteString("\t\tif strings.Contains(userQueryLower, \"http\") {\n")
-	content.WriteString("\t\t\t// Try to extract URL from query (simplified)\n")
-	content.WriteString("\t\t\twords := strings.Fields(userQuery)\n")
-	content.WriteString("\t\t\tfor _, word := range words {\n")
-	content.WriteString("\t\t\t\tif strings.HasPrefix(word, \"http\") {\n")
-	content.WriteString("\t\t\t\t\targs[\"url\"] = word\n")
-	content.WriteString("\t\t\t\t\tbreak\n")
-	content.WriteString("\t\t\t\t}\n")
-	content.WriteString("\t\t\t}\n")
-	content.WriteString("\t\t}\n")
-	content.WriteString("\t}\n")
-	content.WriteString("\t\n")
-	content.WriteString("\treturn args\n")
-	content.WriteString("}\n\n")
 
 	// Type definition
 	content.WriteString(fmt.Sprintf("// Agent%dHandler represents the %d agent handler\n", agentNum, agentNum))
@@ -583,6 +452,7 @@ func createUnifiedAgentFile(config ProjectConfig, filename string, agentNum int)
 	content.WriteString(fmt.Sprintf("func NewAgent%d(llmProvider agentflow.ModelProvider) *Agent%dHandler {\n", agentNum, agentNum))
 	content.WriteString(fmt.Sprintf("\treturn &Agent%dHandler{llm: llmProvider}\n", agentNum))
 	content.WriteString("}\n\n")
+
 	// Run method
 	content.WriteString("// Run implements the agentflow.AgentHandler interface\n")
 	content.WriteString(fmt.Sprintf("func (a *Agent%dHandler) Run(ctx context.Context, event agentflow.Event, state agentflow.State) (agentflow.AgentResult, error) {\n", agentNum))
@@ -605,7 +475,7 @@ func createUnifiedAgentFile(config ProjectConfig, filename string, agentNum int)
 		content.WriteString("\t} else {\n")
 		content.WriteString("\t\tinputToProcess = \"No message provided\"\n")
 		content.WriteString("\t}\n")
-		content.WriteString("\tsystemPrompt = \"You are Agent1, the first agent in a processing chain. Analyze and provide an initial response to the user input. Your output will be processed by subsequent agents.\"\n")
+		content.WriteString("\tsystemPrompt = `You are Agent1, an intelligent assistant that answers user queries by leveraging available tools to provide accurate, current information.\n\nCore Principles:\n- ALWAYS analyze what specific information the user needs\n- Use available MCP tools when they can provide current data or specific information\n- For stock prices, news, web content - ALWAYS use search or fetch_content tools\n- Provide concrete answers with actual data, not generic advice\n- Be decisive and helpful\n\nTool Usage Strategy:\n- For stock prices/financial data: Use the search tool to find current information\n- For current events/news: Use the search tool\n- For specific web content: Use the fetch_content tool with URLs\n- Focus on getting real data rather than giving general advice\n\nResponse Quality:\n- Give specific, data-driven answers when possible\n- If tools provide data, extract the key information clearly\n- Be conversational but informative\n- Integrate tool results naturally into your response`\"\n")
 		content.WriteString(fmt.Sprintf("\tlogger.Debug().Str(\"agent\", \"agent%d\").Interface(\"input\", inputToProcess).Msg(\"Processing original message\")\n", agentNum))
 	} else {
 		// Sequential processing logic for other agents
@@ -635,11 +505,11 @@ func createUnifiedAgentFile(config ProjectConfig, filename string, agentNum int)
 		content.WriteString("\t\n")
 		content.WriteString("\t// Create specialized system prompt based on agent number\n")
 		if agentNum == 2 {
-			content.WriteString("\tsystemPrompt = \"You are Agent2, the second agent in a processing chain. Build upon the initial analysis from Agent1 and add your own insights and processing.\"\n")
+			content.WriteString("\tsystemPrompt = `You are Agent2, specialized in enhancing and improving responses from Agent1. Your role is to:\n\n1. Review Agent1's response and identify any gaps or areas for improvement\n2. Use additional tools if needed to gather more specific information\n3. Provide enhanced, more detailed responses with concrete data\n4. For financial queries: Get specific prices, dates, and percentage changes\n5. Synthesize information to provide comprehensive answers\n\nTool Usage:\n- If Agent1 used search but you need more detailed info, use fetch_content on specific URLs\n- If Agent1 provided general info but you need specifics, use additional searches\n- Focus on getting the exact data the user requested (prices, dates, specific numbers)\n\nResponse Strategy:\n- Build upon Agent1's work but provide more detailed, specific information\n- Extract and present key data points clearly\n- Use tools to fill any information gaps`\"\n")
 		} else if agentNum == config.NumAgents {
-			content.WriteString(fmt.Sprintf("\tsystemPrompt = \"You are Agent%d, the final regular agent in a processing chain before responsible AI review. Your role is to provide final synthesis, conclusions, and comprehensive output based on all previous agents' work.\"\n", agentNum))
+			content.WriteString(fmt.Sprintf("\tsystemPrompt = `You are Agent%d, the final synthesis agent providing comprehensive, authoritative answers. Your role is to:\n\n1. Take the best insights from previous agents\n2. Provide a final, polished, comprehensive response\n3. Present specific data clearly and authoritatively\n4. For financial queries: Provide exact figures, dates, trends, and analysis\n5. Create the definitive answer to the user's question\n\nFinal Synthesis Strategy:\n- Combine the best information from previous agents\n- Add any final clarification or context needed\n- Present information in a clear, organized manner\n- Focus on answering the user's original question completely\n- Use tools only if critical information is still missing`\"\n", agentNum))
 		} else {
-			content.WriteString(fmt.Sprintf("\tsystemPrompt = fmt.Sprintf(\"You are Agent%d, agent number %d in a processing chain. Your role is to build upon previous agents' work and add your own expertise and analysis.\", %d, %d)\n", agentNum, agentNum, agentNum, agentNum))
+			content.WriteString(fmt.Sprintf("\tsystemPrompt = `You are Agent%d, an enhancement agent in the processing chain. Your role is to:\n\n1. Build upon previous agents' work with additional insights\n2. Use available MCP tools to gather more specific information when needed\n3. Enhance the response with more detail and context\n4. Ensure accuracy and completeness of information\n5. Add your expertise and analysis to improve the overall response\n\nEnhancement Strategy:\n- Review all previous agents' contributions\n- Identify gaps or areas that need more detail\n- Use tools to gather additional current information if helpful\n- Provide a more comprehensive and detailed response\n- Maintain focus on the user's original question`\"\n", agentNum))
 		}
 	}
 
@@ -650,7 +520,7 @@ func createUnifiedAgentFile(config ProjectConfig, filename string, agentNum int)
 	content.WriteString("\tif mcpManager != nil {\n")
 	content.WriteString("\t\tavailableTools := mcpManager.GetAvailableTools()\n")
 	content.WriteString(fmt.Sprintf("\t\tlogger.Debug().Str(\"agent\", \"agent%d\").Int(\"tool_count\", len(availableTools)).Msg(\"MCP Tools discovered\")\n", agentNum))
-	content.WriteString("\t\ttoolsPrompt = buildAvailableToolsPrompt(availableTools)\n")
+	content.WriteString("\t\ttoolsPrompt = agentflow.FormatToolsPromptForLLM(availableTools)\n")
 	content.WriteString("\t} else {\n")
 	content.WriteString(fmt.Sprintf("\t\tlogger.Warn().Str(\"agent\", \"agent%d\").Msg(\"MCP Manager is not available\")\n", agentNum))
 	content.WriteString("\t}\n")
@@ -664,6 +534,9 @@ func createUnifiedAgentFile(config ProjectConfig, filename string, agentNum int)
 	content.WriteString("\t\tUser:   userPrompt,\n")
 	content.WriteString("\t}\n")
 	content.WriteString("\t\n")
+	content.WriteString("\t// Debug: Log the full prompt being sent to LLM\n")
+	content.WriteString(fmt.Sprintf("\tlogger.Debug().Str(\"agent\", \"agent%d\").Str(\"system_prompt\", systemPrompt).Str(\"user_prompt\", userPrompt).Msg(\"Full LLM prompt\")\n", agentNum))
+	content.WriteString("\t\n")
 	content.WriteString("\t// Call LLM to get initial response and potential tool calls\n")
 	content.WriteString("\tresponse, err := a.llm.Call(ctx, prompt)\n")
 	content.WriteString("\tif err != nil {\n")
@@ -672,9 +545,13 @@ func createUnifiedAgentFile(config ProjectConfig, filename string, agentNum int)
 	content.WriteString("\t\n")
 	content.WriteString(fmt.Sprintf("\tlogger.Debug().Str(\"agent\", \"agent%d\").Str(\"response\", response.Content).Msg(\"Initial LLM response received\")\n", agentNum))
 	content.WriteString("\t\n")
-	content.WriteString("\t// Parse LLM response for tool calls\n")
-	content.WriteString("\ttoolCalls := parseLLMToolCalls(response.Content)\n")
+	content.WriteString("\t// Parse LLM response for tool calls using core function\n")
+	content.WriteString("\ttoolCalls := agentflow.ParseLLMToolCalls(response.Content)\n")
 	content.WriteString("\tvar mcpResults []string\n")
+	content.WriteString("\t\n")
+	content.WriteString("\t// Debug: Log the LLM response to see tool call format\n")
+	content.WriteString(fmt.Sprintf("\tlogger.Debug().Str(\"agent\", \"agent%d\").Str(\"llm_response\", response.Content).Msg(\"LLM response for tool call analysis\")\n", agentNum))
+	content.WriteString(fmt.Sprintf("\tlogger.Debug().Str(\"agent\", \"agent%d\").Interface(\"parsed_tool_calls\", toolCalls).Msg(\"Parsed tool calls from LLM response\")\n", agentNum))
 	content.WriteString("\t\n")
 	content.WriteString("\t// Execute any requested tools\n")
 	content.WriteString("\tif len(toolCalls) > 0 && mcpManager != nil {\n")
@@ -695,14 +572,28 @@ func createUnifiedAgentFile(config ProjectConfig, filename string, agentNum int)
 	content.WriteString("\t\t\t\t\n")
 	content.WriteString(fmt.Sprintf("\t\t\t\tlogger.Info().Str(\"agent\", \"agent%d\").Str(\"tool_name\", toolName).Interface(\"args\", args).Msg(\"Executing tool as requested by LLM\")\n", agentNum))
 	content.WriteString("\t\t\t\t\n")
-	content.WriteString("\t\t\t\t// Execute tool using the correct API\n")
+	content.WriteString("\t\t\t\t// Execute tool using the global ExecuteMCPTool function\n")
 	content.WriteString("\t\t\t\tresult, err := agentflow.ExecuteMCPTool(ctx, toolName, args)\n")
 	content.WriteString("\t\t\t\tif err != nil {\n")
 	content.WriteString(fmt.Sprintf("\t\t\t\t\tlogger.Error().Str(\"agent\", \"agent%d\").Str(\"tool_name\", toolName).Err(err).Msg(\"Tool execution failed\")\n", agentNum))
 	content.WriteString("\t\t\t\t\tmcpResults = append(mcpResults, fmt.Sprintf(\"Tool '%s' failed: %v\", toolName, err))\n")
 	content.WriteString("\t\t\t\t} else {\n")
-	content.WriteString(fmt.Sprintf("\t\t\t\t\tlogger.Info().Str(\"agent\", \"agent%d\").Str(\"tool_name\", toolName).Msg(\"Tool execution successful\")\n", agentNum))
-	content.WriteString("\t\t\t\t\tmcpResults = append(mcpResults, fmt.Sprintf(\"Tool '%s' result: %v\", toolName, result))\n")
+	content.WriteString("\t\t\t\t\tif result.Success {\n")
+	content.WriteString(fmt.Sprintf("\t\t\t\t\t\tlogger.Info().Str(\"agent\", \"agent%d\").Str(\"tool_name\", toolName).Msg(\"Tool execution successful\")\n", agentNum))
+	content.WriteString("\t\t\t\t\t\t\n")
+	content.WriteString("\t\t\t\t\t\t// Format the result content\n")
+	content.WriteString("\t\t\t\t\t\tvar resultContent string\n")
+	content.WriteString("\t\t\t\t\t\tif len(result.Content) > 0 {\n")
+	content.WriteString("\t\t\t\t\t\t\tresultContent = result.Content[0].Text\n")
+	content.WriteString("\t\t\t\t\t\t} else {\n")
+	content.WriteString("\t\t\t\t\t\t\tresultContent = \"Tool executed successfully but returned no content\"\n")
+	content.WriteString("\t\t\t\t\t\t}\n")
+	content.WriteString("\t\t\t\t\t\t\n")
+	content.WriteString("\t\t\t\t\t\tmcpResults = append(mcpResults, fmt.Sprintf(\"Tool '%s' result: %s\", toolName, resultContent))\n")
+	content.WriteString("\t\t\t\t\t} else {\n")
+	content.WriteString(fmt.Sprintf("\t\t\t\t\t\tlogger.Error().Str(\"agent\", \"agent%d\").Str(\"tool_name\", toolName).Str(\"error\", result.Error).Msg(\"Tool execution failed\")\n", agentNum))
+	content.WriteString("\t\t\t\t\t\tmcpResults = append(mcpResults, fmt.Sprintf(\"Tool '%s' failed: %s\", toolName, result.Error))\n")
+	content.WriteString("\t\t\t\t\t}\n")
 	content.WriteString("\t\t\t\t}\n")
 	content.WriteString("\t\t\t}\n")
 	content.WriteString("\t\t}\n")
@@ -711,11 +602,25 @@ func createUnifiedAgentFile(config ProjectConfig, filename string, agentNum int)
 	content.WriteString("\t// If tools were executed, make a follow-up LLM call with the results\n")
 	content.WriteString("\tfinalResponse := response.Content\n")
 	content.WriteString("\tif len(mcpResults) > 0 {\n")
-	content.WriteString("\t\tfollowUpPrompt := response.Content + \"\\n\\nTool execution results:\\n\"\n")
-	content.WriteString("\t\tfor _, result := range mcpResults {\n")
-	content.WriteString("\t\t\tfollowUpPrompt += \"- \" + result + \"\\n\"\n")
-	content.WriteString("\t\t}\n")
-	content.WriteString("\t\tfollowUpPrompt += \"\\nPlease provide a final response incorporating these tool results.\"\n")
+	if agentNum == 1 {
+		content.WriteString("\t\tfollowUpPrompt := fmt.Sprintf(\"User query: %v\\n\\nTool execution results:\\n\", inputToProcess)\n")
+		content.WriteString("\t\tfor _, result := range mcpResults {\n")
+		content.WriteString("\t\t\tfollowUpPrompt += \"- \" + result + \"\\n\"\n")
+		content.WriteString("\t\t}\n")
+		content.WriteString("\t\tfollowUpPrompt += \"\\nBased on the above tool results, provide a comprehensive answer to the user's query. Extract specific data, prices, or information from the tool results and present it clearly to the user.\"\n")
+	} else if agentNum == config.NumAgents {
+		content.WriteString("\t\tfollowUpPrompt := fmt.Sprintf(\"Previous agents' work: %v\\n\\nAdditional tool results:\\n\", inputToProcess)\n")
+		content.WriteString("\t\tfor _, result := range mcpResults {\n")
+		content.WriteString("\t\t\tfollowUpPrompt += \"- \" + result + \"\\n\"\n")
+		content.WriteString("\t\t}\n")
+		content.WriteString("\t\tfollowUpPrompt += \"\\nProvide the final, comprehensive answer incorporating all information. This is the definitive response to the user.\"\n")
+	} else {
+		content.WriteString("\t\tfollowUpPrompt := fmt.Sprintf(\"Previous agent's response: %v\\n\\nTool execution results:\\n\", inputToProcess)\n")
+		content.WriteString("\t\tfor _, result := range mcpResults {\n")
+		content.WriteString("\t\t\tfollowUpPrompt += \"- \" + result + \"\\n\"\n")
+		content.WriteString("\t\t}\n")
+		content.WriteString("\t\tfollowUpPrompt += \"\\nBased on previous agent's response and the above tool results, provide an enhanced, more comprehensive answer. Extract specific data points and present them clearly.\"\n")
+	}
 	content.WriteString("\t\t\n")
 	content.WriteString("\t\tfollowUpLLMPrompt := agentflow.Prompt{\n")
 	content.WriteString("\t\t\tSystem: systemPrompt,\n")
@@ -1250,8 +1155,10 @@ import (
 
 // WorkflowFinalizerHandler handles workflow completion and signals the WaitGroup
 type WorkflowFinalizerHandler struct {
-	wg   *sync.WaitGroup
-	once sync.Once
+	wg       *sync.WaitGroup
+	once     sync.Once
+	printed  bool
+	printMux sync.Mutex
 }
 
 // NewWorkflowFinalizer creates a new WorkflowFinalizerHandler
@@ -1272,36 +1179,40 @@ func (h *WorkflowFinalizerHandler) Run(ctx context.Context, event agentflow.Even
 	// Log the final state for debugging
 	logger.Debug().Interface("state_keys", state.Keys()).Msg("Final workflow state")
 	
-	// Display clean final output to user
-	fmt.Println("\n=== WORKFLOW RESULTS ===")
-	
-	// Find and display the final agent's response
-	var finalResponse string
-	var foundFinalResponse bool
-	
-	// Look for the highest numbered agent response
-	for i := 10; i >= 1; i-- {
-		responseKey := fmt.Sprintf("agent%d_response", i)
-		if response, exists := state.Get(responseKey); exists {
-			finalResponse = fmt.Sprintf("%v", response)
-			foundFinalResponse = true
-			logger.Debug().Str("agent", "workflow_finalizer").Int("final_agent", i).Str("response", finalResponse).Msg("Found final agent response")
-			break
+	// Display clean final output to user (only once)
+	h.printMux.Lock()
+	if !h.printed {
+		h.printed = true
+		fmt.Println("\n=== WORKFLOW RESULTS ===")
+		
+		// Find and display the final agent's response
+		var finalResponse string
+		var foundFinalResponse bool
+		
+		// Look for the highest numbered agent response
+		for i := 10; i >= 1; i-- {
+			responseKey := fmt.Sprintf("agent%d_response", i)
+			if response, exists := state.Get(responseKey); exists {
+				finalResponse = fmt.Sprintf("%v", response)
+				foundFinalResponse = true
+				logger.Debug().Str("agent", "workflow_finalizer").Int("final_agent", i).Str("response", finalResponse).Msg("Found final agent response")
+				break
+			}
 		}
-	}
-	
-	// Fallback to original message if no agent responses found
-	if !foundFinalResponse {
-		if originalMsg, exists := state.Get("message"); exists {
-			finalResponse = fmt.Sprintf("%v", originalMsg)
-			logger.Debug().Str("agent", "workflow_finalizer").Interface("original_message", originalMsg).Msg("Using original message as fallback")
+		
+		// Fallback to original message if no agent responses found
+		if !foundFinalResponse {
+			if originalMsg, exists := state.Get("message"); exists {
+				finalResponse = fmt.Sprintf("%v", originalMsg)
+				logger.Debug().Str("agent", "workflow_finalizer").Interface("original_message", originalMsg).Msg("Using original message as fallback")
+			}
 		}
+		
+		// Clean user-facing output
+		fmt.Printf("%s\n", finalResponse)
+		fmt.Println("=========================")
 	}
-	
-	// Clean user-facing output
-	fmt.Println("=== WORKFLOW RESULTS ===")
-	fmt.Printf("%s\n", finalResponse)
-	fmt.Println("=========================")
+	h.printMux.Unlock()
 	
 	// Create final output state
 	outputState := agentflow.NewState()
@@ -1588,7 +1499,19 @@ func createUnifiedMainGoContent(config ProjectConfig) string {
 		content.WriteString("\t\tmcpManager = nil\n")
 		content.WriteString("\t}\n")
 		content.WriteString("\tif mcpManager != nil {\n")
-		content.WriteString("\t\tlogger.Info().Msg(\"MCP manager initialized successfully - agents can access tools via core.GetMCPManager()\")\n")
+		content.WriteString("\t\tlogger.Info().Msg(\"MCP manager initialized successfully - agents can access tools via core.GetMCPManager()\")\n\n")
+		content.WriteString("\t\t// Initialize MCP tool registry\n")
+		content.WriteString("\t\tif err := core.InitializeMCPToolRegistry(); err != nil {\n")
+		content.WriteString("\t\t\tlogger.Warn().Err(err).Msg(\"Failed to initialize MCP tool registry\")\n")
+		content.WriteString("\t\t} else {\n")
+		content.WriteString("\t\t\tlogger.Info().Msg(\"MCP tool registry initialized successfully\")\n")
+		content.WriteString("\t\t}\n\n")
+		content.WriteString("\t\t// Register MCP tools with the registry so agents can use them\n")
+		content.WriteString("\t\tif err := core.RegisterMCPToolsWithRegistry(ctx); err != nil {\n")
+		content.WriteString("\t\t\tlogger.Warn().Err(err).Msg(\"Failed to register MCP tools with registry\")\n")
+		content.WriteString("\t\t} else {\n")
+		content.WriteString("\t\t\tlogger.Info().Msg(\"MCP tools registered with registry successfully\")\n")
+		content.WriteString("\t\t}\n")
 		content.WriteString("\t}\n\n")
 	}
 	content.WriteString("\t// Create agents using agent handlers (not unified builder for orchestrator use)\n")
@@ -1653,7 +1576,7 @@ func createUnifiedMainGoContent(config ProjectConfig) string {
 	content.WriteString("\torchestrator := core.NewRouteOrchestrator(callbackRegistry)\n\n")
 
 	content.WriteString("\t// Create and configure runner\n")
-	content.WriteString("\trunner := core.NewRunner(10) // Queue size of 10\n")
+	content.WriteString("\trunner := core.NewRunner(100) // Queue size of 100 for multi-agent with tool calls\n")
 	content.WriteString("\trunner.SetOrchestrator(orchestrator)\n")
 	content.WriteString("\trunner.SetCallbackRegistry(callbackRegistry)\n")
 	content.WriteString("\torchestrator.SetEmitter(runner) // This enables event routing between agents\n\n")
@@ -1875,10 +1798,10 @@ update_interval = "10s"`, config.MetricsPort)
 					mcpConfig += `
 
 [[mcp.servers]]
-name = "docker"
-command = "npx"
-args = ["-y", "@modelcontextprotocol/server-docker"]
-type = "stdio"
+name = "MCP_DOCKER"
+host = "localhost"
+port = 8811
+type = "tcp"
 enabled = true`
 				} else if server == "web-service" {
 					mcpConfig += `
@@ -1907,10 +1830,10 @@ enabled = true`, server, server)
 
 # Default MCP Server Configurations
 [[mcp.servers]]
-name = "docker"
-command = "npx"
-args = ["-y", "@modelcontextprotocol/server-docker"]
-type = "stdio"
+name = "MCP_DOCKER"
+host = "localhost"
+port = 8811
+type = "tcp"
 enabled = true`
 		}
 	}
@@ -1962,58 +1885,98 @@ func createMCPInitFunction(config ProjectConfig) string {
 	content.WriteString("func initializeMCP() (core.MCPManager, error) {\n")
 	content.WriteString("\tlogger := core.Logger()\n\n")
 
-	if config.MCPProduction {
-		content.WriteString("\tctx := context.Background()\n")
-		content.WriteString("\t// Initialize production MCP with all features\n")
-		content.WriteString("\tprodConfig := core.DefaultProductionConfig()\n")
+	content.WriteString("\t// Load configuration from agentflow.toml file\n")
+	content.WriteString("\tconfig, err := core.LoadConfigFromWorkingDir()\n")
+	content.WriteString("\tif err != nil {\n")
+	content.WriteString("\t\tlogger.Warn().Err(err).Msg(\"Failed to load config from agentflow.toml, using default\")\n")
+	content.WriteString("\t\t// Fallback to basic MCP with default config that has the hardcoded server\n")
+	content.WriteString("\t\tmcpConfig := core.DefaultMCPConfig()\n")
+	content.WriteString("\t\t// Add the MCP_DOCKER server from our agentflow.toml\n")
+	content.WriteString("\t\tmcpConfig.Servers = []core.MCPServerConfig{\n")
+	content.WriteString("\t\t\t{\n")
+	content.WriteString("\t\t\t\tName:    \"MCP_DOCKER\",\n")
+	content.WriteString("\t\t\t\tType:    \"tcp\",\n")
+	content.WriteString("\t\t\t\tHost:    \"localhost\",\n")
+	content.WriteString("\t\t\t\tPort:    8811,\n")
+	content.WriteString("\t\t\t\tEnabled: true,\n")
+	content.WriteString("\t\t\t},\n")
+	content.WriteString("\t\t}\n")
+	content.WriteString("\t\terr := core.InitializeMCP(mcpConfig)\n")
+	content.WriteString("\t\tif err != nil {\n")
+	content.WriteString("\t\t\treturn nil, fmt.Errorf(\"failed to initialize MCP: %w\", err)\n")
+	content.WriteString("\t\t}\n")
+	content.WriteString("\t\tlogger.Info().Msg(\"MCP initialized successfully with default config\")\n")
+	content.WriteString("\t\treturn core.GetMCPManager(), nil\n")
+	content.WriteString("\t}\n\n")
 
-		if config.WithCache {
-			content.WriteString(fmt.Sprintf("\tprodConfig.Cache.Type = \"%s\"\n", config.CacheBackend))
-		}
+	content.WriteString("\t// Convert TOML MCP config to internal MCP config\n")
+	content.WriteString("\tmcpConfig := core.DefaultMCPConfig()\n")
+	content.WriteString("\tif config.MCP.Enabled {\n")
+	content.WriteString("\t\tmcpConfig.EnableDiscovery = config.MCP.EnableDiscovery\n")
+	content.WriteString("\t\tmcpConfig.DiscoveryTimeout = time.Duration(config.MCP.DiscoveryTimeout) * time.Millisecond\n")
+	content.WriteString("\t\tif mcpConfig.DiscoveryTimeout == 0 {\n")
+	content.WriteString("\t\t\tmcpConfig.DiscoveryTimeout = 10 * time.Second\n")
+	content.WriteString("\t\t}\n")
+	content.WriteString("\t\tmcpConfig.ConnectionTimeout = time.Duration(config.MCP.ConnectionTimeout) * time.Millisecond\n")
+	content.WriteString("\t\tif mcpConfig.ConnectionTimeout == 0 {\n")
+	content.WriteString("\t\t\tmcpConfig.ConnectionTimeout = 30 * time.Second\n")
+	content.WriteString("\t\t}\n")
+	content.WriteString("\t\tmcpConfig.MaxRetries = config.MCP.MaxRetries\n")
+	content.WriteString("\t\tif mcpConfig.MaxRetries == 0 {\n")
+	content.WriteString("\t\t\tmcpConfig.MaxRetries = 3\n")
+	content.WriteString("\t\t}\n")
+	content.WriteString("\t\tmcpConfig.RetryDelay = time.Duration(config.MCP.RetryDelay) * time.Millisecond\n")
+	content.WriteString("\t\tif mcpConfig.RetryDelay == 0 {\n")
+	content.WriteString("\t\t\tmcpConfig.RetryDelay = 1 * time.Second\n")
+	content.WriteString("\t\t}\n")
+	content.WriteString("\t\tmcpConfig.EnableCaching = config.MCP.EnableCaching\n")
+	content.WriteString("\t\tmcpConfig.CacheTimeout = time.Duration(config.MCP.CacheTimeout) * time.Millisecond\n")
+	content.WriteString("\t\tif mcpConfig.CacheTimeout == 0 {\n")
+	content.WriteString("\t\t\tmcpConfig.CacheTimeout = 5 * time.Minute\n")
+	content.WriteString("\t\t}\n")
+	content.WriteString("\t\tmcpConfig.MaxConnections = config.MCP.MaxConnections\n")
+	content.WriteString("\t\tif mcpConfig.MaxConnections == 0 {\n")
+	content.WriteString("\t\t\tmcpConfig.MaxConnections = 10\n")
+	content.WriteString("\t\t}\n\n")
 
-		if config.WithMetrics {
-			content.WriteString(fmt.Sprintf("\tprodConfig.Metrics.Port = %d\n", config.MetricsPort))
-		}
+	content.WriteString("\t\t// Convert TOML servers to internal server config\n")
+	content.WriteString("\t\tmcpConfig.Servers = make([]core.MCPServerConfig, len(config.MCP.Servers))\n")
+	content.WriteString("\t\tfor i, server := range config.MCP.Servers {\n")
+	content.WriteString("\t\t\tmcpConfig.Servers[i] = core.MCPServerConfig{\n")
+	content.WriteString("\t\t\t\tName:    server.Name,\n")
+	content.WriteString("\t\t\t\tType:    server.Type,\n")
+	content.WriteString("\t\t\t\tHost:    server.Host,\n")
+	content.WriteString("\t\t\t\tPort:    server.Port,\n")
+	content.WriteString("\t\t\t\tCommand: server.Command,\n")
+	content.WriteString("\t\t\t\tEnabled: server.Enabled,\n")
+	content.WriteString("\t\t\t}\n")
+	content.WriteString("\t\t}\n\n")
 
-		content.WriteString(fmt.Sprintf("\tprodConfig.ConnectionPool.MaxConnections = %d\n", config.ConnectionPoolSize))
-		content.WriteString(fmt.Sprintf("\tprodConfig.RetryPolicy.Strategy = \"%s\"\n", config.RetryPolicy))
+	content.WriteString("\t\tlogger.Info().\n")
+	content.WriteString("\t\t\tInt(\"max_connections\", mcpConfig.MaxConnections).\n")
+	content.WriteString("\t\t\tInt(\"max_retries\", mcpConfig.MaxRetries).\n")
+	content.WriteString("\t\t\tBool(\"caching\", mcpConfig.EnableCaching).\n")
+	content.WriteString("\t\t\tInt(\"server_count\", len(mcpConfig.Servers)).\n")
+	content.WriteString("\t\t\tMsg(\"Loaded MCP configuration from agentflow.toml\")\n\n")
 
-		content.WriteString("\terr := core.InitializeProductionMCP(ctx, prodConfig)\n")
-		content.WriteString("\tif err != nil {\n")
-		content.WriteString("\t\treturn nil, fmt.Errorf(\"failed to initialize production MCP: %w\", err)\n")
-		content.WriteString("\t}\n")
-		content.WriteString("\tlogger.Info().Msg(\"Production MCP initialized successfully\")\n")
-		content.WriteString("\treturn core.GetMCPManager(), nil\n")
-	} else {
-		content.WriteString("\t// Initialize basic MCP\n")
-		content.WriteString("\tmcpConfig := core.DefaultMCPConfig()\n")
+	content.WriteString("\t\t// Log each server for debugging\n")
+	content.WriteString("\t\tfor _, server := range mcpConfig.Servers {\n")
+	content.WriteString("\t\t\tlogger.Info().\n")
+	content.WriteString("\t\t\t\tStr(\"name\", server.Name).\n")
+	content.WriteString("\t\t\t\tStr(\"type\", server.Type).\n")
+	content.WriteString("\t\t\t\tStr(\"host\", server.Host).\n")
+	content.WriteString("\t\t\t\tInt(\"port\", server.Port).\n")
+	content.WriteString("\t\t\t\tBool(\"enabled\", server.Enabled).\n")
+	content.WriteString("\t\t\t\tMsg(\"Loaded MCP server configuration\")\n")
+	content.WriteString("\t\t}\n")
+	content.WriteString("\t}\n\n")
 
-		if len(config.MCPServers) > 0 {
-			content.WriteString("\t// Add configured servers\n")
-			for _, server := range config.MCPServers {
-				content.WriteString("\tmcpConfig.Servers = append(mcpConfig.Servers, core.MCPServerConfig{\n")
-				content.WriteString(fmt.Sprintf("\t\tName: \"%s\",\n", server))
-				content.WriteString("\t\tCommand: \"npx\",\n")
-				content.WriteString("\t\tType: \"stdio\",\n")
-				content.WriteString("\t\tEnabled: true,\n")
-				content.WriteString("\t})\n")
-			}
-		}
-
-		if config.WithCache {
-			content.WriteString("\tcacheConfig := core.DefaultMCPCacheConfig()\n")
-			content.WriteString(fmt.Sprintf("\tcacheConfig.Backend = \"%s\"\n", config.CacheBackend))
-			content.WriteString("\terr := core.InitializeMCPWithCache(mcpConfig, cacheConfig)\n")
-		} else {
-			content.WriteString("\terr := core.InitializeMCP(mcpConfig)\n")
-		}
-
-		content.WriteString("\tif err != nil {\n")
-		content.WriteString("\t\treturn nil, fmt.Errorf(\"failed to initialize MCP: %w\", err)\n")
-		content.WriteString("\t}\n")
-		content.WriteString("\tlogger.Info().Msg(\"MCP initialized successfully\")\n")
-		content.WriteString("\treturn core.GetMCPManager(), nil\n")
-	}
+	content.WriteString("\terr = core.InitializeMCP(mcpConfig)\n")
+	content.WriteString("\tif err != nil {\n")
+	content.WriteString("\t\treturn nil, fmt.Errorf(\"failed to initialize MCP: %w\", err)\n")
+	content.WriteString("\t}\n")
+	content.WriteString("\tlogger.Info().Msg(\"MCP initialized successfully\")\n")
+	content.WriteString("\treturn core.GetMCPManager(), nil\n")
 
 	content.WriteString("}\n\n")
 	return content.String()

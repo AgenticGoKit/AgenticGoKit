@@ -78,7 +78,7 @@ func init() {
 
 	// Basic project flags
 	createCmd.Flags().IntVarP(&numAgents, "agents", "a", 2, "Number of agents to create")
-	createCmd.Flags().StringVarP(&provider, "provider", "p", "openai", "LLM provider (openai, azure, ollama, mock)")
+	createCmd.Flags().StringVarP(&provider, "provider", "p", "azure", "LLM provider (openai, azure, ollama, mock)")
 	createCmd.Flags().BoolVar(&responsibleAI, "responsible-ai", true, "Include responsible AI agent")
 	createCmd.Flags().BoolVar(&errorHandler, "error-handler", true, "Include error handling agents")
 	createCmd.Flags().BoolVarP(&interactive, "interactive", "i", false, "Interactive mode for guided setup")
