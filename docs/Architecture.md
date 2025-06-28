@@ -146,15 +146,15 @@ flowchart TB
     CALLBACKS --> MONITOR
 
     %% Styling
-    classDef userLayer fill:#e1f5fe
-    classDef cliLayer fill:#f3e5f5  
-    classDef appLayer fill:#e8f5e8
-    classDef agentLayer fill:#fff3e0
-    classDef workflowLayer fill:#fce4ec
-    classDef toolLayer fill:#e0f2f1
-    classDef llmLayer fill:#e8eaf6
-    classDef infraLayer fill:#f1f8e9
-    classDef external fill:#fff8e1
+    classDef userLayer fill:#e1f5fe,stroke:#01579b,stroke-width:2px,color:#000
+    classDef cliLayer fill:#f3e5f5,stroke:#4a148c,stroke-width:2px,color:#000  
+    classDef appLayer fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px,color:#000
+    classDef agentLayer fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#000
+    classDef workflowLayer fill:#fce4ec,stroke:#880e4f,stroke-width:2px,color:#000
+    classDef toolLayer fill:#e0f2f1,stroke:#004d40,stroke-width:2px,color:#000
+    classDef llmLayer fill:#e8eaf6,stroke:#1a237e,stroke-width:2px,color:#000
+    classDef infraLayer fill:#f1f8e9,stroke:#33691e,stroke-width:2px,color:#000
+    classDef external fill:#fff8e1,stroke:#ff6f00,stroke-width:2px,color:#000
     
     class USER,LLMS,MCPSVR,MONITOR external
     class AGENTCLI,SCAFFOLD,CONFIG cliLayer
@@ -245,11 +245,11 @@ flowchart LR
     STATEUPDATE --> CONVERSATIONHISTORY
 
     %% Styling
-    classDef input fill:#e3f2fd
-    classDef processing fill:#f3e5f5
-    classDef state fill:#e8f5e8
-    classDef external fill:#fff3e0
-    classDef output fill:#fce4ec
+    classDef input fill:#e3f2fd,stroke:#01579b,stroke-width:2px,color:#000
+    classDef processing fill:#f3e5f5,stroke:#4a148c,stroke-width:2px,color:#000
+    classDef state fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px,color:#000
+    classDef external fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#000
+    classDef output fill:#fce4ec,stroke:#880e4f,stroke-width:2px,color:#000
     
     class USERQUERY,VALIDATION,EVENTCREATION input
     class ROUTING,AGENTSELECTION,CONTEXTBUILDING,TOOLSELECTION,LLMCALL,TOOLEXECUTION,RESPONSEAGGREGATION processing
@@ -329,9 +329,9 @@ flowchart TD
     end
     
     %% Styling
-    classDef routeStyle fill:#e3f2fd
-    classDef collaborateStyle fill:#e8f5e8  
-    classDef coordinateStyle fill:#fff3e0
+    classDef routeStyle fill:#e3f2fd,stroke:#01579b,stroke-width:2px,color:#000
+    classDef collaborateStyle fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px,color:#000  
+    classDef coordinateStyle fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#000
     
     class ROUTEQUERY,ROUTEAGENT,ROUTERESULT routeStyle
     class COLLABQUERY,DISPATCHER,AGENT1,AGENT2,AGENT3,AGGREGATOR,COLLABRESULT collaborateStyle
