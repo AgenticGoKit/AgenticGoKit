@@ -148,6 +148,7 @@ agent1 → agent2 → responsible_ai → finalizer
 - **Configuration Management**: Centralized `agentflow.toml` for all settings
 - **Error Resilience**: Specialized handlers for validation, timeout, and critical failures
 - **MCP Integration**: Full Model Context Protocol support with connection pooling
+- **MCP Health Monitoring**: Built-in health checks for MCP server connections
 
 ## Intelligent Tool Usage
 
@@ -375,38 +376,42 @@ AgentFlow provides comprehensive documentation for both users and contributors:
 - **[📖 API Reference](docs/api/core.md)** - Complete API documentation
 - **[🚀 Production Guide](docs/guides/Production.md)** - Deploy and scale AgentFlow apps
 
-## Use Cases & Success Stories
+## What You Can Build with AgentFlow
 
-### **Research & Analysis**
-"*AgentFlow provided the perfect foundation for our market research system*"
+### **Research & Analysis Systems**
+Build intelligent research pipelines that gather, analyze, and synthesize information from multiple sources.
 ```bash
 agentcli create research-bot --agents 3  # Uses Azure OpenAI by default
-# → Generates scaffolding: agent1 → agent2 → responsible_ai → finalizer
-# → You implement: search logic, analysis algorithms, data processing
+# → AgentFlow provides: Multi-agent scaffolding, MCP tool integration, error handling
+# → You implement: Search strategies, analysis algorithms, data processing logic
+# → Result: Automated research system with web search, data analysis, and reporting
 ```
 
-### **Customer Support**
-"*Cut development time by 70% with AgentFlow's multi-agent scaffolding*"
+### **Customer Support Automation**
+Create AI-powered support systems that classify, route, and respond to customer inquiries.
 ```bash  
 agentcli create support-ai --agents 4  # Uses Azure OpenAI by default
-# → Generates scaffolding: sequential workflow with error handling
-# → You implement: ticket classification, routing rules, response logic
+# → AgentFlow provides: Sequential workflow, error recovery, observability
+# → You implement: Ticket classification, routing rules, response generation
+# → Result: Intelligent support system that handles inquiries automatically
 ```
 
-### **Data Processing**
-"*AgentFlow handled all the plumbing, we focused on the algorithms*"
+### **Data Processing Pipelines**
+Develop automated document processing and data transformation workflows.
 ```bash
 agentcli create data-pipeline --agents 2 --mcp-production
-# → Generates scaffolding: MCP-enabled agents with tool discovery
-# → You implement: document parsing, processing rules, business logic
+# → AgentFlow provides: MCP-enabled agents, tool discovery, production patterns
+# → You implement: Document parsing, validation rules, business logic
+# → Result: Scalable data processing system with automatic tool selection
 ```
 
-### **E-commerce Automation**
-"*Rapid prototyping with production-ready agent infrastructure*"
+### **E-commerce Intelligence**
+Build inventory management and recommendation systems with real-time decision making.
 ```bash
 agentcli create inventory-ai --agents 3 --mcp-enabled --with-cache
-# → Generates scaffolding: cached multi-agent workflow
-# → You implement: inventory algorithms, prediction models, business rules
+# → AgentFlow provides: Cached multi-agent workflow, performance optimization
+# → You implement: Inventory algorithms, prediction models, business rules
+# → Result: Intelligent e-commerce system with automated inventory decisions
 ```
 
 ## Developer Experience
@@ -447,11 +452,11 @@ runner.RegisterCallback(core.HookAfterAgentRun, myCallback)
 
 ## Production Features
 
-### �️ **Enterprise Ready**
+### ⚡️ **Enterprise Ready**
 - **Error Recovery**: Circuit breakers, retries, fallback strategies
 - **Security**: Input validation, rate limiting, audit trails
 - **Scalability**: Horizontal scaling, load balancing, connection pooling
-- **Monitoring**: Health checks, metrics, alerting integration
+- **Monitoring**: MCP health checks, metrics collection, observability hooks
 
 ### **CI/CD Integration**
 ```yaml
