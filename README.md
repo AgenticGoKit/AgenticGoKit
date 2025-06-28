@@ -9,6 +9,20 @@
 
 AgentFlow makes it incredibly simple to build and prototype AI agent workflows in Go. From a single intelligent agent to complex multi-agent orchestrations, AgentFlow provides the SDK foundation and scaffolding you need to develop AI applications with production-ready patterns.
 
+**📚 [Complete Documentation](docs/README.md) | 🚀 [Quick Start](docs/README.md#quick-start) | 💡 [Examples](docs/guides/Examples.md)**
+
+---
+
+**Table of Contents:**
+- [Quick Start](#quick-start-30-seconds) - Get running in 30 seconds
+- [Core Concepts](#core-concepts--features) - Agents, Tools, Workflows
+- [Architecture](#core-architecture) - How AgentFlow works
+- [Documentation](#-documentation) - Complete guides and references
+- [Use Cases](#use-cases--success-stories) - Real-world applications
+- [Get Help](#get-help) - Community and support
+
+---
+
 ## What Makes AgentFlow Special?
 
 - **30-Second Setup**: Generate working multi-agent systems with a single CLI command
@@ -17,6 +31,18 @@ AgentFlow makes it incredibly simple to build and prototype AI agent workflows i
 - **Unified API**: One clean interface for all LLM providers and tool integrations
 - **Zero Dependencies**: Pure Go with minimal external requirements
 - **Developer Experience**: From prototype to production without rewriting code
+
+## Why AgentFlow?
+
+AgentFlow is designed for developers who want to:
+
+- **Build intelligent, event-driven workflows** with configurable orchestration patterns
+- **Integrate multiple agents and tools** into cohesive, observable systems
+- **Leverage any LLM provider** (OpenAI, Azure OpenAI, Ollama) through unified interfaces
+- **Create modular, extensible AI systems** that scale from prototype to production
+- **Focus on business logic** while AgentFlow handles the infrastructure complexity
+
+Whether you're prototyping a single-agent application or orchestrating complex multi-agent workflows, AgentFlow provides the tools and abstractions to get started quickly and scale reliably.
 
 ## Perfect for
 
@@ -36,8 +62,8 @@ go install github.com/kunalkushwaha/agentflow/cmd/agentcli@latest
 
 ### 2. Create Your First Multi-Agent System
 ```bash
-# Generate a working project with intelligent agents
-agentcli create my-ai-app --agents 2 --provider ollama
+# Generate a working project with intelligent agents (Azure OpenAI by default)
+agentcli create my-ai-app --agents 2 --mcp-enabled
 
 cd my-ai-app
 
@@ -60,30 +86,68 @@ Based on the latest search results, here are the key Go releases:
 
 That's it! You have a working multi-agent system that can search the web, process information, and provide intelligent responses.
 
-## Core Concepts
+## Core Concepts & Features
 
-AgentFlow is built around three simple concepts:
+AgentFlow is built around three fundamental concepts that enable powerful AI workflows:
 
 ### **Agents**
-Smart components that process information and make decisions
+Smart components that process information and make decisions. [📖 Learn more](docs/guides/AgentBasics.md)
 ```go
 // Create an agent that can use any LLM
 agent, err := core.NewMCPAgent("research-agent", llmProvider)
 ```
 
 ### **Tools** 
-External capabilities agents can discover and use via MCP (Model Context Protocol)
+External capabilities agents can discover and use via MCP (Model Context Protocol). [🔧 Tool Integration Guide](docs/guides/ToolIntegration.md)
 ```go
 // Agents automatically discover tools like web search, databases, APIs
 core.QuickStartMCP() // Auto-discovers available tools
 ```
 
 ### **Workflows**
-Orchestrated sequences of agents working together
+Orchestrated sequences of agents working together. [💡 See Examples](docs/guides/Examples.md)
 ```go
 // Chain agents together for complex workflows
 agent1 → agent2 → responsible_ai → finalizer
 ```
+
+### **Key Features**
+
+#### ** Event-Driven Architecture**
+- Process events through configurable orchestration patterns
+- Route-based (single-agent) and collaborative (multi-agent) execution modes
+- Built-in error handling and retry mechanisms
+
+#### ** Multi-Modal Orchestration**
+- **SequentialAgent**: Step-by-step processing pipelines
+- **ParallelAgent**: Concurrent processing for performance
+- **LoopAgent**: Iterative workflows with conditional logic
+
+#### ** LLM Integration**
+- Unified `ModelProvider` interface for any LLM backend
+- Support for Azure OpenAI, OpenAI, Ollama, and custom providers
+- Provider-agnostic agent development
+
+#### **🛠️ Tool Ecosystem**
+- Dynamic tool discovery via Model Context Protocol (MCP)
+- Function tool registry for extending agent capabilities
+- Multi-server MCP connections for distributed tools
+
+#### ** Observability & Monitoring**
+- Comprehensive tracing at every lifecycle point
+- Callback hooks for custom monitoring and debugging
+- Built-in metrics and health checks
+
+#### ** Memory Management**
+- Short-term session storage for workflow state
+- Long-term vector-based memory for persistent knowledge
+- Configurable caching strategies
+
+#### ** Production Ready**
+- **Project Scaffolding**: `agentcli create` generates production-ready projects
+- **Configuration Management**: Centralized `agentflow.toml` for all settings
+- **Error Resilience**: Specialized handlers for validation, timeout, and critical failures
+- **MCP Integration**: Full Model Context Protocol support with connection pooling
 
 ## Intelligent Tool Usage
 
@@ -223,22 +287,30 @@ This architecture enables AgentFlow to be simple for beginners yet powerful enou
 
 ## Supported Integrations
 
-### LLM Providers
-- **OpenAI** (GPT-4, GPT-3.5)
-- **Azure OpenAI** (Enterprise-ready)  
-- **Ollama** (Local models)
-- **Mock** (Development/testing)
+### **LLM Providers (Unified Interface)**
+- **Azure OpenAI** (Enterprise-ready, default provider)
+- **OpenAI** (GPT-4, GPT-3.5-turbo)  
+- **Ollama** (Local models, privacy-focused)
+- **Mock** (Development/testing environments)
+- **Custom Providers** (Implement `ModelProvider` interface)
 
-### Tool Ecosystem (via MCP)
-- **Web Tools**: Search, scraping, content fetching
-- **Development Tools**: Docker, GitHub, code execution
-- **Database Tools**: PostgreSQL, MongoDB, Redis
-- **Cloud APIs**: AWS, GCP, Azure services
-- **Custom Tools**: Build your own MCP servers
+### **Tool Ecosystem (via MCP)**
+- **Web Tools**: Search engines, content scraping, URL fetching
+- **Development Tools**: Docker containers, GitHub integration, code execution
+- **Database Tools**: PostgreSQL, MongoDB, Redis, vector databases
+- **Cloud APIs**: AWS services, GCP tools, Azure integrations
+- **Custom Tools**: Build your own MCP servers for any capability
 
-### Memory & Storage
-- **Vector Databases**: Weaviate, pgvector
-- **MCP Tool Caching**: In-memory caching
+### **Memory & Storage**
+- **Vector Databases**: Weaviate, pgvector for long-term memory
+- **Session Storage**: In-memory state management for workflows
+- **MCP Tool Caching**: Configurable caching with multiple backends
+
+### **Orchestration Patterns**
+- **Sequential Workflows**: Step-by-step agent processing
+- **Parallel Execution**: Concurrent agent operations
+- **Conditional Routing**: Smart agent selection based on context
+- **Error Recovery**: Automatic fallback and retry strategies
 
 ## Examples & Tutorials
 
@@ -270,18 +342,45 @@ func main() {
 }
 ```
 
+## 📚 Documentation
+
+AgentFlow provides comprehensive documentation for both users and contributors:
+
+### **For Users Building AI Applications**
+- **[🚀 Quick Start](docs/README.md#quick-start)** - Get running in 5 minutes
+- **[📖 Agent Fundamentals](docs/guides/AgentBasics.md)** - Core concepts and patterns
+- **[💡 Examples & Tutorials](docs/guides/Examples.md)** - Practical code samples
+- **[🔧 Tool Integration](docs/guides/ToolIntegration.md)** - MCP protocol and dynamic discovery
+- **[⚙️ Configuration](docs/guides/Configuration.md)** - Project and agent setup
+- **[⚡ Performance Optimization](docs/guides/Performance.md)** - Speed and efficiency
+- **[🛠️ Custom Tools](docs/guides/CustomTools.md)** - Build your own MCP servers
+
+### **For AgentFlow Contributors**
+- **[👨‍💻 Contributor Guide](docs/contributors/ContributorGuide.md)** - Development setup
+- **[🏗️ Architecture Deep Dive](docs/contributors/CoreVsInternal.md)** - Internal structure
+- **[🧪 Testing Strategy](docs/contributors/Testing.md)** - Testing best practices
+- **[📝 Code Style](docs/contributors/CodeStyle.md)** - Standards and conventions
+
+### **API Reference**
+- **[📖 Core Package](docs/api/core.md)** - Complete public API
+- **[🤖 Agent Interface](docs/api/agents.md)** - Agent types and methods
+- **[🔧 MCP Integration](docs/api/mcp.md)** - Tool discovery APIs
+- **[⌨️ CLI Commands](docs/api/cli.md)** - agentcli reference
+
 ### Learn More
-- **[Getting Started Guide](docs/DevGuide.md)** - Complete tutorial
-- **[Architecture Overview](docs/Architecture.md)** - How it works
-- **[Production Deployment](docs/TracingGuide.md)** - Enterprise setup
-- **[API Reference](docs/MCP_API_Usage_Guide.md)** - Complete API docs
+- **[📚 Complete Documentation](docs/README.md)** - User guides, API reference, and contributor docs
+- **[🚀 Getting Started](docs/guides/AgentBasics.md)** - Build your first agent in 5 minutes
+- **[💡 Examples & Tutorials](docs/guides/Examples.md)** - Practical code samples and patterns
+- **[🏗️ Architecture Overview](docs/Architecture.md)** - How AgentFlow works under the hood
+- **[📖 API Reference](docs/api/core.md)** - Complete API documentation
+- **[🚀 Production Guide](docs/guides/Production.md)** - Deploy and scale AgentFlow apps
 
 ## Use Cases & Success Stories
 
 ### **Research & Analysis**
 "*AgentFlow provided the perfect foundation for our market research system*"
 ```bash
-agentcli create research-bot --agents 3 --provider openai
+agentcli create research-bot --agents 3  # Uses Azure OpenAI by default
 # → Generates scaffolding: agent1 → agent2 → responsible_ai → finalizer
 # → You implement: search logic, analysis algorithms, data processing
 ```
@@ -289,7 +388,7 @@ agentcli create research-bot --agents 3 --provider openai
 ### **Customer Support**
 "*Cut development time by 70% with AgentFlow's multi-agent scaffolding*"
 ```bash  
-agentcli create support-ai --agents 4 --provider azure
+agentcli create support-ai --agents 4  # Uses Azure OpenAI by default
 # → Generates scaffolding: sequential workflow with error handling
 # → You implement: ticket classification, routing rules, response logic
 ```
@@ -311,6 +410,9 @@ agentcli create inventory-ai --agents 3 --mcp-enabled --with-cache
 ```
 
 ## Developer Experience
+
+### **Comprehensive Documentation**
+Complete guides for every skill level - from [first-time users](docs/guides/AgentBasics.md) to [advanced patterns](docs/guides/Performance.md) to [contributor onboarding](docs/contributors/ContributorGuide.md).
 
 ### **Beautiful Defaults**
 Every generated project works out of the box with sensible configurations, comprehensive logging, and production-ready patterns.
@@ -363,7 +465,7 @@ runner.RegisterCallback(core.HookAfterAgentRun, myCallback)
 ## Join the AgentFlow Community
 
 ### **Contributing**
-We welcome contributions! Check out our [Contributing Guide](CONTRIBUTING.md) to get started.
+We welcome contributions! Check out our [Contributor Guide](docs/contributors/ContributorGuide.md) to get started.
 
 ```bash
 # Quick contribution setup
@@ -374,10 +476,12 @@ go test ./...
 ```
 
 ### **Get Help**
-- **[Documentation](docs/README.md)** - Complete guides and API reference
-- **[GitHub Discussions](https://github.com/kunalkushwaha/agentflow/discussions)** - Community Q&A
-- **[Issues](https://github.com/kunalkushwaha/agentflow/issues)** - Bug reports and feature requests
-- **[GitHub](https://github.com/kunalkushwaha/agentflow)** - Star the project!
+- **[📚 Documentation Hub](docs/README.md)** - Complete guides and API reference
+- **[👨‍💻 User Guides](docs/guides/)** - Step-by-step tutorials and best practices
+- **[🛠️ Contributor Guide](docs/contributors/ContributorGuide.md)** - How to contribute to AgentFlow
+- **[💬 GitHub Discussions](https://github.com/kunalkushwaha/agentflow/discussions)** - Community Q&A
+- **[🐛 Issues](https://github.com/kunalkushwaha/agentflow/issues)** - Bug reports and feature requests
+- **[⭐ GitHub](https://github.com/kunalkushwaha/agentflow)** - Star the project!
 
 ### **Roadmap**
 - **Multi-modal agent support**: Enable agents to work with text, images, audio, and other data types

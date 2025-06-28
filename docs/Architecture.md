@@ -1,50 +1,64 @@
-## Summary
+# AgentFlow Architecture
 
-This Go-based AI Agent Framework unifies **Agno’s** ultra-fast, model-agnostic, multi-modal agent capabilities—such as lightweight instantiation, advanced multi-agent modes (route, collaborate, coordinate), plug-and-play vector DB memory, and pre-built HTTP routes—with **Agent SDK’s** robust developer tooling—like deterministic workflow agents, callback hooks, session/state management, artifact handling, step-by-step debugging/trace, CLI/UI support, and containerized deployment readiness.
+This Go-based AI Agent Framework provides production-ready, multi-modal agent capabilities with Model Context Protocol (MCP) integration. It combines ultra-fast agent instantiation, dynamic tool discovery, advanced multi-agent coordination patterns, and comprehensive developer tooling for building scalable agent workflows.
 
 ## 1. Core Execution & Orchestration
 
-- **Runner**: A central execution engine manages `Events`, drives agent workflows, and coordinates calls to backends and services citeturn3view0.  
-- **Orchestrator Modes**: Supports Agno’s high-performance multi-agent patterns—**route** (single dispatch), **collaborate** (parallel cooperation), and **coordinate** (hierarchical delegation)—for flexible agent teamwork .
+- **Runner**: A central execution engine manages `Events`, drives agent workflows, and coordinates calls to LLM providers and MCP tools.  
+- **Orchestrator Modes**: Supports high-performance multi-agent patterns—**route** (single dispatch), **collaborate** (parallel cooperation), and **coordinate** (hierarchical delegation)—for flexible agent teamwork.
 
 ## 2. Agents & Workflow Primitives
 
-- **Workflow Agents**: Deterministic controllers like `SequentialAgent`, `ParallelAgent`, and `LoopAgent` enable fixed-order or concurrent pipelines without model calls, ideal for structured tasks .  
-- **Multi-Agent Systems**: Compose specialized agents into teams; support hierarchical LLM-driven transfers (`LlmAgent` ↔ `AgentTool`) for complex orchestration and delegation .
+- **AgentHandler Interface**: Primary interface for implementing event-driven agent logic that processes user queries and manages state.
+- **Multi-Agent Systems**: Compose specialized agents into teams with intelligent handoffs and collaborative processing pipelines.
+- **Universal Agent Pattern**: Agents analyze queries, choose appropriate tools dynamically, and provide comprehensive answers without counter-questions.
 
-## 3. Model & Tool Integration
+## 3. MCP Integration & Tool Ecosystem
 
-- **ModelProvider Adapters**: Abstract any LLM backend—OpenAI, Azure AI, Gemini, or local runtimes like Ollama and Together AI—via a unified interface   
-- **Tool Ecosystem**: Integrate `FunctionTool`, `AgentTool`, built-ins (Search, CodeExec), Google Cloud tools, third-party plugins (LangChain, CrewAI), or custom APIs for extended agent capabilities   
-- **Reasoning Tools**: Incorporate Agno’s `ReasoningTools` and chain-of-thought modules for advanced analysis, multi-modal inputs/outputs (text, image, audio, video) 
+- **Model Context Protocol**: Dynamic tool discovery and schema-based tool integration enables agents to find and use any MCP server tools.
+- **Tool Discovery**: Automatic detection of available tools via `core.FormatToolsForPrompt()` for intelligent tool selection by LLMs.
+- **Tool Execution**: Centralized tool call parsing and execution via `core.ParseAndExecuteToolCalls()` with comprehensive error handling.
+- **MCP Servers**: Built-in support for Docker, web search, databases, file systems, and custom MCP servers.
 
-## 4. Memory & State Management
+## 4. Model & Provider Integration
 
-- **Session Service**: Manages short-term conversation state (`State`) and event histories (`Session`) per user interaction   
-- **Long-Term Memory**: Plug in vector-store drivers (Pinecone, LanceDb, PgVector, etc.) for Agentic RAG or dynamic few-shot learning, preserving user context across sessions 
+- **ModelProvider Adapters**: Abstract any LLM backend—Azure OpenAI (default), OpenAI, Ollama, or custom providers—via a unified interface.
+- **Multi-Provider Architecture**: Switch between providers without changing agent code; configure via `agentflow.toml`.
+- **Provider-Agnostic Development**: Write agents once, deploy with any supported LLM provider.
 
-## 5. Artifact Management
+## 5. Memory & State Management
 
-- **Artifact Service**: Handles storage and versioning of files and binaries (images, PDFs, code artifacts) linked to sessions, enabling reproducibility and inspection 
+- **Session Service**: Manages short-term conversation state (`State`) and event histories (`Session`) per user interaction.
+- **State Cloning**: Thread-safe state management with cloning support for concurrent agent processing.
+- **Event Tracking**: Comprehensive event correlation and session tracking for debugging and analytics.
 
-## 6. Debugging, Callbacks & Monitoring
+## 6. Configuration & Project Management
 
-- **Callbacks**: Register hooks at key lifecycle points (before/after model calls, tool invocations, state changes) for logging, validation, or behavior injection  
-- **Debug & Trace**: Built-in support for step-by-step execution tracing and breakpoint-style introspection, making it easy to diagnose agent decisions and data flows   
-- **Real-Time Monitoring**: Dashboard metrics for API calls, token usage, throughput, and agent session performance, accessible via the pre-built admin UI 
+- **TOML Configuration**: Centralized configuration via `agentflow.toml` for providers, MCP servers, and orchestration settings.
+- **CLI Scaffolding**: `agentcli create` generates production-ready projects with current best practices and patterns.
+- **Project Templates**: Support for basic agents, multi-agent workflows, and production systems with monitoring.
 
-## 7. Developer Interface & Deployment
+## 7. Debugging, Callbacks & Monitoring
 
-- **HTTP API**: Pre-built REST/gRPC endpoints (Go-equivalent of FastAPI) to serve agents, teams, and workflows in production citeturn1search0.  
-- **CLI & Dev UI**: Command-line tools and a local Developer UI to launch agents, inspect execution graphs, edit configurations, and debug interactions  
-- **Containerized Deployment**: Docker-ready with support for Cloud Run, GKE, and Google’s Agent Engine, ensuring seamless scaling and cloud integration 
+- **Callbacks**: Register hooks at key lifecycle points (before/after agent runs, tool calls, state changes) for logging and validation.
+- **Debug & Trace**: Built-in support for step-by-step execution tracing and session correlation for diagnosing agent decisions.
+- **Prometheus Metrics**: Optional metrics integration for production monitoring of agent performance and tool usage.
 
-## 8. Performance & Extensibility
+## 8. Developer Experience & Deployment
 
-- **Go-Native Efficiency**: Agents instantiate in ~3 μs and consume ~5 KiB of memory on average, ensuring minimal overhead   
-- **High-Throughput**: Engineered for concurrency and low GC impact; claims ~10,000× faster setup and ~50× lower memory usage versus comparable frameworks   
-- **Plugin Architecture**: Easily extend core with new ModelAdapters, Tools, Memory drivers, Workflow agents, or custom services without modifying framework internals 
+- **CLI Tools**: Comprehensive `agentcli` for project creation, scaffolding, and development workflow management.
+- **Production Patterns**: Built-in error handling, retry logic, circuit breakers, and input validation.
+- **Containerized Deployment**: Docker-ready with support for cloud deployment and scaling patterns.
 
-## 9. Evaluation & Continuous Improvement
+## 9. Performance & Extensibility
 
-- **Built-in Evaluation Pipelines**: Define multi-turn test suites to evaluate both final outputs and intermediate execution steps, enabling data-driven tuning and regression detection 
+- **Go-Native Efficiency**: Lightweight agent implementation with minimal memory footprint and fast initialization.
+- **High-Throughput**: Engineered for concurrency with event-driven architecture and non-blocking tool execution.
+- **Plugin Architecture**: Easily extend with new ModelAdapters, MCP servers, custom tools, or orchestration patterns.
+
+## 10. Production Features
+
+- **Error Resilience**: Specialized error handlers for validation, timeout, and critical failures with automatic routing.
+- **Session Management**: Built-in session correlation and state management for multi-turn conversations.
+- **Observability**: Comprehensive logging, tracing, and metrics for production monitoring and debugging.
+- **Responsible AI**: Built-in content safety and validation patterns for production deployments.

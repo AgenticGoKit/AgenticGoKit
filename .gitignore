@@ -117,3 +117,4 @@ $RECYCLE.BIN/
 # Folders to ignore
 node_modules/
 .nyc_output/
+archive/
