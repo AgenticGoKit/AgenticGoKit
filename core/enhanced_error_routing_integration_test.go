@@ -118,21 +118,20 @@ func TestEnhancedErrorRoutingIntegration(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Create result channel to capture processed events
-			resultChan := make(chan Event, 1)
-
-			// Register callback to capture error handler results
-			runner.RegisterCallback(HookPostAgentExecution, "test-capture", func(ctx context.Context, event Event, state State, agentID string, result AgentResult, err error) {
-				if state != nil {
-					if processedBy, exists := result.OutputState.Get("processed_by"); exists {
+			resultChan := make(chan Event, 1) // Register callback to capture error handler results
+			runner.RegisterCallback(HookAfterAgentRun, "test-capture", func(ctx context.Context, args CallbackArgs) (State, error) {
+				if args.State != nil {
+					if processedBy, exists := args.AgentResult.OutputState.Get("processed_by"); exists {
 						if processedBy == tc.expectedHandler {
 							resultChan <- NewEvent(tc.expectedHandler, map[string]interface{}{
 								"processed_by":    processedBy,
-								"recovery_action": getStateValue(result.OutputState, "recovery_action"),
-								"error_category":  getStateValue(result.OutputState, "error_category"),
+								"recovery_action": getStateValue(args.AgentResult.OutputState, "recovery_action"),
+								"error_category":  getStateValue(args.AgentResult.OutputState, "error_category"),
 							}, nil)
 						}
 					}
 				}
+				return args.State, nil
 			})
 
 			// Create test event
@@ -176,7 +175,7 @@ func TestEnhancedErrorRoutingIntegration(t *testing.T) {
 			}
 
 			// Clean up callback
-			runner.UnregisterCallback(HookPostAgentExecution, "test-capture")
+			runner.UnregisterCallback(HookAfterAgentRun, "test-capture")
 		})
 	}
 }
@@ -238,11 +237,7 @@ func TestAutoErrorRoutingConfiguration(t *testing.T) {
 }
 
 // TestScaffoldGeneratedProjectErrorHandling tests that scaffold-generated projects have proper error handling
-func TestScaffoldGeneratedProjectErrorHandling(t *testing.T) {
-	// This test simulates a generated project structure
-
-	// Mock LLM Provider for testing
-	mockProvider := &MockProvider{}
+func TestScaffoldGeneratedProjectErrorHandling(t *testing.T) { // This test simulates a generated project structure
 
 	// Create agents similar to what the scaffold would generate
 	agents := map[string]AgentHandler{

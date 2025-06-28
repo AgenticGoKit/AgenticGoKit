@@ -1,196 +1,171 @@
 # AgentFlow Documentation
 
-Welcome to the AgentFlow documentation! This guide helps you build intelligent agent workflows with Model Context Protocol (MCP) integration.
+**The Complete Guide to Building AI Agent Systems in Go**
 
-## 🚀 Getting Started
+AgentFlow is a production-ready Go framework for building intelligent agent workflows with dynamic tool integration, multi-provider LLM support, and enterprise-grade patterns.
 
-- **[Quick Start Guide](../README.md)** - Get AgentFlow running in minutes
-- **[MCP API Quick Reference](MCP_API_Quick_Reference.md)** - 30-second MCP setup
-- **[MCP API Usage Guide](MCP_API_Usage_Guide.md)** - Complete MCP integration guide
+## 📚 For AgentFlow Users
 
-## 📚 Core Documentation
+### **Getting Started**
+- **[Quick Start Guide](#quick-start)** - Get running in 5 minutes
+- **[Installation & Setup](#installation)** - Go module setup and CLI installation
+- **[Your First Agent](#first-agent)** - Build a simple agent from scratch
+- **[Multi-Agent Workflows](#multi-agent)** - Orchestrate multiple agents
 
-### **MCP Integration (Model Context Protocol)**
-- **[MCP API Usage Guide](MCP_API_Usage_Guide.md)** - Complete usage guide with examples
-- **[MCP API Quick Reference](MCP_API_Quick_Reference.md)** - Developer cheat sheet
-- **[MCP API Migration Guide](MCP_API_Migration_Guide.md)** - Upgrade from old API
-- **[MCP Public API Design](MCP_Public_API_Design.md)** - Technical design decisions
-- **[MCP Technical Specification](MCP_Technical_Specification.md)** - Implementation details
+### **Core Concepts**  
+- **[Agent Fundamentals](guides/AgentBasics.md)** - Understanding AgentHandler interface and patterns
+- **[Examples & Tutorials](guides/Examples.md)** - Practical examples and code samples
+- **[Tool Integration](guides/ToolIntegration.md)** - MCP protocol and dynamic tool discovery
+- **[LLM Providers](guides/Providers.md)** - Azure, OpenAI, Ollama, and custom providers
+- **[Configuration](guides/Configuration.md)** - Managing agentflow.toml and environment setup
 
-### **Architecture & Design**
-- **[Architecture Overview](Architecture.md)** - System architecture and components
-- **[Development Guide](DevGuide.md)** - Contributing and development setup
-- **[Library Usage Guide](LibraryUsageGuide.md)** - Using AgentFlow as a library
-- **[Tracing Guide](TracingGuide.md)** - Debugging and monitoring
+### **Advanced Usage**
+- **[Production Deployment](guides/Production.md)** - Scaling, monitoring, and best practices  
+- **[Error Handling](guides/ErrorHandling.md)** - Resilient agent workflows
+- **[Custom Tools](guides/CustomTools.md)** - Building your own MCP servers
+- **[Performance Tuning](guides/Performance.md)** - Optimization and benchmarking
 
-### **Planning & Roadmap**
-- **[Roadmap](ROADMAP.md)** - Future development plans
-- **[MCP Integration Plan](MCP_Integration_Plan.md)** - MCP feature planning
+### **API Reference**
+- **[Core Package API](api/core.md)** - Complete public API reference
+- **[Agent Interface](api/agents.md)** - AgentHandler and related types
+- **[MCP Integration](api/mcp.md)** - Tool discovery and execution APIs
+- **[CLI Commands](api/cli.md)** - agentcli reference
 
-## 🔧 API Reference
+## 🔧 For AgentFlow Contributors
 
-### **Core Package (`core/`)**
-The consolidated public API for AgentFlow:
+### **Development Setup**
+- **[Contributor Guide](contributors/ContributorGuide.md)** - Getting started with development
+- **[Architecture Deep Dive](contributors/Architecture.md)** - Internal structure and design decisions
+- **[Testing Strategy](contributors/Testing.md)** - Unit tests, integration tests, and benchmarks
+- **[Release Process](contributors/ReleaseProcess.md)** - How releases are managed
 
-```go
-import "github.com/kunalkushwaha/agentflow/core"
-```
-
-**Key Files:**
-- **`core/mcp.go`** - Complete MCP public API (interfaces, factories, config)
-- **`core/mcp_agent.go`** - MCP-aware agent implementation
-- **`core/agent.go`** - Basic agent interfaces
-- **`core/factory.go`** - Agent and runner factories
-
-### **Usage Patterns**
-
-#### **Basic MCP Usage**
-```go
-// Initialize and create agent
-core.QuickStartMCP()
-agent, err := core.NewMCPAgent("my-agent", llmProvider)
-
-// Use agent
-state := core.NewState()
-state.Set("query", "search for AI news")
-result, err := agent.Run(ctx, state)
-```
-
-#### **Production MCP Usage**
-```go
-// Production setup
-prodConfig := core.DefaultProductionConfig()
-core.InitializeProductionMCP(ctx, prodConfig)
-agent, err := core.NewProductionMCPAgent("prod-agent", llmProvider, prodConfig)
-```
-
-## 📁 Examples
-
-Explore practical examples in the [`examples/`](../examples/) directory:
-
-### **MCP Examples**
-- **[MCP Integration](../examples/mcp_integration/)** - Basic MCP server connection
-- **[MCP Working Demo](../examples/mcp_working_demo/)** - Complete working example
-- **[MCP Production Demo](../examples/mcp_production_demo/)** - Production-ready setup
-- **[MCP Agent Demo](../examples/mcp_agent_demo/)** - Agent-focused examples
-
-### **Core Examples**  
-- **[Minimal Example](../examples/minimal-example/)** - Simplest possible agent
-- **[OpenAI Example](../examples/openai_example/)** - Using OpenAI models
-- **[Ollama Example](../examples/ollama_example/)** - Using local Ollama models
-- **[Multi-Agent](../examples/multi_agent/)** - Multiple cooperating agents
-
-### **Advanced Examples**
-- **[Memory Agent](../examples/memory_agent/)** - Agents with persistent memory
-- **[Tools Usage](../examples/tools/)** - Custom tool integration
-- **[Clean Multi-Agent](../examples/clean_multi_agent/)** - Production multi-agent setup
-
-## 🏗️ Architecture Overview
-
-AgentFlow follows a clean architecture with clear separation:
-
-```
-🎯 Public API (core/)
-├── Agent interfaces and factories
-├── MCP integration (complete in mcp.go)
-├── Configuration management
-└── State and result types
-
-🔧 Internal Implementation (internal/)
-├── Agent runners and orchestration
-├── MCP protocol implementation  
-├── Tool registry and management
-└── Factory implementations
-
-📦 Examples & Tools (examples/, cmd/)
-├── Usage examples for all features
-├── CLI tools (agentcli)
-└── Integration demonstrations
-```
-
-## 🎯 Key Concepts
-
-### **Agents**
-Intelligent entities that can:
-- Accept input state
-- Process using LLMs and tools
-- Return output state
-- Integrate with MCP tools seamlessly
-
-### **MCP Integration**
-Model Context Protocol support for:
-- **Dynamic tool discovery** - Find tools automatically
-- **Multi-server connections** - Connect to multiple MCP servers
-- **Intelligent caching** - Cache tool results for performance
-- **Production features** - Pooling, retries, metrics, load balancing
-
-### **State Management**
-- **Input State** - Parameters and context for agent execution
-- **Output State** - Results and computed values
-- **State Transformation** - Agents transform input → output state
-
-### **Progressive Complexity**
-1. **Basic** - Simple agents with core functionality
-2. **Enhanced** - Add caching, better configuration  
-3. **Production** - Full enterprise features
-
-## 🛠️ Development
-
-### **Setup Development Environment**
-```bash
-git clone https://github.com/kunalkushwaha/agentflow
-cd agentflow
-go mod download
-go test ./...
-```
-
-### **Project Structure**
-```
-agentflow/
-├── core/           # 🎯 Public API 
-├── internal/       # 🔧 Implementation
-├── examples/       # 📚 Usage examples
-├── cmd/           # 🚀 CLI tools
-├── docs/          # 📖 Documentation
-└── tests/         # 🧪 Integration tests
-```
-
-### **Contributing**
-1. Read the [Development Guide](DevGuide.md)
-2. Check existing [issues](https://github.com/kunalkushwaha/agentflow/issues)
-3. Follow the contribution guidelines
-4. Submit pull requests with tests
-
-## 📖 Learning Path
-
-### **New to AgentFlow?**
-1. Start with [README](../README.md) - Basic concepts
-2. Try [Minimal Example](../examples/minimal-example/) - First agent
-3. Read [MCP Quick Reference](MCP_API_Quick_Reference.md) - MCP basics
-4. Explore [MCP Usage Guide](MCP_API_Usage_Guide.md) - Complete MCP
-
-### **Upgrading from Previous Versions?**
-1. Check [Migration Guide](MCP_API_Migration_Guide.md) - API changes
-2. Review [MCP Usage Guide](MCP_API_Usage_Guide.md) - New features
-3. Test with your existing code - Should work unchanged!
-
-### **Building Production Systems?**
-1. Study [MCP Usage Guide](MCP_API_Usage_Guide.md) - Production patterns
-2. Review [Architecture](Architecture.md) - System design
-3. Check [Production Examples](../examples/mcp_production_demo/) - Real implementations
-4. Follow [Best Practices](MCP_API_Usage_Guide.md#best-practices) - Proven patterns
-
-## 🆘 Support
-
-- **Documentation Issues** - File GitHub issues
-- **API Questions** - Check usage guides first
-- **Bug Reports** - Include minimal reproduction case
-- **Feature Requests** - Describe use case and benefits
-
-## 📜 License
-
-AgentFlow is open source software. See the [LICENSE](../LICENSE) file for details.
+### **Codebase Structure**
+- **[Core vs Internal](contributors/CoreVsInternal.md)** - Public API vs implementation
+- **[Adding Features](contributors/AddingFeatures.md)** - How to extend AgentFlow
+- **[Code Style](contributors/CodeStyle.md)** - Go standards and project conventions
+- **[Documentation Standards](contributors/DocsStandards.md)** - Writing user-focused docs
 
 ---
 
-**Ready to build intelligent agents? Start with the [MCP Quick Reference](MCP_API_Quick_Reference.md)! 🚀**
+## Quick Start
+
+### Installation
+```bash
+# Install the CLI
+go install github.com/kunalkushwaha/agentflow/cmd/agentcli@latest
+
+# Create your first project
+agentcli create my-agent-app --agents 2 --mcp-enabled
+cd my-agent-app
+
+# Run your agents
+go run . -m "search for the latest Go tutorials and summarize them"
+```
+
+### First Agent
+```bash
+# Generate a single agent project
+agentcli create simple-agent
+
+# The generated agent1.go will look like this:
+```
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    agentflow "github.com/kunalkushwaha/agentflow/core"
+)
+
+type Agent1Handler struct {
+    llm        agentflow.ModelProvider
+    mcpManager agentflow.MCPManager
+}
+
+func NewAgent1(llm agentflow.ModelProvider, mcp agentflow.MCPManager) *Agent1Handler {
+    return &Agent1Handler{llm: llm, mcpManager: mcp}
+}
+
+func (a *Agent1Handler) Run(ctx context.Context, event agentflow.Event, state agentflow.State) (agentflow.AgentResult, error) {
+    // Extract user message
+    message := event.GetData()["message"]
+    
+    // Build prompt with available tools
+    systemPrompt := "You are a helpful assistant that uses tools when needed."
+    toolPrompt := agentflow.FormatToolsForPrompt(ctx, a.mcpManager)
+    fullPrompt := fmt.Sprintf("%s\n%s\nUser: %s", systemPrompt, toolPrompt, message)
+    
+    // Get LLM response
+    response, err := a.llm.Generate(ctx, fullPrompt)
+    if err != nil {
+        return agentflow.AgentResult{}, err
+    }
+    
+    // Execute any tool calls
+    toolResults := agentflow.ParseAndExecuteToolCalls(ctx, a.mcpManager, response)
+    if len(toolResults) > 0 {
+        // Synthesize tool results with response
+        finalPrompt := fmt.Sprintf("Response: %s\nTool Results: %v\nProvide final answer:", response, toolResults)
+        response, _ = a.llm.Generate(ctx, finalPrompt)
+    }
+    
+    // Return result
+    state.Set("response", response)
+    return agentflow.AgentResult{Result: response, State: state}, nil
+}
+```
+
+### Multi-Agent
+```bash
+# Generate a multi-agent workflow
+agentcli create research-system --agents 3 --mcp-enabled --provider azure
+
+# This creates:
+# - agent1.go (Research agent - gathers information)
+# - agent2.go (Analysis agent - processes data)  
+# - agent3.go (Summary agent - final synthesis)
+# - workflow orchestration in main.go
+```
+
+## Why AgentFlow?
+
+### **For Users:**
+- **⚡ Fast Setup**: Working agents in 5 minutes with CLI scaffolding
+- **🔧 Tool-Rich**: Dynamic tool discovery via MCP protocol
+- **🌐 Provider Agnostic**: Works with any LLM (Azure, OpenAI, Ollama)
+- **🏗️ Production Ready**: Built-in error handling, monitoring, scaling patterns
+
+### **For Contributors:**
+- **🎯 Clear Architecture**: Separation between core (public API) and internal (implementation)
+- **📝 Documentation First**: Every feature documented with examples
+- **🧪 Test Coverage**: Comprehensive unit and integration tests
+- **🔄 Continuous Integration**: Automated testing and release workflows
+
+---
+
+## Contributing
+
+We welcome contributions! See our [Contributor Guide](contributors/ContributorGuide.md) for details.
+
+```bash
+# Quick start for contributors
+git clone https://github.com/kunalkushwaha/agentflow.git
+cd agentflow
+go mod tidy
+go test ./...
+
+# Generate docs
+go run tools/docgen/main.go
+```
+
+## Community
+
+- **[GitHub Discussions](https://github.com/kunalkushwaha/agentflow/discussions)** - Q&A and community
+- **[Issues](https://github.com/kunalkushwaha/agentflow/issues)** - Bug reports and feature requests
+- **[Contributing](CONTRIBUTING.md)** - How to contribute code and documentation
+
+---
+
+**[⭐ Star us on GitHub](https://github.com/kunalkushwaha/agentflow)** | **[📖 Full Documentation](https://agentflow.dev)** | **[🚀 Examples](examples/)**

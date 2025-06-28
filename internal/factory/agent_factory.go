@@ -108,6 +108,16 @@ func NewMCPEnabledRunnerFromConfig(config *core.Config, agents map[string]core.A
 	return runner, mcpManager, nil
 }
 
+// NewMCPManagerOnly creates just an MCP manager without a full tool registry.
+// This is useful when you want to manage tools separately.
+func NewMCPManagerOnly(mcpConfig core.MCPConfig) (core.MCPManager, error) {
+	// Create a basic tool registry for MCP integration
+	registry := tools.NewToolRegistry()
+
+	// Create and return the MCP manager
+	return createMCPManager(mcpConfig, registry)
+}
+
 // createMCPManager is a helper to create and configure an MCP manager
 func createMCPManager(mcpConfig core.MCPConfig, registry *tools.ToolRegistry) (core.MCPManager, error) {
 	// Import the internal MCP package for implementation
@@ -323,4 +333,21 @@ func (t *SimpleMCPToolAdapter) Call(ctx context.Context, args map[string]any) (m
 		"success": true,
 		"server":  t.serverName,
 	}, nil
+}
+
+// InitRealMCPFactory sets up the core package to use the real MCP implementation
+// This should be called during application initialization to enable real MCP functionality
+func InitRealMCPFactory() {
+	// Set the factory function in core to use our real implementation
+	core.SetMCPManagerFactory(func(config core.MCPConfig) (core.MCPManager, error) {
+		return NewMCPManagerOnly(config)
+	})
+}
+
+// init automatically registers the real MCP factory when this package is imported
+func init() {
+	// Register the real MCP implementation factory with the core package
+	core.SetMCPManagerFactory(func(config core.MCPConfig) (core.MCPManager, error) {
+		return NewMCPManagerOnly(config)
+	})
 }

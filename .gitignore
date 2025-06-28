@@ -67,7 +67,6 @@ examples/*/main
 examples/*/main.exe
 
 # CLI tool executable
-agentcli
 agentcli.exe
 
 # Backup files
@@ -118,3 +117,4 @@ $RECYCLE.BIN/
 # Folders to ignore
 node_modules/
 .nyc_output/
+archive/

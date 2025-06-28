@@ -50,7 +50,8 @@ format = "text"
 }
 
 func TestInitializeProvider_MissingProvider(t *testing.T) {
-	cfg := &Config{AgentFlow: AgentFlowConfig{Provider: ""}}
+	cfg := &Config{}
+	cfg.AgentFlow.Provider = ""
 	_, err := cfg.InitializeProvider()
 	if err == nil {
 		t.Error("Expected error for missing provider, got nil")
@@ -58,7 +59,8 @@ func TestInitializeProvider_MissingProvider(t *testing.T) {
 }
 
 func TestInitializeProvider_UnknownProvider(t *testing.T) {
-	cfg := &Config{AgentFlow: AgentFlowConfig{Provider: "unknown"}}
+	cfg := &Config{}
+	cfg.AgentFlow.Provider = "unknown"
 	_, err := cfg.InitializeProvider()
 	if err == nil {
 		t.Error("Expected error for unknown provider, got nil")
