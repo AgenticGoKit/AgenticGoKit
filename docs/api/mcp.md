@@ -10,26 +10,24 @@ The primary interface for managing MCP servers and tool execution.
 
 ```go
 type MCPManager interface {
-    // ListTools returns all available tools from all connected MCP servers
-    ListTools(ctx context.Context) ([]ToolSchema, error)
-    
-    // GetTool returns the schema for a specific tool
-    GetTool(ctx context.Context, toolName string) (*ToolSchema, error)
-    
-    // ExecuteTool executes a tool with the given parameters
-    ExecuteTool(ctx context.Context, toolName string, params map[string]interface{}) (*ToolResult, error)
-    
-    // ListServers returns information about all configured MCP servers
-    ListServers(ctx context.Context) ([]ServerInfo, error)
-    
-    // GetServerStatus returns the health status of a specific server
-    GetServerStatus(ctx context.Context, serverName string) (*ServerStatus, error)
-    
-    // RefreshTools re-discovers tools from all servers
+    // Connection Management
+    Connect(ctx context.Context, serverName string) error
+    Disconnect(serverName string) error
+    DisconnectAll() error
+
+    // Server Discovery and Management
+    DiscoverServers(ctx context.Context) ([]MCPServerInfo, error)
+    ListConnectedServers() []string
+    GetServerInfo(serverName string) (*MCPServerInfo, error)
+
+    // Tool Management
     RefreshTools(ctx context.Context) error
-    
-    // Close shuts down all MCP server connections
-    Close() error
+    GetAvailableTools() []MCPToolInfo
+    GetToolsFromServer(serverName string) []MCPToolInfo
+
+    // Health and Monitoring
+    HealthCheck(ctx context.Context) map[string]MCPHealthStatus
+    GetMetrics() MCPMetrics
 }
 ```
 
@@ -38,17 +36,22 @@ type MCPManager interface {
 func (a *MCPAgent) Run(ctx context.Context, event core.Event, state core.State) (core.AgentResult, error) {
     mcpManager := a.runner.GetMCPManager()
     
-    // List available tools
-    tools, err := mcpManager.ListTools(ctx)
-    if err != nil {
-        return core.AgentResult{}, fmt.Errorf("failed to list tools: %w", err)
+    // Get available tools
+    tools := mcpManager.GetAvailableTools()
+    if len(tools) == 0 {
+        return core.AgentResult{}, fmt.Errorf("no MCP tools available")
     }
     
-    // Select appropriate tool based on query
-    tool := a.selectTool(event.GetData()["query"].(string), tools)
+    // Refresh tools from servers
+    err := mcpManager.RefreshTools(ctx)
+    if err != nil {
+        return core.AgentResult{}, fmt.Errorf("failed to refresh tools: %w", err)
+    }
     
-    // Execute tool
-    result, err := mcpManager.ExecuteTool(ctx, tool.Name, a.buildToolParams(event))
+    // Use ExecuteMCPTool helper function for simple tool execution
+    result, err := core.ExecuteMCPTool(ctx, "search", map[string]interface{}{
+        "query": event.GetData()["query"],
+    })
     if err != nil {
         return core.AgentResult{}, fmt.Errorf("tool execution failed: %w", err)
     }
@@ -56,7 +59,7 @@ func (a *MCPAgent) Run(ctx context.Context, event core.Event, state core.State) 
     return core.AgentResult{
         Data: map[string]interface{}{
             "tool_result": result,
-            "tool_used":   tool.Name,
+            "tools_available": len(tools),
         },
     }, nil
 }
@@ -70,17 +73,10 @@ Interface for agents that can interact with MCP tools.
 type MCPAgent interface {
     Agent
     
-    // GetToolRegistry returns the agent's tool registry
-    GetToolRegistry() ToolRegistry
-    
-    // ExecuteToolCall executes a single tool call
-    ExecuteToolCall(ctx context.Context, toolCall ToolCall) (*ToolResult, error)
-    
-    // ExecuteToolCalls executes multiple tool calls in parallel
-    ExecuteToolCalls(ctx context.Context, toolCalls []ToolCall) ([]ToolResult, error)
-    
-    // FormatToolsForPrompt formats available tools for LLM prompt inclusion
-    FormatToolsForPrompt(ctx context.Context) (string, error)
+    // MCP-specific methods
+    SelectTools(ctx context.Context, query string, stateContext State) ([]string, error)
+    ExecuteTools(ctx context.Context, tools []MCPToolExecution) ([]MCPToolResult, error)
+    GetAvailableMCPTools() []MCPToolInfo
 }
 ```
 
@@ -102,451 +98,198 @@ type MCPCache interface {
     // Clear removes all cached results
     Clear(ctx context.Context) error
     
-    // Stats returns cache statistics
+    // Stats returns cache performance statistics
     Stats() CacheStats
 }
 ```
 
-## 🛠️ Tool Types and Schemas
+## 🛠️ Data Types and Structures
 
-### `ToolSchema`
+### `MCPServerInfo`
 
-Describes the structure and parameters of an MCP tool.
+Represents information about an MCP server.
 
 ```go
-type ToolSchema struct {
-    // Name is the unique identifier for the tool
-    Name string `json:"name"`
-    
-    // Description explains what the tool does
-    Description string `json:"description"`
-    
-    // Parameters define the input schema using JSON Schema
-    Parameters Parameters `json:"parameters"`
-    
-    // ServerName identifies which MCP server provides this tool
-    ServerName string `json:"server_name"`
-    
-    // Version of the tool schema
-    Version string `json:"version,omitempty"`
-    
-    // Category for tool organization
-    Category string `json:"category,omitempty"`
-    
-    // Tags for tool discovery
-    Tags []string `json:"tags,omitempty"`
-    
-    // Examples of tool usage
-    Examples []ToolExample `json:"examples,omitempty"`
+type MCPServerInfo struct {
+    Name         string                 `json:"name"`
+    Type         string                 `json:"type"`
+    Address      string                 `json:"address"`
+    Port         int                    `json:"port"`
+    Version      string                 `json:"version"`
+    Description  string                 `json:"description"`
+    Capabilities map[string]interface{} `json:"capabilities"`
+    Status       string                 `json:"status"` // connected, disconnected, error
 }
 ```
 
-### `Parameters`
+### `MCPToolInfo`
 
-JSON Schema definition for tool parameters.
+Represents metadata about an available MCP tool.
 
 ```go
-type Parameters struct {
-    Type        string                `json:"type"`
-    Properties  map[string]Property   `json:"properties"`
-    Required    []string              `json:"required,omitempty"`
-    Description string                `json:"description,omitempty"`
-    Examples    []interface{}         `json:"examples,omitempty"`
-}
-
-type Property struct {
-    Type        string        `json:"type"`
-    Description string        `json:"description,omitempty"`
-    Enum        []interface{} `json:"enum,omitempty"`
-    Default     interface{}   `json:"default,omitempty"`
-    Examples    []interface{} `json:"examples,omitempty"`
-    Format      string        `json:"format,omitempty"`
-    Pattern     string        `json:"pattern,omitempty"`
-    Minimum     *float64      `json:"minimum,omitempty"`
-    Maximum     *float64      `json:"maximum,omitempty"`
-    MinLength   *int          `json:"minLength,omitempty"`
-    MaxLength   *int          `json:"maxLength,omitempty"`
+type MCPToolInfo struct {
+    Name        string                 `json:"name"`
+    Description string                 `json:"description"`
+    Schema      map[string]interface{} `json:"schema"`
+    ServerName  string                 `json:"server_name"`
 }
 ```
 
-**Example Tool Schema:**
+### `MCPToolExecution`
+
+Represents a tool execution request.
+
 ```go
-searchToolSchema := &ToolSchema{
-    Name:        "web_search",
-    Description: "Search the web for information on a given topic",
-    Parameters: Parameters{
-        Type: "object",
-        Properties: map[string]Property{
-            "query": {
-                Type:        "string",
-                Description: "The search query",
-                Examples:    []interface{}{"climate change", "AI developments 2024"},
-            },
-            "max_results": {
-                Type:        "integer",
-                Description: "Maximum number of results to return",
-                Default:     10,
-                Minimum:     func() *float64 { v := 1.0; return &v }(),
-                Maximum:     func() *float64 { v := 100.0; return &v }(),
-            },
-            "language": {
-                Type:        "string",
-                Description: "Language for search results",
-                Enum:        []interface{}{"en", "es", "fr", "de", "zh"},
-                Default:     "en",
-            },
-        },
-        Required: []string{"query"},
-    },
-    Category: "search",
-    Tags:     []string{"web", "information", "research"},
+type MCPToolExecution struct {
+    ToolName   string                 `json:"tool_name"`
+    Arguments  map[string]interface{} `json:"arguments"`
+    ServerName string                 `json:"server_name,omitempty"`
 }
 ```
 
-### `ToolCall`
+### `MCPToolResult`
 
-Represents a request to execute a specific tool.
+Represents the result of an MCP tool execution.
 
 ```go
-type ToolCall struct {
-    // ID is a unique identifier for this tool call
-    ID string `json:"id"`
-    
-    // Name is the name of the tool to execute
-    Name string `json:"name"`
-    
-    // Parameters contains the arguments for the tool
-    Parameters map[string]interface{} `json:"parameters"`
-    
-    // ServerName specifies which MCP server to use (optional)
-    ServerName string `json:"server_name,omitempty"`
-    
-    // Timeout for tool execution
-    Timeout time.Duration `json:"timeout,omitempty"`
-    
-    // Metadata for tracking and debugging
-    Metadata map[string]interface{} `json:"metadata,omitempty"`
+type MCPToolResult struct {
+    ToolName   string        `json:"tool_name"`
+    ServerName string        `json:"server_name"`
+    Success    bool          `json:"success"`
+    Content    []MCPContent  `json:"content"`
+    Error      string        `json:"error"`
+    Duration   time.Duration `json:"duration"`
 }
 ```
 
-### `ToolResult`
+### `MCPContent`
 
-The response from executing an MCP tool.
+Represents content returned by an MCP tool.
 
 ```go
-type ToolResult struct {
-    // ID matches the ID from the corresponding ToolCall
-    ID string `json:"id"`
-    
-    // Success indicates if the tool execution was successful
-    Success bool `json:"success"`
-    
-    // Content contains the tool output
-    Content []Content `json:"content,omitempty"`
-    
-    // Error contains error information if Success is false
-    Error string `json:"error,omitempty"`
-    
-    // Metadata contains additional information about the execution
-    Metadata map[string]interface{} `json:"metadata,omitempty"`
-    
-    // ExecutionTime tracks how long the tool took to execute
-    ExecutionTime time.Duration `json:"execution_time,omitempty"`
-    
-    // ServerName identifies which server executed the tool
-    ServerName string `json:"server_name,omitempty"`
-}
-
-type Content struct {
-    Type string      `json:"type"`
-    Text string      `json:"text,omitempty"`
-    Data interface{} `json:"data,omitempty"`
+type MCPContent struct {
+    Type     string `json:"type"`
+    Text     string `json:"text"`
+    Data     string `json:"data"`
+    MimeType string `json:"mime_type"`
 }
 ```
 
-## 🚀 Tool Execution Functions
+## 🚀 Helper Functions
 
-### `ParseAndExecuteToolCalls`
+### `ExecuteMCPTool`
 
-Parses LLM-generated tool calls and executes them.
+Executes a single MCP tool with a simple interface.
 
 ```go
-func ParseAndExecuteToolCalls(
-    ctx context.Context,
-    mcpManager MCPManager,
-    llmResponse string,
-) ([]ToolResult, error)
+func ExecuteMCPTool(ctx context.Context, toolName string, args map[string]interface{}) (MCPToolResult, error)
 ```
+
+**Description**: The simplest way to execute an MCP tool without creating an agent. Handles caching automatically if configured.
+
+**Parameters**:
+- `ctx` - Context for cancellation and timeouts
+- `toolName` - Name of the tool to execute
+- `args` - Arguments to pass to the tool
+
+**Returns**:
+- `MCPToolResult` - The tool execution result
+- `error` - Any error that occurred
 
 **Usage Example:**
 ```go
-func (a *ToolAgent) processLLMResponse(ctx context.Context, llmResponse string) ([]ToolResult, error) {
-    // Parse and execute tool calls from LLM response
-    results, err := core.ParseAndExecuteToolCalls(ctx, a.mcpManager, llmResponse)
+func executeTool(ctx context.Context) error {
+    result, err := core.ExecuteMCPTool(ctx, "search", map[string]interface{}{
+        "query": "latest Go tutorials",
+        "limit": 10,
+    })
     if err != nil {
-        return nil, fmt.Errorf("failed to execute tool calls: %w", err)
+        return fmt.Errorf("tool execution failed: %w", err)
     }
     
-    // Filter out failed results
-    var successfulResults []ToolResult
-    for _, result := range results {
-        if result.Success {
-            successfulResults = append(successfulResults, result)
-        } else {
-            log.Printf("Tool call failed: %s - %s", result.ID, result.Error)
-        }
+    if !result.Success {
+        return fmt.Errorf("tool returned error: %s", result.Error)
     }
     
-    return successfulResults, nil
+    for _, content := range result.Content {
+        fmt.Printf("Result: %s\n", content.Text)
+    }
+    
+    return nil
 }
 ```
 
-### `FormatToolsForPrompt`
+### `RegisterMCPToolsWithRegistry`
 
-Formats available tools for inclusion in LLM prompts.
+Discovers and registers all available MCP tools with the global registry.
 
 ```go
-func FormatToolsForPrompt(
-    ctx context.Context,
-    mcpManager MCPManager,
-    options ...ToolFormattingOption,
-) (string, error)
+func RegisterMCPToolsWithRegistry(ctx context.Context) error
 ```
 
-**Tool Formatting Options:**
-```go
-type ToolFormattingOption func(*ToolFormattingConfig)
-
-func WithToolCategories(categories ...string) ToolFormattingOption
-func WithMaxTools(max int) ToolFormattingOption
-func WithIncludeExamples(include bool) ToolFormattingOption
-func WithFormat(format ToolFormat) ToolFormattingOption
-
-type ToolFormat string
-
-const (
-    ToolFormatJSON     ToolFormat = "json"
-    ToolFormatMarkdown ToolFormat = "markdown"
-    ToolFormatPlain    ToolFormat = "plain"
-)
-```
+**Description**: Automatically discovers tools from all connected MCP servers and registers them with the FunctionTool registry for use in agents.
 
 **Usage Example:**
 ```go
-func (a *ToolAgent) buildPrompt(ctx context.Context, query string) (string, error) {
-    // Format tools for prompt
-    toolsText, err := core.FormatToolsForPrompt(ctx, a.mcpManager,
-        core.WithToolCategories("search", "calculation"),
-        core.WithMaxTools(10),
-        core.WithIncludeExamples(true),
-        core.WithFormat(core.ToolFormatJSON),
-    )
-    if err != nil {
-        return "", fmt.Errorf("failed to format tools: %w", err)
+func initializeTools(ctx context.Context) error {
+    // Register all MCP tools
+    if err := core.RegisterMCPToolsWithRegistry(ctx); err != nil {
+        return fmt.Errorf("failed to register MCP tools: %w", err)
     }
     
-    prompt := fmt.Sprintf(`
-You are an AI assistant with access to the following tools:
-
-%s
-
-User Query: %s
-
-Please analyze the query and use appropriate tools to provide a comprehensive answer.
-When calling tools, use the exact JSON format specified above.
-`, toolsText, query)
+    // Get tool registry
+    registry := core.GetMCPToolRegistry()
+    tools := registry.List()
     
-    return prompt, nil
+    log.Printf("Registered %d MCP tools", len(tools))
+    return nil
 }
-```
-
-## 🖥️ Server Management
-
-### `ServerInfo`
-
-Information about an MCP server.
-
-```go
-type ServerInfo struct {
-    Name        string            `json:"name"`
-    Command     string            `json:"command"`
-    Args        []string          `json:"args"`
-    Env         map[string]string `json:"env"`
-    WorkingDir  string            `json:"working_dir"`
-    Status      ServerStatus      `json:"status"`
-    Tools       []string          `json:"tools"`
-    Resources   []string          `json:"resources"`
-    Prompts     []string          `json:"prompts"`
-    StartedAt   time.Time         `json:"started_at"`
-    LastPing    time.Time         `json:"last_ping"`
-}
-```
-
-### `ServerStatus`
-
-Status information for an MCP server.
-
-```go
-type ServerStatus struct {
-    State       ServerState `json:"state"`
-    Healthy     bool        `json:"healthy"`
-    LastError   string      `json:"last_error,omitempty"`
-    Uptime      time.Duration `json:"uptime"`
-    RequestCount int64       `json:"request_count"`
-    ErrorCount   int64       `json:"error_count"`
-    AvgLatency   time.Duration `json:"avg_latency"`
-}
-
-type ServerState string
-
-const (
-    ServerStateStarting ServerState = "starting"
-    ServerStateRunning  ServerState = "running"
-    ServerStateStopping ServerState = "stopping"
-    ServerStateStopped  ServerState = "stopped"
-    ServerStateError    ServerState = "error"
-)
-```
-
-### Server Management Functions
-
-```go
-// StartMCPServer starts a new MCP server
-func StartMCPServer(ctx context.Context, config ServerConfig) (*MCPServer, error)
-
-// StopMCPServer gracefully stops an MCP server
-func StopMCPServer(ctx context.Context, server *MCPServer) error
-
-// RestartMCPServer restarts an MCP server
-func RestartMCPServer(ctx context.Context, server *MCPServer) error
-
-// HealthCheckMCPServer checks if an MCP server is healthy
-func HealthCheckMCPServer(ctx context.Context, server *MCPServer) (*ServerStatus, error)
 ```
 
 ## 🔧 Configuration
 
 ### `MCPConfig`
 
-Configuration for MCP integration.
+Configuration for MCP manager and servers.
 
 ```go
 type MCPConfig struct {
-    Enabled bool `toml:"enabled"`
-    
-    // Global settings
-    Timeout         time.Duration `toml:"timeout"`
-    MaxConnections  int           `toml:"max_connections"`
-    RetryAttempts   int           `toml:"retry_attempts"`
-    RetryDelay      time.Duration `toml:"retry_delay"`
-    
-    // Cache settings
-    CacheEnabled    bool          `toml:"cache_enabled"`
-    CacheTTL        time.Duration `toml:"cache_ttl"`
-    CacheMaxSize    int           `toml:"cache_max_size"`
-    
-    // Server configurations
-    Servers []ServerConfig `toml:"servers"`
-}
-
-type ServerConfig struct {
-    Name       string            `toml:"name"`
-    Command    string            `toml:"command"`
-    Args       []string          `toml:"args"`
-    Env        map[string]string `toml:"env"`
-    WorkingDir string            `toml:"working_dir"`
-    
-    // Connection settings
-    Address     string        `toml:"address"`
-    Timeout     time.Duration `toml:"timeout"`
-    HealthCheck time.Duration `toml:"health_check"`
-    
-    // Tool filtering
-    IncludeTools []string `toml:"include_tools"`
-    ExcludeTools []string `toml:"exclude_tools"`
+    Servers             []MCPServerConfig `toml:"servers"`
+    DefaultTimeout      time.Duration     `toml:"default_timeout"`
+    RetryAttempts       int               `toml:"retry_attempts"`
+    HealthCheckInterval time.Duration     `toml:"health_check_interval"`
+    ToolDiscoveryMode   string            `toml:"tool_discovery_mode"`
 }
 ```
 
-**Configuration Example:**
-```toml
-[mcp]
-enabled = true
-timeout = "30s"
-max_connections = 10
-retry_attempts = 3
-retry_delay = "1s"
-cache_enabled = true
-cache_ttl = "1h"
-cache_max_size = 1000
+### `MCPServerConfig`
 
-[[mcp.servers]]
-name = "web-search"
-command = "mcp-web-search"
-args = ["--port", "8080"]
-env = { SEARCH_API_KEY = "${SEARCH_API_KEY}" }
-timeout = "30s"
-health_check = "10s"
-
-[[mcp.servers]]
-name = "file-tools"
-command = "docker"
-args = ["run", "-v", "/data:/data", "mcp-file-tools"]
-working_dir = "/app"
-include_tools = ["read_file", "write_file", "list_files"]
-
-[[mcp.servers]]
-name = "database"
-address = "tcp://localhost:9090"
-env = { DB_CONNECTION = "${DATABASE_URL}" }
-exclude_tools = ["drop_table", "delete_database"]
-```
-
-## 📊 Tool Discovery and Registry
-
-### `ToolRegistry`
-
-Registry for managing discovered tools.
+Configuration for a single MCP server.
 
 ```go
-type ToolRegistry interface {
-    // RegisterTool adds a tool to the registry
-    RegisterTool(tool *ToolSchema) error
-    
-    // UnregisterTool removes a tool from the registry
-    UnregisterTool(toolName string) error
-    
-    // GetTool retrieves a tool by name
-    GetTool(toolName string) (*ToolSchema, bool)
-    
-    // ListTools returns all registered tools
-    ListTools() []*ToolSchema
-    
-    // SearchTools finds tools matching criteria
-    SearchTools(criteria SearchCriteria) []*ToolSchema
-    
-    // RefreshFromServers re-discovers tools from all servers
-    RefreshFromServers(ctx context.Context) error
-}
-
-type SearchCriteria struct {
-    Categories []string
-    Tags       []string
-    Pattern    string
-    ServerName string
+type MCPServerConfig struct {
+    Name        string            `toml:"name"`
+    Type        string            `toml:"type"`
+    Host        string            `toml:"host"`
+    Port        int               `toml:"port"`
+    Enabled     bool              `toml:"enabled"`
+    Metadata    map[string]string `toml:"metadata"`
 }
 ```
 
-### Tool Discovery Functions
+### `MCPAgentConfig`
+
+Configuration for MCP-aware agents.
 
 ```go
-// DiscoverTools discovers all tools from configured MCP servers
-func DiscoverTools(ctx context.Context, config MCPConfig) ([]ToolSchema, error)
-
-// DiscoverToolsFromServer discovers tools from a specific server
-func DiscoverToolsFromServer(ctx context.Context, server ServerConfig) ([]ToolSchema, error)
-
-// FilterTools filters tools based on criteria
-func FilterTools(tools []ToolSchema, criteria SearchCriteria) []ToolSchema
+type MCPAgentConfig struct {
+    MaxToolsPerExecution   int           `toml:"max_tools_per_execution"`
+    ToolSelectionTimeout   time.Duration `toml:"tool_selection_timeout"`
+    ExecutionTimeout       time.Duration `toml:"execution_timeout"`
+    EnableCaching          bool          `toml:"enable_caching"`
+    ParallelExecution      bool          `toml:"parallel_execution"`
+    RetryFailedTools       bool          `toml:"retry_failed_tools"`
+}
 ```
 
 ## 🧪 Testing MCP Integration
@@ -555,24 +298,24 @@ func FilterTools(tools []ToolSchema, criteria SearchCriteria) []ToolSchema
 
 ```go
 type MockMCPManager struct {
-    tools   map[string]*ToolSchema
-    results map[string]*ToolResult
+    tools   map[string]*MCPToolInfo
+    results map[string]*MCPToolResult
     errors  map[string]error
 }
 
 func NewMockMCPManager() *MockMCPManager {
     return &MockMCPManager{
-        tools:   make(map[string]*ToolSchema),
-        results: make(map[string]*ToolResult),
+        tools:   make(map[string]*MCPToolInfo),
+        results: make(map[string]*MCPToolResult),
         errors:  make(map[string]error),
     }
 }
 
-func (m *MockMCPManager) AddTool(tool *ToolSchema) {
+func (m *MockMCPManager) AddTool(tool *MCPToolInfo) {
     m.tools[tool.Name] = tool
 }
 
-func (m *MockMCPManager) SetToolResult(toolName string, result *ToolResult) {
+func (m *MockMCPManager) SetToolResult(toolName string, result *MCPToolResult) {
     m.results[toolName] = result
 }
 
@@ -580,62 +323,114 @@ func (m *MockMCPManager) SetToolError(toolName string, err error) {
     m.errors[toolName] = err
 }
 
-func (m *MockMCPManager) ExecuteTool(ctx context.Context, toolName string, params map[string]interface{}) (*ToolResult, error) {
-    if err, exists := m.errors[toolName]; exists {
-        return nil, err
+func (m *MockMCPManager) GetAvailableTools() []MCPToolInfo {
+    tools := make([]MCPToolInfo, 0, len(m.tools))
+    for _, tool := range m.tools {
+        tools = append(tools, *tool)
     }
-    
-    if result, exists := m.results[toolName]; exists {
-        return result, nil
-    }
-    
-    return &ToolResult{
-        Success: true,
-        Content: []Content{{Type: "text", Text: "Mock result"}},
-    }, nil
+    return tools
 }
 ```
 
-### Testing Example
+### Integration Tests
 
 ```go
-func TestMCPAgent(t *testing.T) {
+func TestMCPIntegration(t *testing.T) {
     // Create mock MCP manager
-    mockMCP := NewMockMCPManager()
+    mockManager := NewMockMCPManager()
     
-    // Add test tool
-    mockMCP.AddTool(&ToolSchema{
+    // Add test tools
+    mockManager.AddTool(&MCPToolInfo{
         Name:        "test_tool",
         Description: "A test tool",
-        Parameters: Parameters{
-            Type:       "object",
-            Properties: map[string]Property{
-                "input": {Type: "string", Description: "Test input"},
-            },
-            Required: []string{"input"},
-        },
+        ServerName:  "test_server",
     })
     
     // Set expected result
-    mockMCP.SetToolResult("test_tool", &ToolResult{
-        Success: true,
-        Content: []Content{{Type: "text", Text: "Test result"}},
+    mockManager.SetToolResult("test_tool", &MCPToolResult{
+        ToolName: "test_tool",
+        Success:  true,
+        Content: []MCPContent{
+            {Type: "text", Text: "test result"},
+        },
     })
     
-    // Create agent with mock MCP manager
-    agent := &MCPAgent{mcpManager: mockMCP}
+    // Create agent with mock manager
+    agent := &MCPAwareAgent{
+        mcpManager: mockManager,
+        config: MCPAgentConfig{
+            MaxToolsPerExecution: 5,
+            ExecutionTimeout:     30 * time.Second,
+        },
+    }
     
     // Test tool execution
-    event := core.NewEvent("test", map[string]interface{}{
-        "query": "use test_tool with input 'hello'",
+    result, err := core.ExecuteMCPTool(context.Background(), "test_tool", map[string]interface{}{
+        "param": "value",
     })
-    
-    result, err := agent.Run(context.Background(), event, core.NewState())
     
     assert.NoError(t, err)
     assert.True(t, result.Success)
-    assert.Contains(t, result.Data, "tool_result")
+    assert.Equal(t, "test result", result.Content[0].Text)
 }
 ```
 
-This MCP integration API reference provides comprehensive coverage of AgentFlow's MCP capabilities, from basic tool execution to advanced server management and testing utilities.
+## 📚 Integration Patterns
+
+### Simple Tool Execution
+
+```go
+func simpleToolExample(ctx context.Context) {
+    // Execute a single tool
+    result, err := core.ExecuteMCPTool(ctx, "search", map[string]interface{}{
+        "query": "AgentFlow documentation",
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    for _, content := range result.Content {
+        fmt.Println(content.Text)
+    }
+}
+```
+
+### Agent with MCP Tools
+
+```go
+type MyMCPAgent struct {
+    mcpManager core.MCPManager
+    llm        core.ModelProvider
+}
+
+func (a *MyMCPAgent) Run(ctx context.Context, state core.State) (core.State, error) {
+    query := state.GetString("query")
+    
+    // Get available tools
+    tools := a.mcpManager.GetAvailableTools()
+    
+    // Use LLM to select appropriate tools
+    selectedTools, err := a.selectTools(ctx, query, tools)
+    if err != nil {
+        return state, err
+    }
+    
+    // Execute tools
+    var results []core.MCPToolResult
+    for _, toolName := range selectedTools {
+        result, err := core.ExecuteMCPTool(ctx, toolName, map[string]interface{}{
+            "query": query,
+        })
+        if err != nil {
+            continue // Skip failed tools
+        }
+        results = append(results, result)
+    }
+    
+    // Update state with results
+    state.Set("tool_results", results)
+    return state, nil
+}
+```
+
+This corrected MCP API reference accurately reflects the actual implementation in the AgentFlow codebase.

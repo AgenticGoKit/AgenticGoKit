@@ -14,39 +14,53 @@ The MCP integration in AgentFlow provides:
 
 ## Core MCP Functions
 
-AgentFlow provides two key functions that handle all MCP complexity:
+AgentFlow provides a simple interface for MCP tool execution:
 
-### FormatToolsForPrompt()
+### ExecuteMCPTool()
 
-Discovers available tools and formats them for LLM consumption:
-
-```go
-toolPrompt := agentflow.FormatToolsForPrompt(ctx, mcpManager)
-```
-
-**Example output:**
-```
-Available tools:
-1. search(query: string) - Search the web for information
-2. docker(command: string, args: array) - Execute Docker commands
-3. fetch_content(url: string) - Fetch content from a URL
-```
-
-### ParseAndExecuteToolCalls()
-
-Parses LLM responses and executes any tool calls found:
+The simplest way to execute a tool with automatic caching:
 
 ```go
-toolResults := agentflow.ParseAndExecuteToolCalls(ctx, mcpManager, llmResponse)
+result, err := agentflow.ExecuteMCPTool(ctx, "search", map[string]interface{}{
+    "query": "latest Go tutorials",
+})
 ```
 
-**Handles tool calls like:**
+**Example usage:**
+```go
+func searchExample(ctx context.Context) error {
+    result, err := agentflow.ExecuteMCPTool(ctx, "search", map[string]interface{}{
+        "query": "AgentFlow documentation",
+        "limit": 5,
+    })
+    if err != nil {
+        return fmt.Errorf("tool execution failed: %w", err)
+    }
+    
+    if !result.Success {
+        return fmt.Errorf("tool returned error: %s", result.Error)
+    }
+    
+    for _, content := range result.Content {
+        fmt.Printf("Result: %s\n", content.Text)
+    }
+    
+    return nil
+}
 ```
-I'll search for that information.
 
-<tool_call>
-{"name": "search", "args": {"query": "latest Go tutorials 2025"}}
-</tool_call>
+### GetAvailableTools()
+
+Discover tools from connected MCP servers:
+
+```go
+mcpManager := agentflow.GetMCPManager()
+tools := mcpManager.GetAvailableTools()
+
+for _, tool := range tools {
+    fmt.Printf("Tool: %s - %s (from %s)\n", 
+        tool.Name, tool.Description, tool.ServerName)
+}
 
 Let me also fetch the official Go documentation.
 
@@ -57,7 +71,7 @@ Let me also fetch the official Go documentation.
 
 ## Complete Agent with Tools
 
-Here's a complete agent that uses tools intelligently:
+Here's a complete MCP-aware agent that can use tools intelligently:
 
 ```go
 package main
@@ -84,56 +98,124 @@ func (a *ToolEnabledAgent) Run(ctx context.Context, event agentflow.Event, state
     logger := agentflow.Logger()
     
     // Extract user message
-    message := event.GetData()["message"]
+    message := event.GetData()["message"].(string)
     
-    // Build system prompt with tool awareness
-    systemPrompt := `You are a helpful assistant with access to various tools. 
+    // Get available tools
+    tools := a.mcpManager.GetAvailableTools()
+    logger.Info().Int("available_tools", len(tools)).Msg("Tools discovered")
+    
+    // Build prompt with tool information
+    toolsDesc := a.buildToolsDescription(tools)
+    
+    systemPrompt := fmt.Sprintf(`You are a helpful assistant with access to tools.
 
-Key principles:
-- Analyze what information the user needs
-- Use tools when they can provide current, specific, or actionable information
-- For factual queries, prefer search tools over general knowledge
-- For web content, use fetch_content for specific URLs
-- For technical tasks, use appropriate tools (docker, etc.)
-- Always explain what tools you're using and why
+Available tools:
+%s
 
-When using tools, format calls exactly like this:
-<tool_call>
-{"name": "tool_name", "args": {"param": "value"}}
-</tool_call>`
+Instructions:
+- Analyze the user's request carefully
+- Determine if any tools would be helpful
+- If yes, respond with: USE_TOOL: tool_name with arguments
+- If no tools needed, provide a direct answer
+
+User request: %s`, toolsDesc, message)
     
-    // Get available tools and add to prompt
-    toolPrompt := ""
-    if a.mcpManager != nil {
-        toolPrompt = agentflow.FormatToolsForPrompt(ctx, a.mcpManager)
-        logger.Info().Int("tool_count", len(strings.Split(toolPrompt, "\n"))-1).Msg("Tools available")
-    }
-    
-    fullPrompt := fmt.Sprintf("%s\n\n%s\n\nUser: %s", systemPrompt, toolPrompt, message)
-    
-    // Get initial LLM response
-    response, err := a.llm.Generate(ctx, fullPrompt)
+    // Get LLM response to determine tool usage
+    response, err := a.llm.Generate(ctx, systemPrompt)
     if err != nil {
         return agentflow.AgentResult{}, fmt.Errorf("LLM generation failed: %w", err)
     }
     
-    // Execute any tool calls found in response
-    var finalResponse string
-    if a.mcpManager != nil {
-        toolResults := agentflow.ParseAndExecuteToolCalls(ctx, a.mcpManager, response)
+    // Check if LLM wants to use a tool
+    if a.shouldUseTool(response) {
+        toolName, args := a.parseToolRequest(response)
         
-        if len(toolResults) > 0 {
-            logger.Info().Int("tool_calls", len(toolResults)).Msg("Tools executed")
-            
-            // Synthesize tool results with original response
-            synthesisPrompt := fmt.Sprintf(`Original response: %s
+        // Execute the tool
+        result, err := agentflow.ExecuteMCPTool(ctx, toolName, args)
+        if err != nil {
+            logger.Warn().Err(err).Str("tool", toolName).Msg("Tool execution failed")
+            return agentflow.AgentResult{
+                Data: map[string]interface{}{
+                    "response": "I'm sorry, I couldn't execute the requested tool.",
+                    "error":    err.Error(),
+                },
+            }, nil
+        }
+        
+        // Generate final response incorporating tool results
+        finalPrompt := fmt.Sprintf(`Based on the tool execution results below, provide a helpful response to the user.
 
-Tool execution results: %v
+User request: %s
+Tool used: %s
+Tool results: %v
 
-Please provide a comprehensive final answer that incorporates the tool results. 
-Be specific and cite the information sources when relevant.`, response, toolResults)
-            
-            finalResponse, err = a.llm.Generate(ctx, synthesisPrompt)
+Please provide a clear, helpful response incorporating this information:`, 
+            message, toolName, result)
+        
+        finalResponse, err := a.llm.Generate(ctx, finalPrompt)
+        if err != nil {
+            return agentflow.AgentResult{}, fmt.Errorf("final response generation failed: %w", err)
+        }
+        
+        return agentflow.AgentResult{
+            Data: map[string]interface{}{
+                "response":    finalResponse,
+                "tool_used":   toolName,
+                "tool_result": result,
+            },
+        }, nil
+    }
+    
+    // No tool needed, return direct response
+    return agentflow.AgentResult{
+        Data: map[string]interface{}{
+            "response": response,
+        },
+    }, nil
+}
+
+func (a *ToolEnabledAgent) buildToolsDescription(tools []agentflow.MCPToolInfo) string {
+    if len(tools) == 0 {
+        return "No tools available."
+    }
+    
+    desc := ""
+    for _, tool := range tools {
+        desc += fmt.Sprintf("- %s: %s\n", tool.Name, tool.Description)
+    }
+    return desc
+}
+
+func (a *ToolEnabledAgent) shouldUseTool(response string) bool {
+    return strings.Contains(response, "USE_TOOL:")
+}
+
+func (a *ToolEnabledAgent) parseToolRequest(response string) (string, map[string]interface{}) {
+    // Simple parsing for demo - in production, use more robust parsing
+    parts := strings.Split(response, "USE_TOOL:")
+    if len(parts) < 2 {
+        return "", nil
+    }
+    
+    toolPart := strings.TrimSpace(parts[1])
+    // For demo, assume format: "tool_name arg1=value1 arg2=value2"
+    words := strings.Fields(toolPart)
+    if len(words) == 0 {
+        return "", nil
+    }
+    
+    toolName := words[0]
+    args := make(map[string]interface{})
+    
+    // Parse simple key=value pairs
+    for _, word := range words[1:] {
+        if kv := strings.Split(word, "="); len(kv) == 2 {
+            args[kv[0]] = kv[1]
+        }
+    }
+    
+    return toolName, args
+}
             if err != nil {
                 // Fallback to original response if synthesis fails
                 logger.Warn().Err(err).Msg("Tool result synthesis failed, using original response")
