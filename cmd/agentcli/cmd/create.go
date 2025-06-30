@@ -29,6 +29,18 @@ Examples:
   # Project with specific provider and agent count
   agentcli create myproject --agents 3 --provider azure
 
+  # Collaborative workflow (all agents process events in parallel)
+  agentcli create myworkflow --orchestration-mode collaborative --collaborative-agents "analyzer,processor,validator"
+
+  # Sequential pipeline (agents process one after another)
+  agentcli create mypipeline --orchestration-mode sequential --sequential-agents "analyzer,transformer,validator"
+
+  # Loop-based workflow (single agent repeats with conditions)
+  agentcli create myloop --orchestration-mode loop --loop-agent processor --max-iterations 5
+
+  # Mixed orchestration with fault tolerance
+  agentcli create myworkflow --orchestration-mode collaborative --collaborative-agents "analyzer,validator" --failure-threshold 0.8 --max-concurrency 10
+
   # MCP-enabled project with basic tools
   agentcli create myproject --mcp-enabled
 
@@ -59,6 +71,16 @@ var (
 	errorHandler  bool
 	interactive   bool
 
+	// Multi-agent orchestration flags
+	orchestrationMode    string
+	collaborativeAgents  string
+	sequentialAgents     string
+	loopAgent            string
+	maxIterations        int
+	orchestrationTimeout int
+	failureThreshold     float64
+	maxConcurrency       int
+
 	// MCP flags
 	mcpEnabled         bool
 	mcpProduction      bool
@@ -82,6 +104,16 @@ func init() {
 	createCmd.Flags().BoolVar(&responsibleAI, "responsible-ai", true, "Include responsible AI agent")
 	createCmd.Flags().BoolVar(&errorHandler, "error-handler", true, "Include error handling agents")
 	createCmd.Flags().BoolVarP(&interactive, "interactive", "i", false, "Interactive mode for guided setup")
+
+	// Multi-agent orchestration flags
+	createCmd.Flags().StringVar(&orchestrationMode, "orchestration-mode", "route", "Orchestration mode (route, collaborative, sequential, loop, mixed)")
+	createCmd.Flags().StringVar(&collaborativeAgents, "collaborative-agents", "", "Comma-separated list of agent names for parallel execution")
+	createCmd.Flags().StringVar(&sequentialAgents, "sequential-agents", "", "Comma-separated list of agent names for sequential pipeline")
+	createCmd.Flags().StringVar(&loopAgent, "loop-agent", "", "Single agent name for loop-based execution pattern")
+	createCmd.Flags().IntVar(&maxIterations, "max-iterations", 5, "Maximum iterations for loop orchestration")
+	createCmd.Flags().IntVar(&orchestrationTimeout, "orchestration-timeout", 30, "Timeout for orchestration operations (seconds)")
+	createCmd.Flags().Float64Var(&failureThreshold, "failure-threshold", 0.5, "Failure threshold for stopping orchestration (0.0-1.0)")
+	createCmd.Flags().IntVar(&maxConcurrency, "max-concurrency", 10, "Maximum concurrent agent executions")
 
 	// MCP integration flags
 	createCmd.Flags().BoolVar(&mcpEnabled, "mcp-enabled", false, "Enable MCP tool integration")
@@ -119,6 +151,11 @@ func runCreateCommand(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// Validate orchestration configuration
+	if err := validateOrchestrationFlags(); err != nil {
+		return err
+	}
+
 	// Parse tool and server lists
 	toolList := parseCommaSeparatedList(mcpTools)
 	serverList := parseCommaSeparatedList(mcpServers)
@@ -130,6 +167,16 @@ func runCreateCommand(cmd *cobra.Command, args []string) error {
 		Provider:      provider,
 		ResponsibleAI: responsibleAI,
 		ErrorHandler:  errorHandler,
+
+		// Orchestration configuration
+		OrchestrationMode:    orchestrationMode,
+		CollaborativeAgents:  parseCommaSeparatedList(collaborativeAgents),
+		SequentialAgents:     parseCommaSeparatedList(sequentialAgents),
+		LoopAgent:            loopAgent,
+		MaxIterations:        maxIterations,
+		OrchestrationTimeout: orchestrationTimeout,
+		FailureThreshold:     failureThreshold,
+		MaxConcurrency:       maxConcurrency,
 
 		// MCP configuration
 		MCPEnabled:         mcpEnabled || mcpProduction,
@@ -195,6 +242,96 @@ func validateMCPFlags() error {
 	validPolicies := []string{"exponential", "linear", "fixed"}
 	if !contains(validPolicies, retryPolicy) {
 		return fmt.Errorf("invalid retry policy: %s. Valid options: %s", retryPolicy, strings.Join(validPolicies, ", "))
+	}
+
+	return nil
+}
+
+func validateOrchestrationFlags() error {
+	// Validate orchestration mode
+	validModes := []string{"route", "collaborative", "sequential", "loop", "mixed"}
+	if !contains(validModes, orchestrationMode) {
+		return fmt.Errorf("invalid orchestration mode: %s. Valid options: %s", orchestrationMode, strings.Join(validModes, ", "))
+	}
+
+	// Collaborative mode validations
+	if orchestrationMode == "collaborative" {
+		if numAgents < 2 {
+			return fmt.Errorf("collaborative orchestration requires at least 2 agents")
+		}
+		if collaborativeAgents != "" {
+			agents := parseCommaSeparatedList(collaborativeAgents)
+			if len(agents) < 2 {
+				return fmt.Errorf("collaborative orchestration requires at least 2 agent names")
+			}
+		}
+	}
+
+	// Sequential mode validations
+	if orchestrationMode == "sequential" {
+		if numAgents < 2 {
+			return fmt.Errorf("sequential orchestration requires at least 2 agents")
+		}
+		if sequentialAgents != "" {
+			agents := parseCommaSeparatedList(sequentialAgents)
+			if len(agents) < 2 {
+				return fmt.Errorf("sequential orchestration requires at least 2 agent names in sequence")
+			}
+		}
+	}
+
+	// Loop mode validations
+	if orchestrationMode == "loop" {
+		if numAgents != 1 {
+			return fmt.Errorf("loop orchestration requires exactly 1 agent")
+		}
+		if loopAgent == "" {
+			return fmt.Errorf("loop orchestration requires --loop-agent to be specified")
+		}
+	}
+
+	// Mixed mode validations
+	if orchestrationMode == "mixed" {
+		if collaborativeAgents == "" && sequentialAgents == "" {
+			return fmt.Errorf("mixed orchestration requires at least one of --collaborative-agents or --sequential-agents")
+		}
+	}
+
+	// Cross-mode validations - ensure only relevant flags are used
+	if orchestrationMode != "collaborative" && orchestrationMode != "mixed" && collaborativeAgents != "" {
+		return fmt.Errorf("--collaborative-agents can only be used with --orchestration-mode collaborative or mixed")
+	}
+	if orchestrationMode != "sequential" && orchestrationMode != "mixed" && sequentialAgents != "" {
+		return fmt.Errorf("--sequential-agents can only be used with --orchestration-mode sequential or mixed")
+	}
+	if orchestrationMode != "loop" && loopAgent != "" {
+		return fmt.Errorf("--loop-agent can only be used with --orchestration-mode loop")
+	}
+
+	// Max iterations validation (primarily for loop mode)
+	if maxIterations <= 0 {
+		return fmt.Errorf("max iterations must be a positive integer")
+	}
+	if orchestrationMode == "loop" && maxIterations > 100 {
+		return fmt.Errorf("max iterations for loop mode should not exceed 100 to prevent infinite loops")
+	}
+
+	// Timeout must be positive
+	if orchestrationTimeout <= 0 {
+		return fmt.Errorf("orchestration timeout must be a positive integer")
+	}
+
+	// Failure threshold must be between 0 and 1
+	if failureThreshold < 0.0 || failureThreshold > 1.0 {
+		return fmt.Errorf("failure threshold must be between 0.0 and 1.0")
+	}
+
+	// Max concurrency must be positive
+	if maxConcurrency <= 0 {
+		return fmt.Errorf("max concurrency must be a positive integer")
+	}
+	if maxConcurrency > 100 {
+		return fmt.Errorf("max concurrency should not exceed 100 for performance reasons")
 	}
 
 	return nil
@@ -320,6 +457,79 @@ func interactiveSetup() (scaffold.ProjectConfig, error) {
 	// Responsible AI and error handling (defaults to true)
 	config.ResponsibleAI = true
 	config.ErrorHandler = true
+
+	// Orchestration mode selection
+	fmt.Println("\nSelect orchestration mode:")
+	fmt.Println("1. Route (default) - Events routed to specific agents")
+	fmt.Println("2. Collaborative - All agents process events in parallel")
+	fmt.Println("3. Sequential - Agents process events in pipeline order")
+	fmt.Println("4. Loop - Single agent processes with iterations")
+	fmt.Println("5. Mixed - Combination of collaborative and sequential")
+	fmt.Print("Choice (1-5): ")
+	var orchestrationChoice string
+	fmt.Scanln(&orchestrationChoice)
+
+	orchestrationModes := map[string]string{
+		"1": "route", "2": "collaborative", "3": "sequential", "4": "loop", "5": "mixed",
+		"": "route", // default
+	}
+	if mode, exists := orchestrationModes[orchestrationChoice]; exists {
+		config.OrchestrationMode = mode
+	} else {
+		config.OrchestrationMode = "route"
+	}
+
+	// Set orchestration defaults
+	config.MaxIterations = 5
+	config.OrchestrationTimeout = 30
+	config.FailureThreshold = 0.5
+	config.MaxConcurrency = 10
+
+	// Mode-specific configuration
+	switch config.OrchestrationMode {
+	case "collaborative":
+		fmt.Print("Collaborative agents (comma-separated names, leave empty for auto-generated): ")
+		var collabInput string
+		fmt.Scanln(&collabInput)
+		if collabInput != "" {
+			config.CollaborativeAgents = parseCommaSeparatedList(collabInput)
+		}
+	case "sequential":
+		fmt.Print("Sequential agents (comma-separated names in order, leave empty for auto-generated): ")
+		var seqInput string
+		fmt.Scanln(&seqInput)
+		if seqInput != "" {
+			config.SequentialAgents = parseCommaSeparatedList(seqInput)
+		}
+	case "loop":
+		fmt.Print("Loop agent name (leave empty for auto-generated): ")
+		var loopInput string
+		fmt.Scanln(&loopInput)
+		if loopInput != "" {
+			config.LoopAgent = loopInput
+		}
+		fmt.Print("Max iterations (default 5): ")
+		var iterInput string
+		fmt.Scanln(&iterInput)
+		if iterInput != "" {
+			if parsed, err := strconv.Atoi(iterInput); err == nil && parsed > 0 {
+				config.MaxIterations = parsed
+			}
+		}
+	case "mixed":
+		fmt.Print("Collaborative agents (comma-separated, leave empty to skip): ")
+		var collabInput string
+		fmt.Scanln(&collabInput)
+		if collabInput != "" {
+			config.CollaborativeAgents = parseCommaSeparatedList(collabInput)
+		}
+		fmt.Print("Sequential agents (comma-separated, leave empty to skip): ")
+		var seqInput string
+		fmt.Scanln(&seqInput)
+		if seqInput != "" {
+			config.SequentialAgents = parseCommaSeparatedList(seqInput)
+		}
+	}
 
 	fmt.Println("\n✓ Configuration complete!")
 	return config, nil

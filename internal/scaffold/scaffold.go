@@ -27,6 +27,16 @@ type ProjectConfig struct {
 	WithLoadBalancer   bool
 	ConnectionPoolSize int
 	RetryPolicy        string
+
+	// Multi-agent orchestration configuration
+	OrchestrationMode    string
+	CollaborativeAgents  []string
+	SequentialAgents     []string
+	LoopAgent            string
+	MaxIterations        int
+	OrchestrationTimeout int
+	FailureThreshold     float64
+	MaxConcurrency       int
 }
 
 // CreateAgentProject creates a new AgentFlow project using the unified agent system
@@ -475,7 +485,7 @@ func createUnifiedAgentFile(config ProjectConfig, filename string, agentNum int)
 		content.WriteString("\t} else {\n")
 		content.WriteString("\t\tinputToProcess = \"No message provided\"\n")
 		content.WriteString("\t}\n")
-		content.WriteString("\tsystemPrompt = `You are Agent1, an intelligent assistant that answers user queries by leveraging available tools to provide accurate, current information.\n\nCore Principles:\n- ALWAYS analyze what specific information the user needs\n- Use available MCP tools when they can provide current data or specific information\n- For stock prices, news, web content - ALWAYS use search or fetch_content tools\n- Provide concrete answers with actual data, not generic advice\n- Be decisive and helpful\n\nTool Usage Strategy:\n- For stock prices/financial data: Use the search tool to find current information\n- For current events/news: Use the search tool\n- For specific web content: Use the fetch_content tool with URLs\n- Focus on getting real data rather than giving general advice\n\nResponse Quality:\n- Give specific, data-driven answers when possible\n- If tools provide data, extract the key information clearly\n- Be conversational but informative\n- Integrate tool results naturally into your response`\"\n")
+		content.WriteString("\tsystemPrompt = `You are Agent1, an intelligent assistant that answers user queries by leveraging available tools to provide accurate, current information.\n\nCore Principles:\n- ALWAYS analyze what specific information the user needs\n- Use available MCP tools when they can provide current data or specific information\n- For stock prices, news, web content - ALWAYS use search or fetch_content tools\n- Provide concrete answers with actual data, not generic advice\n- Be decisive and helpful\n\nTool Usage Strategy:\n- For stock prices/financial data: Use the search tool to find current information\n- For current events/news: Use the search tool\n- For specific web content: Use the fetch_content tool with URLs\n- Focus on getting real data rather than giving general advice\n\nResponse Quality:\n- Give specific, data-driven answers when possible\n- If tools provide data, extract the key information clearly\n- Be conversational but informative\n- Integrate tool results naturally into your response`\n")
 		content.WriteString(fmt.Sprintf("\tlogger.Debug().Str(\"agent\", \"agent%d\").Interface(\"input\", inputToProcess).Msg(\"Processing original message\")\n", agentNum))
 	} else {
 		// Sequential processing logic for other agents
@@ -505,11 +515,11 @@ func createUnifiedAgentFile(config ProjectConfig, filename string, agentNum int)
 		content.WriteString("\t\n")
 		content.WriteString("\t// Create specialized system prompt based on agent number\n")
 		if agentNum == 2 {
-			content.WriteString("\tsystemPrompt = `You are Agent2, specialized in enhancing and improving responses from Agent1. Your role is to:\n\n1. Review Agent1's response and identify any gaps or areas for improvement\n2. Use additional tools if needed to gather more specific information\n3. Provide enhanced, more detailed responses with concrete data\n4. For financial queries: Get specific prices, dates, and percentage changes\n5. Synthesize information to provide comprehensive answers\n\nTool Usage:\n- If Agent1 used search but you need more detailed info, use fetch_content on specific URLs\n- If Agent1 provided general info but you need specifics, use additional searches\n- Focus on getting the exact data the user requested (prices, dates, specific numbers)\n\nResponse Strategy:\n- Build upon Agent1's work but provide more detailed, specific information\n- Extract and present key data points clearly\n- Use tools to fill any information gaps`\"\n")
+			content.WriteString("\tsystemPrompt = `You are Agent2, specialized in enhancing and improving responses from Agent1. Your role is to:\n\n1. Review Agent1's response and identify any gaps or areas for improvement\n2. Use additional tools if needed to gather more specific information\n3. Provide enhanced, more detailed responses with concrete data\n4. For financial queries: Get specific prices, dates, and percentage changes\n5. Synthesize information to provide comprehensive answers\n\nTool Usage:\n- If Agent1 used search but you need more detailed info, use fetch_content on specific URLs\n- If Agent1 provided general info but you need specifics, use additional searches\n- Focus on getting the exact data the user requested (prices, dates, specific numbers)\n\nResponse Strategy:\n- Build upon Agent1's work but provide more detailed, specific information\n- Extract and present key data points clearly\n- Use tools to fill any information gaps`\n")
 		} else if agentNum == config.NumAgents {
-			content.WriteString(fmt.Sprintf("\tsystemPrompt = `You are Agent%d, the final synthesis agent providing comprehensive, authoritative answers. Your role is to:\n\n1. Take the best insights from previous agents\n2. Provide a final, polished, comprehensive response\n3. Present specific data clearly and authoritatively\n4. For financial queries: Provide exact figures, dates, trends, and analysis\n5. Create the definitive answer to the user's question\n\nFinal Synthesis Strategy:\n- Combine the best information from previous agents\n- Add any final clarification or context needed\n- Present information in a clear, organized manner\n- Focus on answering the user's original question completely\n- Use tools only if critical information is still missing`\"\n", agentNum))
+			content.WriteString(fmt.Sprintf("\tsystemPrompt = `You are Agent%d, the final synthesis agent providing comprehensive, authoritative answers. Your role is to:\n\n1. Take the best insights from previous agents\n2. Provide a final, polished, comprehensive response\n3. Present specific data clearly and authoritatively\n4. For financial queries: Provide exact figures, dates, trends, and analysis\n5. Create the definitive answer to the user's question\n\nFinal Synthesis Strategy:\n- Combine the best information from previous agents\n- Add any final clarification or context needed\n- Present information in a clear, organized manner\n- Focus on answering the user's original question completely\n- Use tools only if critical information is still missing`\n", agentNum))
 		} else {
-			content.WriteString(fmt.Sprintf("\tsystemPrompt = `You are Agent%d, an enhancement agent in the processing chain. Your role is to:\n\n1. Build upon previous agents' work with additional insights\n2. Use available MCP tools to gather more specific information when needed\n3. Enhance the response with more detail and context\n4. Ensure accuracy and completeness of information\n5. Add your expertise and analysis to improve the overall response\n\nEnhancement Strategy:\n- Review all previous agents' contributions\n- Identify gaps or areas that need more detail\n- Use tools to gather additional current information if helpful\n- Provide a more comprehensive and detailed response\n- Maintain focus on the user's original question`\"\n", agentNum))
+			content.WriteString(fmt.Sprintf("\tsystemPrompt = `You are Agent%d, an enhancement agent in the processing chain. Your role is to:\n\n1. Build upon previous agents' work with additional insights\n2. Use available MCP tools to gather more specific information when needed\n3. Enhance the response with more detail and context\n4. Ensure accuracy and completeness of information\n5. Add your expertise and analysis to improve the overall response\n\nEnhancement Strategy:\n- Review all previous agents' contributions\n- Identify gaps or areas that need more detail\n- Use tools to gather additional current information if helpful\n- Provide a more comprehensive and detailed response\n- Maintain focus on the user's original question`\n", agentNum))
 		}
 	}
 
@@ -1571,20 +1581,24 @@ func createUnifiedMainGoContent(config ProjectConfig) string {
 	content.WriteString("\t\tfmt.Scanln(&inputMessage)\n")
 	content.WriteString("\t}\n\n")
 
-	content.WriteString("\t// Create orchestrator and runner\n")
-	content.WriteString("\tcallbackRegistry := core.NewCallbackRegistry()\n")
-	content.WriteString("\torchestrator := core.NewRouteOrchestrator(callbackRegistry)\n\n")
-
-	content.WriteString("\t// Create and configure runner\n")
-	content.WriteString("\trunner := core.NewRunner(100) // Queue size of 100 for multi-agent with tool calls\n")
-	content.WriteString("\trunner.SetOrchestrator(orchestrator)\n")
-	content.WriteString("\trunner.SetCallbackRegistry(callbackRegistry)\n")
-	content.WriteString("\torchestrator.SetEmitter(runner) // This enables event routing between agents\n\n")
-
-	content.WriteString("\t// Register all agents\n")
-	content.WriteString("\tfor name, agent := range agents {\n")
-	content.WriteString("\t\torchestrator.RegisterAgent(name, agent)\n")
+	content.WriteString("\t// Create orchestrator and runner based on configuration\n")
+	content.WriteString("\t// Using enhanced runner configuration for orchestration support\n")
+	content.WriteString(fmt.Sprintf("\trunnerConfig := core.EnhancedRunnerConfig{\n"))
+	content.WriteString("\t\tRunnerConfig: core.RunnerConfig{\n")
+	content.WriteString("\t\t\tAgents: agents,\n")
+	content.WriteString("\t\t\tQueueSize: 100, // Queue size for multi-agent with tool calls\n")
+	content.WriteString("\t\t},\n")
+	content.WriteString(fmt.Sprintf("\t\tOrchestrationMode: core.OrchestrationMode(\"%s\"),\n", config.OrchestrationMode))
+	content.WriteString("\t\tConfig: core.OrchestrationConfig{\n")
+	content.WriteString(fmt.Sprintf("\t\t\tTimeout:          %d * time.Second,\n", config.OrchestrationTimeout))
+	content.WriteString(fmt.Sprintf("\t\t\tMaxConcurrency:   %d,\n", config.MaxConcurrency))
+	content.WriteString(fmt.Sprintf("\t\t\tFailureThreshold: %.2f,\n", config.FailureThreshold))
+	content.WriteString("\t\t\tRetryPolicy:      core.DefaultRetryPolicy(),\n")
+	content.WriteString("\t\t},\n")
 	content.WriteString("\t}\n\n")
+	content.WriteString("\t// Create runner with orchestration configuration\n")
+	content.WriteString("\t// Agents are automatically registered via the RunnerConfig.Agents map\n")
+	content.WriteString("\trunner := core.NewRunnerWithOrchestration(runnerConfig)\n\n")
 
 	content.WriteString("\t// Start the runner\n")
 	content.WriteString("\trunner.Start(ctx)\n\n")

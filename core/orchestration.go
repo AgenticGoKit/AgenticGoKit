@@ -84,6 +84,23 @@ func NewRunnerWithOrchestration(cfg EnhancedRunnerConfig) Runner {
 	// Set the orchestrator on the runner
 	if runnerImpl, ok := runner.(*RunnerImpl); ok {
 		runnerImpl.SetOrchestrator(orch)
+
+		// Re-register all agents with the new orchestrator since SetOrchestrator replaces it
+		for name, agent := range cfg.RunnerConfig.Agents {
+			if err := orch.RegisterAgent(name, agent); err != nil {
+				Logger().Error().Str("agent", name).Err(err).Msg("Failed to register agent with new orchestrator")
+			}
+		}
+
+		// Re-register the default error handler if it wasn't provided
+		if _, exists := cfg.RunnerConfig.Agents["error-handler"]; !exists {
+			orch.RegisterAgent("error-handler", AgentHandlerFunc(
+				func(ctx context.Context, event Event, state State) (AgentResult, error) {
+					state.SetMeta(RouteMetadataKey, "")
+					return AgentResult{OutputState: state}, nil
+				},
+			))
+		}
 	}
 
 	return runner
