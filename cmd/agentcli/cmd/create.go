@@ -207,7 +207,8 @@ func runCreateCommand(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	return scaffold.CreateAgentProject(config)
+	// Use modular template system for better maintainability
+	return scaffold.CreateAgentProjectModular(config)
 }
 
 func validateMCPFlags() error {
