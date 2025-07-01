@@ -21,6 +21,12 @@ const (
 	OrchestrationRoute OrchestrationMode = "route"
 	// OrchestrationCollaborate sends each event to ALL registered agents in parallel
 	OrchestrationCollaborate OrchestrationMode = "collaborate"
+	// OrchestrationSequential processes agents one after another
+	OrchestrationSequential OrchestrationMode = "sequential"
+	// OrchestrationParallel processes agents in parallel (similar to collaborate but different semantics)
+	OrchestrationParallel OrchestrationMode = "parallel"
+	// OrchestrationLoop repeats processing with a single agent
+	OrchestrationLoop OrchestrationMode = "loop"
 )
 
 // OrchestrationConfig contains configuration for orchestration behavior
