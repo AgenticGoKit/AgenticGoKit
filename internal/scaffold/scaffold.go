@@ -138,9 +138,9 @@ func createAgentFilesWithTemplates(config ProjectConfig) error {
 			nextAgent = "responsible_ai"
 			routingComment = "Route to Responsible AI for final content check"
 		} else {
-			// Route to workflow finalizer to complete the workflow
-			nextAgent = "workflow_finalizer"
-			routingComment = "Route to workflow finalizer to complete the workflow"
+			// Last agent - workflow completion (no routing)
+			nextAgent = ""
+			routingComment = "Workflow completion"
 		}
 
 		// Create system prompt for this agent
@@ -193,95 +193,25 @@ func createMainGoWithTemplate(config ProjectConfig) error {
 	utilsConfig := convertToUtilsConfig(config)
 	agents := utils.ResolveAgentNames(utilsConfig)
 
-	// Simple main.go template
-	mainTemplate := `package main
-
-import (
-	"context"
-	"flag"
-	"fmt"
-	"os"
-	"time"
-
-	"github.com/kunalkushwaha/agentflow/core"
-)
-
-func main() {
-	ctx := context.Background()
-	core.SetLogLevel(core.INFO)
-	logger := core.Logger()
-	logger.Info().Msg("Starting {{.Name}} multi-agent system...")
-
-	messageFlag := flag.String("m", "", "Message to process")
-	flag.Parse()
-
-	llmProvider, err := initializeProvider("{{.Provider}}")
-	if err != nil {
-		fmt.Printf("Failed to initialize LLM provider: %v\n", err)
-		os.Exit(1)
-	}
-
-	agents := make(map[string]core.AgentHandler)
-	{{range .Agents}}
-	{{.Name}} := New{{.DisplayName}}(llmProvider)
-	agents["{{.Name}}"] = {{.Name}}
-	{{end}}
-
-	// Create a simple runner configuration  
-	runner := core.NewRunnerWithConfig(core.RunnerConfig{
-		Agents: agents,
-	})
-
-	var message string
-	if *messageFlag != "" {
-		message = *messageFlag
-	} else {
-		fmt.Print("Enter your message: ")
-		fmt.Scanln(&message)
-	}
-
-	if message == "" {
-		message = "Hello! Please provide information about current topics."
-	}
-
-	// Start the runner
-	runner.Start(ctx)
-	defer runner.Stop()
-
-	event := core.NewEvent("{{range $i, $agent := .Agents}}{{if eq $i 0}}{{$agent.Name}}{{end}}{{end}}", core.EventData{
-		"message": message,
-	}, map[string]string{})
-
-	if err := runner.Emit(event); err != nil {
-		logger.Error().Err(err).Msg("Workflow execution failed")
-		fmt.Printf("Error: %v\n", err)
-		os.Exit(1)
-	}
-
-	// Simple wait for completion (in a real app you'd want better synchronization)
-	time.Sleep(5 * time.Second)
-	
-	fmt.Printf("\n=== Workflow Completed ===\n")
-	fmt.Printf("Event processed successfully\n")
-}
-
-func initializeProvider(providerType string) (core.ModelProvider, error) {
-	// Use the config-based provider initialization
-	return core.NewProviderFromWorkingDir()
-}
-`
-
-	tmpl, err := template.New("main").Parse(mainTemplate)
+	// Use the comprehensive template from templates package
+	tmpl, err := template.New("main").Parse(templates.MainTemplate)
 	if err != nil {
 		return fmt.Errorf("failed to parse main template: %w", err)
 	}
 
+	// Create template data structure that matches the comprehensive template
 	templateData := struct {
-		ProjectConfig
-		Agents []utils.AgentInfo
+		Config               ProjectConfig
+		Agents               []utils.AgentInfo
+		ProviderInitFunction string
+		MCPInitFunction      string
+		CacheInitFunction    string
 	}{
-		ProjectConfig: config,
-		Agents:        agents,
+		Config:               config,
+		Agents:               agents,
+		ProviderInitFunction: generateProviderInitFunction(config),
+		MCPInitFunction:      generateMCPInitFunction(config),
+		CacheInitFunction:    generateCacheInitFunction(config),
 	}
 
 	mainGoPath := filepath.Join(config.Name, "main.go")
@@ -332,6 +262,42 @@ model = "llama2"
 # Mock provider for testing - no configuration needed
 `, config.Name, config.Provider)
 
+	// Add MCP configuration if enabled
+	if config.MCPEnabled {
+		mcpConfig := `
+[mcp]
+enabled = true
+enable_discovery = true
+connection_timeout = 5000
+max_retries = 3
+retry_delay = 1000
+enable_caching = true
+cache_timeout = 300000
+max_connections = 10
+
+# Example MCP servers - configure as needed
+[[mcp.servers]]
+name = "docker"
+type = "tcp"
+host = "localhost"
+port = 8811
+enabled = false
+
+[[mcp.servers]]
+name = "filesystem"
+type = "stdio"
+command = "npx @modelcontextprotocol/server-filesystem /path/to/allowed/files"
+enabled = false
+
+[[mcp.servers]]
+name = "brave-search"
+type = "stdio"
+command = "npx @modelcontextprotocol/server-brave-search"
+enabled = false
+`
+		configContent += mcpConfig
+	}
+
 	configPath := filepath.Join(config.Name, "agentflow.toml")
 	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
 		return fmt.Errorf("failed to create agentflow.toml: %w", err)
@@ -368,4 +334,74 @@ func convertToUtilsConfig(config ProjectConfig) utils.ProjectConfig {
 		FailureThreshold:     config.FailureThreshold,
 		MaxConcurrency:       config.MaxConcurrency,
 	}
+}
+
+// generateProviderInitFunction generates the provider initialization function code
+func generateProviderInitFunction(config ProjectConfig) string {
+	return `func initializeProvider(providerType string) (core.ModelProvider, error) {
+	// Use the config-based provider initialization
+	return core.NewProviderFromWorkingDir()
+}`
+}
+
+// generateMCPInitFunction generates the MCP initialization function code
+func generateMCPInitFunction(config ProjectConfig) string {
+	return `func initializeMCP() (core.MCPManager, error) {
+	// Load configuration from agentflow.toml in current directory
+	config, err := core.LoadConfigFromWorkingDir()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load configuration: %w", err)
+	}
+
+	// Check if MCP is enabled in configuration
+	if !config.MCP.Enabled {
+		return nil, fmt.Errorf("MCP is not enabled in agentflow.toml")
+	}
+
+	// Convert TOML config to MCP config
+	mcpConfig := core.MCPConfig{
+		EnableDiscovery:   config.MCP.EnableDiscovery,
+		ConnectionTimeout: time.Duration(config.MCP.ConnectionTimeout) * time.Millisecond,
+		MaxRetries:        config.MCP.MaxRetries,
+		RetryDelay:        time.Duration(config.MCP.RetryDelay) * time.Millisecond,
+		EnableCaching:     config.MCP.EnableCaching,
+		CacheTimeout:      time.Duration(config.MCP.CacheTimeout) * time.Millisecond,
+		MaxConnections:    config.MCP.MaxConnections,
+		Servers:           make([]core.MCPServerConfig, len(config.MCP.Servers)),
+	}
+
+	// Convert server configurations
+	for i, server := range config.MCP.Servers {
+		mcpConfig.Servers[i] = core.MCPServerConfig{
+			Name:    server.Name,
+			Type:    server.Type,
+			Host:    server.Host,
+			Port:    server.Port,
+			Command: server.Command,
+			Enabled: server.Enabled,
+		}
+	}
+
+	// Initialize MCP manager with configuration from TOML
+	err = core.InitializeMCP(mcpConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize MCP: %w", err)
+	}
+
+	// Get the initialized MCP manager
+	manager := core.GetMCPManager()
+	if manager == nil {
+		return nil, fmt.Errorf("MCP manager not available after initialization")
+	}
+
+	return manager, nil
+}`
+}
+
+// generateCacheInitFunction generates the cache initialization function code
+func generateCacheInitFunction(config ProjectConfig) string {
+	return `func initializeCache() error {
+	// Cache initialization placeholder
+	return nil
+}`
 }
