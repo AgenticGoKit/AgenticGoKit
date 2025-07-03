@@ -27,6 +27,8 @@ const (
 	OrchestrationParallel OrchestrationMode = "parallel"
 	// OrchestrationLoop repeats processing with a single agent
 	OrchestrationLoop OrchestrationMode = "loop"
+	// OrchestrationMixed combines collaborative and sequential patterns in hybrid workflows
+	OrchestrationMixed OrchestrationMode = "mixed"
 )
 
 // OrchestrationConfig contains configuration for orchestration behavior
@@ -54,8 +56,10 @@ func DefaultOrchestrationConfig() OrchestrationConfig {
 // EnhancedRunnerConfig extends RunnerConfig with orchestration options
 type EnhancedRunnerConfig struct {
 	RunnerConfig
-	OrchestrationMode OrchestrationMode   // Mode of orchestration (route or collaborate)
-	Config            OrchestrationConfig // Orchestration-specific configuration
+	OrchestrationMode   OrchestrationMode   // Mode of orchestration (route, collaborate, mixed, etc.)
+	Config              OrchestrationConfig // Orchestration-specific configuration
+	CollaborativeAgents []string            // List of agent names for collaborative execution
+	SequentialAgents    []string            // List of agent names for sequential execution
 }
 
 // =============================================================================
@@ -67,6 +71,29 @@ type EnhancedRunnerConfig struct {
 func NewCollaborativeOrchestrator(registry *CallbackRegistry) Orchestrator {
 	return &collaborativeOrchestrator{
 		handlers:         make(map[string]AgentHandler),
+		callbackRegistry: registry,
+	}
+}
+
+// NewSequentialOrchestrator creates an orchestrator that runs agents in sequence
+func NewSequentialOrchestrator(registry *CallbackRegistry, agentNames []string) Orchestrator {
+	return &sequentialOrchestrator{
+		handlers:         make(map[string]AgentHandler),
+		agentSequence:    agentNames,
+		callbackRegistry: registry,
+	}
+}
+
+// NewLoopOrchestrator creates an orchestrator that runs a single agent in a loop
+func NewLoopOrchestrator(registry *CallbackRegistry, agentNames []string) Orchestrator {
+	agentName := ""
+	if len(agentNames) > 0 {
+		agentName = agentNames[0] // Use first agent for loop
+	}
+	return &loopOrchestrator{
+		handlers:         make(map[string]AgentHandler),
+		agentName:        agentName,
+		maxIterations:    5, // Default iterations
 		callbackRegistry: registry,
 	}
 }
@@ -83,6 +110,12 @@ func NewRunnerWithOrchestration(cfg EnhancedRunnerConfig) Runner {
 	switch cfg.OrchestrationMode {
 	case OrchestrationCollaborate:
 		orch = NewCollaborativeOrchestrator(callbackRegistry)
+	case OrchestrationMixed:
+		orch = NewMixedOrchestrator(callbackRegistry, cfg.CollaborativeAgents, cfg.SequentialAgents)
+	case OrchestrationSequential:
+		orch = NewSequentialOrchestrator(callbackRegistry, cfg.SequentialAgents)
+	case OrchestrationLoop:
+		orch = NewLoopOrchestrator(callbackRegistry, cfg.SequentialAgents)
 	default:
 		orch = NewRouteOrchestrator(callbackRegistry)
 	}
@@ -434,5 +467,448 @@ func (o *collaborativeOrchestrator) Dispatch(ctx context.Context, event Event) (
 }
 
 // =============================================================================
-// ORCHESTRATION CONSTRUCTORS (UPDATED)
+// MIXED ORCHESTRATOR IMPLEMENTATION
 // =============================================================================
+
+// mixedOrchestrator implements hybrid orchestration combining collaborative and sequential patterns
+type mixedOrchestrator struct {
+	handlers                map[string]AgentHandler
+	collaborativeAgents     map[string]AgentHandler // Agents that run in parallel
+	collaborativeAgentNames []string                // Names of collaborative agents
+	sequentialAgents        []string                // Agent names that run in sequence
+	callbackRegistry        *CallbackRegistry
+	mu                      sync.RWMutex
+}
+
+// NewMixedOrchestrator creates an orchestrator that combines collaborative and sequential execution
+func NewMixedOrchestrator(registry *CallbackRegistry, collaborativeAgentNames, sequentialAgentNames []string) Orchestrator {
+	return &mixedOrchestrator{
+		handlers:                make(map[string]AgentHandler),
+		collaborativeAgents:     make(map[string]AgentHandler),
+		collaborativeAgentNames: collaborativeAgentNames,
+		sequentialAgents:        sequentialAgentNames,
+		callbackRegistry:        registry,
+	}
+}
+
+// RegisterAgent adds an agent to the appropriate execution group
+func (o *mixedOrchestrator) RegisterAgent(name string, handler AgentHandler) error {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+
+	if handler == nil {
+		return fmt.Errorf("handler cannot be nil for agent %s", name)
+	}
+
+	o.handlers[name] = handler
+
+	// Determine which group this agent belongs to
+	isCollaborative := false
+	for _, collabName := range o.getCollaborativeAgentNames() {
+		if collabName == name {
+			o.collaborativeAgents[name] = handler
+			isCollaborative = true
+			break
+		}
+	}
+
+	Logger().Debug().
+		Str("agent", name).
+		Bool("collaborative", isCollaborative).
+		Bool("sequential", !isCollaborative && o.isSequentialAgent(name)).
+		Msg("MixedOrchestrator: Agent registered")
+
+	return nil
+}
+
+// Dispatch implements hybrid execution: collaborative agents run in parallel, then sequential agents run in order
+func (o *mixedOrchestrator) Dispatch(ctx context.Context, event Event) (AgentResult, error) {
+	Logger().Info().
+		Str("event_id", event.GetID()).
+		Int("collaborative_agents", len(o.collaborativeAgents)).
+		Int("sequential_agents", len(o.sequentialAgents)).
+		Msg("MixedOrchestrator: Starting hybrid dispatch")
+
+	// Get initial state from event data
+	combinedState := NewState()
+
+	// Copy event data into state
+	for key, value := range event.GetData() {
+		combinedState.Set(key, value)
+	}
+
+	// Phase 1: Execute collaborative agents in parallel
+	if len(o.collaborativeAgents) > 0 {
+		Logger().Info().
+			Int("agents", len(o.collaborativeAgents)).
+			Msg("MixedOrchestrator: Phase 1 - Collaborative execution")
+
+		collabResult, err := o.executeCollaborativePhase(ctx, event, combinedState)
+		if err != nil {
+			return AgentResult{}, fmt.Errorf("collaborative phase failed: %w", err)
+		}
+
+		// Merge collaborative results into combined state
+		for _, key := range collabResult.OutputState.Keys() {
+			if value, ok := collabResult.OutputState.Get(key); ok {
+				combinedState.Set(key, value)
+			}
+		}
+		for _, key := range collabResult.OutputState.MetaKeys() {
+			if value, ok := collabResult.OutputState.GetMeta(key); ok {
+				combinedState.SetMeta(key, value)
+			}
+		}
+	}
+
+	// Phase 2: Execute sequential agents in order
+	if len(o.sequentialAgents) > 0 {
+		Logger().Info().
+			Int("agents", len(o.sequentialAgents)).
+			Msg("MixedOrchestrator: Phase 2 - Sequential execution")
+
+		seqResult, err := o.executeSequentialPhase(ctx, event, combinedState)
+		if err != nil {
+			return AgentResult{}, fmt.Errorf("sequential phase failed: %w", err)
+		}
+
+		// Merge sequential result into combined state
+		for _, key := range seqResult.OutputState.Keys() {
+			if value, ok := seqResult.OutputState.Get(key); ok {
+				combinedState.Set(key, value)
+			}
+		}
+		for _, key := range seqResult.OutputState.MetaKeys() {
+			if value, ok := seqResult.OutputState.GetMeta(key); ok {
+				combinedState.SetMeta(key, value)
+			}
+		}
+	}
+
+	Logger().Info().
+		Str("event_id", event.GetID()).
+		Msg("MixedOrchestrator: Hybrid dispatch completed successfully")
+
+	return AgentResult{
+		OutputState: combinedState,
+		StartTime:   time.Now(),
+		EndTime:     time.Now(),
+	}, nil
+}
+
+// executeCollaborativePhase runs all collaborative agents in parallel
+func (o *mixedOrchestrator) executeCollaborativePhase(ctx context.Context, event Event, state State) (AgentResult, error) {
+	if len(o.collaborativeAgents) == 0 {
+		return AgentResult{OutputState: state}, nil
+	}
+
+	var wg sync.WaitGroup
+	resultChan := make(chan AgentResult, len(o.collaborativeAgents))
+
+	// Execute all collaborative agents in parallel
+	for name, handler := range o.collaborativeAgents {
+		wg.Add(1)
+		go func(agentName string, h AgentHandler) {
+			defer wg.Done()
+
+			result, err := h.Run(ctx, event, state)
+			if err != nil {
+				result = AgentResult{
+					OutputState: state,
+					Error:       fmt.Sprintf("Agent %s failed: %v", agentName, err),
+				}
+			}
+
+			resultChan <- result
+		}(name, handler)
+	}
+
+	wg.Wait()
+	close(resultChan)
+
+	// Collect and merge results
+	combinedState := NewState()
+	var errors []string
+	hasSuccess := false
+
+	for result := range resultChan {
+		if result.Error != "" {
+			errors = append(errors, result.Error)
+		} else {
+			hasSuccess = true
+			// Merge successful results
+			for _, key := range result.OutputState.Keys() {
+				if value, ok := result.OutputState.Get(key); ok {
+					combinedState.Set(key, value)
+				}
+			}
+			for _, key := range result.OutputState.MetaKeys() {
+				if value, ok := result.OutputState.GetMeta(key); ok {
+					combinedState.SetMeta(key, value)
+				}
+			}
+		}
+	}
+
+	if !hasSuccess && len(errors) > 0 {
+		return AgentResult{}, fmt.Errorf("all collaborative agents failed: %v", errors)
+	}
+
+	return AgentResult{OutputState: combinedState}, nil
+}
+
+// executeSequentialPhase runs sequential agents one after another
+func (o *mixedOrchestrator) executeSequentialPhase(ctx context.Context, event Event, initialState State) (AgentResult, error) {
+	if len(o.sequentialAgents) == 0 {
+		return AgentResult{OutputState: initialState}, nil
+	}
+
+	currentState := initialState // State interface, not *SimpleState
+
+	for i, agentName := range o.sequentialAgents {
+		o.mu.RLock()
+		handler, exists := o.handlers[agentName]
+		o.mu.RUnlock()
+
+		if !exists {
+			Logger().Warn().
+				Str("agent", agentName).
+				Int("position", i).
+				Msg("MixedOrchestrator: Sequential agent not found, skipping")
+			continue
+		}
+
+		Logger().Debug().
+			Str("agent", agentName).
+			Int("position", i).
+			Int("total", len(o.sequentialAgents)).
+			Msg("MixedOrchestrator: Executing sequential agent")
+
+		result, err := handler.Run(ctx, event, currentState)
+		if err != nil {
+			return AgentResult{}, fmt.Errorf("sequential agent %s (position %d) failed: %w", agentName, i, err)
+		}
+
+		// Use this agent's output as input for the next agent
+		currentState = result.OutputState
+	}
+
+	return AgentResult{OutputState: currentState}, nil
+}
+
+// Helper methods
+func (o *mixedOrchestrator) getCollaborativeAgentNames() []string {
+	return o.collaborativeAgentNames
+}
+
+func (o *mixedOrchestrator) isSequentialAgent(name string) bool {
+	for _, seqName := range o.sequentialAgents {
+		if seqName == name {
+			return true
+		}
+	}
+	return false
+}
+
+// GetCallbackRegistry returns the callback registry for this orchestrator
+func (o *mixedOrchestrator) GetCallbackRegistry() *CallbackRegistry {
+	return o.callbackRegistry
+}
+
+// Stop halts the mixed orchestrator (cleanup if needed)
+func (o *mixedOrchestrator) Stop() {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+
+	// Clear handlers
+	o.handlers = make(map[string]AgentHandler)
+	o.collaborativeAgents = make(map[string]AgentHandler)
+	o.sequentialAgents = nil
+
+	Logger().Debug().Msg("MixedOrchestrator: Stopped and cleaned up")
+}
+
+// =============================================================================
+// SEQUENTIAL ORCHESTRATOR IMPLEMENTATION
+// =============================================================================
+
+// sequentialOrchestrator implements sequential execution of agents
+type sequentialOrchestrator struct {
+	handlers         map[string]AgentHandler
+	agentSequence    []string
+	callbackRegistry *CallbackRegistry
+	mu               sync.RWMutex
+}
+
+// RegisterAgent adds an agent to the sequential orchestrator
+func (o *sequentialOrchestrator) RegisterAgent(name string, handler AgentHandler) error {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+
+	if handler == nil {
+		return fmt.Errorf("handler cannot be nil for agent %s", name)
+	}
+
+	o.handlers[name] = handler
+	Logger().Debug().Str("agent", name).Msg("SequentialOrchestrator: Agent registered")
+	return nil
+}
+
+// Dispatch executes agents in the specified sequence
+func (o *sequentialOrchestrator) Dispatch(ctx context.Context, event Event) (AgentResult, error) {
+	o.mu.RLock()
+	defer o.mu.RUnlock()
+
+	if len(o.agentSequence) == 0 {
+		return AgentResult{}, fmt.Errorf("no agent sequence defined")
+	}
+
+	// Initialize state from event data
+	currentState := NewState()
+	for key, value := range event.GetData() {
+		currentState.Set(key, value)
+	}
+	for key, value := range event.GetMetadata() {
+		currentState.SetMeta(key, value)
+	}
+
+	var state State = currentState // Use State interface for chaining
+
+	// Execute agents in sequence
+	for i, agentName := range o.agentSequence {
+		handler, exists := o.handlers[agentName]
+		if !exists {
+			Logger().Warn().Str("agent", agentName).Msg("SequentialOrchestrator: Agent not found, skipping")
+			continue
+		}
+
+		Logger().Debug().
+			Str("agent", agentName).
+			Int("position", i).
+			Msg("SequentialOrchestrator: Executing agent")
+
+		result, err := handler.Run(ctx, event, state)
+		if err != nil {
+			return AgentResult{}, fmt.Errorf("sequential agent %s failed: %w", agentName, err)
+		}
+
+		// Pass output state to next agent
+		state = result.OutputState
+	}
+
+	return AgentResult{OutputState: state}, nil
+}
+
+// GetCallbackRegistry returns the callback registry
+func (o *sequentialOrchestrator) GetCallbackRegistry() *CallbackRegistry {
+	return o.callbackRegistry
+}
+
+// Stop halts the sequential orchestrator
+func (o *sequentialOrchestrator) Stop() {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	o.handlers = make(map[string]AgentHandler)
+	Logger().Debug().Msg("SequentialOrchestrator: Stopped")
+}
+
+// =============================================================================
+// LOOP ORCHESTRATOR IMPLEMENTATION
+// =============================================================================
+
+// loopOrchestrator implements loop execution with a single agent
+type loopOrchestrator struct {
+	handlers         map[string]AgentHandler
+	agentName        string
+	maxIterations    int
+	callbackRegistry *CallbackRegistry
+	mu               sync.RWMutex
+}
+
+// RegisterAgent adds an agent to the loop orchestrator
+func (o *loopOrchestrator) RegisterAgent(name string, handler AgentHandler) error {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+
+	if handler == nil {
+		return fmt.Errorf("handler cannot be nil for agent %s", name)
+	}
+
+	o.handlers[name] = handler
+	Logger().Debug().Str("agent", name).Msg("LoopOrchestrator: Agent registered")
+	return nil
+}
+
+// Dispatch executes the specified agent in a loop
+func (o *loopOrchestrator) Dispatch(ctx context.Context, event Event) (AgentResult, error) {
+	o.mu.RLock()
+	defer o.mu.RUnlock()
+
+	if o.agentName == "" {
+		return AgentResult{}, fmt.Errorf("no agent specified for loop")
+	}
+
+	handler, exists := o.handlers[o.agentName]
+	if !exists {
+		return AgentResult{}, fmt.Errorf("loop agent %s not found", o.agentName)
+	}
+
+	// Initialize state from event data
+	currentState := NewState()
+	for key, value := range event.GetData() {
+		currentState.Set(key, value)
+	}
+	for key, value := range event.GetMetadata() {
+		currentState.SetMeta(key, value)
+	}
+
+	var state State = currentState // Use State interface for chaining
+
+	// Execute agent in loop
+	for i := 0; i < o.maxIterations; i++ {
+		Logger().Debug().
+			Str("agent", o.agentName).
+			Int("iteration", i+1).
+			Int("max_iterations", o.maxIterations).
+			Msg("LoopOrchestrator: Executing agent iteration")
+
+		result, err := handler.Run(ctx, event, state)
+		if err != nil {
+			return AgentResult{}, fmt.Errorf("loop agent %s (iteration %d) failed: %w", o.agentName, i+1, err)
+		}
+
+		// Check for completion signal in state
+		if completed, ok := result.OutputState.Get("loop_completed"); ok {
+			if completedBool, isBool := completed.(bool); isBool && completedBool {
+				Logger().Info().
+					Str("agent", o.agentName).
+					Int("iteration", i+1).
+					Msg("LoopOrchestrator: Agent signaled completion")
+				return AgentResult{OutputState: result.OutputState}, nil
+			}
+		}
+
+		// Pass output state to next iteration
+		state = result.OutputState
+	}
+
+	Logger().Info().
+		Str("agent", o.agentName).
+		Int("iterations", o.maxIterations).
+		Msg("LoopOrchestrator: Completed all iterations")
+
+	return AgentResult{OutputState: state}, nil
+}
+
+// GetCallbackRegistry returns the callback registry
+func (o *loopOrchestrator) GetCallbackRegistry() *CallbackRegistry {
+	return o.callbackRegistry
+}
+
+// Stop halts the loop orchestrator
+func (o *loopOrchestrator) Stop() {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	o.handlers = make(map[string]AgentHandler)
+	Logger().Debug().Msg("LoopOrchestrator: Stopped")
+}
