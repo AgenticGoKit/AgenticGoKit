@@ -10,16 +10,20 @@ AgentFlow is a production-ready Go framework for building intelligent agent work
 - **[Quick Start Guide](#quick-start)** - Get running in 5 minutes
 - **[Installation & Setup](#installation)** - Go module setup and CLI installation
 - **[Your First Agent](#first-agent)** - Build a simple agent from scratch
-- **[Multi-Agent Workflows](#multi-agent)** - Orchestrate multiple agents
+- **[Multi-Agent Orchestration](#multi-agent)** - Collaborative, sequential, and mixed workflows
+- **[Workflow Visualization](visualization_guide.md)** - Generate Mermaid diagrams automatically
 
 ### **Core Concepts**  
 - **[Agent Fundamentals](guides/AgentBasics.md)** - Understanding AgentHandler interface and patterns
+- **[Multi-Agent Orchestration](multi_agent_orchestration.md)** - Orchestration patterns and API reference
 - **[Examples & Tutorials](guides/Examples.md)** - Practical examples and code samples
 - **[Tool Integration](guides/ToolIntegration.md)** - MCP protocol and dynamic tool discovery
 - **[LLM Providers](guides/Providers.md)** - Azure, OpenAI, Ollama, and custom providers
 - **[Configuration](guides/Configuration.md)** - Managing agentflow.toml and environment setup
 
 ### **Advanced Usage**
+- **[Multi-Agent Orchestration](multi_agent_orchestration.md)** - Advanced orchestration patterns and configuration
+- **[Workflow Visualization](visualization_guide.md)** - Generate and customize Mermaid diagrams
 - **[Production Deployment](guides/Production.md)** - Scaling, monitoring, and best practices  
 - **[Error Handling](guides/ErrorHandling.md)** - Resilient agent workflows
 - **[Custom Tools](guides/CustomTools.md)** - Building your own MCP servers
@@ -54,18 +58,46 @@ AgentFlow is a production-ready Go framework for building intelligent agent work
 # Install the CLI
 go install github.com/kunalkushwaha/agentflow/cmd/agentcli@latest
 
-# Create your first project
-agentcli create my-agent-app --agents 2 --mcp-enabled
-cd my-agent-app
+# Create a collaborative multi-agent system
+agentcli create research-system \
+  --orchestration-mode collaborative \
+  --collaborative-agents "researcher,analyzer,validator" \
+  --visualize \
+  --mcp-enabled
 
-# Run your agents
-go run . -m "search for the latest Go tutorials and summarize them"
+cd research-system
+
+# Run with any message - agents work together intelligently
+go run . -m "research AI trends and provide comprehensive analysis"
+```
+
+### Multi-Agent Orchestration
+```bash
+# Sequential processing pipeline
+agentcli create data-pipeline \
+  --orchestration-mode sequential \
+  --sequential-agents "collector,processor,formatter" \
+  --visualize
+
+# Loop-based workflow with conditions
+agentcli create quality-loop \
+  --orchestration-mode loop \
+  --loop-agent "quality-checker" \
+  --max-iterations 5 \
+  --visualize
+
+# Mixed collaborative + sequential workflow
+agentcli create complex-workflow \
+  --orchestration-mode mixed \
+  --collaborative-agents "analyzer,validator" \
+  --sequential-agents "processor,reporter" \
+  --visualize-output "docs/diagrams"
 ```
 
 ### First Agent
 ```bash
 # Generate a single agent project
-agentcli create simple-agent
+agentcli create simple-agent --visualize
 
 # The generated agent1.go will look like this:
 ```
@@ -119,14 +151,62 @@ func (a *Agent1Handler) Run(ctx context.Context, event agentflow.Event, state ag
 
 ### Multi-Agent
 ```bash
-# Generate a multi-agent workflow
-agentcli create research-system --agents 3 --mcp-enabled --provider azure
+# Generate a collaborative multi-agent workflow
+agentcli create research-system \
+  --orchestration-mode collaborative \
+  --collaborative-agents "researcher,analyzer,validator" \
+  --visualize
 
 # This creates:
-# - agent1.go (Research agent - gathers information)
-# - agent2.go (Analysis agent - processes data)  
-# - agent3.go (Summary agent - final synthesis)
-# - workflow orchestration in main.go
+# - researcher.go (Research agent - gathers information)
+# - analyzer.go (Analysis agent - processes data)  
+# - validator.go (Validation agent - ensures quality)
+# - main.go (Collaborative orchestration)
+# - workflow.mmd (Mermaid diagram)
+```
+
+**Collaborative Orchestration Code:**
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+    "time"
+    
+    "github.com/kunalkushwaha/agentflow/core"
+)
+
+func main() {
+    // Initialize agents
+    agents := map[string]core.AgentHandler{
+        "researcher": NewResearcher(),
+        "analyzer":   NewAnalyzer(),
+        "validator":  NewValidator(),
+    }
+    
+    // Create collaborative orchestration
+    runner := core.NewOrchestrationBuilder(core.OrchestrationCollaborate).
+        WithAgents(agents).
+        WithTimeout(2 * time.Minute).
+        WithFailureThreshold(0.8).
+        WithMaxConcurrency(10).
+        Build()
+    
+    // Create event
+    event := core.NewEvent("all", map[string]interface{}{
+        "task": "research AI trends and provide comprehensive analysis",
+    }, nil)
+    
+    // All agents process the event in parallel
+    result, err := runner.Run(context.Background(), event)
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    fmt.Printf("Collaborative Result: %s\n", result.GetResult())
+}
 ```
 
 ## Why AgentFlow?

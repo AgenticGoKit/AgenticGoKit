@@ -44,6 +44,10 @@ type ProjectConfig struct {
 	OrchestrationTimeout int
 	FailureThreshold     float64
 	MaxConcurrency       int
+
+	// Visualization configuration
+	Visualize          bool
+	VisualizeOutputDir string
 }
 
 // ResolveAgentNames determines the final list of agents to create based on the config

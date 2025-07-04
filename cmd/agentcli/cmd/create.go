@@ -41,6 +41,9 @@ Examples:
   # Mixed orchestration with fault tolerance
   agentcli create myworkflow --orchestration-mode collaborative --collaborative-agents "analyzer,validator" --failure-threshold 0.8 --max-concurrency 10
 
+  # Generate project with workflow diagrams
+  agentcli create myproject --visualize --visualize-output "docs/diagrams"
+
   # MCP-enabled project with basic tools
   agentcli create myproject --mcp-enabled
 
@@ -81,6 +84,10 @@ var (
 	failureThreshold     float64
 	maxConcurrency       int
 
+	// Visualization flags
+	visualize          bool
+	visualizeOutputDir string
+
 	// MCP flags
 	mcpEnabled         bool
 	mcpProduction      bool
@@ -114,6 +121,10 @@ func init() {
 	createCmd.Flags().IntVar(&orchestrationTimeout, "orchestration-timeout", 30, "Timeout for orchestration operations (seconds)")
 	createCmd.Flags().Float64Var(&failureThreshold, "failure-threshold", 0.5, "Failure threshold for stopping orchestration (0.0-1.0)")
 	createCmd.Flags().IntVar(&maxConcurrency, "max-concurrency", 10, "Maximum concurrent agent executions")
+
+	// Visualization flags
+	createCmd.Flags().BoolVar(&visualize, "visualize", false, "Generate Mermaid workflow diagrams")
+	createCmd.Flags().StringVar(&visualizeOutputDir, "visualize-output", "docs/workflows", "Output directory for generated diagrams")
 
 	// MCP integration flags
 	createCmd.Flags().BoolVar(&mcpEnabled, "mcp-enabled", false, "Enable MCP tool integration")
@@ -178,6 +189,10 @@ func runCreateCommand(cmd *cobra.Command, args []string) error {
 		FailureThreshold:     failureThreshold,
 		MaxConcurrency:       maxConcurrency,
 
+		// Visualization configuration
+		Visualize:          visualize,
+		VisualizeOutputDir: visualizeOutputDir,
+
 		// MCP configuration
 		MCPEnabled:         mcpEnabled || mcpProduction,
 		MCPProduction:      mcpProduction,
@@ -205,6 +220,11 @@ func runCreateCommand(cmd *cobra.Command, args []string) error {
 		if config.WithMetrics {
 			fmt.Printf("✓ Metrics enabled on port %d\n", config.MetricsPort)
 		}
+	}
+
+	if config.Visualize {
+		fmt.Printf("✓ Workflow visualization enabled\n")
+		fmt.Printf("✓ Diagrams will be generated in %s/\n", config.VisualizeOutputDir)
 	}
 
 	// Use modular template system for better maintainability
@@ -529,6 +549,23 @@ func interactiveSetup() (scaffold.ProjectConfig, error) {
 		fmt.Scanln(&seqInput)
 		if seqInput != "" {
 			config.SequentialAgents = parseCommaSeparatedList(seqInput)
+		}
+	}
+
+	// Visualization options
+	fmt.Print("\nGenerate workflow diagrams? (y/N): ")
+	var visualizeChoice string
+	fmt.Scanln(&visualizeChoice)
+	config.Visualize = strings.ToLower(visualizeChoice) == "y" || strings.ToLower(visualizeChoice) == "yes"
+
+	if config.Visualize {
+		fmt.Print("Diagram output directory (default: docs/workflows): ")
+		var outputDir string
+		fmt.Scanln(&outputDir)
+		if outputDir != "" {
+			config.VisualizeOutputDir = outputDir
+		} else {
+			config.VisualizeOutputDir = "docs/workflows"
 		}
 	}
 

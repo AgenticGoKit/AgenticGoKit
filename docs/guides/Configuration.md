@@ -2,7 +2,7 @@
 
 **Managing AgentFlow Configuration with agentflow.toml**
 
-AgentFlow uses TOML configuration files to manage all aspects of your agent system: LLM providers, MCP servers, orchestration settings, and more.
+AgentFlow uses TOML configuration files to manage all aspects of your agent system: LLM providers, MCP servers, multi-agent orchestration settings, workflow visualization, and more.
 
 ## Basic Configuration Structure
 
@@ -16,6 +16,32 @@ description = "AgentFlow-powered agent workflow"
 
 # Logging configuration
 log_level = "info"  # debug, info, warn, error
+
+# Multi-Agent Orchestration Configuration
+[orchestration]
+mode = "collaborative"        # collaborative, sequential, loop, mixed
+timeout = "60s"
+failure_threshold = 0.5       # 0.0-1.0
+max_concurrency = 5
+max_iterations = 10           # for loop mode
+
+# Collaborative agents (parallel processing)
+collaborative_agents = ["researcher", "analyzer", "validator"]
+
+# Sequential agents (pipeline processing)
+sequential_agents = ["collector", "processor", "formatter"]
+
+# Loop agent (iterative processing)
+loop_agent = "quality-checker"
+
+# Workflow Visualization
+[visualization]
+enabled = true
+output_dir = "./docs/diagrams"
+diagram_type = "flowchart"    # flowchart, sequence, etc.
+direction = "TD"              # TD, LR, BT, RL
+show_metadata = true
+show_agent_types = true
 
 # LLM Provider configuration
 [provider]

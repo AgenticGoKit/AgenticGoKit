@@ -39,6 +39,10 @@ type ProjectConfig struct {
 	OrchestrationTimeout int
 	FailureThreshold     float64
 	MaxConcurrency       int
+
+	// Visualization configuration
+	Visualize          bool
+	VisualizeOutputDir string
 }
 
 // TemplateData represents the data structure passed to templates

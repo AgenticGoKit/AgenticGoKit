@@ -1,6 +1,6 @@
 # AgentFlow Architecture
 
-This Go-based AI Agent Framework provides production-ready, multi-modal agent capabilities with Model Context Protocol (MCP) integration. It combines ultra-fast agent instantiation, dynamic tool discovery, advanced multi-agent coordination patterns, and comprehensive developer tooling for building scalable agent workflows.
+This Go-based AI Agent Framework provides production-ready, multi-modal agent capabilities with Model Context Protocol (MCP) integration. It combines ultra-fast agent instantiation, dynamic tool discovery, advanced multi-agent orchestration patterns, automatic workflow visualization, and comprehensive developer tooling for building scalable agent workflows.
 
 ## System Architecture Overview
 
@@ -19,6 +19,7 @@ flowchart TB
         AGENTCLI[agentcli]
         SCAFFOLD[🏗️ Project Scaffolding]
         CONFIG[📄 agentflow.toml]
+        VISUALIZE[📊 Workflow Visualization<br/>Mermaid Diagrams]
     end
 
     %% Core AgentFlow System
@@ -35,7 +36,7 @@ flowchart TB
             AGENT1[Agent 1<br/>Research]
             AGENT2[Agent 2<br/>Analysis] 
             AGENT3[Agent N<br/>Validation]
-            ORCHESTRATOR[🎭 Orchestrator<br/>Route/Collaborate/Coordinate]
+            ORCHESTRATOR[🎭 Multi-Agent Orchestrator<br/>Collaborative/Sequential/Loop/Mixed]
         end
         
         %% Workflow Management Layer

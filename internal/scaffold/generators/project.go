@@ -49,6 +49,13 @@ func (g *ProjectGenerator) GenerateProjectStructure(config scaffold.ProjectConfi
 		return err
 	}
 
+	// Generate workflow diagrams if requested
+	if config.Visualize {
+		if err := g.generateWorkflowDiagrams(config); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -76,7 +83,37 @@ func (g *ProjectGenerator) generateReadme(config scaffold.ProjectConfig) error {
 
 // generateMainFile creates the main.go file using templates
 func (g *ProjectGenerator) generateMainFile(config scaffold.ProjectConfig) error {
-	agents := utils.ResolveAgentNames(config)
+	// Convert to utils.ProjectConfig
+	utilsConfig := utils.ProjectConfig{
+		Name:                 config.Name,
+		NumAgents:            config.NumAgents,
+		Provider:             config.Provider,
+		ResponsibleAI:        config.ResponsibleAI,
+		ErrorHandler:         config.ErrorHandler,
+		MCPEnabled:           config.MCPEnabled,
+		MCPProduction:        config.MCPProduction,
+		WithCache:            config.WithCache,
+		WithMetrics:          config.WithMetrics,
+		MCPTools:             config.MCPTools,
+		MCPServers:           config.MCPServers,
+		CacheBackend:         config.CacheBackend,
+		MetricsPort:          config.MetricsPort,
+		WithLoadBalancer:     config.WithLoadBalancer,
+		ConnectionPoolSize:   config.ConnectionPoolSize,
+		RetryPolicy:          config.RetryPolicy,
+		OrchestrationMode:    config.OrchestrationMode,
+		CollaborativeAgents:  config.CollaborativeAgents,
+		SequentialAgents:     config.SequentialAgents,
+		LoopAgent:            config.LoopAgent,
+		MaxIterations:        config.MaxIterations,
+		OrchestrationTimeout: config.OrchestrationTimeout,
+		FailureThreshold:     config.FailureThreshold,
+		MaxConcurrency:       config.MaxConcurrency,
+		Visualize:            config.Visualize,
+		VisualizeOutputDir:   config.VisualizeOutputDir,
+	}
+
+	agents := utils.ResolveAgentNames(utilsConfig)
 
 	// Create template data
 	templateData := struct {
@@ -126,7 +163,36 @@ func (g *ProjectGenerator) createReadmeContent(config scaffold.ProjectConfig) st
 	}
 
 	content += "\n## Agents\n\n"
-	agents := utils.ResolveAgentNames(config)
+	// Convert to utils.ProjectConfig
+	utilsConfig := utils.ProjectConfig{
+		Name:                 config.Name,
+		NumAgents:            config.NumAgents,
+		Provider:             config.Provider,
+		ResponsibleAI:        config.ResponsibleAI,
+		ErrorHandler:         config.ErrorHandler,
+		MCPEnabled:           config.MCPEnabled,
+		MCPProduction:        config.MCPProduction,
+		WithCache:            config.WithCache,
+		WithMetrics:          config.WithMetrics,
+		MCPTools:             config.MCPTools,
+		MCPServers:           config.MCPServers,
+		CacheBackend:         config.CacheBackend,
+		MetricsPort:          config.MetricsPort,
+		WithLoadBalancer:     config.WithLoadBalancer,
+		ConnectionPoolSize:   config.ConnectionPoolSize,
+		RetryPolicy:          config.RetryPolicy,
+		OrchestrationMode:    config.OrchestrationMode,
+		CollaborativeAgents:  config.CollaborativeAgents,
+		SequentialAgents:     config.SequentialAgents,
+		LoopAgent:            config.LoopAgent,
+		MaxIterations:        config.MaxIterations,
+		OrchestrationTimeout: config.OrchestrationTimeout,
+		FailureThreshold:     config.FailureThreshold,
+		MaxConcurrency:       config.MaxConcurrency,
+		Visualize:            config.Visualize,
+		VisualizeOutputDir:   config.VisualizeOutputDir,
+	}
+	agents := utils.ResolveAgentNames(utilsConfig)
 	for _, agent := range agents {
 		content += fmt.Sprintf("- **%s** (%s): %s\n", agent.DisplayName, agent.Name, agent.Purpose)
 	}
@@ -138,6 +204,11 @@ func (g *ProjectGenerator) createReadmeContent(config scaffold.ProjectConfig) st
 	content += "# Run the application\n"
 	content += "go run . -m \"Your message here\"\n"
 	content += "```\n\n"
+
+	if config.Visualize {
+		content += "## Workflow Diagrams\n\n"
+		content += fmt.Sprintf("Visual workflow diagrams have been generated in the `%s` directory. These diagrams show the orchestration pattern and agent interactions for this project.\n\n", config.VisualizeOutputDir)
+	}
 
 	content += "## Configuration\n\n"
 	content += "Set the following environment variables:\n\n"
@@ -221,7 +292,7 @@ func initializeMCP() (*core.MCPManager, error) {
 		}
 	}
 
-	content += "\n\treturn mcpManager, nil\n}"
+	content += "\n\t return mcpManager, nil\n}"
 
 	return content
 }
@@ -244,4 +315,248 @@ func initializeCache() error {
 		return fmt.Errorf("unsupported cache backend: %s")
 	}
 }`, config.CacheBackend, config.CacheBackend)
+}
+
+// generateWorkflowDiagrams creates Mermaid workflow diagrams for the project
+func (g *ProjectGenerator) generateWorkflowDiagrams(config scaffold.ProjectConfig) error {
+	// Create the output directory for diagrams
+	diagramsDir := filepath.Join(config.Name, config.VisualizeOutputDir)
+	if err := os.MkdirAll(diagramsDir, 0755); err != nil {
+		return fmt.Errorf("failed to create diagrams directory: %w", err)
+	}
+	fmt.Printf("Created directory: %s\n", diagramsDir)
+
+	// Generate diagram based on orchestration mode
+	var diagram string
+	var title string
+
+	switch config.OrchestrationMode {
+	case "collaborative":
+		diagram, title = g.generateCollaborativeDiagram(config)
+	case "sequential":
+		diagram, title = g.generateSequentialDiagram(config)
+	case "loop":
+		diagram, title = g.generateLoopDiagram(config)
+	case "mixed":
+		diagram, title = g.generateMixedDiagram(config)
+	default:
+		diagram, title = g.generateRouteDiagram(config)
+	}
+
+	// Create the diagram file
+	diagramPath := filepath.Join(diagramsDir, "workflow.md")
+	content := fmt.Sprintf(`# %s Workflow
+
+## Overview
+This diagram shows the %s orchestration pattern used in this project.
+
+## Workflow Diagram
+
+%s
+
+## Configuration
+- **Orchestration Mode**: %s
+- **Number of Agents**: %d
+- **Timeout**: %d seconds
+- **Max Concurrency**: %d
+- **Failure Threshold**: %.2f
+
+## Agent Details
+%s
+`, title, config.OrchestrationMode, diagram, config.OrchestrationMode, config.NumAgents, config.OrchestrationTimeout, config.MaxConcurrency, config.FailureThreshold, g.generateAgentDetails(config))
+
+	if err := os.WriteFile(diagramPath, []byte(content), 0644); err != nil {
+		return fmt.Errorf("failed to create workflow diagram: %w", err)
+	}
+	fmt.Printf("Created workflow diagram: %s\n", diagramPath)
+
+	return nil
+}
+
+// generateCollaborativeDiagram creates a collaborative orchestration diagram
+func (g *ProjectGenerator) generateCollaborativeDiagram(config scaffold.ProjectConfig) (string, string) {
+	agents := config.CollaborativeAgents
+	if len(agents) == 0 {
+		// Use default agent names if none specified
+		agents = make([]string, config.NumAgents)
+		for i := 0; i < config.NumAgents; i++ {
+			agents[i] = fmt.Sprintf("agent%d", i+1)
+		}
+	}
+
+	diagram := "```mermaid\n---\ntitle: Collaborative Orchestration\n---\nflowchart TD\n"
+	diagram += "    EVENT[\"📨 Input Event\"]\n"
+	diagram += "    ORCHESTRATOR[\"🎯 Collaborative Orchestrator\"]\n"
+	diagram += "    AGGREGATOR[\"📊 Result Aggregator\"]\n"
+	diagram += "    RESULT[\"📤 Final Result\"]\n\n"
+	diagram += "    EVENT --> ORCHESTRATOR\n"
+
+	for i, agent := range agents {
+		agentId := fmt.Sprintf("AGENT%d", i+1)
+		diagram += fmt.Sprintf("    %s[\"🤖 %s\"]\n", agentId, agent)
+		diagram += fmt.Sprintf("    ORCHESTRATOR --> %s\n", agentId)
+		diagram += fmt.Sprintf("    %s --> AGGREGATOR\n", agentId)
+	}
+
+	diagram += "    AGGREGATOR --> RESULT\n"
+	diagram += "```"
+
+	return diagram, "Collaborative"
+}
+
+// generateSequentialDiagram creates a sequential orchestration diagram
+func (g *ProjectGenerator) generateSequentialDiagram(config scaffold.ProjectConfig) (string, string) {
+	agents := config.SequentialAgents
+	if len(agents) == 0 {
+		// Use default agent names if none specified
+		agents = make([]string, config.NumAgents)
+		for i := 0; i < config.NumAgents; i++ {
+			agents[i] = fmt.Sprintf("agent%d", i+1)
+		}
+	}
+
+	diagram := "```mermaid\n---\ntitle: Sequential Pipeline\n---\nflowchart TD\n"
+	diagram += "    INPUT[\"📨 Input Event\"]\n"
+
+	var prevNode = "INPUT"
+	for i, agent := range agents {
+		agentId := fmt.Sprintf("AGENT%d", i+1)
+		diagram += fmt.Sprintf("    %s[\"🤖 %s\"]\n", agentId, agent)
+		diagram += fmt.Sprintf("    %s --> %s\n", prevNode, agentId)
+		prevNode = agentId
+	}
+
+	diagram += "    OUTPUT[\"📤 Final Result\"]\n"
+	diagram += fmt.Sprintf("    %s --> OUTPUT\n", prevNode)
+	diagram += "```"
+
+	return diagram, "Sequential Pipeline"
+}
+
+// generateLoopDiagram creates a loop orchestration diagram
+func (g *ProjectGenerator) generateLoopDiagram(config scaffold.ProjectConfig) (string, string) {
+	agentName := config.LoopAgent
+	if agentName == "" {
+		agentName = "processor"
+	}
+
+	diagram := "```mermaid\n---\ntitle: Loop Processing\n---\nflowchart TD\n"
+	diagram += "    INPUT[\"📨 Input Event\"]\n"
+	diagram += "    AGENT[\"🤖 " + agentName + "\"]\n"
+	diagram += "    CONDITION{\"🔄 Continue Loop?\"}\n"
+	diagram += "    OUTPUT[\"📤 Final Result\"]\n\n"
+	diagram += "    INPUT --> AGENT\n"
+	diagram += "    AGENT --> CONDITION\n"
+	diagram += "    CONDITION -->|Yes| AGENT\n"
+	diagram += "    CONDITION -->|No| OUTPUT\n"
+	diagram += fmt.Sprintf("    CONDITION -.->|Max %d iterations| OUTPUT\n", config.MaxIterations)
+	diagram += "```"
+
+	return diagram, "Loop Processing"
+}
+
+// generateMixedDiagram creates a mixed orchestration diagram
+func (g *ProjectGenerator) generateMixedDiagram(config scaffold.ProjectConfig) (string, string) {
+	diagram := "```mermaid\n---\ntitle: Mixed Orchestration\n---\nflowchart TD\n"
+	diagram += "    INPUT[\"📨 Input Event\"]\n"
+	diagram += "    PHASE1[\"🤝 Collaborative Phase\"]\n"
+	diagram += "    PHASE2[\"🎭 Sequential Phase\"]\n"
+	diagram += "    OUTPUT[\"📤 Final Result\"]\n\n"
+	diagram += "    INPUT --> PHASE1\n"
+
+	// Add collaborative agents
+	if len(config.CollaborativeAgents) > 0 {
+		for i, agent := range config.CollaborativeAgents {
+			agentId := fmt.Sprintf("COLLAB%d", i+1)
+			diagram += fmt.Sprintf("    %s[\"🤖 %s\"]\n", agentId, agent)
+			diagram += fmt.Sprintf("    PHASE1 --> %s\n", agentId)
+			diagram += fmt.Sprintf("    %s --> PHASE2\n", agentId)
+		}
+	}
+
+	// Add sequential agents
+	if len(config.SequentialAgents) > 0 {
+		var prevNode = "PHASE2"
+		for i, agent := range config.SequentialAgents {
+			agentId := fmt.Sprintf("SEQ%d", i+1)
+			diagram += fmt.Sprintf("    %s[\"🤖 %s\"]\n", agentId, agent)
+			diagram += fmt.Sprintf("    %s --> %s\n", prevNode, agentId)
+			prevNode = agentId
+		}
+		diagram += fmt.Sprintf("    %s --> OUTPUT\n", prevNode)
+	} else {
+		diagram += "    PHASE2 --> OUTPUT\n"
+	}
+
+	diagram += "```"
+
+	return diagram, "Mixed Orchestration"
+}
+
+// generateRouteDiagram creates a route orchestration diagram
+func (g *ProjectGenerator) generateRouteDiagram(config scaffold.ProjectConfig) (string, string) {
+	diagram := "```mermaid\n---\ntitle: Route Orchestration\n---\nflowchart TD\n"
+	diagram += "    INPUT[\"📨 Input Event\"]\n"
+	diagram += "    ROUTER[\"🎯 Event Router\"]\n"
+	diagram += "    OUTPUT[\"📤 Result\"]\n\n"
+	diagram += "    INPUT --> ROUTER\n"
+
+	for i := 0; i < config.NumAgents; i++ {
+		agentId := fmt.Sprintf("AGENT%d", i+1)
+		agentName := fmt.Sprintf("agent%d", i+1)
+		diagram += fmt.Sprintf("    %s[\"🤖 %s\"]\n", agentId, agentName)
+		diagram += fmt.Sprintf("    ROUTER -.->|Route| %s\n", agentId)
+		diagram += fmt.Sprintf("    %s --> OUTPUT\n", agentId)
+	}
+
+	diagram += "```"
+
+	return diagram, "Route Orchestration"
+}
+
+// generateAgentDetails creates detailed agent information
+func (g *ProjectGenerator) generateAgentDetails(config scaffold.ProjectConfig) string {
+	details := ""
+
+	switch config.OrchestrationMode {
+	case "collaborative":
+		if len(config.CollaborativeAgents) > 0 {
+			details += "### Collaborative Agents\n"
+			for i, agent := range config.CollaborativeAgents {
+				details += fmt.Sprintf("%d. **%s**: Processes events in parallel with other agents\n", i+1, agent)
+			}
+		}
+	case "sequential":
+		if len(config.SequentialAgents) > 0 {
+			details += "### Sequential Agents\n"
+			for i, agent := range config.SequentialAgents {
+				details += fmt.Sprintf("%d. **%s**: Processes events in pipeline order\n", i+1, agent)
+			}
+		}
+	case "loop":
+		if config.LoopAgent != "" {
+			details += "### Loop Agent\n"
+			details += fmt.Sprintf("1. **%s**: Processes events iteratively up to %d times\n", config.LoopAgent, config.MaxIterations)
+		}
+	case "mixed":
+		if len(config.CollaborativeAgents) > 0 {
+			details += "### Collaborative Agents (Phase 1)\n"
+			for i, agent := range config.CollaborativeAgents {
+				details += fmt.Sprintf("%d. **%s**: Processes events in parallel\n", i+1, agent)
+			}
+		}
+		if len(config.SequentialAgents) > 0 {
+			details += "\n### Sequential Agents (Phase 2)\n"
+			for i, agent := range config.SequentialAgents {
+				details += fmt.Sprintf("%d. **%s**: Processes events in pipeline order\n", i+1, agent)
+			}
+		}
+	default:
+		details += "### Route Agents\n"
+		for i := 0; i < config.NumAgents; i++ {
+			details += fmt.Sprintf("%d. **agent%d**: Processes events based on routing logic\n", i+1, i+1)
+		}
+	}
+
+	return details
 }

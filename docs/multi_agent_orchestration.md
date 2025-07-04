@@ -1,14 +1,147 @@
-# Multi-Agent Orchestration API Documentation
+# Multi-Agent Orchestration Guide
 
-This document describes the newly exposed multi-agent orchestration capabilities in AgentFlow's public core API.
+This guide covers AgentFlow's comprehensive multi-agent orchestration capabilities, including collaborative, sequential, loop, and mixed orchestration patterns with automatic workflow visualization.
 
 ## Overview
 
-The multi-agent orchestration API provides patterns for coordinating multiple agents in complex workflows. It supports several orchestration modes including collaborative (parallel) execution, sequential pipelines, and looping patterns.
+AgentFlow provides powerful multi-agent orchestration patterns that enable you to build complex workflows with multiple agents working together. The system supports various orchestration modes and includes built-in workflow visualization using Mermaid diagrams.
 
-## Key Components
+## CLI Quick Start
 
-### 1. Orchestration Modes
+The fastest way to create multi-agent workflows is using the AgentFlow CLI:
+
+```bash
+# Collaborative workflow - all agents process events in parallel
+agentcli create research-system \
+  --orchestration-mode collaborative \
+  --collaborative-agents "researcher,analyzer,validator" \
+  --visualize \
+  --mcp-enabled
+
+# Sequential pipeline - agents process one after another
+agentcli create data-pipeline \
+  --orchestration-mode sequential \
+  --sequential-agents "collector,processor,formatter" \
+  --visualize-output "docs/diagrams"
+
+# Loop-based workflow - single agent repeats with conditions
+agentcli create quality-loop \
+  --orchestration-mode loop \
+  --loop-agent "quality-checker" \
+  --max-iterations 5 \
+  --visualize
+
+# Mixed orchestration - combine collaborative and sequential
+agentcli create complex-workflow \
+  --orchestration-mode mixed \
+  --collaborative-agents "analyzer,validator" \
+  --sequential-agents "processor,reporter" \
+  --failure-threshold 0.8 \
+  --max-concurrency 10 \
+  --visualize
+```
+
+## Orchestration Modes
+
+### 1. Collaborative Orchestration
+All agents process events in parallel, with results aggregated:
+
+```bash
+agentcli create parallel-system \
+  --orchestration-mode collaborative \
+  --collaborative-agents "agent1,agent2,agent3" \
+  --visualize
+```
+
+### 2. Sequential Orchestration  
+Agents process events one after another in a pipeline:
+
+```bash
+agentcli create pipeline-system \
+  --orchestration-mode sequential \
+  --sequential-agents "input,transform,output" \
+  --visualize
+```
+
+### 3. Loop Orchestration
+Single agent repeats execution until conditions are met:
+
+```bash
+agentcli create loop-system \
+  --orchestration-mode loop \
+  --loop-agent "processor" \
+  --max-iterations 10 \
+  --visualize
+```
+
+### 4. Mixed Orchestration
+Combine multiple orchestration patterns:
+
+```bash
+agentcli create mixed-system \
+  --orchestration-mode mixed \
+  --collaborative-agents "analyzer,validator" \
+  --sequential-agents "processor,reporter" \
+  --visualize
+```
+
+## Workflow Visualization
+
+AgentFlow automatically generates Mermaid diagrams for all orchestration patterns:
+
+```bash
+# Generate diagrams in default location (./workflow.mmd)
+agentcli create my-workflow --visualize
+
+# Specify custom output directory
+agentcli create my-workflow --visualize-output "docs/diagrams"
+```
+
+**Generated Mermaid Diagram Example:**
+```mermaid
+---
+title: Collaborative Multi-Agent Workflow
+---
+flowchart TD
+    INPUT["🎯 Event Input"]
+    AGENT1["🤖 Researcher"]
+    AGENT2["🤖 Analyzer"] 
+    AGENT3["🤖 Validator"]
+    OUTPUT["✅ Aggregated Result"]
+    
+    INPUT --> AGENT1
+    INPUT --> AGENT2
+    INPUT --> AGENT3
+    AGENT1 --> OUTPUT
+    AGENT2 --> OUTPUT
+    AGENT3 --> OUTPUT
+```
+
+## API Reference
+
+### CLI Configuration Options
+
+All CLI flags for multi-agent orchestration:
+
+```bash
+# Orchestration mode flags
+--orchestration-mode string          # collaborative, sequential, loop, mixed
+--collaborative-agents string        # Comma-separated list of agents
+--sequential-agents string           # Comma-separated list of agents
+--loop-agent string                  # Single agent name for loop mode
+--max-iterations int                 # Maximum loop iterations (default: 10)
+
+# Configuration flags
+--orchestration-timeout int          # Timeout in seconds (default: 60)
+--failure-threshold float           # Failure threshold 0.0-1.0 (default: 0.5)
+--max-concurrency int              # Maximum concurrent agents (default: 5)
+
+# Visualization flags
+--visualize                         # Generate Mermaid diagrams
+--visualize-output string           # Custom output directory for diagrams
+```
+
+### Orchestration Modes
 
 ```go
 type OrchestrationMode string
@@ -16,10 +149,11 @@ type OrchestrationMode string
 const (
     OrchestrationRoute       OrchestrationMode = "route"       // Route to single agent
     OrchestrationCollaborate OrchestrationMode = "collaborate" // Send to all agents
+    OrchestrationSequential  OrchestrationMode = "sequential"  // Process in sequence
+    OrchestrationLoop        OrchestrationMode = "loop"        // Loop single agent
+    OrchestrationMixed       OrchestrationMode = "mixed"       // Combine patterns
 )
 ```
-
-### 2. Orchestrator Interface
 
 ```go
 type Orchestrator interface {
@@ -30,13 +164,25 @@ type Orchestrator interface {
 }
 ```
 
-### 3. Multi-Agent Composition (Planned)
+### Orchestrator Interface
 
-The multi-agent composition API will provide:
+```go
+type Orchestrator interface {
+    Dispatch(ctx context.Context, event Event) (AgentResult, error)
+    RegisterAgent(name string, handler AgentHandler) error
+    GetCallbackRegistry() *CallbackRegistry
+    Stop()
+}
+```
+
+### Multi-Agent Composition (Available)
+
+The multi-agent composition API provides:
 - Parallel execution of multiple agents
 - Sequential agent pipelines 
 - Loop-based agent execution
 - Configurable failure handling strategies
+- Automatic workflow visualization
 
 ## Usage Examples
 
@@ -58,6 +204,68 @@ eventData["task"] = "collaborative_analysis"
 
 event := core.NewEvent("any", eventData, nil)
 result, err := orchestrator.Dispatch(ctx, event)
+```
+
+### Sequential Pipeline
+
+```go
+// Create sequential orchestration
+agents := map[string]core.AgentHandler{
+    "collector": NewCollectorAgent(),
+    "processor": NewProcessorAgent(),
+    "formatter": NewFormatterAgent(),
+}
+
+runner := core.NewOrchestrationBuilder(core.OrchestrationSequential).
+    WithAgents(agents).
+    WithTimeout(5 * time.Minute).
+    Build()
+
+event := core.NewEvent("pipeline", eventData, nil)
+result, err := runner.Run(ctx, event)
+```
+
+### Loop-Based Execution
+
+```go
+// Create loop orchestration
+loopAgent := map[string]core.AgentHandler{
+    "quality-checker": NewQualityCheckerAgent(),
+}
+
+runner := core.NewOrchestrationBuilder(core.OrchestrationLoop).
+    WithAgents(loopAgent).
+    WithMaxIterations(10).
+    WithTimeout(10 * time.Minute).
+    Build()
+
+event := core.NewEvent("loop", eventData, nil)
+result, err := runner.Run(ctx, event)
+```
+
+### Mixed Orchestration
+
+```go
+// Create mixed orchestration (collaborative + sequential)
+collaborativeAgents := map[string]core.AgentHandler{
+    "analyzer":  NewAnalyzerAgent(),
+    "validator": NewValidatorAgent(),
+}
+
+sequentialAgents := map[string]core.AgentHandler{
+    "processor": NewProcessorAgent(),
+    "reporter":  NewReporterAgent(),
+}
+
+runner := core.NewOrchestrationBuilder(core.OrchestrationMixed).
+    WithCollaborativeAgents(collaborativeAgents).
+    WithSequentialAgents(sequentialAgents).
+    WithTimeout(8 * time.Minute).
+    WithFailureThreshold(0.8).
+    Build()
+
+event := core.NewEvent("mixed", eventData, nil)
+result, err := runner.Run(ctx, event)
 ```
 
 ### Fault-Tolerant Runner

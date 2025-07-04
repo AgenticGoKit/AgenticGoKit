@@ -2,10 +2,121 @@
 
 **Complete reference for the AgentFlow core package**
 
-The `core` package provides the complete public API for AgentFlow. All user code should import only from this package.
+The `core` package provides the complete public API for AgentFlow, including multi-agent orchestration, workflow visualization, and all agent interfaces. All user code should import only from this package.
 
 ```go
 import agentflow "github.com/kunalkushwaha/agentflow/core"
+```
+
+## Multi-Agent Orchestration
+
+### OrchestrationBuilder
+
+Fluent builder for creating multi-agent orchestrations.
+
+```go
+func NewOrchestrationBuilder(mode OrchestrationMode) *OrchestrationBuilder
+```
+
+**Methods**:
+- `WithAgents(agents map[string]AgentHandler) *OrchestrationBuilder`
+- `WithCollaborativeAgents(agents map[string]AgentHandler) *OrchestrationBuilder`
+- `WithSequentialAgents(agents map[string]AgentHandler) *OrchestrationBuilder`
+- `WithTimeout(timeout time.Duration) *OrchestrationBuilder`
+- `WithMaxIterations(max int) *OrchestrationBuilder`
+- `WithFailureThreshold(threshold float64) *OrchestrationBuilder`
+- `WithMaxConcurrency(max int) *OrchestrationBuilder`
+- `WithRetryPolicy(policy *RetryPolicy) *OrchestrationBuilder`
+- `Build() Runner`
+- `GenerateMermaidDiagram() string`
+- `GenerateMermaidDiagramWithConfig(config MermaidConfig) string`
+
+**Example**:
+```go
+// Collaborative orchestration
+runner := core.NewOrchestrationBuilder(core.OrchestrationCollaborate).
+    WithAgents(agents).
+    WithTimeout(2 * time.Minute).
+    WithFailureThreshold(0.8).
+    Build()
+
+// Sequential orchestration  
+runner := core.NewOrchestrationBuilder(core.OrchestrationSequential).
+    WithAgents(agents).
+    WithTimeout(5 * time.Minute).
+    Build()
+
+// Loop orchestration
+runner := core.NewOrchestrationBuilder(core.OrchestrationLoop).
+    WithAgents(singleAgent).
+    WithMaxIterations(10).
+    Build()
+```
+
+### OrchestrationMode
+
+Enum for different orchestration patterns.
+
+```go
+type OrchestrationMode string
+
+const (
+    OrchestrationRoute       OrchestrationMode = "route"       // Route to single agent
+    OrchestrationCollaborate OrchestrationMode = "collaborate" // All agents process in parallel
+    OrchestrationSequential  OrchestrationMode = "sequential"  // Process in sequence
+    OrchestrationLoop        OrchestrationMode = "loop"        // Loop single agent
+    OrchestrationMixed       OrchestrationMode = "mixed"       // Combine patterns
+)
+```
+
+### Orchestrator Interface
+
+Interface for agent orchestration.
+
+```go
+type Orchestrator interface {
+    Dispatch(ctx context.Context, event Event) (AgentResult, error)
+    RegisterAgent(name string, handler AgentHandler) error
+    GetCallbackRegistry() *CallbackRegistry
+    Stop()
+}
+```
+
+### Convenience Functions
+
+Pre-configured orchestration patterns.
+
+```go
+func CreateCollaborativeRunner(agents map[string]AgentHandler, timeout time.Duration) Runner
+func CreateFaultTolerantRunner(agents map[string]AgentHandler) Runner
+func CreateLoadBalancedRunner(agents map[string]AgentHandler, maxConcurrency int) Runner
+func NewCollaborativeOrchestrator(registry *CallbackRegistry) Orchestrator
+```
+
+## Workflow Visualization
+
+### MermaidConfig
+
+Configuration for workflow diagram generation.
+
+```go
+type MermaidConfig struct {
+    DiagramType    MermaidDiagramType // flowchart, sequenceDiagram, etc.
+    Title          string             // Custom diagram title
+    Direction      string             // "TD", "LR", "BT", "RL"
+    Theme          string             // "default", "dark", "forest"
+    ShowMetadata   bool               // Include timeout/error info
+    ShowAgentTypes bool               // Show agent type details
+    CompactMode    bool               // Generate compact diagrams
+}
+```
+
+### Visualization Functions
+
+```go
+func GenerateWorkflowPatternDiagram(pattern string, agents []Agent) string
+func SaveDiagramAsMarkdown(filename, title, diagram string) error
+func SaveDiagramWithMetadata(filename, title, description, diagram string, metadata map[string]interface{}) error
 ```
 
 ## Interfaces

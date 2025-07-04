@@ -416,12 +416,15 @@ func (m *OptimizedMCPManager) ExecuteTool(ctx context.Context, tool string, para
 }
 ```
 
-### **2. Tool Result Streaming**
+### **2. MCP Server Tool Optimization**
 
-Handle large tool results efficiently:
+**Note**: This pattern applies to external MCP server tools, not AgentFlow-native tools using the `FunctionTool` interface.
+
+Handle large tool results efficiently in MCP servers:
 
 ```go
-func (t *StreamingTool) ExecuteStreaming(ctx context.Context, params map[string]interface{}) (<-chan *ToolResult, error) {
+// This is an example for an external MCP server implementation
+func (t *MCPServerTool) ExecuteStreaming(ctx context.Context, params map[string]interface{}) (<-chan *ToolResult, error) {
     resultChan := make(chan *ToolResult, 100) // Buffered channel
     
     go func() {
@@ -467,6 +470,33 @@ func (t *StreamingTool) ExecuteStreaming(ctx context.Context, params map[string]
     }()
     
     return resultChan, nil
+}
+```
+
+**For AgentFlow-native tools**, use pagination patterns instead:
+
+```go
+// AgentFlow-native tool with pagination
+func (t *NativeDataTool) Call(ctx context.Context, args map[string]any) (map[string]any, error) {
+    pageSize := getIntParam(args, "page_size", 100)
+    pageToken := getStringParam(args, "page_token", "")
+    
+    results, nextToken, err := t.fetchPage(ctx, pageToken, pageSize)
+    if err != nil {
+        return nil, err
+    }
+    
+    response := map[string]any{
+        "results": results,
+        "page_size": pageSize,
+        "has_more": nextToken != "",
+    }
+    
+    if nextToken != "" {
+        response["next_page_token"] = nextToken
+    }
+    
+    return response, nil
 }
 ```
 
