@@ -55,24 +55,56 @@ func main() {
 }
 ```
 
+### Multi-Agent Orchestration (Quick Start)
+
+Generate complete multi-agent workflows with the CLI:
+
+```bash
+# Collaborative workflow - all agents work in parallel
+agentcli create research-system \
+  --orchestration-mode collaborative \
+  --collaborative-agents "researcher,analyzer,validator" \
+  --visualize \
+  --mcp-enabled
+
+# Sequential pipeline - agents process one after another
+agentcli create data-pipeline \
+  --orchestration-mode sequential \
+  --sequential-agents "collector,processor,formatter" \
+  --visualize
+
+# Loop-based workflow - single agent repeats with conditions
+agentcli create quality-loop \
+  --orchestration-mode loop \
+  --loop-agent "quality-checker" \
+  --max-iterations 5 \
+  --visualize
+```
+
 ### Using CLI Scaffolding
 
 Generate a complete project in seconds:
 
 ```bash
-# Create a new project with 2 agents
-agentcli create my-ai-app --agents 2 --mcp-enabled
+# Create a new project with mixed orchestration
+agentcli create my-ai-app \
+  --orchestration-mode mixed \
+  --collaborative-agents "analyzer,validator" \
+  --sequential-agents "processor,reporter" \
+  --visualize-output "docs/diagrams" \
+  --mcp-enabled
 
 cd my-ai-app
 
 # Run with any query
-go run . -m "search for the latest Go tutorials and summarize"
+go run . -m "analyze market trends and generate comprehensive report"
 ```
 
 The generated project includes:
-- Agent configuration
+- Multi-agent orchestration configuration
+- Automatic workflow visualization (Mermaid diagrams)
 - MCP tool integration
-- Error handling
+- Error handling and fault tolerance
 - Logging and tracing
 - Production-ready structure
 
@@ -179,6 +211,245 @@ type AnalysisResult struct {
 ```
 
 ## Multi-Agent Workflows
+
+### Collaborative Research System
+
+All agents work in parallel to process the same task:
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+    "time"
+    
+    "github.com/kunalkushwaha/agentflow/core"
+)
+
+func main() {
+    // Create specialized agents
+    agents := map[string]core.AgentHandler{
+        "researcher": NewResearchAgent(),
+        "analyzer":   NewAnalysisAgent(),
+        "validator":  NewValidationAgent(),
+    }
+    
+    // Create collaborative orchestration
+    runner := core.NewOrchestrationBuilder(core.OrchestrationCollaborate).
+        WithAgents(agents).
+        WithTimeout(2 * time.Minute).
+        WithFailureThreshold(0.8).
+        WithMaxConcurrency(10).
+        Build()
+    
+    // Create event
+    event := core.NewEvent("all", map[string]interface{}{
+        "task": "research AI trends and provide comprehensive analysis",
+    }, nil)
+    
+    // All agents process in parallel
+    result, err := runner.Run(context.Background(), event)
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    fmt.Printf("Collaborative Result: %s\n", result.GetResult())
+}
+```
+
+### Sequential Data Pipeline
+
+Agents process data in sequence, each building on the previous result:
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+    "time"
+    
+    "github.com/kunalkushwaha/agentflow/core"
+)
+
+func main() {
+    // Create pipeline agents
+    agents := map[string]core.AgentHandler{
+        "collector":  NewDataCollectorAgent(),
+        "processor":  NewDataProcessorAgent(),
+        "formatter":  NewDataFormatterAgent(),
+    }
+    
+    // Create sequential orchestration
+    runner := core.NewOrchestrationBuilder(core.OrchestrationSequential).
+        WithAgents(agents).
+        WithTimeout(5 * time.Minute).
+        Build()
+    
+    // Create pipeline event
+    event := core.NewEvent("pipeline", map[string]interface{}{
+        "data_source": "market_data",
+        "format":      "json",
+    }, nil)
+    
+    // Process through pipeline
+    result, err := runner.Run(context.Background(), event)
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    fmt.Printf("Pipeline Result: %s\n", result.GetResult())
+}
+```
+
+### Loop-Based Quality Checker
+
+Single agent repeats execution until quality standards are met:
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+    "time"
+    
+    "github.com/kunalkushwaha/agentflow/core"
+)
+
+func main() {
+    // Create quality checker agent
+    agents := map[string]core.AgentHandler{
+        "quality-checker": NewQualityCheckerAgent(),
+    }
+    
+    // Create loop orchestration
+    runner := core.NewOrchestrationBuilder(core.OrchestrationLoop).
+        WithAgents(agents).
+        WithMaxIterations(10).
+        WithTimeout(10 * time.Minute).
+        Build()
+    
+    // Create quality check event
+    event := core.NewEvent("loop", map[string]interface{}{
+        "content":          "document to check",
+        "quality_threshold": 0.95,
+    }, nil)
+    
+    // Loop until quality is met
+    result, err := runner.Run(context.Background(), event)
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    fmt.Printf("Quality Check Result: %s\n", result.GetResult())
+}
+```
+
+### Mixed Orchestration Workflow
+
+Combine collaborative and sequential patterns:
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+    "time"
+    
+    "github.com/kunalkushwaha/agentflow/core"
+)
+
+func main() {
+    // Collaborative agents (parallel processing)
+    collaborativeAgents := map[string]core.AgentHandler{
+        "analyzer":  NewAnalyzerAgent(),
+        "validator": NewValidatorAgent(),
+    }
+    
+    // Sequential agents (pipeline processing)
+    sequentialAgents := map[string]core.AgentHandler{
+        "processor": NewProcessorAgent(),
+        "reporter":  NewReporterAgent(),
+    }
+    
+    // Create mixed orchestration
+    runner := core.NewOrchestrationBuilder(core.OrchestrationMixed).
+        WithCollaborativeAgents(collaborativeAgents).
+        WithSequentialAgents(sequentialAgents).
+        WithTimeout(8 * time.Minute).
+        WithFailureThreshold(0.8).
+        Build()
+    
+    // Create mixed workflow event
+    event := core.NewEvent("mixed", map[string]interface{}{
+        "task": "analyze data, validate results, process, and generate report",
+    }, nil)
+    
+    // Execute mixed workflow
+    result, err := runner.Run(context.Background(), event)
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    fmt.Printf("Mixed Workflow Result: %s\n", result.GetResult())
+}
+```
+
+### Workflow Visualization
+
+Generate Mermaid diagrams for any orchestration:
+
+```go
+package main
+
+import (
+    "fmt"
+    "os"
+    "path/filepath"
+    
+    "github.com/kunalkushwaha/agentflow/core"
+)
+
+func main() {
+    // Create agents
+    agents := map[string]core.AgentHandler{
+        "researcher": NewResearchAgent(),
+        "analyzer":   NewAnalysisAgent(),
+        "validator":  NewValidationAgent(),
+    }
+    
+    // Create orchestration builder
+    builder := core.NewOrchestrationBuilder(core.OrchestrationCollaborate).
+        WithAgents(agents).
+        WithTimeout(2 * time.Minute).
+        WithFailureThreshold(0.8)
+    
+    // Generate Mermaid diagram
+    diagram := builder.GenerateMermaidDiagram()
+    
+    // Save to file
+    outputDir := "docs/diagrams"
+    os.MkdirAll(outputDir, 0755)
+    
+    filename := filepath.Join(outputDir, "workflow.mmd")
+    err := os.WriteFile(filename, []byte(diagram), 0644)
+    if err != nil {
+        fmt.Printf("Error saving diagram: %v\n", err)
+        return
+    }
+    
+    fmt.Printf("Workflow diagram saved to: %s\n", filename)
+    fmt.Println("Diagram content:")
+    fmt.Println(diagram)
+}
+```
 
 ### Research and Analysis Pipeline
 

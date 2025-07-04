@@ -1,23 +1,61 @@
 ## Summary
 
-Below is a 6-sprint, 12-week roadmap that breaks your architecture into epics and granular user stories. Each sprint spans two weeks and contains 4–6 stories, complete with brief acceptance criteria. This structure will help your PM translate high-level goals into actionable tasks and let developers pick up well-defined user stories each sprint.
+AgentFlow has evolved significantly with many core features already implemented, including multi-agent orchestration, workflow visualization, and comprehensive CLI tooling. Below is the current implementation status and future roadmap.
 
 ---
 
-## High-Level Sprint Overview
+## Implementation Status
 
-| Sprint | Focus Areas                                  | Key Deliverables                             |
-|--------|-----------------------------------------------|-----------------------------------------------|
-| 1      | Core Runner & Orchestration                   | Event bus, Runner core, Route/Collaborate modes |
-| 2      | Deterministic Workflow Agents                 | SequentialAgent, ParallelAgent, LoopAgent     |
-| 3      | ModelProvider & Tool Integration              | ModelProvider interface, OpenAI & Ollama adapters, basic tools |
-| 4      | Memory & Artifact Management                  | In-memory sessions, Vector DB driver, Artifact service |
-| 5      | Debugging, Callbacks & CLI                    | Callback hooks, Trace logger, CLI inspector   |
-| 6      | REST API, Developer UI & Deployment Pipelines | HTTP/gRPC endpoints, Dev dashboard, Docker/Helm |
+| Component | Status | Notes |
+|-----------|--------|-------|
+| **Core Runner & Orchestration** | ✅ **COMPLETED** | Event system, Runner core, Route/Collaborate modes |
+| **Multi-Agent Orchestration** | ✅ **COMPLETED** | Collaborative, Sequential, Loop, and Mixed patterns |
+| **Workflow Visualization** | ✅ **COMPLETED** | Automatic Mermaid diagram generation |
+| **CLI Tooling** | ✅ **COMPLETED** | Project scaffolding, orchestration modes, visualization |
+| **ModelProvider Interface** | ✅ **COMPLETED** | OpenAI, Azure OpenAI, Ollama adapters |
+| **MCP Integration** | ✅ **COMPLETED** | Tool discovery, execution, server management |
+| **Tool Integration** | ✅ **COMPLETED** | Dynamic tool discovery via MCP protocol |
+| **Memory & State Management** | ✅ **COMPLETED** | Session storage, state management |
+| **Error Handling & Resilience** | ✅ **COMPLETED** | Retry policies, circuit breakers, fault tolerance |
+| **Developer Tooling** | ✅ **COMPLETED** | Comprehensive CLI, project templates |
+| **REST API** | 🔄 **IN PROGRESS** | HTTP endpoints for programmatic access |
+| **Developer UI** | 📋 **PLANNED** | Dashboard for workflow visualization and debugging |
+| **Advanced RAG** | 📋 **PLANNED** | Vector database integration, retrieval workflows |
 
 ---
 
-## Sprint 1 (Weeks 1–2): Core Runner & Orchestration
+## Recently Completed Features
+
+### ✅ Multi-Agent Orchestration (Completed)
+- **Collaborative Mode**: All agents process events in parallel with result aggregation
+- **Sequential Mode**: Agents process events in pipeline order with state passing
+- **Loop Mode**: Single agent repeats execution until conditions are met
+- **Mixed Mode**: Combine collaborative and sequential patterns in one workflow
+
+### ✅ Workflow Visualization (Completed)
+- **Automatic Mermaid Generation**: CLI generates workflow diagrams automatically
+- **Multiple Diagram Types**: Support for all orchestration patterns
+- **Custom Configuration**: Configurable diagram styles, directions, and metadata
+- **File Export**: Save diagrams as `.mmd` files for documentation
+
+### ✅ Enhanced CLI Tooling (Completed)
+- **Orchestration Mode Flags**: `--orchestration-mode`, `--collaborative-agents`, `--sequential-agents`, `--loop-agent`
+- **Visualization Flags**: `--visualize`, `--visualize-output`
+- **Configuration Options**: `--failure-threshold`, `--max-concurrency`, `--orchestration-timeout`
+- **Project Templates**: Complete multi-agent project scaffolding
+
+### ✅ Production-Ready Features (Completed)
+- **Fault Tolerance**: Configurable failure thresholds and error handling
+- **Retry Policies**: Exponential backoff, circuit breakers, jitter
+- **State Management**: Comprehensive state passing between agents
+- **Callback System**: Pre/post execution hooks for monitoring
+- **Observability**: Structured logging and tracing throughout
+
+---
+
+## Original Roadmap (Historical)
+
+## Sprint 1 (Weeks 1–2): Core Runner & Orchestration ✅ COMPLETED
 
 **Epic**: Establish the heart of the framework—the Runner—that ingests events and dispatches to agents in different orchestration modes.
 

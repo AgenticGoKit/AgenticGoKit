@@ -26,8 +26,10 @@ AgentFlow makes it incredibly simple to build and prototype AI agent workflows i
 ## What Makes AgentFlow Special?
 
 - **30-Second Setup**: Generate working multi-agent systems with a single CLI command
+- **Multi-Agent Orchestration**: Build collaborative, sequential, loop, and mixed workflows with automatic visual diagrams
+- **Workflow Visualization**: Automatic Mermaid diagram generation for all orchestration patterns
 - **LLM-Driven Tool Discovery**: Agents automatically find and use the right tools via MCP protocol  
-- **Production-First**: Built-in error handling, observability, and enterprise patterns
+- **Production-First**: Built-in error handling, fault tolerance, and enterprise patterns
 - **Unified API**: One clean interface for all LLM providers and tool integrations
 - **Zero Dependencies**: Pure Go with minimal external requirements
 - **Developer Experience**: From prototype to production without rewriting code
@@ -36,8 +38,9 @@ AgentFlow makes it incredibly simple to build and prototype AI agent workflows i
 
 AgentFlow is designed for developers who want to:
 
-- **Build intelligent, event-driven workflows** with configurable orchestration patterns
-- **Integrate multiple agents and tools** into cohesive, observable systems
+- **Build intelligent, event-driven workflows** with configurable orchestration patterns (collaborative, sequential, loop, mixed)
+- **Visualize complex multi-agent systems** with automatic Mermaid diagram generation
+- **Integrate multiple agents and tools** into cohesive, observable systems with built-in fault tolerance
 - **Leverage any LLM provider** (OpenAI, Azure OpenAI, Ollama) through unified interfaces
 - **Create modular, extensible AI systems** that scale from prototype to production
 - **Focus on business logic** while AgentFlow handles the infrastructure complexity
@@ -62,29 +65,86 @@ go install github.com/kunalkushwaha/agentflow/cmd/agentcli@latest
 
 ### 2. Create Your First Multi-Agent System
 ```bash
-# Generate a working project with intelligent agents (Azure OpenAI by default)
-agentcli create my-ai-app --agents 2 --mcp-enabled
+# Generate a collaborative workflow with visual diagrams
+agentcli create research-system \
+  --orchestration-mode collaborative \
+  --collaborative-agents "researcher,analyzer,validator" \
+  --visualize \
+  --mcp-enabled
 
-cd my-ai-app
+cd research-system
 
-# Run with any message - agents will use tools intelligently
-go run . -m "search for the latest Go releases and summarize"
+# Run with any message - agents work together intelligently
+go run . -m "research AI trends and provide comprehensive analysis"
 ```
 
-### 3. See the Magic
-```
-11:20AM INF MCP Tools discovered agent=agent1 tool_count=3
-11:20AM INF Executing LLM-requested tools agent=agent1 tool_calls=1
-11:20AM INF Tool execution successful agent=agent1 tool_name=search
+### 3. Try Different Orchestration Patterns
+```bash
+# Sequential processing pipeline
+agentcli create data-pipeline \
+  --orchestration-mode sequential \
+  --sequential-agents "collector,processor,formatter" \
+  --visualize
 
-=== WORKFLOW RESULTS ===
-Based on the latest search results, here are the key Go releases:
-- Go 1.23.8 released with improved performance...
-- Go 1.24 upcoming features include enhanced generics...
+# Loop-based workflow with conditions
+agentcli create quality-loop \
+  --orchestration-mode loop \
+  --loop-agent "quality-checker" \
+  --max-iterations 5 \
+  --visualize
+
+# Mixed collaborative + sequential workflow  
+agentcli create complex-workflow \
+  --orchestration-mode mixed \
+  --collaborative-agents "analyzer,validator" \
+  --sequential-agents "processor,reporter" \
+  --visualize-output "docs/diagrams"
+```
+
+### 4. See the Magic
+```
+11:20AM INF Multi-agent orchestration started mode=collaborative agents=3
+11:20AM INF MCP Tools discovered agent=researcher tool_count=3
+11:20AM INF MCP Tools discovered agent=analyzer tool_count=5
+11:20AM INF Workflow visualization generated file=workflow.mmd
+11:20AM INF Collaborative execution: all agents processing in parallel
+11:20AM INF Tool execution successful agent=researcher tool_name=web_search
+11:20AM INF Analysis complete agent=analyzer confidence=0.95
+11:20AM INF Validation passed agent=validator quality_score=0.89
+
+=== COLLABORATIVE WORKFLOW RESULTS ===
+🔍 Research (by researcher): Found 15 sources on AI trends for 2024...
+📊 Analysis (by analyzer): Key patterns identified: LLMs, multimodality, agents...  
+✅ Validation (by validator): High confidence in findings, sources verified...
+
+📈 COMPREHENSIVE AI TRENDS REPORT:
+Based on collaborative analysis, here are the top AI trends...
 =========================
 ```
 
-That's it! You have a working multi-agent system that can search the web, process information, and provide intelligent responses.
+**Generated Mermaid Diagram (`workflow.mmd`):**
+```mermaid
+---
+title: Collaborative Research System
+---
+flowchart TD
+    INPUT["🎯 Research Task"]
+    RESEARCHER["🤖 Researcher<br/>Gathers Information"]
+    ANALYZER["🤖 Analyzer<br/>Processes Data"]
+    VALIDATOR["🤖 Validator<br/>Ensures Quality"]
+    OUTPUT["✅ Comprehensive Analysis"]
+    
+    INPUT --> RESEARCHER
+    INPUT --> ANALYZER
+    INPUT --> VALIDATOR
+    RESEARCHER --> OUTPUT
+    ANALYZER --> OUTPUT
+    VALIDATOR --> OUTPUT
+```
+
+**Plus**: Check `workflow.mmd` for a beautiful Mermaid diagram showing how your agents collaborate!
+
+That's it! You have a working multi-agent system with visual workflows that can search, analyze, and validate information collaboratively.
 
 ## Core Concepts & Features
 
@@ -105,23 +165,35 @@ core.QuickStartMCP() // Auto-discovers available tools
 ```
 
 ### **Workflows**
-Orchestrated sequences of agents working together. [💡 See Examples](docs/guides/Examples.md)
+Orchestrated sequences of agents working together with multiple execution patterns. [💡 See Examples](docs/guides/Examples.md) | [📖 Orchestration Guide](docs/multi_agent_orchestration.md)
 ```go
-// Chain agents together for complex workflows
-agent1 → agent2 → responsible_ai → finalizer
+// Collaborative: All agents process events in parallel
+runner := core.NewOrchestrationBuilder(core.OrchestrationCollaborate).
+    WithAgents(agents).Build()
+
+// Sequential: Agents process in pipeline order
+runner := core.NewOrchestrationBuilder(core.OrchestrationSequential).
+    WithAgents(agents).Build()
+
+// Loop: Single agent repeats until conditions are met
+runner := core.NewOrchestrationBuilder(core.OrchestrationLoop).
+    WithAgents(singleAgent).WithMaxIterations(10).Build()
 ```
 
 ### **Key Features**
 
-#### ** Event-Driven Architecture**
-- Process events through configurable orchestration patterns
-- Route-based (single-agent) and collaborative (multi-agent) execution modes
-- Built-in error handling and retry mechanisms
+#### **🤝 Multi-Agent Orchestration**
+- **Collaborative**: Multiple agents process events in parallel, with result aggregation
+- **Sequential**: Agents process events in pipeline order, passing state between stages  
+- **Mixed**: Hybrid workflows combining collaborative and sequential phases
+- **Loop**: Iterative processing with conditional termination
+- **Route**: Intelligent event routing to appropriate specialized agents
+- **Visual Workflows**: Auto-generated Mermaid diagrams showing agent interactions
 
-#### ** Multi-Modal Orchestration**
-- **SequentialAgent**: Step-by-step processing pipelines
-- **ParallelAgent**: Concurrent processing for performance
-- **LoopAgent**: Iterative workflows with conditional logic
+#### **⚡ Event-Driven Architecture**
+- Process events through configurable orchestration patterns
+- Built-in error handling, retry mechanisms, and circuit breakers
+- Comprehensive state management and context passing
 
 #### ** LLM Integration**
 - Unified `ModelProvider` interface for any LLM backend
@@ -332,14 +404,42 @@ func main() {
 }
 ```
 
-**Multi-Agent Workflow**
+**Multi-Agent Orchestration**
 ```go
-// Generated by: agentcli create workflow --agents 3
-func main() {
-    // Agent1: Research and gather information
-    // Agent2: Analyze and process data  
-    // Agent3: Generate final response
-    runner.Start() // Automatic orchestration
+// Collaborative workflow - agents work in parallel
+agents := map[string]core.AgentHandler{
+    "researcher": core.ConvertAgentToHandler(researchAgent),
+    "analyzer":   core.ConvertAgentToHandler(analysisAgent),
+    "validator":  core.ConvertAgentToHandler(validationAgent),
+}
+
+// Build collaborative orchestration
+runner := core.NewOrchestrationBuilder(core.OrchestrationCollaborate).
+    WithAgents(agents).
+    WithTimeout(60 * time.Second).
+    WithFailureThreshold(0.8).
+    Build()
+
+// Or use the fluent AgentBuilder API
+workflow := core.NewAgent("research-pipeline").
+    WithLLM(llmProvider).
+    WithMCP(mcpManager).
+    WithParallelAgents(researchAgent, analysisAgent, validationAgent).
+    Build()
+```
+
+**Sequential Pipeline**
+```go
+// Create processing pipeline with visual diagram
+pipeline := core.NewComposition("data-processing").
+    WithAgents(inputAgent, transformAgent, outputAgent).
+    AsSequential().
+    WithTimeout(2 * time.Minute)
+
+// Generate workflow diagram
+if pipeline.CanVisualize() {
+    diagram := pipeline.GenerateMermaidDiagram()
+    fmt.Println(diagram) // Beautiful workflow visualization!
 }
 ```
 
@@ -350,6 +450,8 @@ AgentFlow provides comprehensive documentation for both users and contributors:
 ### **For Users Building AI Applications**
 - **[🚀 Quick Start](docs/README.md#quick-start)** - Get running in 5 minutes
 - **[📖 Agent Fundamentals](docs/guides/AgentBasics.md)** - Core concepts and patterns
+- **[🤝 Multi-Agent Orchestration](docs/multi_agent_orchestration.md)** - Collaborative, sequential, and mixed workflows
+- **[📊 Workflow Visualization](docs/visualization_guide.md)** - Visual diagrams and documentation generation
 - **[💡 Examples & Tutorials](docs/guides/Examples.md)** - Practical code samples
 - **[🔧 Tool Integration](docs/guides/ToolIntegration.md)** - MCP protocol and dynamic discovery
 - **[⚙️ Configuration](docs/guides/Configuration.md)** - Project and agent setup

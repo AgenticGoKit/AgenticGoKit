@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"time"
 
 	"github.com/rs/zerolog"
 )
@@ -20,6 +21,11 @@ type AgentBuilder struct {
 	capabilities []AgentCapability
 	errors       []error
 	config       AgentBuilderConfig
+	// Multi-agent composition fields
+	compositionMode string
+	subAgents       []Agent
+	multiConfig     MultiAgentConfig
+	loopConfig      LoopConfig
 }
 
 // AgentBuilderConfig contains configuration for the agent builder
@@ -71,6 +77,68 @@ func (b *AgentBuilder) WithValidation(validate bool) *AgentBuilder {
 // WithStrictMode enables or disables strict mode
 func (b *AgentBuilder) WithStrictMode(strict bool) *AgentBuilder {
 	b.config.StrictMode = strict
+	return b
+}
+
+// =============================================================================
+// MULTI-AGENT COMPOSITION METHODS
+// =============================================================================
+
+// WithParallelAgents configures the agent to run sub-agents in parallel
+func (b *AgentBuilder) WithParallelAgents(agents ...Agent) *AgentBuilder {
+	b.compositionMode = "parallel"
+	b.subAgents = append(b.subAgents, agents...)
+	return b
+}
+
+// WithSequentialAgents configures the agent to run sub-agents sequentially
+func (b *AgentBuilder) WithSequentialAgents(agents ...Agent) *AgentBuilder {
+	b.compositionMode = "sequential"
+	b.subAgents = append(b.subAgents, agents...)
+	return b
+}
+
+// WithLoopAgent configures the agent to repeatedly run a sub-agent
+func (b *AgentBuilder) WithLoopAgent(agent Agent, maxIterations int, condition func(State) bool) *AgentBuilder {
+	b.compositionMode = "loop"
+	b.subAgents = []Agent{agent}
+	b.loopConfig = LoopConfig{
+		MaxIterations: maxIterations,
+		Condition:     condition,
+	}
+	return b
+}
+
+// WithMultiAgentConfig sets the configuration for multi-agent composition
+func (b *AgentBuilder) WithMultiAgentConfig(config MultiAgentConfig) *AgentBuilder {
+	b.multiConfig = config
+	return b
+}
+
+// WithMultiAgentTimeout sets the timeout for multi-agent composition
+func (b *AgentBuilder) WithMultiAgentTimeout(timeout time.Duration) *AgentBuilder {
+	if b.multiConfig.Timeout == 0 {
+		b.multiConfig = DefaultMultiAgentConfig()
+	}
+	b.multiConfig.Timeout = timeout
+	return b
+}
+
+// WithMultiAgentErrorStrategy sets the error handling strategy for multi-agent composition
+func (b *AgentBuilder) WithMultiAgentErrorStrategy(strategy ErrorHandlingStrategy) *AgentBuilder {
+	if b.multiConfig.Timeout == 0 {
+		b.multiConfig = DefaultMultiAgentConfig()
+	}
+	b.multiConfig.ErrorStrategy = strategy
+	return b
+}
+
+// WithMultiAgentConcurrency sets the maximum concurrency for multi-agent composition
+func (b *AgentBuilder) WithMultiAgentConcurrency(maxConcurrency int) *AgentBuilder {
+	if b.multiConfig.Timeout == 0 {
+		b.multiConfig = DefaultMultiAgentConfig()
+	}
+	b.multiConfig.MaxConcurrency = maxConcurrency
 	return b
 }
 
@@ -281,6 +349,11 @@ func (b *AgentBuilder) Build() (Agent, error) {
 		return nil, fmt.Errorf("agent validation failed: %w", err)
 	}
 
+	// Check if this is a multi-agent composition
+	if b.compositionMode != "" {
+		return b.buildCompositeAgent()
+	}
+
 	// Sort capabilities by priority if enabled
 	capabilities := b.capabilities
 	if b.config.SortByPriority {
@@ -333,39 +406,54 @@ func (b *AgentBuilder) BuildOrPanic() Agent {
 }
 
 // =============================================================================
-// CONVENIENCE BUILDER FUNCTIONS
+// MULTI-AGENT CONVENIENCE METHODS
 // =============================================================================
 
-// NewMCPEnabledAgent creates an agent with MCP and LLM capabilities (convenience function)
-func NewMCPEnabledAgent(name string, mcpManager MCPManager, llmProvider ModelProvider) (Agent, error) {
-	return NewAgent(name).
-		WithMCP(mcpManager).
-		WithLLM(llmProvider).
+// CreateDataProcessingPipeline creates a sequential agent for data processing workflows
+// Usage: input -> processing -> output
+func CreateDataProcessingPipeline(name string, inputAgent, processingAgent, outputAgent Agent) Agent {
+	pipeline, _ := NewAgent(name).
+		WithSequentialAgents(inputAgent, processingAgent, outputAgent).
 		Build()
+	return pipeline
 }
 
-// NewProductionAgent creates an agent with all production features
-// This is a placeholder implementation that will be enhanced when ProductionConfig
-// is properly integrated with the capability system
-func NewProductionAgent(name string, config ProductionConfig) (Agent, error) {
-	builder := NewAgent(name)
+// CreateParallelAnalysis creates a parallel agent for analysis workflows
+// Usage: Multiple analysis agents process the same input concurrently
+func CreateParallelAnalysisWorkflow(name string, timeout time.Duration, analysisAgents ...Agent) Agent {
+	workflow, _ := NewAgent(name).
+		WithParallelAgents(analysisAgents...).
+		WithMultiAgentTimeout(timeout).
+		WithMultiAgentErrorStrategy(ErrorStrategyCollectAll).
+		Build()
+	return workflow
+}
 
-	// Add default capabilities based on production config
-	// TODO: Extract LLM provider and MCP manager from ProductionConfig
+// CreateResilientWorkflow creates a parallel agent with fault tolerance
+func CreateResilientWorkflow(name string, agents ...Agent) Agent {
+	workflow, _ := NewAgent(name).
+		WithParallelAgents(agents...).
+		WithMultiAgentTimeout(60 * time.Second).
+		WithMultiAgentErrorStrategy(ErrorStrategyContinue).
+		WithMultiAgentConcurrency(20).
+		Build()
+	return workflow
+}
 
-	// Add metrics if enabled
-	if config.Metrics.Enabled {
-		builder = builder.WithMetrics(config.Metrics)
+// CreateConditionalProcessor creates a loop agent with a simple condition
+func CreateConditionalProcessor(name string, maxIterations int, conditionKey string, expectedValue interface{}, agent Agent) Agent {
+	condition := func(state State) bool {
+		if value, exists := state.Get(conditionKey); exists {
+			return value == expectedValue
+		}
+		return false
 	}
 
-	return builder.Build()
-}
-
-// NewAgentWithCapabilities creates an agent with the specified capabilities
-func NewAgentWithCapabilities(name string, capabilities ...AgentCapability) (Agent, error) {
-	return NewAgent(name).
-		WithCapabilities(capabilities...).
+	processor, _ := NewAgent(name).
+		WithLoopAgent(agent, maxIterations, condition).
+		WithMultiAgentTimeout(120 * time.Second).
 		Build()
+	return processor
 }
 
 // =============================================================================
@@ -529,3 +617,97 @@ func capabilityNames(capabilities []AgentCapability) []string {
 	sort.Strings(names) // Sort for consistent output
 	return names
 }
+
+// buildCompositeAgent creates a composite agent based on the composition mode
+func (b *AgentBuilder) buildCompositeAgent() (Agent, error) {
+	if len(b.subAgents) == 0 {
+		return nil, fmt.Errorf("composite agent '%s' requires at least one sub-agent", b.name)
+	}
+
+	// Use default config if not set
+	config := b.multiConfig
+	if config.Timeout == 0 {
+		config = DefaultMultiAgentConfig()
+	}
+
+	logger := Logger().With().Str("agent", b.name).Str("composition_mode", b.compositionMode).Logger()
+
+	switch b.compositionMode {
+	case "parallel":
+		logger.Info().
+			Int("sub_agents", len(b.subAgents)).
+			Dur("timeout", config.Timeout).
+			Str("error_strategy", string(config.ErrorStrategy)).
+			Msg("Building parallel composite agent")
+		return NewParallelAgentWithConfig(b.name, config, b.subAgents...), nil
+
+	case "sequential":
+		logger.Info().
+			Int("sub_agents", len(b.subAgents)).
+			Msg("Building sequential composite agent")
+		return NewSequentialAgent(b.name, b.subAgents...), nil
+
+	case "loop":
+		if len(b.subAgents) != 1 {
+			return nil, fmt.Errorf("loop composite agent '%s' requires exactly one sub-agent, got %d", b.name, len(b.subAgents))
+		}
+		logger.Info().
+			Int("max_iterations", b.loopConfig.MaxIterations).
+			Dur("timeout", config.Timeout).
+			Msg("Building loop composite agent")
+		return NewLoopAgent(b.name, b.loopConfig.MaxIterations, config.Timeout,
+			b.loopConfig.Condition, b.subAgents[0]), nil
+
+	default:
+		return nil, fmt.Errorf("unknown composition mode '%s' for agent '%s'", b.compositionMode, b.name)
+	}
+}
+
+// =============================================================================
+// VISUALIZATION METHODS
+// =============================================================================
+
+// GenerateMermaidDiagram generates a Mermaid diagram for the multi-agent composition
+// Returns empty string if not a multi-agent composition
+func (b *AgentBuilder) GenerateMermaidDiagram() string {
+	return b.GenerateMermaidDiagramWithConfig(DefaultMermaidConfig())
+}
+
+// GenerateMermaidDiagramWithConfig generates a Mermaid diagram with custom configuration
+func (b *AgentBuilder) GenerateMermaidDiagramWithConfig(config MermaidConfig) string {
+	if b.compositionMode == "" || len(b.subAgents) == 0 {
+		return "" // Not a multi-agent composition
+	}
+
+	// Create a temporary composition builder to generate the diagram
+	composition := NewComposition(b.name).WithAgents(b.subAgents...)
+
+	// Apply composition mode
+	switch b.compositionMode {
+	case "parallel":
+		composition = composition.AsParallel()
+	case "sequential":
+		composition = composition.AsSequential()
+	case "loop":
+		if len(b.subAgents) == 1 && b.loopConfig.Condition != nil {
+			composition = composition.AsLoop(b.loopConfig.MaxIterations, b.loopConfig.Condition)
+		}
+	}
+
+	// Apply multi-agent configuration
+	if b.multiConfig.Timeout > 0 {
+		composition = composition.WithTimeout(b.multiConfig.Timeout)
+	}
+	if b.multiConfig.ErrorStrategy != "" {
+		composition = composition.WithErrorStrategy(b.multiConfig.ErrorStrategy)
+	}
+
+	return composition.GenerateMermaidDiagramWithConfig(config)
+}
+
+// CanVisualize returns true if the agent builder has a multi-agent composition that can be visualized
+func (b *AgentBuilder) CanVisualize() bool {
+	return b.compositionMode != "" && len(b.subAgents) > 0
+}
+
+// =============================================================================

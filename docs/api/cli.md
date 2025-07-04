@@ -45,13 +45,13 @@ agentcli [global options] command [command options] [arguments...]
 
 ### `create`
 
-Creates a new AgentFlow project from templates.
+Creates a new AgentFlow project with multi-agent orchestration and visualization capabilities.
 
 ```bash
 agentcli create [options] <project-name>
 ```
 
-#### Options
+#### Basic Options
 
 | Option | Description | Default |
 |--------|-------------|---------|
@@ -61,16 +61,96 @@ agentcli create [options] <project-name>
 | `--no-deps` | Skip dependency installation | `false` |
 | `--overwrite` | Overwrite existing directory | `false` |
 | `--provider` | LLM provider to configure | `azure` |
+| `--agents` | Number of agents (legacy) | `1` |
+| `--interactive` | Interactive project setup | `false` |
+
+#### Multi-Agent Orchestration Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--orchestration-mode` | Orchestration mode (collaborative, sequential, loop, mixed) | `collaborative` |
+| `--collaborative-agents` | Comma-separated list of collaborative agents | |
+| `--sequential-agents` | Comma-separated list of sequential agents | |
+| `--loop-agent` | Agent name for loop orchestration | |
+| `--max-iterations` | Maximum loop iterations | `10` |
+| `--orchestration-timeout` | Timeout in seconds | `60` |
+| `--failure-threshold` | Failure threshold (0.0-1.0) | `0.5` |
+| `--max-concurrency` | Maximum concurrent agents | `5` |
+
+#### Visualization Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--visualize` | Generate workflow diagrams | `false` |
+| `--visualize-output` | Custom output directory for diagrams | `./` |
+
+#### MCP Integration Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--mcp-enabled` | Enable MCP integration | `false` |
+| `--mcp-production` | Production MCP setup | `false` |
+| `--with-cache` | Enable caching | `false` |
+| `--with-metrics` | Enable metrics | `false` |
+| `--mcp-tools` | Comma-separated list of MCP tools | |
+| `--mcp-servers` | Comma-separated list of MCP servers | |
+| `--cache-backend` | Cache backend (memory, redis) | `memory` |
+| `--metrics-port` | Metrics port | `9090` |
+| `--with-load-balancer` | Enable load balancing | `false` |
 
 #### Available Templates
 
 | Template | Description | Use Case |
 |----------|-------------|----------|
 | `basic` | Simple single-agent project | Getting started, prototyping |
-| `multi-agent` | Multi-agent orchestration | Complex workflows, collaboration |
+| `collaborative` | Multi-agent collaborative workflow | Parallel processing, research systems |
+| `sequential` | Sequential pipeline workflow | Data processing, transformation |
+| `loop` | Loop-based workflow | Quality checking, iterative processing |
+| `mixed` | Mixed orchestration workflow | Complex business processes |
 | `tools` | Agent with custom MCP tools | Domain-specific functionality |
 | `production` | Production-ready setup | Deployment, monitoring |
 | `minimal` | Minimal configuration | Learning, experimentation |
+
+#### Multi-Agent Orchestration Examples
+
+```bash
+# Create collaborative research system
+agentcli create research-system \
+  --orchestration-mode collaborative \
+  --collaborative-agents "researcher,analyzer,validator" \
+  --visualize \
+  --mcp-enabled
+
+# Create sequential data pipeline
+agentcli create data-pipeline \
+  --orchestration-mode sequential \
+  --sequential-agents "collector,processor,formatter" \
+  --visualize-output "docs/diagrams"
+
+# Create loop-based quality checker
+agentcli create quality-loop \
+  --orchestration-mode loop \
+  --loop-agent "quality-checker" \
+  --max-iterations 5 \
+  --visualize
+
+# Create mixed workflow
+agentcli create complex-workflow \
+  --orchestration-mode mixed \
+  --collaborative-agents "analyzer,validator" \
+  --sequential-agents "processor,reporter" \
+  --failure-threshold 0.8 \
+  --max-concurrency 10 \
+  --visualize
+
+# Create production MCP project
+agentcli create production-system \
+  --mcp-production \
+  --with-cache \
+  --with-metrics \
+  --mcp-tools "web_search,summarize,translate" \
+  --mcp-servers "docker,web-service"
+```
 
 #### Examples
 
@@ -78,14 +158,30 @@ agentcli create [options] <project-name>
 # Create basic project
 agentcli create my-agent
 
-# Create multi-agent project with Azure OpenAI
-agentcli create --template multi-agent --provider azure my-workflow
+# Create collaborative multi-agent system
+agentcli create --orchestration-mode collaborative \
+  --collaborative-agents "research,analyze,validate" \
+  --visualize my-workflow
+
+# Create sequential pipeline
+agentcli create --orchestration-mode sequential \
+  --sequential-agents "collect,process,format" \
+  --visualize-output "docs" data-pipeline
+
+# Create project with specific provider and MCP
+agentcli create --provider azure --mcp-enabled \
+  --orchestration-mode mixed \
+  --collaborative-agents "analyzer,validator" \
+  --sequential-agents "processor,reporter" my-app
 
 # Create project in specific directory
-agentcli create --path ./projects --template production my-app
+agentcli create --path ./projects --visualize production-agent
 
 # Create without git initialization
 agentcli create --no-git --template minimal test-agent
+
+# Interactive project creation
+agentcli create --interactive
 ```
 
 #### Generated Project Structure
@@ -93,9 +189,14 @@ agentcli create --no-git --template minimal test-agent
 ```
 my-agent/
 ├── agentflow.toml          # Configuration file
-├── main.go                 # Entry point
+├── main.go                 # Entry point with orchestration
 ├── agents/                 # Agent implementations
-│   └── handler.go
+│   ├── researcher.go       # Research agent (if collaborative)
+│   ├── analyzer.go         # Analysis agent (if collaborative)
+│   └── validator.go        # Validation agent (if collaborative)
+├── workflow.mmd            # Generated Mermaid diagram (if --visualize)
+├── docs/                   # Documentation
+│   └── diagrams/           # Workflow diagrams (if custom output)
 ├── tools/                  # Custom MCP tools (if applicable)
 ├── config/                 # Additional configuration
 ├── tests/                  # Test files
@@ -104,6 +205,48 @@ my-agent/
 ├── .gitignore             # Git ignore rules
 ├── README.md              # Project documentation
 └── Dockerfile             # Container configuration (production template)
+```
+
+#### Generated Workflow Diagrams
+
+When using `--visualize`, the CLI generates Mermaid diagrams showing the workflow:
+
+**Collaborative Mode:**
+```mermaid
+---
+title: Collaborative Multi-Agent Workflow
+---
+flowchart TD
+    INPUT["🎯 Event Input"]
+    RESEARCHER["🤖 Researcher"]
+    ANALYZER["🤖 Analyzer"]
+    VALIDATOR["🤖 Validator"]
+    OUTPUT["✅ Aggregated Result"]
+    
+    INPUT --> RESEARCHER
+    INPUT --> ANALYZER
+    INPUT --> VALIDATOR
+    RESEARCHER --> OUTPUT
+    ANALYZER --> OUTPUT
+    VALIDATOR --> OUTPUT
+```
+
+**Sequential Mode:**
+```mermaid
+---
+title: Sequential Processing Pipeline
+---
+flowchart TD
+    INPUT["🎯 Event Input"]
+    COLLECTOR["🤖 Collector"]
+    PROCESSOR["🤖 Processor"]
+    FORMATTER["🤖 Formatter"]
+    OUTPUT["✅ Final Result"]
+    
+    INPUT --> COLLECTOR
+    COLLECTOR --> PROCESSOR
+    PROCESSOR --> FORMATTER
+    FORMATTER --> OUTPUT
 ```
 
 ### `init`
@@ -707,6 +850,32 @@ version = "1.0"
 max_concurrent_events = 100
 event_timeout = "30s"
 enable_tracing = true
+
+# Multi-Agent Orchestration Configuration
+[orchestration]
+mode = "collaborative"        # collaborative, sequential, loop, mixed
+timeout = "60s"
+failure_threshold = 0.5       # 0.0-1.0
+max_concurrency = 5
+max_iterations = 10           # for loop mode
+
+# Collaborative agents (parallel processing)
+collaborative_agents = ["researcher", "analyzer", "validator"]
+
+# Sequential agents (pipeline processing)
+sequential_agents = ["collector", "processor", "formatter"]
+
+# Loop agent (iterative processing)
+loop_agent = "quality-checker"
+
+# Workflow Visualization
+[visualization]
+enabled = true
+output_dir = "./docs/diagrams"
+diagram_type = "flowchart"    # flowchart, sequence, etc.
+direction = "TD"              # TD, LR, BT, RL
+show_metadata = true
+show_agent_types = true
 
 [llm]
 provider = "azure"

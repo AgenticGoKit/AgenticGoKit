@@ -2,7 +2,7 @@
 
 **Understanding the AgentFlow Agent System**
 
-This guide covers the fundamental concepts of building agents in AgentFlow, from the basic interfaces to advanced patterns.
+This guide covers the fundamental concepts of building agents in AgentFlow, from the basic interfaces to advanced multi-agent orchestration patterns.
 
 ## Core Concepts
 
@@ -20,6 +20,58 @@ type AgentHandler interface {
 - **Event**: Contains the user input and metadata
 - **State**: Thread-safe storage for agent data
 - **AgentResult**: The agent's response and updated state
+
+### Multi-Agent Orchestration
+
+AgentFlow supports multiple orchestration patterns for coordinating agents:
+
+#### Collaborative Orchestration
+All agents process the same event in parallel:
+
+```go
+// Create collaborative orchestration
+agents := map[string]core.AgentHandler{
+    "researcher": NewResearchAgent(),
+    "analyzer":   NewAnalysisAgent(),
+    "validator":  NewValidationAgent(),
+}
+
+runner := core.NewOrchestrationBuilder(core.OrchestrationCollaborate).
+    WithAgents(agents).
+    WithTimeout(2 * time.Minute).
+    Build()
+```
+
+#### Sequential Orchestration
+Agents process events in pipeline order:
+
+```go
+// Create sequential orchestration
+agents := map[string]core.AgentHandler{
+    "collector":  NewCollectorAgent(),
+    "processor":  NewProcessorAgent(),
+    "formatter":  NewFormatterAgent(),
+}
+
+runner := core.NewOrchestrationBuilder(core.OrchestrationSequential).
+    WithAgents(agents).
+    Build()
+```
+
+#### Loop Orchestration
+Single agent repeats until conditions are met:
+
+```go
+// Create loop orchestration
+agents := map[string]core.AgentHandler{
+    "quality-checker": NewQualityCheckerAgent(),
+}
+
+runner := core.NewOrchestrationBuilder(core.OrchestrationLoop).
+    WithAgents(agents).
+    WithMaxIterations(10).
+    Build()
+```
 
 ### Basic Agent Structure
 
