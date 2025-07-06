@@ -87,10 +87,28 @@ func TestComputeMetricTool(t *testing.T) {
 			expectErr:    "argument 'b' must be a number (float64 or int)",
 		},
 		{
-			name:         "Unsupported operation",
+			name:         "Multiply ints",
 			args:         map[string]any{"operation": "multiply", "a": 10, "b": 5},
+			expectResult: map[string]any{"result": 50.0},
+			expectErr:    "",
+		},
+		{
+			name:         "Divide ints",
+			args:         map[string]any{"operation": "divide", "a": 10, "b": 5},
+			expectResult: map[string]any{"result": 2.0},
+			expectErr:    "",
+		},
+		{
+			name:         "Division by zero",
+			args:         map[string]any{"operation": "divide", "a": 1, "b": 0},
 			expectResult: nil,
-			expectErr:    "unsupported operation 'multiply'",
+			expectErr:    "division by zero is not allowed",
+		},
+		{
+			name:         "Unsupported operation",
+			args:         map[string]any{"operation": "mod", "a": 10, "b": 5},
+			expectResult: nil,
+			expectErr:    "unsupported operation 'mod'",
 		},
 	}
 

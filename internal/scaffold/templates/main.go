@@ -9,8 +9,8 @@ import (
 	"os"
 	{{if eq .Config.OrchestrationMode "collaborative"}}
 	"strings"
-	"sync"
 	{{end}}
+	"sync"
 	"time"
 
 	"github.com/kunalkushwaha/agentflow/core"
@@ -25,9 +25,27 @@ func main() {
 	messageFlag := flag.String("m", "", "Message to process")
 	flag.Parse()
 
-	llmProvider, err := initializeProvider("{{.Config.Provider}}")
+	// Read provider from config
+	config, err := core.LoadConfig("agentflow.toml")
 	if err != nil {
-		fmt.Printf("Failed to initialize LLM provider: %v\n", err)
+		fmt.Printf("Failed to load configuration: %v\n", err)
+		os.Exit(1)
+	}
+
+	llmProvider, err := initializeProvider(config.AgentFlow.Provider)
+	if err != nil {
+		fmt.Printf("Failed to initialize LLM provider '%s': %v\n", config.AgentFlow.Provider, err)
+		fmt.Printf("Make sure you have set the appropriate environment variables:\n")
+		switch config.AgentFlow.Provider {
+		case "azure":
+			fmt.Printf("  AZURE_OPENAI_API_KEY=your-api-key\n")
+			fmt.Printf("  AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/\n")
+			fmt.Printf("  AZURE_OPENAI_DEPLOYMENT=your-deployment-name\n")
+		case "openai":
+			fmt.Printf("  OPENAI_API_KEY=your-api-key\n")
+		case "ollama":
+			fmt.Printf("  Ollama should be running on localhost:11434\n")
+		}
 		os.Exit(1)
 	}
 
@@ -104,11 +122,19 @@ func main() {
 	{{end}}
 
 	agents := make(map[string]core.AgentHandler)
+	results := make([]AgentOutput, 0)
+	var resultsMutex sync.Mutex
 
 	{{range .Agents}}
-	// Create {{.DisplayName}} handler
+	// Create {{.DisplayName}} handler with result collection
 	{{.Name}} := New{{.DisplayName}}(llmProvider)
-	agents["{{.Name}}"] = {{.Name}}
+	wrapped{{.DisplayName}} := &ResultCollectorHandler{
+		originalHandler: {{.Name}},
+		agentName:       "{{.Name}}",
+		outputs:         &results,
+		mutex:           &resultsMutex,
+	}
+	agents["{{.Name}}"] = wrapped{{.DisplayName}}
 	{{end}}
 
 	// Create basic error handlers to prevent routing errors
@@ -319,6 +345,22 @@ func main() {
 	// Wait for processing to complete
 	logger.Info().Msg("Waiting for agents to complete processing...")
 	time.Sleep(5 * time.Second)
+
+	// Display collected results
+	fmt.Printf("\n=== Agent Responses ===\n")
+	resultsMutex.Lock()
+	if len(results) > 0 {
+		for _, result := range results {
+			fmt.Printf("\n🤖 %s:\n%s\n", result.AgentName, result.Content)
+			fmt.Printf("⏰ %s\n", result.Timestamp.Format("15:04:05"))
+		}
+	} else {
+		fmt.Printf("No agent responses captured. This might indicate:\n")
+		fmt.Printf("- LLM provider credentials are not configured\n")
+		fmt.Printf("- The agent encountered an error during processing\n")
+		fmt.Printf("- The LLM provider is not responding\n")
+	}
+	resultsMutex.Unlock()
 
 	fmt.Printf("\n=== Workflow Completed ===\n")
 	fmt.Printf("Check the logs above for detailed agent execution results.\n")
