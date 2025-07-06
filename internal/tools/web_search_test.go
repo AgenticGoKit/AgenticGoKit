@@ -1,83 +1,111 @@
 package tools
 
 import (
+	"bytes"
 	"context"
-	"reflect"
+	"io"
+	"net/http"
+	"strings"
 	"testing"
 )
 
+// mockHTTPClient is a mock HTTP client for testing.
+type mockHTTPClient struct {
+	responseBody string
+	statusCode   int
+	error        error
+}
+
+func (m *mockHTTPClient) Do(req *http.Request) (*http.Response, error) {
+	if m.error != nil {
+		return nil, m.error
+	}
+	return &http.Response{
+		StatusCode: m.statusCode,
+		Body:       io.NopCloser(bytes.NewBufferString(m.responseBody)),
+		Header:     make(http.Header),
+	}, nil
+}
+
 func TestWebSearchTool(t *testing.T) {
-	tool := &WebSearchTool{}
 	ctx := context.Background()
 
-	if tool.Name() != "web_search" {
-		t.Errorf("Name() mismatch: got %s, want web_search", tool.Name())
-	}
+	t.Run("Valid query returns results", func(t *testing.T) {
+		mockClient := &mockHTTPClient{
+			statusCode: http.StatusOK,
+			responseBody: `{
+				"web": {
+					"results": [
+						{"title": "The Go Programming Language", "url": "https://golang.org", "description": "Go is an open source programming language..."}
+					]
+				}
+			}`,
+		}
+		tool := &WebSearchTool{apiKey: "dummy-key", httpClient: mockClient}
 
-	testCases := []struct {
-		name         string
-		args         map[string]any
-		expectResult map[string]any
-		expectErr    string
-	}{
-		{
-			name: "Valid query",
-			args: map[string]any{"query": "test search"},
-			expectResult: map[string]any{
-				"results": []string{"Showing results for 'test search'", "Result 1", "Result 2"},
-			},
-			expectErr: "",
-		},
-		{
-			name: "Specific query",
-			args: map[string]any{"query": "capital of France"},
-			expectResult: map[string]any{
-				"results": []string{"Paris is the capital of France.", "France is a country in Europe."},
-			},
-			expectErr: "",
-		},
-		{
-			name:         "Missing query",
-			args:         map[string]any{},
-			expectResult: nil,
-			expectErr:    "missing required argument 'query'",
-		},
-		{
-			name:         "Empty query",
-			args:         map[string]any{"query": ""},
-			expectResult: nil,
-			expectErr:    "argument 'query' must be a non-empty string",
-		},
-		{
-			name:         "Invalid query type",
-			args:         map[string]any{"query": 123},
-			expectResult: nil,
-			expectErr:    "argument 'query' must be a non-empty string",
-		},
-	}
+		result, err := tool.Call(ctx, map[string]any{"query": "golang"})
+		if err != nil {
+			t.Fatalf("Expected no error, got: %v", err)
+		}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			result, err := tool.Call(ctx, tc.args)
+		results, ok := result["results"].([]string)
+		if !ok {
+			t.Fatalf("Expected results to be []string, got %T", result["results"])
+		}
+		if len(results) != 1 {
+			t.Fatalf("Expected 1 result, got %d", len(results))
+		}
+		if !strings.Contains(results[0], "Title: The Go Programming Language") {
+			t.Errorf("Result mismatch: got %s", results[0])
+		}
+	})
 
-			if tc.expectErr != "" {
-				if err == nil {
-					t.Fatalf("Expected error '%s', but got nil", tc.expectErr)
-				}
-				if err.Error() != tc.expectErr {
-					t.Fatalf("Error mismatch: got '%v', want '%s'", err, tc.expectErr)
-				}
-				if result != nil {
-					t.Errorf("Expected nil result on error, but got %v", result)
-				}
-			} else {
-				if err != nil {
-					t.Fatalf("Expected no error, but got: %v", err)
-				}
-				if !reflect.DeepEqual(result, tc.expectResult) {
-					t.Errorf("Result mismatch: got %v, want %v", result, tc.expectResult)
-				}
-			}
-		})
-	}
+	t.Run("No results found", func(t *testing.T) {
+		mockClient := &mockHTTPClient{
+			statusCode:   http.StatusOK,
+			responseBody: `{"web": {"results": []}}`,
+		}
+		tool := &WebSearchTool{apiKey: "dummy-key", httpClient: mockClient}
+
+		result, err := tool.Call(ctx, map[string]any{"query": "a query with no results"})
+		if err != nil {
+			t.Fatalf("Expected no error, got: %v", err)
+		}
+		results := result["results"].([]string)
+		if len(results) != 1 || !strings.Contains(results[0], "No results found.") {
+			t.Errorf("Expected 'No results found.', got: %v", results)
+		}
+	})
+
+	t.Run("API error", func(t *testing.T) {
+		mockClient := &mockHTTPClient{
+			statusCode:   http.StatusUnauthorized,
+			responseBody: `{"error": "invalid api key"}`,
+		}
+		tool := &WebSearchTool{apiKey: "dummy-key", httpClient: mockClient}
+
+		_, err := tool.Call(ctx, map[string]any{"query": "test"})
+		if err == nil {
+			t.Fatal("Expected an error, but got nil")
+		}
+		if !strings.Contains(err.Error(), "search request failed") {
+			t.Errorf("Expected error to contain 'search request failed', got: %v", err)
+		}
+	})
+
+	t.Run("Missing query", func(t *testing.T) {
+		tool := &WebSearchTool{apiKey: "dummy-key", httpClient: &mockHTTPClient{}}
+		_, err := tool.Call(ctx, map[string]any{})
+		if err == nil || err.Error() != "missing required argument 'query'" {
+			t.Errorf("Expected missing argument error, got: %v", err)
+		}
+	})
+
+	t.Run("Empty query", func(t *testing.T) {
+		tool := &WebSearchTool{apiKey: "dummy-key", httpClient: &mockHTTPClient{}}
+		_, err := tool.Call(ctx, map[string]any{"query": ""})
+		if err == nil || err.Error() != "argument 'query' must be a non-empty string" {
+			t.Errorf("Expected empty string error, got: %v", err)
+		}
+	})
 }

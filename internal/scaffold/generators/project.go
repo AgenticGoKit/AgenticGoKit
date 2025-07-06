@@ -61,7 +61,7 @@ func (g *ProjectGenerator) GenerateProjectStructure(config scaffold.ProjectConfi
 
 // generateGoMod creates the go.mod file
 func (g *ProjectGenerator) generateGoMod(config scaffold.ProjectConfig) error {
-	goModContent := fmt.Sprintf("module %s\n\ngo 1.21\n\nrequire github.com/kunalkushwaha/agentflow v0.2.1\n", config.Name)
+	goModContent := fmt.Sprintf("module %s\n\ngo 1.21\n\nrequire github.com/kunalkushwaha/agentflow %s\n", config.Name, scaffold.AgentFlowVersion)
 	goModPath := filepath.Join(config.Name, "go.mod")
 	if err := os.WriteFile(goModPath, []byte(goModContent), 0644); err != nil {
 		return fmt.Errorf("failed to create go.mod: %w", err)

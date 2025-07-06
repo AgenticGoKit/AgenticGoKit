@@ -14,8 +14,26 @@ func (t *ComputeMetricTool) Name() string {
 	return "compute_metric"
 }
 
+// getFloat is a helper function to safely extract a float64 from the arguments map.
+// It handles both float64 and int types, promoting ints to float64.
+func getFloat(args map[string]any, key string) (float64, error) {
+	val, ok := args[key]
+	if !ok {
+		return 0, fmt.Errorf("missing required argument '%s'", key)
+	}
+
+	switch v := val.(type) {
+	case float64:
+		return v, nil
+	case int:
+		return float64(v), nil
+	default:
+		return 0, fmt.Errorf("argument '%s' must be a number (float64 or int)", key)
+	}
+}
+
 // Call performs the calculation based on the 'operation' argument.
-// Expects "operation" (string: "add", "subtract") and "a", "b" (float64) in args.
+// Expects "operation" (string: "add", "subtract", "multiply", "divide") and "a", "b" (float64 or int) in args.
 // Returns "result" (float64) in the result map.
 func (t *ComputeMetricTool) Call(ctx context.Context, args map[string]any) (map[string]any, error) {
 	opVal, ok := args["operation"]
@@ -27,34 +45,14 @@ func (t *ComputeMetricTool) Call(ctx context.Context, args map[string]any) (map[
 		return nil, fmt.Errorf("argument 'operation' must be a string")
 	}
 
-	aVal, ok := args["a"]
-	if !ok {
-		return nil, fmt.Errorf("missing required argument 'a'")
-	}
-	// Use type assertion with check for float64 (JSON numbers often decode to float64)
-	a, ok := aVal.(float64)
-	if !ok {
-		// Allow int promotion to float64
-		if aInt, isInt := aVal.(int); isInt {
-			a = float64(aInt)
-			ok = true
-		} else {
-			return nil, fmt.Errorf("argument 'a' must be a number (float64 or int)")
-		}
+	a, err := getFloat(args, "a")
+	if err != nil {
+		return nil, err
 	}
 
-	bVal, ok := args["b"]
-	if !ok {
-		return nil, fmt.Errorf("missing required argument 'b'")
-	}
-	b, ok := bVal.(float64)
-	if !ok {
-		if bInt, isInt := bVal.(int); isInt {
-			b = float64(bInt)
-			ok = true
-		} else {
-			return nil, fmt.Errorf("argument 'b' must be a number (float64 or int)")
-		}
+	b, err := getFloat(args, "b")
+	if err != nil {
+		return nil, err
 	}
 
 	log.Printf("ComputeMetricTool: Performing operation '%s' on a=%.2f, b=%.2f", operation, a, b)
@@ -65,7 +63,13 @@ func (t *ComputeMetricTool) Call(ctx context.Context, args map[string]any) (map[
 		result = a + b
 	case "subtract":
 		result = a - b
-	// TODO: Add more operations like multiply, divide
+	case "multiply":
+		result = a * b
+	case "divide":
+		if b == 0 {
+			return nil, fmt.Errorf("division by zero is not allowed")
+		}
+		result = a / b
 	default:
 		return nil, fmt.Errorf("unsupported operation '%s'", operation)
 	}
