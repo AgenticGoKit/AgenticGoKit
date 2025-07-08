@@ -28,6 +28,9 @@ type Config struct {
 		TimeoutSeconds      int `toml:"timeout_seconds"`
 	} `toml:"runtime"`
 
+	// Breaking change: Agent memory configuration added
+	AgentMemory AgentMemoryConfig `toml:"agent_memory"`
+
 	// Error routing configuration
 	ErrorRouting struct {
 		Enabled              bool                     `toml:"enabled"`
@@ -44,6 +47,14 @@ type Config struct {
 
 	// MCP configuration
 	MCP MCPConfigToml `toml:"mcp"`
+}
+
+// MemoryConfig represents memory configuration in TOML
+type MemoryConfig struct {
+	Limit      string `toml:"limit"`
+	Swap       string `toml:"swap"`
+	Disable    bool   `toml:"disable"`
+	Overcommit bool   `toml:"overcommit"`
 }
 
 // CircuitBreakerConfigToml represents circuit breaker configuration in TOML
@@ -145,9 +156,22 @@ func LoadConfig(path string) (*Config, error) {
 	if config.MCP.MaxConnections == 0 {
 		config.MCP.MaxConnections = 10
 	}
-	if len(config.MCP.ScanPorts) == 0 {
-		config.MCP.ScanPorts = []int{8080, 8081, 8090, 8100, 3000, 3001, 8811}
+
+	// Set agent memory defaults if not specified
+	if config.AgentMemory.Provider == "" {
+		config.AgentMemory.Provider = "memory" // Default to in-memory for simplicity
 	}
+	if config.AgentMemory.Connection == "" {
+		config.AgentMemory.Connection = "memory"
+	}
+	if config.AgentMemory.MaxResults == 0 {
+		config.AgentMemory.MaxResults = 10
+	}
+	if config.AgentMemory.Dimensions == 0 {
+		config.AgentMemory.Dimensions = 1536
+	}
+	// AutoEmbed defaults to true
+	config.AgentMemory.AutoEmbed = true
 
 	return &config, nil
 }
