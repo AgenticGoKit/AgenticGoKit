@@ -173,6 +173,85 @@ func LoadConfig(path string) (*Config, error) {
 	// AutoEmbed defaults to true
 	config.AgentMemory.AutoEmbed = true
 
+	// Set RAG defaults if not specified
+	if config.AgentMemory.KnowledgeMaxResults == 0 {
+		config.AgentMemory.KnowledgeMaxResults = 20
+	}
+	if config.AgentMemory.KnowledgeScoreThreshold == 0 {
+		config.AgentMemory.KnowledgeScoreThreshold = 0.7
+	}
+	if config.AgentMemory.ChunkSize == 0 {
+		config.AgentMemory.ChunkSize = 1000
+	}
+	if config.AgentMemory.ChunkOverlap == 0 {
+		config.AgentMemory.ChunkOverlap = 200
+	}
+	if config.AgentMemory.RAGMaxContextTokens == 0 {
+		config.AgentMemory.RAGMaxContextTokens = 4000
+	}
+	if config.AgentMemory.RAGPersonalWeight == 0 {
+		config.AgentMemory.RAGPersonalWeight = 0.3
+	}
+	if config.AgentMemory.RAGKnowledgeWeight == 0 {
+		config.AgentMemory.RAGKnowledgeWeight = 0.7
+	}
+
+	// Set document processing defaults
+	if len(config.AgentMemory.Documents.SupportedTypes) == 0 {
+		config.AgentMemory.Documents.SupportedTypes = []string{"pdf", "txt", "md", "web", "code"}
+	}
+	if config.AgentMemory.Documents.MaxFileSize == "" {
+		config.AgentMemory.Documents.MaxFileSize = "10MB"
+	}
+
+	// Set embedding service defaults
+	if config.AgentMemory.Embedding.Provider == "" {
+		config.AgentMemory.Embedding.Provider = "azure"
+	}
+	if config.AgentMemory.Embedding.Model == "" {
+		config.AgentMemory.Embedding.Model = "text-embedding-ada-002"
+	}
+	if config.AgentMemory.Embedding.MaxBatchSize == 0 {
+		config.AgentMemory.Embedding.MaxBatchSize = 100
+	}
+	if config.AgentMemory.Embedding.TimeoutSeconds == 0 {
+		config.AgentMemory.Embedding.TimeoutSeconds = 30
+	}
+
+	// Set search defaults
+	if config.AgentMemory.Search.KeywordWeight == 0 {
+		config.AgentMemory.Search.KeywordWeight = 0.3
+	}
+	if config.AgentMemory.Search.SemanticWeight == 0 {
+		config.AgentMemory.Search.SemanticWeight = 0.7
+	}
+
+	// Set boolean defaults (these are false by default in Go)
+	if !config.AgentMemory.EnableKnowledgeBase {
+		config.AgentMemory.EnableKnowledgeBase = true
+	}
+	if !config.AgentMemory.EnableRAG {
+		config.AgentMemory.EnableRAG = true
+	}
+	if !config.AgentMemory.RAGIncludeSources {
+		config.AgentMemory.RAGIncludeSources = true
+	}
+	if !config.AgentMemory.Documents.AutoChunk {
+		config.AgentMemory.Documents.AutoChunk = true
+	}
+	if !config.AgentMemory.Documents.EnableMetadataExtraction {
+		config.AgentMemory.Documents.EnableMetadataExtraction = true
+	}
+	if !config.AgentMemory.Documents.EnableURLScraping {
+		config.AgentMemory.Documents.EnableURLScraping = true
+	}
+	if !config.AgentMemory.Embedding.CacheEmbeddings {
+		config.AgentMemory.Embedding.CacheEmbeddings = true
+	}
+	if !config.AgentMemory.Search.HybridSearch {
+		config.AgentMemory.Search.HybridSearch = true
+	}
+
 	return &config, nil
 }
 

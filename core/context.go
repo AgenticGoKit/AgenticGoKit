@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"time"
 )
 
 // Context keys for memory and session
@@ -118,4 +119,67 @@ func (n *NoOpMemory) ClearSession(ctx context.Context) error {
 
 func (n *NoOpMemory) Close() error {
 	return nil
+}
+
+// RAG method implementations for NoOpMemory
+func (n *NoOpMemory) IngestDocument(ctx context.Context, doc Document) error {
+	return nil // Silent no-op
+}
+
+func (n *NoOpMemory) IngestDocuments(ctx context.Context, docs []Document) error {
+	return nil // Silent no-op
+}
+
+func (n *NoOpMemory) SearchKnowledge(ctx context.Context, query string, options ...SearchOption) ([]KnowledgeResult, error) {
+	return []KnowledgeResult{}, nil // Return empty results
+}
+
+func (n *NoOpMemory) SearchAll(ctx context.Context, query string, options ...SearchOption) (*HybridResult, error) {
+	return &HybridResult{
+		PersonalMemory: []Result{},
+		Knowledge:      []KnowledgeResult{},
+		Query:          query,
+		TotalResults:   0,
+		SearchTime:     0,
+	}, nil
+}
+
+func (n *NoOpMemory) BuildContext(ctx context.Context, query string, options ...ContextOption) (*RAGContext, error) {
+	return &RAGContext{
+		Query:          query,
+		PersonalMemory: []Result{},
+		Knowledge:      []KnowledgeResult{},
+		ChatHistory:    []Message{},
+		ContextText:    "",
+		Sources:        []string{},
+		TokenCount:     0,
+		Timestamp:      time.Now(),
+	}, nil
+}
+
+// RAG Context Helper Functions
+
+// IngestDocument ingests a document into the knowledge base
+func IngestDocument(ctx context.Context, doc Document) error {
+	return GetMemory(ctx).IngestDocument(ctx, doc)
+}
+
+// IngestDocuments ingests multiple documents into the knowledge base
+func IngestDocuments(ctx context.Context, docs []Document) error {
+	return GetMemory(ctx).IngestDocuments(ctx, docs)
+}
+
+// SearchKnowledge searches the knowledge base
+func SearchKnowledge(ctx context.Context, query string, options ...SearchOption) ([]KnowledgeResult, error) {
+	return GetMemory(ctx).SearchKnowledge(ctx, query, options...)
+}
+
+// SearchAll performs hybrid search across personal memory and knowledge base
+func SearchAll(ctx context.Context, query string, options ...SearchOption) (*HybridResult, error) {
+	return GetMemory(ctx).SearchAll(ctx, query, options...)
+}
+
+// BuildContext builds RAG context for LLM prompts
+func BuildContext(ctx context.Context, query string, options ...ContextOption) (*RAGContext, error) {
+	return GetMemory(ctx).BuildContext(ctx, query, options...)
 }
