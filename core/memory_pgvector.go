@@ -34,6 +34,8 @@ func newPgVectorProvider(config AgentMemoryConfig) (Memory, error) {
 			return nil, fmt.Errorf("OpenAI API key is required for embedding service")
 		}
 		embeddingService = NewOpenAIEmbeddingService(config.Embedding.APIKey, config.Embedding.Model)
+	} else if config.Embedding.Provider == "ollama" {
+		embeddingService = NewOllamaEmbeddingService(config.Embedding.Model, config.Embedding.BaseURL)
 	} else {
 		// Use dummy embedding service for development
 		embeddingService = NewDummyEmbeddingService(config.Dimensions)

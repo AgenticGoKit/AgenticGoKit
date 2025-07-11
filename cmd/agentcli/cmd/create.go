@@ -54,7 +54,19 @@ Examples:
   agentcli create --interactive
 
   # MCP project with specific tools and servers
-  agentcli create myproject --mcp-enabled --mcp-tools "web_search,summarize,translate" --mcp-servers "docker,web-service"`,
+  agentcli create myproject --mcp-enabled --mcp-tools "web_search,summarize,translate" --mcp-servers "docker,web-service"
+
+  # Project with memory and RAG capabilities
+  agentcli create myproject --memory-enabled --memory-provider pgvector --rag-enabled
+
+  # Advanced RAG with custom chunking and embedding
+  agentcli create myproject --memory-enabled --memory-provider pgvector --rag-enabled --rag-chunk-size 512 --rag-overlap 50 --embedding-provider openai --embedding-model text-embedding-3-small
+
+  # Project with hybrid search and session memory
+  agentcli create myproject --memory-enabled --memory-provider weaviate --rag-enabled --hybrid-search --session-memory
+
+  # Complete project with MCP, memory, and visualization
+  agentcli create myproject --mcp-enabled --memory-enabled --memory-provider pgvector --rag-enabled --visualize`,
 	Args: func(cmd *cobra.Command, args []string) error {
 		interactive, _ := cmd.Flags().GetBool("interactive")
 		if !interactive && len(args) != 1 {
@@ -100,6 +112,19 @@ var (
 	withLoadBalancer   bool
 	connectionPoolSize int
 	retryPolicy        string
+
+	// Memory/RAG flags
+	memoryEnabled     bool
+	memoryProvider    string
+	embeddingProvider string
+	embeddingModel    string
+	ragEnabled        bool
+	ragChunkSize      int
+	ragOverlap        int
+	ragTopK           int
+	ragScoreThreshold float64
+	hybridSearch      bool
+	sessionMemory     bool
 )
 
 func init() {
@@ -113,7 +138,7 @@ func init() {
 	createCmd.Flags().BoolVarP(&interactive, "interactive", "i", false, "Interactive mode for guided setup")
 
 	// Multi-agent orchestration flags
-	createCmd.Flags().StringVar(&orchestrationMode, "orchestration-mode", "route", "Orchestration mode (route, collaborative, sequential, loop, mixed)")
+	createCmd.Flags().StringVar(&orchestrationMode, "orchestration-mode", "sequential", "Orchestration mode (sequential, route, collaborative, loop, mixed)")
 	createCmd.Flags().StringVar(&collaborativeAgents, "collaborative-agents", "", "Comma-separated list of agent names for parallel execution")
 	createCmd.Flags().StringVar(&sequentialAgents, "sequential-agents", "", "Comma-separated list of agent names for sequential pipeline")
 	createCmd.Flags().StringVar(&loopAgent, "loop-agent", "", "Single agent name for loop-based execution pattern")
@@ -138,6 +163,19 @@ func init() {
 	createCmd.Flags().BoolVar(&withLoadBalancer, "with-load-balancer", false, "Enable MCP load balancing")
 	createCmd.Flags().IntVar(&connectionPoolSize, "connection-pool-size", 5, "MCP connection pool size")
 	createCmd.Flags().StringVar(&retryPolicy, "retry-policy", "exponential", "Retry policy (exponential, linear, fixed)")
+
+	// Memory/RAG flags
+	createCmd.Flags().BoolVar(&memoryEnabled, "memory-enabled", false, "Enable memory system for agents")
+	createCmd.Flags().StringVar(&memoryProvider, "memory-provider", "memory", "Memory provider (memory, pgvector, weaviate)")
+	createCmd.Flags().StringVar(&embeddingProvider, "embedding-provider", "ollama", "Embedding provider (openai, ollama, dummy)")
+	createCmd.Flags().StringVar(&embeddingModel, "embedding-model", "mxbai-embed-large", "Embedding model name")
+	createCmd.Flags().BoolVar(&ragEnabled, "rag-enabled", false, "Enable RAG (Retrieval-Augmented Generation)")
+	createCmd.Flags().IntVar(&ragChunkSize, "rag-chunk-size", 1000, "RAG chunk size for document splitting")
+	createCmd.Flags().IntVar(&ragOverlap, "rag-overlap", 100, "RAG chunk overlap size")
+	createCmd.Flags().IntVar(&ragTopK, "rag-top-k", 5, "RAG top-k results for context")
+	createCmd.Flags().Float64Var(&ragScoreThreshold, "rag-score-threshold", 0.7, "RAG minimum score threshold")
+	createCmd.Flags().BoolVar(&hybridSearch, "hybrid-search", false, "Enable hybrid search (semantic + keyword)")
+	createCmd.Flags().BoolVar(&sessionMemory, "session-memory", false, "Enable session-based memory")
 
 	// Mark MCP production dependencies
 	createCmd.MarkFlagsMutuallyExclusive("mcp-production", "mcp-enabled")
@@ -164,6 +202,11 @@ func runCreateCommand(cmd *cobra.Command, args []string) error {
 
 	// Validate orchestration configuration
 	if err := validateOrchestrationFlags(); err != nil {
+		return err
+	}
+
+	// Validate memory configuration
+	if err := validateMemoryFlags(); err != nil {
 		return err
 	}
 
@@ -205,6 +248,19 @@ func runCreateCommand(cmd *cobra.Command, args []string) error {
 		WithLoadBalancer:   withLoadBalancer,
 		ConnectionPoolSize: connectionPoolSize,
 		RetryPolicy:        retryPolicy,
+
+		// Memory/RAG configuration
+		MemoryEnabled:     memoryEnabled,
+		MemoryProvider:    memoryProvider,
+		EmbeddingProvider: embeddingProvider,
+		EmbeddingModel:    embeddingModel,
+		RAGEnabled:        ragEnabled,
+		RAGChunkSize:      ragChunkSize,
+		RAGOverlap:        ragOverlap,
+		RAGTopK:           ragTopK,
+		RAGScoreThreshold: ragScoreThreshold,
+		HybridSearch:      hybridSearch,
+		SessionMemory:     sessionMemory,
 	}
 
 	// Create the project
@@ -225,6 +281,21 @@ func runCreateCommand(cmd *cobra.Command, args []string) error {
 	if config.Visualize {
 		fmt.Printf("✓ Workflow visualization enabled\n")
 		fmt.Printf("✓ Diagrams will be generated in %s/\n", config.VisualizeOutputDir)
+	}
+
+	if config.MemoryEnabled {
+		fmt.Printf("✓ Memory system enabled (%s)\n", config.MemoryProvider)
+		if config.RAGEnabled {
+			fmt.Printf("✓ RAG enabled (chunk size: %d, overlap: %d, top-k: %d)\n",
+				config.RAGChunkSize, config.RAGOverlap, config.RAGTopK)
+		}
+		if config.HybridSearch {
+			fmt.Printf("✓ Hybrid search enabled\n")
+		}
+		if config.SessionMemory {
+			fmt.Printf("✓ Session memory enabled\n")
+		}
+		fmt.Printf("✓ Embedding provider: %s\n", config.EmbeddingProvider)
 	}
 
 	// Use modular template system for better maintainability
@@ -270,7 +341,7 @@ func validateMCPFlags() error {
 
 func validateOrchestrationFlags() error {
 	// Validate orchestration mode
-	validModes := []string{"route", "collaborative", "sequential", "loop", "mixed"}
+	validModes := []string{"sequential", "route", "collaborative", "loop", "mixed"}
 	if !contains(validModes, orchestrationMode) {
 		return fmt.Errorf("invalid orchestration mode: %s. Valid options: %s", orchestrationMode, strings.Join(validModes, ", "))
 	}
@@ -353,6 +424,57 @@ func validateOrchestrationFlags() error {
 	}
 	if maxConcurrency > 100 {
 		return fmt.Errorf("max concurrency should not exceed 100 for performance reasons")
+	}
+
+	return nil
+}
+
+func validateMemoryFlags() error {
+	// RAG requires memory to be enabled
+	if ragEnabled && !memoryEnabled {
+		return fmt.Errorf("--rag-enabled requires --memory-enabled")
+	}
+
+	// Session memory requires memory to be enabled
+	if sessionMemory && !memoryEnabled {
+		return fmt.Errorf("--session-memory requires --memory-enabled")
+	}
+
+	// Hybrid search requires memory to be enabled
+	if hybridSearch && !memoryEnabled {
+		return fmt.Errorf("--hybrid-search requires --memory-enabled")
+	}
+
+	// Validate memory provider
+	if memoryEnabled {
+		validProviders := []string{"memory", "pgvector", "weaviate"}
+		if !contains(validProviders, memoryProvider) {
+			return fmt.Errorf("invalid memory provider: %s. Valid options: %s", memoryProvider, strings.Join(validProviders, ", "))
+		}
+	}
+
+	// Validate embedding provider
+	if memoryEnabled {
+		validEmbeddingProviders := []string{"openai", "ollama", "dummy"}
+		if !contains(validEmbeddingProviders, embeddingProvider) {
+			return fmt.Errorf("invalid embedding provider: %s. Valid options: %s", embeddingProvider, strings.Join(validEmbeddingProviders, ", "))
+		}
+	}
+
+	// Validate RAG parameters
+	if ragEnabled {
+		if ragChunkSize <= 0 {
+			return fmt.Errorf("RAG chunk size must be a positive integer")
+		}
+		if ragOverlap < 0 || ragOverlap >= ragChunkSize {
+			return fmt.Errorf("RAG overlap must be non-negative and less than chunk size")
+		}
+		if ragTopK <= 0 {
+			return fmt.Errorf("RAG top-k must be a positive integer")
+		}
+		if ragScoreThreshold < 0.0 || ragScoreThreshold > 1.0 {
+			return fmt.Errorf("RAG score threshold must be between 0.0 and 1.0")
+		}
 	}
 
 	return nil
@@ -567,6 +689,150 @@ func interactiveSetup() (scaffold.ProjectConfig, error) {
 		} else {
 			config.VisualizeOutputDir = "docs/workflows"
 		}
+	}
+
+	// Memory and RAG options
+	fmt.Print("\nEnable memory system? (y/N): ")
+	var memoryChoice string
+	fmt.Scanln(&memoryChoice)
+	config.MemoryEnabled = strings.ToLower(memoryChoice) == "y" || strings.ToLower(memoryChoice) == "yes"
+
+	if config.MemoryEnabled {
+		// Memory provider selection
+		fmt.Println("Select memory provider:")
+		fmt.Println("1. In-Memory (default) - Fast, temporary storage")
+		fmt.Println("2. PgVector - PostgreSQL with vector search")
+		fmt.Println("3. Weaviate - Dedicated vector database")
+		fmt.Print("Choice (1-3): ")
+		var memoryProviderChoice string
+		fmt.Scanln(&memoryProviderChoice)
+
+		memoryProviders := map[string]string{
+			"1": "memory", "2": "pgvector", "3": "weaviate",
+			"": "memory", // default
+		}
+		if p, exists := memoryProviders[memoryProviderChoice]; exists {
+			config.MemoryProvider = p
+		} else {
+			config.MemoryProvider = "memory"
+		}
+
+		// Embedding provider selection
+		fmt.Println("Select embedding provider:")
+		fmt.Println("1. Dummy (default) - For testing/development")
+		fmt.Println("2. OpenAI - Production-ready embeddings")
+		fmt.Println("3. Ollama - Local embeddings with models like mxbai-embed-large")
+		fmt.Print("Choice (1-3): ")
+		var embeddingChoice string
+		fmt.Scanln(&embeddingChoice)
+
+		embeddingProviders := map[string]string{
+			"1": "dummy", "2": "openai", "3": "ollama",
+			"": "dummy", // default
+		}
+		if p, exists := embeddingProviders[embeddingChoice]; exists {
+			config.EmbeddingProvider = p
+		} else {
+			config.EmbeddingProvider = "dummy"
+		}
+
+		// Embedding model
+		if config.EmbeddingProvider == "openai" {
+			fmt.Print("OpenAI embedding model (default: text-embedding-3-small): ")
+			var modelInput string
+			fmt.Scanln(&modelInput)
+			if modelInput != "" {
+				config.EmbeddingModel = modelInput
+			} else {
+				config.EmbeddingModel = "text-embedding-3-small"
+			}
+		} else if config.EmbeddingProvider == "ollama" {
+			fmt.Print("Ollama embedding model (default: mxbai-embed-large): ")
+			var modelInput string
+			fmt.Scanln(&modelInput)
+			if modelInput != "" {
+				config.EmbeddingModel = modelInput
+			} else {
+				config.EmbeddingModel = "mxbai-embed-large"
+			}
+		} else {
+			config.EmbeddingModel = "text-embedding-3-small"
+		}
+
+		// RAG options
+		fmt.Print("Enable RAG (Retrieval-Augmented Generation)? (y/N): ")
+		var ragChoice string
+		fmt.Scanln(&ragChoice)
+		config.RAGEnabled = strings.ToLower(ragChoice) == "y" || strings.ToLower(ragChoice) == "yes"
+
+		if config.RAGEnabled {
+			// RAG chunk size
+			fmt.Print("RAG chunk size (default: 1000): ")
+			var chunkInput string
+			fmt.Scanln(&chunkInput)
+			if chunkInput != "" {
+				if parsed, err := strconv.Atoi(chunkInput); err == nil && parsed > 0 {
+					config.RAGChunkSize = parsed
+				} else {
+					config.RAGChunkSize = 1000
+				}
+			} else {
+				config.RAGChunkSize = 1000
+			}
+
+			// RAG overlap
+			fmt.Print("RAG chunk overlap (default: 100): ")
+			var overlapInput string
+			fmt.Scanln(&overlapInput)
+			if overlapInput != "" {
+				if parsed, err := strconv.Atoi(overlapInput); err == nil && parsed >= 0 {
+					config.RAGOverlap = parsed
+				} else {
+					config.RAGOverlap = 100
+				}
+			} else {
+				config.RAGOverlap = 100
+			}
+
+			// RAG top-k
+			fmt.Print("RAG top-k results (default: 5): ")
+			var topkInput string
+			fmt.Scanln(&topkInput)
+			if topkInput != "" {
+				if parsed, err := strconv.Atoi(topkInput); err == nil && parsed > 0 {
+					config.RAGTopK = parsed
+				} else {
+					config.RAGTopK = 5
+				}
+			} else {
+				config.RAGTopK = 5
+			}
+
+			// RAG score threshold
+			fmt.Print("RAG score threshold (default: 0.7): ")
+			var thresholdInput string
+			fmt.Scanln(&thresholdInput)
+			if thresholdInput != "" {
+				if parsed, err := strconv.ParseFloat(thresholdInput, 64); err == nil && parsed >= 0.0 && parsed <= 1.0 {
+					config.RAGScoreThreshold = parsed
+				} else {
+					config.RAGScoreThreshold = 0.7
+				}
+			} else {
+				config.RAGScoreThreshold = 0.7
+			}
+		}
+
+		// Additional memory features
+		fmt.Print("Enable hybrid search (semantic + keyword)? (y/N): ")
+		var hybridChoice string
+		fmt.Scanln(&hybridChoice)
+		config.HybridSearch = strings.ToLower(hybridChoice) == "y" || strings.ToLower(hybridChoice) == "yes"
+
+		fmt.Print("Enable session-based memory? (y/N): ")
+		var sessionChoice string
+		fmt.Scanln(&sessionChoice)
+		config.SessionMemory = strings.ToLower(sessionChoice) == "y" || strings.ToLower(sessionChoice) == "yes"
 	}
 
 	fmt.Println("\n✓ Configuration complete!")

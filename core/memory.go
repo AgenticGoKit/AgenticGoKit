@@ -51,11 +51,12 @@ type DocumentConfig struct {
 
 // EmbeddingConfig represents embedding service configuration
 type EmbeddingConfig struct {
-	Provider        string `toml:"provider"`         // azure, openai, local
-	Model           string `toml:"model"`            // text-embedding-ada-002, etc.
+	Provider        string `toml:"provider"`         // openai, ollama, dummy
+	Model           string `toml:"model"`            // text-embedding-ada-002, mxbai-embed-large, etc.
 	CacheEmbeddings bool   `toml:"cache_embeddings"` // default: true
 	APIKey          string `toml:"api_key"`          // API key for service
-	Endpoint        string `toml:"endpoint"`         // Custom endpoint
+	BaseURL         string `toml:"base_url"`         // Base URL for service (e.g., Ollama endpoint)
+	Endpoint        string `toml:"endpoint"`         // Custom endpoint (deprecated, use BaseURL)
 	MaxBatchSize    int    `toml:"max_batch_size"`   // default: 100
 	TimeoutSeconds  int    `toml:"timeout_seconds"`  // default: 30
 }

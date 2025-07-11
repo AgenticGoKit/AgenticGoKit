@@ -16,6 +16,11 @@ import (
 	"github.com/kunalkushwaha/agentflow/core"
 )
 
+{{if .Config.MemoryEnabled}}
+// Global memory instance for access by agents
+var memory core.Memory
+{{end}}
+
 func main() {
 	ctx := context.Background()
 	core.SetLogLevel(core.INFO)
@@ -121,6 +126,79 @@ func main() {
 	}
 	{{end}}
 
+	{{if .Config.MemoryEnabled}}
+	// Initialize memory system
+	logger.Info().Msg("Initializing memory system...")
+	memoryConfig := core.AgentMemoryConfig{
+		Provider:   "{{.Config.MemoryProvider}}",
+		MaxResults: {{.Config.RAGTopK}},
+		{{if eq .Config.EmbeddingProvider "ollama"}}
+		{{if eq .Config.EmbeddingModel "mxbai-embed-large"}}
+		Dimensions: 1024,
+		{{else}}
+		Dimensions: 1536,
+		{{end}}
+		{{else}}
+		Dimensions: 1536,
+		{{end}}
+		AutoEmbed:  true,
+		
+		// Connection string based on provider
+		{{if eq .Config.MemoryProvider "pgvector"}}
+		Connection: "postgres://user:password@localhost:5432/dbname?sslmode=disable",
+		{{else if eq .Config.MemoryProvider "weaviate"}}
+		Connection: "http://localhost:8080",
+		{{else}}
+		Connection: "", // In-memory doesn't need connection
+		{{end}}
+
+		// Embedding configuration
+		Embedding: core.EmbeddingConfig{
+			Provider: "{{.Config.EmbeddingProvider}}",
+			Model:    "{{.Config.EmbeddingModel}}",
+			{{if eq .Config.EmbeddingProvider "openai"}}
+			APIKey:   os.Getenv("OPENAI_API_KEY"),
+			{{else if eq .Config.EmbeddingProvider "ollama"}}
+			BaseURL:  "http://localhost:11434",
+			{{end}}
+		},
+	}
+
+	memory, memErr := core.NewMemory(memoryConfig)
+	if memErr != nil {
+		logger.Warn().Err(memErr).Msg("Failed to initialize memory system, continuing without memory")
+		{{if eq .Config.MemoryProvider "pgvector"}}
+		logger.Info().Msg("For PgVector, make sure PostgreSQL with pgvector extension is running")
+		logger.Info().Msg("Update the connection string in the code with your database credentials")
+		{{else if eq .Config.MemoryProvider "weaviate"}}
+		logger.Info().Msg("For Weaviate, make sure Weaviate is running on http://localhost:8080")
+		{{end}}
+		{{if eq .Config.EmbeddingProvider "openai"}}
+		logger.Info().Msg("For OpenAI embeddings, make sure OPENAI_API_KEY environment variable is set")
+		{{else if eq .Config.EmbeddingProvider "ollama"}}
+		logger.Info().Msg("For Ollama embeddings, make sure Ollama is running on http://localhost:11434")
+		logger.Info().Msg("Make sure you have the embedding model installed: ollama pull {{.Config.EmbeddingModel}}")
+		{{end}}
+		memory = nil
+	} else {
+		logger.Info().Msg("Memory system initialized successfully")
+		{{if .Config.RAGEnabled}}
+		logger.Info().Msg("RAG (Retrieval-Augmented Generation) enabled")
+		{{end}}
+		{{if .Config.HybridSearch}}
+		logger.Info().Msg("Hybrid search (semantic + keyword) enabled")
+		{{end}}
+		{{if .Config.SessionMemory}}
+		logger.Info().Msg("Session-based memory enabled")
+		{{end}}
+
+		// Make memory accessible to agents
+		if memory != nil {
+			logger.Debug().Msg("Memory system ready for agent use")
+		}
+	}
+	{{end}}
+
 	agents := make(map[string]core.AgentHandler)
 	results := make([]AgentOutput, 0)
 	var resultsMutex sync.Mutex
@@ -154,6 +232,24 @@ func main() {
 	{{end}}
 
 	// Create orchestrated runner
+	{{if .Config.MemoryEnabled}}
+	// Use NewRunnerFromConfig for automatic memory setup
+	runner, err := core.NewRunnerFromConfig("agentflow.toml")
+	if err != nil {
+		logger.Error().Err(err).Msg("Failed to create runner from config")
+		fmt.Printf("Error creating runner: %v\n", err)
+		os.Exit(1)
+	}
+	
+	// Register agents with the runner
+	for name, handler := range agents {
+		if err := runner.RegisterAgent(name, handler); err != nil {
+			logger.Error().Err(err).Str("agent", name).Msg("Failed to register agent")
+			fmt.Printf("Error registering agent %s: %v\n", name, err)
+			os.Exit(1)
+		}
+	}
+	{{else}}
 	{{if eq .Config.OrchestrationMode "collaborative"}}
 	runner := core.CreateCollaborativeRunner(agents, 30*time.Second)
 	{{else if eq .Config.OrchestrationMode "sequential"}}
@@ -232,8 +328,9 @@ func main() {
 	// Default collaborative mode
 	runner := core.CreateCollaborativeRunner(agents, 30*time.Second)
 	{{end}}
+	{{end}}
 
-	{{if eq .Config.OrchestrationMode "collaborative"}}
+	{{if and (eq .Config.OrchestrationMode "collaborative") (not .Config.MemoryEnabled)}}
 	// Result collection system
 	var agentOutputs []AgentOutput
 	var outputMutex sync.Mutex
@@ -318,9 +415,8 @@ func main() {
 
 	logger.Info().Msg("Workflow completed successfully")
 	{{else}}
-	// Start the runner for non-collaborative orchestration modes (sequential, loop, mixed)
+	// Start the runner (non-blocking)
 	runner.Start(ctx)
-	defer runner.Stop()
 
 	{{if .Agents}}
 	event := core.NewEvent("{{(index .Agents 0).Name}}", core.EventData{
@@ -342,9 +438,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Wait for processing to complete
+	// Wait for processing to complete BEFORE printing results.
+	// We call runner.Stop() explicitly here (instead of using defer runner.Stop()).
+	// A deferred call would execute only when main() returns—after the result-printing
+	// code below—so we could print an empty "Agent Responses" section while the
+	// agents are still working.  Calling Stop() now closes the queue and blocks
+	// until the event-processing goroutine has finished handling all queued events,
+	// guaranteeing the results slice is fully populated.
 	logger.Info().Msg("Waiting for agents to complete processing...")
-	time.Sleep(5 * time.Second)
+	runner.Stop()
 
 	// Display collected results
 	fmt.Printf("\n=== Agent Responses ===\n")

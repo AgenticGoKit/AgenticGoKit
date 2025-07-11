@@ -367,6 +367,9 @@ func (c *Config) initializeAzureProvider(config map[string]interface{}) (ModelPr
 func (c *Config) initializeOllamaProvider(config map[string]interface{}) (ModelProvider, error) {
 	baseURL := c.getStringValue(config, "base_url")
 	if baseURL == "" {
+		baseURL = c.getStringValue(config, "endpoint") // alias support
+	}
+	if baseURL == "" {
 		baseURL = os.Getenv("OLLAMA_BASE_URL")
 		if baseURL == "" {
 			baseURL = "http://localhost:11434"

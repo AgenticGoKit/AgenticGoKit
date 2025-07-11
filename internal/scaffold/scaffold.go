@@ -91,6 +91,21 @@ func createReadme(config ProjectConfig) error {
 		content += "- **MCP Integration**: Enabled\n"
 	}
 
+	if config.MemoryEnabled {
+		content += "- **Memory System**: Enabled\n"
+		content += fmt.Sprintf("- **Memory Provider**: %s\n", config.MemoryProvider)
+		content += fmt.Sprintf("- **Embedding Provider**: %s\n", config.EmbeddingProvider)
+		if config.RAGEnabled {
+			content += "- **RAG**: Enabled\n"
+		}
+		if config.HybridSearch {
+			content += "- **Hybrid Search**: Enabled\n"
+		}
+		if config.SessionMemory {
+			content += "- **Session Memory**: Enabled\n"
+		}
+	}
+
 	content += "\n## Agents\n\n"
 	agents := utils.ResolveAgentNames(convertToUtilsConfig(config))
 	for _, agent := range agents {
@@ -102,6 +117,68 @@ func createReadme(config ProjectConfig) error {
 	content += "go mod tidy\n"
 	content += "go run . -m \"Your message here\"\n"
 	content += "```\n"
+
+	if config.MemoryEnabled {
+		content += "\n## Memory System\n\n"
+		content += fmt.Sprintf("This project uses **%s** as the memory provider", config.MemoryProvider)
+		if config.EmbeddingProvider == "openai" {
+			content += " with **OpenAI embeddings**"
+		}
+		content += ".\n\n"
+
+		if config.MemoryProvider == "pgvector" {
+			content += "### PostgreSQL with pgvector Setup\n\n"
+			content += "To use the pgvector memory provider, you need PostgreSQL with the pgvector extension:\n\n"
+			content += "```bash\n"
+			content += "# Using Docker\n"
+			content += "docker run --name pgvector-db -e POSTGRES_PASSWORD=password -e POSTGRES_DB=agentflow -p 5432:5432 -d pgvector/pgvector:pg16\n"
+			content += "\n"
+			content += "# Update connection string in main.go:\n"
+			content += "# Connection: \"postgres://postgres:password@localhost:5432/agentflow?sslmode=disable\"\n"
+			content += "```\n\n"
+		} else if config.MemoryProvider == "weaviate" {
+			content += "### Weaviate Setup\n\n"
+			content += "To use the Weaviate memory provider, you need Weaviate running:\n\n"
+			content += "```bash\n"
+			content += "# Using Docker\n"
+			content += "docker run -d --name weaviate -p 8080:8080 -e QUERY_DEFAULTS_LIMIT=25 -e AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED=true -e PERSISTENCE_DATA_PATH=/var/lib/weaviate -e DEFAULT_VECTORIZER_MODULE=none -e ENABLE_MODULES=text2vec-openai,text2vec-cohere,text2vec-huggingface,ref2vec-centroid,generative-openai,qna-openai semitechnologies/weaviate:latest\n"
+			content += "```\n\n"
+		}
+
+		if config.EmbeddingProvider == "openai" {
+			content += "### OpenAI API Key\n\n"
+			content += "Set your OpenAI API key as an environment variable:\n\n"
+			content += "```bash\n"
+			content += "export OPENAI_API_KEY=\"your-api-key-here\"\n"
+			content += "```\n\n"
+		} else if config.EmbeddingProvider == "ollama" {
+			content += "### Ollama Setup\n\n"
+			content += "Make sure Ollama is running and the embedding model is installed:\n\n"
+			content += "```bash\n"
+			content += "# Start Ollama (if not already running)\n"
+			content += "ollama serve\n"
+			content += "\n"
+			content += "# Install the embedding model\n"
+			content += fmt.Sprintf("ollama pull %s\n", config.EmbeddingModel)
+			content += "```\n\n"
+		}
+
+		if config.RAGEnabled {
+			content += "### RAG Features\n\n"
+			content += "This project includes RAG (Retrieval-Augmented Generation) capabilities:\n\n"
+			content += fmt.Sprintf("- **Chunk Size**: %d tokens\n", config.RAGChunkSize)
+			content += fmt.Sprintf("- **Overlap**: %d tokens\n", config.RAGOverlap)
+			content += fmt.Sprintf("- **Top-K Results**: %d\n", config.RAGTopK)
+			content += fmt.Sprintf("- **Score Threshold**: %.1f\n", config.RAGScoreThreshold)
+			if config.HybridSearch {
+				content += "- **Hybrid Search**: Enabled (semantic + keyword)\n"
+			}
+			if config.SessionMemory {
+				content += "- **Session Memory**: Enabled\n"
+			}
+			content += "\n"
+		}
+	}
 
 	if config.Visualize {
 		content += "\n## Workflow Diagrams\n\n"
@@ -160,6 +237,7 @@ func createAgentFilesWithTemplates(config ProjectConfig) error {
 
 		// Create template data structure that matches the comprehensive template
 		templateData := struct {
+			Config         ProjectConfig
 			Agent          utils.AgentInfo
 			Agents         []utils.AgentInfo
 			AgentIndex     int
@@ -171,6 +249,7 @@ func createAgentFilesWithTemplates(config ProjectConfig) error {
 			SystemPrompt   string
 			RoutingComment string
 		}{
+			Config:         config,
 			Agent:          agent,
 			Agents:         agents,
 			AgentIndex:     i,
@@ -267,7 +346,7 @@ timeout_seconds = 30
 # API key will be read from OPENAI_API_KEY environment variable
 
 [providers.ollama]
-endpoint = "http://localhost:11434"
+base_url = "http://localhost:11434"
 model = "llama2"
 
 [providers.mock]
@@ -308,6 +387,60 @@ command = "npx @modelcontextprotocol/server-brave-search"
 enabled = false
 `
 		configContent += mcpConfig
+	}
+
+	// Add memory configuration if enabled
+	if config.MemoryEnabled {
+		memoryConfig := fmt.Sprintf(`
+[memory]
+enabled = true
+provider = "%s"
+max_results = %d
+dimensions = 1536
+auto_embed = true
+
+[memory.embedding]
+provider = "%s"
+model = "%s"
+`, config.MemoryProvider, config.RAGTopK, config.EmbeddingProvider, config.EmbeddingModel)
+
+		// Add provider-specific embedding configuration
+		if config.EmbeddingProvider == "ollama" {
+			memoryConfig += `base_url = "http://localhost:11434"
+`
+		}
+
+		// Add provider-specific configuration
+		if config.MemoryProvider == "pgvector" {
+			memoryConfig += `
+[memory.pgvector]
+# Update with your PostgreSQL connection details
+connection = "postgres://postgres:password@localhost:5432/agentflow?sslmode=disable"
+table_name = "agent_memory"
+`
+		} else if config.MemoryProvider == "weaviate" {
+			memoryConfig += `
+[memory.weaviate]
+# Update with your Weaviate connection details
+connection = "http://localhost:8080"
+class_name = "AgentMemory"
+`
+		}
+
+		if config.RAGEnabled {
+			memoryConfig += fmt.Sprintf(`
+[memory.rag]
+enabled = true
+chunk_size = %d
+overlap = %d
+top_k = %d
+score_threshold = %.1f
+hybrid_search = %t
+session_memory = %t
+`, config.RAGChunkSize, config.RAGOverlap, config.RAGTopK, config.RAGScoreThreshold, config.HybridSearch, config.SessionMemory)
+		}
+
+		configContent += memoryConfig
 	}
 
 	configPath := filepath.Join(config.Name, "agentflow.toml")
