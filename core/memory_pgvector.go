@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"strings"
 	"sync"
 	"time"
@@ -19,12 +20,30 @@ type PgVectorProvider struct {
 	pool             *pgxpool.Pool
 	embeddingService EmbeddingService
 	mutex            sync.RWMutex
+	retryConfig      RetryConfig
+}
+
+// RetryConfig defines retry behavior for database operations
+type RetryConfig struct {
+	MaxRetries      int
+	BackoffDuration time.Duration
+	MaxBackoff      time.Duration
+}
+
+// DefaultRetryConfig returns sensible defaults for retry behavior
+func DefaultRetryConfig() RetryConfig {
+	return RetryConfig{
+		MaxRetries:      3,
+		BackoffDuration: 100 * time.Millisecond,
+		MaxBackoff:      5 * time.Second,
+	}
 }
 
 // newPgVectorProvider creates a new PgVector provider
 func newPgVectorProvider(config AgentMemoryConfig) (Memory, error) {
 	provider := &PgVectorProvider{
-		config: config,
+		config:      config,
+		retryConfig: DefaultRetryConfig(),
 	}
 
 	// Initialize embedding service
@@ -42,7 +61,7 @@ func newPgVectorProvider(config AgentMemoryConfig) (Memory, error) {
 	}
 	provider.embeddingService = embeddingService
 
-	// Initialize database
+	// Initialize database with enhanced connection pooling
 	if err := provider.initialize(); err != nil {
 		return nil, fmt.Errorf("failed to initialize PgVector provider: %w", err)
 	}
@@ -52,21 +71,30 @@ func newPgVectorProvider(config AgentMemoryConfig) (Memory, error) {
 
 // Database schema and initialization
 func (p *PgVectorProvider) initialize() error {
-	// Create connection pool
-	pool, err := pgxpool.New(context.Background(), p.config.Connection)
+	// Create enhanced connection pool
+	config, err := p.configurePool()
+	if err != nil {
+		return fmt.Errorf("failed to configure connection pool: %w", err)
+	}
+
+	pool, err := pgxpool.NewWithConfig(context.Background(), config)
 	if err != nil {
 		return fmt.Errorf("failed to create connection pool: %w", err)
 	}
 
 	p.pool = pool
 
-	// Test connection
-	if err := pool.Ping(context.Background()); err != nil {
+	// Test connection with retry logic
+	if err := p.withRetry(context.Background(), "database ping", func() error {
+		return pool.Ping(context.Background())
+	}); err != nil {
 		return fmt.Errorf("failed to ping database: %w", err)
 	}
 
-	// Create tables and indexes
-	if err := p.createTables(); err != nil {
+	// Create tables and indexes with retry logic
+	if err := p.withRetry(context.Background(), "create tables", func() error {
+		return p.createTables()
+	}); err != nil {
 		return fmt.Errorf("failed to create tables: %w", err)
 	}
 
@@ -189,17 +217,20 @@ func (p *PgVectorProvider) Store(ctx context.Context, content string, tags ...st
 		return fmt.Errorf("failed to generate embedding: %w", err)
 	}
 
-	query := `
-		INSERT INTO personal_memory (session_id, content, embedding, tags)
-		VALUES ($1, $2, $3, $4)
-	`
+	// Use retry logic for database operations
+	return p.withRetry(ctx, "store memory", func() error {
+		query := `
+			INSERT INTO personal_memory (session_id, content, embedding, tags)
+			VALUES ($1, $2, $3, $4)
+		`
 
-	_, err = p.pool.Exec(ctx, query, sessionID, content, pgvector.NewVector(embedding), tags)
-	if err != nil {
-		return fmt.Errorf("failed to store memory: %w", err)
-	}
+		_, err := p.pool.Exec(ctx, query, sessionID, content, pgvector.NewVector(embedding), tags)
+		if err != nil {
+			return fmt.Errorf("failed to store memory: %w", err)
+		}
 
-	return nil
+		return nil
+	})
 }
 
 func (p *PgVectorProvider) Query(ctx context.Context, query string, limit ...int) ([]Result, error) {
@@ -768,4 +799,292 @@ func (p *PgVectorProvider) formatContextText(query string, results *HybridResult
 	}
 
 	return builder.String()
+}
+
+// Enhanced retry logic and methods from memory_pgvector_enhanced.go
+
+// withRetry executes a function with exponential backoff retry logic
+func (p *PgVectorProvider) withRetry(ctx context.Context, operation string, fn func() error) error {
+	config := p.retryConfig
+	var lastErr error
+
+	for attempt := 1; attempt <= config.MaxRetries; attempt++ {
+		if err := fn(); err != nil {
+			lastErr = err
+
+			// Check if error is retryable
+			if !isRetryableError(err) {
+				return fmt.Errorf("%s failed (non-retryable): %w", operation, err)
+			}
+
+			// Last attempt failed
+			if attempt == config.MaxRetries {
+				return fmt.Errorf("%s failed after %d attempts: %w", operation, config.MaxRetries, err)
+			}
+
+			// Calculate delay with exponential backoff
+			delay := time.Duration(float64(config.BackoffDuration) * math.Pow(2.0, float64(attempt-1)))
+			if delay > config.MaxBackoff {
+				delay = config.MaxBackoff
+			}
+
+			// Wait before retry
+			select {
+			case <-ctx.Done():
+				return fmt.Errorf("%s cancelled during retry: %w", operation, ctx.Err())
+			case <-time.After(delay):
+				// Continue to next attempt
+			}
+		} else {
+			// Success
+			return nil
+		}
+	}
+
+	return fmt.Errorf("%s failed after %d attempts: %w", operation, config.MaxRetries, lastErr)
+}
+
+// isRetryableError determines if an error is worth retrying
+func isRetryableError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	errStr := err.Error()
+
+	// Network-related errors that are typically transient
+	retryableErrors := []string{
+		"connection refused",
+		"connection reset",
+		"timeout",
+		"temporary failure",
+		"server is not ready",
+		"too many connections",
+		"connection lost",
+		"network unreachable",
+		"host unreachable",
+	}
+
+	for _, retryable := range retryableErrors {
+		if strings.Contains(errStr, retryable) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// BatchStoreRequest represents a single item in a batch store operation
+type BatchStoreRequest struct {
+	Content string
+	Tags    []string
+}
+
+// BatchStore stores multiple memories in a single transaction
+func (p *PgVectorProvider) BatchStore(ctx context.Context, requests []BatchStoreRequest) error {
+	if len(requests) == 0 {
+		return nil
+	}
+
+	sessionID := GetSessionID(ctx)
+
+	// Generate embeddings in batch
+	texts := make([]string, len(requests))
+	for i, req := range requests {
+		texts[i] = req.Content
+	}
+
+	embeddings, err := p.embeddingService.GenerateEmbeddings(ctx, texts)
+	if err != nil {
+		return fmt.Errorf("failed to generate batch embeddings: %w", err)
+	}
+
+	if len(embeddings) != len(requests) {
+		return fmt.Errorf("embedding count mismatch: got %d, expected %d", len(embeddings), len(requests))
+	}
+
+	// Store in database with transaction
+	return p.withRetry(ctx, "batch store", func() error {
+		tx, err := p.pool.Begin(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to begin transaction: %w", err)
+		}
+		defer tx.Rollback(ctx)
+
+		// Prepare batch insert
+		query := `
+			INSERT INTO personal_memory (session_id, content, embedding, tags)
+			VALUES ($1, $2, $3, $4)
+		`
+
+		for i, req := range requests {
+			_, err = tx.Exec(ctx, query, sessionID, req.Content, pgvector.NewVector(embeddings[i]), req.Tags)
+			if err != nil {
+				return fmt.Errorf("failed to insert batch item %d: %w", i, err)
+			}
+		}
+
+		return tx.Commit(ctx)
+	})
+}
+
+// BatchIngestDocuments ingests multiple documents efficiently
+func (p *PgVectorProvider) BatchIngestDocuments(ctx context.Context, docs []Document) error {
+	if len(docs) == 0 {
+		return nil
+	}
+
+	// Generate embeddings in batch
+	texts := make([]string, len(docs))
+	for i, doc := range docs {
+		texts[i] = doc.Content
+	}
+
+	embeddings, err := p.embeddingService.GenerateEmbeddings(ctx, texts)
+	if err != nil {
+		return fmt.Errorf("failed to generate batch embeddings: %w", err)
+	}
+
+	// Store documents in batches to avoid overwhelming the database
+	batchSize := p.config.Embedding.MaxBatchSize
+	if batchSize <= 0 {
+		batchSize = 50 // Default batch size
+	}
+
+	for i := 0; i < len(docs); i += batchSize {
+		end := i + batchSize
+		if end > len(docs) {
+			end = len(docs)
+		}
+
+		err := p.batchIngestChunk(ctx, docs[i:end], embeddings[i:end])
+		if err != nil {
+			return fmt.Errorf("failed to ingest batch chunk %d-%d: %w", i, end-1, err)
+		}
+	}
+
+	return nil
+}
+
+func (p *PgVectorProvider) batchIngestChunk(ctx context.Context, docs []Document, embeddings [][]float32) error {
+	return p.withRetry(ctx, "batch ingest chunk", func() error {
+		tx, err := p.pool.Begin(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to begin transaction: %w", err)
+		}
+		defer tx.Rollback(ctx)
+
+		now := time.Now()
+
+		// Batch insert documents
+		documentQuery := `
+			INSERT INTO documents (id, title, content, source, doc_type, metadata, tags, created_at, updated_at, chunk_index, chunk_total)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+			ON CONFLICT (id) DO UPDATE SET
+				title = EXCLUDED.title, content = EXCLUDED.content, source = EXCLUDED.source, 
+				doc_type = EXCLUDED.doc_type, metadata = EXCLUDED.metadata, tags = EXCLUDED.tags, 
+				updated_at = EXCLUDED.updated_at, chunk_index = EXCLUDED.chunk_index, chunk_total = EXCLUDED.chunk_total
+		`
+
+		knowledgeQuery := `
+			INSERT INTO knowledge_base (document_id, content, embedding, created_at, updated_at)
+			VALUES ($1, $2, $3, $4, $5)
+		`
+
+		for i, doc := range docs {
+			// Set default values
+			if doc.ID == "" {
+				doc.ID = generateID()
+			}
+			if doc.CreatedAt.IsZero() {
+				doc.CreatedAt = now
+			}
+			doc.UpdatedAt = now
+
+			// First, delete any existing knowledge base entries for this document
+			_, err = tx.Exec(ctx, "DELETE FROM knowledge_base WHERE document_id = $1", doc.ID)
+			if err != nil {
+				return fmt.Errorf("failed to delete existing knowledge base entries for doc %s: %w", doc.ID, err)
+			}
+
+			// Insert document
+			metadataJSON, err := marshalMetadata(doc.Metadata)
+			if err != nil {
+				return fmt.Errorf("failed to marshal metadata for doc %s: %w", doc.ID, err)
+			}
+
+			_, err = tx.Exec(ctx, documentQuery,
+				doc.ID, doc.Title, doc.Content, doc.Source, string(doc.Type),
+				metadataJSON, doc.Tags, doc.CreatedAt, doc.UpdatedAt,
+				doc.ChunkIndex, doc.ChunkTotal)
+			if err != nil {
+				return fmt.Errorf("failed to insert document %s: %w", doc.ID, err)
+			}
+
+			// Insert knowledge base entry
+			_, err = tx.Exec(ctx, knowledgeQuery,
+				doc.ID, doc.Content, pgvector.NewVector(embeddings[i]),
+				doc.CreatedAt, doc.UpdatedAt)
+			if err != nil {
+				return fmt.Errorf("failed to insert knowledge base entry for doc %s: %w", doc.ID, err)
+			}
+		}
+
+		return tx.Commit(ctx)
+	})
+}
+
+// Enhanced connection pool configuration
+func (p *PgVectorProvider) configurePool() (*pgxpool.Config, error) {
+	config, err := pgxpool.ParseConfig(p.config.Connection)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse connection string: %w", err)
+	}
+
+	// Configure connection pool settings for optimal performance
+	config.MaxConns = 25                       // Maximum number of connections
+	config.MinConns = 5                        // Minimum number of connections
+	config.MaxConnLifetime = time.Hour         // Maximum lifetime of a connection
+	config.MaxConnIdleTime = 30 * time.Minute  // Maximum idle time
+	config.HealthCheckPeriod = 1 * time.Minute // Health check interval
+
+	// Set statement timeout for long-running vector operations
+	config.ConnConfig.RuntimeParams = map[string]string{
+		"statement_timeout":                   "30s",
+		"idle_in_transaction_session_timeout": "60s",
+	}
+
+	return config, nil
+}
+
+// UpdatePoolConfig updates the connection pool with optimal settings
+func (p *PgVectorProvider) UpdatePoolConfig() error {
+	if p.pool != nil {
+		p.pool.Close()
+	}
+
+	config, err := p.configurePool()
+	if err != nil {
+		return err
+	}
+
+	pool, err := pgxpool.NewWithConfig(context.Background(), config)
+	if err != nil {
+		return fmt.Errorf("failed to create enhanced connection pool: %w", err)
+	}
+
+	p.pool = pool
+
+	// Test the connection
+	return p.withRetry(context.Background(), "pool connection test", func() error {
+		return p.pool.Ping(context.Background())
+	})
+}
+
+// Helper function for metadata marshaling
+func marshalMetadata(metadata map[string]any) ([]byte, error) {
+	if metadata == nil {
+		return []byte("{}"), nil
+	}
+	return json.Marshal(metadata)
 }
