@@ -13,12 +13,16 @@ import (
 // {{.Agent.DisplayName}}Handler represents the {{.Agent.Name}} agent handler
 // Purpose: {{.Agent.Purpose}}
 type {{.Agent.DisplayName}}Handler struct {
-	llm agentflow.ModelProvider
+	llm    agentflow.ModelProvider
+	{{if .Config.MemoryEnabled}}memory agentflow.Memory{{end}}
 }
 
 // New{{.Agent.DisplayName}} creates a new {{.Agent.DisplayName}} instance
-func New{{.Agent.DisplayName}}(llmProvider agentflow.ModelProvider) *{{.Agent.DisplayName}}Handler {
-	return &{{.Agent.DisplayName}}Handler{llm: llmProvider}
+func New{{.Agent.DisplayName}}(llmProvider agentflow.ModelProvider{{if .Config.MemoryEnabled}}, memory agentflow.Memory{{end}}) *{{.Agent.DisplayName}}Handler {
+	return &{{.Agent.DisplayName}}Handler{
+		llm: llmProvider,
+		{{if .Config.MemoryEnabled}}memory: memory,{{end}}
+	}
 }
 
 // Run implements the agentflow.AgentHandler interface
@@ -90,19 +94,19 @@ func (a *{{.Agent.DisplayName}}Handler) Run(ctx context.Context, event agentflow
 	{{if .Config.MemoryEnabled}}
 	// Memory system integration
 	var memoryContext string
-	if memory != nil {
+	if a.memory != nil {
 		logger.Debug().Str("agent", "{{.Agent.Name}}").Msg("Building memory context")
 		
 		{{if .Config.SessionMemory}}
 		// Create or get session context
-		sessionID := memory.NewSession()
-		ctx = memory.SetSession(ctx, sessionID)
+		sessionID := a.memory.NewSession()
+		ctx = a.memory.SetSession(ctx, sessionID)
 		logger.Debug().Str("agent", "{{.Agent.Name}}").Str("session_id", sessionID).Msg("Session context created")
 		{{end}}
 		
 		{{if .Config.RAGEnabled}}
 		// Build RAG context from knowledge base
-		ragContext, err := memory.BuildContext(ctx, fmt.Sprintf("%v", inputToProcess),
+		ragContext, err := a.memory.BuildContext(ctx, fmt.Sprintf("%v", inputToProcess),
 			agentflow.WithMaxTokens({{.Config.RAGChunkSize}}),
 			agentflow.WithIncludeSources(true))
 		if err != nil {
@@ -114,7 +118,7 @@ func (a *{{.Agent.DisplayName}}Handler) Run(ctx context.Context, event agentflow
 		{{end}}
 		
 		// Query relevant memories
-		if memoryResults, err := memory.Query(ctx, fmt.Sprintf("%v", inputToProcess), {{.Config.RAGTopK}}); err == nil && len(memoryResults) > 0 {
+		if memoryResults, err := a.memory.Query(ctx, fmt.Sprintf("%v", inputToProcess), {{.Config.RAGTopK}}); err == nil && len(memoryResults) > 0 {
 			memoryContext += "\n\nRelevant Memories:\n"
 			for i, result := range memoryResults {
 				memoryContext += fmt.Sprintf("%d. %s (score: %.3f)\n", i+1, result.Content, result.Score)
@@ -123,7 +127,7 @@ func (a *{{.Agent.DisplayName}}Handler) Run(ctx context.Context, event agentflow
 		}
 		
 		// Get chat history if available
-		if chatHistory, err := memory.GetHistory(ctx, 3); err == nil && len(chatHistory) > 0 {
+		if chatHistory, err := a.memory.GetHistory(ctx, 3); err == nil && len(chatHistory) > 0 {
 			memoryContext += "\n\nRecent Chat History:\n"
 			for _, msg := range chatHistory {
 				memoryContext += fmt.Sprintf("[%s] %s\n", msg.Role, msg.Content)
@@ -240,22 +244,22 @@ func (a *{{.Agent.DisplayName}}Handler) Run(ctx context.Context, event agentflow
 	
 	{{if .Config.MemoryEnabled}}
 	// Store interaction in memory
-	if memory != nil {
+	if a.memory != nil {
 		// Store the user query
-		if err := memory.Store(ctx, fmt.Sprintf("%v", inputToProcess), "user-query", "{{.Agent.Name}}"); err != nil {
+		if err := a.memory.Store(ctx, fmt.Sprintf("%v", inputToProcess), "user-query", "{{.Agent.Name}}"); err != nil {
 			logger.Warn().Str("agent", "{{.Agent.Name}}").Err(err).Msg("Failed to store user query in memory")
 		}
 		
 		// Store the agent response
-		if err := memory.Store(ctx, finalResponse, "agent-response", "{{.Agent.Name}}"); err != nil {
+		if err := a.memory.Store(ctx, finalResponse, "agent-response", "{{.Agent.Name}}"); err != nil {
 			logger.Warn().Str("agent", "{{.Agent.Name}}").Err(err).Msg("Failed to store agent response in memory")
 		}
 		
 		// Add to chat history
-		if err := memory.AddMessage(ctx, "user", fmt.Sprintf("%v", inputToProcess)); err != nil {
+		if err := a.memory.AddMessage(ctx, "user", fmt.Sprintf("%v", inputToProcess)); err != nil {
 			logger.Warn().Str("agent", "{{.Agent.Name}}").Err(err).Msg("Failed to add user message to chat history")
 		}
-		if err := memory.AddMessage(ctx, "assistant", finalResponse); err != nil {
+		if err := a.memory.AddMessage(ctx, "assistant", finalResponse); err != nil {
 			logger.Warn().Str("agent", "{{.Agent.Name}}").Err(err).Msg("Failed to add assistant message to chat history")
 		}
 		

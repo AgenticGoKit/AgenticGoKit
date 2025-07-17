@@ -137,7 +137,11 @@ func main() {
 
 	{{range .Agents}}
 	// Create {{.DisplayName}} handler with result collection
+	{{if $.Config.MemoryEnabled}}
+	{{.Name}} := New{{.DisplayName}}(llmProvider, nil) // Memory will be injected by runner
+	{{else}}
 	{{.Name}} := New{{.DisplayName}}(llmProvider)
+	{{end}}
 	wrapped{{.DisplayName}} := &ResultCollectorHandler{
 		originalHandler: {{.Name}},
 		agentName:       "{{.Name}}",
