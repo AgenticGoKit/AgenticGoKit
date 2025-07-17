@@ -430,22 +430,25 @@ func validateOrchestrationFlags() error {
 }
 
 func validateMemoryFlags() error {
-	// RAG requires memory to be enabled
+	// Auto-enable memory when RAG is enabled with warning message
 	if ragEnabled && !memoryEnabled {
-		return fmt.Errorf("--rag-enabled requires --memory-enabled")
+		fmt.Println("⚠️  RAG requires memory - automatically enabling memory")
+		memoryEnabled = true
 	}
 
-	// Session memory requires memory to be enabled
+	// Auto-enable memory when session memory is enabled
 	if sessionMemory && !memoryEnabled {
-		return fmt.Errorf("--session-memory requires --memory-enabled")
+		fmt.Println("⚠️  Session memory requires memory system - automatically enabling memory")
+		memoryEnabled = true
 	}
 
-	// Hybrid search requires memory to be enabled
+	// Auto-enable memory when hybrid search is enabled
 	if hybridSearch && !memoryEnabled {
-		return fmt.Errorf("--hybrid-search requires --memory-enabled")
+		fmt.Println("⚠️  Hybrid search requires memory system - automatically enabling memory")
+		memoryEnabled = true
 	}
 
-	// Validate memory provider
+	// Validate memory provider options
 	if memoryEnabled {
 		validProviders := []string{"memory", "pgvector", "weaviate"}
 		if !contains(validProviders, memoryProvider) {
@@ -453,7 +456,7 @@ func validateMemoryFlags() error {
 		}
 	}
 
-	// Validate embedding provider
+	// Validate embedding provider options
 	if memoryEnabled {
 		validEmbeddingProviders := []string{"openai", "ollama", "dummy"}
 		if !contains(validEmbeddingProviders, embeddingProvider) {
@@ -461,19 +464,52 @@ func validateMemoryFlags() error {
 		}
 	}
 
-	// Validate RAG parameters
+	// Warn about Docker requirements for database providers
+	if memoryEnabled && (memoryProvider == "pgvector" || memoryProvider == "weaviate") {
+		fmt.Printf("ℹ️  Database provider '%s' selected - Docker Compose file will be generated\n", memoryProvider)
+		fmt.Println("   Run 'docker-compose up -d' (or 'docker compose up -d') to start the database")
+		fmt.Println("   Setup scripts (setup.sh/setup.bat) will be created for easy initialization")
+	}
+
+	// Warn about API key requirements for OpenAI embeddings
+	if memoryEnabled && embeddingProvider == "openai" {
+		fmt.Println("ℹ️  OpenAI embeddings selected - set OPENAI_API_KEY environment variable")
+		fmt.Println("   Example: export OPENAI_API_KEY=\"your-api-key-here\"")
+	}
+
+	// Warn about Ollama requirements
+	if memoryEnabled && embeddingProvider == "ollama" {
+		fmt.Printf("ℹ️  Ollama embeddings selected - ensure Ollama is running on http://localhost:11434\n")
+		fmt.Printf("   Make sure the embedding model is installed: ollama pull %s\n", embeddingModel)
+	}
+
+	// Validate RAG parameters with helpful error messages
 	if ragEnabled {
 		if ragChunkSize <= 0 {
-			return fmt.Errorf("RAG chunk size must be a positive integer")
+			return fmt.Errorf("RAG chunk size must be a positive integer (current: %d). Recommended: 500-2000", ragChunkSize)
 		}
 		if ragOverlap < 0 || ragOverlap >= ragChunkSize {
-			return fmt.Errorf("RAG overlap must be non-negative and less than chunk size")
+			return fmt.Errorf("RAG overlap must be non-negative and less than chunk size (current: %d, chunk size: %d). Recommended: 10-20%% of chunk size", ragOverlap, ragChunkSize)
 		}
 		if ragTopK <= 0 {
-			return fmt.Errorf("RAG top-k must be a positive integer")
+			return fmt.Errorf("RAG top-k must be a positive integer (current: %d). Recommended: 3-10", ragTopK)
 		}
 		if ragScoreThreshold < 0.0 || ragScoreThreshold > 1.0 {
-			return fmt.Errorf("RAG score threshold must be between 0.0 and 1.0")
+			return fmt.Errorf("RAG score threshold must be between 0.0 and 1.0 (current: %.2f). Recommended: 0.6-0.8", ragScoreThreshold)
+		}
+	}
+
+	// Validate compatibility between memory and embedding providers
+	if memoryEnabled {
+		// Check for potential compatibility issues
+		if memoryProvider == "weaviate" && embeddingProvider == "dummy" {
+			fmt.Println("⚠️  Using dummy embeddings with Weaviate may not provide meaningful search results")
+			fmt.Println("   Consider using 'openai' or 'ollama' embedding provider for better performance")
+		}
+		
+		if memoryProvider == "memory" && ragEnabled {
+			fmt.Println("ℹ️  Using in-memory provider with RAG - data will not persist between restarts")
+			fmt.Println("   Consider using 'pgvector' or 'weaviate' for persistent storage")
 		}
 	}
 

@@ -127,76 +127,8 @@ func main() {
 	{{end}}
 
 	{{if .Config.MemoryEnabled}}
-	// Initialize memory system
-	logger.Info().Msg("Initializing memory system...")
-	memoryConfig := core.AgentMemoryConfig{
-		Provider:   "{{.Config.MemoryProvider}}",
-		MaxResults: {{.Config.RAGTopK}},
-		{{if eq .Config.EmbeddingProvider "ollama"}}
-		{{if eq .Config.EmbeddingModel "mxbai-embed-large"}}
-		Dimensions: 1024,
-		{{else}}
-		Dimensions: 1536,
-		{{end}}
-		{{else}}
-		Dimensions: 1536,
-		{{end}}
-		AutoEmbed:  true,
-		
-		// Connection string based on provider
-		{{if eq .Config.MemoryProvider "pgvector"}}
-		Connection: "postgres://user:password@localhost:5432/dbname?sslmode=disable",
-		{{else if eq .Config.MemoryProvider "weaviate"}}
-		Connection: "http://localhost:8080",
-		{{else}}
-		Connection: "", // In-memory doesn't need connection
-		{{end}}
-
-		// Embedding configuration
-		Embedding: core.EmbeddingConfig{
-			Provider: "{{.Config.EmbeddingProvider}}",
-			Model:    "{{.Config.EmbeddingModel}}",
-			{{if eq .Config.EmbeddingProvider "openai"}}
-			APIKey:   os.Getenv("OPENAI_API_KEY"),
-			{{else if eq .Config.EmbeddingProvider "ollama"}}
-			BaseURL:  "http://localhost:11434",
-			{{end}}
-		},
-	}
-
-	memory, memErr := core.NewMemory(memoryConfig)
-	if memErr != nil {
-		logger.Warn().Err(memErr).Msg("Failed to initialize memory system, continuing without memory")
-		{{if eq .Config.MemoryProvider "pgvector"}}
-		logger.Info().Msg("For PgVector, make sure PostgreSQL with pgvector extension is running")
-		logger.Info().Msg("Update the connection string in the code with your database credentials")
-		{{else if eq .Config.MemoryProvider "weaviate"}}
-		logger.Info().Msg("For Weaviate, make sure Weaviate is running on http://localhost:8080")
-		{{end}}
-		{{if eq .Config.EmbeddingProvider "openai"}}
-		logger.Info().Msg("For OpenAI embeddings, make sure OPENAI_API_KEY environment variable is set")
-		{{else if eq .Config.EmbeddingProvider "ollama"}}
-		logger.Info().Msg("For Ollama embeddings, make sure Ollama is running on http://localhost:11434")
-		logger.Info().Msg("Make sure you have the embedding model installed: ollama pull {{.Config.EmbeddingModel}}")
-		{{end}}
-		memory = nil
-	} else {
-		logger.Info().Msg("Memory system initialized successfully")
-		{{if .Config.RAGEnabled}}
-		logger.Info().Msg("RAG (Retrieval-Augmented Generation) enabled")
-		{{end}}
-		{{if .Config.HybridSearch}}
-		logger.Info().Msg("Hybrid search (semantic + keyword) enabled")
-		{{end}}
-		{{if .Config.SessionMemory}}
-		logger.Info().Msg("Session-based memory enabled")
-		{{end}}
-
-		// Make memory accessible to agents
-		if memory != nil {
-			logger.Debug().Msg("Memory system ready for agent use")
-		}
-	}
+	// Memory system will be initialized automatically by NewRunnerFromConfig
+	// The runner will read memory configuration from agentflow.toml
 	{{end}}
 
 	agents := make(map[string]core.AgentHandler)

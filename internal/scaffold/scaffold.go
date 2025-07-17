@@ -53,6 +53,17 @@ func CreateAgentProjectModular(config ProjectConfig) error {
 		return err
 	}
 
+	// Generate Docker Compose files for database providers
+	if config.MemoryEnabled && (config.MemoryProvider == "pgvector" || config.MemoryProvider == "weaviate") {
+		dockerGenerator := NewDockerComposeGenerator(config)
+		if err := dockerGenerator.GenerateDockerCompose(); err != nil {
+			return fmt.Errorf("failed to generate Docker Compose files: %w", err)
+		}
+		if err := dockerGenerator.GenerateSetupScript(); err != nil {
+			return fmt.Errorf("failed to generate setup scripts: %w", err)
+		}
+	}
+
 	// Generate workflow diagrams if requested
 	if config.Visualize {
 		if err := generateWorkflowDiagrams(config); err != nil {
@@ -133,8 +144,8 @@ func createReadme(config ProjectConfig) error {
 			content += "# Using Docker\n"
 			content += "docker run --name pgvector-db -e POSTGRES_PASSWORD=password -e POSTGRES_DB=agentflow -p 5432:5432 -d pgvector/pgvector:pg16\n"
 			content += "\n"
-			content += "# Update connection string in main.go:\n"
-			content += "# Connection: \"postgres://postgres:password@localhost:5432/agentflow?sslmode=disable\"\n"
+			content += "# Update connection string in agentflow.toml:\n"
+			content += "# Connection: \"postgres://user:password@localhost:5432/agentflow?sslmode=disable\"\n"
 			content += "```\n\n"
 		} else if config.MemoryProvider == "weaviate" {
 			content += "### Weaviate Setup\n\n"
@@ -415,7 +426,7 @@ model = "%s"
 			memoryConfig += `
 [memory.pgvector]
 # Update with your PostgreSQL connection details
-connection = "postgres://postgres:password@localhost:5432/agentflow?sslmode=disable"
+connection = "postgres://user:password@localhost:5432/agentflow?sslmode=disable"
 table_name = "agent_memory"
 `
 		} else if config.MemoryProvider == "weaviate" {
