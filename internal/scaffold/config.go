@@ -1,7 +1,7 @@
 package scaffold
 
 // AgentFlowVersion represents the version of AgentFlow to use in generated projects
-const AgentFlowVersion = "v0.2.2"
+const AgentFlowVersion = "v0.3.0-preview"
 
 // AgentInfo represents information about an agent including its name and purpose
 type AgentInfo struct {
