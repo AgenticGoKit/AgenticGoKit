@@ -1027,3 +1027,5 @@ The AgentFlow Memory System provides:
 The system is designed for production use with enterprise-grade features while maintaining simplicity for development and testing scenarios.
 
 For more examples and advanced usage, see the `/examples` directory in the AgentFlow repository.
+
+For detailed RAG configuration options, see the **[RAG Configuration Guide](RAGConfiguration.md)**.

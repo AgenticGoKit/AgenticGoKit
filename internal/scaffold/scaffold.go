@@ -263,7 +263,7 @@ func createReadme(config ProjectConfig) error {
 	if config.MemoryEnabled {
 		content += "### Memory & RAG Documentation\n"
 		content += "- **[Memory System Guide](https://github.com/kunalkushwaha/agentflow/blob/main/docs/guides/Memory.md)** - Complete memory implementation guide\n"
-		content += "- **[RAG Configuration Guide](https://github.com/kunalkushwaha/agentflow/blob/main/docs/RAG_CONFIGURATION_GUIDE.md)** - RAG configuration and best practices\n"
+		content += "- **[RAG Configuration Guide](https://github.com/kunalkushwaha/agentflow/blob/main/docs/guides/RAGConfiguration.md)** - RAG configuration and best practices\n"
 		content += "- **[Memory Quick Reference](https://github.com/kunalkushwaha/agentflow/blob/main/docs/memory_quick_reference.md)** - Essential memory API reference\n\n"
 	}
 
