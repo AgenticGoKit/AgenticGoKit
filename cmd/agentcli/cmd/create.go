@@ -12,61 +12,103 @@ import (
 // createCmd represents the create command
 var createCmd = &cobra.Command{
 	Use:   "create [project-name]",
-	Short: "Create a new AgentFlow project with optional MCP integration",
+	Short: "Create a new AgentFlow project with multi-agent workflows, memory, and MCP integration",
 	Long: `Create a new AgentFlow project with customizable multi-agent workflows.
 
 This command generates a complete project structure including:
-  * Multi-agent workflow implementation
-  * Configuration files (agentflow.toml)
+  * Multi-agent workflow implementation with various orchestration patterns
+  * Memory system with RAG (Retrieval-Augmented Generation) capabilities
+  * MCP (Model Context Protocol) tool integration
+  * Configuration files (agentflow.toml) with intelligent defaults
+  * Docker Compose files for database providers (PostgreSQL, Weaviate)
   * Error handling and responsible AI agents
-  * Optional MCP (Model Context Protocol) integration
   * Production-ready features (caching, metrics, load balancing)
+  * Workflow visualization with Mermaid diagrams
 
-Examples:
-  # Basic project with 2 agents
+BASIC EXAMPLES:
+  # Simple project with 2 agents
   agentcli create myproject
 
-  # Project with specific provider and agent count
+  # Project with specific LLM provider and agent count
   agentcli create myproject --agents 3 --provider azure
 
-  # Collaborative workflow (all agents process events in parallel)
-  agentcli create myworkflow --orchestration-mode collaborative --collaborative-agents "analyzer,processor,validator"
+  # Interactive mode for guided setup (recommended for beginners)
+  agentcli create --interactive
 
-  # Sequential pipeline (agents process one after another)
-  agentcli create mypipeline --orchestration-mode sequential --sequential-agents "analyzer,transformer,validator"
+MEMORY & RAG EXAMPLES:
+  # Basic memory-enabled project (in-memory storage)
+  agentcli create myproject --memory-enabled
 
-  # Loop-based workflow (single agent repeats with conditions)
+  # PostgreSQL with vector search and RAG
+  agentcli create myproject --memory-enabled --memory-provider pgvector --rag-enabled
+
+  # Weaviate with OpenAI embeddings
+  agentcli create myproject --memory-enabled --memory-provider weaviate --embedding-provider openai
+
+  # Advanced RAG with custom settings
+  agentcli create myproject --memory-enabled --memory-provider pgvector --rag-enabled \
+    --rag-chunk-size 512 --rag-overlap 50 --rag-top-k 3 --rag-score-threshold 0.8
+
+  # Hybrid search (semantic + keyword) with session memory
+  agentcli create myproject --memory-enabled --memory-provider pgvector --rag-enabled \
+    --hybrid-search --session-memory
+
+  # Local embeddings with Ollama
+  agentcli create myproject --memory-enabled --memory-provider pgvector --rag-enabled \
+    --embedding-provider ollama --embedding-model mxbai-embed-large
+
+ORCHESTRATION EXAMPLES:
+  # Collaborative workflow (agents work in parallel)
+  agentcli create myworkflow --orchestration-mode collaborative \
+    --collaborative-agents "analyzer,processor,validator"
+
+  # Sequential pipeline (agents work in sequence)
+  agentcli create mypipeline --orchestration-mode sequential \
+    --sequential-agents "analyzer,transformer,validator"
+
+  # Loop-based workflow (single agent with iterations)
   agentcli create myloop --orchestration-mode loop --loop-agent processor --max-iterations 5
 
   # Mixed orchestration with fault tolerance
-  agentcli create myworkflow --orchestration-mode collaborative --collaborative-agents "analyzer,validator" --failure-threshold 0.8 --max-concurrency 10
+  agentcli create myworkflow --orchestration-mode mixed \
+    --collaborative-agents "analyzer,validator" --sequential-agents "processor,finalizer" \
+    --failure-threshold 0.8 --max-concurrency 10
 
-  # Generate project with workflow diagrams
-  agentcli create myproject --visualize --visualize-output "docs/diagrams"
-
-  # MCP-enabled project with basic tools
+MCP INTEGRATION EXAMPLES:
+  # Basic MCP with common tools
   agentcli create myproject --mcp-enabled
 
-  # Production MCP project with caching and metrics
+  # Production MCP with caching and metrics
   agentcli create myproject --mcp-production --with-cache --with-metrics
 
-  # Interactive mode for guided setup
-  agentcli create --interactive
+  # MCP with specific tools and servers
+  agentcli create myproject --mcp-enabled \
+    --mcp-tools "web_search,summarize,translate" --mcp-servers "docker,web-service"
 
-  # MCP project with specific tools and servers
-  agentcli create myproject --mcp-enabled --mcp-tools "web_search,summarize,translate" --mcp-servers "docker,web-service"
+VISUALIZATION EXAMPLES:
+  # Generate workflow diagrams
+  agentcli create myproject --visualize --visualize-output "docs/diagrams"
 
-  # Project with memory and RAG capabilities
-  agentcli create myproject --memory-enabled --memory-provider pgvector --rag-enabled
+COMPLETE EXAMPLES:
+  # Full-featured project with everything enabled
+  agentcli create myproject --memory-enabled --memory-provider pgvector --rag-enabled \
+    --mcp-enabled --visualize --orchestration-mode collaborative
 
-  # Advanced RAG with custom chunking and embedding
-  agentcli create myproject --memory-enabled --memory-provider pgvector --rag-enabled --rag-chunk-size 512 --rag-overlap 50 --embedding-provider openai --embedding-model text-embedding-3-small
+  # Production-ready RAG system
+  agentcli create knowledge-base --memory-enabled --memory-provider pgvector --rag-enabled \
+    --embedding-provider openai --hybrid-search --session-memory --mcp-production
 
-  # Project with hybrid search and session memory
-  agentcli create myproject --memory-enabled --memory-provider weaviate --rag-enabled --hybrid-search --session-memory
+MEMORY PROVIDERS:
+  * memory     - In-memory storage (fast, temporary, good for development)
+  * pgvector   - PostgreSQL with vector extension (persistent, production-ready)
+  * weaviate   - Dedicated vector database (scalable, advanced features)
 
-  # Complete project with MCP, memory, and visualization
-  agentcli create myproject --mcp-enabled --memory-enabled --memory-provider pgvector --rag-enabled --visualize`,
+EMBEDDING PROVIDERS:
+  * dummy      - Simple embeddings for testing (default)
+  * openai     - OpenAI embeddings (requires OPENAI_API_KEY)
+  * ollama     - Local embeddings with Ollama (requires Ollama running)
+
+For more information on setup and configuration, see the generated README.md file.`,
 	Args: func(cmd *cobra.Command, args []string) error {
 		interactive, _ := cmd.Flags().GetBool("interactive")
 		if !interactive && len(args) != 1 {
@@ -165,17 +207,17 @@ func init() {
 	createCmd.Flags().StringVar(&retryPolicy, "retry-policy", "exponential", "Retry policy (exponential, linear, fixed)")
 
 	// Memory/RAG flags
-	createCmd.Flags().BoolVar(&memoryEnabled, "memory-enabled", false, "Enable memory system for agents")
-	createCmd.Flags().StringVar(&memoryProvider, "memory-provider", "memory", "Memory provider (memory, pgvector, weaviate)")
-	createCmd.Flags().StringVar(&embeddingProvider, "embedding-provider", "ollama", "Embedding provider (openai, ollama, dummy)")
-	createCmd.Flags().StringVar(&embeddingModel, "embedding-model", "mxbai-embed-large", "Embedding model name")
-	createCmd.Flags().BoolVar(&ragEnabled, "rag-enabled", false, "Enable RAG (Retrieval-Augmented Generation)")
-	createCmd.Flags().IntVar(&ragChunkSize, "rag-chunk-size", 1000, "RAG chunk size for document splitting")
-	createCmd.Flags().IntVar(&ragOverlap, "rag-overlap", 100, "RAG chunk overlap size")
-	createCmd.Flags().IntVar(&ragTopK, "rag-top-k", 5, "RAG top-k results for context")
-	createCmd.Flags().Float64Var(&ragScoreThreshold, "rag-score-threshold", 0.7, "RAG minimum score threshold")
-	createCmd.Flags().BoolVar(&hybridSearch, "hybrid-search", false, "Enable hybrid search (semantic + keyword)")
-	createCmd.Flags().BoolVar(&sessionMemory, "session-memory", false, "Enable session-based memory")
+	createCmd.Flags().BoolVar(&memoryEnabled, "memory-enabled", false, "Enable memory system for agents with persistent storage and retrieval")
+	createCmd.Flags().StringVar(&memoryProvider, "memory-provider", "memory", "Memory provider: 'memory' (in-memory), 'pgvector' (PostgreSQL), 'weaviate' (vector DB)")
+	createCmd.Flags().StringVar(&embeddingProvider, "embedding-provider", "ollama", "Embedding provider: 'openai' (requires API key), 'ollama' (local), 'dummy' (testing)")
+	createCmd.Flags().StringVar(&embeddingModel, "embedding-model", "mxbai-embed-large", "Embedding model name (auto-selected based on provider if empty)")
+	createCmd.Flags().BoolVar(&ragEnabled, "rag-enabled", false, "Enable RAG (Retrieval-Augmented Generation) for knowledge-aware responses")
+	createCmd.Flags().IntVar(&ragChunkSize, "rag-chunk-size", 1000, "RAG document chunk size in tokens (recommended: 500-2000)")
+	createCmd.Flags().IntVar(&ragOverlap, "rag-overlap", 100, "RAG chunk overlap size in tokens (recommended: 10-20% of chunk size)")
+	createCmd.Flags().IntVar(&ragTopK, "rag-top-k", 5, "RAG top-k results to retrieve for context (recommended: 3-10)")
+	createCmd.Flags().Float64Var(&ragScoreThreshold, "rag-score-threshold", 0.7, "RAG minimum similarity score threshold (0.0-1.0, recommended: 0.6-0.8)")
+	createCmd.Flags().BoolVar(&hybridSearch, "hybrid-search", false, "Enable hybrid search combining semantic similarity and keyword matching")
+	createCmd.Flags().BoolVar(&sessionMemory, "session-memory", false, "Enable session-based memory isolation for multi-user scenarios")
 
 	// Mark MCP production dependencies
 	createCmd.MarkFlagsMutuallyExclusive("mcp-production", "mcp-enabled")

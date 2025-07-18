@@ -92,42 +92,94 @@ func createGoMod(config ProjectConfig) error {
 // createReadme creates the README.md file
 func createReadme(config ProjectConfig) error {
 	content := fmt.Sprintf("# %s\n\n", config.Name)
-	content += "This AgentFlow project was generated using the AgentFlow CLI with modular templates.\n\n"
+	content += "**An AgentFlow project with intelligent multi-agent workflows**\n\n"
+	content += "This project was generated using the AgentFlow CLI and includes production-ready features for building AI agent systems.\n\n"
 
-	content += "## Project Configuration\n\n"
-	content += fmt.Sprintf("- **Orchestration Mode**: %s\n", config.OrchestrationMode)
-	content += fmt.Sprintf("- **LLM Provider**: %s\n", config.Provider)
+	// Quick Start section
+	content += "## 🚀 Quick Start\n\n"
+	content += "```bash\n"
+	content += "# Install dependencies\n"
+	content += "go mod tidy\n\n"
+	content += "# Run your agents with a message\n"
+	content += "go run . -m \"Your message here\"\n\n"
+	if config.MemoryEnabled && (config.MemoryProvider == "pgvector" || config.MemoryProvider == "weaviate") {
+		content += "# Start the database (if using external memory provider)\n"
+		if config.MemoryProvider == "pgvector" || config.MemoryProvider == "weaviate" {
+			content += "docker compose up -d\n"
+			content += "./setup.sh  # or setup.bat on Windows\n\n"
+		}
+	}
+	content += "```\n\n"
+
+	// Project Configuration section
+	content += "## ⚙️ Project Configuration\n\n"
+	content += "| Feature | Configuration |\n"
+	content += "|---------|---------------|\n"
+	content += fmt.Sprintf("| **Orchestration Mode** | %s |\n", config.OrchestrationMode)
+	content += fmt.Sprintf("| **LLM Provider** | %s |\n", config.Provider)
+	content += fmt.Sprintf("| **Number of Agents** | %d |\n", config.NumAgents)
 
 	if config.MCPEnabled {
-		content += "- **MCP Integration**: Enabled\n"
+		content += "| **MCP Integration** | ✅ Enabled |\n"
+		if config.MCPProduction {
+			content += "| **MCP Features** | Production (caching, metrics, load balancing) |\n"
+		}
 	}
 
 	if config.MemoryEnabled {
-		content += "- **Memory System**: Enabled\n"
-		content += fmt.Sprintf("- **Memory Provider**: %s\n", config.MemoryProvider)
-		content += fmt.Sprintf("- **Embedding Provider**: %s\n", config.EmbeddingProvider)
+		content += "| **Memory System** | ✅ Enabled |\n"
+		content += fmt.Sprintf("| **Memory Provider** | %s |\n", config.MemoryProvider)
+		content += fmt.Sprintf("| **Embedding Provider** | %s |\n", config.EmbeddingProvider)
 		if config.RAGEnabled {
-			content += "- **RAG**: Enabled\n"
+			content += "| **RAG (Retrieval-Augmented Generation)** | ✅ Enabled |\n"
+			content += fmt.Sprintf("| **RAG Configuration** | Chunk: %d tokens, Overlap: %d, Top-K: %d |\n", config.RAGChunkSize, config.RAGOverlap, config.RAGTopK)
 		}
 		if config.HybridSearch {
-			content += "- **Hybrid Search**: Enabled\n"
+			content += "| **Hybrid Search** | ✅ Enabled (semantic + keyword) |\n"
 		}
 		if config.SessionMemory {
-			content += "- **Session Memory**: Enabled\n"
+			content += "| **Session Memory** | ✅ Enabled |\n"
 		}
 	}
 
-	content += "\n## Agents\n\n"
-	agents := utils.ResolveAgentNames(convertToUtilsConfig(config))
-	for _, agent := range agents {
-		content += fmt.Sprintf("- **%s** (%s): %s\n", agent.DisplayName, agent.Name, agent.Purpose)
+	if config.Visualize {
+		content += "| **Workflow Visualization** | ✅ Enabled |\n"
 	}
 
-	content += "\n## Usage\n\n"
+	content += "\n"
+
+	// Agents section
+	content += "## 🤖 Agents\n\n"
+	agents := utils.ResolveAgentNames(convertToUtilsConfig(config))
+	for i, agent := range agents {
+		content += fmt.Sprintf("%d. **%s** (`%s`)\n", i+1, agent.DisplayName, agent.Name)
+		content += fmt.Sprintf("   - **Purpose**: %s\n", agent.Purpose)
+		content += fmt.Sprintf("   - **Role**: %s orchestration\n", config.OrchestrationMode)
+		content += "\n"
+	}
+
+	// Usage Examples section
+	content += "## 💡 Usage Examples\n\n"
+	content += "### Basic Usage\n"
 	content += "```bash\n"
-	content += "go mod tidy\n"
-	content += "go run . -m \"Your message here\"\n"
-	content += "```\n"
+	content += "# Ask a simple question\n"
+	content += "go run . -m \"What is artificial intelligence?\"\n\n"
+	content += "# Complex analysis request\n"
+	content += "go run . -m \"Analyze the current trends in machine learning and provide recommendations\"\n"
+	content += "```\n\n"
+
+	if config.MemoryEnabled {
+		content += "### Memory & RAG Usage\n"
+		content += "```bash\n"
+		content += "# The agents will automatically:\n"
+		content += "# - Store conversation history\n"
+		content += "# - Query relevant memories\n"
+		if config.RAGEnabled {
+			content += "# - Use RAG to enhance responses with knowledge base\n"
+		}
+		content += "# - Build context from previous interactions\n"
+		content += "```\n\n"
+	}
 
 	if config.MemoryEnabled {
 		content += "\n## Memory System\n\n"
@@ -192,9 +244,122 @@ func createReadme(config ProjectConfig) error {
 	}
 
 	if config.Visualize {
-		content += "\n## Workflow Diagrams\n\n"
-		content += fmt.Sprintf("Visual workflow diagrams have been generated in the `%s` directory. These diagrams show the orchestration pattern and agent interactions for this project.\n", config.VisualizeOutputDir)
+		content += "\n## 📊 Workflow Diagrams\n\n"
+		content += fmt.Sprintf("Visual workflow diagrams have been generated in the `%s` directory. These diagrams show the orchestration pattern and agent interactions for this project.\n\n", config.VisualizeOutputDir)
+		content += "The diagrams include:\n"
+		content += "- **Workflow Overview**: High-level agent interaction patterns\n"
+		content += "- **Agent Details**: Individual agent roles and responsibilities\n"
+		content += "- **Configuration Summary**: Key settings and parameters\n\n"
 	}
+
+	// Documentation and Resources section
+	content += "## 📚 Documentation & Resources\n\n"
+	content += "### AgentFlow Documentation\n"
+	content += "- **[AgentFlow Documentation](https://github.com/kunalkushwaha/agentflow/tree/main/docs)** - Complete framework documentation\n"
+	content += "- **[Agent Basics Guide](https://github.com/kunalkushwaha/agentflow/blob/main/docs/guides/AgentBasics.md)** - Understanding AgentHandler interface and patterns\n"
+	content += "- **[Configuration Guide](https://github.com/kunalkushwaha/agentflow/blob/main/docs/guides/Configuration.md)** - Managing agentflow.toml and environment setup\n"
+	content += "- **[Examples & Tutorials](https://github.com/kunalkushwaha/agentflow/blob/main/docs/guides/Examples.md)** - Practical examples and code samples\n\n"
+
+	if config.MemoryEnabled {
+		content += "### Memory & RAG Documentation\n"
+		content += "- **[Memory System Guide](https://github.com/kunalkushwaha/agentflow/blob/main/docs/guides/Memory.md)** - Complete memory implementation guide\n"
+		content += "- **[RAG Configuration Guide](https://github.com/kunalkushwaha/agentflow/blob/main/docs/RAG_CONFIGURATION_GUIDE.md)** - RAG configuration and best practices\n"
+		content += "- **[Memory Quick Reference](https://github.com/kunalkushwaha/agentflow/blob/main/docs/memory_quick_reference.md)** - Essential memory API reference\n\n"
+	}
+
+	if config.MCPEnabled {
+		content += "### MCP Integration Documentation\n"
+		content += "- **[Tool Integration Guide](https://github.com/kunalkushwaha/agentflow/blob/main/docs/guides/ToolIntegration.md)** - MCP protocol and dynamic tool discovery\n"
+		content += "- **[Custom Tools Guide](https://github.com/kunalkushwaha/agentflow/blob/main/docs/guides/CustomTools.md)** - Building your own MCP servers\n\n"
+	}
+
+	content += "### Advanced Topics\n"
+	content += "- **[Multi-Agent Orchestration](https://github.com/kunalkushwaha/agentflow/blob/main/docs/multi_agent_orchestration.md)** - Advanced orchestration patterns and configuration\n"
+	content += "- **[Production Deployment](https://github.com/kunalkushwaha/agentflow/blob/main/docs/guides/Production.md)** - Scaling, monitoring, and best practices\n"
+	content += "- **[Performance Tuning](https://github.com/kunalkushwaha/agentflow/blob/main/docs/guides/Performance.md)** - Optimization and benchmarking\n"
+	content += "- **[Error Handling](https://github.com/kunalkushwaha/agentflow/blob/main/docs/guides/ErrorHandling.md)** - Resilient agent workflows\n\n"
+
+	// Troubleshooting section
+	content += "## 🔧 Troubleshooting\n\n"
+	content += "### Common Issues\n\n"
+	
+	if config.MemoryEnabled {
+		content += "**Memory System Issues:**\n"
+		if config.MemoryProvider == "pgvector" {
+			content += "- **Database Connection Failed**: Ensure PostgreSQL with pgvector is running (`docker compose up -d`)\n"
+			content += "- **Permission Denied**: Check database user permissions and connection string\n"
+			content += "- **Vector Extension Missing**: Verify pgvector extension is installed in the database\n\n"
+		} else if config.MemoryProvider == "weaviate" {
+			content += "- **Weaviate Connection Failed**: Ensure Weaviate is running (`docker compose up -d`)\n"
+			content += "- **Schema Issues**: Check Weaviate class configuration and vector dimensions\n\n"
+		}
+		
+		if config.EmbeddingProvider == "openai" {
+			content += "- **OpenAI API Errors**: Verify `OPENAI_API_KEY` environment variable is set\n"
+			content += "- **Rate Limiting**: Implement retry logic or upgrade your OpenAI plan\n\n"
+		} else if config.EmbeddingProvider == "ollama" {
+			content += "- **Ollama Connection Failed**: Ensure Ollama is running (`ollama serve`)\n"
+			content += fmt.Sprintf("- **Model Not Found**: Install the embedding model (`ollama pull %s`)\n\n", config.EmbeddingModel)
+		}
+	}
+
+	content += "**General Issues:**\n"
+	content += "- **LLM Provider Errors**: Check API keys and endpoint configurations in `agentflow.toml`\n"
+	content += "- **Agent Not Responding**: Verify LLM provider credentials and network connectivity\n"
+	content += "- **Build Errors**: Run `go mod tidy` to ensure all dependencies are installed\n\n"
+
+	if config.MCPEnabled {
+		content += "**MCP Integration Issues:**\n"
+		content += "- **Tools Not Available**: Check MCP server configuration and connectivity\n"
+		content += "- **Tool Execution Failed**: Verify tool permissions and required dependencies\n\n"
+	}
+
+	content += "### Getting Help\n\n"
+	content += "- **[GitHub Issues](https://github.com/kunalkushwaha/agentflow/issues)** - Report bugs and request features\n"
+	content += "- **[Discussions](https://github.com/kunalkushwaha/agentflow/discussions)** - Community support and questions\n"
+	content += "- **[Documentation](https://github.com/kunalkushwaha/agentflow/tree/main/docs)** - Comprehensive guides and API reference\n\n"
+
+	// Project Structure section
+	content += "## 📁 Project Structure\n\n"
+	content += "```\n"
+	content += fmt.Sprintf("%s/\n", config.Name)
+	content += "├── main.go                 # Application entry point\n"
+	content += "├── agentflow.toml         # Configuration file\n"
+	agents = utils.ResolveAgentNames(convertToUtilsConfig(config))
+	for _, agent := range agents {
+		content += fmt.Sprintf("├── %s              # %s agent implementation\n", agent.FileName, agent.DisplayName)
+	}
+	if config.MemoryEnabled && (config.MemoryProvider == "pgvector" || config.MemoryProvider == "weaviate") {
+		content += "├── docker-compose.yml     # Database services\n"
+		content += "├── init-db.sql           # Database initialization\n"
+		content += "├── setup.sh/.bat         # Setup scripts\n"
+		content += "├── .env.example          # Environment template\n"
+	}
+	if config.Visualize {
+		content += fmt.Sprintf("├── %s/           # Workflow diagrams\n", config.VisualizeOutputDir)
+	}
+	content += "├── go.mod                 # Go module definition\n"
+	content += "└── README.md              # This file\n"
+	content += "```\n\n"
+
+	// Next Steps section
+	content += "## 🚀 Next Steps\n\n"
+	content += "1. **Customize Agents**: Modify agent logic in the generated `.go` files\n"
+	content += "2. **Configure Providers**: Update `agentflow.toml` with your API keys and settings\n"
+	if config.MemoryEnabled {
+		content += "3. **Add Knowledge**: Use the memory system to store and retrieve information\n"
+		if config.RAGEnabled {
+			content += "4. **Ingest Documents**: Add documents to your knowledge base for RAG\n"
+		}
+	}
+	if config.MCPEnabled {
+		content += "3. **Add Tools**: Configure additional MCP tools for enhanced capabilities\n"
+	}
+	content += fmt.Sprintf("%d. **Scale Up**: Add more agents or modify orchestration patterns as needed\n", 3 + (func() int { count := 0; if config.MemoryEnabled { count++; if config.RAGEnabled { count++ } }; if config.MCPEnabled { count++ }; return count })())
+	content += fmt.Sprintf("%d. **Deploy**: Follow the [Production Guide](https://github.com/kunalkushwaha/agentflow/blob/main/docs/guides/Production.md) for deployment\n\n", 4 + (func() int { count := 0; if config.MemoryEnabled { count++; if config.RAGEnabled { count++ } }; if config.MCPEnabled { count++ }; return count })())
+
+	content += "---\n\n"
+	content += "*Generated with ❤️ by [AgentFlow](https://github.com/kunalkushwaha/agentflow)*\n"
 
 	readmePath := filepath.Join(config.Name, "README.md")
 	if err := os.WriteFile(readmePath, []byte(content), 0644); err != nil {
