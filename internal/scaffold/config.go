@@ -48,17 +48,18 @@ type ProjectConfig struct {
 	VisualizeOutputDir string
 
 	// Memory/RAG configuration
-	MemoryEnabled     bool
-	MemoryProvider    string // inmemory, pgvector, weaviate
-	EmbeddingProvider string // openai, dummy
-	EmbeddingModel    string // text-embedding-3-small, etc.
-	RAGEnabled        bool
-	RAGChunkSize      int
-	RAGOverlap        int
-	RAGTopK           int
-	RAGScoreThreshold float64
-	HybridSearch      bool
-	SessionMemory     bool
+	MemoryEnabled       bool
+	MemoryProvider      string // inmemory, pgvector, weaviate
+	EmbeddingProvider   string // openai, dummy
+	EmbeddingModel      string // text-embedding-3-small, etc.
+	EmbeddingDimensions int    // Auto-calculated based on embedding model
+	RAGEnabled          bool
+	RAGChunkSize        int
+	RAGOverlap          int
+	RAGTopK             int
+	RAGScoreThreshold   float64
+	HybridSearch        bool
+	SessionMemory       bool
 }
 
 // TemplateData represents the data structure passed to templates

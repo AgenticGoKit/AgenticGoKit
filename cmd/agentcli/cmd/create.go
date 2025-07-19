@@ -53,9 +53,9 @@ MEMORY & RAG EXAMPLES:
   agentcli create myproject --memory-enabled --memory-provider pgvector --rag-enabled \
     --hybrid-search --session-memory
 
-  # Local embeddings with Ollama
+  # Local embeddings with Ollama (recommended)
   agentcli create myproject --memory-enabled --memory-provider pgvector --rag-enabled \
-    --embedding-provider ollama --embedding-model mxbai-embed-large
+    --embedding-provider ollama --embedding-model nomic-embed-text:latest
 
 ORCHESTRATION EXAMPLES:
   # Collaborative workflow (agents work in parallel)
@@ -210,7 +210,7 @@ func init() {
 	createCmd.Flags().BoolVar(&memoryEnabled, "memory-enabled", false, "Enable memory system for agents with persistent storage and retrieval")
 	createCmd.Flags().StringVar(&memoryProvider, "memory-provider", "memory", "Memory provider: 'memory' (in-memory), 'pgvector' (PostgreSQL), 'weaviate' (vector DB)")
 	createCmd.Flags().StringVar(&embeddingProvider, "embedding-provider", "ollama", "Embedding provider: 'openai' (requires API key), 'ollama' (local), 'dummy' (testing)")
-	createCmd.Flags().StringVar(&embeddingModel, "embedding-model", "mxbai-embed-large", "Embedding model name (auto-selected based on provider if empty)")
+	createCmd.Flags().StringVar(&embeddingModel, "embedding-model", "nomic-embed-text:latest", "Embedding model name (auto-selected based on provider if empty)")
 	createCmd.Flags().BoolVar(&ragEnabled, "rag-enabled", false, "Enable RAG (Retrieval-Augmented Generation) for knowledge-aware responses")
 	createCmd.Flags().IntVar(&ragChunkSize, "rag-chunk-size", 1000, "RAG document chunk size in tokens (recommended: 500-2000)")
 	createCmd.Flags().IntVar(&ragOverlap, "rag-overlap", 100, "RAG chunk overlap size in tokens (recommended: 10-20% of chunk size)")
@@ -247,14 +247,34 @@ func runCreateCommand(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Validate memory configuration
-	if err := validateMemoryFlags(); err != nil {
+	// Validate memory configuration with embedding intelligence
+	if err := validateMemoryFlagsWithIntelligence(); err != nil {
 		return err
 	}
 
 	// Parse tool and server lists
 	toolList := parseCommaSeparatedList(mcpTools)
 	serverList := parseCommaSeparatedList(mcpServers)
+
+	// Use embedding intelligence to calculate dimensions and validate configuration
+	var embeddingDimensions int
+	if memoryEnabled {
+		dimensions, err := scaffold.EmbeddingIntel.GetDimensionsForModel(embeddingProvider, embeddingModel)
+		if err != nil {
+			// Use fallback logic for unknown models
+			dimensions = scaffold.GetModelDimensions(embeddingProvider, embeddingModel)
+			fmt.Printf("⚠️  Unknown embedding model %s/%s - using default dimensions: %d\n", embeddingProvider, embeddingModel, dimensions)
+		}
+		embeddingDimensions = dimensions
+		
+		// Show embedding model information
+		if modelInfo, err := scaffold.EmbeddingIntel.GetModelInfo(embeddingProvider, embeddingModel); err == nil {
+			fmt.Printf("✓ Using embedding model: %s (%d dimensions)\n", modelInfo.Model, modelInfo.Dimensions)
+			if modelInfo.Notes != "" {
+				fmt.Printf("  %s\n", modelInfo.Notes)
+			}
+		}
+	}
 
 	// Create project configuration
 	config := scaffold.ProjectConfig{
@@ -291,18 +311,19 @@ func runCreateCommand(cmd *cobra.Command, args []string) error {
 		ConnectionPoolSize: connectionPoolSize,
 		RetryPolicy:        retryPolicy,
 
-		// Memory/RAG configuration
-		MemoryEnabled:     memoryEnabled,
-		MemoryProvider:    memoryProvider,
-		EmbeddingProvider: embeddingProvider,
-		EmbeddingModel:    embeddingModel,
-		RAGEnabled:        ragEnabled,
-		RAGChunkSize:      ragChunkSize,
-		RAGOverlap:        ragOverlap,
-		RAGTopK:           ragTopK,
-		RAGScoreThreshold: ragScoreThreshold,
-		HybridSearch:      hybridSearch,
-		SessionMemory:     sessionMemory,
+		// Memory/RAG configuration with intelligent defaults
+		MemoryEnabled:       memoryEnabled,
+		MemoryProvider:      memoryProvider,
+		EmbeddingProvider:   embeddingProvider,
+		EmbeddingModel:      embeddingModel,
+		EmbeddingDimensions: embeddingDimensions,
+		RAGEnabled:          ragEnabled,
+		RAGChunkSize:        ragChunkSize,
+		RAGOverlap:          ragOverlap,
+		RAGTopK:             ragTopK,
+		RAGScoreThreshold:   ragScoreThreshold,
+		HybridSearch:        hybridSearch,
+		SessionMemory:       sessionMemory,
 	}
 
 	// Create the project
@@ -558,6 +579,62 @@ func validateMemoryFlags() error {
 	return nil
 }
 
+// validateMemoryFlagsWithIntelligence validates memory configuration using embedding intelligence
+func validateMemoryFlagsWithIntelligence() error {
+	// First run the basic validation
+	if err := validateMemoryFlags(); err != nil {
+		return err
+	}
+
+	// Skip intelligence validation if memory is not enabled
+	if !memoryEnabled {
+		return nil
+	}
+
+	// Use embedding intelligence to suggest better models if current one is unknown
+	if _, err := scaffold.EmbeddingIntel.GetModelInfo(embeddingProvider, embeddingModel); err != nil {
+		fmt.Printf("⚠️  Unknown embedding model: %s/%s\n", embeddingProvider, embeddingModel)
+		
+		// Suggest recommended models for the provider
+		suggestions := scaffold.GetEmbeddingModelSuggestions(embeddingProvider)
+		if len(suggestions) > 0 {
+			fmt.Println("💡 Recommended models for this provider:")
+			for _, suggestion := range suggestions {
+				fmt.Printf("   • %s\n", suggestion)
+			}
+		}
+		
+		// Continue with fallback dimensions but warn user
+		fmt.Printf("   Continuing with default dimensions, but consider using a recommended model\n")
+	}
+
+	// Validate compatibility between embedding model and memory provider
+	if err := scaffold.EmbeddingIntel.ValidateCompatibility(embeddingProvider, embeddingModel, memoryProvider); err != nil {
+		fmt.Printf("⚠️  Compatibility warning: %v\n", err)
+		// Don't fail, just warn - let user decide
+	}
+
+	// Show additional warnings from the validation system
+	warnings := scaffold.ValidateEmbeddingConfig(embeddingProvider, embeddingModel, memoryProvider)
+	for _, warning := range warnings {
+		fmt.Printf("ℹ️  %s\n", warning)
+	}
+
+	// Validate that embedding model dimensions are reasonable for the memory provider
+	dimensions := scaffold.GetModelDimensions(embeddingProvider, embeddingModel)
+	if dimensions > 3072 {
+		fmt.Printf("⚠️  Large embedding dimensions (%d) may impact performance\n", dimensions)
+		fmt.Println("   Consider using a smaller model for better performance")
+	}
+
+	// Specific validation for pgvector
+	if memoryProvider == "pgvector" && dimensions > 2000 {
+		fmt.Printf("ℹ️  PgVector with %d dimensions - ensure your PostgreSQL instance has sufficient resources\n", dimensions)
+	}
+
+	return nil
+}
+
 func parseCommaSeparatedList(input string) []string {
 	if input == "" {
 		return []string{}
@@ -797,25 +874,30 @@ func interactiveSetup() (scaffold.ProjectConfig, error) {
 
 		// Embedding provider selection
 		fmt.Println("Select embedding provider:")
-		fmt.Println("1. Dummy (default) - For testing/development")
-		fmt.Println("2. OpenAI - Production-ready embeddings")
-		fmt.Println("3. Ollama - Local embeddings with models like mxbai-embed-large")
+		fmt.Println("1. Ollama (recommended) - Local embeddings with nomic-embed-text")
+		fmt.Println("2. OpenAI - Production-ready embeddings (requires API key)")
+		fmt.Println("3. Dummy - For testing/development only")
 		fmt.Print("Choice (1-3): ")
 		var embeddingChoice string
 		fmt.Scanln(&embeddingChoice)
 
 		embeddingProviders := map[string]string{
-			"1": "dummy", "2": "openai", "3": "ollama",
-			"": "dummy", // default
+			"1": "ollama", "2": "openai", "3": "dummy",
+			"": "ollama", // default changed to ollama
 		}
 		if p, exists := embeddingProviders[embeddingChoice]; exists {
 			config.EmbeddingProvider = p
 		} else {
-			config.EmbeddingProvider = "dummy"
+			config.EmbeddingProvider = "ollama"
 		}
 
-		// Embedding model
+		// Embedding model with intelligent suggestions
 		if config.EmbeddingProvider == "openai" {
+			fmt.Println("Available OpenAI models:")
+			suggestions := scaffold.GetEmbeddingModelSuggestions("openai")
+			for i, suggestion := range suggestions {
+				fmt.Printf("  %d. %s\n", i+1, suggestion)
+			}
 			fmt.Print("OpenAI embedding model (default: text-embedding-3-small): ")
 			var modelInput string
 			fmt.Scanln(&modelInput)
@@ -825,17 +907,27 @@ func interactiveSetup() (scaffold.ProjectConfig, error) {
 				config.EmbeddingModel = "text-embedding-3-small"
 			}
 		} else if config.EmbeddingProvider == "ollama" {
-			fmt.Print("Ollama embedding model (default: mxbai-embed-large): ")
+			fmt.Println("Available Ollama models:")
+			suggestions := scaffold.GetEmbeddingModelSuggestions("ollama")
+			for i, suggestion := range suggestions {
+				fmt.Printf("  %d. %s\n", i+1, suggestion)
+			}
+			fmt.Print("Ollama embedding model (default: nomic-embed-text:latest): ")
 			var modelInput string
 			fmt.Scanln(&modelInput)
 			if modelInput != "" {
 				config.EmbeddingModel = modelInput
 			} else {
-				config.EmbeddingModel = "mxbai-embed-large"
+				config.EmbeddingModel = "nomic-embed-text:latest"
 			}
 		} else {
-			config.EmbeddingModel = "text-embedding-3-small"
+			config.EmbeddingModel = "dummy"
 		}
+
+		// Calculate and show embedding dimensions
+		dimensions := scaffold.GetModelDimensions(config.EmbeddingProvider, config.EmbeddingModel)
+		config.EmbeddingDimensions = dimensions
+		fmt.Printf("✓ Using %d-dimensional embeddings\n", dimensions)
 
 		// RAG options
 		fmt.Print("Enable RAG (Retrieval-Augmented Generation)? (y/N): ")

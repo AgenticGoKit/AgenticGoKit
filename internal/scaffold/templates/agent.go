@@ -92,48 +92,68 @@ func (a *{{.Agent.DisplayName}}Handler) Run(ctx context.Context, event agentflow
 	}
 	
 	{{if .Config.MemoryEnabled}}
-	// Memory system integration
+	// Memory system integration with error handling
 	var memoryContext string
 	if a.memory != nil {
 		logger.Debug().Str("agent", "{{.Agent.Name}}").Msg("Building memory context")
 		
 		{{if .Config.SessionMemory}}
-		// Create or get session context
+		// Create or get session context with validation
 		sessionID := a.memory.NewSession()
-		ctx = a.memory.SetSession(ctx, sessionID)
-		logger.Debug().Str("agent", "{{.Agent.Name}}").Str("session_id", sessionID).Msg("Session context created")
+		if sessionID == "" {
+			logger.Warn().Str("agent", "{{.Agent.Name}}").Msg("Failed to create session ID, continuing without session context")
+		} else {
+			ctx = a.memory.SetSession(ctx, sessionID)
+			logger.Debug().Str("agent", "{{.Agent.Name}}").Str("session_id", sessionID).Msg("Session context created")
+		}
 		{{end}}
 		
 		{{if .Config.RAGEnabled}}
-		// Build RAG context from knowledge base
+		// Build RAG context from knowledge base with error handling
 		ragContext, err := a.memory.BuildContext(ctx, fmt.Sprintf("%v", inputToProcess),
 			agentflow.WithMaxTokens({{.Config.RAGChunkSize}}),
 			agentflow.WithIncludeSources(true))
 		if err != nil {
-			logger.Warn().Str("agent", "{{.Agent.Name}}").Err(err).Msg("Failed to build RAG context")
-		} else if ragContext != nil {
+			logger.Warn().Str("agent", "{{.Agent.Name}}").Err(err).Msg("Failed to build RAG context - continuing without knowledge base context")
+		} else if ragContext != nil && ragContext.ContextText != "" {
 			memoryContext = fmt.Sprintf("\n\nRelevant Context from Knowledge Base:\n%s", ragContext.ContextText)
-			logger.Debug().Str("agent", "{{.Agent.Name}}").Int("context_tokens", ragContext.TokenCount).Msg("RAG context built")
+			logger.Debug().Str("agent", "{{.Agent.Name}}").Int("context_tokens", ragContext.TokenCount).Msg("RAG context built successfully")
+		} else {
+			logger.Debug().Str("agent", "{{.Agent.Name}}").Msg("No relevant knowledge base context found")
 		}
 		{{end}}
 		
-		// Query relevant memories
-		if memoryResults, err := a.memory.Query(ctx, fmt.Sprintf("%v", inputToProcess), {{.Config.RAGTopK}}); err == nil && len(memoryResults) > 0 {
+		// Query relevant memories with error handling
+		memoryResults, err := a.memory.Query(ctx, fmt.Sprintf("%v", inputToProcess), {{.Config.RAGTopK}})
+		if err != nil {
+			logger.Warn().Str("agent", "{{.Agent.Name}}").Err(err).Msg("Failed to query memories - continuing without memory context")
+		} else if len(memoryResults) > 0 {
 			memoryContext += "\n\nRelevant Memories:\n"
 			for i, result := range memoryResults {
-				memoryContext += fmt.Sprintf("%d. %s (score: %.3f)\n", i+1, result.Content, result.Score)
+				if result.Score >= {{.Config.RAGScoreThreshold}} {
+					memoryContext += fmt.Sprintf("%d. %s (score: %.3f)\n", i+1, result.Content, result.Score)
+				}
 			}
 			logger.Debug().Str("agent", "{{.Agent.Name}}").Int("memory_count", len(memoryResults)).Msg("Memory context retrieved")
+		} else {
+			logger.Debug().Str("agent", "{{.Agent.Name}}").Msg("No relevant memories found")
 		}
 		
-		// Get chat history if available
-		if chatHistory, err := a.memory.GetHistory(ctx, 3); err == nil && len(chatHistory) > 0 {
+		// Get chat history with error handling
+		chatHistory, err := a.memory.GetHistory(ctx, 3)
+		if err != nil {
+			logger.Warn().Str("agent", "{{.Agent.Name}}").Err(err).Msg("Failed to get chat history - continuing without history context")
+		} else if len(chatHistory) > 0 {
 			memoryContext += "\n\nRecent Chat History:\n"
 			for _, msg := range chatHistory {
 				memoryContext += fmt.Sprintf("[%s] %s\n", msg.Role, msg.Content)
 			}
 			logger.Debug().Str("agent", "{{.Agent.Name}}").Int("history_count", len(chatHistory)).Msg("Chat history retrieved")
+		} else {
+			logger.Debug().Str("agent", "{{.Agent.Name}}").Msg("No chat history available")
 		}
+	} else {
+		logger.Warn().Str("agent", "{{.Agent.Name}}").Msg("Memory system not available - continuing without memory context")
 	}
 	{{end}}
 	

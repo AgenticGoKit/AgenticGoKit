@@ -197,7 +197,7 @@ func createReadme(config ProjectConfig) error {
 			content += "docker run --name pgvector-db -e POSTGRES_PASSWORD=password -e POSTGRES_DB=agentflow -p 5432:5432 -d pgvector/pgvector:pg16\n"
 			content += "\n"
 			content += "# Update connection string in agentflow.toml:\n"
-			content += "# Connection: \"postgres://user:password@localhost:5432/agentflow?sslmode=disable\"\n"
+			content += "# Connection: \"postgres://user:password@localhost:15432/agentflow?sslmode=disable\"\n"
 			content += "```\n\n"
 		} else if config.MemoryProvider == "weaviate" {
 			content += "### Weaviate Setup\n\n"
@@ -567,54 +567,67 @@ enabled = false
 
 	// Add memory configuration if enabled
 	if config.MemoryEnabled {
+		// Get embedding dimensions from intelligence system
+		dimensions := GetModelDimensions(config.EmbeddingProvider, config.EmbeddingModel)
+		
 		memoryConfig := fmt.Sprintf(`
-[memory]
-enabled = true
+[agent_memory]
 provider = "%s"
+connection = "%s"
 max_results = %d
-dimensions = 1536
+dimensions = %d
 auto_embed = true
+enable_knowledge_base = true
+knowledge_max_results = %d
+knowledge_score_threshold = %.1f
+chunk_size = %d
+chunk_overlap = %d
+enable_rag = %t
+rag_max_context_tokens = 4000
+rag_personal_weight = 0.3
+rag_knowledge_weight = 0.7
+rag_include_sources = true
 
-[memory.embedding]
+[agent_memory.embedding]
 provider = "%s"
-model = "%s"
-`, config.MemoryProvider, config.RAGTopK, config.EmbeddingProvider, config.EmbeddingModel)
+model = "%s"`,
+			config.MemoryProvider,
+			getConnectionString(config.MemoryProvider),
+			config.RAGTopK,
+			dimensions,
+			config.RAGTopK,
+			config.RAGScoreThreshold,
+			config.RAGChunkSize,
+			config.RAGOverlap,
+			config.RAGEnabled,
+			config.EmbeddingProvider,
+			config.EmbeddingModel)
 
 		// Add provider-specific embedding configuration
 		if config.EmbeddingProvider == "ollama" {
-			memoryConfig += `base_url = "http://localhost:11434"
-`
-		}
-
-		// Add provider-specific configuration
-		if config.MemoryProvider == "pgvector" {
 			memoryConfig += `
-[memory.pgvector]
-# Update with your PostgreSQL connection details
-connection = "postgres://user:password@localhost:5432/agentflow?sslmode=disable"
-table_name = "agent_memory"
-`
-		} else if config.MemoryProvider == "weaviate" {
-			memoryConfig += `
-[memory.weaviate]
-# Update with your Weaviate connection details
-connection = "http://localhost:8080"
-class_name = "AgentMemory"
-`
+base_url = "http://localhost:11434"`
 		}
+		
+		memoryConfig += `
+cache_embeddings = true
+max_batch_size = 100
+timeout_seconds = 30
 
-		if config.RAGEnabled {
-			memoryConfig += fmt.Sprintf(`
-[memory.rag]
-enabled = true
-chunk_size = %d
-overlap = %d
-top_k = %d
-score_threshold = %.1f
-hybrid_search = %t
-session_memory = %t
-`, config.RAGChunkSize, config.RAGOverlap, config.RAGTopK, config.RAGScoreThreshold, config.HybridSearch, config.SessionMemory)
-		}
+[agent_memory.documents]
+auto_chunk = true
+supported_types = ["pdf", "txt", "md", "web", "code"]
+max_file_size = "10MB"
+enable_metadata_extraction = true
+enable_url_scraping = true
+
+[agent_memory.search]
+hybrid_search = ` + fmt.Sprintf("%t", config.HybridSearch) + `
+keyword_weight = 0.3
+semantic_weight = 0.7
+enable_reranking = false
+enable_query_expansion = false
+`
 
 		configContent += memoryConfig
 	}
@@ -741,6 +754,18 @@ func generateSequentialDiagram(config ProjectConfig) (string, string) {
 	diagram += "```"
 
 	return diagram, "Sequential Pipeline"
+}
+
+// getConnectionString returns the appropriate connection string for a memory provider
+func getConnectionString(memoryProvider string) string {
+	switch memoryProvider {
+	case "pgvector":
+		return "postgres://user:password@localhost:15432/agentflow?sslmode=disable"
+	case "weaviate":
+		return "http://localhost:8080"
+	default:
+		return "memory"
+	}
 }
 
 // generateLoopDiagram creates a loop orchestration diagram

@@ -46,7 +46,7 @@ services:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
     ports:
-      - "5432:5432"
+      - "15432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
@@ -130,7 +130,11 @@ volumes:
 
 // generatePgVectorInitScript creates the database initialization script for pgvector
 func (dcg *DockerComposeGenerator) generatePgVectorInitScript() error {
-	initScriptContent := `-- AgentFlow Database Initialization Script for pgvector
+	// Get embedding dimensions from intelligence system
+	dimensions := GetModelDimensions(dcg.config.EmbeddingProvider, dcg.config.EmbeddingModel)
+	
+	initScriptContent := fmt.Sprintf(`-- AgentFlow Database Initialization Script for pgvector
+-- Configured for %d-dimensional vectors (compatible with %s embeddings)
 -- This script sets up the database schema for AgentFlow memory system
 
 -- Enable the pgvector extension
@@ -140,7 +144,7 @@ CREATE EXTENSION IF NOT EXISTS vector;
 CREATE TABLE IF NOT EXISTS agent_memory (
     id SERIAL PRIMARY KEY,
     content TEXT NOT NULL,
-    embedding vector(1536),
+    embedding vector(%d),
     tags TEXT[],
     metadata JSONB,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -169,24 +173,22 @@ CREATE INDEX IF NOT EXISTS idx_chat_history_created_at ON chat_history (created_
 
 -- Create the documents table for RAG document storage
 CREATE TABLE IF NOT EXISTS documents (
-    id SERIAL PRIMARY KEY,
-    title VARCHAR(500),
+    id VARCHAR(255) PRIMARY KEY,
+    title TEXT,
     content TEXT NOT NULL,
-    source VARCHAR(1000),
-    document_type VARCHAR(50),
-    chunk_index INTEGER DEFAULT 0,
-    chunk_total INTEGER DEFAULT 1,
-    embedding vector(1536),
+    source TEXT,
+    doc_type VARCHAR(50),
     metadata JSONB,
     tags TEXT[],
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    chunk_index INTEGER DEFAULT 0,
+    chunk_total INTEGER DEFAULT 1
 );
 
 -- Create indexes for documents
-CREATE INDEX IF NOT EXISTS idx_documents_embedding ON documents USING ivfflat (embedding vector_cosine_ops);
 CREATE INDEX IF NOT EXISTS idx_documents_source ON documents (source);
-CREATE INDEX IF NOT EXISTS idx_documents_type ON documents (document_type);
+CREATE INDEX IF NOT EXISTS idx_documents_type ON documents (doc_type);
 CREATE INDEX IF NOT EXISTS idx_documents_tags ON documents USING GIN (tags);
 CREATE INDEX IF NOT EXISTS idx_documents_created_at ON documents (created_at);
 
@@ -220,7 +222,7 @@ BEGIN
     RAISE NOTICE 'Extensions enabled: vector (pgvector)';
     RAISE NOTICE 'Ready for AgentFlow memory operations.';
 END $$;
-`
+`, dimensions, dcg.config.EmbeddingModel, dimensions, dimensions, dcg.config.EmbeddingModel, dimensions, dimensions, dcg.config.EmbeddingModel)
 
 	initScriptPath := filepath.Join(dcg.config.Name, "init-db.sql")
 	if err := os.WriteFile(initScriptPath, []byte(initScriptContent), 0644); err != nil {
@@ -244,7 +246,7 @@ func (dcg *DockerComposeGenerator) generateEnvFile(provider string) error {
 POSTGRES_DB=agentflow
 POSTGRES_USER=user
 POSTGRES_PASSWORD=password
-DATABASE_URL=postgres://user:password@localhost:5432/agentflow?sslmode=disable
+DATABASE_URL=postgres://user:password@localhost:15432/agentflow?sslmode=disable
 
 # LLM Provider Configuration (choose one)
 # Azure OpenAI
@@ -368,7 +370,7 @@ sleep 10
 echo "🔍 Checking database connection..."
 if docker exec agentflow-postgres pg_isready -U user -d agentflow > /dev/null 2>&1; then
     echo "✅ Database is ready!"
-    echo "📊 Database URL: postgres://user:password@localhost:5432/agentflow"
+    echo "📊 Database URL: postgres://user:password@localhost:15432/agentflow"
     echo ""
     echo "🎉 Setup complete! You can now run your AgentFlow project:"
     echo "   go mod tidy"
@@ -428,7 +430,7 @@ echo 🔍 Checking database connection...
 docker exec agentflow-postgres pg_isready -U user -d agentflow >nul 2>&1
 if %errorlevel% equ 0 (
     echo ✅ Database is ready!
-    echo 📊 Database URL: postgres://user:password@localhost:5432/agentflow
+    echo 📊 Database URL: postgres://user:password@localhost:15432/agentflow
     echo.
     echo 🎉 Setup complete! You can now run your AgentFlow project:
     echo    go mod tidy
