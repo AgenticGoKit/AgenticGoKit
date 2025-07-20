@@ -231,9 +231,7 @@ func main() {
 	}
 	{{end}}
 
-	// Create orchestrated runner
-	{{if .Config.MemoryEnabled}}
-	// Use NewRunnerFromConfig for automatic memory setup
+	// Create orchestrated runner using configuration-based setup
 	runner, err := core.NewRunnerFromConfig("agentflow.toml")
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to create runner from config")
@@ -249,112 +247,8 @@ func main() {
 			os.Exit(1)
 		}
 	}
-	{{else}}
-	{{if eq .Config.OrchestrationMode "collaborative"}}
-	runner := core.CreateCollaborativeRunner(agents, 30*time.Second)
-	{{else if eq .Config.OrchestrationMode "sequential"}}
-	runner := core.NewRunnerWithOrchestration(core.EnhancedRunnerConfig{
-		RunnerConfig: core.RunnerConfig{
-			Agents: agents,
-		},
-		OrchestrationMode: core.OrchestrationSequential,
-		Config:            core.DefaultOrchestrationConfig(),
-		SequentialAgents: []string{
-			{{- range $i, $agent := .Agents}}
-			{{- if $i}}, {{end}}"{{$agent.Name}}"
-			{{- end}}
-		},
-	})
-	{{else if eq .Config.OrchestrationMode "loop"}}
-	runner := core.NewRunnerWithOrchestration(core.EnhancedRunnerConfig{
-		RunnerConfig: core.RunnerConfig{
-			Agents: agents,
-		},
-		OrchestrationMode: core.OrchestrationLoop,
-		Config:            core.DefaultOrchestrationConfig(),
-		SequentialAgents: []string{"{{(index .Agents 0).Name}}"}, // Loop uses single agent
-	})
-	{{else if eq .Config.OrchestrationMode "mixed"}}
-	// Create mixed mode orchestration with CLI-specified collaborative and sequential agent groups
-	{{if and (gt (len .Config.CollaborativeAgents) 0) (gt (len .Config.SequentialAgents) 0)}}
-	// Use CLI-specified agent groups
-	collaborativeAgents := []string{
-		{{- range $i, $agent := .Config.CollaborativeAgents}}
-		{{- if $i}}, {{end}}"{{$agent}}"
-		{{- end}},
-	}
-	sequentialAgents := []string{
-		{{- range $i, $agent := .Config.SequentialAgents}}
-		{{- if $i}}, {{end}}"{{$agent}}"
-		{{- end}},
-	}
-	{{else if gt (len .Agents) 1}}
-	// Fallback: Split agents automatically when no specific groups are provided
-	halfPoint := len([]string{
-		{{- range $i, $agent := .Agents}}
-		{{- if $i}}, {{end}}"{{$agent.Name}}"
-		{{- end}}
-	}) / 2
-	allAgentNames := []string{
-		{{- range $i, $agent := .Agents}}
-		{{- if $i}}, {{end}}"{{$agent.Name}}"
-		{{- end}}
-	}
-	
-	var collaborativeAgents, sequentialAgents []string
-	if halfPoint > 0 {
-		collaborativeAgents = allAgentNames[:halfPoint]
-		sequentialAgents = allAgentNames[halfPoint:]
-	} else {
-		// If only one agent, make it sequential
-		sequentialAgents = allAgentNames
-	}
-	{{else}}
-	// Single agent - use sequential mode
-	sequentialAgents := []string{"{{(index .Agents 0).Name}}"}
-	var collaborativeAgents []string
-	{{end}}
-	
-	runner := core.NewRunnerWithOrchestration(core.EnhancedRunnerConfig{
-		RunnerConfig: core.RunnerConfig{
-			Agents: agents,
-		},
-		OrchestrationMode:   core.OrchestrationMixed,
-		Config:              core.DefaultOrchestrationConfig(),
-		CollaborativeAgents: collaborativeAgents,
-		SequentialAgents:    sequentialAgents,
-	})
-	{{else}}
-	// Default collaborative mode
-	runner := core.CreateCollaborativeRunner(agents, 30*time.Second)
-	{{end}}
-	{{end}}
 
-	{{if eq .Config.OrchestrationMode "collaborative"}}
-	// Result collection system
-	var agentOutputs []AgentOutput
-	var outputMutex sync.Mutex
 
-	// Create a result collector by wrapping the existing agents (only for collaborative mode)
-	for name, handler := range agents {
-		if strings.Contains(name, "error-handler") {
-			continue // Skip error handlers for result collection
-		}
-
-		// Wrap the original handler to capture outputs
-		originalHandler := handler
-		wrappedHandler := &ResultCollectorHandler{
-			originalHandler: originalHandler,
-			agentName:       name,
-			outputs:         &agentOutputs,
-			mutex:           &outputMutex,
-		}
-		agents[name] = wrappedHandler
-	}
-
-	// Recreate runner with wrapped agents
-	runner = core.CreateCollaborativeRunner(agents, 30*time.Second)
-	{{end}}
 
 	var message string
 	if *messageFlag != "" {
@@ -370,51 +264,6 @@ func main() {
 
 	logger.Info().Str("message", message).Msg("Processing user message")
 
-	{{if eq .Config.OrchestrationMode "collaborative"}}
-	// Start the collaborative runner
-	runner.Start(ctx)
-	defer runner.Stop()
-
-	{{if .Agents}}
-	event := core.NewEvent("{{(index .Agents 0).Name}}", core.EventData{
-		"message": message,
-	}, map[string]string{
-		"route": "{{(index .Agents 0).Name}}",
-	})
-	{{else}}
-	event := core.NewEvent("user_request", core.EventData{
-		"message": message,
-	}, map[string]string{
-		"route": "user_request",
-	})
-	{{end}}
-
-	if err := runner.Emit(event); err != nil {
-		logger.Error().Err(err).Msg("Workflow execution failed")
-		fmt.Printf("Error: %v\n", err)
-		os.Exit(1)
-	}
-
-	// Extended wait to allow all agents to complete their work
-	logger.Info().Msg("Waiting for agents to complete processing...")
-	time.Sleep(10 * time.Second)
-
-	// Display collected agent outputs
-	outputMutex.Lock()
-	if len(agentOutputs) > 0 {
-		fmt.Printf("\n=== Agent Results ===\n")
-		for _, output := range agentOutputs {
-			fmt.Printf("\n[%s] %s:\n", output.Timestamp.Format("15:04:05"), output.AgentName)
-			fmt.Printf("%s\n", output.Content)
-			fmt.Printf("%s\n", strings.Repeat("-", 50))
-		}
-	} else {
-		logger.Debug().Msg("No agent outputs captured")
-	}
-	outputMutex.Unlock()
-
-	logger.Info().Msg("Workflow completed successfully")
-	{{else}}
 	// Start the runner (non-blocking)
 	runner.Start(ctx)
 
@@ -466,7 +315,6 @@ func main() {
 
 	fmt.Printf("\n=== Workflow Completed ===\n")
 	fmt.Printf("Check the logs above for detailed agent execution results.\n")
-	{{end}}
 
 	logger.Info().Msg("Workflow completed successfully")
 }

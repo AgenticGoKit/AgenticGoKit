@@ -138,12 +138,16 @@ func NewRunnerWithConfig(cfg RunnerConfig) Runner {
 	return runner
 }
 
-// Breaking change: New convenience constructor that auto-initializes memory
-// NewRunnerFromConfig creates a runner with automatic memory setup from config
+// NewRunnerFromConfig creates a runner with automatic memory and orchestration setup from config
 func NewRunnerFromConfig(configPath string) (Runner, error) {
 	config, err := LoadConfig(configPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load config from %s: %w", configPath, err)
+	}
+
+	// Validate orchestration configuration
+	if err := config.ValidateOrchestrationConfig(); err != nil {
+		return nil, fmt.Errorf("invalid orchestration configuration: %w", err)
 	}
 
 	// Auto-initialize memory based on config
@@ -155,15 +159,8 @@ func NewRunnerFromConfig(configPath string) (Runner, error) {
 	// Generate session ID
 	sessionID := GenerateSessionID()
 
-	// Create runner config with memory
-	runnerConfig := RunnerConfig{
-		Config:    config,
-		Memory:    memory,
-		SessionID: sessionID,
-		Agents:    make(map[string]AgentHandler), // Empty - agents added separately
-	}
-
-	return NewRunnerWithConfig(runnerConfig), nil
+	// Create orchestration-aware runner
+	return createRunnerWithOrchestration(config, memory, sessionID)
 }
 
 // Breaking change: Convenience constructor for quick setup
@@ -326,4 +323,102 @@ func configureErrorRouting(runner Runner, agents map[string]AgentHandler) {
 	if runnerImpl, ok := runner.(*RunnerImpl); ok {
 		runnerImpl.SetErrorRouterConfig(errorConfig)
 	}
+}
+
+// createRunnerWithOrchestration creates a runner with orchestration based on configuration
+func createRunnerWithOrchestration(config *Config, memory Memory, sessionID string) (Runner, error) {
+	// Validate orchestration configuration
+	if err := config.ValidateOrchestrationConfig(); err != nil {
+		return nil, fmt.Errorf("invalid orchestration configuration: %w", err)
+	}
+
+	// Create base runner config
+	runnerConfig := RunnerConfig{
+		Config:    config,
+		Memory:    memory,
+		SessionID: sessionID,
+		Agents:    make(map[string]AgentHandler), // Empty - agents added separately
+	}
+
+	orch := &config.Orchestration
+
+	// Create orchestrator based on mode
+	switch orch.Mode {
+	case "route":
+		// Use default route orchestrator (already handled in NewRunnerWithConfig)
+		return NewRunnerWithConfig(runnerConfig), nil
+
+	case "collaborative":
+		// Create collaborative runner using existing function
+		return createCollaborativeRunnerFromConfig(runnerConfig, orch)
+
+	case "sequential":
+		// Create sequential runner using orchestration system
+		return createSequentialRunnerFromConfig(runnerConfig, orch)
+
+	case "loop":
+		// Create loop runner using orchestration system
+		return createLoopRunnerFromConfig(runnerConfig, orch)
+
+	case "mixed":
+		// Create mixed runner using orchestration system
+		return createMixedRunnerFromConfig(runnerConfig, orch)
+
+	default:
+		return nil, fmt.Errorf("unsupported orchestration mode: %s", orch.Mode)
+	}
+}
+
+// createCollaborativeRunnerFromConfig creates a collaborative runner from configuration
+func createCollaborativeRunnerFromConfig(runnerConfig RunnerConfig, orch *OrchestrationConfigToml) (Runner, error) {
+	// Use the existing CreateCollaborativeRunner function
+	// We'll need to create it with empty agents first, then register agents separately
+	runner := NewRunnerWithConfig(runnerConfig)
+	
+	// Set up collaborative orchestrator
+	callbackRegistry := runner.GetCallbackRegistry()
+	collaborativeOrch := NewCollaborativeOrchestrator(callbackRegistry)
+	
+	if runnerImpl, ok := runner.(*RunnerImpl); ok {
+		runnerImpl.SetOrchestrator(collaborativeOrch)
+	}
+	
+	return runner, nil
+}
+
+// createSequentialRunnerFromConfig creates a sequential runner from configuration
+func createSequentialRunnerFromConfig(runnerConfig RunnerConfig, orch *OrchestrationConfigToml) (Runner, error) {
+	// Create enhanced runner config for orchestration
+	enhancedConfig := EnhancedRunnerConfig{
+		RunnerConfig:      runnerConfig,
+		OrchestrationMode: OrchestrationSequential,
+		SequentialAgents:  orch.SequentialAgents,
+	}
+	
+	return NewRunnerWithOrchestration(enhancedConfig), nil
+}
+
+// createLoopRunnerFromConfig creates a loop runner from configuration
+func createLoopRunnerFromConfig(runnerConfig RunnerConfig, orch *OrchestrationConfigToml) (Runner, error) {
+	// Create enhanced runner config for orchestration
+	enhancedConfig := EnhancedRunnerConfig{
+		RunnerConfig:      runnerConfig,
+		OrchestrationMode: OrchestrationLoop,
+		SequentialAgents:  []string{orch.LoopAgent}, // Loop uses SequentialAgents for agent name
+	}
+	
+	return NewRunnerWithOrchestration(enhancedConfig), nil
+}
+
+// createMixedRunnerFromConfig creates a mixed runner from configuration
+func createMixedRunnerFromConfig(runnerConfig RunnerConfig, orch *OrchestrationConfigToml) (Runner, error) {
+	// Create enhanced runner config for orchestration
+	enhancedConfig := EnhancedRunnerConfig{
+		RunnerConfig:        runnerConfig,
+		OrchestrationMode:   OrchestrationMixed,
+		CollaborativeAgents: orch.CollaborativeAgents,
+		SequentialAgents:    orch.SequentialAgents,
+	}
+	
+	return NewRunnerWithOrchestration(enhancedConfig), nil
 }

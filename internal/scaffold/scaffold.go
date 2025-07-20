@@ -632,6 +632,10 @@ enable_query_expansion = false
 		configContent += memoryConfig
 	}
 
+	// Add orchestration configuration
+	orchestrationConfig := generateOrchestrationConfig(config)
+	configContent += orchestrationConfig
+
 	configPath := filepath.Join(config.Name, "agentflow.toml")
 	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
 		return fmt.Errorf("failed to create agentflow.toml: %w", err)
@@ -766,6 +770,91 @@ func getConnectionString(memoryProvider string) string {
 	default:
 		return "memory"
 	}
+}
+
+// generateOrchestrationConfig generates the orchestration configuration section for TOML
+func generateOrchestrationConfig(config ProjectConfig) string {
+	orchestrationConfig := fmt.Sprintf(`
+[orchestration]
+mode = "%s"
+timeout_seconds = %d`, config.OrchestrationMode, config.OrchestrationTimeout)
+
+	// Add mode-specific configuration
+	switch config.OrchestrationMode {
+	case "sequential":
+		if len(config.SequentialAgents) > 0 {
+			orchestrationConfig += "\nsequential_agents = ["
+			for i, agent := range config.SequentialAgents {
+				if i > 0 {
+					orchestrationConfig += ", "
+				}
+				orchestrationConfig += fmt.Sprintf("\"%s\"", agent)
+			}
+			orchestrationConfig += "]"
+		} else {
+			// Generate default sequential agents based on NumAgents
+			orchestrationConfig += "\nsequential_agents = ["
+			for i := 0; i < config.NumAgents; i++ {
+				if i > 0 {
+					orchestrationConfig += ", "
+				}
+				orchestrationConfig += fmt.Sprintf("\"agent%d\"", i+1)
+			}
+			orchestrationConfig += "]"
+		}
+
+	case "loop":
+		if config.LoopAgent != "" {
+			orchestrationConfig += fmt.Sprintf("\nloop_agent = \"%s\"", config.LoopAgent)
+		} else {
+			orchestrationConfig += "\nloop_agent = \"agent1\""
+		}
+		orchestrationConfig += fmt.Sprintf("\nmax_iterations = %d", config.MaxIterations)
+
+	case "mixed":
+		// Add collaborative agents
+		if len(config.CollaborativeAgents) > 0 {
+			orchestrationConfig += "\ncollaborative_agents = ["
+			for i, agent := range config.CollaborativeAgents {
+				if i > 0 {
+					orchestrationConfig += ", "
+				}
+				orchestrationConfig += fmt.Sprintf("\"%s\"", agent)
+			}
+			orchestrationConfig += "]"
+		}
+
+		// Add sequential agents
+		if len(config.SequentialAgents) > 0 {
+			orchestrationConfig += "\nsequential_agents = ["
+			for i, agent := range config.SequentialAgents {
+				if i > 0 {
+					orchestrationConfig += ", "
+				}
+				orchestrationConfig += fmt.Sprintf("\"%s\"", agent)
+			}
+			orchestrationConfig += "]"
+		}
+
+		// If no agents specified, create default mixed configuration
+		if len(config.CollaborativeAgents) == 0 && len(config.SequentialAgents) == 0 {
+			// First agent collaborative, rest sequential
+			orchestrationConfig += "\ncollaborative_agents = [\"agent1\"]"
+			if config.NumAgents > 1 {
+				orchestrationConfig += "\nsequential_agents = ["
+				for i := 1; i < config.NumAgents; i++ {
+					if i > 1 {
+						orchestrationConfig += ", "
+					}
+					orchestrationConfig += fmt.Sprintf("\"agent%d\"", i+1)
+				}
+				orchestrationConfig += "]"
+			}
+		}
+	}
+
+	orchestrationConfig += "\n"
+	return orchestrationConfig
 }
 
 // generateLoopDiagram creates a loop orchestration diagram

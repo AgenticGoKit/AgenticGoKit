@@ -47,6 +47,9 @@ type Config struct {
 
 	// MCP configuration
 	MCP MCPConfigToml `toml:"mcp"`
+
+	// Orchestration configuration
+	Orchestration OrchestrationConfigToml `toml:"orchestration"`
 }
 
 // MemoryConfig represents memory configuration in TOML
@@ -98,6 +101,16 @@ type MCPServerConfigToml struct {
 	Port    int    `toml:"port,omitempty"`
 	Command string `toml:"command,omitempty"` // for stdio transport
 	Enabled bool   `toml:"enabled"`
+}
+
+// OrchestrationConfigToml represents orchestration configuration in TOML format
+type OrchestrationConfigToml struct {
+	Mode                string   `toml:"mode"`                 // route, collaborative, sequential, loop, mixed
+	TimeoutSeconds      int      `toml:"timeout_seconds"`      // Overall timeout for orchestration operations
+	MaxIterations       int      `toml:"max_iterations"`       // For loop mode: maximum iterations
+	SequentialAgents    []string `toml:"sequential_agents"`    // For sequential mode: ordered list of agent names
+	CollaborativeAgents []string `toml:"collaborative_agents"` // For mixed mode: agents that run collaboratively
+	LoopAgent           string   `toml:"loop_agent"`           // For loop mode: agent to run in loop
 }
 
 // LoadConfig loads configuration from the specified TOML file path
@@ -250,6 +263,14 @@ func LoadConfig(path string) (*Config, error) {
 	}
 	if !config.AgentMemory.Search.HybridSearch {
 		config.AgentMemory.Search.HybridSearch = true
+	}
+
+	// Set orchestration defaults if not specified
+	if config.Orchestration.TimeoutSeconds == 0 {
+		config.Orchestration.TimeoutSeconds = 30
+	}
+	if config.Orchestration.MaxIterations == 0 {
+		config.Orchestration.MaxIterations = 5
 	}
 
 	return &config, nil
@@ -582,4 +603,54 @@ func (c *MCPConfigToml) ToMCPConfig() MCPConfig {
 // GetMCPConfig returns the MCP configuration from the main config
 func (c *Config) GetMCPConfig() MCPConfig {
 	return c.MCP.ToMCPConfig()
+}
+
+// ValidateOrchestrationConfig validates the orchestration configuration
+func (c *Config) ValidateOrchestrationConfig() error {
+	orch := &c.Orchestration
+
+	// Validate orchestration mode
+	validModes := []string{"route", "collaborative", "sequential", "loop", "mixed"}
+	if orch.Mode == "" {
+		return fmt.Errorf("orchestration mode is required. Valid options: %v", validModes)
+	}
+
+	isValidMode := false
+	for _, mode := range validModes {
+		if orch.Mode == mode {
+			isValidMode = true
+			break
+		}
+	}
+	if !isValidMode {
+		return fmt.Errorf("invalid orchestration mode '%s': valid options are %v", orch.Mode, validModes)
+	}
+
+	// Mode-specific validation
+	switch orch.Mode {
+	case "sequential":
+		if len(orch.SequentialAgents) == 0 {
+			return fmt.Errorf("sequential orchestration requires 'sequential_agents' array with at least one agent")
+		}
+	case "loop":
+		if orch.LoopAgent == "" {
+			return fmt.Errorf("loop orchestration requires 'loop_agent' string in configuration")
+		}
+	case "mixed":
+		if len(orch.CollaborativeAgents) == 0 && len(orch.SequentialAgents) == 0 {
+			return fmt.Errorf("mixed orchestration requires either 'collaborative_agents' or 'sequential_agents' (or both)")
+		}
+	}
+
+	// Validate timeout
+	if orch.TimeoutSeconds <= 0 {
+		return fmt.Errorf("orchestration timeout_seconds must be positive, got %d", orch.TimeoutSeconds)
+	}
+
+	// Validate max iterations for loop mode
+	if orch.Mode == "loop" && orch.MaxIterations <= 0 {
+		return fmt.Errorf("orchestration max_iterations must be positive for loop mode, got %d", orch.MaxIterations)
+	}
+
+	return nil
 }

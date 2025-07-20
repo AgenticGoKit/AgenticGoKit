@@ -222,7 +222,7 @@ BEGIN
     RAISE NOTICE 'Extensions enabled: vector (pgvector)';
     RAISE NOTICE 'Ready for AgentFlow memory operations.';
 END $$;
-`, dimensions, dcg.config.EmbeddingModel, dimensions, dimensions, dcg.config.EmbeddingModel, dimensions, dimensions, dcg.config.EmbeddingModel)
+`, dimensions, dcg.config.EmbeddingModel, dimensions)
 
 	initScriptPath := filepath.Join(dcg.config.Name, "init-db.sql")
 	if err := os.WriteFile(initScriptPath, []byte(initScriptContent), 0644); err != nil {
