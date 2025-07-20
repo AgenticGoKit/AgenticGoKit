@@ -330,7 +330,7 @@ func main() {
 	{{end}}
 	{{end}}
 
-	{{if and (eq .Config.OrchestrationMode "collaborative") (not .Config.MemoryEnabled)}}
+	{{if eq .Config.OrchestrationMode "collaborative"}}
 	// Result collection system
 	var agentOutputs []AgentOutput
 	var outputMutex sync.Mutex
