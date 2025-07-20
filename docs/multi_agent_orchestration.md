@@ -14,7 +14,8 @@ The fastest way to create multi-agent workflows is using the AgentFlow CLI:
 # Collaborative workflow - all agents process events in parallel
 agentcli create research-system \
   --orchestration-mode collaborative \
-  --collaborative-agents "researcher,analyzer,validator" \
+  --agents 3 \
+  --orchestration-timeout 60 \
   --visualize \
   --mcp-enabled
 
@@ -22,6 +23,7 @@ agentcli create research-system \
 agentcli create data-pipeline \
   --orchestration-mode sequential \
   --sequential-agents "collector,processor,formatter" \
+  --orchestration-timeout 45 \
   --visualize-output "docs/diagrams"
 
 # Loop-based workflow - single agent repeats with conditions
@@ -29,6 +31,7 @@ agentcli create quality-loop \
   --orchestration-mode loop \
   --loop-agent "quality-checker" \
   --max-iterations 5 \
+  --orchestration-timeout 120 \
   --visualize
 
 # Mixed orchestration - combine collaborative and sequential
@@ -36,10 +39,65 @@ agentcli create complex-workflow \
   --orchestration-mode mixed \
   --collaborative-agents "analyzer,validator" \
   --sequential-agents "processor,reporter" \
-  --failure-threshold 0.8 \
-  --max-concurrency 10 \
+  --orchestration-timeout 90 \
   --visualize
 ```
+
+All generated projects use **configuration-based orchestration** via `agentflow.toml`, making it easy to modify orchestration patterns without changing code.
+
+## Configuration-Based Orchestration
+
+AgentFlow now supports configuration-driven orchestration through `agentflow.toml` files. This approach allows you to change orchestration patterns without modifying code.
+
+### agentflow.toml Configuration
+
+```toml
+[orchestration]
+mode = "sequential"                    # sequential, collaborative, loop, mixed, route
+timeout_seconds = 30                   # Timeout for orchestration operations
+max_iterations = 5                     # Maximum iterations for loop mode
+
+# Sequential mode: agents process in order
+sequential_agents = ["agent1", "agent2", "agent3"]
+
+# Collaborative mode: agents process in parallel  
+collaborative_agents = ["analyzer", "validator", "processor"]
+
+# Loop mode: single agent repeats
+loop_agent = "processor"
+
+# Mixed mode: combine collaborative and sequential
+# collaborative_agents = ["analyzer", "validator"]
+# sequential_agents = ["processor", "reporter"]
+```
+
+### Using Configuration-Based Runners
+
+Generated projects automatically use `NewRunnerFromConfig()`:
+
+```go
+// Automatically reads orchestration config from agentflow.toml
+runner, err := core.NewRunnerFromConfig("agentflow.toml")
+if err != nil {
+    log.Fatal(err)
+}
+
+// Register your agents
+for name, handler := range agents {
+    runner.RegisterAgent(name, handler)
+}
+
+// The runner automatically uses the configured orchestration mode
+runner.Start(ctx)
+```
+
+### Benefits of Configuration-Based Approach
+
+- **No Code Changes**: Switch orchestration modes by editing TOML files
+- **Environment-Specific**: Different configs for dev/staging/production
+- **Runtime Flexibility**: Change orchestration without rebuilding
+- **Validation**: Built-in validation of orchestration parameters
+- **Consistency**: Same configuration format across all projects
 
 ## Orchestration Modes
 

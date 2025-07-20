@@ -68,14 +68,16 @@ agentcli create [options] <project-name>
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--orchestration-mode` | Orchestration mode (collaborative, sequential, loop, mixed) | `collaborative` |
+| `--orchestration-mode` | Orchestration mode (sequential, collaborative, loop, mixed, route) | `sequential` |
 | `--collaborative-agents` | Comma-separated list of collaborative agents | |
 | `--sequential-agents` | Comma-separated list of sequential agents | |
 | `--loop-agent` | Agent name for loop orchestration | |
-| `--max-iterations` | Maximum loop iterations | `10` |
-| `--orchestration-timeout` | Timeout in seconds | `60` |
+| `--max-iterations` | Maximum loop iterations | `5` |
+| `--orchestration-timeout` | Timeout in seconds | `30` |
 | `--failure-threshold` | Failure threshold (0.0-1.0) | `0.5` |
-| `--max-concurrency` | Maximum concurrent agents | `5` |
+| `--max-concurrency` | Maximum concurrent agents | `10` |
+
+**Note**: All orchestration settings are saved to `agentflow.toml` and can be modified without changing code.
 
 #### Visualization Options
 

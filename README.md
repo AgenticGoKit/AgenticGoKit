@@ -69,14 +69,15 @@ go install github.com/kunalkushwaha/agentflow/cmd/agentcli@latest
 
 ### 2. Create Your First Multi-Agent System
 ```bash
-# Generate a collaborative workflow with visual diagrams
-agentcli create research-system \
-  --orchestration-mode collaborative \
-  --collaborative-agents "researcher,analyzer,validator" \
-  --visualize \
-  --mcp-enabled
+# Generate a sequential pipeline with configuration-based orchestration
+agentcli create data-pipeline \
+  --orchestration-mode sequential \
+  --agents 3 \
+  --orchestration-timeout 45 \
+  --memory-enabled \
+  --visualize
 
-cd research-system
+cd data-pipeline
 
 # Run with any message - agents work together intelligently
 go run . -m "research AI trends and provide comprehensive analysis"
