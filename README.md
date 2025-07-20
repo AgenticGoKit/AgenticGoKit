@@ -282,8 +282,14 @@ AgentFlow's power comes from its layered, event-driven architecture that separat
 ├─────────────────────────────────────────────────────┤
 │    Workflow Layer (Event-Driven Orchestration)      │
 │  ┌─────────────┬─────────────┬─────────────────────┐│
-│  │   Runner    │ Orchestrator│   State Manager     ││
-│  │ (Execution) │ (Routing)   │   (Memory)          ││
+│  │   Runner    │ Orchestrator│   Config Manager    ││
+│  │ (Execution) │ (Routing)   │   (agentflow.toml)  ││
+│  └─────────────┴─────────────┴─────────────────────┘│
+├─────────────────────────────────────────────────────┤
+│    Memory Layer (Knowledge & Context)               │
+│  ┌─────────────┬─────────────┬─────────────────────┐│
+│  │   Memory    │ Embeddings  │      RAG            ││
+│  │ (Storage)   │ (Vectors)   │   (Retrieval)       ││
 │  └─────────────┴─────────────┴─────────────────────┘│
 ├─────────────────────────────────────────────────────┤
 │    Tool Layer (MCP Integration)                     │
@@ -296,6 +302,12 @@ AgentFlow's power comes from its layered, event-driven architecture that separat
 │  ┌─────────────┬─────────────┬─────────────────────┐│
 │  │   OpenAI    │   Ollama    │     Azure AI        ││
 │  │   Adapter   │   Adapter   │     Adapter         ││
+│  └─────────────┴─────────────┴─────────────────────┘│
+├─────────────────────────────────────────────────────┤
+│    Storage Layer (Persistent Data)                  │
+│  ┌─────────────┬─────────────┬─────────────────────┐│
+│  │  PgVector   │   Weaviate  │    In-Memory        ││
+│  │ (Postgres)  │ (Vector DB) │   (Development)     ││
 │  └─────────────┴─────────────┴─────────────────────┘│
 └─────────────────────────────────────────────────────┘
 ```
