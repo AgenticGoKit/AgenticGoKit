@@ -1,3 +1,7 @@
+ ## ⚠️ This project was renamed from `agentflow` to `agenticgokit`. Please update your references. 
+ - Name references within project will be updated soon 
+
+
 # AgentFlow
 
 [![Go Version](https://img.shields.io/badge/go-1.21+-blue.svg)](https://golang.org/doc/devel/release.html)
