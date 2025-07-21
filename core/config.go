@@ -28,6 +28,9 @@ type Config struct {
 		TimeoutSeconds      int `toml:"timeout_seconds"`
 	} `toml:"runtime"`
 
+	// Breaking change: Agent memory configuration added
+	AgentMemory AgentMemoryConfig `toml:"agent_memory"`
+
 	// Error routing configuration
 	ErrorRouting struct {
 		Enabled              bool                     `toml:"enabled"`
@@ -44,6 +47,17 @@ type Config struct {
 
 	// MCP configuration
 	MCP MCPConfigToml `toml:"mcp"`
+
+	// Orchestration configuration
+	Orchestration OrchestrationConfigToml `toml:"orchestration"`
+}
+
+// MemoryConfig represents memory configuration in TOML
+type MemoryConfig struct {
+	Limit      string `toml:"limit"`
+	Swap       string `toml:"swap"`
+	Disable    bool   `toml:"disable"`
+	Overcommit bool   `toml:"overcommit"`
 }
 
 // CircuitBreakerConfigToml represents circuit breaker configuration in TOML
@@ -87,6 +101,16 @@ type MCPServerConfigToml struct {
 	Port    int    `toml:"port,omitempty"`
 	Command string `toml:"command,omitempty"` // for stdio transport
 	Enabled bool   `toml:"enabled"`
+}
+
+// OrchestrationConfigToml represents orchestration configuration in TOML format
+type OrchestrationConfigToml struct {
+	Mode                string   `toml:"mode"`                 // route, collaborative, sequential, loop, mixed
+	TimeoutSeconds      int      `toml:"timeout_seconds"`      // Overall timeout for orchestration operations
+	MaxIterations       int      `toml:"max_iterations"`       // For loop mode: maximum iterations
+	SequentialAgents    []string `toml:"sequential_agents"`    // For sequential mode: ordered list of agent names
+	CollaborativeAgents []string `toml:"collaborative_agents"` // For mixed mode: agents that run collaboratively
+	LoopAgent           string   `toml:"loop_agent"`           // For loop mode: agent to run in loop
 }
 
 // LoadConfig loads configuration from the specified TOML file path
@@ -145,8 +169,108 @@ func LoadConfig(path string) (*Config, error) {
 	if config.MCP.MaxConnections == 0 {
 		config.MCP.MaxConnections = 10
 	}
-	if len(config.MCP.ScanPorts) == 0 {
-		config.MCP.ScanPorts = []int{8080, 8081, 8090, 8100, 3000, 3001, 8811}
+
+	// Set agent memory defaults if not specified
+	if config.AgentMemory.Provider == "" {
+		config.AgentMemory.Provider = "memory" // Default to in-memory for simplicity
+	}
+	if config.AgentMemory.Connection == "" {
+		config.AgentMemory.Connection = "memory"
+	}
+	if config.AgentMemory.MaxResults == 0 {
+		config.AgentMemory.MaxResults = 10
+	}
+	if config.AgentMemory.Dimensions == 0 {
+		config.AgentMemory.Dimensions = 1536
+	}
+	// AutoEmbed defaults to true
+	config.AgentMemory.AutoEmbed = true
+
+	// Set RAG defaults if not specified
+	if config.AgentMemory.KnowledgeMaxResults == 0 {
+		config.AgentMemory.KnowledgeMaxResults = 20
+	}
+	if config.AgentMemory.KnowledgeScoreThreshold == 0 {
+		config.AgentMemory.KnowledgeScoreThreshold = 0.7
+	}
+	if config.AgentMemory.ChunkSize == 0 {
+		config.AgentMemory.ChunkSize = 1000
+	}
+	if config.AgentMemory.ChunkOverlap == 0 {
+		config.AgentMemory.ChunkOverlap = 200
+	}
+	if config.AgentMemory.RAGMaxContextTokens == 0 {
+		config.AgentMemory.RAGMaxContextTokens = 4000
+	}
+	if config.AgentMemory.RAGPersonalWeight == 0 {
+		config.AgentMemory.RAGPersonalWeight = 0.3
+	}
+	if config.AgentMemory.RAGKnowledgeWeight == 0 {
+		config.AgentMemory.RAGKnowledgeWeight = 0.7
+	}
+
+	// Set document processing defaults
+	if len(config.AgentMemory.Documents.SupportedTypes) == 0 {
+		config.AgentMemory.Documents.SupportedTypes = []string{"pdf", "txt", "md", "web", "code"}
+	}
+	if config.AgentMemory.Documents.MaxFileSize == "" {
+		config.AgentMemory.Documents.MaxFileSize = "10MB"
+	}
+
+	// Set embedding service defaults
+	if config.AgentMemory.Embedding.Provider == "" {
+		config.AgentMemory.Embedding.Provider = "azure"
+	}
+	if config.AgentMemory.Embedding.Model == "" {
+		config.AgentMemory.Embedding.Model = "text-embedding-ada-002"
+	}
+	if config.AgentMemory.Embedding.MaxBatchSize == 0 {
+		config.AgentMemory.Embedding.MaxBatchSize = 100
+	}
+	if config.AgentMemory.Embedding.TimeoutSeconds == 0 {
+		config.AgentMemory.Embedding.TimeoutSeconds = 30
+	}
+
+	// Set search defaults
+	if config.AgentMemory.Search.KeywordWeight == 0 {
+		config.AgentMemory.Search.KeywordWeight = 0.3
+	}
+	if config.AgentMemory.Search.SemanticWeight == 0 {
+		config.AgentMemory.Search.SemanticWeight = 0.7
+	}
+
+	// Set boolean defaults (these are false by default in Go)
+	if !config.AgentMemory.EnableKnowledgeBase {
+		config.AgentMemory.EnableKnowledgeBase = true
+	}
+	if !config.AgentMemory.EnableRAG {
+		config.AgentMemory.EnableRAG = true
+	}
+	if !config.AgentMemory.RAGIncludeSources {
+		config.AgentMemory.RAGIncludeSources = true
+	}
+	if !config.AgentMemory.Documents.AutoChunk {
+		config.AgentMemory.Documents.AutoChunk = true
+	}
+	if !config.AgentMemory.Documents.EnableMetadataExtraction {
+		config.AgentMemory.Documents.EnableMetadataExtraction = true
+	}
+	if !config.AgentMemory.Documents.EnableURLScraping {
+		config.AgentMemory.Documents.EnableURLScraping = true
+	}
+	if !config.AgentMemory.Embedding.CacheEmbeddings {
+		config.AgentMemory.Embedding.CacheEmbeddings = true
+	}
+	if !config.AgentMemory.Search.HybridSearch {
+		config.AgentMemory.Search.HybridSearch = true
+	}
+
+	// Set orchestration defaults if not specified
+	if config.Orchestration.TimeoutSeconds == 0 {
+		config.Orchestration.TimeoutSeconds = 30
+	}
+	if config.Orchestration.MaxIterations == 0 {
+		config.Orchestration.MaxIterations = 5
 	}
 
 	return &config, nil
@@ -263,6 +387,9 @@ func (c *Config) initializeAzureProvider(config map[string]interface{}) (ModelPr
 // initializeOllamaProvider creates an Ollama provider from configuration
 func (c *Config) initializeOllamaProvider(config map[string]interface{}) (ModelProvider, error) {
 	baseURL := c.getStringValue(config, "base_url")
+	if baseURL == "" {
+		baseURL = c.getStringValue(config, "endpoint") // alias support
+	}
 	if baseURL == "" {
 		baseURL = os.Getenv("OLLAMA_BASE_URL")
 		if baseURL == "" {
@@ -476,4 +603,54 @@ func (c *MCPConfigToml) ToMCPConfig() MCPConfig {
 // GetMCPConfig returns the MCP configuration from the main config
 func (c *Config) GetMCPConfig() MCPConfig {
 	return c.MCP.ToMCPConfig()
+}
+
+// ValidateOrchestrationConfig validates the orchestration configuration
+func (c *Config) ValidateOrchestrationConfig() error {
+	orch := &c.Orchestration
+
+	// Validate orchestration mode
+	validModes := []string{"route", "collaborative", "sequential", "loop", "mixed"}
+	if orch.Mode == "" {
+		return fmt.Errorf("orchestration mode is required. Valid options: %v", validModes)
+	}
+
+	isValidMode := false
+	for _, mode := range validModes {
+		if orch.Mode == mode {
+			isValidMode = true
+			break
+		}
+	}
+	if !isValidMode {
+		return fmt.Errorf("invalid orchestration mode '%s': valid options are %v", orch.Mode, validModes)
+	}
+
+	// Mode-specific validation
+	switch orch.Mode {
+	case "sequential":
+		if len(orch.SequentialAgents) == 0 {
+			return fmt.Errorf("sequential orchestration requires 'sequential_agents' array with at least one agent")
+		}
+	case "loop":
+		if orch.LoopAgent == "" {
+			return fmt.Errorf("loop orchestration requires 'loop_agent' string in configuration")
+		}
+	case "mixed":
+		if len(orch.CollaborativeAgents) == 0 && len(orch.SequentialAgents) == 0 {
+			return fmt.Errorf("mixed orchestration requires either 'collaborative_agents' or 'sequential_agents' (or both)")
+		}
+	}
+
+	// Validate timeout
+	if orch.TimeoutSeconds <= 0 {
+		return fmt.Errorf("orchestration timeout_seconds must be positive, got %d", orch.TimeoutSeconds)
+	}
+
+	// Validate max iterations for loop mode
+	if orch.Mode == "loop" && orch.MaxIterations <= 0 {
+		return fmt.Errorf("orchestration max_iterations must be positive for loop mode, got %d", orch.MaxIterations)
+	}
+
+	return nil
 }

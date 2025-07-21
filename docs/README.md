@@ -15,7 +15,9 @@ AgentFlow is a production-ready Go framework for building intelligent agent work
 
 ### **Core Concepts**  
 - **[Agent Fundamentals](guides/AgentBasics.md)** - Understanding AgentHandler interface and patterns
+- **[Memory & RAG](guides/Memory.md)** - Persistent memory, vector search, and knowledge bases
 - **[Multi-Agent Orchestration](multi_agent_orchestration.md)** - Orchestration patterns and API reference
+- **[Orchestration Configuration](guides/OrchestrationConfiguration.md)** - Complete guide to configuration-based orchestration
 - **[Examples & Tutorials](guides/Examples.md)** - Practical examples and code samples
 - **[Tool Integration](guides/ToolIntegration.md)** - MCP protocol and dynamic tool discovery
 - **[LLM Providers](guides/Providers.md)** - Azure, OpenAI, Ollama, and custom providers
@@ -23,6 +25,8 @@ AgentFlow is a production-ready Go framework for building intelligent agent work
 
 ### **Advanced Usage**
 - **[Multi-Agent Orchestration](multi_agent_orchestration.md)** - Advanced orchestration patterns and configuration
+- **[RAG Configuration](guides/RAGConfiguration.md)** - Retrieval-Augmented Generation setup and tuning
+- **[Memory Provider Setup](guides/MemoryProviderSetup.md)** - PostgreSQL, Weaviate, and in-memory setup guides
 - **[Workflow Visualization](visualization_guide.md)** - Generate and customize Mermaid diagrams
 - **[Production Deployment](guides/Production.md)** - Scaling, monitoring, and best practices  
 - **[Error Handling](guides/ErrorHandling.md)** - Resilient agent workflows
@@ -32,6 +36,7 @@ AgentFlow is a production-ready Go framework for building intelligent agent work
 ### **API Reference**
 - **[Core Package API](api/core.md)** - Complete public API reference
 - **[Agent Interface](api/agents.md)** - AgentHandler and related types
+- **[Memory API](api/memory.md)** - Memory system and RAG APIs
 - **[MCP Integration](api/mcp.md)** - Tool discovery and execution APIs
 - **[CLI Commands](api/cli.md)** - agentcli reference
 
@@ -77,6 +82,7 @@ go run . -m "research AI trends and provide comprehensive analysis"
 agentcli create data-pipeline \
   --orchestration-mode sequential \
   --sequential-agents "collector,processor,formatter" \
+  --orchestration-timeout 45 \
   --visualize
 
 # Loop-based workflow with conditions
@@ -84,6 +90,7 @@ agentcli create quality-loop \
   --orchestration-mode loop \
   --loop-agent "quality-checker" \
   --max-iterations 5 \
+  --orchestration-timeout 120 \
   --visualize
 
 # Mixed collaborative + sequential workflow
@@ -91,7 +98,32 @@ agentcli create complex-workflow \
   --orchestration-mode mixed \
   --collaborative-agents "analyzer,validator" \
   --sequential-agents "processor,reporter" \
+  --orchestration-timeout 90 \
   --visualize-output "docs/diagrams"
+```
+
+### Configuration-Based Orchestration
+All generated projects use **configuration-driven orchestration** via `agentflow.toml`:
+
+```toml
+[orchestration]
+mode = "sequential"                    # sequential, collaborative, loop, mixed, route
+timeout_seconds = 30                   # Timeout for orchestration operations
+sequential_agents = ["agent1", "agent2", "agent3"]
+```
+
+```go
+// Generated projects automatically use configuration-based runners
+runner, err := core.NewRunnerFromConfig("agentflow.toml")
+if err != nil {
+    log.Fatal(err)
+}
+
+// Register agents and run - orchestration mode is handled automatically
+for name, handler := range agents {
+    runner.RegisterAgent(name, handler)
+}
+runner.Start(ctx)
 ```
 
 ### First Agent

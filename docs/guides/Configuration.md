@@ -19,20 +19,22 @@ log_level = "info"  # debug, info, warn, error
 
 # Multi-Agent Orchestration Configuration
 [orchestration]
-mode = "collaborative"        # collaborative, sequential, loop, mixed
-timeout = "60s"
-failure_threshold = 0.5       # 0.0-1.0
-max_concurrency = 5
-max_iterations = 10           # for loop mode
+mode = "sequential"                    # sequential, collaborative, loop, mixed, route
+timeout_seconds = 30                   # Timeout for orchestration operations
+max_iterations = 5                     # Maximum iterations for loop mode
 
-# Collaborative agents (parallel processing)
-collaborative_agents = ["researcher", "analyzer", "validator"]
+# Sequential mode: agents process in order
+sequential_agents = ["agent1", "agent2", "agent3"]
 
-# Sequential agents (pipeline processing)
-sequential_agents = ["collector", "processor", "formatter"]
+# Collaborative mode: agents process in parallel  
+collaborative_agents = ["analyzer", "validator", "processor"]
 
-# Loop agent (iterative processing)
-loop_agent = "quality-checker"
+# Loop mode: single agent repeats
+loop_agent = "processor"
+
+# Mixed mode: combine collaborative and sequential
+# collaborative_agents = ["analyzer", "validator"]
+# sequential_agents = ["processor", "reporter"]
 
 # Workflow Visualization
 [visualization]
@@ -74,12 +76,7 @@ command = "npx"
 args = ["-y", "@modelcontextprotocol/server-docker"]
 transport = "stdio"
 
-# Agent orchestration settings
-[orchestration]
-mode = "sequential"     # sequential, parallel, collaborative
-queue_size = 100
-worker_count = 4
-timeout = "5m"
+
 
 # Error handling and routing
 [error_routing]
