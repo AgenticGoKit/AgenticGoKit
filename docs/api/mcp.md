@@ -1,641 +1,933 @@
-# MCP Integration API Reference
+# MCP Integration API
 
-This document provides comprehensive API reference for AgentFlow's Model Context Protocol (MCP) integration, including tool discovery, execution, and server management.
+**Tool integration via Model Context Protocol**
 
-## 🏗️ Core MCP Interfaces
+This document covers AgenticGoKit's MCP (Model Context Protocol) integration API, which enables agents to discover, connect to, and use external tools and services. MCP provides a standardized way to integrate with various tools, from web search to database operations.
 
-### `MCPManager`
+## 📋 Core Concepts
 
-The primary interface for managing MCP servers and tool execution.
+### MCP Overview
+
+MCP (Model Context Protocol) is a protocol for connecting AI agents with external tools and services. AgenticGoKit provides comprehensive MCP integration with three levels of complexity:
+
+- **Basic MCP**: Simple tool discovery and execution
+- **Enhanced MCP**: Caching and performance optimization
+- **Production MCP**: Enterprise-grade features with monitoring and scaling
+
+### Core Interfaces
 
 ```go
+// MCPManager provides the main interface for managing MCP connections and tools
 type MCPManager interface {
-    // ListTools returns all available tools from all connected MCP servers
-    ListTools(ctx context.Context) ([]ToolSchema, error)
-    
-    // GetTool returns the schema for a specific tool
-    GetTool(ctx context.Context, toolName string) (*ToolSchema, error)
-    
-    // ExecuteTool executes a tool with the given parameters
-    ExecuteTool(ctx context.Context, toolName string, params map[string]interface{}) (*ToolResult, error)
-    
-    // ListServers returns information about all configured MCP servers
-    ListServers(ctx context.Context) ([]ServerInfo, error)
-    
-    // GetServerStatus returns the health status of a specific server
-    GetServerStatus(ctx context.Context, serverName string) (*ServerStatus, error)
-    
-    // RefreshTools re-discovers tools from all servers
+    // Connection Management
+    Connect(ctx context.Context, serverName string) error
+    Disconnect(serverName string) error
+    DisconnectAll() error
+
+    // Server Discovery and Management
+    DiscoverServers(ctx context.Context) ([]MCPServerInfo, error)
+    ListConnectedServers() []string
+    GetServerInfo(serverName string) (*MCPServerInfo, error)
+
+    // Tool Management
     RefreshTools(ctx context.Context) error
-    
-    // Close shuts down all MCP server connections
-    Close() error
+    GetAvailableTools() []MCPToolInfo
+    GetToolsFromServer(serverName string) []MCPToolInfo
+
+    // Health and Monitoring
+    HealthCheck(ctx context.Context) map[string]MCPHealthStatus
+    GetMetrics() MCPMetrics
 }
-```
 
-**Usage Example:**
-```go
-func (a *MCPAgent) Run(ctx context.Context, event core.Event, state core.State) (core.AgentResult, error) {
-    mcpManager := a.runner.GetMCPManager()
-    
-    // List available tools
-    tools, err := mcpManager.ListTools(ctx)
-    if err != nil {
-        return core.AgentResult{}, fmt.Errorf("failed to list tools: %w", err)
-    }
-    
-    // Select appropriate tool based on query
-    tool := a.selectTool(event.GetData()["query"].(string), tools)
-    
-    // Execute tool
-    result, err := mcpManager.ExecuteTool(ctx, tool.Name, a.buildToolParams(event))
-    if err != nil {
-        return core.AgentResult{}, fmt.Errorf("tool execution failed: %w", err)
-    }
-    
-    return core.AgentResult{
-        Data: map[string]interface{}{
-            "tool_result": result,
-            "tool_used":   tool.Name,
-        },
-    }, nil
-}
-```
-
-### `MCPAgent`
-
-Interface for agents that can interact with MCP tools.
-
-```go
+// MCPAgent represents an agent that can utilize MCP tools
 type MCPAgent interface {
     Agent
-    
-    // GetToolRegistry returns the agent's tool registry
-    GetToolRegistry() ToolRegistry
-    
-    // ExecuteToolCall executes a single tool call
-    ExecuteToolCall(ctx context.Context, toolCall ToolCall) (*ToolResult, error)
-    
-    // ExecuteToolCalls executes multiple tool calls in parallel
-    ExecuteToolCalls(ctx context.Context, toolCalls []ToolCall) ([]ToolResult, error)
-    
-    // FormatToolsForPrompt formats available tools for LLM prompt inclusion
-    FormatToolsForPrompt(ctx context.Context) (string, error)
+    // MCP-specific methods
+    SelectTools(ctx context.Context, query string, stateContext State) ([]string, error)
+    ExecuteTools(ctx context.Context, tools []MCPToolExecution) ([]MCPToolResult, error)
+    GetAvailableMCPTools() []MCPToolInfo
 }
 ```
 
-### `MCPCache`
+## 🚀 Basic Usage
 
-Interface for caching MCP tool results.
-
-```go
-type MCPCache interface {
-    // Get retrieves a cached tool result
-    Get(ctx context.Context, key string) (*ToolResult, bool)
-    
-    // Set stores a tool result in the cache
-    Set(ctx context.Context, key string, result *ToolResult, ttl time.Duration) error
-    
-    // Delete removes a cached result
-    Delete(ctx context.Context, key string) error
-    
-    // Clear removes all cached results
-    Clear(ctx context.Context) error
-    
-    // Stats returns cache statistics
-    Stats() CacheStats
-}
-```
-
-## 🛠️ Tool Types and Schemas
-
-### `ToolSchema`
-
-Describes the structure and parameters of an MCP tool.
+### Quick Start with MCP
 
 ```go
-type ToolSchema struct {
-    // Name is the unique identifier for the tool
-    Name string `json:"name"`
-    
-    // Description explains what the tool does
-    Description string `json:"description"`
-    
-    // Parameters define the input schema using JSON Schema
-    Parameters Parameters `json:"parameters"`
-    
-    // ServerName identifies which MCP server provides this tool
-    ServerName string `json:"server_name"`
-    
-    // Version of the tool schema
-    Version string `json:"version,omitempty"`
-    
-    // Category for tool organization
-    Category string `json:"category,omitempty"`
-    
-    // Tags for tool discovery
-    Tags []string `json:"tags,omitempty"`
-    
-    // Examples of tool usage
-    Examples []ToolExample `json:"examples,omitempty"`
-}
-```
+package main
 
-### `Parameters`
+import (
+    "context"
+    "fmt"
+    "github.com/kunalkushwaha/agenticgokit/core"
+)
 
-JSON Schema definition for tool parameters.
-
-```go
-type Parameters struct {
-    Type        string                `json:"type"`
-    Properties  map[string]Property   `json:"properties"`
-    Required    []string              `json:"required,omitempty"`
-    Description string                `json:"description,omitempty"`
-    Examples    []interface{}         `json:"examples,omitempty"`
-}
-
-type Property struct {
-    Type        string        `json:"type"`
-    Description string        `json:"description,omitempty"`
-    Enum        []interface{} `json:"enum,omitempty"`
-    Default     interface{}   `json:"default,omitempty"`
-    Examples    []interface{} `json:"examples,omitempty"`
-    Format      string        `json:"format,omitempty"`
-    Pattern     string        `json:"pattern,omitempty"`
-    Minimum     *float64      `json:"minimum,omitempty"`
-    Maximum     *float64      `json:"maximum,omitempty"`
-    MinLength   *int          `json:"minLength,omitempty"`
-    MaxLength   *int          `json:"maxLength,omitempty"`
-}
-```
-
-**Example Tool Schema:**
-```go
-searchToolSchema := &ToolSchema{
-    Name:        "web_search",
-    Description: "Search the web for information on a given topic",
-    Parameters: Parameters{
-        Type: "object",
-        Properties: map[string]Property{
-            "query": {
-                Type:        "string",
-                Description: "The search query",
-                Examples:    []interface{}{"climate change", "AI developments 2024"},
-            },
-            "max_results": {
-                Type:        "integer",
-                Description: "Maximum number of results to return",
-                Default:     10,
-                Minimum:     func() *float64 { v := 1.0; return &v }(),
-                Maximum:     func() *float64 { v := 100.0; return &v }(),
-            },
-            "language": {
-                Type:        "string",
-                Description: "Language for search results",
-                Enum:        []interface{}{"en", "es", "fr", "de", "zh"},
-                Default:     "en",
-            },
-        },
-        Required: []string{"query"},
-    },
-    Category: "search",
-    Tags:     []string{"web", "information", "research"},
-}
-```
-
-### `ToolCall`
-
-Represents a request to execute a specific tool.
-
-```go
-type ToolCall struct {
-    // ID is a unique identifier for this tool call
-    ID string `json:"id"`
-    
-    // Name is the name of the tool to execute
-    Name string `json:"name"`
-    
-    // Parameters contains the arguments for the tool
-    Parameters map[string]interface{} `json:"parameters"`
-    
-    // ServerName specifies which MCP server to use (optional)
-    ServerName string `json:"server_name,omitempty"`
-    
-    // Timeout for tool execution
-    Timeout time.Duration `json:"timeout,omitempty"`
-    
-    // Metadata for tracking and debugging
-    Metadata map[string]interface{} `json:"metadata,omitempty"`
-}
-```
-
-### `ToolResult`
-
-The response from executing an MCP tool.
-
-```go
-type ToolResult struct {
-    // ID matches the ID from the corresponding ToolCall
-    ID string `json:"id"`
-    
-    // Success indicates if the tool execution was successful
-    Success bool `json:"success"`
-    
-    // Content contains the tool output
-    Content []Content `json:"content,omitempty"`
-    
-    // Error contains error information if Success is false
-    Error string `json:"error,omitempty"`
-    
-    // Metadata contains additional information about the execution
-    Metadata map[string]interface{} `json:"metadata,omitempty"`
-    
-    // ExecutionTime tracks how long the tool took to execute
-    ExecutionTime time.Duration `json:"execution_time,omitempty"`
-    
-    // ServerName identifies which server executed the tool
-    ServerName string `json:"server_name,omitempty"`
-}
-
-type Content struct {
-    Type string      `json:"type"`
-    Text string      `json:"text,omitempty"`
-    Data interface{} `json:"data,omitempty"`
-}
-```
-
-## 🚀 Tool Execution Functions
-
-### `ParseAndExecuteToolCalls`
-
-Parses LLM-generated tool calls and executes them.
-
-```go
-func ParseAndExecuteToolCalls(
-    ctx context.Context,
-    mcpManager MCPManager,
-    llmResponse string,
-) ([]ToolResult, error)
-```
-
-**Usage Example:**
-```go
-func (a *ToolAgent) processLLMResponse(ctx context.Context, llmResponse string) ([]ToolResult, error) {
-    // Parse and execute tool calls from LLM response
-    results, err := core.ParseAndExecuteToolCalls(ctx, a.mcpManager, llmResponse)
+func quickStartExample() {
+    // Initialize MCP with automatic discovery
+    err := core.QuickStartMCP()
     if err != nil {
-        return nil, fmt.Errorf("failed to execute tool calls: %w", err)
+        panic(fmt.Sprintf("Failed to initialize MCP: %v", err))
     }
     
-    // Filter out failed results
-    var successfulResults []ToolResult
-    for _, result := range results {
-        if result.Success {
-            successfulResults = append(successfulResults, result)
-        } else {
-            log.Printf("Tool call failed: %s - %s", result.ID, result.Error)
+    // Create an MCP-aware agent
+    llmProvider, err := core.NewOpenAIProvider()
+    if err != nil {
+        panic(fmt.Sprintf("Failed to create LLM provider: %v", err))
+    }
+    
+    agent, err := core.NewMCPAgent("assistant", llmProvider)
+    if err != nil {
+        panic(fmt.Sprintf("Failed to create MCP agent: %v", err))
+    }
+    
+    // Create an event that might require tool usage
+    event := core.NewEvent("query", map[string]interface{}{
+        "question": "What's the weather like in San Francisco?",
+    })
+    
+    // Process the event - agent will automatically discover and use appropriate tools
+    result, err := agent.Run(context.Background(), event, core.NewState())
+    if err != nil {
+        panic(fmt.Sprintf("Agent execution failed: %v", err))
+    }
+    
+    fmt.Printf("Response: %s\n", result.Data["response"])
+    if tools, ok := result.Data["tools_used"]; ok {
+        fmt.Printf("Tools used: %v\n", tools)
+    }
+}
+```
+
+### Manual Tool Execution
+
+```go
+func manualToolExample() {
+    // Initialize MCP
+    config := core.DefaultMCPConfig()
+    err := core.InitializeMCP(config)
+    if err != nil {
+        panic(fmt.Sprintf("Failed to initialize MCP: %v", err))
+    }
+    
+    // Execute a specific tool directly
+    result, err := core.ExecuteMCPTool(context.Background(), "web_search", map[string]interface{}{
+        "query": "AgenticGoKit framework",
+        "limit": 5,
+    })
+    
+    if err != nil {
+        panic(fmt.Sprintf("Tool execution failed: %v", err))
+    }
+    
+    fmt.Printf("Search results: %+v\n", result.Content)
+    fmt.Printf("Execution time: %v\n", result.Duration)
+}
+```
+
+### Server Discovery and Connection
+
+```go
+func serverDiscoveryExample() {
+    // Initialize MCP with discovery enabled
+    config := core.MCPConfig{
+        EnableDiscovery:   true,
+        DiscoveryTimeout:  10 * time.Second,
+        ScanPorts:         []int{8080, 8081, 8090, 3000},
+        ConnectionTimeout: 30 * time.Second,
+        MaxRetries:        3,
+        RetryDelay:        1 * time.Second,
+    }
+    
+    err := core.InitializeMCP(config)
+    if err != nil {
+        panic(fmt.Sprintf("Failed to initialize MCP: %v", err))
+    }
+    
+    // Get the MCP manager
+    manager := core.GetMCPManager()
+    if manager == nil {
+        panic("MCP manager not available")
+    }
+    
+    // Discover available servers
+    ctx := context.Background()
+    servers, err := manager.DiscoverServers(ctx)
+    if err != nil {
+        fmt.Printf("Discovery failed: %v\n", err)
+        return
+    }
+    
+    fmt.Printf("Discovered %d MCP servers:\n", len(servers))
+    for _, server := range servers {
+        fmt.Printf("- %s (%s) at %s:%d\n", 
+            server.Name, server.Type, server.Address, server.Port)
+        
+        // Connect to the server
+        err := manager.Connect(ctx, server.Name)
+        if err != nil {
+            fmt.Printf("  Failed to connect: %v\n", err)
+            continue
+        }
+        
+        // Get available tools from this server
+        tools := manager.GetToolsFromServer(server.Name)
+        fmt.Printf("  Available tools: %d\n", len(tools))
+        for _, tool := range tools {
+            fmt.Printf("    - %s: %s\n", tool.Name, tool.Description)
         }
     }
     
-    return successfulResults, nil
+    // Check health of all connections
+    healthStatus := manager.HealthCheck(ctx)
+    fmt.Printf("\nHealth Status:\n")
+    for serverName, status := range healthStatus {
+        fmt.Printf("- %s: %s (response time: %v)\n", 
+            serverName, status.Status, status.ResponseTime)
+    }
 }
 ```
 
-### `FormatToolsForPrompt`
+## 🔧 Enhanced MCP with Caching
 
-Formats available tools for inclusion in LLM prompts.
+### Caching Configuration
 
 ```go
-func FormatToolsForPrompt(
-    ctx context.Context,
-    mcpManager MCPManager,
-    options ...ToolFormattingOption,
-) (string, error)
-```
-
-**Tool Formatting Options:**
-```go
-type ToolFormattingOption func(*ToolFormattingConfig)
-
-func WithToolCategories(categories ...string) ToolFormattingOption
-func WithMaxTools(max int) ToolFormattingOption
-func WithIncludeExamples(include bool) ToolFormattingOption
-func WithFormat(format ToolFormat) ToolFormattingOption
-
-type ToolFormat string
-
-const (
-    ToolFormatJSON     ToolFormat = "json"
-    ToolFormatMarkdown ToolFormat = "markdown"
-    ToolFormatPlain    ToolFormat = "plain"
-)
-```
-
-**Usage Example:**
-```go
-func (a *ToolAgent) buildPrompt(ctx context.Context, query string) (string, error) {
-    // Format tools for prompt
-    toolsText, err := core.FormatToolsForPrompt(ctx, a.mcpManager,
-        core.WithToolCategories("search", "calculation"),
-        core.WithMaxTools(10),
-        core.WithIncludeExamples(true),
-        core.WithFormat(core.ToolFormatJSON),
-    )
-    if err != nil {
-        return "", fmt.Errorf("failed to format tools: %w", err)
+func cachingExample() {
+    // Configure MCP with caching
+    mcpConfig := core.DefaultMCPConfig()
+    mcpConfig.EnableCaching = true
+    
+    cacheConfig := core.MCPCacheConfig{
+        Enabled:         true,
+        DefaultTTL:      15 * time.Minute,
+        MaxSize:         100, // 100 MB
+        MaxKeys:         10000,
+        EvictionPolicy:  "lru",
+        CleanupInterval: 5 * time.Minute,
+        Backend:         "memory",
+        ToolTTLs: map[string]time.Duration{
+            "web_search":     5 * time.Minute,  // Search results change frequently
+            "content_fetch":  30 * time.Minute, // Content is more stable
+            "weather":        10 * time.Minute, // Weather updates regularly
+        },
     }
     
-    prompt := fmt.Sprintf(`
-You are an AI assistant with access to the following tools:
-
-%s
-
-User Query: %s
-
-Please analyze the query and use appropriate tools to provide a comprehensive answer.
-When calling tools, use the exact JSON format specified above.
-`, toolsText, query)
+    // Initialize MCP with caching
+    err := core.InitializeMCPWithCache(mcpConfig, cacheConfig)
+    if err != nil {
+        panic(fmt.Sprintf("Failed to initialize MCP with cache: %v", err))
+    }
     
-    return prompt, nil
+    // Create cache-aware agent
+    llmProvider, _ := core.NewOpenAIProvider()
+    agent, err := core.NewMCPAgentWithCache("cached-assistant", llmProvider)
+    if err != nil {
+        panic(fmt.Sprintf("Failed to create cached MCP agent: %v", err))
+    }
+    
+    // First execution - will cache results
+    event1 := core.NewEvent("query", map[string]interface{}{
+        "question": "What's the current weather in New York?",
+    })
+    
+    start := time.Now()
+    result1, _ := agent.Run(context.Background(), event1, core.NewState())
+    duration1 := time.Since(start)
+    
+    fmt.Printf("First execution: %v\n", duration1)
+    fmt.Printf("Response: %s\n", result1.Data["response"])
+    
+    // Second execution - should use cache
+    start = time.Now()
+    result2, _ := agent.Run(context.Background(), event1, core.NewState())
+    duration2 := time.Since(start)
+    
+    fmt.Printf("Second execution: %v (cached)\n", duration2)
+    fmt.Printf("Speed improvement: %.2fx\n", float64(duration1)/float64(duration2))
+    
+    // Get cache statistics
+    cacheManager := core.GetMCPCacheManager()
+    if cacheManager != nil {
+        stats, _ := cacheManager.GetGlobalStats(context.Background())
+        fmt.Printf("Cache stats: Hit rate: %.2f%%, Total keys: %d\n", 
+            stats.HitRate*100, stats.TotalKeys)
+    }
 }
 ```
 
-## 🖥️ Server Management
-
-### `ServerInfo`
-
-Information about an MCP server.
+### Custom Cache Backends
 
 ```go
-type ServerInfo struct {
-    Name        string            `json:"name"`
-    Command     string            `json:"command"`
-    Args        []string          `json:"args"`
-    Env         map[string]string `json:"env"`
-    WorkingDir  string            `json:"working_dir"`
-    Status      ServerStatus      `json:"status"`
-    Tools       []string          `json:"tools"`
-    Resources   []string          `json:"resources"`
-    Prompts     []string          `json:"prompts"`
-    StartedAt   time.Time         `json:"started_at"`
-    LastPing    time.Time         `json:"last_ping"`
+func customCacheExample() {
+    // Configure Redis cache backend
+    cacheConfig := core.MCPCacheConfig{
+        Enabled:    true,
+        DefaultTTL: 20 * time.Minute,
+        Backend:    "redis",
+        BackendConfig: map[string]string{
+            "address":  "localhost:6379",
+            "password": "",
+            "database": "0",
+        },
+    }
+    
+    mcpConfig := core.DefaultMCPConfig()
+    
+    err := core.InitializeMCPWithCache(mcpConfig, cacheConfig)
+    if err != nil {
+        panic(fmt.Sprintf("Failed to initialize MCP with Redis cache: %v", err))
+    }
+    
+    // Use the cache-enabled system
+    result, err := core.ExecuteMCPTool(context.Background(), "expensive_computation", map[string]interface{}{
+        "input": "complex data",
+    })
+    
+    if err != nil {
+        panic(fmt.Sprintf("Tool execution failed: %v", err))
+    }
+    
+    fmt.Printf("Result: %+v\n", result)
 }
 ```
 
-### `ServerStatus`
+## 🏭 Production MCP
 
-Status information for an MCP server.
+### Production Configuration
 
 ```go
-type ServerStatus struct {
-    State       ServerState `json:"state"`
-    Healthy     bool        `json:"healthy"`
-    LastError   string      `json:"last_error,omitempty"`
-    Uptime      time.Duration `json:"uptime"`
-    RequestCount int64       `json:"request_count"`
-    ErrorCount   int64       `json:"error_count"`
-    AvgLatency   time.Duration `json:"avg_latency"`
+func productionMCPExample() {
+    // Configure production-grade MCP
+    productionConfig := core.ProductionConfig{
+        ConnectionPool: core.ConnectionPoolConfig{
+            MinConnections:       5,
+            MaxConnections:       50,
+            MaxIdleTime:          30 * time.Minute,
+            HealthCheckInterval:  1 * time.Minute,
+            HealthCheckTimeout:   10 * time.Second,
+            ReconnectBackoff:     1 * time.Second,
+            MaxReconnectBackoff:  30 * time.Second,
+            MaxReconnectAttempts: 10,
+            ConnectionTimeout:    30 * time.Second,
+            MaxConnectionAge:     1 * time.Hour,
+        },
+        
+        RetryPolicy: core.RetryPolicyConfig{
+            Strategy:    "exponential",
+            BaseDelay:   100 * time.Millisecond,
+            MaxDelay:    10 * time.Second,
+            MaxAttempts: 5,
+            Multiplier:  2.0,
+            Jitter:      0.1,
+            RetryableErrors: []string{
+                "timeout",
+                "connection_error",
+                "temporary_failure",
+            },
+            ToolSpecificPolicies: map[string]core.ToolRetryConfig{
+                "web_search": {
+                    Strategy:    "linear",
+                    BaseDelay:   500 * time.Millisecond,
+                    MaxDelay:    5 * time.Second,
+                    MaxAttempts: 3,
+                },
+            },
+        },
+        
+        LoadBalancer: core.LoadBalancerConfig{
+            Strategy:              "round_robin",
+            HealthCheckInterval:   30 * time.Second,
+            HealthCheckTimeout:    5 * time.Second,
+            UnhealthyThreshold:    3,
+            HealthyThreshold:      2,
+            FailoverEnabled:       true,
+            CircuitBreakerEnabled: true,
+        },
+        
+        Metrics: core.MetricsConfig{
+            Enabled:           true,
+            Port:              9090,
+            Path:              "/metrics",
+            UpdateInterval:    10 * time.Second,
+            PrometheusEnabled: true,
+        },
+        
+        HealthCheck: core.HealthCheckConfig{
+            Enabled:        true,
+            Port:           8080,
+            Path:           "/health",
+            Interval:       30 * time.Second,
+            Timeout:        5 * time.Second,
+            ChecksRequired: 3,
+        },
+        
+        Cache: core.CacheConfig{
+            Type:               "redis",
+            TTL:                15 * time.Minute,
+            MaxSize:            1000, // 1GB
+            BackgroundCleanup:  true,
+            CleanupInterval:    5 * time.Minute,
+            CompressionEnabled: true,
+            PersistenceEnabled: true,
+            Redis: core.RedisConfig{
+                Enabled:    true,
+                Address:    "redis-cluster:6379",
+                Password:   "secure-password",
+                Database:   0,
+                PoolSize:   20,
+                Timeout:    5 * time.Second,
+                MaxRetries: 3,
+            },
+        },
+        
+        CircuitBreaker: core.ProductionCircuitBreakerConfig{
+            FailureThreshold:    10,
+            SuccessThreshold:    5,
+            Timeout:             60 * time.Second,
+            HalfOpenMaxCalls:    3,
+            OpenStateTimeout:    30 * time.Second,
+            MetricsEnabled:      true,
+            NotificationEnabled: true,
+        },
+    }
+    
+    // Initialize production MCP
+    ctx := context.Background()
+    err := core.InitializeProductionMCP(ctx, productionConfig)
+    if err != nil {
+        panic(fmt.Sprintf("Failed to initialize production MCP: %v", err))
+    }
+    
+    // Create production-ready agent
+    llmProvider, _ := core.NewOpenAIProvider()
+    agent, err := core.NewProductionMCPAgent("production-assistant", llmProvider, productionConfig)
+    if err != nil {
+        panic(fmt.Sprintf("Failed to create production MCP agent: %v", err))
+    }
+    
+    // Use the production agent
+    event := core.NewEvent("complex_query", map[string]interface{}{
+        "question": "Analyze market trends and provide investment recommendations",
+        "context":  "financial services",
+    })
+    
+    result, err := agent.Run(context.Background(), event, core.NewState())
+    if err != nil {
+        panic(fmt.Sprintf("Production agent execution failed: %v", err))
+    }
+    
+    fmt.Printf("Production response: %s\n", result.Data["response"])
+    
+    // Get production metrics
+    manager := core.GetMCPManager()
+    metrics := manager.GetMetrics()
+    
+    fmt.Printf("Production Metrics:\n")
+    fmt.Printf("- Connected servers: %d\n", metrics.ConnectedServers)
+    fmt.Printf("- Total tools: %d\n", metrics.TotalTools)
+    fmt.Printf("- Tool executions: %d\n", metrics.ToolExecutions)
+    fmt.Printf("- Average latency: %v\n", metrics.AverageLatency)
+    fmt.Printf("- Error rate: %.2f%%\n", metrics.ErrorRate*100)
 }
-
-type ServerState string
-
-const (
-    ServerStateStarting ServerState = "starting"
-    ServerStateRunning  ServerState = "running"
-    ServerStateStopping ServerState = "stopping"
-    ServerStateStopped  ServerState = "stopped"
-    ServerStateError    ServerState = "error"
-)
 ```
 
-### Server Management Functions
+### Monitoring and Observability
 
 ```go
-// StartMCPServer starts a new MCP server
-func StartMCPServer(ctx context.Context, config ServerConfig) (*MCPServer, error)
-
-// StopMCPServer gracefully stops an MCP server
-func StopMCPServer(ctx context.Context, server *MCPServer) error
-
-// RestartMCPServer restarts an MCP server
-func RestartMCPServer(ctx context.Context, server *MCPServer) error
-
-// HealthCheckMCPServer checks if an MCP server is healthy
-func HealthCheckMCPServer(ctx context.Context, server *MCPServer) (*ServerStatus, error)
+func monitoringExample() {
+    // Initialize production MCP with monitoring
+    config := core.ProductionConfig{
+        Metrics: core.MetricsConfig{
+            Enabled:           true,
+            Port:              9090,
+            Path:              "/metrics",
+            UpdateInterval:    5 * time.Second,
+            PrometheusEnabled: true,
+            HistogramBuckets:  []float64{0.1, 0.5, 1.0, 2.5, 5.0, 10.0},
+        },
+        HealthCheck: core.HealthCheckConfig{
+            Enabled:        true,
+            Port:           8080,
+            Path:           "/health",
+            Interval:       10 * time.Second,
+            Timeout:        3 * time.Second,
+            ChecksRequired: 2,
+        },
+    }
+    
+    ctx := context.Background()
+    err := core.InitializeProductionMCP(ctx, config)
+    if err != nil {
+        panic(fmt.Sprintf("Failed to initialize production MCP: %v", err))
+    }
+    
+    // Start monitoring goroutine
+    go func() {
+        ticker := time.NewTicker(30 * time.Second)
+        defer ticker.Stop()
+        
+        for {
+            select {
+            case <-ticker.C:
+                manager := core.GetMCPManager()
+                if manager == nil {
+                    continue
+                }
+                
+                // Get health status
+                healthStatus := manager.HealthCheck(context.Background())
+                fmt.Printf("Health Check Results:\n")
+                for serverName, status := range healthStatus {
+                    fmt.Printf("- %s: %s (tools: %d, latency: %v)\n",
+                        serverName, status.Status, status.ToolCount, status.ResponseTime)
+                    
+                    if status.Error != "" {
+                        fmt.Printf("  Error: %s\n", status.Error)
+                    }
+                }
+                
+                // Get detailed metrics
+                metrics := manager.GetMetrics()
+                fmt.Printf("System Metrics:\n")
+                fmt.Printf("- Total executions: %d\n", metrics.ToolExecutions)
+                fmt.Printf("- Average latency: %v\n", metrics.AverageLatency)
+                fmt.Printf("- Error rate: %.2f%%\n", metrics.ErrorRate*100)
+                
+                // Server-specific metrics
+                for serverName, serverMetrics := range metrics.ServerMetrics {
+                    fmt.Printf("- %s: %d executions, %.2f%% success rate\n",
+                        serverName, 
+                        serverMetrics.Executions,
+                        float64(serverMetrics.SuccessfulCalls)/float64(serverMetrics.Executions)*100)
+                }
+                
+                fmt.Println("---")
+            }
+        }
+    }()
+    
+    // Simulate some tool usage
+    for i := 0; i < 10; i++ {
+        _, err := core.ExecuteMCPTool(context.Background(), "test_tool", map[string]interface{}{
+            "iteration": i,
+        })
+        if err != nil {
+            fmt.Printf("Tool execution %d failed: %v\n", i, err)
+        }
+        time.Sleep(2 * time.Second)
+    }
+}
 ```
 
-## 🔧 Configuration
+## 🔧 Custom Tool Development
 
-### `MCPConfig`
-
-Configuration for MCP integration.
+### Creating MCP Function Tools
 
 ```go
-type MCPConfig struct {
-    Enabled bool `toml:"enabled"`
-    
-    // Global settings
-    Timeout         time.Duration `toml:"timeout"`
-    MaxConnections  int           `toml:"max_connections"`
-    RetryAttempts   int           `toml:"retry_attempts"`
-    RetryDelay      time.Duration `toml:"retry_delay"`
-    
-    // Cache settings
-    CacheEnabled    bool          `toml:"cache_enabled"`
-    CacheTTL        time.Duration `toml:"cache_ttl"`
-    CacheMaxSize    int           `toml:"cache_max_size"`
-    
-    // Server configurations
-    Servers []ServerConfig `toml:"servers"`
+// Custom tool implementation
+type WeatherTool struct {
+    apiKey string
+    client *http.Client
 }
 
-type ServerConfig struct {
-    Name       string            `toml:"name"`
-    Command    string            `toml:"command"`
-    Args       []string          `toml:"args"`
-    Env        map[string]string `toml:"env"`
-    WorkingDir string            `toml:"working_dir"`
+func NewWeatherTool(apiKey string) *WeatherTool {
+    return &WeatherTool{
+        apiKey: apiKey,
+        client: &http.Client{Timeout: 10 * time.Second},
+    }
+}
+
+func (w *WeatherTool) Name() string {
+    return "get_weather"
+}
+
+func (w *WeatherTool) Call(ctx context.Context, args map[string]any) (map[string]any, error) {
+    location, ok := args["location"].(string)
+    if !ok {
+        return nil, fmt.Errorf("location parameter is required")
+    }
     
-    // Connection settings
-    Address     string        `toml:"address"`
-    Timeout     time.Duration `toml:"timeout"`
-    HealthCheck time.Duration `toml:"health_check"`
+    // Make API call to weather service
+    url := fmt.Sprintf("https://api.weather.com/v1/current?key=%s&location=%s", 
+        w.apiKey, url.QueryEscape(location))
     
-    // Tool filtering
-    IncludeTools []string `toml:"include_tools"`
-    ExcludeTools []string `toml:"exclude_tools"`
+    req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+    if err != nil {
+        return nil, fmt.Errorf("failed to create request: %w", err)
+    }
+    
+    resp, err := w.client.Do(req)
+    if err != nil {
+        return nil, fmt.Errorf("weather API request failed: %w", err)
+    }
+    defer resp.Body.Close()
+    
+    if resp.StatusCode != http.StatusOK {
+        return nil, fmt.Errorf("weather API returned status %d", resp.StatusCode)
+    }
+    
+    var weatherData map[string]interface{}
+    if err := json.NewDecoder(resp.Body).Decode(&weatherData); err != nil {
+        return nil, fmt.Errorf("failed to decode weather response: %w", err)
+    }
+    
+    return map[string]any{
+        "location":    location,
+        "temperature": weatherData["temperature"],
+        "conditions":  weatherData["conditions"],
+        "humidity":    weatherData["humidity"],
+        "timestamp":   time.Now().Unix(),
+    }, nil
+}
+
+func customToolExample() {
+    // Initialize MCP tool registry
+    err := core.InitializeMCPToolRegistry()
+    if err != nil {
+        panic(fmt.Sprintf("Failed to initialize tool registry: %v", err))
+    }
+    
+    // Register custom tool
+    registry := core.GetMCPToolRegistry()
+    weatherTool := NewWeatherTool("your-api-key")
+    
+    err = registry.Register(weatherTool)
+    if err != nil {
+        panic(fmt.Sprintf("Failed to register weather tool: %v", err))
+    }
+    
+    // Use the custom tool
+    result, err := registry.CallTool(context.Background(), "get_weather", map[string]any{
+        "location": "San Francisco, CA",
+    })
+    
+    if err != nil {
+        panic(fmt.Sprintf("Tool execution failed: %v", err))
+    }
+    
+    fmt.Printf("Weather data: %+v\n", result)
 }
 ```
 
-**Configuration Example:**
-```toml
-[mcp]
-enabled = true
-timeout = "30s"
-max_connections = 10
-retry_attempts = 3
-retry_delay = "1s"
-cache_enabled = true
-cache_ttl = "1h"
-cache_max_size = 1000
-
-[[mcp.servers]]
-name = "web-search"
-command = "mcp-web-search"
-args = ["--port", "8080"]
-env = { SEARCH_API_KEY = "${SEARCH_API_KEY}" }
-timeout = "30s"
-health_check = "10s"
-
-[[mcp.servers]]
-name = "file-tools"
-command = "docker"
-args = ["run", "-v", "/data:/data", "mcp-file-tools"]
-working_dir = "/app"
-include_tools = ["read_file", "write_file", "list_files"]
-
-[[mcp.servers]]
-name = "database"
-address = "tcp://localhost:9090"
-env = { DB_CONNECTION = "${DATABASE_URL}" }
-exclude_tools = ["drop_table", "delete_database"]
-```
-
-## 📊 Tool Discovery and Registry
-
-### `ToolRegistry`
-
-Registry for managing discovered tools.
+### Tool Registry Management
 
 ```go
-type ToolRegistry interface {
-    // RegisterTool adds a tool to the registry
-    RegisterTool(tool *ToolSchema) error
+func toolRegistryExample() {
+    // Initialize registry
+    err := core.InitializeMCPToolRegistry()
+    if err != nil {
+        panic(fmt.Sprintf("Failed to initialize tool registry: %v", err))
+    }
     
-    // UnregisterTool removes a tool from the registry
-    UnregisterTool(toolName string) error
+    registry := core.GetMCPToolRegistry()
     
-    // GetTool retrieves a tool by name
-    GetTool(toolName string) (*ToolSchema, bool)
+    // Register multiple custom tools
+    tools := []core.FunctionTool{
+        NewWeatherTool("weather-api-key"),
+        NewCalculatorTool(),
+        NewTextAnalyzerTool(),
+    }
     
-    // ListTools returns all registered tools
-    ListTools() []*ToolSchema
+    for _, tool := range tools {
+        err := registry.Register(tool)
+        if err != nil {
+            fmt.Printf("Failed to register tool %s: %v\n", tool.Name(), err)
+            continue
+        }
+        fmt.Printf("Registered tool: %s\n", tool.Name())
+    }
     
-    // SearchTools finds tools matching criteria
-    SearchTools(criteria SearchCriteria) []*ToolSchema
+    // List all available tools
+    availableTools := registry.List()
+    fmt.Printf("Available tools: %v\n", availableTools)
     
-    // RefreshFromServers re-discovers tools from all servers
-    RefreshFromServers(ctx context.Context) error
+    // Execute tools
+    ctx := context.Background()
+    
+    // Weather tool
+    weatherResult, err := registry.CallTool(ctx, "get_weather", map[string]any{
+        "location": "New York, NY",
+    })
+    if err == nil {
+        fmt.Printf("Weather: %+v\n", weatherResult)
+    }
+    
+    // Calculator tool
+    calcResult, err := registry.CallTool(ctx, "calculate", map[string]any{
+        "operation": "add",
+        "a":         10,
+        "b":         5,
+    })
+    if err == nil {
+        fmt.Printf("Calculation: %+v\n", calcResult)
+    }
+    
+    // Text analyzer tool
+    textResult, err := registry.CallTool(ctx, "analyze_text", map[string]any{
+        "text": "This is a sample text for analysis.",
+    })
+    if err == nil {
+        fmt.Printf("Text analysis: %+v\n", textResult)
+    }
 }
-
-type SearchCriteria struct {
-    Categories []string
-    Tags       []string
-    Pattern    string
-    ServerName string
-}
-```
-
-### Tool Discovery Functions
-
-```go
-// DiscoverTools discovers all tools from configured MCP servers
-func DiscoverTools(ctx context.Context, config MCPConfig) ([]ToolSchema, error)
-
-// DiscoverToolsFromServer discovers tools from a specific server
-func DiscoverToolsFromServer(ctx context.Context, server ServerConfig) ([]ToolSchema, error)
-
-// FilterTools filters tools based on criteria
-func FilterTools(tools []ToolSchema, criteria SearchCriteria) []ToolSchema
 ```
 
 ## 🧪 Testing MCP Integration
 
-### Mock MCP Manager
+### Unit Testing MCP Tools
 
 ```go
-type MockMCPManager struct {
-    tools   map[string]*ToolSchema
-    results map[string]*ToolResult
-    errors  map[string]error
-}
-
-func NewMockMCPManager() *MockMCPManager {
-    return &MockMCPManager{
-        tools:   make(map[string]*ToolSchema),
-        results: make(map[string]*ToolResult),
-        errors:  make(map[string]error),
-    }
-}
-
-func (m *MockMCPManager) AddTool(tool *ToolSchema) {
-    m.tools[tool.Name] = tool
-}
-
-func (m *MockMCPManager) SetToolResult(toolName string, result *ToolResult) {
-    m.results[toolName] = result
-}
-
-func (m *MockMCPManager) SetToolError(toolName string, err error) {
-    m.errors[toolName] = err
-}
-
-func (m *MockMCPManager) ExecuteTool(ctx context.Context, toolName string, params map[string]interface{}) (*ToolResult, error) {
-    if err, exists := m.errors[toolName]; exists {
-        return nil, err
-    }
+func TestWeatherTool(t *testing.T) {
+    tool := NewWeatherTool("test-api-key")
     
-    if result, exists := m.results[toolName]; exists {
-        return result, nil
-    }
+    // Test valid input
+    result, err := tool.Call(context.Background(), map[string]any{
+        "location": "San Francisco, CA",
+    })
     
-    return &ToolResult{
-        Success: true,
-        Content: []Content{{Type: "text", Text: "Mock result"}},
-    }, nil
+    assert.NoError(t, err)
+    assert.NotNil(t, result)
+    assert.Contains(t, result, "location")
+    assert.Contains(t, result, "temperature")
+    
+    // Test missing location
+    _, err = tool.Call(context.Background(), map[string]any{})
+    assert.Error(t, err)
+    assert.Contains(t, err.Error(), "location parameter is required")
 }
-```
 
-### Testing Example
-
-```go
-func TestMCPAgent(t *testing.T) {
-    // Create mock MCP manager
-    mockMCP := NewMockMCPManager()
+func TestMCPAgentIntegration(t *testing.T) {
+    // Initialize test MCP environment
+    config := core.DefaultMCPConfig()
+    config.EnableDiscovery = false // Disable discovery for testing
     
-    // Add test tool
-    mockMCP.AddTool(&ToolSchema{
-        Name:        "test_tool",
-        Description: "A test tool",
-        Parameters: Parameters{
-            Type:       "object",
-            Properties: map[string]Property{
-                "input": {Type: "string", Description: "Test input"},
-            },
-            Required: []string{"input"},
+    err := core.InitializeMCP(config)
+    require.NoError(t, err)
+    
+    // Register test tools
+    registry := core.GetMCPToolRegistry()
+    testTool := &MockTool{
+        name: "test_tool",
+        response: map[string]any{
+            "result": "test_response",
         },
-    })
+    }
     
-    // Set expected result
-    mockMCP.SetToolResult("test_tool", &ToolResult{
-        Success: true,
-        Content: []Content{{Type: "text", Text: "Test result"}},
-    })
+    err = registry.Register(testTool)
+    require.NoError(t, err)
     
-    // Create agent with mock MCP manager
-    agent := &MCPAgent{mcpManager: mockMCP}
+    // Create MCP agent
+    mockLLM := &MockLLMProvider{}
+    agent, err := core.NewMCPAgent("test-agent", mockLLM)
+    require.NoError(t, err)
     
-    // Test tool execution
-    event := core.NewEvent("test", map[string]interface{}{
-        "query": "use test_tool with input 'hello'",
+    // Test agent with tool usage
+    event := core.NewEvent("query", map[string]interface{}{
+        "question": "Use the test tool",
     })
     
     result, err := agent.Run(context.Background(), event, core.NewState())
+    require.NoError(t, err)
     
-    assert.NoError(t, err)
-    assert.True(t, result.Success)
-    assert.Contains(t, result.Data, "tool_result")
+    // Verify tool was used
+    assert.Contains(t, result.Data, "tools_used")
+    toolsUsed := result.Data["tools_used"].([]string)
+    assert.Contains(t, toolsUsed, "test_tool")
 }
 ```
 
-This MCP integration API reference provides comprehensive coverage of AgentFlow's MCP capabilities, from basic tool execution to advanced server management and testing utilities.
+### Integration Testing
+
+```go
+func TestMCPEndToEnd(t *testing.T) {
+    // Skip if not running integration tests
+    if testing.Short() {
+        t.Skip("Skipping MCP integration test")
+    }
+    
+    // Initialize full MCP stack
+    mcpConfig := core.DefaultMCPConfig()
+    cacheConfig := core.DefaultMCPCacheConfig()
+    
+    err := core.InitializeMCPWithCache(mcpConfig, cacheConfig)
+    require.NoError(t, err)
+    
+    // Register MCP tools from discovered servers
+    ctx := context.Background()
+    err = core.RegisterMCPToolsWithRegistry(ctx)
+    require.NoError(t, err)
+    
+    // Create agent and test complete workflow
+    llmProvider, err := core.NewOpenAIProvider()
+    require.NoError(t, err)
+    
+    agent, err := core.NewMCPAgentWithCache("integration-test-agent", llmProvider)
+    require.NoError(t, err)
+    
+    // Test complex query that requires multiple tools
+    event := core.NewEvent("complex_query", map[string]interface{}{
+        "question": "Search for information about Go programming and summarize the results",
+    })
+    
+    result, err := agent.Run(ctx, event, core.NewState())
+    require.NoError(t, err)
+    
+    // Verify response
+    assert.Contains(t, result.Data, "response")
+    assert.NotEmpty(t, result.Data["response"])
+    
+    // Verify tools were used
+    if toolsUsed, ok := result.Data["tools_used"]; ok {
+        tools := toolsUsed.([]string)
+        assert.NotEmpty(t, tools)
+        t.Logf("Tools used: %v", tools)
+    }
+    
+    // Test caching by running the same query again
+    start := time.Now()
+    result2, err := agent.Run(ctx, event, core.NewState())
+    duration := time.Since(start)
+    
+    require.NoError(t, err)
+    assert.Equal(t, result.Data["response"], result2.Data["response"])
+    
+    // Second execution should be faster due to caching
+    assert.Less(t, duration, 1*time.Second, "Cached execution should be faster")
+}
+```
+
+## 📚 Best Practices
+
+### 1. MCP Configuration
+
+```go
+// Good: Appropriate timeouts and retry policies
+config := core.MCPConfig{
+    EnableDiscovery:   true,
+    DiscoveryTimeout:  10 * time.Second,  // Reasonable discovery timeout
+    ConnectionTimeout: 30 * time.Second,  // Allow time for connection
+    MaxRetries:        3,                 // Reasonable retry attempts
+    RetryDelay:        1 * time.Second,   // Progressive backoff
+    EnableCaching:     true,              // Enable performance optimization
+    CacheTimeout:      15 * time.Minute, // Balance freshness vs performance
+}
+
+// Bad: Unrealistic or missing configuration
+config := core.MCPConfig{
+    EnableDiscovery:   true,
+    DiscoveryTimeout:  1 * time.Second,   // Too short
+    ConnectionTimeout: 5 * time.Minute,   // Too long
+    MaxRetries:        20,                // Too many retries
+    RetryDelay:        100 * time.Millisecond, // Too aggressive
+    EnableCaching:     false,             // Missing optimization
+}
+```
+
+### 2. Error Handling
+
+```go
+// Good: Comprehensive error handling
+func robustMCPUsage() {
+    manager := core.GetMCPManager()
+    if manager == nil {
+        log.Fatal("MCP manager not initialized")
+    }
+    
+    ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+    defer cancel()
+    
+    result, err := core.ExecuteMCPTool(ctx, "web_search", map[string]interface{}{
+        "query": "search term",
+    })
+    
+    if err != nil {
+        // Handle different types of errors
+        if strings.Contains(err.Error(), "timeout") {
+            log.Printf("Tool execution timed out: %v", err)
+            // Implement fallback or retry logic
+        } else if strings.Contains(err.Error(), "not found") {
+            log.Printf("Tool not available: %v", err)
+            // Use alternative tool or method
+        } else {
+            log.Printf("Tool execution failed: %v", err)
+            // General error handling
+        }
+        return
+    }
+    
+    // Process successful result
+    fmt.Printf("Tool result: %+v\n", result)
+}
+```
+
+### 3. Performance Optimization
+
+```go
+// Good: Use caching and connection pooling
+func optimizedMCPUsage() {
+    // Configure with performance optimizations
+    productionConfig := core.ProductionConfig{
+        ConnectionPool: core.ConnectionPoolConfig{
+            MinConnections: 5,
+            MaxConnections: 20,
+            MaxIdleTime:    30 * time.Minute,
+        },
+        Cache: core.CacheConfig{
+            Type:               "redis",
+            TTL:                15 * time.Minute,
+            CompressionEnabled: true,
+        },
+    }
+    
+    ctx := context.Background()
+    err := core.InitializeProductionMCP(ctx, productionConfig)
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    // Use the optimized system
+    llmProvider, _ := core.NewOpenAIProvider()
+    agent, _ := core.NewProductionMCPAgent("optimized-agent", llmProvider, productionConfig)
+    
+    // Agent will automatically use connection pooling and caching
+}
+```
+
+### 4. Security Considerations
+
+```go
+// Good: Secure MCP configuration
+func secureMCPSetup() {
+    config := core.MCPConfig{
+        // Only connect to trusted servers
+        Servers: []core.MCPServerConfig{
+            {
+                Name:    "trusted-search",
+                Type:    "tcp",
+                Host:    "internal-search.company.com",
+                Port:    8080,
+                Enabled: true,
+            },
+        },
+        EnableDiscovery: false, // Disable auto-discovery in production
+        MaxConnections:  10,    // Limit resource usage
+    }
+    
+    // Validate server certificates and use secure connections
+    err := core.InitializeMCP(config)
+    if err != nil {
+        log.Fatal(err)
+    }
+}
+```
+
+## 🔗 Related APIs
+
+- **[Agent API](agent.md)** - Building individual agents
+- **[Orchestration API](orchestration.md)** - Multi-agent coordination
+- **[State & Event API](state-event.md)** - Data flow and communication
+- **[Configuration API](configuration.md)** - System configuration
+
+---
+
+*This documentation covers the current MCP Integration API in AgenticGoKit. The framework is actively developed, so some interfaces may evolve.*

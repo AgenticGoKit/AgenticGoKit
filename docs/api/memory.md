@@ -1,53 +1,60 @@
-# Memory API Reference
+# Memory API
 
-**Complete API reference for AgentFlow's memory system**
+**Persistent storage, RAG, and knowledge management**
 
-This document provides comprehensive API documentation for AgentFlow's memory system, including interfaces, types, methods, and usage examples.
+This document covers AgenticGoKit's Memory API, which enables agents to store and retrieve information persistently. The Memory system is essential for building agents with long-term memory, knowledge bases, and RAG (Retrieval-Augmented Generation) capabilities.
 
-## 📚 Table of Contents
-
-- [Overview](#overview)
-- [Core Interfaces](#core-interfaces)
-- [Memory Providers](#memory-providers)
-- [Data Types](#data-types)
-- [Configuration Types](#configuration-types)
-- [Search Options](#search-options)
-- [Error Types](#error-types)
-- [Usage Examples](#usage-examples)
-
-## 🎯 Overview
-
-The AgentFlow memory system provides a unified interface for persistent storage, vector search, and RAG (Retrieval-Augmented Generation) capabilities. The API is designed to be provider-agnostic, allowing seamless switching between different storage backends.
-
-### Key Features
-
-- **Unified Interface**: Single API for all memory operations
-- **Multiple Providers**: Support for in-memory, PostgreSQL+pgvector, and Weaviate
-- **Session Isolation**: Complete data separation between users/sessions
-- **RAG Capabilities**: Document ingestion, knowledge search, context building
-- **Vector Search**: Semantic similarity search with configurable scoring
-- **Batch Operations**: Efficient bulk operations for large datasets
-
-## 🔧 Core Interfaces
+## 📋 Core Concepts
 
 ### Memory Interface
 
-The primary interface for all memory operations.
+The core interface for agent memory systems:
 
 ```go
 type Memory interface {
-    // Personal memory operations
-    Store(ctx context.Context, content string, tags ...string) error
-    Query(ctx context.Context, query string, limit ...int) ([]Result, error)
+    // Store stores a memory with optional metadata
+    Store(ctx context.Context, content string, metadata map[string]interface{}) (string, error)
     
-    // Key-value storage
-    Remember(ctx context.Context, key string, value any) error
-    Recall(ctx context.Context, key string) (any, error)
+    // Search finds memories similar to the query
+    Search(ctx context.Context, query string, limit int, minScore float64) ([]MemorySearchResult, error)
     
-    // Chat history
-    AddMessage(ctx context.Context, role, content string) error
-    GetHistory(ctx context.Context, limit ...int) ([]Message, error)
+    // Get retrieves a specific memory by ID
+    Get(ctx context.Context, id string) (*MemorySearchResult, error)
     
+    // Delete removes a memory by ID
+    Delete(ctx context.Context, id string) error
+}
+```
+
+### Memory Search Result
+
+Represents a memory retrieved from storage:
+
+```go
+type MemorySearchResult struct {
+    ID        string                 // Unique identifier
+    Content   string                 // Memory content
+    Metadata  map[string]interface{} // Associated metadata
+    Score     float64                // Similarity score (for search results)
+    CreatedAt time.Time              // Creation timestamp
+}
+```
+
+### Memory Configuration
+
+Configuration for memory systems:
+
+```go
+type AgentMemoryConfig struct {
+    Provider           string  // Memory provider ("pgvector", "weaviate", "memory")
+    Connection         string  // Connection string for database
+    MaxResults         int     // Maximum results to return from search
+    Dimensions         int     // Vector dimensions for embeddings
+    AutoEmbed          bool    // Automatically generate embeddings
+    EnableKnowledgeBase bool    // Enable RAG capabilities
+    ChunkSize          int     // Document chunk size for RAG
+    ChunkOverlap       int     // Overlap between chunks
+}
     // Knowledge base (RAG)
     IngestDocument(ctx context.Context, doc Document) error
     IngestDocuments(ctx context.Context, docs []Document) error
