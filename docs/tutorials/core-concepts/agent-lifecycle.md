@@ -856,6 +856,6 @@ Key takeaways:
 
 ## Further Reading
 
-- [API Reference: Agent Interfaces](../../api/core.md#agents)
+- [API Reference: Agent Interfaces](../../reference/api/agent.md#agents)
 - [Examples: Agent Lifecycle Patterns](../../examples/)
-- [Configuration Guide: Agent Settings](../../guides/Configuration.md)
+- [Configuration Guide: Agent Settings](../../reference/api/configuration.md)

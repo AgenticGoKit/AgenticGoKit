@@ -1067,6 +1067,6 @@ Key takeaways:
 
 ## Further Reading
 
-- [API Reference: Document Interface](../../api/core.md#document)
+- [API Reference: Document Interface](../../reference/api/agent.md#document)
 - [Examples: Document Processing](../../examples/)
-- [Configuration Guide: Memory Settings](../../guides/Configuration.md)
+- [Configuration Guide: Memory Settings](../../reference/api/configuration.md)

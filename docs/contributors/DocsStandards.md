@@ -1,6 +1,6 @@
 # Documentation Standards
 
-This guide outlines the standards and best practices for writing and maintaining AgentFlow documentation.
+This guide outlines the standards and best practices for writing and maintaining AgenticGoKit documentation.
 
 ## Table of Contents
 
@@ -13,7 +13,7 @@ This guide outlines the standards and best practices for writing and maintaining
 
 ## Documentation Philosophy
 
-AgentFlow documentation follows these core principles:
+AgenticGoKit documentation follows these core principles:
 
 ### 1. User-Centric Approach
 - **Start with the user's goal** - What are they trying to accomplish?
@@ -34,8 +34,8 @@ AgentFlow documentation follows these core principles:
 - **Link between related concepts** to build understanding
 
 ### 4. Separation of Concerns
-- **User docs** focus on building with AgentFlow
-- **Contributor docs** focus on extending AgentFlow
+- **User docs** focus on building with AgenticGoKit
+- **Contributor docs** focus on extending AgenticGoKit
 - **API reference** provides comprehensive technical details
 - **Examples** demonstrate practical applications
 
@@ -103,7 +103,7 @@ Related: [LLM Providers](Providers.md) | [Error Handling](ErrorHandling.md)
 - **Confident but not arrogant** - "This approach works well" vs "This is the only way"
 
 **For Contributor Documentation:**
-- **Technical but approachable** - Assume programming knowledge but explain AgentFlow-specific concepts
+- **Technical but approachable** - Assume programming knowledge but explain AgenticGoKit-specific concepts
 - **Collaborative** - "We use this pattern because..."
 - **Detailed and precise** - Include implementation details and reasoning
 
@@ -431,7 +431,7 @@ AgentBasics.md ←→ ToolIntegration.md ←→ Configuration.md
 ### Common Terminology
 
 **Consistent terms:**
-- "AgentFlow" (not "agentflow" or "Agent Flow") - the framework
+- "AgenticGoKit" (not "agenticgokit" or "Agentic Go Kit") - the framework
 - "agent" (lowercase) - an instance of an agent
 - "MCP" - Model Context Protocol (define on first use)
 - "LLM" - Large Language Model (define on first use)

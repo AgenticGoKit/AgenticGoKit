@@ -1,8 +1,8 @@
-# AgentFlow Memory System - Complete Implementation Guide
+# AgenticGoKit Memory System - Complete Implementation Guide
 
 ## 🎯 Overview
 
-AgentFlow provides a powerful, production-ready memory system that enables agents to maintain persistent context, conversation history, and knowledge bases. The system supports multiple storage backends, RAG (Retrieval-Augmented Generation) capabilities, and advanced features like vector embeddings, batch operations, and intelligent retry logic.
+AgenticGoKit provides a powerful, production-ready memory system that enables agents to maintain persistent context, conversation history, and knowledge bases. The system supports multiple storage backends, RAG (Retrieval-Augmented Generation) capabilities, and advanced features like vector embeddings, batch operations, and intelligent retry logic.
 
 ## 📚 Table of Contents
 
@@ -28,7 +28,7 @@ import (
     "context"
     "log"
     
-    "github.com/kunalkushwaha/agentflow/core"
+    "github.com/kunalkushwaha/agenticgokit/core"
 )
 
 func main() {

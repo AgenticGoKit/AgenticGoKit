@@ -1,8 +1,12 @@
 # Contributor Guide
 
-**Contributing to AgentFlow Development**
+> **Navigation:** [Documentation Home](../README.md) → [Contributors](README.md) → **Contributor Guide**
 
-Welcome to AgentFlow! This guide will help you get started with contributing to the project, understanding the codebase, and following our development practices.
+**Contributing to AgenticGoKit Development**
+
+> **Note:** This is contributor documentation. If you're looking to use AgenticGoKit in your projects, see the [main documentation](../README.md).
+
+Welcome to AgenticGoKit! This guide will help you get started with contributing to the project, understanding the codebase, and following our development practices.
 
 ## Quick Start for Contributors
 
@@ -521,5 +525,5 @@ Follow existing patterns in the codebase. When in doubt:
 
 - **[Architecture Deep Dive](Architecture.md)** - Understand the internal structure
 - **[Testing Strategy](Testing.md)** - Learn our testing approaches
-- **[Adding Features](AddingFeatures.md)** - Detailed guide for extending AgentFlow
+- **[Adding Features](AddingFeatures.md)** - Detailed guide for extending AgenticGoKit
 - **[Release Process](ReleaseProcess.md)** - How we manage releases

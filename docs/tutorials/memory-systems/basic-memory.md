@@ -32,8 +32,9 @@ import (
 func main() {
     // Create in-memory storage
     memory, err := core.NewMemory(core.AgentMemoryConfig{
-        Provider: "memory",
-        MaxSize:  1000, // Maximum number of items
+        Provider:   "memory",
+        Connection: "memory",
+        MaxResults: 10,
     })
     if err != nil {
         log.Fatalf("Failed to create memory: %v", err)
@@ -41,20 +42,28 @@ func main() {
     
     ctx := context.Background()
     
-    // Store some information
-    err = memory.Store(ctx, "Paris is the capital of France", "fact")
+    // Store some information with metadata
+    err = memory.Store(ctx, "Paris is the capital of France", map[string]interface{}{
+        "type":     "fact",
+        "category": "geography",
+        "source":   "general_knowledge",
+    })
     if err != nil {
         log.Fatalf("Failed to store: %v", err)
     }
     
     // Search for information
-    results, err := memory.Search(ctx, "capital France")
+    results, err := memory.Search(ctx, "capital France", core.WithLimit(5))
     if err != nil {
         log.Fatalf("Failed to search: %v", err)
     }
     
     for _, result := range results {
         fmt.Printf("Found: %s (Score: %.3f)\n", result.Content, result.Score)
+        if result.Metadata != nil {
+            fmt.Printf("  Type: %v, Category: %v\n", 
+                result.Metadata["type"], result.Metadata["category"])
+        }
     }
 }
 ```
@@ -64,12 +73,32 @@ func main() {
 ```go
 // Basic configuration
 config := core.AgentMemoryConfig{
-    Provider: "memory",
-    MaxSize:  1000,
-    Options: map[string]interface{}{
-        "cleanup_interval": "5m",     // Clean up old entries
-        "max_age":         "24h",     // Maximum age for entries
-        "enable_metrics":  true,      // Enable performance metrics
+    Provider:   "memory",
+    Connection: "memory",
+    MaxResults: 10,
+    Dimensions: 1536,
+    AutoEmbed:  true,
+    
+    // Enable knowledge base features
+    EnableKnowledgeBase:     true,
+    KnowledgeMaxResults:     20,
+    KnowledgeScoreThreshold: 0.7,
+    
+    // Document processing settings
+    Documents: core.DocumentConfig{
+        AutoChunk:                true,
+        SupportedTypes:           []string{"txt", "md", "pdf"},
+        MaxFileSize:              "10MB",
+        EnableMetadataExtraction: true,
+    },
+    
+    // Embedding configuration
+    Embedding: core.EmbeddingConfig{
+        Provider:        "dummy", // Use "openai" for production
+        Model:           "text-embedding-3-small",
+        CacheEmbeddings: true,
+        MaxBatchSize:    100,
+        TimeoutSeconds:  30,
     },
 }
 
@@ -850,6 +879,6 @@ These fundamentals prepare you for more advanced memory systems including vector
 
 ## Further Reading
 
-- [API Reference: Memory Interface](../../api/core.md#memory)
+- [API Reference: Memory Interface](../../reference/api/agent.md#memory)
 - [Examples: Basic Memory Usage](../../examples/)
-- [Configuration Guide: Memory Settings](../../guides/Configuration.md)
+- [Configuration Guide: Memory Settings](../../reference/api/configuration.md)

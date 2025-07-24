@@ -64,18 +64,18 @@ import (
 type BasicRAGAgent struct {
     name   string
     memory core.Memory
-    llm    core.LLMProvider
+    llm    core.ModelProvider
     config RAGConfig
 }
 
 type RAGConfig struct {
     MaxRetrievalResults int
-    ScoreThreshold      float64
+    ScoreThreshold      float32
     MaxContextLength    int
     ContextTemplate     string
 }
 
-func NewBasicRAGAgent(name string, memory core.Memory, llm core.LLMProvider) *BasicRAGAgent {
+func NewBasicRAGAgent(name string, memory core.Memory, llm core.ModelProvider) *BasicRAGAgent {
     return &BasicRAGAgent{
         name:   name,
         memory: memory,
@@ -102,19 +102,20 @@ func (r *BasicRAGAgent) Run(ctx context.Context, event core.Event, state core.St
     queryStr := query.(string)
     
     // Retrieve relevant context
-    context, sources, err := r.retrieveContext(ctx, queryStr)
+    contextStr, sources, err := r.retrieveContext(ctx, queryStr)
     if err != nil {
         return core.AgentResult{}, fmt.Errorf("retrieval failed: %w", err)
     }
     
     // Generate response with context
-    response, err := r.generateResponse(ctx, queryStr, context)
+    response, err := r.generateResponse(ctx, queryStr, contextStr)
     if err != nil {
         return core.AgentResult{}, fmt.Errorf("generation failed: %w", err)
     }
     
     // Store the interaction
-    err = r.storeInteraction(ctx, event.GetSessionID(), queryStr, response, sources)
+    sessionID, _ := event.GetMetadataValue(core.SessionIDKey)
+    err = r.storeInteraction(ctx, sessionID, queryStr, response, sources)
     if err != nil {
         log.Printf("Failed to store interaction: %v", err)
     }
@@ -1203,7 +1204,7 @@ RAG transforms agents from static responders to dynamic, knowledgeable assistant
 
 - [Knowledge Bases](knowledge-bases.md) - Build comprehensive knowledge systems
 - [Memory Optimization](memory-optimization.md) - Advanced performance tuning
-- [Production Deployment](../deployment/README.md) - Deploy RAG systems at scale
+- [Production Deployment](../../guides/deployment/README.md) - Deploy RAG systems at scale
 
 ## Further Reading
 

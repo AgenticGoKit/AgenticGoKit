@@ -1,10 +1,10 @@
 # Testing Strategy
 
-This document outlines the comprehensive testing approach for AgentFlow, covering unit tests, integration tests, benchmarks, and quality assurance practices.
+This document outlines the comprehensive testing approach for AgenticGoKit, covering unit tests, integration tests, benchmarks, and quality assurance practices.
 
 ## 🎯 Testing Philosophy
 
-AgentFlow follows a multi-layered testing strategy:
+AgenticGoKit follows a multi-layered testing strategy:
 
 1. **Unit Tests**: Test individual components in isolation
 2. **Integration Tests**: Test component interactions and workflows
@@ -741,4 +741,4 @@ func (tdm *TestDataManager) SaveJSON(filename string, v interface{}) error {
 - ❌ Mock everything (test real integrations when appropriate)
 - ❌ Skip testing error conditions
 
-This comprehensive testing strategy ensures AgentFlow maintains high quality, reliability, and performance across all components and use cases.
+This comprehensive testing strategy ensures AgenticGoKit maintains high quality, reliability, and performance across all components and use cases.

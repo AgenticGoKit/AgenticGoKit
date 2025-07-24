@@ -367,6 +367,6 @@ Key takeaways:
 
 ## Further Reading
 
-- [API Reference: MCP](../../api/core.md#mcp)
+- [API Reference: MCP](../../reference/api/agent.md#mcp)
 - [Examples: Tool Usage](../../examples/)
 - [Advanced Patterns: Tool Composition](../advanced-patterns/multi-agent-collaboration.md)

@@ -1048,6 +1048,6 @@ Key takeaways:
 
 ## Further Reading
 
-- [API Reference: State Interface](../../api/core.md#state)
+- [API Reference: State Interface](../../reference/api/state-event.md#state)
 - [Examples: State Management Patterns](../../examples/)
-- [Configuration Guide: State Settings](../../guides/Configuration.md)
+- [Configuration Guide: State Settings](../../reference/api/configuration.md)

@@ -1,6 +1,6 @@
 # Code Style Guide
 
-This document defines the coding standards and conventions for AgentFlow to ensure consistency, readability, and maintainability across the codebase.
+This document defines the coding standards and conventions for AgenticGoKit to ensure consistency, readability, and maintainability across the codebase.
 
 ## 🎯 Core Principles
 
@@ -14,7 +14,7 @@ This document defines the coding standards and conventions for AgentFlow to ensu
 
 ### Follow Standard Go Conventions
 
-AgentFlow adheres to all standard Go conventions:
+AgenticGoKit adheres to all standard Go conventions:
 
 - [Effective Go](https://golang.org/doc/effective_go.html)
 - [Go Code Review Comments](https://github.com/golang/go/wiki/CodeReviewComments)
@@ -55,7 +55,7 @@ linters-settings:
     min-occurrences: 3
   
   goimports:
-    local-prefixes: github.com/zynkworks/agentflow
+    local-prefixes: github.com/kunalkushwaha/agentflow
   
   govet:
     check-shadowing: true
@@ -150,8 +150,8 @@ import (
     "go.opentelemetry.io/otel/trace"
     
     // Local imports
-    "github.com/zynkworks/agentflow/internal/mcp"
-    "github.com/zynkworks/agentflow/pkg/utils"
+    "github.com/kunalkushwaha/agentflow/internal/mcp"
+    "github.com/kunalkushwaha/agentflow/pkg/utils"
 )
 ```
 

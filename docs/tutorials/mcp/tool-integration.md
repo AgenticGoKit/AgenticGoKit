@@ -994,6 +994,6 @@ Key takeaways:
 
 ## Further Reading
 
-- [API Reference: MCP](../../api/core.md#mcp)
+- [API Reference: MCP](../../reference/api/agent.md#mcp)
 - [Examples: Tool Usage](../../examples/)
 - [Production Deployment](../deployment/README.md)

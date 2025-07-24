@@ -1,5 +1,7 @@
 # Core Concepts Overview
 
+> **Navigation:** [Documentation Home](../../README.md) → [Tutorials](../README.md) → **Core Concepts**
+
 Understanding AgenticGoKit's core concepts is essential for building effective multi-agent systems. This section covers the fundamental building blocks that power the framework.
 
 ## The Big Picture
@@ -68,7 +70,7 @@ type Agent interface {
 
 // Create a simple agent
 agent := core.NewLLMAgent("assistant", llmProvider)
-result, err := agent.Run(ctx, inputState)
+agentResult, err := agent.Run(ctx, event, state)
 ```
 
 ### 4. Runner - The Event Processor
@@ -121,35 +123,94 @@ sequenceDiagram
 
 ### 1. Simple Agent Execution
 ```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+    
+    "github.com/kunalkushwaha/agentflow/core"
+)
+
+// Simple agent implementation
+type SimpleAgent struct {
+    name string
+    llm  core.ModelProvider
+}
+
+func (a *SimpleAgent) Run(ctx context.Context, event core.Event, state core.State) (core.AgentResult, error) {
+    // Get message from event
+    message, ok := event.GetData()["message"].(string)
+    if !ok {
+        return core.AgentResult{}, fmt.Errorf("no message found")
+    }
+    
+    // Create prompt
+    prompt := core.Prompt{
+        System: "You are a helpful assistant.",
+        User:   message,
+    }
+    
+    // Call LLM
+    response, err := a.llm.Call(ctx, prompt)
+    if err != nil {
+        return core.AgentResult{}, err
+    }
+    
+    // Create output state
+    outputState := core.NewState()
+    outputState.Set("response", response.Content)
+    
+    return core.AgentResult{OutputState: outputState}, nil
+}
+
 func main() {
+    // Create LLM provider from configuration
+    provider, err := core.NewProviderFromWorkingDir()
+    if err != nil {
+        log.Fatal(err)
+    }
+    
     // Create agent
-    agent := core.NewLLMAgent("assistant", openaiProvider)
+    agent := &SimpleAgent{
+        name: "assistant",
+        llm:  provider,
+    }
     
     // Create state with input
     state := core.NewState()
     state.Set("message", "Hello, world!")
     
+    // Create event
+    event := core.NewEvent("assistant", core.EventData{
+        "message": "Hello, world!",
+    }, nil)
+    
     // Run agent
-    result, err := agent.Run(context.Background(), state)
+    result, err := agent.Run(context.Background(), event, state)
     if err != nil {
         log.Fatal(err)
     }
     
-    // Get response
-    response, _ := result.Get("response")
-    fmt.Println(response)
+    // Get response from output state
+    if response, ok := result.OutputState.Get("response"); ok {
+        fmt.Println(response)
+    }
 }
 ```
 
 ### 2. Event-Driven Processing
 ```go
 func main() {
-    // Create runner with agents
-    runner := core.NewRunnerWithConfig(core.RunnerConfig{
-        Agents: map[string]core.AgentHandler{
-            "processor": processorAgent,
-            "responder": responderAgent,
-        },
+    // Create agents
+    agents := map[string]core.AgentHandler{
+        "processor": &ProcessorAgent{},
+        "responder": &ResponderAgent{},
+    }
+    
+    // Create collaborative runner
+    runner := core.CreateCollaborativeRunner(agents, 30*time.Second)
     })
     
     // Start processing
@@ -166,18 +227,29 @@ func main() {
 ```go
 func main() {
     agents := map[string]core.AgentHandler{
-        "researcher": researchAgent,
-        "analyzer":   analysisAgent,
-        "writer":     writingAgent,
+        "researcher": &ResearchAgent{},
+        "analyzer":   &AnalysisAgent{},
+        "writer":     &WritingAgent{},
     }
     
     // All agents work on the same input
     runner := core.CreateCollaborativeRunner(agents, 60*time.Second)
-    runner.Start(context.Background())
     
-    event := core.NewEvent("", // No specific target - all agents get it
-        core.EventData{"topic": "AI trends"}, nil)
-    runner.Emit(event)
+    ctx := context.Background()
+    runner.Start(ctx)
+    defer runner.Stop()
+    
+    event := core.NewEvent("researcher", // Start with researcher
+        core.EventData{"topic": "AI trends"}, 
+        map[string]string{"route": "researcher"})
+    
+    err := runner.Emit(event)
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    // Wait for processing
+    time.Sleep(10 * time.Second)
 }
 ```
 

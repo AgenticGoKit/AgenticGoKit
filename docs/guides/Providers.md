@@ -608,4 +608,4 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 - **[Configuration](Configuration.md)** - Advanced configuration management
 - **[Tool Integration](ToolIntegration.md)** - Add MCP tools to your agents
 - **[Production Deployment](Production.md)** - Deploy at scale
-- **[Custom Providers](../contributors/AddingFeatures.md)** - Build custom provider adapters
+- **[Custom Providers](../contributors/AddingFeatures.md)** - Build custom provider adapters (for contributors)

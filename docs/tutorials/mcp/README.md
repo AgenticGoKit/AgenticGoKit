@@ -1,5 +1,7 @@
 # Model Context Protocol (MCP) in AgenticGoKit
 
+> **Navigation:** [Documentation Home](../../README.md) → [Tutorials](../README.md) → **MCP (Tools)**
+
 ## Overview
 
 The Model Context Protocol (MCP) is a powerful framework within AgenticGoKit that enables agents to interact with external tools, APIs, and services. MCP bridges the gap between language models and the outside world, allowing agents to perform actions beyond text generation.
@@ -90,49 +92,62 @@ import (
     "context"
     "fmt"
     "log"
+    "os"
+    "time"
     
     "github.com/kunalkushwaha/agenticgokit/core"
-    "github.com/kunalkushwaha/agenticgokit/tools"
 )
 
 func main() {
-    // Create MCP manager
-    mcpManager := core.NewMCPManager()
+    // Initialize MCP for tool discovery
+    core.QuickStartMCP()
     
-    // Register built-in tools
-    mcpManager.RegisterTool("calculator", tools.NewCalculatorTool())
-    mcpManager.RegisterTool("weather", tools.NewWeatherTool(os.Getenv("WEATHER_API_KEY")))
-    
-    // Create agent with MCP capability
-    agent, err := core.NewAgent("assistant").
-        WithLLM(llmProvider).
-        WithMCP(mcpManager).
-        Build()
+    // Create LLM provider
+    provider, err := core.NewOpenAIAdapter(
+        os.Getenv("OPENAI_API_KEY"),
+        "gpt-3.5-turbo",
+        1000,
+        0.7,
+    )
     if err != nil {
-        log.Fatalf("Failed to create agent: %v", err)
+        log.Fatalf("Failed to create provider: %v", err)
+    }
+    
+    // Create agent with MCP tools
+    agent := core.NewLLMAgent("assistant", provider).
+        WithSystemPrompt("You are a helpful assistant with access to tools. Use them when needed.").
+        WithTools([]string{"calculator", "weather"}) // Tools discovered via MCP
+    
+    // Create agents map
+    agents := map[string]core.AgentHandler{
+        "assistant": agent,
     }
     
     // Create runner
-    runner := core.NewRunner(100)
-    runner.RegisterAgent("assistant", agent)
+    runner := core.CreateRouteRunner(agents)
     
     // Start runner
     ctx := context.Background()
-    runner.Start(ctx)
+    if err := runner.Start(ctx); err != nil {
+        log.Fatalf("Failed to start runner: %v", err)
+    }
     defer runner.Stop()
     
     // Create event with user query
-    event := core.NewEvent(
-        "assistant",
-        core.EventData{"message": "What's 25 * 16 and what's the weather in New York?"},
-        map[string]string{"session_id": "test-session"},
-    )
+    event := core.NewEvent("assistant", map[string]interface{}{
+        "message": "What's 25 * 16 and what's the weather in New York?",
+    })
+    event.SetMetadata(core.RouteMetadataKey, "assistant")
     
-    // Emit event
-    runner.Emit(event)
+    // Emit the event
+    if err := runner.Emit(event); err != nil {
+        log.Fatalf("Failed to emit event: %v", err)
+    }
     
-    // Wait for response (in a real app, you'd use callbacks)
+    // Wait for processing
     time.Sleep(5 * time.Second)
+    
+    fmt.Println("MCP tool integration complete!")
 }
 ```
 
@@ -146,6 +161,6 @@ Now that you understand the basics of MCP, proceed to the following tutorials to
 
 ## Further Reading
 
-- [API Reference: MCP](../../api/core.md#mcp)
+- [API Reference: MCP](../../reference/api/agent.md#mcp)
 - [Examples: Tool Usage](../../examples/)
 - [Advanced Patterns: Tool Composition](../advanced-patterns/multi-agent-collaboration.md)

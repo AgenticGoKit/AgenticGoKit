@@ -1,10 +1,10 @@
 # Release Process
 
-This document describes the comprehensive release process for AgentFlow, including versioning, testing, documentation, and deployment procedures.
+This document describes the comprehensive release process for AgenticGoKit, including versioning, testing, documentation, and deployment procedures.
 
 ## 🎯 Release Philosophy
 
-AgentFlow follows a disciplined release process to ensure:
+AgenticGoKit follows a disciplined release process to ensure:
 - **Stability**: Thorough testing before releases
 - **Predictability**: Regular release schedule and clear versioning
 - **Transparency**: Open communication about changes and timeline
@@ -31,7 +31,7 @@ AgentFlow follows a disciplined release process to ensure:
 
 ### Semantic Versioning (SemVer)
 
-AgentFlow uses semantic versioning: `MAJOR.MINOR.PATCH`
+AgenticGoKit uses semantic versioning: `MAJOR.MINOR.PATCH`
 
 ```
 v2.3.1
@@ -198,7 +198,7 @@ go run ./cmd/gendocs
 
 #### Create Release Notes
 ```markdown
-# AgentFlow v1.2.0 Release Notes
+# AgenticGoKit v1.2.0 Release Notes
 
 ## 🚀 New Features
 - **MCP Caching**: Intelligent caching of tool results for improved performance
@@ -544,4 +544,4 @@ Final go/no-go meeting with:
 - CLI version check messages
 - Community forum posts
 
-This comprehensive release process ensures AgentFlow maintains high quality and reliability while delivering regular value to users and maintaining contributor confidence.
+This comprehensive release process ensures AgenticGoKit maintains high quality and reliability while delivering regular value to users and maintaining contributor confidence.

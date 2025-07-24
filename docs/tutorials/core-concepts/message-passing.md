@@ -10,7 +10,7 @@ Understanding message passing is crucial because it's the foundation of how agen
 
 - Basic understanding of Go programming
 - Familiarity with interfaces and goroutines
-- Completed the [5-minute quickstart](../../quickstart.md)
+- Completed the [5-minute quickstart](../getting-started/quickstart.md)
 
 ## Core Concepts
 
@@ -572,6 +572,6 @@ Key takeaways:
 
 ## Further Reading
 
-- [API Reference: Event Interface](../../api/core.md#event)
-- [API Reference: Runner Interface](../../api/core.md#runner)
+- [API Reference: Event Interface](../../reference/api/state-event.md#event)
+- [API Reference: Runner Interface](../../reference/api/orchestration.md#runner)
 - [Examples: Message Passing Patterns](../../examples/)

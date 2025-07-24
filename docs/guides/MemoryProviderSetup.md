@@ -1,8 +1,8 @@
 # Memory Provider Setup Guide
 
-**Complete setup guides for AgentFlow memory providers**
+**Complete setup guides for AgenticGoKit memory providers**
 
-AgentFlow supports multiple memory providers for different use cases. This guide provides step-by-step setup instructions for each provider, from development to production deployment.
+AgenticGoKit supports multiple memory providers for different use cases. This guide provides step-by-step setup instructions for each provider, from development to production deployment.
 
 ## 📚 Table of Contents
 
@@ -58,7 +58,7 @@ import (
     "context"
     "log"
     
-    agentflow "github.com/kunalkushwaha/agentflow/core"
+    agentflow "github.com/kunalkushwaha/agenticgokit/core"
 )
 
 func main() {

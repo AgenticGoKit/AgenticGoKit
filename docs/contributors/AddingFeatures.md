@@ -166,7 +166,7 @@ import (
     "sync"
     "time"
     
-    "github.com/zynkworks/agentflow/core"
+    "github.com/kunalkushwaha/agentflow/core"
 )
 
 type agentChain struct {
@@ -216,7 +216,7 @@ import (
     "fmt"
     "time"
     
-    "github.com/zynkworks/agentflow/core"
+    "github.com/kunalkushwaha/agentflow/core"
 )
 
 type ChainExecutor struct {
@@ -506,7 +506,7 @@ import (
     
     "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/require"
-    "github.com/zynkworks/agentflow/core"
+    "github.com/kunalkushwaha/agentflow/core"
 )
 
 func TestAgentChain_RealWorkflow(t *testing.T) {
@@ -559,7 +559,7 @@ Agent chaining allows you to create sophisticated workflows by connecting multip
 ## Basic Usage
 
 ```go
-import "github.com/zynkworks/agentflow/core"
+import "github.com/kunalkushwaha/agentflow/core"
 
 // Create agents
 searchAgent := &SearchAgent{}

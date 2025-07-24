@@ -43,7 +43,7 @@ AgenticGoKit provides a global logger that can be used throughout your applicati
 package main
 
 import (
-    "github.com/kunalkushwaha/agentflow/core"
+    "github.com/kunalkushwaha/agenticgokit/core"
 )
 
 func main() {
@@ -142,7 +142,7 @@ Tracing is enabled by default. You can configure it in your runner setup:
 package main
 
 import (
-    "github.com/kunalkushwaha/agentflow/core"
+    "github.com/kunalkushwaha/agenticgokit/core"
 )
 
 func main() {

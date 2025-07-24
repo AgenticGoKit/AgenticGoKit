@@ -824,6 +824,6 @@ Key takeaways:
 
 ## Further Reading
 
-- [API Reference: Error Handling](../../api/core.md#error-handling)
+- [API Reference: Error Handling](../../reference/api/agent.md#error-handling)
 - [Examples: Error Recovery Patterns](../../examples/)
-- [Configuration Guide: Error Settings](../../guides/Configuration.md)
+- [Configuration Guide: Error Settings](../../reference/api/configuration.md)

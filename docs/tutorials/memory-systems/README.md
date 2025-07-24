@@ -1,5 +1,7 @@
 # Memory Systems in AgenticGoKit
 
+> **Navigation:** [Documentation Home](../../README.md) → [Tutorials](../README.md) → **Memory Systems**
+
 ## Overview
 
 Memory systems are crucial for building intelligent agents that can learn, remember, and build upon previous interactions. This tutorial series explores AgenticGoKit's memory capabilities, from basic in-memory storage to advanced RAG (Retrieval-Augmented Generation) systems with vector databases.
@@ -102,8 +104,11 @@ Fast, non-persistent storage for development and testing:
 ```go
 // Create in-memory storage
 memory, err := core.NewMemory(core.AgentMemoryConfig{
-    Provider: "memory",
-    MaxSize:  1000, // Maximum number of items
+    Provider:   "memory",
+    Connection: "memory",
+    MaxResults: 10,
+    Dimensions: 1536,
+    AutoEmbed:  true,
 })
 ```
 
@@ -119,14 +124,20 @@ Production-ready vector storage with SQL capabilities:
 ```go
 // Create pgvector storage
 memory, err := core.NewMemory(core.AgentMemoryConfig{
-    Provider:   "pgvector",
-    Connection: "postgres://user:pass@localhost:5432/agentdb",
-    EnableRAG:  true,
-    Dimensions: 1536, // OpenAI embedding dimensions
+    Provider:                "pgvector",
+    Connection:              "postgres://user:pass@localhost:5432/agentdb",
+    EnableRAG:               true,
+    EnableKnowledgeBase:     true,
+    Dimensions:              1536, // OpenAI embedding dimensions
+    KnowledgeMaxResults:     20,
+    KnowledgeScoreThreshold: 0.7,
     Embedding: core.EmbeddingConfig{
-        Provider: "openai",
-        Model:    "text-embedding-3-small",
-        APIKey:   os.Getenv("OPENAI_API_KEY"),
+        Provider:        "openai",
+        Model:           "text-embedding-3-small",
+        APIKey:          os.Getenv("OPENAI_API_KEY"),
+        MaxBatchSize:    100,
+        TimeoutSeconds:  30,
+        CacheEmbeddings: true,
     },
 })
 ```
@@ -143,13 +154,20 @@ Specialized vector database with advanced features:
 ```go
 // Create Weaviate storage
 memory, err := core.NewMemory(core.AgentMemoryConfig{
-    Provider:   "weaviate",
-    Connection: "http://localhost:8080",
-    EnableRAG:  true,
+    Provider:                "weaviate",
+    Connection:              "http://localhost:8080",
+    EnableRAG:               true,
+    EnableKnowledgeBase:     true,
+    Dimensions:              1536,
+    KnowledgeMaxResults:     20,
+    KnowledgeScoreThreshold: 0.7,
     Embedding: core.EmbeddingConfig{
-        Provider: "openai",
-        Model:    "text-embedding-3-small",
-        APIKey:   os.Getenv("OPENAI_API_KEY"),
+        Provider:        "openai",
+        Model:           "text-embedding-3-small",
+        APIKey:          os.Getenv("OPENAI_API_KEY"),
+        MaxBatchSize:    100,
+        TimeoutSeconds:  30,
+        CacheEmbeddings: true,
     },
 })
 ```
@@ -616,6 +634,6 @@ The key to effective memory systems is choosing the right combination of storage
 
 ## Further Reading
 
-- [API Reference: Memory Interface](../../api/core.md#memory)
+- [API Reference: Memory Interface](../../reference/api/agent.md#memory)
 - [Examples: Memory Systems](../../examples/)
-- [Configuration Guide: Memory Settings](../../guides/Configuration.md)
+- [Configuration Guide: Memory Settings](../../reference/api/configuration.md)

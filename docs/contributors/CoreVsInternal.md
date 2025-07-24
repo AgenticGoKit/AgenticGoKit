@@ -1,8 +1,8 @@
 # Core vs Internal Architecture
 
-**Understanding AgentFlow's Package Structure**
+**Understanding AgenticGoKit's Package Structure**
 
-AgentFlow uses a clear separation between public API (`core/`) and private implementation (`internal/`) to provide a stable, developer-friendly interface while maintaining implementation flexibility.
+AgenticGoKit uses a clear separation between public API (`core/`) and private implementation (`internal/`) to provide a stable, developer-friendly interface while maintaining implementation flexibility.
 
 ## Overview
 
@@ -480,5 +480,5 @@ Go interfaces have minimal overhead:
 ## Next Steps
 
 - **[Contributor Guide](ContributorGuide.md)** - Get started with development
-- **[Adding Features](AddingFeatures.md)** - Learn how to extend AgentFlow
+- **[Adding Features](AddingFeatures.md)** - Learn how to extend AgenticGoKit
 - **[Testing Strategy](Testing.md)** - Understand our testing approach
