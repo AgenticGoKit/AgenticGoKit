@@ -438,4 +438,4 @@ grep "duration" debug_output.log | sort -k3 -n
 
 - **[Testing Agents](testing-agents.md)** - Comprehensive testing strategies
 - **[Best Practices](best-practices.md)** - Development best practices
-- **[Performance Monitoring](../deployment/monitoring.md)** - Production monitoring
+- **[Production Deployment](../deployment/README.md)** - Production deployment

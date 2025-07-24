@@ -546,8 +546,8 @@ func NewAPITool() *APITool {
 Now that your agents can use tools:
 
 1. **Go Production**: Learn [Production Deployment](production-deployment.md) for scaling
-2. **Advanced Patterns**: Explore [Advanced Patterns](../advanced-patterns/) for complex workflows
-3. **Custom MCP Servers**: Build [MCP Tool Development](../tools/creating-custom-tools.md)
+2. **Advanced Patterns**: Explore [Advanced Patterns](../advanced/README.md) for complex workflows
+3. **Custom MCP Servers**: Learn [MCP Tool Development](../mcp/tool-development.md)
 
 ## Key Takeaways
 
@@ -559,6 +559,6 @@ Now that your agents can use tools:
 
 ## Further Reading
 
-- [MCP Fundamentals](../tools/mcp-fundamentals.md) - Deep dive into MCP concepts
-- [Creating Custom Tools](../tools/creating-custom-tools.md) - Advanced tool development
-- [Tool Integration Patterns](../tools/tool-integration-patterns.md) - Advanced patterns
+- [MCP Fundamentals](../mcp/README.md) - Deep dive into MCP concepts
+- [Creating Custom Tools](../mcp/tool-development.md) - Advanced tool development
+- [Tool Integration Patterns](../mcp/advanced-tool-patterns.md) - Advanced patterns

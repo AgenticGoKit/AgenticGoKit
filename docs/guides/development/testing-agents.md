@@ -807,4 +807,4 @@ func loadTestFixture(t *testing.T, filename string) map[string]interface{} {
 
 - **[Debugging](debugging.md)** - Debug agent interactions effectively
 - **[Best Practices](best-practices.md)** - Development best practices
-- **[Performance Monitoring](../deployment/monitoring.md)** - Production monitoring
+- **[Production Deployment](../deployment/README.md)** - Production deployment

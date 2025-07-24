@@ -231,7 +231,7 @@ import (
     "fmt"
     "log"
     
-    "github.com/kunalkushwaha/agentflow/core"
+    "github.com/kunalkushwaha/agenticgokit/core"
 )
 
 func main() {

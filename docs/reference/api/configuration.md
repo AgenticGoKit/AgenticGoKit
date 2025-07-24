@@ -2,7 +2,7 @@
 
 **System configuration and setup**
 
-This document covers AgentFlow's Configuration API, which provides comprehensive configuration management for agents, orchestration, memory systems, and MCP integration. The configuration system uses TOML files and provides validation and defaults.
+This document covers AgenticGoKit's Configuration API, which provides comprehensive configuration management for agents, orchestration, memory systems, and MCP integration. The configuration system uses TOML files and provides validation and defaults.
 
 ## 📋 Core Configuration Types
 
@@ -98,33 +98,27 @@ type AgentMemoryConfig struct {
 Configuration for Model Context Protocol integration:
 
 ```go
-type MCPConfig struct {
-    // Discovery settings
-    EnableDiscovery  bool          `toml:\"enable_discovery\"`
-    DiscoveryTimeout time.Duration `toml:\"discovery_timeout\"`
-    ScanPorts        []int         `toml:\"scan_ports\"`
-
-    // Connection settings
-    ConnectionTimeout time.Duration `toml:\"connection_timeout\"`
-    MaxRetries        int           `toml:\"max_retries\"`
-    RetryDelay        time.Duration `toml:\"retry_delay\"`
-
-    // Server configurations
-    Servers []MCPServerConfig `toml:\"servers\"`
-
-    // Performance settings
-    EnableCaching  bool          `toml:\"enable_caching\"`
-    CacheTimeout   time.Duration `toml:\"cache_timeout\"`
-    MaxConnections int           `toml:\"max_connections\"`
+type MCPConfigToml struct {
+    Enabled           bool                  `toml:"enabled"`
+    EnableDiscovery   bool                  `toml:"enable_discovery"`
+    DiscoveryTimeout  int                   `toml:"discovery_timeout_ms"`
+    ScanPorts         []int                 `toml:"scan_ports"`
+    ConnectionTimeout int                   `toml:"connection_timeout_ms"`
+    MaxRetries        int                   `toml:"max_retries"`
+    RetryDelay        int                   `toml:"retry_delay_ms"`
+    EnableCaching     bool                  `toml:"enable_caching"`
+    CacheTimeout      int                   `toml:"cache_timeout_ms"`
+    MaxConnections    int                   `toml:"max_connections"`
+    Servers           []MCPServerConfigToml `toml:"servers"`
 }
 
-type MCPServerConfig struct {
-    Name    string `toml:\"name\"`
-    Type    string `toml:\"type\"` // tcp, stdio, docker, websocket
-    Host    string `toml:\"host,omitempty\"`
-    Port    int    `toml:\"port,omitempty\"`
-    Command string `toml:\"command,omitempty\"`
-    Enabled bool   `toml:\"enabled\"`
+type MCPServerConfigToml struct {
+    Name    string `toml:"name"`
+    Type    string `toml:"type"` // tcp, stdio, docker, websocket
+    Host    string `toml:"host,omitempty"`
+    Port    int    `toml:"port,omitempty"`
+    Command string `toml:"command,omitempty"` // for stdio transport
+    Enabled bool   `toml:"enabled"`
 }
 ```
 
@@ -135,11 +129,11 @@ type MCPServerConfig struct {
 AgentFlow supports TOML configuration files for easy setup:
 
 ```toml
-# agentflow.toml
+# agentflow.toml - Basic Configuration
 [agent_flow]
 name = "my-agent-system"
 version = "1.0.0"
-provider = "openai"
+provider = "azure"
 
 [logging]
 level = "info"
@@ -149,105 +143,141 @@ format = "json"
 max_concurrent_agents = 10
 timeout_seconds = 30
 
-[agent_memory]
-provider = "pgvector"
-connection = "postgres://user:password@localhost:5432/agentflow"
-max_results = 10
-dimensions = 1536
-auto_embed = true
-enable_knowledge_base = true
-enable_rag = true
-chunk_size = 1000
-chunk_overlap = 200
-rag_max_context_tokens = 4000
-rag_personal_weight = 0.3
-rag_knowledge_weight = 0.7
-rag_include_sources = true
-
-[agent_memory.documents]
-supported_types = ["pdf", "txt", "md", "web", "code"]
-max_file_size = "10MB"
-auto_chunk = true
-enable_metadata_extraction = true
-enable_url_scraping = true
-
-[agent_memory.embedding]
-provider = "azure"
-model = "text-embedding-ada-002"
-max_batch_size = 100
-timeout_seconds = 30
-cache_embeddings = true
-
-[agent_memory.search]
-hybrid_search = true
-keyword_weight = 0.3
-semantic_weight = 0.7
-
-[error_routing]
-enabled = true
-max_retries = 3
-retry_delay_ms = 1000
-enable_circuit_breaker = true
-error_handler_name = "default-error-handler"
-
-[error_routing.circuit_breaker]
-failure_threshold = 5
-success_threshold = 3
-timeout_ms = 30000
-reset_timeout_ms = 60000
-half_open_max_calls = 3
-
-[error_routing.retry]
-max_retries = 3
-base_delay_ms = 1000
-max_delay_ms = 30000
-backoff_factor = 2.0
-enable_jitter = true
+[providers.azure]
+# API key will be read from AZURE_OPENAI_API_KEY environment variable
+# Endpoint will be read from AZURE_OPENAI_ENDPOINT environment variable
+# Deployment will be read from AZURE_OPENAI_DEPLOYMENT environment variable
 
 [providers.openai]
 # API key will be read from OPENAI_API_KEY environment variable
+
+[providers.ollama]
+endpoint = "http://localhost:11434"
+model = "llama2"
+
+[providers.mock]
+# Mock provider for testing - no configuration needed
+```
+
+**With Memory and RAG Configuration:**
+```toml
+# agentflow.toml - With Memory and RAG
+[agent_flow]
+name = "my-rag-system"
+version = "1.0.0"
+provider = "azure"
+
+[logging]
+level = "info"
+format = "text"
+
+[runtime]
+max_concurrent_agents = 5
+timeout_seconds = 30
+
+# RAG-Enhanced Memory Configuration
+[agent_memory]
+# Core memory settings
+provider = "memory"        # Options: memory, pgvector, weaviate
+connection = "memory"      # Connection string (for database providers)
+max_results = 10          # Maximum results per query
+dimensions = 1536         # Embedding dimensions
+auto_embed = true         # Automatic embedding generation
+
+# RAG-enhanced settings
+enable_knowledge_base = true        # Enable knowledge base functionality
+knowledge_max_results = 20          # Maximum results from knowledge base
+knowledge_score_threshold = 0.7     # Minimum relevance score for results
+chunk_size = 1000                  # Document chunk size in characters
+chunk_overlap = 200                # Overlap between chunks in characters
+
+# RAG context assembly
+enable_rag = true                  # Enable RAG context building
+rag_max_context_tokens = 4000      # Maximum tokens in assembled context
+rag_personal_weight = 0.3          # Weight for personal memory (0.0-1.0)
+rag_knowledge_weight = 0.7         # Weight for knowledge base (0.0-1.0)
+rag_include_sources = true         # Include source attribution in context
+
+# Document processing
+[agent_memory.documents]
+auto_chunk = true                           # Automatically chunk large documents
+supported_types = ["pdf", "txt", "md", "web", "code", "json"]  # Supported file types
+max_file_size = "10MB"                     # Maximum file size for processing
+enable_metadata_extraction = true          # Extract metadata from documents
+enable_url_scraping = true                 # Enable web scraping for URLs
+
+# Embedding service
+[agent_memory.embedding]
+provider = "azure"                    # Options: azure, openai, local
+model = "text-embedding-ada-002"     # Embedding model to use
+cache_embeddings = true              # Cache embeddings for performance
+max_batch_size = 100                 # Maximum batch size for embeddings
+timeout_seconds = 30                 # Request timeout in seconds
+
+# Search configuration
+[agent_memory.search]
+hybrid_search = true           # Enable hybrid search (semantic + keyword)
+keyword_weight = 0.3          # Weight for keyword search (BM25)
+semantic_weight = 0.7         # Weight for semantic search (vector similarity)
+enable_reranking = false      # Enable advanced re-ranking
+enable_query_expansion = false # Enable query expansion for better results
+
+[providers.azure]
+# API key will be read from AZURE_OPENAI_API_KEY environment variable
+# Endpoint will be read from AZURE_OPENAI_ENDPOINT environment variable
+# Deployment will be read from AZURE_OPENAI_DEPLOYMENT environment variable
+```
+
+**With MCP Integration:**
+```toml
+# agentflow.toml - With MCP Integration
+[agent_flow]
+name = "my-mcp-system"
+version = "1.0.0"
+provider = "azure"
+
+[logging]
+level = "info"
+format = "json"
+
+[runtime]
+max_concurrent_agents = 10
+timeout_seconds = 30
 
 [providers.azure]
 # API key will be read from AZURE_OPENAI_API_KEY environment variable
 # Endpoint will be read from AZURE_OPENAI_ENDPOINT environment variable
 # Deployment will be read from AZURE_OPENAI_DEPLOYMENT environment variable
 
-[providers.ollama]
-endpoint = "http://localhost:11434"
-model = "llama3.2:latest"
-
 [mcp]
 enabled = true
 enable_discovery = true
-discovery_timeout_ms = 10000
-scan_ports = [8080, 8081, 8090, 3000]
-connection_timeout_ms = 30000
+connection_timeout = 5000
 max_retries = 3
-retry_delay_ms = 1000
+retry_delay = 1000
 enable_caching = true
-cache_timeout_ms = 300000
+cache_timeout = 300000
 max_connections = 10
 
+# Example MCP servers - configure as needed
 [[mcp.servers]]
-name = "web-search"
+name = "docker"
 type = "tcp"
 host = "localhost"
-port = 8080
-enabled = true
+port = 8811
+enabled = false
 
 [[mcp.servers]]
-name = "file-operations"
+name = "filesystem"
 type = "stdio"
-command = "python -m file_server"
-enabled = true
+command = "npx @modelcontextprotocol/server-filesystem /path/to/allowed/files"
+enabled = false
 
-[orchestration]
-mode = "collaborative"
-timeout_seconds = 30
-max_iterations = 5
-sequential_agents = ["agent1", "agent2", "agent3"]
-collaborative_agents = ["researcher", "analyzer"]
-loop_agent = "quality-checker"
+[[mcp.servers]]
+name = "brave-search"
+type = "stdio"
+command = "npx @modelcontextprotocol/server-brave-search"
+enabled = false
 ```
 
 ### Loading Configuration
@@ -257,7 +287,7 @@ package main
 
 import (
     "fmt"
-    "github.com/kunalkushwaha/agentflow/core"
+    "github.com/kunalkushwaha/agenticgokit/core"
 )
 
 func loadConfigurationExample() {
@@ -282,12 +312,6 @@ func loadConfigurationExample() {
         panic(fmt.Sprintf("Failed to initialize provider: %v", err))
     }
     
-    // Or use the convenience function
-    provider, err = core.NewProviderFromWorkingDir()
-    if err != nil {
-        panic(fmt.Sprintf("Failed to initialize provider: %v", err))
-    }
-    
     // Initialize memory if configured
     if config.AgentMemory.Provider != "" {
         memory, err := core.NewMemory(config.AgentMemory)
@@ -300,17 +324,8 @@ func loadConfigurationExample() {
     // Initialize MCP if enabled
     if config.MCP.Enabled {
         mcpConfig := config.GetMCPConfig()
-        err = core.InitializeMCP(mcpConfig)
-        if err != nil {
-            panic(fmt.Sprintf("Failed to initialize MCP: %v", err))
-        }
-        fmt.Println("MCP initialized")
-    }
-    
-    // Create runner from configuration
-    runner, err := core.NewRunnerFromConfig("agentflow.toml")
-    if err != nil {
-        panic(fmt.Sprintf("Failed to create runner: %v", err))
+        // MCP initialization would be handled by the framework
+        fmt.Println("MCP configuration loaded")
     }
     
     fmt.Println("System initialized with configuration")
@@ -319,7 +334,7 @@ func loadConfigurationExample() {
 
 ### Environment Variables
 
-AgentFlow supports environment variables for sensitive configuration like API keys:
+AgenticGoKit supports environment variables for sensitive configuration like API keys:
 
 ```bash
 # LLM Provider Configuration
@@ -347,11 +362,18 @@ These environment variables are automatically used when not specified in the TOM
 [agent_flow]
 name = "my-dev-agent"
 version = "1.0.0"
-provider = "openai"
+provider = "mock"  # Use mock provider for development
 
 [logging]
 level = "debug"
 format = "text"
+
+[runtime]
+max_concurrent_agents = 2
+timeout_seconds = 10
+
+[providers.mock]
+# Mock provider for testing - no configuration needed
 
 [agent_memory]
 provider = "memory"  # In-memory for fast development
@@ -377,6 +399,11 @@ format = "json"
 [runtime]
 max_concurrent_agents = 20
 timeout_seconds = 60
+
+[providers.azure]
+# API key will be read from AZURE_OPENAI_API_KEY environment variable
+# Endpoint will be read from AZURE_OPENAI_ENDPOINT environment variable
+# Deployment will be read from AZURE_OPENAI_DEPLOYMENT environment variable
 
 [agent_memory]
 provider = "pgvector"
@@ -422,7 +449,7 @@ go run .
 
 ## 🔧 Configuration Validation
 
-AgentFlow automatically validates your configuration when loading. Common validation errors:
+AgenticGoKit automatically validates your configuration when loading. Common validation errors:
 
 - **Invalid provider**: Must be one of `openai`, `azure`, `ollama`
 - **Missing API keys**: Set environment variables for your chosen provider
@@ -487,4 +514,4 @@ enabled = true
 mode = "collaborative"
 ```
 
-This covers the essential configuration patterns you'll need for AgentFlow systems.
+This covers the essential configuration patterns you'll need for AgenticGoKit systems.

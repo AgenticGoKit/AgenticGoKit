@@ -17,7 +17,7 @@ AgenticGoKit follows a multi-layered testing strategy:
 ### Directory Structure
 
 ```
-agentflow/
+agenticgokit/
 ├── core/                           # Public API tests
 │   ├── agent_test.go
 │   ├── runner_test.go
@@ -260,7 +260,7 @@ func TestMCPIntegration(t *testing.T) {
     server := startTestMCPServer(t)
     defer server.Stop()
     
-    // Configure AgentFlow with test server
+    // Configure AgenticGoKit with test server
     config := &core.Config{
         MCP: core.MCPConfig{
             Enabled: true,

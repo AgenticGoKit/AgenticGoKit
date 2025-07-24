@@ -818,9 +818,9 @@ Key takeaways:
 ## Next Steps
 
 - [Memory Systems](../memory-systems/README.md) - Learn about persistent storage and RAG
-- [Debugging Guide](../debugging-monitoring/README.md) - Advanced debugging techniques
-- [Performance Optimization](../advanced-patterns/README.md) - Optimize agent performance
-- [Production Deployment](../../production/README.md) - Deploy with proper error handling
+- [Debugging Guide](../debugging/README.md) - Advanced debugging techniques
+- [Performance Optimization](../advanced/README.md) - Optimize agent performance
+- [Production Deployment](../../guides/deployment/README.md) - Deploy with proper error handling
 
 ## Further Reading
 

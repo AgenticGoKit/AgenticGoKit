@@ -163,4 +163,4 @@ Now that you understand the basics of MCP, proceed to the following tutorials to
 
 - [API Reference: MCP](../../reference/api/agent.md#mcp)
 - [Examples: Tool Usage](../../examples/)
-- [Advanced Patterns: Tool Composition](../advanced-patterns/multi-agent-collaboration.md)
+- [Advanced Patterns](../advanced/README.md) - Advanced multi-agent patterns

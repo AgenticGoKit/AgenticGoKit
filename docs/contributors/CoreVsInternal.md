@@ -7,7 +7,7 @@ AgenticGoKit uses a clear separation between public API (`core/`) and private im
 ## Overview
 
 ```
-agentflow/
+agenticgokit/
 ├── core/           # Public API - what users import
 │   ├── agent.go    # Agent interfaces and types
 │   ├── mcp.go      # MCP integration public API  
@@ -290,7 +290,7 @@ func (p *azureProvider) Generate(ctx context.Context, prompt string) (string, er
 
 Users import only from `core/`:
 ```go
-import agentflow "github.com/kunalkushwaha/agentflow/core"
+import agentflow "github.com/kunalkushwaha/agenticgokit/core"
 
 // All user code works with interfaces
 var agent agentflow.AgentHandler = agentflow.NewMCPAgent("my-agent", llm, mcp)

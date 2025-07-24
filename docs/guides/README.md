@@ -24,9 +24,7 @@ Task-oriented guides for specific development scenarios and common tasks.
 - [Troubleshooting](troubleshooting.md) - Common issues and solutions
 
 ### Deployment & Operations
-- [Docker Deployment](deployment/docker-deployment.md) - Containerize your agents
-- [Monitoring](deployment/monitoring.md) - Monitor agent performance
-- [Scaling](deployment/scaling.md) - Scale agents horizontally
+- [Production Deployment](deployment/README.md) - Deploy and scale your agents
 
 ## Guide Structure
 

@@ -851,8 +851,8 @@ Key takeaways:
 
 - [Error Handling](error-handling.md) - Learn robust error management
 - [Memory Systems](../memory-systems/README.md) - Understand persistent storage
-- [Debugging Guide](../debugging-monitoring/README.md) - Debug agent issues
-- [Production Deployment](../../production/README.md) - Deploy agents in production
+- [Debugging Guide](../debugging/README.md) - Debug agent issues
+- [Production Deployment](../../guides/deployment/README.md) - Deploy agents in production
 
 ## Further Reading
 

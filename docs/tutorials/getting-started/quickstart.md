@@ -363,7 +363,7 @@ Deploy and scale your agents:
 - Monitoring setup
 - Performance optimization
 
-[→ Production Tutorial](../../guides/deployment/)
+[→ Production Tutorial](../../guides/deployment/README.md)
 
 </td>
 </tr>

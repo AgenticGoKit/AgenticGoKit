@@ -672,6 +672,6 @@ Your agents are now production-ready! Consider:
 
 ## Further Reading
 
-- [Advanced Patterns](../advanced-patterns/README.md) - Production patterns and best practices
+- [Advanced Patterns](../advanced/README.md) - Production patterns and best practices
 - [Monitoring Guide](../debugging/performance-monitoring.md) - Deep dive into monitoring
 - [Security Best Practices](../../guides/security.md) - Comprehensive security guide

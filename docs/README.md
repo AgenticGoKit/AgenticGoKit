@@ -14,22 +14,22 @@ AgenticGoKit is a production-ready Go framework for building intelligent agent w
 - **[Workflow Visualization](guides/development/visualization.md)** - Generate Mermaid diagrams automatically
 
 ### **Core Concepts**  
-- **[Agent Fundamentals](guides/AgentBasics.md)** - Understanding AgentHandler interface and patterns
-- **[Memory & RAG](guides/Memory.md)** - Persistent memory, vector search, and knowledge bases
+- **[Agent Fundamentals](tutorials/core-concepts/agent-lifecycle.md)** - Understanding AgentHandler interface and patterns
+- **[Memory & RAG](tutorials/memory-systems/README.md)** - Persistent memory, vector search, and knowledge bases
 - **[Multi-Agent Orchestration](tutorials/core-concepts/orchestration-patterns.md)** - Orchestration patterns and API reference
 - **[Orchestration Configuration](guides/setup/orchestration-configuration.md)** - Complete guide to configuration-based orchestration
 - **[Examples & Tutorials](guides/Examples.md)** - Practical examples and code samples
-- **[Tool Integration](guides/ToolIntegration.md)** - MCP protocol and dynamic tool discovery
-- **[LLM Providers](guides/Providers.md)** - Azure, OpenAI, Ollama, and custom providers
+- **[Tool Integration](tutorials/mcp/README.md)** - MCP protocol and dynamic tool discovery
+- **[LLM Providers](guides/setup/llm-providers.md)** - Azure, OpenAI, Ollama, and custom providers
 - **[Configuration](reference/api/configuration.md)** - Managing agentflow.toml and environment setup
 
 ### **Advanced Usage**
-- **[Multi-Agent Orchestration](tutorials/core-concepts/orchestration-patterns.md)** - Advanced orchestration patterns and configuration
+- **[Advanced Patterns](tutorials/advanced/README.md)** - Advanced orchestration patterns and configuration
 - **[RAG Configuration](guides/RAGConfiguration.md)** - Retrieval-Augmented Generation setup and tuning
-- **[Memory Provider Setup](guides/MemoryProviderSetup.md)** - PostgreSQL, Weaviate, and in-memory setup guides
+- **[Memory Provider Setup](guides/setup/vector-databases.md)** - PostgreSQL, Weaviate, and in-memory setup guides
 - **[Workflow Visualization](guides/development/visualization.md)** - Generate and customize Mermaid diagrams
-- **[Production Deployment](guides/Production.md)** - Scaling, monitoring, and best practices  
-- **[Error Handling](guides/ErrorHandling.md)** - Resilient agent workflows
+- **[Production Deployment](guides/deployment/README.md)** - Scaling, monitoring, and best practices  
+- **[Error Handling](tutorials/core-concepts/error-handling.md)** - Resilient agent workflows
 - **[Custom Tools](guides/CustomTools.md)** - Building your own MCP servers
 - **[Performance Tuning](guides/Performance.md)** - Optimization and benchmarking
 

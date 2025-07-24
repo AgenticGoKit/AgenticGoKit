@@ -82,9 +82,9 @@ go run tools/docgen/main.go
 
 ## 📚 Additional Resources
 
-- **[GitHub Repository](https://github.com/kunalkushwaha/agentflow)**
-- **[GitHub Issues](https://github.com/kunalkushwaha/agentflow/issues)**
-- **[GitHub Discussions](https://github.com/kunalkushwaha/agentflow/discussions)**
+- **[GitHub Repository](https://github.com/kunalkushwaha/agenticgokit)**
+- **[GitHub Issues](https://github.com/kunalkushwaha/agenticgokit/issues)**
+- **[GitHub Discussions](https://github.com/kunalkushwaha/agenticgokit/discussions)**
 - **[Main Documentation](../README.md)** - For users of AgenticGoKit
 
 ---

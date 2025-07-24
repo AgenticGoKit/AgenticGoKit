@@ -1043,8 +1043,8 @@ Key takeaways:
 
 - [Memory Systems](../memory-systems/README.md) - Learn about persistent state storage
 - [Error Handling](error-handling.md) - Master robust error management with state
-- [Debugging Guide](../debugging-monitoring/tracing-events.md) - Learn to trace state flow
-- [Advanced Patterns](../advanced-patterns/README.md) - Explore advanced state management patterns
+- [Debugging Guide](../debugging/README.md) - Learn to trace state flow
+- [Advanced Patterns](../advanced/README.md) - Explore advanced state management patterns
 
 ## Further Reading
 

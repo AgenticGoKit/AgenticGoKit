@@ -803,4 +803,4 @@ See `deployments/` directory for Docker and Kubernetes configurations.
 
 - **[Testing Agents](testing-agents.md)** - Comprehensive testing strategies
 - **[Debugging](debugging.md)** - Debug agent interactions effectively
-- **[Monitoring](../deployment/monitoring.md)** - Production monitoring setup
+- **[Production Deployment](../deployment/README.md)** - Production deployment setup

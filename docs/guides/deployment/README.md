@@ -4,17 +4,17 @@ Guides for deploying and operating AgenticGoKit applications in production.
 
 ## Available Guides
 
-### [Docker Deployment](docker-deployment.md)
+### Docker Deployment
 Containerize your AgenticGoKit applications with Docker, including multi-stage builds and optimization techniques.
 
 **When to use:** Deploying agents in containerized environments or cloud platforms.
 
-### [Monitoring](monitoring.md)
+### Monitoring
 Set up comprehensive monitoring for agent performance, including metrics, logging, and alerting.
 
 **When to use:** Running agents in production and need visibility into system health and performance.
 
-### [Scaling](scaling.md)
+### Scaling
 Scale AgenticGoKit applications horizontally, including load balancing and distributed deployment patterns.
 
 **When to use:** Handling increased load or building high-availability agent systems.
@@ -60,7 +60,7 @@ Typical production requirements:
 ## Next Steps
 
 For production deployment:
-1. Start with [Docker Deployment](docker-deployment.md)
-2. Add [Monitoring](monitoring.md) for observability
-3. Scale with [Scaling](scaling.md) patterns as needed
+1. Start with Docker containerization
+2. Add monitoring for observability
+3. Scale with appropriate patterns as needed
 4. Reference [Best Practices](../development/best-practices.md) for operational excellence

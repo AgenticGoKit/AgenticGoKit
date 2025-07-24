@@ -742,8 +742,7 @@ Now that you've seen the power of `agentcli create`, explore:
 
 ### 🏭 **Production Ready**
 - **[Best Practices](../../guides/development/best-practices.md)** - Code quality and patterns
-- **[Docker Deployment](../../guides/deployment/docker-deployment.md)** - Containerize your agents
-- **[Monitoring](../../guides/deployment/monitoring.md)** - Observability and metrics
+- **[Production Deployment](../../guides/deployment/README.md)** - Deploy and scale your agents
 
 ## Troubleshooting
 

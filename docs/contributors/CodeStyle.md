@@ -55,7 +55,7 @@ linters-settings:
     min-occurrences: 3
   
   goimports:
-    local-prefixes: github.com/kunalkushwaha/agentflow
+    local-prefixes: github.com/kunalkushwaha/agenticgokit
   
   govet:
     check-shadowing: true
@@ -95,7 +95,7 @@ issues:
 ### Directory Structure
 
 ```
-agentflow/
+agenticgokit/
 ├── cmd/                    # Main applications
 │   └── agentcli/          # CLI application
 ├── core/                   # Public API
@@ -150,8 +150,8 @@ import (
     "go.opentelemetry.io/otel/trace"
     
     // Local imports
-    "github.com/kunalkushwaha/agentflow/internal/mcp"
-    "github.com/kunalkushwaha/agentflow/pkg/utils"
+    "github.com/kunalkushwaha/agenticgokit/internal/mcp"
+    "github.com/kunalkushwaha/agenticgokit/pkg/utils"
 )
 ```
 
@@ -230,7 +230,7 @@ type ExecutorImpl interface {}
 Every package should have a package comment:
 
 ```go
-// Package core provides the public API for AgentFlow.
+// Package core provides the public API for AgenticGoKit.
 // It defines the primary interfaces and types used to build
 // AI agent systems with dynamic tool integration.
 //
@@ -686,4 +686,4 @@ func processRequest(ctx context.Context, request Request) error {
 - [ ] No obvious performance issues
 - [ ] Follows established patterns
 
-This code style guide ensures consistency and quality across the AgentFlow codebase, making it easier for contributors to understand, maintain, and extend the system.
+This code style guide ensures consistency and quality across the AgenticGoKit codebase, making it easier for contributors to understand, maintain, and extend the system.

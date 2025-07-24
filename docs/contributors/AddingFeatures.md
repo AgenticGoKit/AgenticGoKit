@@ -1,10 +1,10 @@
-# Adding Features to AgentFlow
+# Adding Features to AgenticGoKit
 
-This guide walks through the process of adding new features to AgentFlow, from design to implementation to testing and documentation.
+This guide walks through the process of adding new features to AgenticGoKit, from design to implementation to testing and documentation.
 
 ## 🎯 Feature Development Philosophy
 
-AgentFlow follows these principles for feature development:
+AgenticGoKit follows these principles for feature development:
 
 - **User-Centric**: Features should solve real user problems
 - **API-First**: Design public APIs before implementation
@@ -166,7 +166,7 @@ import (
     "sync"
     "time"
     
-    "github.com/kunalkushwaha/agentflow/core"
+    "github.com/kunalkushwaha/agenticgokit/core"
 )
 
 type agentChain struct {
@@ -216,7 +216,7 @@ import (
     "fmt"
     "time"
     
-    "github.com/kunalkushwaha/agentflow/core"
+    "github.com/kunalkushwaha/agenticgokit/core"
 )
 
 type ChainExecutor struct {
@@ -506,7 +506,7 @@ import (
     
     "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/require"
-    "github.com/kunalkushwaha/agentflow/core"
+    "github.com/kunalkushwaha/agenticgokit/core"
 )
 
 func TestAgentChain_RealWorkflow(t *testing.T) {
@@ -559,7 +559,7 @@ Agent chaining allows you to create sophisticated workflows by connecting multip
 ## Basic Usage
 
 ```go
-import "github.com/kunalkushwaha/agentflow/core"
+import "github.com/kunalkushwaha/agenticgokit/core"
 
 // Create agents
 searchAgent := &SearchAgent{}
@@ -838,4 +838,4 @@ func (r *Runner) RegisterAgentWithMiddleware(name string, handler AgentHandler, 
 }
 ```
 
-This comprehensive guide provides the framework for adding any feature to AgentFlow while maintaining code quality, performance, and user experience standards.
+This comprehensive guide provides the framework for adding any feature to AgenticGoKit while maintaining code quality, performance, and user experience standards.

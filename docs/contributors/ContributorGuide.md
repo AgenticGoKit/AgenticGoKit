@@ -14,8 +14,8 @@ Welcome to AgenticGoKit! This guide will help you get started with contributing 
 
 ```bash
 # Clone the repository
-git clone https://github.com/kunalkushwaha/agentflow.git
-cd agentflow
+git clone https://github.com/kunalkushwaha/agenticgokit.git
+cd agenticgokit
 
 # Install dependencies
 go mod tidy
@@ -30,7 +30,7 @@ go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 ### 2. Project Structure
 
 ```
-agentflow/
+agenticgokit/
 ├── cmd/                     # CLI tools
 │   └── agentcli/           # AgentFlow CLI
 ├── core/                   # Public API (this is what users import)
@@ -52,7 +52,7 @@ agentflow/
 ### 3. Core vs Internal Architecture
 
 **`core/` Package (Public API):**
-- This is what users import: `import "github.com/kunalkushwaha/agentflow/core"`
+- This is what users import: `import "github.com/kunalkushwaha/agenticgokit/core"`
 - Contains interfaces, types, and factory functions
 - Must maintain backward compatibility
 - All functions here should be well-documented and tested
@@ -118,7 +118,7 @@ git commit -m "test(core): add agent factory unit tests"
 
 ### 1. Go Code Style
 
-Follow standard Go conventions plus AgentFlow-specific patterns:
+Follow standard Go conventions plus AgenticGoKit-specific patterns:
 
 ```go
 // Good: Clear interface with documentation

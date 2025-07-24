@@ -10,7 +10,7 @@ Effective tool integration allows agents to interact with external systems, acce
 
 - Understanding of [MCP Overview](README.md)
 - Familiarity with [Tool Development](tool-development.md)
-- Knowledge of [Agent Capabilities](../core-concepts/agent-capabilities.md)
+- Knowledge of [Agent Lifecycle](../core-concepts/agent-lifecycle.md)
 - Basic understanding of [State Management](../core-concepts/state-management.md)
 
 ## MCP Integration Architecture
@@ -996,4 +996,4 @@ Key takeaways:
 
 - [API Reference: MCP](../../reference/api/agent.md#mcp)
 - [Examples: Tool Usage](../../examples/)
-- [Production Deployment](../deployment/README.md)
+- [Production Deployment](../../guides/deployment/README.md)
