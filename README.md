@@ -1,3 +1,8 @@
+ ## ⚠️ This project was renamed from `agentflow` to `agenticgokit`. Please update your references. 
+ - Name references within project will be updated soon 
+
+
+
 # AgenticGoKit
 **The Go Framework for Building Multi-Agent AI Systems**
 
