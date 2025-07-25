@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="en-us" dir="ltr" itemscope itemtype="http://schema.org/Article" data-r-output-format="html">
+  <head><script src="/AgenticGoKitDocs/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=AgenticGoKitDocs/livereload" data-no-instant defer></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="height=device-height, width=device-width, initial-scale=1.0, minimum-scale=1.0">
+    <meta name="generator" content="Hugo 0.148.1">
+    <meta name="generator" content="Relearn 8.0.0+9803d5122ebb3276acea823f476e9eb44f607862">
+    <meta name="description" content="Adding Features to AgenticGoKit This guide walks through the process of adding new features to AgenticGoKit, from design to implementation to testing and documentation.
+🎯 Feature Development Philosophy AgenticGoKit follows these principles for feature development:
+User-Centric: Features should solve real user problems API-First: Design public APIs before implementation Backward Compatibility: Maintain compatibility when possible Performance-Aware: Consider performance implications Test-Driven: Write tests alongside code Documentation-Complete: Include comprehensive documentation 📋 Feature Development Process 1. Feature Proposal Phase Create Feature Request Start with a GitHub issue using the feature request template:">
+    <meta name="author" content="">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="AddingFeatures :: AgenticGoKit Docs">
+    <meta name="twitter:description" content="Adding Features to AgenticGoKit This guide walks through the process of adding new features to AgenticGoKit, from design to implementation to testing and documentation.
+🎯 Feature Development Philosophy AgenticGoKit follows these principles for feature development:
+User-Centric: Features should solve real user problems API-First: Design public APIs before implementation Backward Compatibility: Maintain compatibility when possible Performance-Aware: Consider performance implications Test-Driven: Write tests alongside code Documentation-Complete: Include comprehensive documentation 📋 Feature Development Process 1. Feature Proposal Phase Create Feature Request Start with a GitHub issue using the feature request template:">
+    <meta property="og:url" content="http://localhost:1313/AgenticGoKitDocs/contributors/addingfeatures/index.html">
+    <meta property="og:site_name" content="AgenticGoKit Docs">
+    <meta property="og:title" content="AddingFeatures :: AgenticGoKit Docs">
+    <meta property="og:description" content="Adding Features to AgenticGoKit This guide walks through the process of adding new features to AgenticGoKit, from design to implementation to testing and documentation.
+🎯 Feature Development Philosophy AgenticGoKit follows these principles for feature development:
+User-Centric: Features should solve real user problems API-First: Design public APIs before implementation Backward Compatibility: Maintain compatibility when possible Performance-Aware: Consider performance implications Test-Driven: Write tests alongside code Documentation-Complete: Include comprehensive documentation 📋 Feature Development Process 1. Feature Proposal Phase Create Feature Request Start with a GitHub issue using the feature request template:">
+    <meta property="og:locale" content="en_us">
+    <meta property="og:type" content="article">
+    <meta property="article:section" content="contributors">
+    <meta property="article:published_time" content="2025-07-25T00:00:00+00:00">
+    <meta property="article:modified_time" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="name" content="AddingFeatures :: AgenticGoKit Docs">
+    <meta itemprop="description" content="Adding Features to AgenticGoKit This guide walks through the process of adding new features to AgenticGoKit, from design to implementation to testing and documentation.
+🎯 Feature Development Philosophy AgenticGoKit follows these principles for feature development:
+User-Centric: Features should solve real user problems API-First: Design public APIs before implementation Backward Compatibility: Maintain compatibility when possible Performance-Aware: Consider performance implications Test-Driven: Write tests alongside code Documentation-Complete: Include comprehensive documentation 📋 Feature Development Process 1. Feature Proposal Phase Create Feature Request Start with a GitHub issue using the feature request template:">
+    <meta itemprop="datePublished" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="dateModified" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="wordCount" content="2048">
+    <title>AddingFeatures :: AgenticGoKit Docs</title>
+    <link href="/AgenticGoKitDocs/css/auto-complete/auto-complete.min.css?1753430931" rel="stylesheet">
+    <script src="/AgenticGoKitDocs/js/auto-complete/auto-complete.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/search-lunr.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/search.js?1753430931" defer></script>
+    <script>
+      window.relearn = window.relearn || {};
+      window.relearn.index_js_url="/AgenticGoKitDocs/searchindex.en.js?1753430931";
+    </script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.stemmer.support.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.multi.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.en.min.js?1753430931" defer></script>
+    <script>
+      window.relearn = window.relearn || {};
+      window.relearn.contentLangs=['en'];
+    </script>
+    <link href="/AgenticGoKitDocs/fonts/fontawesome/css/fontawesome-all.min.css?1753430931" rel="stylesheet" media="print" onload="this.media='all';this.onload=null;"><noscript><link href="/AgenticGoKitDocs/fonts/fontawesome/css/fontawesome-all.min.css?1753430931" rel="stylesheet"></noscript>
+    <link href="/AgenticGoKitDocs/css/perfect-scrollbar/perfect-scrollbar.min.css?1753430931" rel="stylesheet">
+    <link href="/AgenticGoKitDocs/css/theme.css?1753430931" rel="stylesheet">
+    <link href="/AgenticGoKitDocs/css/format-html.css?1753430931" rel="stylesheet" id="R-format-style">
+    <script>
+      window.relearn = window.relearn || {};
+      // configuration
+      window.relearn.min = ``;
+      window.relearn.path='\/contributors\/addingfeatures\/index.html';
+      window.relearn.relBasePath='..\/..';
+      window.relearn.relBaseUri='..\/..\/..';
+      window.relearn.absBaseUri='http:\/\/localhost:1313\/AgenticGoKitDocs';
+      window.relearn.disableAnchorCopy=false;
+      window.relearn.disableAnchorScrolling=false;
+      window.relearn.disableInlineCopyToClipboard=false;
+      window.relearn.enableBlockCodeWrap=true;
+      // legal
+      window.relearn.getItem = (s,n) => {return s.getItem(n)};
+      window.relearn.setItem = (s,n,v) => {return s.setItem(n,v)};
+      window.relearn.removeItem = (s,n) => {return s.removeItem(n)};
+      // translations
+      window.T_Copy_to_clipboard = `Copy to clipboard`;
+      window.T_Copied_to_clipboard = `Copied to clipboard!`;
+      window.T_Copy_link_to_clipboard = `Copy link to clipboard`;
+      window.T_Link_copied_to_clipboard = `Copied link to clipboard!`;
+      window.T_Reset_view = `Reset view`;
+      window.T_View_reset = `View reset!`;
+      window.T_No_results_found = `No results found for "{0}"`;
+      window.T_N_results_found = `{1} results found for "{0}"`;
+      // variant stuff
+      window.relearn.themevariants = [ 'blue' ];
+      window.relearn.customvariantname = "my-custom-variant";
+      window.relearn.changeVariant = function(variant) {
+        var oldVariant = document.documentElement.dataset.rThemeVariant;
+        window.relearn.setItem(window.localStorage, window.relearn.absBaseUri + "/variant", variant);
+        document.documentElement.dataset.rThemeVariant = variant;
+        if (oldVariant != variant) {
+          document.dispatchEvent( new CustomEvent('themeVariantLoaded', { detail: { variant, oldVariant } }) );
+          window.relearn.markVariant();
+        }
+      }
+      window.relearn.markVariant = function() {
+        var variant = window.relearn.getItem(window.localStorage, window.relearn.absBaseUri + "/variant");
+        document.querySelectorAll(".R-variantswitcher select").forEach((select) => {select.value = variant;});
+      }
+      window.relearn.initVariant = function() {
+        var variant = window.relearn.getItem(window.localStorage, window.relearn.absBaseUri + "/variant") ?? "";
+        if( variant == window.relearn.customvariantname ){
+        }else if( !variant || !window.relearn.themevariants.includes(variant) ){
+          variant = window.relearn.themevariants[0];
+          window.relearn.setItem(window.localStorage, window.relearn.absBaseUri + "/variant", variant);
+        }
+        document.documentElement.dataset.rThemeVariant = variant;
+      }
+      window.relearn.initVariant();
+      window.relearn.markVariant();
+    </script>
+  </head>
+  <body class="mobile-support html" data-url="/AgenticGoKitDocs/contributors/addingfeatures/index.html">
+    <div id="R-body" class="default-animation">
+      <div id="R-body-overlay"></div>
+      <nav id="R-topbar">
+        <div class="topbar-wrapper">
+          <div class="topbar-sidebar-divider"></div>
+          <div class="topbar-area topbar-area-start" data-area="start">
+            <div class="topbar-button topbar-button-sidebar" data-content-empty="disable" data-width-s="show" data-width-m="hide" data-width-l="hide"><button class="topbar-control" onclick="toggleNav()" type="button" title="Menu (CTRL&#43;ALT&#43;n)"><i class="fa-fw fas fa-bars"></i></button>
+            </div>
+            <div class="topbar-button topbar-button-toc" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show"><button class="topbar-control" onclick="toggleTopbarFlyout(this)" type="button" title="Table of Contents (CTRL&#43;ALT&#43;t)"><i class="fa-fw fas fa-list-alt"></i></button>
+              <div class="topbar-content">
+                <div class="topbar-content-wrapper">
+<nav class="TableOfContents">
+  <ul>
+    <li><a href="#-feature-development-philosophy">🎯 Feature Development Philosophy</a></li>
+    <li><a href="#-feature-development-process">📋 Feature Development Process</a>
+      <ul>
+        <li><a href="#1-feature-proposal-phase">1. Feature Proposal Phase</a></li>
+        <li><a href="#2-design-phase">2. Design Phase</a></li>
+        <li><a href="#core-implementation-structure">Core Implementation Structure</a></li>
+        <li><a href="#configuration-integration">Configuration Integration</a></li>
+        <li><a href="#4-testing-phase">4. Testing Phase</a></li>
+        <li><a href="#5-documentation-phase">5. Documentation Phase</a></li>
+      </ul>
+    </li>
+    <li><a href="#advanced-features">Advanced Features</a>
+      <ul>
+        <li><a href="#conditional-steps">Conditional Steps</a></li>
+        <li><a href="#error-handling">Error Handling</a></li>
+        <li><a href="#executing-the-chain">Executing the Chain</a></li>
+        <li><a href="#7-cli-integration">7. CLI Integration</a></li>
+      </ul>
+    </li>
+    <li><a href="#-feature-integration-checklist">🔄 Feature Integration Checklist</a>
+      <ul>
+        <li><a href="#pre-implementation">Pre-Implementation</a></li>
+        <li><a href="#implementation">Implementation</a></li>
+        <li><a href="#testing">Testing</a></li>
+        <li><a href="#documentation">Documentation</a></li>
+        <li><a href="#cli-integration">CLI Integration</a></li>
+        <li><a href="#quality-assurance">Quality Assurance</a></li>
+        <li><a href="#release-preparation">Release Preparation</a></li>
+      </ul>
+    </li>
+    <li><a href="#-feature-examples">📚 Feature Examples</a>
+      <ul>
+        <li><a href="#simple-feature-add-timeout-to-agent-execution">Simple Feature: Add Timeout to Agent Execution</a></li>
+        <li><a href="#complex-feature-agent-middleware-system">Complex Feature: Agent Middleware System</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+                </div>
+              </div>
+            </div>
+          </div>
+          <ol class="topbar-breadcrumbs breadcrumbs highlightable" itemscope itemtype="http://schema.org/BreadcrumbList"><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="/AgenticGoKitDocs/index.html"><span itemprop="name">content</span></a><meta itemprop="position" content="1">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="/AgenticGoKitDocs/contributors/index.html"><span itemprop="name">contributors</span></a><meta itemprop="position" content="2">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><span itemprop="name">AddingFeatures</span><meta itemprop="position" content="3"></li>
+          </ol>
+          <div class="topbar-area topbar-area-end" data-area="end">
+            <div class="topbar-button topbar-button-prev" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show"><a class="topbar-control" href="/AgenticGoKitDocs/contributors/corevsinternal/index.html" title="CoreVsInternal (🡐)"><i class="fa-fw fas fa-chevron-left"></i></a>
+            </div>
+            <div class="topbar-button topbar-button-next" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show"><a class="topbar-control" href="/AgenticGoKitDocs/contributors/testing/index.html" title="Testing (🡒)"><i class="fa-fw fas fa-chevron-right"></i></a>
+            </div>
+            <div class="topbar-button topbar-button-more" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show"><button class="topbar-control" onclick="toggleTopbarFlyout(this)" type="button" title="More"><i class="fa-fw fas fa-ellipsis-v"></i></button>
+              <div class="topbar-content">
+                <div class="topbar-content-wrapper">
+                  <div class="topbar-area topbar-area-more" data-area="more">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+      <div id="R-main-overlay"></div>
+      <main id="R-body-inner" class="highlightable contributors" tabindex="-1">
+        <div class="flex-block-wrapper">
+<article class="default">
+  <header class="headline">
+  </header>
+
+<h1 id="addingfeatures">AddingFeatures</h1>
+
+<h1 id="adding-features-to-agenticgokit">Adding Features to AgenticGoKit</h1>
+<p>This guide walks through the process of adding new features to AgenticGoKit, from design to implementation to testing and documentation.</p>
+<h2 id="-feature-development-philosophy">🎯 Feature Development Philosophy</h2>
+<p>AgenticGoKit follows these principles for feature development:</p>
+<ul>
+<li><strong>User-Centric</strong>: Features should solve real user problems</li>
+<li><strong>API-First</strong>: Design public APIs before implementation</li>
+<li><strong>Backward Compatibility</strong>: Maintain compatibility when possible</li>
+<li><strong>Performance-Aware</strong>: Consider performance implications</li>
+<li><strong>Test-Driven</strong>: Write tests alongside code</li>
+<li><strong>Documentation-Complete</strong>: Include comprehensive documentation</li>
+</ul>
+<h2 id="-feature-development-process">📋 Feature Development Process</h2>
+<h3 id="1-feature-proposal-phase">1. Feature Proposal Phase</h3>
+<h4 id="create-feature-request">Create Feature Request</h4>
+<p>Start with a GitHub issue using the feature request template:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-markdown" data-lang="markdown"><span style="display:flex;"><span><span style="color:#75715e">## Feature Request: Advanced Agent Chaining
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">### Problem Statement
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>Users need to chain multiple agents in complex workflows where the output of one agent becomes the input of the next, with conditional branching and error handling.
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">### Proposed Solution
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>Implement an <span style="color:#e6db74">`AgentChain`</span> component that allows:
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">-</span> Sequential agent execution
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">-</span> Conditional branching based on agent results
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">-</span> Error handling and fallback strategies
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">-</span> State passing between agents
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">### Use Cases
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">1.</span> Research workflow: Search → Analyze → Summarize
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">2.</span> Content workflow: Generate → Review → Publish
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">3.</span> Data workflow: Extract → Transform → Load
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">### Success Criteria
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">-</span> Agents can be chained declaratively
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">-</span> Conditional logic can be expressed clearly
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">-</span> Error handling is robust
+</span></span><span style="display:flex;"><span>- Performance is comparable to manual orchestration</span></span></code></pre></div>
+<h4 id="initial-design-discussion">Initial Design Discussion</h4>
+<ul>
+<li>Post in GitHub Discussions for community feedback</li>
+<li>Discuss with core maintainers</li>
+<li>Consider alternatives and trade-offs</li>
+<li>Define scope and non-goals</li>
+</ul>
+<h3 id="2-design-phase">2. Design Phase</h3>
+<h4 id="api-design-document">API Design Document</h4>
+<p>Create a detailed design document:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-markdown" data-lang="markdown"><span style="display:flex;"><span># Agent Chaining Feature Design
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## Public API
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">### AgentChain Interface
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>```go
+</span></span><span style="display:flex;"><span>type AgentChain interface {
+</span></span><span style="display:flex;"><span>    // AddStep adds an agent to the chain
+</span></span><span style="display:flex;"><span>    AddStep(step ChainStep) AgentChain
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    // AddConditionalStep adds a conditional step
+</span></span><span style="display:flex;"><span>    AddConditionalStep(condition Condition, step ChainStep) AgentChain
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    // Execute runs the entire chain
+</span></span><span style="display:flex;"><span>    Execute(ctx context.Context, input ChainInput) (ChainResult, error)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    // SetErrorHandler sets global error handling strategy
+</span></span><span style="display:flex;"><span>    SetErrorHandler(handler ErrorHandler) AgentChain
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>type ChainStep struct {
+</span></span><span style="display:flex;"><span>    Name        string
+</span></span><span style="display:flex;"><span>    Agent       AgentHandler
+</span></span><span style="display:flex;"><span>    InputMapper InputMapper
+</span></span><span style="display:flex;"><span>    Condition   Condition
+</span></span><span style="display:flex;"><span>    OnError     ErrorAction
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>type ChainInput struct {
+</span></span><span style="display:flex;"><span>    Event Event
+</span></span><span style="display:flex;"><span>    State State
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>type ChainResult struct {
+</span></span><span style="display:flex;"><span>    Steps   []StepResult
+</span></span><span style="display:flex;"><span>    FinalState State
+</span></span><span style="display:flex;"><span>    Success bool
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h3 id="core-implementation-structure">Core Implementation Structure</h3>
+<ul>
+<li><code>core/agent_chain.go</code> - Public interface</li>
+<li><code>internal/chain/</code> - Implementation details</li>
+<li><code>internal/chain/executor.go</code> - Chain execution logic</li>
+<li><code>internal/chain/condition.go</code> - Conditional logic</li>
+<li><code>internal/chain/mapper.go</code> - Input/output mapping</li>
+</ul>
+<h3 id="configuration-integration">Configuration Integration</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">agent_chain</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_steps</span> = <span style="color:#ae81ff">50</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">step_timeout</span> = <span style="color:#e6db74">&#34;30s&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enable_parallel_execution</span> = <span style="color:#66d9ef">true</span></span></span></code></pre></div>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0"><code>### 3. Implementation Phase
+
+#### Step 1: Create Public Interface
+
+Start with the public API in `core/`:
+
+```go
+// core/agent_chain.go
+package core
+
+import (
+    &#34;context&#34;
+    &#34;time&#34;
+)
+
+// AgentChain defines the interface for chaining multiple agents
+type AgentChain interface {
+    AddStep(step ChainStep) AgentChain
+    AddConditionalStep(condition Condition, step ChainStep) AgentChain
+    Execute(ctx context.Context, input ChainInput) (ChainResult, error)
+    SetErrorHandler(handler ErrorHandler) AgentChain
+}
+
+// ChainStep represents a single step in an agent chain
+type ChainStep struct {
+    Name        string
+    Agent       AgentHandler
+    InputMapper InputMapper
+    Condition   Condition
+    OnError     ErrorAction
+    Timeout     time.Duration
+}
+
+// NewAgentChain creates a new agent chain
+func NewAgentChain(name string) AgentChain {
+    return internal.NewAgentChain(name)
+}</code></pre></div>
+<h4 id="step-2-implement-core-logic">Step 2: Implement Core Logic</h4>
+<p>Create the implementation in <code>internal/</code>:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// internal/chain/agent_chain.go</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">chain</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;context&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;fmt&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;sync&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;time&#34;</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;github.com/kunalkushwaha/agenticgokit/core&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">agentChain</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">name</span>         <span style="color:#66d9ef">string</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">steps</span>        []<span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">ChainStep</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">errorHandler</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">ErrorHandler</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">config</span>       <span style="color:#a6e22e">ChainConfig</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">mu</span>           <span style="color:#a6e22e">sync</span>.<span style="color:#a6e22e">RWMutex</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">ChainConfig</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">MaxSteps</span>              <span style="color:#66d9ef">int</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">StepTimeout</span>           <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Duration</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">EnableParallelExecution</span> <span style="color:#66d9ef">bool</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewAgentChain</span>(<span style="color:#a6e22e">name</span> <span style="color:#66d9ef">string</span>) <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">AgentChain</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">agentChain</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">name</span>:   <span style="color:#a6e22e">name</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">steps</span>:  make([]<span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">ChainStep</span>, <span style="color:#ae81ff">0</span>),
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">config</span>: <span style="color:#a6e22e">DefaultChainConfig</span>(),
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">agentChain</span>) <span style="color:#a6e22e">AddStep</span>(<span style="color:#a6e22e">step</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">ChainStep</span>) <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">AgentChain</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">mu</span>.<span style="color:#a6e22e">Lock</span>()
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">mu</span>.<span style="color:#a6e22e">Unlock</span>()
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">steps</span> = append(<span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">steps</span>, <span style="color:#a6e22e">step</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">c</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">agentChain</span>) <span style="color:#a6e22e">Execute</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">input</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">ChainInput</span>) (<span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">ChainResult</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">executor</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">NewChainExecutor</span>(<span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">config</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">executor</span>.<span style="color:#a6e22e">Execute</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">steps</span>, <span style="color:#a6e22e">input</span>, <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">errorHandler</span>)
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h4 id="step-3-add-execution-logic">Step 3: Add Execution Logic</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// internal/chain/executor.go</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">chain</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;context&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;fmt&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;time&#34;</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;github.com/kunalkushwaha/agenticgokit/core&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">ChainExecutor</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">config</span> <span style="color:#a6e22e">ChainConfig</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewChainExecutor</span>(<span style="color:#a6e22e">config</span> <span style="color:#a6e22e">ChainConfig</span>) <span style="color:#f92672">*</span><span style="color:#a6e22e">ChainExecutor</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">ChainExecutor</span>{<span style="color:#a6e22e">config</span>: <span style="color:#a6e22e">config</span>}
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">e</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">ChainExecutor</span>) <span style="color:#a6e22e">Execute</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">steps</span> []<span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">ChainStep</span>, <span style="color:#a6e22e">input</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">ChainInput</span>, <span style="color:#a6e22e">errorHandler</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">ErrorHandler</span>) (<span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">ChainResult</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">result</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">ChainResult</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Steps</span>:      make([]<span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">StepResult</span>, <span style="color:#ae81ff">0</span>, len(<span style="color:#a6e22e">steps</span>)),
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">FinalState</span>: <span style="color:#a6e22e">input</span>.<span style="color:#a6e22e">State</span>.<span style="color:#a6e22e">Clone</span>(),
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Success</span>:    <span style="color:#66d9ef">true</span>,
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">currentState</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">input</span>.<span style="color:#a6e22e">State</span>.<span style="color:#a6e22e">Clone</span>()
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">i</span>, <span style="color:#a6e22e">step</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">steps</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Check context cancellation</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">select</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">case</span> <span style="color:#f92672">&lt;-</span><span style="color:#a6e22e">ctx</span>.<span style="color:#a6e22e">Done</span>():
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">result</span>, <span style="color:#a6e22e">ctx</span>.<span style="color:#a6e22e">Err</span>()
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">default</span>:
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Evaluate condition if present</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">step</span>.<span style="color:#a6e22e">Condition</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> <span style="color:#f92672">&amp;&amp;</span> !<span style="color:#a6e22e">step</span>.<span style="color:#a6e22e">Condition</span>.<span style="color:#a6e22e">Evaluate</span>(<span style="color:#a6e22e">currentState</span>) {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">continue</span>
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Execute step with timeout</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">stepCtx</span>, <span style="color:#a6e22e">cancel</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">WithTimeout</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">e</span>.<span style="color:#a6e22e">getStepTimeout</span>(<span style="color:#a6e22e">step</span>))
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">stepResult</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">e</span>.<span style="color:#a6e22e">executeStep</span>(<span style="color:#a6e22e">stepCtx</span>, <span style="color:#a6e22e">step</span>, <span style="color:#a6e22e">input</span>.<span style="color:#a6e22e">Event</span>, <span style="color:#a6e22e">currentState</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">cancel</span>()
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Handle step result</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">Steps</span> = append(<span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">Steps</span>, <span style="color:#a6e22e">stepResult</span>)
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">errorHandler</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>                <span style="color:#a6e22e">action</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">errorHandler</span>.<span style="color:#a6e22e">HandleError</span>(<span style="color:#a6e22e">err</span>, <span style="color:#a6e22e">step</span>, <span style="color:#a6e22e">currentState</span>)
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">action</span> <span style="color:#f92672">==</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">ErrorActionStop</span> {
+</span></span><span style="display:flex;"><span>                    <span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">Success</span> = <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span>                    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">result</span>, <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;chain stopped at step %d: %w&#34;</span>, <span style="color:#a6e22e">i</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>                }
+</span></span><span style="display:flex;"><span>                <span style="color:#75715e">// Continue with ErrorActionContinue</span>
+</span></span><span style="display:flex;"><span>            } <span style="color:#66d9ef">else</span> {
+</span></span><span style="display:flex;"><span>                <span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">Success</span> = <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">result</span>, <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;step %d failed: %w&#34;</span>, <span style="color:#a6e22e">i</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>        } <span style="color:#66d9ef">else</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// Update state with step result</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">stepResult</span>.<span style="color:#a6e22e">State</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>                <span style="color:#a6e22e">currentState</span> = <span style="color:#a6e22e">stepResult</span>.<span style="color:#a6e22e">State</span>
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">FinalState</span> = <span style="color:#a6e22e">currentState</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">result</span>, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">e</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">ChainExecutor</span>) <span style="color:#a6e22e">executeStep</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">step</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">ChainStep</span>, <span style="color:#a6e22e">event</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">Event</span>, <span style="color:#a6e22e">state</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">State</span>) (<span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">StepResult</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Map input if mapper is provided</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">stepEvent</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">event</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">stepState</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">state</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">step</span>.<span style="color:#a6e22e">InputMapper</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">err</span> <span style="color:#66d9ef">error</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">stepEvent</span>, <span style="color:#a6e22e">stepState</span>, <span style="color:#a6e22e">err</span> = <span style="color:#a6e22e">step</span>.<span style="color:#a6e22e">InputMapper</span>.<span style="color:#a6e22e">Map</span>(<span style="color:#a6e22e">event</span>, <span style="color:#a6e22e">state</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">StepResult</span>{}, <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;input mapping failed: %w&#34;</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Execute agent</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">agentResult</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">step</span>.<span style="color:#a6e22e">Agent</span>.<span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">stepEvent</span>, <span style="color:#a6e22e">stepState</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">StepResult</span>{
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">StepName</span>: <span style="color:#a6e22e">step</span>.<span style="color:#a6e22e">Name</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">Success</span>:  <span style="color:#66d9ef">false</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">Error</span>:    <span style="color:#a6e22e">err</span>,
+</span></span><span style="display:flex;"><span>        }, <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">StepResult</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">StepName</span>: <span style="color:#a6e22e">step</span>.<span style="color:#a6e22e">Name</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Success</span>:  <span style="color:#66d9ef">true</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Data</span>:     <span style="color:#a6e22e">agentResult</span>.<span style="color:#a6e22e">Data</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">State</span>:    <span style="color:#a6e22e">agentResult</span>.<span style="color:#a6e22e">State</span>,
+</span></span><span style="display:flex;"><span>    }, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h4 id="step-4-add-builder-pattern-support">Step 4: Add Builder Pattern Support</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// core/agent_chain_builder.go</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">core</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// AgentChainBuilder provides a fluent interface for building agent chains</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">AgentChainBuilder</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">chain</span> <span style="color:#a6e22e">AgentChain</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// NewAgentChainBuilder creates a new builder</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewAgentChainBuilder</span>(<span style="color:#a6e22e">name</span> <span style="color:#66d9ef">string</span>) <span style="color:#f92672">*</span><span style="color:#a6e22e">AgentChainBuilder</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">AgentChainBuilder</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">chain</span>: <span style="color:#a6e22e">NewAgentChain</span>(<span style="color:#a6e22e">name</span>),
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Step adds a simple step to the chain</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">b</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">AgentChainBuilder</span>) <span style="color:#a6e22e">Step</span>(<span style="color:#a6e22e">name</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">agent</span> <span style="color:#a6e22e">AgentHandler</span>) <span style="color:#f92672">*</span><span style="color:#a6e22e">AgentChainBuilder</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">b</span>.<span style="color:#a6e22e">chain</span>.<span style="color:#a6e22e">AddStep</span>(<span style="color:#a6e22e">ChainStep</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Name</span>:  <span style="color:#a6e22e">name</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Agent</span>: <span style="color:#a6e22e">agent</span>,
+</span></span><span style="display:flex;"><span>    })
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">b</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// ConditionalStep adds a conditional step</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">b</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">AgentChainBuilder</span>) <span style="color:#a6e22e">ConditionalStep</span>(<span style="color:#a6e22e">name</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">agent</span> <span style="color:#a6e22e">AgentHandler</span>, <span style="color:#a6e22e">condition</span> <span style="color:#a6e22e">Condition</span>) <span style="color:#f92672">*</span><span style="color:#a6e22e">AgentChainBuilder</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">b</span>.<span style="color:#a6e22e">chain</span>.<span style="color:#a6e22e">AddConditionalStep</span>(<span style="color:#a6e22e">condition</span>, <span style="color:#a6e22e">ChainStep</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Name</span>:  <span style="color:#a6e22e">name</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Agent</span>: <span style="color:#a6e22e">agent</span>,
+</span></span><span style="display:flex;"><span>    })
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">b</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// WithErrorHandler sets the error handling strategy</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">b</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">AgentChainBuilder</span>) <span style="color:#a6e22e">WithErrorHandler</span>(<span style="color:#a6e22e">handler</span> <span style="color:#a6e22e">ErrorHandler</span>) <span style="color:#f92672">*</span><span style="color:#a6e22e">AgentChainBuilder</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">b</span>.<span style="color:#a6e22e">chain</span>.<span style="color:#a6e22e">SetErrorHandler</span>(<span style="color:#a6e22e">handler</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">b</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Build returns the configured chain</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">b</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">AgentChainBuilder</span>) <span style="color:#a6e22e">Build</span>() <span style="color:#a6e22e">AgentChain</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">b</span>.<span style="color:#a6e22e">chain</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h3 id="4-testing-phase">4. Testing Phase</h3>
+<h4 id="unit-tests">Unit Tests</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// core/agent_chain_test.go</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">core</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;context&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;testing&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;time&#34;</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;github.com/stretchr/testify/assert&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;github.com/stretchr/testify/require&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">TestAgentChain_Execute</span>(<span style="color:#a6e22e">t</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">testing</span>.<span style="color:#a6e22e">T</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">tests</span> <span style="color:#f92672">:=</span> []<span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">name</span>     <span style="color:#66d9ef">string</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">steps</span>    []<span style="color:#a6e22e">ChainStep</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">input</span>    <span style="color:#a6e22e">ChainInput</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">expected</span> <span style="color:#a6e22e">ChainResult</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">wantErr</span>  <span style="color:#66d9ef">bool</span>
+</span></span><span style="display:flex;"><span>    }{
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">name</span>: <span style="color:#e6db74">&#34;Simple two-step chain&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">steps</span>: []<span style="color:#a6e22e">ChainStep</span>{
+</span></span><span style="display:flex;"><span>                {
+</span></span><span style="display:flex;"><span>                    <span style="color:#a6e22e">Name</span>:  <span style="color:#e6db74">&#34;step1&#34;</span>,
+</span></span><span style="display:flex;"><span>                    <span style="color:#a6e22e">Agent</span>: <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">mockAgent</span>{<span style="color:#a6e22e">response</span>: <span style="color:#e6db74">&#34;result1&#34;</span>},
+</span></span><span style="display:flex;"><span>                },
+</span></span><span style="display:flex;"><span>                {
+</span></span><span style="display:flex;"><span>                    <span style="color:#a6e22e">Name</span>:  <span style="color:#e6db74">&#34;step2&#34;</span>, 
+</span></span><span style="display:flex;"><span>                    <span style="color:#a6e22e">Agent</span>: <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">mockAgent</span>{<span style="color:#a6e22e">response</span>: <span style="color:#e6db74">&#34;result2&#34;</span>},
+</span></span><span style="display:flex;"><span>                },
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">input</span>: <span style="color:#a6e22e">ChainInput</span>{
+</span></span><span style="display:flex;"><span>                <span style="color:#a6e22e">Event</span>: <span style="color:#a6e22e">NewEvent</span>(<span style="color:#e6db74">&#34;test&#34;</span>, <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">interface</span>{}{<span style="color:#e6db74">&#34;query&#34;</span>: <span style="color:#e6db74">&#34;test&#34;</span>}),
+</span></span><span style="display:flex;"><span>                <span style="color:#a6e22e">State</span>: <span style="color:#a6e22e">NewState</span>(),
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">expected</span>: <span style="color:#a6e22e">ChainResult</span>{
+</span></span><span style="display:flex;"><span>                <span style="color:#a6e22e">Success</span>: <span style="color:#66d9ef">true</span>,
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">wantErr</span>: <span style="color:#66d9ef">false</span>,
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">name</span>: <span style="color:#e6db74">&#34;Chain with error in middle step&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">steps</span>: []<span style="color:#a6e22e">ChainStep</span>{
+</span></span><span style="display:flex;"><span>                {
+</span></span><span style="display:flex;"><span>                    <span style="color:#a6e22e">Name</span>:  <span style="color:#e6db74">&#34;step1&#34;</span>,
+</span></span><span style="display:flex;"><span>                    <span style="color:#a6e22e">Agent</span>: <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">mockAgent</span>{<span style="color:#a6e22e">response</span>: <span style="color:#e6db74">&#34;result1&#34;</span>},
+</span></span><span style="display:flex;"><span>                },
+</span></span><span style="display:flex;"><span>                {
+</span></span><span style="display:flex;"><span>                    <span style="color:#a6e22e">Name</span>:  <span style="color:#e6db74">&#34;step2&#34;</span>,
+</span></span><span style="display:flex;"><span>                    <span style="color:#a6e22e">Agent</span>: <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">mockAgent</span>{<span style="color:#a6e22e">err</span>: <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;step error&#34;</span>)},
+</span></span><span style="display:flex;"><span>                },
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">input</span>: <span style="color:#a6e22e">ChainInput</span>{
+</span></span><span style="display:flex;"><span>                <span style="color:#a6e22e">Event</span>: <span style="color:#a6e22e">NewEvent</span>(<span style="color:#e6db74">&#34;test&#34;</span>, <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">interface</span>{}{<span style="color:#e6db74">&#34;query&#34;</span>: <span style="color:#e6db74">&#34;test&#34;</span>}),
+</span></span><span style="display:flex;"><span>                <span style="color:#a6e22e">State</span>: <span style="color:#a6e22e">NewState</span>(),
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">wantErr</span>: <span style="color:#66d9ef">true</span>,
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">tt</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">tests</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">tt</span>.<span style="color:#a6e22e">name</span>, <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">t</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">testing</span>.<span style="color:#a6e22e">T</span>) {
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">chain</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">NewAgentChain</span>(<span style="color:#e6db74">&#34;test-chain&#34;</span>)
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">step</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">tt</span>.<span style="color:#a6e22e">steps</span> {
+</span></span><span style="display:flex;"><span>                <span style="color:#a6e22e">chain</span>.<span style="color:#a6e22e">AddStep</span>(<span style="color:#a6e22e">step</span>)
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>            
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">result</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">chain</span>.<span style="color:#a6e22e">Execute</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>(), <span style="color:#a6e22e">tt</span>.<span style="color:#a6e22e">input</span>)
+</span></span><span style="display:flex;"><span>            
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">tt</span>.<span style="color:#a6e22e">wantErr</span> {
+</span></span><span style="display:flex;"><span>                <span style="color:#a6e22e">assert</span>.<span style="color:#a6e22e">Error</span>(<span style="color:#a6e22e">t</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">return</span>
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>            
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">require</span>.<span style="color:#a6e22e">NoError</span>(<span style="color:#a6e22e">t</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">assert</span>.<span style="color:#a6e22e">Equal</span>(<span style="color:#a6e22e">t</span>, <span style="color:#a6e22e">tt</span>.<span style="color:#a6e22e">expected</span>.<span style="color:#a6e22e">Success</span>, <span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">Success</span>)
+</span></span><span style="display:flex;"><span>        })
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">TestAgentChainBuilder</span>(<span style="color:#a6e22e">t</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">testing</span>.<span style="color:#a6e22e">T</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">agent1</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">mockAgent</span>{<span style="color:#a6e22e">response</span>: <span style="color:#e6db74">&#34;result1&#34;</span>}
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">agent2</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">mockAgent</span>{<span style="color:#a6e22e">response</span>: <span style="color:#e6db74">&#34;result2&#34;</span>}
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">chain</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">NewAgentChainBuilder</span>(<span style="color:#e6db74">&#34;test-chain&#34;</span>).
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Step</span>(<span style="color:#e6db74">&#34;step1&#34;</span>, <span style="color:#a6e22e">agent1</span>).
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Step</span>(<span style="color:#e6db74">&#34;step2&#34;</span>, <span style="color:#a6e22e">agent2</span>).
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">WithErrorHandler</span>(<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">mockErrorHandler</span>{}).
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Build</span>()
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">assert</span>.<span style="color:#a6e22e">NotNil</span>(<span style="color:#a6e22e">t</span>, <span style="color:#a6e22e">chain</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">input</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ChainInput</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Event</span>: <span style="color:#a6e22e">NewEvent</span>(<span style="color:#e6db74">&#34;test&#34;</span>, <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">interface</span>{}{<span style="color:#e6db74">&#34;query&#34;</span>: <span style="color:#e6db74">&#34;test&#34;</span>}),
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">State</span>: <span style="color:#a6e22e">NewState</span>(),
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">result</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">chain</span>.<span style="color:#a6e22e">Execute</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>(), <span style="color:#a6e22e">input</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">require</span>.<span style="color:#a6e22e">NoError</span>(<span style="color:#a6e22e">t</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">assert</span>.<span style="color:#a6e22e">True</span>(<span style="color:#a6e22e">t</span>, <span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">Success</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">assert</span>.<span style="color:#a6e22e">Len</span>(<span style="color:#a6e22e">t</span>, <span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">Steps</span>, <span style="color:#ae81ff">2</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Mock implementations for testing</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">mockAgent</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">response</span> <span style="color:#66d9ef">string</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">err</span>      <span style="color:#66d9ef">error</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">m</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">mockAgent</span>) <span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">event</span> <span style="color:#a6e22e">Event</span>, <span style="color:#a6e22e">state</span> <span style="color:#a6e22e">State</span>) (<span style="color:#a6e22e">AgentResult</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">m</span>.<span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">AgentResult</span>{}, <span style="color:#a6e22e">m</span>.<span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">AgentResult</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Data</span>: <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">interface</span>{}{
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;result&#34;</span>: <span style="color:#a6e22e">m</span>.<span style="color:#a6e22e">response</span>,
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Success</span>: <span style="color:#66d9ef">true</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">State</span>:   <span style="color:#a6e22e">state</span>,
+</span></span><span style="display:flex;"><span>    }, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h4 id="integration-tests">Integration Tests</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// integration/agent_chain_integration_test.go</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">//go:build integration</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// +build integration</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">integration</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;context&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;testing&#34;</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;github.com/stretchr/testify/assert&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;github.com/stretchr/testify/require&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;github.com/kunalkushwaha/agenticgokit/core&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">TestAgentChain_RealWorkflow</span>(<span style="color:#a6e22e">t</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">testing</span>.<span style="color:#a6e22e">T</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Setup real agents</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">searchAgent</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">SearchAgent</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">provider</span>: <span style="color:#a6e22e">newTestSearchProvider</span>(),
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">analysisAgent</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">AnalysisAgent</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">llm</span>: <span style="color:#a6e22e">newTestLLMProvider</span>(),
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">summaryAgent</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">SummaryAgent</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">llm</span>: <span style="color:#a6e22e">newTestLLMProvider</span>(),
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Create chain</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">chain</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewAgentChainBuilder</span>(<span style="color:#e6db74">&#34;research-workflow&#34;</span>).
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Step</span>(<span style="color:#e6db74">&#34;search&#34;</span>, <span style="color:#a6e22e">searchAgent</span>).
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Step</span>(<span style="color:#e6db74">&#34;analyze&#34;</span>, <span style="color:#a6e22e">analysisAgent</span>).
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Step</span>(<span style="color:#e6db74">&#34;summarize&#34;</span>, <span style="color:#a6e22e">summaryAgent</span>).
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Build</span>()
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Execute chain</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">input</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">ChainInput</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Event</span>: <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewEvent</span>(<span style="color:#e6db74">&#34;research&#34;</span>, <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">interface</span>{}{
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;topic&#34;</span>: <span style="color:#e6db74">&#34;artificial intelligence trends 2024&#34;</span>,
+</span></span><span style="display:flex;"><span>        }),
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">State</span>: <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewState</span>(),
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">result</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">chain</span>.<span style="color:#a6e22e">Execute</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>(), <span style="color:#a6e22e">input</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">require</span>.<span style="color:#a6e22e">NoError</span>(<span style="color:#a6e22e">t</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">assert</span>.<span style="color:#a6e22e">True</span>(<span style="color:#a6e22e">t</span>, <span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">Success</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">assert</span>.<span style="color:#a6e22e">Len</span>(<span style="color:#a6e22e">t</span>, <span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">Steps</span>, <span style="color:#ae81ff">3</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">assert</span>.<span style="color:#a6e22e">Contains</span>(<span style="color:#a6e22e">t</span>, <span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">FinalState</span>.<span style="color:#a6e22e">GetString</span>(<span style="color:#e6db74">&#34;summary&#34;</span>), <span style="color:#e6db74">&#34;artificial intelligence&#34;</span>)
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h3 id="5-documentation-phase">5. Documentation Phase</h3>
+<h4 id="api-documentation">API Documentation</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-markdown" data-lang="markdown"><span style="display:flex;"><span># Agent Chaining
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Agent chaining allows you to create sophisticated workflows by connecting multiple agents in sequence, with conditional logic and error handling.
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## Basic Usage
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span>```go
+</span></span><span style="display:flex;"><span>import &#34;github.com/kunalkushwaha/agenticgokit/core&#34;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>// Create agents
+</span></span><span style="display:flex;"><span>searchAgent := <span style="color:#960050;background-color:#1e0010">&amp;</span>SearchAgent{}
+</span></span><span style="display:flex;"><span>analysisAgent := <span style="color:#960050;background-color:#1e0010">&amp;</span>AnalysisAgent{}
+</span></span><span style="display:flex;"><span>summaryAgent := <span style="color:#960050;background-color:#1e0010">&amp;</span>SummaryAgent{}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>// Build chain
+</span></span><span style="display:flex;"><span>chain := core.NewAgentChainBuilder(&#34;research-workflow&#34;).
+</span></span><span style="display:flex;"><span>    Step(&#34;search&#34;, searchAgent).
+</span></span><span style="display:flex;"><span>    Step(&#34;analyze&#34;, analysisAgent).
+</span></span><span style="display:flex;"><span>    Step(&#34;summarize&#34;, summaryAgent).
+</span></span><span style="display:flex;"><span>    Build()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>// Execute chain
+</span></span><span style="display:flex;"><span>input := core.ChainInput{
+</span></span><span style="display:flex;"><span>    Event: core.NewEvent(&#34;research&#34;, map[string]interface{}{
+</span></span><span style="display:flex;"><span>        &#34;topic&#34;: &#34;AI trends&#34;,
+</span></span><span style="display:flex;"><span>    }),
+</span></span><span style="display:flex;"><span>    State: core.NewState(),
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>result, err := chain.Execute(context.Background(), input)
+</span></span><span style="display:flex;"><span>if err != nil {
+</span></span><span style="display:flex;"><span>    log.Fatal(err)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>fmt.Printf(&#34;Final result: %v\n&#34;, result.FinalState)</span></span></code></pre></div>
+<h2 id="advanced-features">Advanced Features</h2>
+<h3 id="conditional-steps">Conditional Steps</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#a6e22e">chain</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewAgentChainBuilder</span>(<span style="color:#e6db74">&#34;conditional-workflow&#34;</span>).
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Step</span>(<span style="color:#e6db74">&#34;initial&#34;</span>, <span style="color:#a6e22e">initialAgent</span>).
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">ConditionalStep</span>(<span style="color:#e6db74">&#34;optional&#34;</span>, <span style="color:#a6e22e">optionalAgent</span>, 
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">StateCondition</span>(<span style="color:#e6db74">&#34;need_extra_processing&#34;</span>, <span style="color:#66d9ef">true</span>)).
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Step</span>(<span style="color:#e6db74">&#34;final&#34;</span>, <span style="color:#a6e22e">finalAgent</span>).
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Build</span>()</span></span></code></pre></div>
+<h3 id="error-handling">Error Handling</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#a6e22e">errorHandler</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">ContinueOnErrorHandler</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">MaxErrors</span>: <span style="color:#ae81ff">2</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">LogErrors</span>: <span style="color:#66d9ef">true</span>,
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">chain</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewAgentChainBuilder</span>(<span style="color:#e6db74">&#34;resilient-workflow&#34;</span>).
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Step</span>(<span style="color:#e6db74">&#34;step1&#34;</span>, <span style="color:#a6e22e">agent1</span>).
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Step</span>(<span style="color:#e6db74">&#34;step2&#34;</span>, <span style="color:#a6e22e">agent2</span>).
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">WithErrorHandler</span>(<span style="color:#a6e22e">errorHandler</span>).
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Build</span>()</span></span></code></pre></div>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0"><code>#### User Guide Update
+
+Add section to `docs/guides/AgentBasics.md`:
+
+```markdown
+## Agent Chaining
+
+For complex workflows requiring multiple agents, use AgentChain:
+
+### Creating a Chain
+
+```go
+chain := core.NewAgentChainBuilder(&#34;my-workflow&#34;).
+    Step(&#34;search&#34;, searchAgent).
+    Step(&#34;analyze&#34;, analysisAgent).
+    Step(&#34;summarize&#34;, summaryAgent).
+    Build()</code></pre></div>
+<h3 id="executing-the-chain">Executing the Chain</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#a6e22e">result</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">chain</span>.<span style="color:#a6e22e">Execute</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">ChainInput</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Event</span>: <span style="color:#a6e22e">event</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">State</span>: <span style="color:#a6e22e">state</span>,
+</span></span><span style="display:flex;"><span>})</span></span></code></pre></div>
+<p>The chain will execute each step in sequence, passing state between steps.</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0"><code>### 6. Configuration Integration
+
+#### Add Configuration Support
+
+```go
+// core/config.go - Add to existing config
+
+type Config struct {
+    // ... existing fields ...
+    
+    AgentChain AgentChainConfig `toml:&#34;agent_chain&#34;`
+}
+
+type AgentChainConfig struct {
+    MaxSteps              int           `toml:&#34;max_steps&#34;`
+    StepTimeout           time.Duration `toml:&#34;step_timeout&#34;`
+    EnableParallelSteps   bool          `toml:&#34;enable_parallel_steps&#34;`
+    DefaultErrorStrategy  string        `toml:&#34;default_error_strategy&#34;`
+}
+
+func (c AgentChainConfig) Validate() error {
+    if c.MaxSteps &lt; 1 {
+        return fmt.Errorf(&#34;max_steps must be at least 1&#34;)
+    }
+    if c.StepTimeout &lt; time.Second {
+        return fmt.Errorf(&#34;step_timeout must be at least 1 second&#34;)
+    }
+    return nil
+}</code></pre></div>
+<h4 id="update-default-configuration">Update Default Configuration</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span><span style="color:#75715e"># Default agentflow.toml additions</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">agent_chain</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_steps</span> = <span style="color:#ae81ff">50</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">step_timeout</span> = <span style="color:#e6db74">&#34;30s&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enable_parallel_steps</span> = <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">default_error_strategy</span> = <span style="color:#e6db74">&#34;stop&#34;</span></span></span></code></pre></div>
+<h3 id="7-cli-integration">7. CLI Integration</h3>
+<h4 id="add-cli-commands">Add CLI Commands</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// cmd/agentcli/cmd/chain.go</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">cmd</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;github.com/spf13/cobra&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">chainCmd</span> = <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">cobra</span>.<span style="color:#a6e22e">Command</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Use</span>:   <span style="color:#e6db74">&#34;chain&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Short</span>: <span style="color:#e6db74">&#34;Manage agent chains&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Long</span>:  <span style="color:#e6db74">&#34;Commands for creating and managing agent chains&#34;</span>,
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">chainCreateCmd</span> = <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">cobra</span>.<span style="color:#a6e22e">Command</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Use</span>:   <span style="color:#e6db74">&#34;create &lt;name&gt;&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Short</span>: <span style="color:#e6db74">&#34;Create a new agent chain&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Args</span>:  <span style="color:#a6e22e">cobra</span>.<span style="color:#a6e22e">ExactArgs</span>(<span style="color:#ae81ff">1</span>),
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">RunE</span>:  <span style="color:#a6e22e">runChainCreate</span>,
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">chainRunCmd</span> = <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">cobra</span>.<span style="color:#a6e22e">Command</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Use</span>:   <span style="color:#e6db74">&#34;run &lt;chain-name&gt;&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Short</span>: <span style="color:#e6db74">&#34;Execute an agent chain&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Args</span>:  <span style="color:#a6e22e">cobra</span>.<span style="color:#a6e22e">ExactArgs</span>(<span style="color:#ae81ff">1</span>),
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">RunE</span>:  <span style="color:#a6e22e">runChainRun</span>,
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">init</span>() {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">chainCmd</span>.<span style="color:#a6e22e">AddCommand</span>(<span style="color:#a6e22e">chainCreateCmd</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">chainCmd</span>.<span style="color:#a6e22e">AddCommand</span>(<span style="color:#a6e22e">chainRunCmd</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">rootCmd</span>.<span style="color:#a6e22e">AddCommand</span>(<span style="color:#a6e22e">chainCmd</span>)
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h2 id="-feature-integration-checklist">🔄 Feature Integration Checklist</h2>
+<h3 id="pre-implementation">Pre-Implementation</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Feature request created and discussed</li>
+<li><input disabled="" type="checkbox"> Design document written and reviewed</li>
+<li><input disabled="" type="checkbox"> API design approved by maintainers</li>
+<li><input disabled="" type="checkbox"> Breaking changes identified and documented</li>
+</ul>
+<h3 id="implementation">Implementation</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Public API implemented in <code>core/</code></li>
+<li><input disabled="" type="checkbox"> Implementation details in <code>internal/</code></li>
+<li><input disabled="" type="checkbox"> Configuration integration added</li>
+<li><input disabled="" type="checkbox"> Error handling implemented</li>
+<li><input disabled="" type="checkbox"> Performance considerations addressed</li>
+</ul>
+<h3 id="testing">Testing</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Unit tests written and passing</li>
+<li><input disabled="" type="checkbox"> Integration tests written and passing</li>
+<li><input disabled="" type="checkbox"> Benchmarks created for performance-critical paths</li>
+<li><input disabled="" type="checkbox"> Mock implementations created for testing</li>
+</ul>
+<h3 id="documentation">Documentation</h3>
+<ul>
+<li><input disabled="" type="checkbox"> API documentation written</li>
+<li><input disabled="" type="checkbox"> User guide updated</li>
+<li><input disabled="" type="checkbox"> Examples created and tested</li>
+<li><input disabled="" type="checkbox"> Migration guide written (if breaking changes)</li>
+</ul>
+<h3 id="cli-integration">CLI Integration</h3>
+<ul>
+<li><input disabled="" type="checkbox"> CLI commands added (if applicable)</li>
+<li><input disabled="" type="checkbox"> Help text and examples provided</li>
+<li><input disabled="" type="checkbox"> Shell completion updated</li>
+</ul>
+<h3 id="quality-assurance">Quality Assurance</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Code review completed</li>
+<li><input disabled="" type="checkbox"> Security review completed (if applicable)</li>
+<li><input disabled="" type="checkbox"> Performance testing completed</li>
+<li><input disabled="" type="checkbox"> Manual testing completed</li>
+</ul>
+<h3 id="release-preparation">Release Preparation</h3>
+<ul>
+<li><input disabled="" type="checkbox"> CHANGELOG.md updated</li>
+<li><input disabled="" type="checkbox"> Version compatibility documented</li>
+<li><input disabled="" type="checkbox"> Release notes drafted</li>
+<li><input disabled="" type="checkbox"> Deprecation notices added (if applicable)</li>
+</ul>
+<h2 id="-feature-examples">📚 Feature Examples</h2>
+<h3 id="simple-feature-add-timeout-to-agent-execution">Simple Feature: Add Timeout to Agent Execution</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// 1. Extend AgentHandler interface</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">AgentHandler</span> <span style="color:#66d9ef">interface</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">event</span> <span style="color:#a6e22e">Event</span>, <span style="color:#a6e22e">state</span> <span style="color:#a6e22e">State</span>) (<span style="color:#a6e22e">AgentResult</span>, <span style="color:#66d9ef">error</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">GetTimeout</span>() <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Duration</span> <span style="color:#75715e">// New method</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// 2. Update Runner to use timeout</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Runner</span>) <span style="color:#a6e22e">executeAgent</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">agent</span> <span style="color:#a6e22e">AgentHandler</span>, <span style="color:#a6e22e">event</span> <span style="color:#a6e22e">Event</span>, <span style="color:#a6e22e">state</span> <span style="color:#a6e22e">State</span>) (<span style="color:#a6e22e">AgentResult</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">timeout</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">agent</span>.<span style="color:#a6e22e">GetTimeout</span>()
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">timeout</span> &gt; <span style="color:#ae81ff">0</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">cancel</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">CancelFunc</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">cancel</span> = <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">WithTimeout</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">timeout</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">cancel</span>()
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">agent</span>.<span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">event</span>, <span style="color:#a6e22e">state</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// 3. Provide default implementation</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">BaseAgent</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">timeout</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Duration</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">a</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">BaseAgent</span>) <span style="color:#a6e22e">GetTimeout</span>() <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Duration</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">a</span>.<span style="color:#a6e22e">timeout</span> &gt; <span style="color:#ae81ff">0</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">a</span>.<span style="color:#a6e22e">timeout</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">30</span> <span style="color:#f92672">*</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Second</span> <span style="color:#75715e">// default</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h3 id="complex-feature-agent-middleware-system">Complex Feature: Agent Middleware System</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// 1. Define middleware interface</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Middleware</span> <span style="color:#66d9ef">interface</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Handle</span>(<span style="color:#a6e22e">next</span> <span style="color:#a6e22e">AgentHandler</span>) <span style="color:#a6e22e">AgentHandler</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// 2. Create middleware chain</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">MiddlewareChain</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">middlewares</span> []<span style="color:#a6e22e">Middleware</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">MiddlewareChain</span>) <span style="color:#a6e22e">Then</span>(<span style="color:#a6e22e">handler</span> <span style="color:#a6e22e">AgentHandler</span>) <span style="color:#a6e22e">AgentHandler</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">i</span> <span style="color:#f92672">:=</span> len(<span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">middlewares</span>) <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>; <span style="color:#a6e22e">i</span> <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">0</span>; <span style="color:#a6e22e">i</span><span style="color:#f92672">--</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">handler</span> = <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">middlewares</span>[<span style="color:#a6e22e">i</span>].<span style="color:#a6e22e">Handle</span>(<span style="color:#a6e22e">handler</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">handler</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// 3. Integrate with Runner</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Runner</span>) <span style="color:#a6e22e">RegisterAgentWithMiddleware</span>(<span style="color:#a6e22e">name</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">handler</span> <span style="color:#a6e22e">AgentHandler</span>, <span style="color:#a6e22e">middlewares</span> <span style="color:#f92672">...</span><span style="color:#a6e22e">Middleware</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">chain</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">MiddlewareChain</span>{<span style="color:#a6e22e">middlewares</span>: <span style="color:#a6e22e">middlewares</span>}
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">wrappedHandler</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">chain</span>.<span style="color:#a6e22e">Then</span>(<span style="color:#a6e22e">handler</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">RegisterAgent</span>(<span style="color:#a6e22e">name</span>, <span style="color:#a6e22e">wrappedHandler</span>)
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<p>This comprehensive guide provides the framework for adding any feature to AgenticGoKit while maintaining code quality, performance, and user experience standards.</p>
+
+  <footer class="footline">
+              <i class='fa-fw fas fa-calendar'></i> Jul 25, 2025
+  </footer>
+</article>
+        </div>
+      </main>
+    </div>
+    <aside id="R-sidebar" class="default-animation">
+      <div id="R-header-topbar" class="default-animation"></div>
+      <div id="R-header-wrapper" class="default-animation">
+        <div id="R-header" class="default-animation">
+          <a id="R-logo" class="R-default" href="/AgenticGoKitDocs/index.html">
+            <div class="logo-title">AgenticGoKit Docs</div>
+          </a>
+        </div>
+        <search><form action="/AgenticGoKitDocs/search/index.html" method="get">
+          <div class="searchbox default-animation">
+            <button class="search-detail" type="submit" title="Search (CTRL+ALT+f)"><i class="fas fa-search"></i></button>
+            <label class="a11y-only" for="R-search-by">Search</label>
+            <input data-search-input id="R-search-by" name="search-by" class="search-by" type="search" placeholder="Search...">
+            <button class="search-clear" type="button" data-search-clear="" title="Clear search"><i class="fas fa-times" title="Clear search"></i></button>
+          </div>
+        </form></search>
+      </div>
+      <div id="R-homelinks" class="default-animation homelinks">
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-homelinks">
+          <ul class="space collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/index.html"><a class="padding" href="/AgenticGoKitDocs/index.html"><i class="fa-fw fas fa-home"></i> Home</a></li>
+          </ul>
+        </div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-headercontrols">
+          <ul class="">
+          </ul>
+        </div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+      </div>
+      <div id="R-content-wrapper" class="highlightable">
+        <div class="R-sidebarmenu R-shortcutmenu-main">
+          <ul class="enlarge morespace collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/readme/index.html">content</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/index.html"><input type="checkbox" id="R-section-8fc2fd7736125e87cab8840a86c2af5a" aria-controls="R-subsections-8fc2fd7736125e87cab8840a86c2af5a" checked><label for="R-section-8fc2fd7736125e87cab8840a86c2af5a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu guides</span></label><a class="padding" href="/AgenticGoKitDocs/guides/index.html">guides</a><ul id="R-subsections-8fc2fd7736125e87cab8840a86c2af5a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/readme/index.html">guides</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/agentbasics/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/agentbasics/index.html">AgentBasics</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/examples/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/examples/index.html">Examples</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/configuration/index.html">Configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/customtools/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/customtools/index.html">CustomTools</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/providers/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/providers/index.html">Providers</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memoryprovidersetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memoryprovidersetup/index.html">MemoryProviderSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memorytroubleshooting/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memorytroubleshooting/index.html">MemoryTroubleshooting</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/embeddingmodelguide/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/embeddingmodelguide/index.html">EmbeddingModelGuide</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/ragconfiguration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/ragconfiguration/index.html">RAGConfiguration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/toolintegration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/toolintegration/index.html">ToolIntegration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/pgvectorsetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/pgvectorsetup/index.html">PgVectorSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/weaviatesetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/weaviatesetup/index.html">WeaviateSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/performance/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/performance/index.html">Performance</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/errorhandling/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/errorhandling/index.html">ErrorHandling</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/deployment/index.html"><input type="checkbox" id="R-section-ecc839349395ef3c015a12132049dff2" aria-controls="R-subsections-ecc839349395ef3c015a12132049dff2" checked><label for="R-section-ecc839349395ef3c015a12132049dff2"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu deployment</span></label><a class="padding" href="/AgenticGoKitDocs/guides/deployment/index.html">deployment</a><ul id="R-subsections-ecc839349395ef3c015a12132049dff2" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/deployment/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/deployment/readme/index.html">deployment</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/development/index.html"><input type="checkbox" id="R-section-fff1f5eca5d0a93209b9c6262762c25a" aria-controls="R-subsections-fff1f5eca5d0a93209b9c6262762c25a" checked><label for="R-section-fff1f5eca5d0a93209b9c6262762c25a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu development</span></label><a class="padding" href="/AgenticGoKitDocs/guides/development/index.html">development</a><ul id="R-subsections-fff1f5eca5d0a93209b9c6262762c25a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/readme/index.html">development</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/best-practices/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/best-practices/index.html">best-practices</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/debugging/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/debugging/index.html">debugging</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/research-assistant/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/research-assistant/index.html">research-assistant</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/testing-agents/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/testing-agents/index.html">testing-agents</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/visualization/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/visualization/index.html">visualization</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/web-search-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/web-search-integration/index.html">web-search-integration</a></li></ul></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/framework-comparison/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/framework-comparison/index.html">framework-comparison</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memory/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memory/index.html">Memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/scaffoldmemoryguide/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/scaffoldmemoryguide/index.html">ScaffoldMemoryGuide</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/setup/index.html"><input type="checkbox" id="R-section-0124aed9abb5064d53391168f3c95c22" aria-controls="R-subsections-0124aed9abb5064d53391168f3c95c22" checked><label for="R-section-0124aed9abb5064d53391168f3c95c22"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu setup</span></label><a class="padding" href="/AgenticGoKitDocs/guides/setup/index.html">setup</a><ul id="R-subsections-0124aed9abb5064d53391168f3c95c22" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/readme/index.html">setup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/llm-providers/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/llm-providers/index.html">llm-providers</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/mcp-tools/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/mcp-tools/index.html">mcp-tools</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/orchestration-configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/orchestration-configuration/index.html">orchestration-configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/vector-databases/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/vector-databases/index.html">vector-databases</a></li></ul></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/troubleshooting/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/troubleshooting/index.html">troubleshooting</a></li></ul></li>
+            <li class="parent alwaysopen " data-nav-id="/AgenticGoKitDocs/contributors/index.html"><input type="checkbox" id="R-section-190d9b328fbda7e13ab386f7a5417de5" aria-controls="R-subsections-190d9b328fbda7e13ab386f7a5417de5" checked><label for="R-section-190d9b328fbda7e13ab386f7a5417de5"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu contributors</span></label><a class="padding" href="/AgenticGoKitDocs/contributors/index.html">contributors</a><ul id="R-subsections-190d9b328fbda7e13ab386f7a5417de5" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/readme/index.html">contributors</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/contributorguide/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/contributorguide/index.html">ContributorGuide</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/codestyle/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/codestyle/index.html">CodeStyle</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/corevsinternal/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/corevsinternal/index.html">CoreVsInternal</a></li>
+            <li class="active " data-nav-id="/AgenticGoKitDocs/contributors/addingfeatures/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/addingfeatures/index.html">AddingFeatures</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/testing/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/testing/index.html">Testing</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/docsstandards/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/docsstandards/index.html">DocsStandards</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/reference/index.html"><input type="checkbox" id="R-section-66002f201bef818664bb81aa67490c58" aria-controls="R-subsections-66002f201bef818664bb81aa67490c58" checked><label for="R-section-66002f201bef818664bb81aa67490c58"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu reference</span></label><a class="padding" href="/AgenticGoKitDocs/reference/index.html">reference</a><ul id="R-subsections-66002f201bef818664bb81aa67490c58" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/readme/index.html">reference</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/configuration/index.html">configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/cli/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/cli/index.html">cli</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/mcp/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/mcp/index.html">mcp</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/agent/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/agent/index.html">agent</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/memory/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/memory/index.html">memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/orchestration/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/orchestration/index.html">orchestration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/state-event/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/state-event/index.html">state-event</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/index.html"><input type="checkbox" id="R-section-e1e8c1e70c5500b49e8dda2dc550651a" aria-controls="R-subsections-e1e8c1e70c5500b49e8dda2dc550651a" checked><label for="R-section-e1e8c1e70c5500b49e8dda2dc550651a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu tutorials</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/index.html">tutorials</a><ul id="R-subsections-e1e8c1e70c5500b49e8dda2dc550651a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/readme/index.html">tutorials</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/advanced/index.html"><input type="checkbox" id="R-section-d3def5cd76adc8096d0ff9fda6b8e479" aria-controls="R-subsections-d3def5cd76adc8096d0ff9fda6b8e479" checked><label for="R-section-d3def5cd76adc8096d0ff9fda6b8e479"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu advanced</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/index.html">advanced</a><ul id="R-subsections-d3def5cd76adc8096d0ff9fda6b8e479" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/readme/index.html">advanced</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/circuit-breaker-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/circuit-breaker-patterns/index.html">circuit-breaker-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/load-balancing-scaling/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/load-balancing-scaling/index.html">load-balancing-scaling</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/retry-policies/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/retry-policies/index.html">retry-policies</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/testing-strategies/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/testing-strategies/index.html">testing-strategies</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/index.html"><input type="checkbox" id="R-section-212c6ccffb40ecdd78eb2136f98c4cac" aria-controls="R-subsections-212c6ccffb40ecdd78eb2136f98c4cac" checked><label for="R-section-212c6ccffb40ecdd78eb2136f98c4cac"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu core-concepts</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/index.html">core-concepts</a><ul id="R-subsections-212c6ccffb40ecdd78eb2136f98c4cac" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/readme/index.html">core-concepts</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/agent-lifecycle/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/agent-lifecycle/index.html">agent-lifecycle</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/error-handling/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/error-handling/index.html">error-handling</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/message-passing/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/message-passing/index.html">message-passing</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/orchestration-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/orchestration-patterns/index.html">orchestration-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/state-management/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/state-management/index.html">state-management</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/debugging/index.html"><input type="checkbox" id="R-section-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" aria-controls="R-subsections-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" checked><label for="R-section-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu debugging</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/index.html">debugging</a><ul id="R-subsections-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/readme/index.html">debugging</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/debugging-multi-agent-systems/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/debugging-multi-agent-systems/index.html">debugging-multi-agent-systems</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/logging-and-tracing/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/logging-and-tracing/index.html">logging-and-tracing</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/index.html"><input type="checkbox" id="R-section-e7f904c8b9d0f9bf1f07ca7d482d2247" aria-controls="R-subsections-e7f904c8b9d0f9bf1f07ca7d482d2247" checked><label for="R-section-e7f904c8b9d0f9bf1f07ca7d482d2247"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu getting-started</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/index.html">getting-started</a><ul id="R-subsections-e7f904c8b9d0f9bf1f07ca7d482d2247" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/readme/index.html">getting-started</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/memory-and-rag/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/memory-and-rag/index.html">memory-and-rag</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/multi-agent-collaboration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/multi-agent-collaboration/index.html">multi-agent-collaboration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/production-deployment/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/production-deployment/index.html">production-deployment</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/quickstart/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/quickstart/index.html">quickstart</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/tool-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/tool-integration/index.html">tool-integration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/your-first-agent/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/your-first-agent/index.html">your-first-agent</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/mcp/index.html"><input type="checkbox" id="R-section-153aac44598009a99dd5a60317a3eecc" aria-controls="R-subsections-153aac44598009a99dd5a60317a3eecc" checked><label for="R-section-153aac44598009a99dd5a60317a3eecc"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu mcp</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/index.html">mcp</a><ul id="R-subsections-153aac44598009a99dd5a60317a3eecc" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/readme/index.html">mcp</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/advanced-tool-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/advanced-tool-patterns/index.html">advanced-tool-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/tool-development/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/tool-development/index.html">tool-development</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/tool-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/tool-integration/index.html">tool-integration</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/index.html"><input type="checkbox" id="R-section-9c1a65f2d7b3888241dcafa51a0710e7" aria-controls="R-subsections-9c1a65f2d7b3888241dcafa51a0710e7" checked><label for="R-section-9c1a65f2d7b3888241dcafa51a0710e7"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu memory-systems</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/index.html">memory-systems</a><ul id="R-subsections-9c1a65f2d7b3888241dcafa51a0710e7" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/readme/index.html">memory-systems</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/basic-memory/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/basic-memory/index.html">basic-memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/document-ingestion/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/document-ingestion/index.html">document-ingestion</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/knowledge-bases/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/knowledge-bases/index.html">knowledge-bases</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/memory-optimization/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/memory-optimization/index.html">memory-optimization</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/rag-implementation/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/rag-implementation/index.html">rag-implementation</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/vector-databases/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/vector-databases/index.html">vector-databases</a></li></ul></li></ul></li>
+          </ul>
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-shortcuts">
+          <ul class="space collapsible-menu">
+          </ul>
+        </div>
+        <div id="R-footer-margin"></div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-footercontrols">
+          <ul class="">
+          </ul>
+        </div>
+<div id="R-footer"><p>Built with <a href="https://github.com/McShelby/hugo-theme-relearn" title="love"><i class="fas fa-heart"></i></a> by <a href="https://gohugo.io/">Hugo</a></p></div>
+      </div>
+    </aside>
+    <script src="/AgenticGoKitDocs/js/clipboard/clipboard.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/perfect-scrollbar/perfect-scrollbar.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/theme.js?1753430931" defer></script>
+  </body>
+</html>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>core-concepts :: AgenticGoKit Docs</title>
+    <link>http://localhost:1313/AgenticGoKitDocs/tutorials/core-concepts/index.html</link>
+    <description>Core Concepts Overview Navigation: Documentation Home → Tutorials → Core Concepts&#xA;Understanding AgenticGoKit’s core concepts is essential for building effective multi-agent systems. This section covers the fundamental building blocks that power the framework.&#xA;The Big Picture AgenticGoKit is built around a few key concepts that work together to create a powerful multi-agent system:&#xA;graph TB&#xD;Event[Event] --&gt; Runner[Runner]&#xD;Runner --&gt; Orchestrator[Orchestrator]&#xD;Orchestrator --&gt; Agent[Agent]&#xD;Agent --&gt; State[State]&#xD;State --&gt; Memory[Memory]&#xD;subgraph &#34;Core Flow&#34;&#xD;Event --&gt; State&#xD;State --&gt; Agent&#xD;Agent --&gt; State&#xD;end&#xD;subgraph &#34;Orchestration&#34;&#xD;Orchestrator --&gt; AgentA[Agent A]&#xD;Orchestrator --&gt; AgentB[Agent B]&#xD;Orchestrator --&gt; AgentC[Agent C]&#xD;end&#xD;Key Components 1. Events - The Message System Events are the messages that flow through your agent system. They carry data, metadata, and routing information.</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <lastBuildDate>Fri, 25 Jul 2025 00:00:00 +0000</lastBuildDate>
+    <atom:link href="http://localhost:1313/AgenticGoKitDocs/tutorials/core-concepts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>core-concepts</title>
+      <link>http://localhost:1313/AgenticGoKitDocs/tutorials/core-concepts/readme/index.html</link>
+      <pubDate>Fri, 25 Jul 2025 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/AgenticGoKitDocs/tutorials/core-concepts/readme/index.html</guid>
+      <description>Core Concepts Overview Navigation: Documentation Home → Tutorials → Core Concepts&#xA;Understanding AgenticGoKit’s core concepts is essential for building effective multi-agent systems. This section covers the fundamental building blocks that power the framework.&#xA;The Big Picture AgenticGoKit is built around a few key concepts that work together to create a powerful multi-agent system:&#xA;graph TB&#xD;Event[Event] --&gt; Runner[Runner]&#xD;Runner --&gt; Orchestrator[Orchestrator]&#xD;Orchestrator --&gt; Agent[Agent]&#xD;Agent --&gt; State[State]&#xD;State --&gt; Memory[Memory]&#xD;subgraph &#34;Core Flow&#34;&#xD;Event --&gt; State&#xD;State --&gt; Agent&#xD;Agent --&gt; State&#xD;end&#xD;subgraph &#34;Orchestration&#34;&#xD;Orchestrator --&gt; AgentA[Agent A]&#xD;Orchestrator --&gt; AgentB[Agent B]&#xD;Orchestrator --&gt; AgentC[Agent C]&#xD;end&#xD;Key Components 1. Events - The Message System Events are the messages that flow through your agent system. They carry data, metadata, and routing information.</description>
+    </item>
+    <item>
+      <title>agent-lifecycle</title>
+      <link>http://localhost:1313/AgenticGoKitDocs/tutorials/core-concepts/agent-lifecycle/index.html</link>
+      <pubDate>Fri, 25 Jul 2025 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/AgenticGoKitDocs/tutorials/core-concepts/agent-lifecycle/index.html</guid>
+      <description>Agent Lifecycle in AgenticGoKit Overview Understanding the agent lifecycle is fundamental to building effective multi-agent systems. This tutorial explores how agents are created, initialized, executed, and cleaned up in AgenticGoKit, along with best practices for managing agent resources and state.&#xA;The agent lifecycle encompasses everything from agent creation and configuration to execution patterns and resource cleanup.&#xA;Prerequisites Basic understanding of Go programming Familiarity with Message Passing and Event Flow Knowledge of State Management Agent Lifecycle Phases 1. Creation and Configuration Agents go through several phases during their lifecycle:</description>
+    </item>
+    <item>
+      <title>error-handling</title>
+      <link>http://localhost:1313/AgenticGoKitDocs/tutorials/core-concepts/error-handling/index.html</link>
+      <pubDate>Fri, 25 Jul 2025 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/AgenticGoKitDocs/tutorials/core-concepts/error-handling/index.html</guid>
+      <description>Error Handling and Recovery in AgenticGoKit Overview Robust error handling is critical for building reliable multi-agent systems. This tutorial explores AgenticGoKit’s error handling mechanisms, recovery strategies, and best practices for building fault-tolerant agent workflows.&#xA;Understanding error handling is essential because agent systems involve multiple components, network calls, and complex interactions where failures can occur at any point.&#xA;Prerequisites Understanding of Message Passing and Event Flow Knowledge of State Management Basic understanding of Go error handling patterns Core Error Handling Concepts Error Types in AgenticGoKit AgenticGoKit handles several types of errors:</description>
+    </item>
+    <item>
+      <title>message-passing</title>
+      <link>http://localhost:1313/AgenticGoKitDocs/tutorials/core-concepts/message-passing/index.html</link>
+      <pubDate>Fri, 25 Jul 2025 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/AgenticGoKitDocs/tutorials/core-concepts/message-passing/index.html</guid>
+      <description>Message Passing and Event Flow in AgenticGoKit Overview At the heart of AgenticGoKit is an event-driven architecture that enables flexible communication between agents. This tutorial explains how messages flow through the system, how the Runner orchestrates this flow, and how you can leverage these patterns in your own applications.&#xA;Understanding message passing is crucial because it’s the foundation of how agents communicate, share data, and coordinate their work in AgenticGoKit.</description>
+    </item>
+    <item>
+      <title>orchestration-patterns</title>
+      <link>http://localhost:1313/AgenticGoKitDocs/tutorials/core-concepts/orchestration-patterns/index.html</link>
+      <pubDate>Fri, 25 Jul 2025 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/AgenticGoKitDocs/tutorials/core-concepts/orchestration-patterns/index.html</guid>
+      <description>Multi-Agent Orchestration Patterns Overview AgenticGoKit provides powerful multi-agent orchestration patterns that enable you to build complex workflows with multiple agents working together. The system supports various orchestration modes and includes built-in workflow visualization using Mermaid diagrams.&#xA;Prerequisites Understanding of Agent Lifecycle Familiarity with State Management Basic knowledge of Go concurrency Learning Objectives By the end of this tutorial, you’ll understand:&#xA;Different orchestration patterns and their use cases How to configure each orchestration mode using CLI and configuration files Performance characteristics of each pattern When to use which pattern How to visualize your orchestration workflows CLI Quick Start The fastest way to create multi-agent workflows is using the AgentFlow CLI:</description>
+    </item>
+    <item>
+      <title>state-management</title>
+      <link>http://localhost:1313/AgenticGoKitDocs/tutorials/core-concepts/state-management/index.html</link>
+      <pubDate>Fri, 25 Jul 2025 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/AgenticGoKitDocs/tutorials/core-concepts/state-management/index.html</guid>
+      <description>State Management and Data Flow in AgenticGoKit Overview State management is the backbone of data flow in AgenticGoKit. It determines how information is stored, passed between agents, and persisted across interactions. This tutorial explores how State objects work, how data flows through agent systems, and best practices for managing complex data transformations.&#xA;Understanding state management is crucial because it’s how agents share information, maintain context, and build upon each other’s work.</description>
+    </item>
+  </channel>
+</rss>

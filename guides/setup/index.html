@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en-us" dir="ltr" itemscope itemtype="http://schema.org/Article" data-r-output-format="html">
+  <head><script src="/AgenticGoKitDocs/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=AgenticGoKitDocs/livereload" data-no-instant defer></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="height=device-height, width=device-width, initial-scale=1.0, minimum-scale=1.0">
+    <meta name="generator" content="Hugo 0.148.1">
+    <meta name="generator" content="Relearn 8.0.0+9803d5122ebb3276acea823f476e9eb44f607862">
+    <meta name="description" content="Setup &amp; Configuration Guides Guides for setting up and configuring AgenticGoKit components.
+Available Guides LLM Providers Configure different Large Language Model providers including OpenAI, Anthropic, and local models.
+When to use: Setting up your first agent or switching LLM providers.
+Vector Databases Set up vector storage systems for Retrieval-Augmented Generation (RAG) including pgvector and Weaviate.
+When to use: Building agents that need to search through documents or knowledge bases.
+MCP Tools Integrate Model Context Protocol tools to extend agent capabilities with external services.">
+    <meta name="author" content="">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="setup :: AgenticGoKit Docs">
+    <meta name="twitter:description" content="Setup &amp; Configuration Guides Guides for setting up and configuring AgenticGoKit components.
+Available Guides LLM Providers Configure different Large Language Model providers including OpenAI, Anthropic, and local models.
+When to use: Setting up your first agent or switching LLM providers.
+Vector Databases Set up vector storage systems for Retrieval-Augmented Generation (RAG) including pgvector and Weaviate.
+When to use: Building agents that need to search through documents or knowledge bases.
+MCP Tools Integrate Model Context Protocol tools to extend agent capabilities with external services.">
+    <meta property="og:url" content="http://localhost:1313/AgenticGoKitDocs/guides/setup/index.html">
+    <meta property="og:site_name" content="AgenticGoKit Docs">
+    <meta property="og:title" content="setup :: AgenticGoKit Docs">
+    <meta property="og:description" content="Setup &amp; Configuration Guides Guides for setting up and configuring AgenticGoKit components.
+Available Guides LLM Providers Configure different Large Language Model providers including OpenAI, Anthropic, and local models.
+When to use: Setting up your first agent or switching LLM providers.
+Vector Databases Set up vector storage systems for Retrieval-Augmented Generation (RAG) including pgvector and Weaviate.
+When to use: Building agents that need to search through documents or knowledge bases.
+MCP Tools Integrate Model Context Protocol tools to extend agent capabilities with external services.">
+    <meta property="og:locale" content="en_us">
+    <meta property="og:type" content="website">
+    <meta itemprop="name" content="setup :: AgenticGoKit Docs">
+    <meta itemprop="description" content="Setup &amp; Configuration Guides Guides for setting up and configuring AgenticGoKit components.
+Available Guides LLM Providers Configure different Large Language Model providers including OpenAI, Anthropic, and local models.
+When to use: Setting up your first agent or switching LLM providers.
+Vector Databases Set up vector storage systems for Retrieval-Augmented Generation (RAG) including pgvector and Weaviate.
+When to use: Building agents that need to search through documents or knowledge bases.
+MCP Tools Integrate Model Context Protocol tools to extend agent capabilities with external services.">
+    <meta itemprop="datePublished" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="dateModified" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="wordCount" content="185">
+    <title>setup :: AgenticGoKit Docs</title>
+    <link href="/AgenticGoKitDocs/guides/setup/index.xml" rel="alternate" type="application/rss+xml" title="setup :: AgenticGoKit Docs">
+    <link href="/AgenticGoKitDocs/css/auto-complete/auto-complete.min.css?1753430931" rel="stylesheet">
+    <script src="/AgenticGoKitDocs/js/auto-complete/auto-complete.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/search-lunr.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/search.js?1753430931" defer></script>
+    <script>
+      window.relearn = window.relearn || {};
+      window.relearn.index_js_url="/AgenticGoKitDocs/searchindex.en.js?1753430931";
+    </script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.stemmer.support.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.multi.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.en.min.js?1753430931" defer></script>
+    <script>
+      window.relearn = window.relearn || {};
+      window.relearn.contentLangs=['en'];
+    </script>
+    <link href="/AgenticGoKitDocs/fonts/fontawesome/css/fontawesome-all.min.css?1753430931" rel="stylesheet" media="print" onload="this.media='all';this.onload=null;"><noscript><link href="/AgenticGoKitDocs/fonts/fontawesome/css/fontawesome-all.min.css?1753430931" rel="stylesheet"></noscript>
+    <link href="/AgenticGoKitDocs/css/perfect-scrollbar/perfect-scrollbar.min.css?1753430931" rel="stylesheet">
+    <link href="/AgenticGoKitDocs/css/theme.css?1753430931" rel="stylesheet">
+    <link href="/AgenticGoKitDocs/css/format-html.css?1753430931" rel="stylesheet" id="R-format-style">
+    <script>
+      window.relearn = window.relearn || {};
+      // configuration
+      window.relearn.min = ``;
+      window.relearn.path='\/guides\/setup\/index.html';
+      window.relearn.relBasePath='..\/..';
+      window.relearn.relBaseUri='..\/..\/..';
+      window.relearn.absBaseUri='http:\/\/localhost:1313\/AgenticGoKitDocs';
+      window.relearn.disableAnchorCopy=false;
+      window.relearn.disableAnchorScrolling=false;
+      window.relearn.disableInlineCopyToClipboard=false;
+      window.relearn.enableBlockCodeWrap=true;
+      // legal
+      window.relearn.getItem = (s,n) => {return s.getItem(n)};
+      window.relearn.setItem = (s,n,v) => {return s.setItem(n,v)};
+      window.relearn.removeItem = (s,n) => {return s.removeItem(n)};
+      // translations
+      window.T_Copy_to_clipboard = `Copy to clipboard`;
+      window.T_Copied_to_clipboard = `Copied to clipboard!`;
+      window.T_Copy_link_to_clipboard = `Copy link to clipboard`;
+      window.T_Link_copied_to_clipboard = `Copied link to clipboard!`;
+      window.T_Reset_view = `Reset view`;
+      window.T_View_reset = `View reset!`;
+      window.T_No_results_found = `No results found for "{0}"`;
+      window.T_N_results_found = `{1} results found for "{0}"`;
+      // variant stuff
+      window.relearn.themevariants = [ 'blue' ];
+      window.relearn.customvariantname = "my-custom-variant";
+      window.relearn.changeVariant = function(variant) {
+        var oldVariant = document.documentElement.dataset.rThemeVariant;
+        window.relearn.setItem(window.localStorage, window.relearn.absBaseUri + "/variant", variant);
+        document.documentElement.dataset.rThemeVariant = variant;
+        if (oldVariant != variant) {
+          document.dispatchEvent( new CustomEvent('themeVariantLoaded', { detail: { variant, oldVariant } }) );
+          window.relearn.markVariant();
+        }
+      }
+      window.relearn.markVariant = function() {
+        var variant = window.relearn.getItem(window.localStorage, window.relearn.absBaseUri + "/variant");
+        document.querySelectorAll(".R-variantswitcher select").forEach((select) => {select.value = variant;});
+      }
+      window.relearn.initVariant = function() {
+        var variant = window.relearn.getItem(window.localStorage, window.relearn.absBaseUri + "/variant") ?? "";
+        if( variant == window.relearn.customvariantname ){
+        }else if( !variant || !window.relearn.themevariants.includes(variant) ){
+          variant = window.relearn.themevariants[0];
+          window.relearn.setItem(window.localStorage, window.relearn.absBaseUri + "/variant", variant);
+        }
+        document.documentElement.dataset.rThemeVariant = variant;
+      }
+      window.relearn.initVariant();
+      window.relearn.markVariant();
+    </script>
+  </head>
+  <body class="mobile-support html" data-url="/AgenticGoKitDocs/guides/setup/index.html">
+    <div id="R-body" class="default-animation">
+      <div id="R-body-overlay"></div>
+      <nav id="R-topbar">
+        <div class="topbar-wrapper">
+          <div class="topbar-sidebar-divider"></div>
+          <div class="topbar-area topbar-area-start" data-area="start">
+            <div class="topbar-button topbar-button-sidebar" data-content-empty="disable" data-width-s="show" data-width-m="hide" data-width-l="hide"><button class="topbar-control" onclick="toggleNav()" type="button" title="Menu (CTRL&#43;ALT&#43;n)"><i class="fa-fw fas fa-bars"></i></button>
+            </div>
+            <div class="topbar-button topbar-button-toc" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show"><button class="topbar-control" onclick="toggleTopbarFlyout(this)" type="button" title="Table of Contents (CTRL&#43;ALT&#43;t)"><i class="fa-fw fas fa-list-alt"></i></button>
+              <div class="topbar-content">
+                <div class="topbar-content-wrapper">
+<nav class="TableOfContents">
+  <ul>
+    <li><a href="#available-guides">Available Guides</a>
+      <ul>
+        <li><a href="#llm-providers"><a href="llm-providers.md">LLM Providers</a></a></li>
+        <li><a href="#vector-databases"><a href="vector-databases.md">Vector Databases</a></a></li>
+        <li><a href="#mcp-tools"><a href="mcp-tools.md">MCP Tools</a></a></li>
+      </ul>
+    </li>
+    <li><a href="#common-setup-patterns">Common Setup Patterns</a></li>
+    <li><a href="#configuration-files">Configuration Files</a></li>
+    <li><a href="#next-steps">Next Steps</a></li>
+  </ul>
+</nav>
+                </div>
+              </div>
+            </div>
+          </div>
+          <ol class="topbar-breadcrumbs breadcrumbs highlightable" itemscope itemtype="http://schema.org/BreadcrumbList"><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="/AgenticGoKitDocs/index.html"><span itemprop="name">content</span></a><meta itemprop="position" content="1">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="/AgenticGoKitDocs/guides/index.html"><span itemprop="name">guides</span></a><meta itemprop="position" content="2">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><span itemprop="name">setup</span><meta itemprop="position" content="3"></li>
+          </ol>
+          <div class="topbar-area topbar-area-end" data-area="end">
+            <div class="topbar-button topbar-button-prev" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show"><a class="topbar-control" href="/AgenticGoKitDocs/guides/scaffoldmemoryguide/index.html" title="ScaffoldMemoryGuide (🡐)"><i class="fa-fw fas fa-chevron-left"></i></a>
+            </div>
+            <div class="topbar-button topbar-button-next" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show"><a class="topbar-control" href="/AgenticGoKitDocs/guides/setup/readme/index.html" title="setup (🡒)"><i class="fa-fw fas fa-chevron-right"></i></a>
+            </div>
+            <div class="topbar-button topbar-button-more" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show"><button class="topbar-control" onclick="toggleTopbarFlyout(this)" type="button" title="More"><i class="fa-fw fas fa-ellipsis-v"></i></button>
+              <div class="topbar-content">
+                <div class="topbar-content-wrapper">
+                  <div class="topbar-area topbar-area-more" data-area="more">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+      <div id="R-main-overlay"></div>
+      <main id="R-body-inner" class="highlightable guides" tabindex="-1">
+        <div class="flex-block-wrapper">
+<article class="default">
+  <header class="headline">
+  </header>
+
+<h1 id="setup">setup</h1>
+
+<h1 id="setup--configuration-guides">Setup &amp; Configuration Guides</h1>
+<p>Guides for setting up and configuring AgenticGoKit components.</p>
+<h2 id="available-guides">Available Guides</h2>
+<h3 id="llm-providers"><a href="/AgenticGoKitDocs/guides/setup/llm-providers/index.html">LLM Providers</a></h3>
+<p>Configure different Large Language Model providers including OpenAI, Anthropic, and local models.</p>
+<p><strong>When to use:</strong> Setting up your first agent or switching LLM providers.</p>
+<h3 id="vector-databases"><a href="/AgenticGoKitDocs/guides/setup/vector-databases/index.html">Vector Databases</a></h3>
+<p>Set up vector storage systems for Retrieval-Augmented Generation (RAG) including pgvector and Weaviate.</p>
+<p><strong>When to use:</strong> Building agents that need to search through documents or knowledge bases.</p>
+<h3 id="mcp-tools"><a href="/AgenticGoKitDocs/guides/setup/mcp-tools/index.html">MCP Tools</a></h3>
+<p>Integrate Model Context Protocol tools to extend agent capabilities with external services.</p>
+<p><strong>When to use:</strong> Adding specific tools like web search, file operations, or API integrations.</p>
+<h2 id="common-setup-patterns">Common Setup Patterns</h2>
+<p>Most AgenticGoKit applications follow this setup pattern:</p>
+<ol>
+<li><strong>Choose your LLM provider</strong> - Start with <a href="/AgenticGoKitDocs/guides/setup/llm-providers/index.html">LLM Providers</a></li>
+<li><strong>Configure memory (optional)</strong> - Add <a href="/AgenticGoKitDocs/guides/setup/vector-databases/index.html">Vector Databases</a> if needed</li>
+<li><strong>Add tools (optional)</strong> - Integrate <a href="/AgenticGoKitDocs/guides/setup/mcp-tools/index.html">MCP Tools</a> for extended capabilities</li>
+<li><strong>Test your configuration</strong> - Use <a href="/AgenticGoKitDocs/guides/development/testing-agents/index.html">Testing Agents</a></li>
+</ol>
+<h2 id="configuration-files">Configuration Files</h2>
+<p>AgenticGoKit uses TOML configuration files (<code>agentflow.toml</code>) for most settings. Each guide shows you how to configure the relevant sections.</p>
+<h2 id="next-steps">Next Steps</h2>
+<p>After setup, explore:</p>
+<ul>
+<li><a href="/AgenticGoKitDocs/guides/development/readme/index.html">Development Guides</a> for building and testing</li>
+<li><a href="/AgenticGoKitDocs/guides/deployment/readme/index.html">Deployment Guides</a> for production deployment</li>
+<li><a href="/AgenticGoKitDocs/tutorials/getting-started/readme/index.html">Getting Started Tutorials</a> for hands-on learning</li>
+</ul>
+
+  <footer class="footline">
+              <i class='fa-fw fas fa-calendar'></i> Jul 25, 2025
+  </footer>
+</article>
+        </div>
+      </main>
+    </div>
+    <aside id="R-sidebar" class="default-animation">
+      <div id="R-header-topbar" class="default-animation"></div>
+      <div id="R-header-wrapper" class="default-animation">
+        <div id="R-header" class="default-animation">
+          <a id="R-logo" class="R-default" href="/AgenticGoKitDocs/index.html">
+            <div class="logo-title">AgenticGoKit Docs</div>
+          </a>
+        </div>
+        <search><form action="/AgenticGoKitDocs/search/index.html" method="get">
+          <div class="searchbox default-animation">
+            <button class="search-detail" type="submit" title="Search (CTRL+ALT+f)"><i class="fas fa-search"></i></button>
+            <label class="a11y-only" for="R-search-by">Search</label>
+            <input data-search-input id="R-search-by" name="search-by" class="search-by" type="search" placeholder="Search...">
+            <button class="search-clear" type="button" data-search-clear="" title="Clear search"><i class="fas fa-times" title="Clear search"></i></button>
+          </div>
+        </form></search>
+      </div>
+      <div id="R-homelinks" class="default-animation homelinks">
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-homelinks">
+          <ul class="space collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/index.html"><a class="padding" href="/AgenticGoKitDocs/index.html"><i class="fa-fw fas fa-home"></i> Home</a></li>
+          </ul>
+        </div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-headercontrols">
+          <ul class="">
+          </ul>
+        </div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+      </div>
+      <div id="R-content-wrapper" class="highlightable">
+        <div class="R-sidebarmenu R-shortcutmenu-main">
+          <ul class="enlarge morespace collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/readme/index.html">content</a></li>
+            <li class="parent alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/index.html"><input type="checkbox" id="R-section-8fc2fd7736125e87cab8840a86c2af5a" aria-controls="R-subsections-8fc2fd7736125e87cab8840a86c2af5a" checked><label for="R-section-8fc2fd7736125e87cab8840a86c2af5a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu guides</span></label><a class="padding" href="/AgenticGoKitDocs/guides/index.html">guides</a><ul id="R-subsections-8fc2fd7736125e87cab8840a86c2af5a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/readme/index.html">guides</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/agentbasics/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/agentbasics/index.html">AgentBasics</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/examples/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/examples/index.html">Examples</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/configuration/index.html">Configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/customtools/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/customtools/index.html">CustomTools</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/providers/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/providers/index.html">Providers</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memoryprovidersetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memoryprovidersetup/index.html">MemoryProviderSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memorytroubleshooting/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memorytroubleshooting/index.html">MemoryTroubleshooting</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/embeddingmodelguide/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/embeddingmodelguide/index.html">EmbeddingModelGuide</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/ragconfiguration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/ragconfiguration/index.html">RAGConfiguration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/toolintegration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/toolintegration/index.html">ToolIntegration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/pgvectorsetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/pgvectorsetup/index.html">PgVectorSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/weaviatesetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/weaviatesetup/index.html">WeaviateSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/performance/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/performance/index.html">Performance</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/errorhandling/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/errorhandling/index.html">ErrorHandling</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/deployment/index.html"><input type="checkbox" id="R-section-ecc839349395ef3c015a12132049dff2" aria-controls="R-subsections-ecc839349395ef3c015a12132049dff2" checked><label for="R-section-ecc839349395ef3c015a12132049dff2"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu deployment</span></label><a class="padding" href="/AgenticGoKitDocs/guides/deployment/index.html">deployment</a><ul id="R-subsections-ecc839349395ef3c015a12132049dff2" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/deployment/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/deployment/readme/index.html">deployment</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/development/index.html"><input type="checkbox" id="R-section-fff1f5eca5d0a93209b9c6262762c25a" aria-controls="R-subsections-fff1f5eca5d0a93209b9c6262762c25a" checked><label for="R-section-fff1f5eca5d0a93209b9c6262762c25a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu development</span></label><a class="padding" href="/AgenticGoKitDocs/guides/development/index.html">development</a><ul id="R-subsections-fff1f5eca5d0a93209b9c6262762c25a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/readme/index.html">development</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/best-practices/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/best-practices/index.html">best-practices</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/debugging/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/debugging/index.html">debugging</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/research-assistant/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/research-assistant/index.html">research-assistant</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/testing-agents/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/testing-agents/index.html">testing-agents</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/visualization/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/visualization/index.html">visualization</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/web-search-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/web-search-integration/index.html">web-search-integration</a></li></ul></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/framework-comparison/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/framework-comparison/index.html">framework-comparison</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memory/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memory/index.html">Memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/scaffoldmemoryguide/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/scaffoldmemoryguide/index.html">ScaffoldMemoryGuide</a></li>
+            <li class="active parent alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/setup/index.html"><input type="checkbox" id="R-section-0124aed9abb5064d53391168f3c95c22" aria-controls="R-subsections-0124aed9abb5064d53391168f3c95c22" checked><label for="R-section-0124aed9abb5064d53391168f3c95c22"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu setup</span></label><a class="padding" href="/AgenticGoKitDocs/guides/setup/index.html">setup</a><ul id="R-subsections-0124aed9abb5064d53391168f3c95c22" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/readme/index.html">setup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/llm-providers/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/llm-providers/index.html">llm-providers</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/mcp-tools/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/mcp-tools/index.html">mcp-tools</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/orchestration-configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/orchestration-configuration/index.html">orchestration-configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/vector-databases/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/vector-databases/index.html">vector-databases</a></li></ul></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/troubleshooting/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/troubleshooting/index.html">troubleshooting</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/contributors/index.html"><input type="checkbox" id="R-section-190d9b328fbda7e13ab386f7a5417de5" aria-controls="R-subsections-190d9b328fbda7e13ab386f7a5417de5" checked><label for="R-section-190d9b328fbda7e13ab386f7a5417de5"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu contributors</span></label><a class="padding" href="/AgenticGoKitDocs/contributors/index.html">contributors</a><ul id="R-subsections-190d9b328fbda7e13ab386f7a5417de5" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/readme/index.html">contributors</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/contributorguide/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/contributorguide/index.html">ContributorGuide</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/codestyle/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/codestyle/index.html">CodeStyle</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/corevsinternal/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/corevsinternal/index.html">CoreVsInternal</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/addingfeatures/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/addingfeatures/index.html">AddingFeatures</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/testing/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/testing/index.html">Testing</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/docsstandards/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/docsstandards/index.html">DocsStandards</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/reference/index.html"><input type="checkbox" id="R-section-66002f201bef818664bb81aa67490c58" aria-controls="R-subsections-66002f201bef818664bb81aa67490c58" checked><label for="R-section-66002f201bef818664bb81aa67490c58"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu reference</span></label><a class="padding" href="/AgenticGoKitDocs/reference/index.html">reference</a><ul id="R-subsections-66002f201bef818664bb81aa67490c58" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/readme/index.html">reference</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/configuration/index.html">configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/cli/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/cli/index.html">cli</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/mcp/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/mcp/index.html">mcp</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/agent/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/agent/index.html">agent</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/memory/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/memory/index.html">memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/orchestration/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/orchestration/index.html">orchestration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/state-event/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/state-event/index.html">state-event</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/index.html"><input type="checkbox" id="R-section-e1e8c1e70c5500b49e8dda2dc550651a" aria-controls="R-subsections-e1e8c1e70c5500b49e8dda2dc550651a" checked><label for="R-section-e1e8c1e70c5500b49e8dda2dc550651a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu tutorials</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/index.html">tutorials</a><ul id="R-subsections-e1e8c1e70c5500b49e8dda2dc550651a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/readme/index.html">tutorials</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/advanced/index.html"><input type="checkbox" id="R-section-d3def5cd76adc8096d0ff9fda6b8e479" aria-controls="R-subsections-d3def5cd76adc8096d0ff9fda6b8e479" checked><label for="R-section-d3def5cd76adc8096d0ff9fda6b8e479"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu advanced</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/index.html">advanced</a><ul id="R-subsections-d3def5cd76adc8096d0ff9fda6b8e479" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/readme/index.html">advanced</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/circuit-breaker-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/circuit-breaker-patterns/index.html">circuit-breaker-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/load-balancing-scaling/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/load-balancing-scaling/index.html">load-balancing-scaling</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/retry-policies/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/retry-policies/index.html">retry-policies</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/testing-strategies/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/testing-strategies/index.html">testing-strategies</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/index.html"><input type="checkbox" id="R-section-212c6ccffb40ecdd78eb2136f98c4cac" aria-controls="R-subsections-212c6ccffb40ecdd78eb2136f98c4cac" checked><label for="R-section-212c6ccffb40ecdd78eb2136f98c4cac"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu core-concepts</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/index.html">core-concepts</a><ul id="R-subsections-212c6ccffb40ecdd78eb2136f98c4cac" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/readme/index.html">core-concepts</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/agent-lifecycle/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/agent-lifecycle/index.html">agent-lifecycle</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/error-handling/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/error-handling/index.html">error-handling</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/message-passing/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/message-passing/index.html">message-passing</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/orchestration-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/orchestration-patterns/index.html">orchestration-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/state-management/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/state-management/index.html">state-management</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/debugging/index.html"><input type="checkbox" id="R-section-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" aria-controls="R-subsections-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" checked><label for="R-section-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu debugging</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/index.html">debugging</a><ul id="R-subsections-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/readme/index.html">debugging</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/debugging-multi-agent-systems/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/debugging-multi-agent-systems/index.html">debugging-multi-agent-systems</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/logging-and-tracing/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/logging-and-tracing/index.html">logging-and-tracing</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/index.html"><input type="checkbox" id="R-section-e7f904c8b9d0f9bf1f07ca7d482d2247" aria-controls="R-subsections-e7f904c8b9d0f9bf1f07ca7d482d2247" checked><label for="R-section-e7f904c8b9d0f9bf1f07ca7d482d2247"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu getting-started</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/index.html">getting-started</a><ul id="R-subsections-e7f904c8b9d0f9bf1f07ca7d482d2247" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/readme/index.html">getting-started</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/memory-and-rag/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/memory-and-rag/index.html">memory-and-rag</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/multi-agent-collaboration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/multi-agent-collaboration/index.html">multi-agent-collaboration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/production-deployment/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/production-deployment/index.html">production-deployment</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/quickstart/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/quickstart/index.html">quickstart</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/tool-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/tool-integration/index.html">tool-integration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/your-first-agent/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/your-first-agent/index.html">your-first-agent</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/mcp/index.html"><input type="checkbox" id="R-section-153aac44598009a99dd5a60317a3eecc" aria-controls="R-subsections-153aac44598009a99dd5a60317a3eecc" checked><label for="R-section-153aac44598009a99dd5a60317a3eecc"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu mcp</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/index.html">mcp</a><ul id="R-subsections-153aac44598009a99dd5a60317a3eecc" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/readme/index.html">mcp</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/advanced-tool-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/advanced-tool-patterns/index.html">advanced-tool-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/tool-development/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/tool-development/index.html">tool-development</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/tool-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/tool-integration/index.html">tool-integration</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/index.html"><input type="checkbox" id="R-section-9c1a65f2d7b3888241dcafa51a0710e7" aria-controls="R-subsections-9c1a65f2d7b3888241dcafa51a0710e7" checked><label for="R-section-9c1a65f2d7b3888241dcafa51a0710e7"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu memory-systems</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/index.html">memory-systems</a><ul id="R-subsections-9c1a65f2d7b3888241dcafa51a0710e7" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/readme/index.html">memory-systems</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/basic-memory/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/basic-memory/index.html">basic-memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/document-ingestion/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/document-ingestion/index.html">document-ingestion</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/knowledge-bases/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/knowledge-bases/index.html">knowledge-bases</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/memory-optimization/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/memory-optimization/index.html">memory-optimization</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/rag-implementation/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/rag-implementation/index.html">rag-implementation</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/vector-databases/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/vector-databases/index.html">vector-databases</a></li></ul></li></ul></li>
+          </ul>
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-shortcuts">
+          <ul class="space collapsible-menu">
+          </ul>
+        </div>
+        <div id="R-footer-margin"></div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-footercontrols">
+          <ul class="">
+          </ul>
+        </div>
+<div id="R-footer"><p>Built with <a href="https://github.com/McShelby/hugo-theme-relearn" title="love"><i class="fas fa-heart"></i></a> by <a href="https://gohugo.io/">Hugo</a></p></div>
+      </div>
+    </aside>
+    <script src="/AgenticGoKitDocs/js/clipboard/clipboard.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/perfect-scrollbar/perfect-scrollbar.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/theme.js?1753430931" defer></script>
+  </body>
+</html>

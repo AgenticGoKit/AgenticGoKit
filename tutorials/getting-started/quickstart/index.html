@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en-us" dir="ltr" itemscope itemtype="http://schema.org/Article" data-r-output-format="html">
+  <head><script src="/AgenticGoKitDocs/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=AgenticGoKitDocs/livereload" data-no-instant defer></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="height=device-height, width=device-width, initial-scale=1.0, minimum-scale=1.0">
+    <meta name="generator" content="Hugo 0.148.1">
+    <meta name="generator" content="Relearn 8.0.0+9803d5122ebb3276acea823f476e9eb44f607862">
+    <meta name="description" content="🚀 5-Minute Quickstart Get your first AgenticGoKit multi-agent system running in 5 minutes. No complex setup, no configuration files—just working code.
+What You’ll Build A simple but powerful multi-agent system where:
+🤖 Agent 1 processes your request 🤖 Agent 2 enhances the response 🤖 Agent 3 formats the final output All working together automatically!
+Prerequisites Go 1.21&#43; (install here) OpenAI API Key (get one here) That’s it! No Docker, no databases, no complex setup.">
+    <meta name="author" content="">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="quickstart :: AgenticGoKit Docs">
+    <meta name="twitter:description" content="🚀 5-Minute Quickstart Get your first AgenticGoKit multi-agent system running in 5 minutes. No complex setup, no configuration files—just working code.
+What You’ll Build A simple but powerful multi-agent system where:
+🤖 Agent 1 processes your request 🤖 Agent 2 enhances the response 🤖 Agent 3 formats the final output All working together automatically!
+Prerequisites Go 1.21&#43; (install here) OpenAI API Key (get one here) That’s it! No Docker, no databases, no complex setup.">
+    <meta property="og:url" content="http://localhost:1313/AgenticGoKitDocs/tutorials/getting-started/quickstart/index.html">
+    <meta property="og:site_name" content="AgenticGoKit Docs">
+    <meta property="og:title" content="quickstart :: AgenticGoKit Docs">
+    <meta property="og:description" content="🚀 5-Minute Quickstart Get your first AgenticGoKit multi-agent system running in 5 minutes. No complex setup, no configuration files—just working code.
+What You’ll Build A simple but powerful multi-agent system where:
+🤖 Agent 1 processes your request 🤖 Agent 2 enhances the response 🤖 Agent 3 formats the final output All working together automatically!
+Prerequisites Go 1.21&#43; (install here) OpenAI API Key (get one here) That’s it! No Docker, no databases, no complex setup.">
+    <meta property="og:locale" content="en_us">
+    <meta property="og:type" content="article">
+    <meta property="article:section" content="tutorials">
+    <meta property="article:published_time" content="2025-07-25T00:00:00+00:00">
+    <meta property="article:modified_time" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="name" content="quickstart :: AgenticGoKit Docs">
+    <meta itemprop="description" content="🚀 5-Minute Quickstart Get your first AgenticGoKit multi-agent system running in 5 minutes. No complex setup, no configuration files—just working code.
+What You’ll Build A simple but powerful multi-agent system where:
+🤖 Agent 1 processes your request 🤖 Agent 2 enhances the response 🤖 Agent 3 formats the final output All working together automatically!
+Prerequisites Go 1.21&#43; (install here) OpenAI API Key (get one here) That’s it! No Docker, no databases, no complex setup.">
+    <meta itemprop="datePublished" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="dateModified" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="wordCount" content="1393">
+    <title>quickstart :: AgenticGoKit Docs</title>
+    <link href="/AgenticGoKitDocs/css/auto-complete/auto-complete.min.css?1753430931" rel="stylesheet">
+    <script src="/AgenticGoKitDocs/js/auto-complete/auto-complete.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/search-lunr.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/search.js?1753430931" defer></script>
+    <script>
+      window.relearn = window.relearn || {};
+      window.relearn.index_js_url="/AgenticGoKitDocs/searchindex.en.js?1753430931";
+    </script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.stemmer.support.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.multi.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.en.min.js?1753430931" defer></script>
+    <script>
+      window.relearn = window.relearn || {};
+      window.relearn.contentLangs=['en'];
+    </script>
+    <link href="/AgenticGoKitDocs/fonts/fontawesome/css/fontawesome-all.min.css?1753430931" rel="stylesheet" media="print" onload="this.media='all';this.onload=null;"><noscript><link href="/AgenticGoKitDocs/fonts/fontawesome/css/fontawesome-all.min.css?1753430931" rel="stylesheet"></noscript>
+    <link href="/AgenticGoKitDocs/css/perfect-scrollbar/perfect-scrollbar.min.css?1753430931" rel="stylesheet">
+    <link href="/AgenticGoKitDocs/css/theme.css?1753430931" rel="stylesheet">
+    <link href="/AgenticGoKitDocs/css/format-html.css?1753430931" rel="stylesheet" id="R-format-style">
+    <script>
+      window.relearn = window.relearn || {};
+      // configuration
+      window.relearn.min = ``;
+      window.relearn.path='\/tutorials\/getting-started\/quickstart\/index.html';
+      window.relearn.relBasePath='..\/..\/..';
+      window.relearn.relBaseUri='..\/..\/..\/..';
+      window.relearn.absBaseUri='http:\/\/localhost:1313\/AgenticGoKitDocs';
+      window.relearn.disableAnchorCopy=false;
+      window.relearn.disableAnchorScrolling=false;
+      window.relearn.disableInlineCopyToClipboard=false;
+      window.relearn.enableBlockCodeWrap=true;
+      // legal
+      window.relearn.getItem = (s,n) => {return s.getItem(n)};
+      window.relearn.setItem = (s,n,v) => {return s.setItem(n,v)};
+      window.relearn.removeItem = (s,n) => {return s.removeItem(n)};
+      // translations
+      window.T_Copy_to_clipboard = `Copy to clipboard`;
+      window.T_Copied_to_clipboard = `Copied to clipboard!`;
+      window.T_Copy_link_to_clipboard = `Copy link to clipboard`;
+      window.T_Link_copied_to_clipboard = `Copied link to clipboard!`;
+      window.T_Reset_view = `Reset view`;
+      window.T_View_reset = `View reset!`;
+      window.T_No_results_found = `No results found for "{0}"`;
+      window.T_N_results_found = `{1} results found for "{0}"`;
+      // variant stuff
+      window.relearn.themevariants = [ 'blue' ];
+      window.relearn.customvariantname = "my-custom-variant";
+      window.relearn.changeVariant = function(variant) {
+        var oldVariant = document.documentElement.dataset.rThemeVariant;
+        window.relearn.setItem(window.localStorage, window.relearn.absBaseUri + "/variant", variant);
+        document.documentElement.dataset.rThemeVariant = variant;
+        if (oldVariant != variant) {
+          document.dispatchEvent( new CustomEvent('themeVariantLoaded', { detail: { variant, oldVariant } }) );
+          window.relearn.markVariant();
+        }
+      }
+      window.relearn.markVariant = function() {
+        var variant = window.relearn.getItem(window.localStorage, window.relearn.absBaseUri + "/variant");
+        document.querySelectorAll(".R-variantswitcher select").forEach((select) => {select.value = variant;});
+      }
+      window.relearn.initVariant = function() {
+        var variant = window.relearn.getItem(window.localStorage, window.relearn.absBaseUri + "/variant") ?? "";
+        if( variant == window.relearn.customvariantname ){
+        }else if( !variant || !window.relearn.themevariants.includes(variant) ){
+          variant = window.relearn.themevariants[0];
+          window.relearn.setItem(window.localStorage, window.relearn.absBaseUri + "/variant", variant);
+        }
+        document.documentElement.dataset.rThemeVariant = variant;
+      }
+      window.relearn.initVariant();
+      window.relearn.markVariant();
+    </script>
+  </head>
+  <body class="mobile-support html" data-url="/AgenticGoKitDocs/tutorials/getting-started/quickstart/index.html">
+    <div id="R-body" class="default-animation">
+      <div id="R-body-overlay"></div>
+      <nav id="R-topbar">
+        <div class="topbar-wrapper">
+          <div class="topbar-sidebar-divider"></div>
+          <div class="topbar-area topbar-area-start" data-area="start">
+            <div class="topbar-button topbar-button-sidebar" data-content-empty="disable" data-width-s="show" data-width-m="hide" data-width-l="hide"><button class="topbar-control" onclick="toggleNav()" type="button" title="Menu (CTRL&#43;ALT&#43;n)"><i class="fa-fw fas fa-bars"></i></button>
+            </div>
+            <div class="topbar-button topbar-button-toc" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show"><button class="topbar-control" onclick="toggleTopbarFlyout(this)" type="button" title="Table of Contents (CTRL&#43;ALT&#43;t)"><i class="fa-fw fas fa-list-alt"></i></button>
+              <div class="topbar-content">
+                <div class="topbar-content-wrapper">
+<nav class="TableOfContents">
+  <ul>
+    <li><a href="#what-youll-build">What You&rsquo;ll Build</a></li>
+    <li><a href="#prerequisites">Prerequisites</a></li>
+    <li><a href="#choose-your-approach">Choose Your Approach</a>
+      <ul>
+        <li><a href="#-option-a-cli-approach-fastest---2-minutes">🚀 <strong>Option A: CLI Approach</strong> (Fastest - 2 minutes)</a></li>
+        <li><a href="#-option-b-code-first-approach-learn-by-doing---3-minutes">💻 <strong>Option B: Code-First Approach</strong> (Learn by doing - 3 minutes)</a></li>
+      </ul>
+    </li>
+    <li><a href="#-congratulations">🎉 Congratulations!</a></li>
+    <li><a href="#-what-just-happened">🤔 What Just Happened?</a>
+      <ul>
+        <li><a href="#the-magic-behind-the-scenes">The Magic Behind the Scenes</a></li>
+        <li><a href="#key-concepts-you-just-used">Key Concepts You Just Used</a></li>
+      </ul>
+    </li>
+    <li><a href="#-next-steps">🚀 Next Steps</a>
+      <ul>
+        <li><a href="#-15-minute-tutorials-choose-your-path">🎓 <strong>15-Minute Tutorials</strong> (Choose Your Path)</a></li>
+        <li><a href="#-quick-wins-5-10-minutes-each">🎯 <strong>Quick Wins</strong> (5-10 minutes each)</a></li>
+        <li><a href="#-build-something-cool">🏗️ <strong>Build Something Cool</strong></a></li>
+      </ul>
+    </li>
+    <li><a href="#-need-help">🆘 Need Help?</a>
+      <ul>
+        <li><a href="#common-issues">Common Issues</a></li>
+        <li><a href="#get-support">Get Support</a></li>
+      </ul>
+    </li>
+    <li><a href="#-whats-next">🎯 What&rsquo;s Next?</a>
+      <ul>
+        <li><a href="#heading"><a href="../core-concepts/orchestration-patterns.md">🎓 <strong>Take the 15-Minute Tutorial</strong></a></a></li>
+        <li><a href="#heading-1"><a href="../../../examples/">🏗️ <strong>Build a Real Application</strong></a></a></li>
+        <li><a href="#heading-2"><a href="../../README.md">📖 <strong>Read the Full Documentation</strong></a></a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+                </div>
+              </div>
+            </div>
+          </div>
+          <ol class="topbar-breadcrumbs breadcrumbs highlightable" itemscope itemtype="http://schema.org/BreadcrumbList"><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="/AgenticGoKitDocs/index.html"><span itemprop="name">content</span></a><meta itemprop="position" content="1">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="/AgenticGoKitDocs/tutorials/index.html"><span itemprop="name">tutorials</span></a><meta itemprop="position" content="2">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="/AgenticGoKitDocs/tutorials/getting-started/index.html"><span itemprop="name">getting-started</span></a><meta itemprop="position" content="3">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><span itemprop="name">quickstart</span><meta itemprop="position" content="4"></li>
+          </ol>
+          <div class="topbar-area topbar-area-end" data-area="end">
+            <div class="topbar-button topbar-button-prev" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show"><a class="topbar-control" href="/AgenticGoKitDocs/tutorials/getting-started/production-deployment/index.html" title="production-deployment (🡐)"><i class="fa-fw fas fa-chevron-left"></i></a>
+            </div>
+            <div class="topbar-button topbar-button-next" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show"><a class="topbar-control" href="/AgenticGoKitDocs/tutorials/getting-started/tool-integration/index.html" title="tool-integration (🡒)"><i class="fa-fw fas fa-chevron-right"></i></a>
+            </div>
+            <div class="topbar-button topbar-button-more" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show"><button class="topbar-control" onclick="toggleTopbarFlyout(this)" type="button" title="More"><i class="fa-fw fas fa-ellipsis-v"></i></button>
+              <div class="topbar-content">
+                <div class="topbar-content-wrapper">
+                  <div class="topbar-area topbar-area-more" data-area="more">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+      <div id="R-main-overlay"></div>
+      <main id="R-body-inner" class="highlightable tutorials" tabindex="-1">
+        <div class="flex-block-wrapper">
+<article class="default">
+  <header class="headline">
+  </header>
+
+<h1 id="quickstart">quickstart</h1>
+
+<h1 id="-5-minute-quickstart">🚀 5-Minute Quickstart</h1>
+<p>Get your first AgenticGoKit multi-agent system running in 5 minutes. No complex setup, no configuration files—just working code.</p>
+<h2 id="what-youll-build">What You&rsquo;ll Build</h2>
+<p>A simple but powerful multi-agent system where:</p>
+<ul>
+<li>🤖 <strong>Agent 1</strong> processes your request</li>
+<li>🤖 <strong>Agent 2</strong> enhances the response</li>
+<li>🤖 <strong>Agent 3</strong> formats the final output</li>
+</ul>
+<p>All working together automatically!</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li><strong>Go 1.21+</strong> (<a href="https://golang.org/dl/" rel="external" target="_blank">install here</a>)</li>
+<li><strong>OpenAI API Key</strong> (<a href="https://platform.openai.com/api-keys" rel="external" target="_blank">get one here</a>)</li>
+</ul>
+<p><em>That&rsquo;s it! No Docker, no databases, no complex setup.</em></p>
+<hr>
+<h2 id="choose-your-approach">Choose Your Approach</h2>
+<h3 id="-option-a-cli-approach-fastest---2-minutes">🚀 <strong>Option A: CLI Approach</strong> (Fastest - 2 minutes)</h3>
+<p>Perfect for getting started quickly with scaffolded projects.</p>
+<h4 id="step-1-install-cli-and-create-project">Step 1: Install CLI and Create Project</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Install the AgenticGoKit CLI</span>
+</span></span><span style="display:flex;"><span>go install github.com/kunalkushwaha/agenticgokit/cmd/agentcli@latest
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Create a collaborative multi-agent project</span>
+</span></span><span style="display:flex;"><span>agentcli create my-agents --agents <span style="color:#ae81ff">3</span> --orchestration-mode collaborative
+</span></span><span style="display:flex;"><span>cd my-agents</span></span></code></pre></div>
+<h4 id="step-2-configure-and-run">Step 2: Configure and Run</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Set your OpenAI API key</span>
+</span></span><span style="display:flex;"><span>export OPENAI_API_KEY<span style="color:#f92672">=</span>your-api-key-here
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Run your multi-agent system</span>
+</span></span><span style="display:flex;"><span>go run main.go</span></span></code></pre></div>
+<h3 id="-option-b-code-first-approach-learn-by-doing---3-minutes">💻 <strong>Option B: Code-First Approach</strong> (Learn by doing - 3 minutes)</h3>
+<p>Perfect for understanding how AgenticGoKit works under the hood.</p>
+<h4 id="step-1-create-your-project">Step 1: Create Your Project</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>mkdir my-agents <span style="color:#f92672">&amp;&amp;</span> cd my-agents
+</span></span><span style="display:flex;"><span>go mod init my-agents
+</span></span><span style="display:flex;"><span>go get github.com/kunalkushwaha/agenticgokit</span></span></code></pre></div>
+<h4 id="step-2-create-configuration">Step 2: Create Configuration</h4>
+<p>Create <code>agentflow.toml</code>:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">agent_flow</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">name</span> = <span style="color:#e6db74">&#34;my-agents&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">version</span> = <span style="color:#e6db74">&#34;1.0.0&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;openai&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">logging</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">level</span> = <span style="color:#e6db74">&#34;info&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">format</span> = <span style="color:#e6db74">&#34;json&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">providers</span>.<span style="color:#a6e22e">openai</span>]
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># API key will be read from OPENAI_API_KEY environment variable</span></span></span></code></pre></div>
+<h4 id="step-3-write-your-multi-agent-system">Step 3: Write Your Multi-Agent System</h4>
+<p>Create <code>main.go</code>:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;context&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;fmt&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;log&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;strings&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;time&#34;</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;github.com/kunalkushwaha/agenticgokit/core&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// 🔑 Set up your LLM provider from environment</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">provider</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewProviderFromWorkingDir</span>()
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatalf</span>(<span style="color:#e6db74">&#34;Failed to create LLM provider: %v&#34;</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// 🤖 Create three specialized agents</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">agents</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">AgentHandler</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;processor&#34;</span>: <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">ProcessorAgent</span>{<span style="color:#a6e22e">llm</span>: <span style="color:#a6e22e">provider</span>},
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;enhancer&#34;</span>:  <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">EnhancerAgent</span>{<span style="color:#a6e22e">llm</span>: <span style="color:#a6e22e">provider</span>},
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;formatter&#34;</span>: <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">FormatterAgent</span>{<span style="color:#a6e22e">llm</span>: <span style="color:#a6e22e">provider</span>},
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// 🚀 Create a collaborative runner (agents work together)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">runner</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">CreateCollaborativeRunner</span>(<span style="color:#a6e22e">agents</span>, <span style="color:#ae81ff">30</span><span style="color:#f92672">*</span><span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Second</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// 💬 Process a message - watch the magic happen!</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;🤖 Starting multi-agent collaboration...&#34;</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Start the runner</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>()
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">runner</span>.<span style="color:#a6e22e">Start</span>(<span style="color:#a6e22e">ctx</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">runner</span>.<span style="color:#a6e22e">Stop</span>()
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Create an event for processing</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">event</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewEvent</span>(<span style="color:#e6db74">&#34;processor&#34;</span>, <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">EventData</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;input&#34;</span>: <span style="color:#e6db74">&#34;Explain quantum computing in simple terms&#34;</span>,
+</span></span><span style="display:flex;"><span>    }, <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">string</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;route&#34;</span>: <span style="color:#e6db74">&#34;processor&#34;</span>,
+</span></span><span style="display:flex;"><span>    })
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Emit the event to the runner</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">runner</span>.<span style="color:#a6e22e">Emit</span>(<span style="color:#a6e22e">event</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatalf</span>(<span style="color:#e6db74">&#34;Failed to emit event: %v&#34;</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Wait for processing to complete</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Sleep</span>(<span style="color:#ae81ff">5</span> <span style="color:#f92672">*</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Second</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;\n✅ Multi-Agent Processing Complete!&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;=&#34;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">strings</span>.<span style="color:#a6e22e">Repeat</span>(<span style="color:#e6db74">&#34;=&#34;</span>, <span style="color:#ae81ff">50</span>))
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;📊 Execution Stats:\n&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;   • Agents involved: %d\n&#34;</span>, len(<span style="color:#a6e22e">agents</span>))
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;   • Event ID: %s\n&#34;</span>, <span style="color:#a6e22e">event</span>.<span style="color:#a6e22e">GetID</span>())
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// ProcessorAgent handles initial processing</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">ProcessorAgent</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">llm</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">ModelProvider</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">a</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">ProcessorAgent</span>) <span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">event</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">Event</span>, <span style="color:#a6e22e">state</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">State</span>) (<span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">AgentResult</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Get user input from event data</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">input</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">event</span>.<span style="color:#a6e22e">GetData</span>()[<span style="color:#e6db74">&#34;input&#34;</span>].(<span style="color:#66d9ef">string</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">ok</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">AgentResult</span>{}, <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;no input provided&#34;</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Process with LLM</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">prompt</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">Prompt</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">System</span>: <span style="color:#e6db74">&#34;You are a processor agent. Extract and organize key information from user requests.&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">User</span>:   <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;Process this request and extract key information: %s&#34;</span>, <span style="color:#a6e22e">input</span>),
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">response</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">a</span>.<span style="color:#a6e22e">llm</span>.<span style="color:#a6e22e">Call</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">prompt</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">AgentResult</span>{}, <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Update state with processed result</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewState</span>()
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;processed&#34;</span>, <span style="color:#a6e22e">response</span>.<span style="color:#a6e22e">Content</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;message&#34;</span>, <span style="color:#a6e22e">response</span>.<span style="color:#a6e22e">Content</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Route to enhancer</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span>.<span style="color:#a6e22e">SetMeta</span>(<span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">RouteMetadataKey</span>, <span style="color:#e6db74">&#34;enhancer&#34;</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">AgentResult</span>{<span style="color:#a6e22e">OutputState</span>: <span style="color:#a6e22e">outputState</span>}, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// EnhancerAgent enhances the processed information</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">EnhancerAgent</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">llm</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">ModelProvider</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">a</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">EnhancerAgent</span>) <span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">event</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">Event</span>, <span style="color:#a6e22e">state</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">State</span>) (<span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">AgentResult</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Get processed result from state</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">processed</span> <span style="color:#66d9ef">interface</span>{}
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">processedData</span>, <span style="color:#a6e22e">exists</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#e6db74">&#34;processed&#34;</span>); <span style="color:#a6e22e">exists</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">processed</span> = <span style="color:#a6e22e">processedData</span>
+</span></span><span style="display:flex;"><span>    } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">msg</span>, <span style="color:#a6e22e">exists</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#e6db74">&#34;message&#34;</span>); <span style="color:#a6e22e">exists</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">processed</span> = <span style="color:#a6e22e">msg</span>
+</span></span><span style="display:flex;"><span>    } <span style="color:#66d9ef">else</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">AgentResult</span>{}, <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;no processed data found&#34;</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Enhance with LLM</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">prompt</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">Prompt</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">System</span>: <span style="color:#e6db74">&#34;You are an enhancer agent. Add insights, context, and additional valuable information.&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">User</span>:   <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;Enhance this response with additional insights: %v&#34;</span>, <span style="color:#a6e22e">processed</span>),
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">response</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">a</span>.<span style="color:#a6e22e">llm</span>.<span style="color:#a6e22e">Call</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">prompt</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">AgentResult</span>{}, <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Update state with enhanced result</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewState</span>()
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;enhanced&#34;</span>, <span style="color:#a6e22e">response</span>.<span style="color:#a6e22e">Content</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;message&#34;</span>, <span style="color:#a6e22e">response</span>.<span style="color:#a6e22e">Content</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Route to formatter</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span>.<span style="color:#a6e22e">SetMeta</span>(<span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">RouteMetadataKey</span>, <span style="color:#e6db74">&#34;formatter&#34;</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">AgentResult</span>{<span style="color:#a6e22e">OutputState</span>: <span style="color:#a6e22e">outputState</span>}, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// FormatterAgent formats the final response</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">FormatterAgent</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">llm</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">ModelProvider</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">a</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">FormatterAgent</span>) <span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">event</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">Event</span>, <span style="color:#a6e22e">state</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">State</span>) (<span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">AgentResult</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Get enhanced result from state</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">enhanced</span> <span style="color:#66d9ef">interface</span>{}
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">enhancedData</span>, <span style="color:#a6e22e">exists</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#e6db74">&#34;enhanced&#34;</span>); <span style="color:#a6e22e">exists</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">enhanced</span> = <span style="color:#a6e22e">enhancedData</span>
+</span></span><span style="display:flex;"><span>    } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">msg</span>, <span style="color:#a6e22e">exists</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#e6db74">&#34;message&#34;</span>); <span style="color:#a6e22e">exists</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">enhanced</span> = <span style="color:#a6e22e">msg</span>
+</span></span><span style="display:flex;"><span>    } <span style="color:#66d9ef">else</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">AgentResult</span>{}, <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;no enhanced data found&#34;</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Format with LLM</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">prompt</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">Prompt</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">System</span>: <span style="color:#e6db74">&#34;You are a formatter agent. Present information in a clear, professional, and well-structured manner.&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">User</span>:   <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;Format this response in a clear, professional manner: %v&#34;</span>, <span style="color:#a6e22e">enhanced</span>),
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">response</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">a</span>.<span style="color:#a6e22e">llm</span>.<span style="color:#a6e22e">Call</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">prompt</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">AgentResult</span>{}, <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Update state with final result</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewState</span>()
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;final_response&#34;</span>, <span style="color:#a6e22e">response</span>.<span style="color:#a6e22e">Content</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;message&#34;</span>, <span style="color:#a6e22e">response</span>.<span style="color:#a6e22e">Content</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Print the final result</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;\n📝 Final Response:\n%s\n&#34;</span>, <span style="color:#a6e22e">response</span>.<span style="color:#a6e22e">Content</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">AgentResult</span>{<span style="color:#a6e22e">OutputState</span>: <span style="color:#a6e22e">outputState</span>}, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h4 id="step-4-run-it">Step 4: Run It!</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>export OPENAI_API_KEY<span style="color:#f92672">=</span>your-api-key-here
+</span></span><span style="display:flex;"><span>go mod tidy
+</span></span><span style="display:flex;"><span>go run main.go</span></span></code></pre></div>
+<p>You should see:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0"><code>🤖 Starting multi-agent collaboration...
+
+📝 Final Response:
+Quantum computing is a revolutionary technology that uses quantum mechanics 
+principles to process information in fundamentally different ways than 
+classical computers. Instead of using traditional bits that can only be 
+0 or 1, quantum computers use quantum bits (qubits) that can exist in 
+multiple states simultaneously through a property called superposition...
+
+✅ Multi-Agent Processing Complete!
+==================================================
+📊 Execution Stats:
+   • Agents involved: 3
+   • Event ID: evt_abc123</code></pre></div>
+<hr>
+<h2 id="-congratulations">🎉 Congratulations!</h2>
+<p>You just created a <strong>multi-agent system</strong> that:</p>
+<ul>
+<li>✅ Runs three agents in parallel</li>
+<li>✅ Combines their outputs intelligently</li>
+<li>✅ Handles errors gracefully</li>
+<li>✅ Provides execution metrics</li>
+</ul>
+<p><strong>And it took less than 5 minutes!</strong></p>
+<hr>
+<h2 id="-what-just-happened">🤔 What Just Happened?</h2>
+<h3 id="the-magic-behind-the-scenes">The Magic Behind the Scenes</h3>
+<ol>
+<li><strong>🏗️ Agent Creation</strong>: Each agent has a specialized role and system prompt</li>
+<li><strong>🤝 Collaborative Orchestration</strong>: <code>CreateCollaborativeRunner</code> makes agents work together</li>
+<li><strong>⚡ Parallel Processing</strong>: All agents process your message simultaneously</li>
+<li><strong>🧠 Intelligent Combination</strong>: Results are automatically merged and enhanced</li>
+<li><strong>📊 Built-in Monitoring</strong>: You get metrics and error handling for free</li>
+</ol>
+<h3 id="key-concepts-you-just-used">Key Concepts You Just Used</h3>
+<ul>
+<li><strong><code>core.AgentHandler</code></strong>: The interface for all agents with <code>Run()</code> method</li>
+<li><strong><code>core.ModelProvider</code></strong>: Interface for LLM providers with <code>Call()</code> method</li>
+<li><strong><code>core.CreateCollaborativeRunner</code></strong>: Orchestrates multiple agents in parallel</li>
+<li><strong><code>runner.Start()</code> and <code>runner.Emit()</code></strong>: Start runner and emit events for processing</li>
+<li><strong><code>core.NewEvent()</code></strong>: Creates events with data and metadata</li>
+<li><strong><code>core.State</code></strong>: Thread-safe state management between agents</li>
+<li><strong><code>core.AgentResult</code></strong>: Result structure with output state and error handling</li>
+<li><strong><code>core.Prompt</code></strong>: Structured prompt with system and user messages</li>
+</ul>
+<hr>
+<h2 id="-next-steps">🚀 Next Steps</h2>
+<p>Now that you have a working multi-agent system, here&rsquo;s what to explore next:</p>
+<h3 id="-15-minute-tutorials-choose-your-path">🎓 <strong>15-Minute Tutorials</strong> (Choose Your Path)</h3>
+<!-- raw HTML omitted -->
+<p><strong>🤝 Multi-Agent Patterns</strong>
+Learn different orchestration modes:</p>
+<ul>
+<li>Collaborative (parallel)</li>
+<li>Sequential (pipeline)</li>
+<li>Mixed (hybrid workflows)</li>
+</ul>
+<p><a href="/AgenticGoKitDocs/tutorials/core-concepts/orchestration-patterns/index.html">→ Multi-Agent Tutorial</a></p>
+<!-- raw HTML omitted -->
+<p><strong>🧠 Memory &amp; RAG</strong>
+Add persistent memory and knowledge:</p>
+<ul>
+<li>Vector databases</li>
+<li>Document ingestion</li>
+<li>Semantic search</li>
+</ul>
+<p><a href="/AgenticGoKitDocs/tutorials/memory-systems/index.html">→ Memory Tutorial</a></p>
+<!-- raw HTML omitted -->
+<p><strong>🔧 Tool Integration</strong>
+Connect to external tools:</p>
+<ul>
+<li>Web search</li>
+<li>File operations</li>
+<li>API integrations</li>
+<li>Custom tools</li>
+</ul>
+<p><a href="/AgenticGoKitDocs/reference/api/mcp/index.html">→ Tools Tutorial</a></p>
+<!-- raw HTML omitted -->
+<p><strong>🏭 Production Ready</strong>
+Deploy and scale your agents:</p>
+<ul>
+<li>Docker deployment</li>
+<li>Monitoring setup</li>
+<li>Performance optimization</li>
+</ul>
+<p><a href="/AgenticGoKitDocs/guides/deployment/readme/index.html">→ Production Tutorial</a></p>
+<!-- raw HTML omitted -->
+<h3 id="-quick-wins-5-10-minutes-each">🎯 <strong>Quick Wins</strong> (5-10 minutes each)</h3>
+<ul>
+<li><strong><a href="/AgenticGoKitDocs/guides/development/best-practices/index.html">🔄 Try Sequential Processing</a></strong> - Build a data processing pipeline</li>
+<li><strong><a href="/AgenticGoKitDocs/guides/development/web-search-integration/index.html">🌐 Add Web Search</a></strong> - Give your agents internet access</li>
+<li><strong><a href="/AgenticGoKitDocs/tutorials/memory-systems/basic-memory/index.html">💾 Add Memory</a></strong> - Make agents remember conversations</li>
+<li><strong><a href="/AgenticGoKitDocs/guides/development/debugging/index.html">📊 Add Monitoring</a></strong> - See what your agents are doing</li>
+</ul>
+<h3 id="-build-something-cool">🏗️ <strong>Build Something Cool</strong></h3>
+<p>Ready to build a real application? Try these examples:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Research assistant with web search and analysis</span>
+</span></span><span style="display:flex;"><span>agentcli create research-assistant --mcp-enabled --mcp-tools <span style="color:#e6db74">&#34;web_search,summarize&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Data processing pipeline with error handling  </span>
+</span></span><span style="display:flex;"><span>agentcli create data-pipeline --orchestration-mode sequential --agents <span style="color:#ae81ff">4</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Chat system with persistent memory</span>
+</span></span><span style="display:flex;"><span>agentcli create chat-system --memory-enabled --memory-provider pgvector
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Knowledge base with document ingestion and RAG</span>
+</span></span><span style="display:flex;"><span>agentcli create knowledge-base --memory-enabled --memory-provider pgvector --rag-enabled</span></span></code></pre></div>
+<hr>
+<h2 id="-need-help">🆘 Need Help?</h2>
+<h3 id="common-issues">Common Issues</h3>
+<p><strong>❌ &ldquo;OpenAI API key not found&rdquo;</strong></p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Make sure your API key is set</span>
+</span></span><span style="display:flex;"><span>export OPENAI_API_KEY<span style="color:#f92672">=</span>sk-your-key-here
+</span></span><span style="display:flex;"><span>echo $OPENAI_API_KEY  <span style="color:#75715e"># Should show your key</span></span></span></code></pre></div>
+<p><strong>❌ &ldquo;Module not found&rdquo;</strong></p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Make sure you&#39;re in the right directory and ran go mod init</span>
+</span></span><span style="display:flex;"><span>go mod tidy</span></span></code></pre></div>
+<p><strong>❌ &ldquo;Context deadline exceeded&rdquo;</strong></p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Increase the timeout if agents are taking too long</span>
+</span></span><span style="display:flex;"><span>runner :<span style="color:#f92672">=</span> core.CreateCollaborativeRunner<span style="color:#f92672">(</span>agents, 60*time.Second<span style="color:#f92672">)</span> // Increased to 60s</span></span></code></pre></div>
+<h3 id="get-support">Get Support</h3>
+<ul>
+<li><strong>💬 <a href="https://discord.gg/agenticgokit" rel="external" target="_blank">Discord Community</a></strong> - Real-time help</li>
+<li><strong>💡 <a href="https://github.com/kunalkushwaha/agenticgokit/discussions" rel="external" target="_blank">GitHub Discussions</a></strong> - Q&amp;A</li>
+<li><strong>📖 <a href="/AgenticGoKitDocs/guides/troubleshooting/index.html">Troubleshooting Guide</a></strong> - Common solutions</li>
+</ul>
+<hr>
+<h2 id="-whats-next">🎯 What&rsquo;s Next?</h2>
+<p>You&rsquo;ve successfully created your first multi-agent system! Here are some paths to continue your AgenticGoKit journey:</p>
+<!-- raw HTML omitted -->
+<h3 id="heading"><a href="/AgenticGoKitDocs/tutorials/core-concepts/orchestration-patterns/index.html">🎓 <strong>Take the 15-Minute Tutorial</strong></a></h3>
+<p><em>Learn advanced orchestration patterns</em></p>
+<h3 id="heading-1"><a href="../../../examples/">🏗️ <strong>Build a Real Application</strong></a></h3>
+<p><em>Explore production-ready examples</em></p>
+<h3 id="heading-2"><a href="/AgenticGoKitDocs/readme/index.html">📖 <strong>Read the Full Documentation</strong></a></h3>
+<p><em>Dive deep into all features</em></p>
+<!-- raw HTML omitted -->
+<hr>
+<p><em>⏱️ <strong>Actual time</strong>: Most developers complete this in 3-4 minutes. The extra minute is for reading and understanding!</em></p>
+
+  <footer class="footline">
+              <i class='fa-fw fas fa-calendar'></i> Jul 25, 2025
+  </footer>
+</article>
+        </div>
+      </main>
+    </div>
+    <aside id="R-sidebar" class="default-animation">
+      <div id="R-header-topbar" class="default-animation"></div>
+      <div id="R-header-wrapper" class="default-animation">
+        <div id="R-header" class="default-animation">
+          <a id="R-logo" class="R-default" href="/AgenticGoKitDocs/index.html">
+            <div class="logo-title">AgenticGoKit Docs</div>
+          </a>
+        </div>
+        <search><form action="/AgenticGoKitDocs/search/index.html" method="get">
+          <div class="searchbox default-animation">
+            <button class="search-detail" type="submit" title="Search (CTRL+ALT+f)"><i class="fas fa-search"></i></button>
+            <label class="a11y-only" for="R-search-by">Search</label>
+            <input data-search-input id="R-search-by" name="search-by" class="search-by" type="search" placeholder="Search...">
+            <button class="search-clear" type="button" data-search-clear="" title="Clear search"><i class="fas fa-times" title="Clear search"></i></button>
+          </div>
+        </form></search>
+      </div>
+      <div id="R-homelinks" class="default-animation homelinks">
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-homelinks">
+          <ul class="space collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/index.html"><a class="padding" href="/AgenticGoKitDocs/index.html"><i class="fa-fw fas fa-home"></i> Home</a></li>
+          </ul>
+        </div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-headercontrols">
+          <ul class="">
+          </ul>
+        </div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+      </div>
+      <div id="R-content-wrapper" class="highlightable">
+        <div class="R-sidebarmenu R-shortcutmenu-main">
+          <ul class="enlarge morespace collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/readme/index.html">content</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/index.html"><input type="checkbox" id="R-section-8fc2fd7736125e87cab8840a86c2af5a" aria-controls="R-subsections-8fc2fd7736125e87cab8840a86c2af5a" checked><label for="R-section-8fc2fd7736125e87cab8840a86c2af5a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu guides</span></label><a class="padding" href="/AgenticGoKitDocs/guides/index.html">guides</a><ul id="R-subsections-8fc2fd7736125e87cab8840a86c2af5a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/readme/index.html">guides</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/agentbasics/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/agentbasics/index.html">AgentBasics</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/examples/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/examples/index.html">Examples</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/configuration/index.html">Configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/customtools/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/customtools/index.html">CustomTools</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/providers/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/providers/index.html">Providers</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memoryprovidersetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memoryprovidersetup/index.html">MemoryProviderSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memorytroubleshooting/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memorytroubleshooting/index.html">MemoryTroubleshooting</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/embeddingmodelguide/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/embeddingmodelguide/index.html">EmbeddingModelGuide</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/ragconfiguration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/ragconfiguration/index.html">RAGConfiguration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/toolintegration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/toolintegration/index.html">ToolIntegration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/pgvectorsetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/pgvectorsetup/index.html">PgVectorSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/weaviatesetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/weaviatesetup/index.html">WeaviateSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/performance/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/performance/index.html">Performance</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/errorhandling/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/errorhandling/index.html">ErrorHandling</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/deployment/index.html"><input type="checkbox" id="R-section-ecc839349395ef3c015a12132049dff2" aria-controls="R-subsections-ecc839349395ef3c015a12132049dff2" checked><label for="R-section-ecc839349395ef3c015a12132049dff2"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu deployment</span></label><a class="padding" href="/AgenticGoKitDocs/guides/deployment/index.html">deployment</a><ul id="R-subsections-ecc839349395ef3c015a12132049dff2" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/deployment/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/deployment/readme/index.html">deployment</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/development/index.html"><input type="checkbox" id="R-section-fff1f5eca5d0a93209b9c6262762c25a" aria-controls="R-subsections-fff1f5eca5d0a93209b9c6262762c25a" checked><label for="R-section-fff1f5eca5d0a93209b9c6262762c25a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu development</span></label><a class="padding" href="/AgenticGoKitDocs/guides/development/index.html">development</a><ul id="R-subsections-fff1f5eca5d0a93209b9c6262762c25a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/readme/index.html">development</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/best-practices/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/best-practices/index.html">best-practices</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/debugging/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/debugging/index.html">debugging</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/research-assistant/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/research-assistant/index.html">research-assistant</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/testing-agents/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/testing-agents/index.html">testing-agents</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/visualization/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/visualization/index.html">visualization</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/web-search-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/web-search-integration/index.html">web-search-integration</a></li></ul></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/framework-comparison/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/framework-comparison/index.html">framework-comparison</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memory/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memory/index.html">Memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/scaffoldmemoryguide/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/scaffoldmemoryguide/index.html">ScaffoldMemoryGuide</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/setup/index.html"><input type="checkbox" id="R-section-0124aed9abb5064d53391168f3c95c22" aria-controls="R-subsections-0124aed9abb5064d53391168f3c95c22" checked><label for="R-section-0124aed9abb5064d53391168f3c95c22"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu setup</span></label><a class="padding" href="/AgenticGoKitDocs/guides/setup/index.html">setup</a><ul id="R-subsections-0124aed9abb5064d53391168f3c95c22" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/readme/index.html">setup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/llm-providers/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/llm-providers/index.html">llm-providers</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/mcp-tools/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/mcp-tools/index.html">mcp-tools</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/orchestration-configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/orchestration-configuration/index.html">orchestration-configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/vector-databases/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/vector-databases/index.html">vector-databases</a></li></ul></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/troubleshooting/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/troubleshooting/index.html">troubleshooting</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/contributors/index.html"><input type="checkbox" id="R-section-190d9b328fbda7e13ab386f7a5417de5" aria-controls="R-subsections-190d9b328fbda7e13ab386f7a5417de5" checked><label for="R-section-190d9b328fbda7e13ab386f7a5417de5"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu contributors</span></label><a class="padding" href="/AgenticGoKitDocs/contributors/index.html">contributors</a><ul id="R-subsections-190d9b328fbda7e13ab386f7a5417de5" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/readme/index.html">contributors</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/contributorguide/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/contributorguide/index.html">ContributorGuide</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/codestyle/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/codestyle/index.html">CodeStyle</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/corevsinternal/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/corevsinternal/index.html">CoreVsInternal</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/addingfeatures/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/addingfeatures/index.html">AddingFeatures</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/testing/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/testing/index.html">Testing</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/docsstandards/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/docsstandards/index.html">DocsStandards</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/reference/index.html"><input type="checkbox" id="R-section-66002f201bef818664bb81aa67490c58" aria-controls="R-subsections-66002f201bef818664bb81aa67490c58" checked><label for="R-section-66002f201bef818664bb81aa67490c58"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu reference</span></label><a class="padding" href="/AgenticGoKitDocs/reference/index.html">reference</a><ul id="R-subsections-66002f201bef818664bb81aa67490c58" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/readme/index.html">reference</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/configuration/index.html">configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/cli/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/cli/index.html">cli</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/mcp/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/mcp/index.html">mcp</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/agent/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/agent/index.html">agent</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/memory/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/memory/index.html">memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/orchestration/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/orchestration/index.html">orchestration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/state-event/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/state-event/index.html">state-event</a></li></ul></li>
+            <li class="parent alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/index.html"><input type="checkbox" id="R-section-e1e8c1e70c5500b49e8dda2dc550651a" aria-controls="R-subsections-e1e8c1e70c5500b49e8dda2dc550651a" checked><label for="R-section-e1e8c1e70c5500b49e8dda2dc550651a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu tutorials</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/index.html">tutorials</a><ul id="R-subsections-e1e8c1e70c5500b49e8dda2dc550651a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/readme/index.html">tutorials</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/advanced/index.html"><input type="checkbox" id="R-section-d3def5cd76adc8096d0ff9fda6b8e479" aria-controls="R-subsections-d3def5cd76adc8096d0ff9fda6b8e479" checked><label for="R-section-d3def5cd76adc8096d0ff9fda6b8e479"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu advanced</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/index.html">advanced</a><ul id="R-subsections-d3def5cd76adc8096d0ff9fda6b8e479" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/readme/index.html">advanced</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/circuit-breaker-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/circuit-breaker-patterns/index.html">circuit-breaker-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/load-balancing-scaling/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/load-balancing-scaling/index.html">load-balancing-scaling</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/retry-policies/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/retry-policies/index.html">retry-policies</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/testing-strategies/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/testing-strategies/index.html">testing-strategies</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/index.html"><input type="checkbox" id="R-section-212c6ccffb40ecdd78eb2136f98c4cac" aria-controls="R-subsections-212c6ccffb40ecdd78eb2136f98c4cac" checked><label for="R-section-212c6ccffb40ecdd78eb2136f98c4cac"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu core-concepts</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/index.html">core-concepts</a><ul id="R-subsections-212c6ccffb40ecdd78eb2136f98c4cac" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/readme/index.html">core-concepts</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/agent-lifecycle/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/agent-lifecycle/index.html">agent-lifecycle</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/error-handling/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/error-handling/index.html">error-handling</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/message-passing/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/message-passing/index.html">message-passing</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/orchestration-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/orchestration-patterns/index.html">orchestration-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/state-management/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/state-management/index.html">state-management</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/debugging/index.html"><input type="checkbox" id="R-section-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" aria-controls="R-subsections-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" checked><label for="R-section-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu debugging</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/index.html">debugging</a><ul id="R-subsections-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/readme/index.html">debugging</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/debugging-multi-agent-systems/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/debugging-multi-agent-systems/index.html">debugging-multi-agent-systems</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/logging-and-tracing/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/logging-and-tracing/index.html">logging-and-tracing</a></li></ul></li>
+            <li class="parent alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/index.html"><input type="checkbox" id="R-section-e7f904c8b9d0f9bf1f07ca7d482d2247" aria-controls="R-subsections-e7f904c8b9d0f9bf1f07ca7d482d2247" checked><label for="R-section-e7f904c8b9d0f9bf1f07ca7d482d2247"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu getting-started</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/index.html">getting-started</a><ul id="R-subsections-e7f904c8b9d0f9bf1f07ca7d482d2247" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/readme/index.html">getting-started</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/memory-and-rag/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/memory-and-rag/index.html">memory-and-rag</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/multi-agent-collaboration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/multi-agent-collaboration/index.html">multi-agent-collaboration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/production-deployment/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/production-deployment/index.html">production-deployment</a></li>
+            <li class="active " data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/quickstart/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/quickstart/index.html">quickstart</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/tool-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/tool-integration/index.html">tool-integration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/your-first-agent/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/your-first-agent/index.html">your-first-agent</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/mcp/index.html"><input type="checkbox" id="R-section-153aac44598009a99dd5a60317a3eecc" aria-controls="R-subsections-153aac44598009a99dd5a60317a3eecc" checked><label for="R-section-153aac44598009a99dd5a60317a3eecc"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu mcp</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/index.html">mcp</a><ul id="R-subsections-153aac44598009a99dd5a60317a3eecc" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/readme/index.html">mcp</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/advanced-tool-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/advanced-tool-patterns/index.html">advanced-tool-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/tool-development/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/tool-development/index.html">tool-development</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/tool-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/tool-integration/index.html">tool-integration</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/index.html"><input type="checkbox" id="R-section-9c1a65f2d7b3888241dcafa51a0710e7" aria-controls="R-subsections-9c1a65f2d7b3888241dcafa51a0710e7" checked><label for="R-section-9c1a65f2d7b3888241dcafa51a0710e7"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu memory-systems</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/index.html">memory-systems</a><ul id="R-subsections-9c1a65f2d7b3888241dcafa51a0710e7" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/readme/index.html">memory-systems</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/basic-memory/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/basic-memory/index.html">basic-memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/document-ingestion/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/document-ingestion/index.html">document-ingestion</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/knowledge-bases/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/knowledge-bases/index.html">knowledge-bases</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/memory-optimization/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/memory-optimization/index.html">memory-optimization</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/rag-implementation/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/rag-implementation/index.html">rag-implementation</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/vector-databases/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/vector-databases/index.html">vector-databases</a></li></ul></li></ul></li>
+          </ul>
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-shortcuts">
+          <ul class="space collapsible-menu">
+          </ul>
+        </div>
+        <div id="R-footer-margin"></div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-footercontrols">
+          <ul class="">
+          </ul>
+        </div>
+<div id="R-footer"><p>Built with <a href="https://github.com/McShelby/hugo-theme-relearn" title="love"><i class="fas fa-heart"></i></a> by <a href="https://gohugo.io/">Hugo</a></p></div>
+      </div>
+    </aside>
+    <script src="/AgenticGoKitDocs/js/clipboard/clipboard.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/perfect-scrollbar/perfect-scrollbar.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/theme.js?1753430931" defer></script>
+  </body>
+</html>

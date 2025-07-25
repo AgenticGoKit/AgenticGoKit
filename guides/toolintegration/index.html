@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en-us" dir="ltr" itemscope itemtype="http://schema.org/Article" data-r-output-format="html">
+  <head><script src="/AgenticGoKitDocs/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=AgenticGoKitDocs/livereload" data-no-instant defer></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="height=device-height, width=device-width, initial-scale=1.0, minimum-scale=1.0">
+    <meta name="generator" content="Hugo 0.148.1">
+    <meta name="generator" content="Relearn 8.0.0+9803d5122ebb3276acea823f476e9eb44f607862">
+    <meta name="description" content="Tool Integration Dynamic Tool Discovery and Execution with MCP Protocol
+AgentFlow uses the Model Context Protocol (MCP) to provide agents with dynamic tool discovery and execution capabilities. This guide covers everything from basic tool usage to building custom MCP servers.
+Overview The MCP integration in AgentFlow provides:
+Dynamic Discovery: Tools are discovered at runtime, not hard-coded Schema-Based: Tools provide their own descriptions and parameters LLM-Driven: The LLM decides which tools to use based on context Extensible: Add new tools by connecting MCP servers Core MCP Functions AgentFlow provides two key functions that handle all MCP complexity:">
+    <meta name="author" content="">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="ToolIntegration :: AgenticGoKit Docs">
+    <meta name="twitter:description" content="Tool Integration Dynamic Tool Discovery and Execution with MCP Protocol
+AgentFlow uses the Model Context Protocol (MCP) to provide agents with dynamic tool discovery and execution capabilities. This guide covers everything from basic tool usage to building custom MCP servers.
+Overview The MCP integration in AgentFlow provides:
+Dynamic Discovery: Tools are discovered at runtime, not hard-coded Schema-Based: Tools provide their own descriptions and parameters LLM-Driven: The LLM decides which tools to use based on context Extensible: Add new tools by connecting MCP servers Core MCP Functions AgentFlow provides two key functions that handle all MCP complexity:">
+    <meta property="og:url" content="http://localhost:1313/AgenticGoKitDocs/guides/toolintegration/index.html">
+    <meta property="og:site_name" content="AgenticGoKit Docs">
+    <meta property="og:title" content="ToolIntegration :: AgenticGoKit Docs">
+    <meta property="og:description" content="Tool Integration Dynamic Tool Discovery and Execution with MCP Protocol
+AgentFlow uses the Model Context Protocol (MCP) to provide agents with dynamic tool discovery and execution capabilities. This guide covers everything from basic tool usage to building custom MCP servers.
+Overview The MCP integration in AgentFlow provides:
+Dynamic Discovery: Tools are discovered at runtime, not hard-coded Schema-Based: Tools provide their own descriptions and parameters LLM-Driven: The LLM decides which tools to use based on context Extensible: Add new tools by connecting MCP servers Core MCP Functions AgentFlow provides two key functions that handle all MCP complexity:">
+    <meta property="og:locale" content="en_us">
+    <meta property="og:type" content="article">
+    <meta property="article:section" content="guides">
+    <meta property="article:published_time" content="2025-07-25T00:00:00+00:00">
+    <meta property="article:modified_time" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="name" content="ToolIntegration :: AgenticGoKit Docs">
+    <meta itemprop="description" content="Tool Integration Dynamic Tool Discovery and Execution with MCP Protocol
+AgentFlow uses the Model Context Protocol (MCP) to provide agents with dynamic tool discovery and execution capabilities. This guide covers everything from basic tool usage to building custom MCP servers.
+Overview The MCP integration in AgentFlow provides:
+Dynamic Discovery: Tools are discovered at runtime, not hard-coded Schema-Based: Tools provide their own descriptions and parameters LLM-Driven: The LLM decides which tools to use based on context Extensible: Add new tools by connecting MCP servers Core MCP Functions AgentFlow provides two key functions that handle all MCP complexity:">
+    <meta itemprop="datePublished" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="dateModified" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="wordCount" content="1761">
+    <title>ToolIntegration :: AgenticGoKit Docs</title>
+    <link href="/AgenticGoKitDocs/css/auto-complete/auto-complete.min.css?1753430931" rel="stylesheet">
+    <script src="/AgenticGoKitDocs/js/auto-complete/auto-complete.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/search-lunr.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/search.js?1753430931" defer></script>
+    <script>
+      window.relearn = window.relearn || {};
+      window.relearn.index_js_url="/AgenticGoKitDocs/searchindex.en.js?1753430931";
+    </script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.stemmer.support.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.multi.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.en.min.js?1753430931" defer></script>
+    <script>
+      window.relearn = window.relearn || {};
+      window.relearn.contentLangs=['en'];
+    </script>
+    <link href="/AgenticGoKitDocs/fonts/fontawesome/css/fontawesome-all.min.css?1753430931" rel="stylesheet" media="print" onload="this.media='all';this.onload=null;"><noscript><link href="/AgenticGoKitDocs/fonts/fontawesome/css/fontawesome-all.min.css?1753430931" rel="stylesheet"></noscript>
+    <link href="/AgenticGoKitDocs/css/perfect-scrollbar/perfect-scrollbar.min.css?1753430931" rel="stylesheet">
+    <link href="/AgenticGoKitDocs/css/theme.css?1753430931" rel="stylesheet">
+    <link href="/AgenticGoKitDocs/css/format-html.css?1753430931" rel="stylesheet" id="R-format-style">
+    <script>
+      window.relearn = window.relearn || {};
+      // configuration
+      window.relearn.min = ``;
+      window.relearn.path='\/guides\/toolintegration\/index.html';
+      window.relearn.relBasePath='..\/..';
+      window.relearn.relBaseUri='..\/..\/..';
+      window.relearn.absBaseUri='http:\/\/localhost:1313\/AgenticGoKitDocs';
+      window.relearn.disableAnchorCopy=false;
+      window.relearn.disableAnchorScrolling=false;
+      window.relearn.disableInlineCopyToClipboard=false;
+      window.relearn.enableBlockCodeWrap=true;
+      // legal
+      window.relearn.getItem = (s,n) => {return s.getItem(n)};
+      window.relearn.setItem = (s,n,v) => {return s.setItem(n,v)};
+      window.relearn.removeItem = (s,n) => {return s.removeItem(n)};
+      // translations
+      window.T_Copy_to_clipboard = `Copy to clipboard`;
+      window.T_Copied_to_clipboard = `Copied to clipboard!`;
+      window.T_Copy_link_to_clipboard = `Copy link to clipboard`;
+      window.T_Link_copied_to_clipboard = `Copied link to clipboard!`;
+      window.T_Reset_view = `Reset view`;
+      window.T_View_reset = `View reset!`;
+      window.T_No_results_found = `No results found for "{0}"`;
+      window.T_N_results_found = `{1} results found for "{0}"`;
+      // variant stuff
+      window.relearn.themevariants = [ 'blue' ];
+      window.relearn.customvariantname = "my-custom-variant";
+      window.relearn.changeVariant = function(variant) {
+        var oldVariant = document.documentElement.dataset.rThemeVariant;
+        window.relearn.setItem(window.localStorage, window.relearn.absBaseUri + "/variant", variant);
+        document.documentElement.dataset.rThemeVariant = variant;
+        if (oldVariant != variant) {
+          document.dispatchEvent( new CustomEvent('themeVariantLoaded', { detail: { variant, oldVariant } }) );
+          window.relearn.markVariant();
+        }
+      }
+      window.relearn.markVariant = function() {
+        var variant = window.relearn.getItem(window.localStorage, window.relearn.absBaseUri + "/variant");
+        document.querySelectorAll(".R-variantswitcher select").forEach((select) => {select.value = variant;});
+      }
+      window.relearn.initVariant = function() {
+        var variant = window.relearn.getItem(window.localStorage, window.relearn.absBaseUri + "/variant") ?? "";
+        if( variant == window.relearn.customvariantname ){
+        }else if( !variant || !window.relearn.themevariants.includes(variant) ){
+          variant = window.relearn.themevariants[0];
+          window.relearn.setItem(window.localStorage, window.relearn.absBaseUri + "/variant", variant);
+        }
+        document.documentElement.dataset.rThemeVariant = variant;
+      }
+      window.relearn.initVariant();
+      window.relearn.markVariant();
+    </script>
+  </head>
+  <body class="mobile-support html" data-url="/AgenticGoKitDocs/guides/toolintegration/index.html">
+    <div id="R-body" class="default-animation">
+      <div id="R-body-overlay"></div>
+      <nav id="R-topbar">
+        <div class="topbar-wrapper">
+          <div class="topbar-sidebar-divider"></div>
+          <div class="topbar-area topbar-area-start" data-area="start">
+            <div class="topbar-button topbar-button-sidebar" data-content-empty="disable" data-width-s="show" data-width-m="hide" data-width-l="hide"><button class="topbar-control" onclick="toggleNav()" type="button" title="Menu (CTRL&#43;ALT&#43;n)"><i class="fa-fw fas fa-bars"></i></button>
+            </div>
+            <div class="topbar-button topbar-button-toc" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show"><button class="topbar-control" onclick="toggleTopbarFlyout(this)" type="button" title="Table of Contents (CTRL&#43;ALT&#43;t)"><i class="fa-fw fas fa-list-alt"></i></button>
+              <div class="topbar-content">
+                <div class="topbar-content-wrapper">
+<nav class="TableOfContents">
+  <ul>
+    <li><a href="#overview">Overview</a></li>
+    <li><a href="#core-mcp-functions">Core MCP Functions</a>
+      <ul>
+        <li><a href="#formattoolsforprompt">FormatToolsForPrompt()</a></li>
+        <li><a href="#parseandexecutetoolcalls">ParseAndExecuteToolCalls()</a></li>
+      </ul>
+    </li>
+    <li><a href="#complete-agent-with-tools">Complete Agent with Tools</a></li>
+    <li><a href="#mcp-configuration">MCP Configuration</a>
+      <ul>
+        <li><a href="#basic-configuration-agentflowtoml">Basic Configuration (agentflow.toml)</a></li>
+        <li><a href="#production-configuration-with-caching">Production Configuration with Caching</a></li>
+      </ul>
+    </li>
+    <li><a href="#available-mcp-servers">Available MCP Servers</a>
+      <ul>
+        <li><a href="#development--system-tools">Development &amp; System Tools</a></li>
+        <li><a href="#web--search-tools">Web &amp; Search Tools</a></li>
+        <li><a href="#database-tools">Database Tools</a></li>
+      </ul>
+    </li>
+    <li><a href="#tool-usage-patterns">Tool Usage Patterns</a>
+      <ul>
+        <li><a href="#information-gathering-pattern">Information Gathering Pattern</a></li>
+        <li><a href="#technical-operations-pattern">Technical Operations Pattern</a></li>
+      </ul>
+    </li>
+    <li><a href="#error-handling-for-tools">Error Handling for Tools</a>
+      <ul>
+        <li><a href="#graceful-tool-failure-handling">Graceful Tool Failure Handling</a></li>
+      </ul>
+    </li>
+    <li><a href="#custom-mcp-servers">Custom MCP Servers</a>
+      <ul>
+        <li><a href="#building-a-custom-tool">Building a Custom Tool</a></li>
+      </ul>
+    </li>
+    <li><a href="#testing-tool-integration">Testing Tool Integration</a>
+      <ul>
+        <li><a href="#mock-mcp-manager-for-testing">Mock MCP Manager for Testing</a></li>
+      </ul>
+    </li>
+    <li><a href="#performance-considerations">Performance Considerations</a>
+      <ul>
+        <li><a href="#tool-execution-optimization">Tool Execution Optimization</a></li>
+      </ul>
+    </li>
+    <li><a href="#next-steps">Next Steps</a></li>
+  </ul>
+</nav>
+                </div>
+              </div>
+            </div>
+          </div>
+          <ol class="topbar-breadcrumbs breadcrumbs highlightable" itemscope itemtype="http://schema.org/BreadcrumbList"><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="/AgenticGoKitDocs/index.html"><span itemprop="name">content</span></a><meta itemprop="position" content="1">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="/AgenticGoKitDocs/guides/index.html"><span itemprop="name">guides</span></a><meta itemprop="position" content="2">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><span itemprop="name">ToolIntegration</span><meta itemprop="position" content="3"></li>
+          </ol>
+          <div class="topbar-area topbar-area-end" data-area="end">
+            <div class="topbar-button topbar-button-prev" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show"><a class="topbar-control" href="/AgenticGoKitDocs/guides/ragconfiguration/index.html" title="RAGConfiguration (🡐)"><i class="fa-fw fas fa-chevron-left"></i></a>
+            </div>
+            <div class="topbar-button topbar-button-next" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show"><a class="topbar-control" href="/AgenticGoKitDocs/guides/pgvectorsetup/index.html" title="PgVectorSetup (🡒)"><i class="fa-fw fas fa-chevron-right"></i></a>
+            </div>
+            <div class="topbar-button topbar-button-more" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show"><button class="topbar-control" onclick="toggleTopbarFlyout(this)" type="button" title="More"><i class="fa-fw fas fa-ellipsis-v"></i></button>
+              <div class="topbar-content">
+                <div class="topbar-content-wrapper">
+                  <div class="topbar-area topbar-area-more" data-area="more">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+      <div id="R-main-overlay"></div>
+      <main id="R-body-inner" class="highlightable guides" tabindex="-1">
+        <div class="flex-block-wrapper">
+<article class="default">
+  <header class="headline">
+  </header>
+
+<h1 id="toolintegration">ToolIntegration</h1>
+
+<h1 id="tool-integration">Tool Integration</h1>
+<p><strong>Dynamic Tool Discovery and Execution with MCP Protocol</strong></p>
+<p>AgentFlow uses the Model Context Protocol (MCP) to provide agents with dynamic tool discovery and execution capabilities. This guide covers everything from basic tool usage to building custom MCP servers.</p>
+<h2 id="overview">Overview</h2>
+<p>The MCP integration in AgentFlow provides:</p>
+<ul>
+<li><strong>Dynamic Discovery</strong>: Tools are discovered at runtime, not hard-coded</li>
+<li><strong>Schema-Based</strong>: Tools provide their own descriptions and parameters</li>
+<li><strong>LLM-Driven</strong>: The LLM decides which tools to use based on context</li>
+<li><strong>Extensible</strong>: Add new tools by connecting MCP servers</li>
+</ul>
+<h2 id="core-mcp-functions">Core MCP Functions</h2>
+<p>AgentFlow provides two key functions that handle all MCP complexity:</p>
+<h3 id="formattoolsforprompt">FormatToolsForPrompt()</h3>
+<p>Discovers available tools and formats them for LLM consumption:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#a6e22e">toolPrompt</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">agentflow</span>.<span style="color:#a6e22e">FormatToolsForPrompt</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">mcpManager</span>)</span></span></code></pre></div>
+<p><strong>Example output:</strong></p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0"><code>Available tools:
+1. search(query: string) - Search the web for information
+2. docker(command: string, args: array) - Execute Docker commands
+3. fetch_content(url: string) - Fetch content from a URL</code></pre></div>
+<h3 id="parseandexecutetoolcalls">ParseAndExecuteToolCalls()</h3>
+<p>Parses LLM responses and executes any tool calls found:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#a6e22e">toolResults</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">agentflow</span>.<span style="color:#a6e22e">ParseAndExecuteToolCalls</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">mcpManager</span>, <span style="color:#a6e22e">llmResponse</span>)</span></span></code></pre></div>
+<p><strong>Handles tool calls like:</strong></p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0"><code>I&#39;ll search for that information.
+
+&lt;tool_call&gt;
+{&#34;name&#34;: &#34;search&#34;, &#34;args&#34;: {&#34;query&#34;: &#34;latest Go tutorials 2025&#34;}}
+&lt;/tool_call&gt;
+
+Let me also fetch the official Go documentation.
+
+&lt;tool_call&gt;
+{&#34;name&#34;: &#34;fetch_content&#34;, &#34;args&#34;: {&#34;url&#34;: &#34;https://golang.org/doc/&#34;}}
+&lt;/tool_call&gt;</code></pre></div>
+<h2 id="complete-agent-with-tools">Complete Agent with Tools</h2>
+<p>Here&rsquo;s a complete agent that uses tools intelligently:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;context&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;fmt&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">agentflow</span> <span style="color:#e6db74">&#34;github.com/kunalkushwaha/agentflow/core&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">ToolEnabledAgent</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">llm</span>        <span style="color:#a6e22e">agentflow</span>.<span style="color:#a6e22e">ModelProvider</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">mcpManager</span> <span style="color:#a6e22e">agentflow</span>.<span style="color:#a6e22e">MCPManager</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewToolEnabledAgent</span>(<span style="color:#a6e22e">llm</span> <span style="color:#a6e22e">agentflow</span>.<span style="color:#a6e22e">ModelProvider</span>, <span style="color:#a6e22e">mcp</span> <span style="color:#a6e22e">agentflow</span>.<span style="color:#a6e22e">MCPManager</span>) <span style="color:#f92672">*</span><span style="color:#a6e22e">ToolEnabledAgent</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">ToolEnabledAgent</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">llm</span>:        <span style="color:#a6e22e">llm</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">mcpManager</span>: <span style="color:#a6e22e">mcp</span>,
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">a</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">ToolEnabledAgent</span>) <span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">event</span> <span style="color:#a6e22e">agentflow</span>.<span style="color:#a6e22e">Event</span>, <span style="color:#a6e22e">state</span> <span style="color:#a6e22e">agentflow</span>.<span style="color:#a6e22e">State</span>) (<span style="color:#a6e22e">agentflow</span>.<span style="color:#a6e22e">AgentResult</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">logger</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">agentflow</span>.<span style="color:#a6e22e">Logger</span>()
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Extract user message</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">message</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">event</span>.<span style="color:#a6e22e">GetData</span>()[<span style="color:#e6db74">&#34;message&#34;</span>]
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Build system prompt with tool awareness</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">systemPrompt</span> <span style="color:#f92672">:=</span> <span style="color:#e6db74">`You are a helpful assistant with access to various tools. 
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">Key principles:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">- Analyze what information the user needs
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">- Use tools when they can provide current, specific, or actionable information
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">- For factual queries, prefer search tools over general knowledge
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">- For web content, use fetch_content for specific URLs
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">- For technical tasks, use appropriate tools (docker, etc.)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">- Always explain what tools you&#39;re using and why
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">When using tools, format calls exactly like this:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">&lt;tool_call&gt;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">{&#34;name&#34;: &#34;tool_name&#34;, &#34;args&#34;: {&#34;param&#34;: &#34;value&#34;}}
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">&lt;/tool_call&gt;`</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Get available tools and add to prompt</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">toolPrompt</span> <span style="color:#f92672">:=</span> <span style="color:#e6db74">&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">a</span>.<span style="color:#a6e22e">mcpManager</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">toolPrompt</span> = <span style="color:#a6e22e">agentflow</span>.<span style="color:#a6e22e">FormatToolsForPrompt</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">a</span>.<span style="color:#a6e22e">mcpManager</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">logger</span>.<span style="color:#a6e22e">Info</span>().<span style="color:#a6e22e">Int</span>(<span style="color:#e6db74">&#34;tool_count&#34;</span>, len(<span style="color:#a6e22e">strings</span>.<span style="color:#a6e22e">Split</span>(<span style="color:#a6e22e">toolPrompt</span>, <span style="color:#e6db74">&#34;\n&#34;</span>))<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>).<span style="color:#a6e22e">Msg</span>(<span style="color:#e6db74">&#34;Tools available&#34;</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">fullPrompt</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;%s\n\n%s\n\nUser: %s&#34;</span>, <span style="color:#a6e22e">systemPrompt</span>, <span style="color:#a6e22e">toolPrompt</span>, <span style="color:#a6e22e">message</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Get initial LLM response</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">response</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">a</span>.<span style="color:#a6e22e">llm</span>.<span style="color:#a6e22e">Generate</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">fullPrompt</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">agentflow</span>.<span style="color:#a6e22e">AgentResult</span>{}, <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;LLM generation failed: %w&#34;</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Execute any tool calls found in response</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">finalResponse</span> <span style="color:#66d9ef">string</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">a</span>.<span style="color:#a6e22e">mcpManager</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">toolResults</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">agentflow</span>.<span style="color:#a6e22e">ParseAndExecuteToolCalls</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">a</span>.<span style="color:#a6e22e">mcpManager</span>, <span style="color:#a6e22e">response</span>)
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> len(<span style="color:#a6e22e">toolResults</span>) &gt; <span style="color:#ae81ff">0</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">logger</span>.<span style="color:#a6e22e">Info</span>().<span style="color:#a6e22e">Int</span>(<span style="color:#e6db74">&#34;tool_calls&#34;</span>, len(<span style="color:#a6e22e">toolResults</span>)).<span style="color:#a6e22e">Msg</span>(<span style="color:#e6db74">&#34;Tools executed&#34;</span>)
+</span></span><span style="display:flex;"><span>            
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// Synthesize tool results with original response</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">synthesisPrompt</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">`Original response: %s
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">Tool execution results: %v
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">Please provide a comprehensive final answer that incorporates the tool results. 
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">Be specific and cite the information sources when relevant.`</span>, <span style="color:#a6e22e">response</span>, <span style="color:#a6e22e">toolResults</span>)
+</span></span><span style="display:flex;"><span>            
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">finalResponse</span>, <span style="color:#a6e22e">err</span> = <span style="color:#a6e22e">a</span>.<span style="color:#a6e22e">llm</span>.<span style="color:#a6e22e">Generate</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">synthesisPrompt</span>)
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>                <span style="color:#75715e">// Fallback to original response if synthesis fails</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#a6e22e">logger</span>.<span style="color:#a6e22e">Warn</span>().<span style="color:#a6e22e">Err</span>(<span style="color:#a6e22e">err</span>).<span style="color:#a6e22e">Msg</span>(<span style="color:#e6db74">&#34;Tool result synthesis failed, using original response&#34;</span>)
+</span></span><span style="display:flex;"><span>                <span style="color:#a6e22e">finalResponse</span> = <span style="color:#a6e22e">response</span>
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>        } <span style="color:#66d9ef">else</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">finalResponse</span> = <span style="color:#a6e22e">response</span>
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    } <span style="color:#66d9ef">else</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">finalResponse</span> = <span style="color:#a6e22e">response</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Update state with results</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;response&#34;</span>, <span style="color:#a6e22e">finalResponse</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;tools_used&#34;</span>, len(<span style="color:#a6e22e">toolResults</span>) &gt; <span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> len(<span style="color:#a6e22e">toolResults</span>) &gt; <span style="color:#ae81ff">0</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;tool_results&#34;</span>, <span style="color:#a6e22e">toolResults</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">agentflow</span>.<span style="color:#a6e22e">AgentResult</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Result</span>: <span style="color:#a6e22e">finalResponse</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">State</span>:  <span style="color:#a6e22e">state</span>,
+</span></span><span style="display:flex;"><span>    }, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h2 id="mcp-configuration">MCP Configuration</h2>
+<h3 id="basic-configuration-agentflowtoml">Basic Configuration (agentflow.toml)</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">mcp</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enabled</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Web search capabilities</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">mcp</span>.<span style="color:#a6e22e">servers</span>.<span style="color:#a6e22e">search</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">command</span> = <span style="color:#e6db74">&#34;npx&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">args</span> = [<span style="color:#e6db74">&#34;-y&#34;</span>, <span style="color:#e6db74">&#34;@modelcontextprotocol/server-web-search&#34;</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">transport</span> = <span style="color:#e6db74">&#34;stdio&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Docker container management</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">mcp</span>.<span style="color:#a6e22e">servers</span>.<span style="color:#a6e22e">docker</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">command</span> = <span style="color:#e6db74">&#34;npx&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">args</span> = [<span style="color:#e6db74">&#34;-y&#34;</span>, <span style="color:#e6db74">&#34;@modelcontextprotocol/server-docker&#34;</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">transport</span> = <span style="color:#e6db74">&#34;stdio&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># File system operations</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">mcp</span>.<span style="color:#a6e22e">servers</span>.<span style="color:#a6e22e">filesystem</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">command</span> = <span style="color:#e6db74">&#34;npx&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">args</span> = [<span style="color:#e6db74">&#34;-y&#34;</span>, <span style="color:#e6db74">&#34;@modelcontextprotocol/server-filesystem&#34;</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">transport</span> = <span style="color:#e6db74">&#34;stdio&#34;</span></span></span></code></pre></div>
+<h3 id="production-configuration-with-caching">Production Configuration with Caching</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">mcp</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enabled</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">cache_enabled</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">cache_ttl</span> = <span style="color:#e6db74">&#34;5m&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">connection_timeout</span> = <span style="color:#e6db74">&#34;30s&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_retries</span> = <span style="color:#ae81ff">3</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">mcp</span>.<span style="color:#a6e22e">cache</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">type</span> = <span style="color:#e6db74">&#34;memory&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_size</span> = <span style="color:#ae81ff">1000</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Production-ready servers</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">mcp</span>.<span style="color:#a6e22e">servers</span>.<span style="color:#a6e22e">search</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">command</span> = <span style="color:#e6db74">&#34;npx&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">args</span> = [<span style="color:#e6db74">&#34;-y&#34;</span>, <span style="color:#e6db74">&#34;@modelcontextprotocol/server-web-search&#34;</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">transport</span> = <span style="color:#e6db74">&#34;stdio&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">env</span> = { <span style="color:#e6db74">&#34;SEARCH_API_KEY&#34;</span> = <span style="color:#e6db74">&#34;${SEARCH_API_KEY}&#34;</span> }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">mcp</span>.<span style="color:#a6e22e">servers</span>.<span style="color:#a6e22e">database</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">command</span> = <span style="color:#e6db74">&#34;npx&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">args</span> = [<span style="color:#e6db74">&#34;-y&#34;</span>, <span style="color:#e6db74">&#34;@modelcontextprotocol/server-postgres&#34;</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">transport</span> = <span style="color:#e6db74">&#34;stdio&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">env</span> = { <span style="color:#e6db74">&#34;DATABASE_URL&#34;</span> = <span style="color:#e6db74">&#34;${DATABASE_URL}&#34;</span> }</span></span></code></pre></div>
+<h2 id="available-mcp-servers">Available MCP Servers</h2>
+<h3 id="development--system-tools">Development &amp; System Tools</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span><span style="color:#75715e"># Docker management</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">mcp</span>.<span style="color:#a6e22e">servers</span>.<span style="color:#a6e22e">docker</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">command</span> = <span style="color:#e6db74">&#34;npx&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">args</span> = [<span style="color:#e6db74">&#34;-y&#34;</span>, <span style="color:#e6db74">&#34;@modelcontextprotocol/server-docker&#34;</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">transport</span> = <span style="color:#e6db74">&#34;stdio&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># File system operations</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">mcp</span>.<span style="color:#a6e22e">servers</span>.<span style="color:#a6e22e">filesystem</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">command</span> = <span style="color:#e6db74">&#34;npx&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">args</span> = [<span style="color:#e6db74">&#34;-y&#34;</span>, <span style="color:#e6db74">&#34;@modelcontextprotocol/server-filesystem&#34;</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">transport</span> = <span style="color:#e6db74">&#34;stdio&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># GitHub integration</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">mcp</span>.<span style="color:#a6e22e">servers</span>.<span style="color:#a6e22e">github</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">command</span> = <span style="color:#e6db74">&#34;npx&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">args</span> = [<span style="color:#e6db74">&#34;-y&#34;</span>, <span style="color:#e6db74">&#34;@modelcontextprotocol/server-github&#34;</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">transport</span> = <span style="color:#e6db74">&#34;stdio&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">env</span> = { <span style="color:#e6db74">&#34;GITHUB_TOKEN&#34;</span> = <span style="color:#e6db74">&#34;${GITHUB_TOKEN}&#34;</span> }</span></span></code></pre></div>
+<h3 id="web--search-tools">Web &amp; Search Tools</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span><span style="color:#75715e"># Web search</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">mcp</span>.<span style="color:#a6e22e">servers</span>.<span style="color:#a6e22e">search</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">command</span> = <span style="color:#e6db74">&#34;npx&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">args</span> = [<span style="color:#e6db74">&#34;-y&#34;</span>, <span style="color:#e6db74">&#34;@modelcontextprotocol/server-web-search&#34;</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">transport</span> = <span style="color:#e6db74">&#34;stdio&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># URL content fetching</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">mcp</span>.<span style="color:#a6e22e">servers</span>.<span style="color:#a6e22e">fetch</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">command</span> = <span style="color:#e6db74">&#34;npx&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">args</span> = [<span style="color:#e6db74">&#34;-y&#34;</span>, <span style="color:#e6db74">&#34;@modelcontextprotocol/server-fetch&#34;</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">transport</span> = <span style="color:#e6db74">&#34;stdio&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Brave search API</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">mcp</span>.<span style="color:#a6e22e">servers</span>.<span style="color:#a6e22e">brave</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">command</span> = <span style="color:#e6db74">&#34;npx&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">args</span> = [<span style="color:#e6db74">&#34;-y&#34;</span>, <span style="color:#e6db74">&#34;@modelcontextprotocol/server-brave-search&#34;</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">transport</span> = <span style="color:#e6db74">&#34;stdio&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">env</span> = { <span style="color:#e6db74">&#34;BRAVE_API_KEY&#34;</span> = <span style="color:#e6db74">&#34;${BRAVE_API_KEY}&#34;</span> }</span></span></code></pre></div>
+<h3 id="database-tools">Database Tools</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span><span style="color:#75715e"># PostgreSQL</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">mcp</span>.<span style="color:#a6e22e">servers</span>.<span style="color:#a6e22e">postgres</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">command</span> = <span style="color:#e6db74">&#34;npx&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">args</span> = [<span style="color:#e6db74">&#34;-y&#34;</span>, <span style="color:#e6db74">&#34;@modelcontextprotocol/server-postgres&#34;</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">transport</span> = <span style="color:#e6db74">&#34;stdio&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">env</span> = { <span style="color:#e6db74">&#34;DATABASE_URL&#34;</span> = <span style="color:#e6db74">&#34;${DATABASE_URL}&#34;</span> }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># SQLite</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">mcp</span>.<span style="color:#a6e22e">servers</span>.<span style="color:#a6e22e">sqlite</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">command</span> = <span style="color:#e6db74">&#34;npx&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">args</span> = [<span style="color:#e6db74">&#34;-y&#34;</span>, <span style="color:#e6db74">&#34;@modelcontextprotocol/server-sqlite&#34;</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">transport</span> = <span style="color:#e6db74">&#34;stdio&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># MongoDB</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">mcp</span>.<span style="color:#a6e22e">servers</span>.<span style="color:#a6e22e">mongodb</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">command</span> = <span style="color:#e6db74">&#34;npx&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">args</span> = [<span style="color:#e6db74">&#34;-y&#34;</span>, <span style="color:#e6db74">&#34;@modelcontextprotocol/server-mongodb&#34;</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">transport</span> = <span style="color:#e6db74">&#34;stdio&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">env</span> = { <span style="color:#e6db74">&#34;MONGODB_URI&#34;</span> = <span style="color:#e6db74">&#34;${MONGODB_URI}&#34;</span> }</span></span></code></pre></div>
+<h2 id="tool-usage-patterns">Tool Usage Patterns</h2>
+<h3 id="information-gathering-pattern">Information Gathering Pattern</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">a</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">ResearchAgent</span>) <span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">event</span> <span style="color:#a6e22e">agentflow</span>.<span style="color:#a6e22e">Event</span>, <span style="color:#a6e22e">state</span> <span style="color:#a6e22e">agentflow</span>.<span style="color:#a6e22e">State</span>) (<span style="color:#a6e22e">agentflow</span>.<span style="color:#a6e22e">AgentResult</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">query</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">event</span>.<span style="color:#a6e22e">GetData</span>()[<span style="color:#e6db74">&#34;message&#34;</span>]
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// System prompt optimized for research</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">systemPrompt</span> <span style="color:#f92672">:=</span> <span style="color:#e6db74">`You are a research agent. For any query:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">1. First, search for current information using the search tool
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">2. If specific URLs are mentioned or found, fetch their content
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">3. Gather multiple perspectives and sources
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">4. Organize findings in a structured way
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">Always use tools for factual, current information rather than relying on training data.`</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">toolPrompt</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">agentflow</span>.<span style="color:#a6e22e">FormatToolsForPrompt</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">a</span>.<span style="color:#a6e22e">mcpManager</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">prompt</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;%s\n%s\nResearch: %s&#34;</span>, <span style="color:#a6e22e">systemPrompt</span>, <span style="color:#a6e22e">toolPrompt</span>, <span style="color:#a6e22e">query</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">response</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">a</span>.<span style="color:#a6e22e">llm</span>.<span style="color:#a6e22e">Generate</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">prompt</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">agentflow</span>.<span style="color:#a6e22e">AgentResult</span>{}, <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Execute research tools</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">toolResults</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">agentflow</span>.<span style="color:#a6e22e">ParseAndExecuteToolCalls</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">a</span>.<span style="color:#a6e22e">mcpManager</span>, <span style="color:#a6e22e">response</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Compile comprehensive research report</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> len(<span style="color:#a6e22e">toolResults</span>) &gt; <span style="color:#ae81ff">0</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">reportPrompt</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">`Based on this research: %v
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">Create a comprehensive research report with:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">1. Executive summary
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">2. Key findings with sources
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">3. Detailed information
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">4. Implications and insights`</span>, <span style="color:#a6e22e">toolResults</span>)
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">finalReport</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">a</span>.<span style="color:#a6e22e">llm</span>.<span style="color:#a6e22e">Generate</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">reportPrompt</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;research_report&#34;</span>, <span style="color:#a6e22e">finalReport</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">agentflow</span>.<span style="color:#a6e22e">AgentResult</span>{<span style="color:#a6e22e">Result</span>: <span style="color:#a6e22e">finalReport</span>, <span style="color:#a6e22e">State</span>: <span style="color:#a6e22e">state</span>}, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">agentflow</span>.<span style="color:#a6e22e">AgentResult</span>{<span style="color:#a6e22e">Result</span>: <span style="color:#a6e22e">response</span>, <span style="color:#a6e22e">State</span>: <span style="color:#a6e22e">state</span>}, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h3 id="technical-operations-pattern">Technical Operations Pattern</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">a</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">DevOpsAgent</span>) <span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">event</span> <span style="color:#a6e22e">agentflow</span>.<span style="color:#a6e22e">Event</span>, <span style="color:#a6e22e">state</span> <span style="color:#a6e22e">agentflow</span>.<span style="color:#a6e22e">State</span>) (<span style="color:#a6e22e">agentflow</span>.<span style="color:#a6e22e">AgentResult</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">task</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">event</span>.<span style="color:#a6e22e">GetData</span>()[<span style="color:#e6db74">&#34;message&#34;</span>]
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">systemPrompt</span> <span style="color:#f92672">:=</span> <span style="color:#e6db74">`You are a DevOps agent with access to Docker and system tools.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">For technical tasks:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">1. Analyze what needs to be done
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">2. Use docker commands for container operations
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">3. Use filesystem tools for file operations  
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">4. Provide clear explanations of actions taken
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">5. Include any warnings or important notes
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">Be careful with destructive operations and always explain what you&#39;re doing.`</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">toolPrompt</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">agentflow</span>.<span style="color:#a6e22e">FormatToolsForPrompt</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">a</span>.<span style="color:#a6e22e">mcpManager</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">prompt</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;%s\n%s\nTask: %s&#34;</span>, <span style="color:#a6e22e">systemPrompt</span>, <span style="color:#a6e22e">toolPrompt</span>, <span style="color:#a6e22e">task</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">response</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">a</span>.<span style="color:#a6e22e">llm</span>.<span style="color:#a6e22e">Generate</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">prompt</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">agentflow</span>.<span style="color:#a6e22e">AgentResult</span>{}, <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Execute technical tools with logging</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">logger</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">agentflow</span>.<span style="color:#a6e22e">Logger</span>()
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">toolResults</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">agentflow</span>.<span style="color:#a6e22e">ParseAndExecuteToolCalls</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">a</span>.<span style="color:#a6e22e">mcpManager</span>, <span style="color:#a6e22e">response</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> len(<span style="color:#a6e22e">toolResults</span>) &gt; <span style="color:#ae81ff">0</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">logger</span>.<span style="color:#a6e22e">Info</span>().<span style="color:#a6e22e">Interface</span>(<span style="color:#e6db74">&#34;results&#34;</span>, <span style="color:#a6e22e">toolResults</span>).<span style="color:#a6e22e">Msg</span>(<span style="color:#e6db74">&#34;Technical operations completed&#34;</span>)
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Provide detailed summary of actions</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">summaryPrompt</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">`Technical operations completed: %v
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">Provide a summary that includes:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">1. What actions were taken
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">2. Results of each operation
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">3. Current state
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">4. Any follow-up recommendations`</span>, <span style="color:#a6e22e">toolResults</span>)
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">summary</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">a</span>.<span style="color:#a6e22e">llm</span>.<span style="color:#a6e22e">Generate</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">summaryPrompt</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;operations_summary&#34;</span>, <span style="color:#a6e22e">summary</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">agentflow</span>.<span style="color:#a6e22e">AgentResult</span>{<span style="color:#a6e22e">Result</span>: <span style="color:#a6e22e">summary</span>, <span style="color:#a6e22e">State</span>: <span style="color:#a6e22e">state</span>}, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">agentflow</span>.<span style="color:#a6e22e">AgentResult</span>{<span style="color:#a6e22e">Result</span>: <span style="color:#a6e22e">response</span>, <span style="color:#a6e22e">State</span>: <span style="color:#a6e22e">state</span>}, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h2 id="error-handling-for-tools">Error Handling for Tools</h2>
+<h3 id="graceful-tool-failure-handling">Graceful Tool Failure Handling</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">a</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Agent</span>) <span style="color:#a6e22e">handleToolExecution</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">response</span> <span style="color:#66d9ef">string</span>) (<span style="color:#66d9ef">string</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">logger</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">agentflow</span>.<span style="color:#a6e22e">Logger</span>()
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Attempt tool execution</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">toolResults</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">agentflow</span>.<span style="color:#a6e22e">ParseAndExecuteToolCalls</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">a</span>.<span style="color:#a6e22e">mcpManager</span>, <span style="color:#a6e22e">response</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Check if tools were expected but failed</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">strings</span>.<span style="color:#a6e22e">Contains</span>(<span style="color:#a6e22e">response</span>, <span style="color:#e6db74">&#34;&lt;tool_call&gt;&#34;</span>) <span style="color:#f92672">&amp;&amp;</span> len(<span style="color:#a6e22e">toolResults</span>) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">logger</span>.<span style="color:#a6e22e">Warn</span>().<span style="color:#a6e22e">Msg</span>(<span style="color:#e6db74">&#34;Tool calls were attempted but none succeeded&#34;</span>)
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Generate fallback response</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">fallbackPrompt</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">`The following response contained tool calls that failed to execute:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">%s
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">Please provide a helpful response based on your knowledge instead, and mention that some real-time information couldn&#39;t be retrieved.`</span>, <span style="color:#a6e22e">response</span>)
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">fallbackResponse</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">a</span>.<span style="color:#a6e22e">llm</span>.<span style="color:#a6e22e">Generate</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">fallbackPrompt</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// If even fallback fails, return original response</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">response</span>, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">fallbackResponse</span>, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// If tools succeeded, synthesize results</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> len(<span style="color:#a6e22e">toolResults</span>) &gt; <span style="color:#ae81ff">0</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">synthesisPrompt</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;Response: %s\nTool results: %v\nFinal answer:&#34;</span>, <span style="color:#a6e22e">response</span>, <span style="color:#a6e22e">toolResults</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">finalResponse</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">a</span>.<span style="color:#a6e22e">llm</span>.<span style="color:#a6e22e">Generate</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">synthesisPrompt</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// Fallback to original response</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">response</span>, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">finalResponse</span>, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// No tools were called, return original response</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">response</span>, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h2 id="custom-mcp-servers">Custom MCP Servers</h2>
+<h3 id="building-a-custom-tool">Building a Custom Tool</h3>
+<p>You can create custom MCP servers for domain-specific tools. Here&rsquo;s a conceptual example:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-javascript" data-lang="javascript"><span style="display:flex;"><span><span style="color:#75715e">// custom-mcp-server.js
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">const</span> { <span style="color:#a6e22e">MCPServer</span> } <span style="color:#f92672">=</span> <span style="color:#a6e22e">require</span>(<span style="color:#e6db74">&#39;@modelcontextprotocol/server&#39;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">const</span> <span style="color:#a6e22e">server</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> <span style="color:#a6e22e">MCPServer</span>({
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">name</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;custom-tools&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">version</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;1.0.0&#34;</span>
+</span></span><span style="display:flex;"><span>});
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Define custom tool
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#a6e22e">server</span>.<span style="color:#a6e22e">registerTool</span>({
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">name</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;analyze_data&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">description</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;Analyze CSV data and return insights&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">parameters</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">type</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;object&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">properties</span><span style="color:#f92672">:</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">data</span><span style="color:#f92672">:</span> { <span style="color:#a6e22e">type</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;string&#34;</span>, <span style="color:#a6e22e">description</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;CSV data to analyze&#34;</span> },
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">analysis_type</span><span style="color:#f92672">:</span> { <span style="color:#a6e22e">type</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;string&#34;</span>, <span style="color:#a6e22e">description</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;Type of analysis: summary, trends, outliers&#34;</span> }
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">required</span><span style="color:#f92672">:</span> [<span style="color:#e6db74">&#34;data&#34;</span>, <span style="color:#e6db74">&#34;analysis_type&#34;</span>]
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}, <span style="color:#66d9ef">async</span> (<span style="color:#a6e22e">params</span>) =&gt; {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Custom analysis logic here
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">const</span> { <span style="color:#a6e22e">data</span>, <span style="color:#a6e22e">analysis_type</span> } <span style="color:#f92672">=</span> <span style="color:#a6e22e">params</span>;
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">switch</span>(<span style="color:#a6e22e">analysis_type</span>) {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#34;summary&#34;</span><span style="color:#f92672">:</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span> { <span style="color:#a6e22e">result</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;Data summary: ...&#34;</span> };
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#34;trends&#34;</span><span style="color:#f92672">:</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span> { <span style="color:#a6e22e">result</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;Trend analysis: ...&#34;</span> };
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">default</span><span style="color:#f92672">:</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span> { <span style="color:#a6e22e">error</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;Unknown analysis type&#34;</span> };
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>});
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">server</span>.<span style="color:#a6e22e">start</span>();</span></span></code></pre></div>
+<p><strong>Configure in agentflow.toml:</strong></p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">mcp</span>.<span style="color:#a6e22e">servers</span>.<span style="color:#a6e22e">custom</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">command</span> = <span style="color:#e6db74">&#34;node&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">args</span> = [<span style="color:#e6db74">&#34;custom-mcp-server.js&#34;</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">transport</span> = <span style="color:#e6db74">&#34;stdio&#34;</span></span></span></code></pre></div>
+<h2 id="testing-tool-integration">Testing Tool Integration</h2>
+<h3 id="mock-mcp-manager-for-testing">Mock MCP Manager for Testing</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">MockMCPManager</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">tools</span>       []<span style="color:#a6e22e">agentflow</span>.<span style="color:#a6e22e">ToolSchema</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">toolResults</span> <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">interface</span>{}
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewMockMCPManager</span>() <span style="color:#f92672">*</span><span style="color:#a6e22e">MockMCPManager</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">MockMCPManager</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">tools</span>: []<span style="color:#a6e22e">agentflow</span>.<span style="color:#a6e22e">ToolSchema</span>{
+</span></span><span style="display:flex;"><span>            {
+</span></span><span style="display:flex;"><span>                <span style="color:#a6e22e">Name</span>: <span style="color:#e6db74">&#34;search&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#a6e22e">Description</span>: <span style="color:#e6db74">&#34;Search for information&#34;</span>,
+</span></span><span style="display:flex;"><span>                <span style="color:#a6e22e">Parameters</span>: <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">interface</span>{}{
+</span></span><span style="display:flex;"><span>                    <span style="color:#e6db74">&#34;query&#34;</span>: <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">interface</span>{}{
+</span></span><span style="display:flex;"><span>                        <span style="color:#e6db74">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;string&#34;</span>,
+</span></span><span style="display:flex;"><span>                        <span style="color:#e6db74">&#34;description&#34;</span>: <span style="color:#e6db74">&#34;Search query&#34;</span>,
+</span></span><span style="display:flex;"><span>                    },
+</span></span><span style="display:flex;"><span>                },
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">toolResults</span>: <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">interface</span>{}{
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;search&#34;</span>: <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">interface</span>{}{
+</span></span><span style="display:flex;"><span>                <span style="color:#e6db74">&#34;results&#34;</span>: []<span style="color:#66d9ef">string</span>{<span style="color:#e6db74">&#34;Mock search result 1&#34;</span>, <span style="color:#e6db74">&#34;Mock search result 2&#34;</span>},
+</span></span><span style="display:flex;"><span>            },
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">m</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">MockMCPManager</span>) <span style="color:#a6e22e">ListTools</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>) ([]<span style="color:#a6e22e">agentflow</span>.<span style="color:#a6e22e">ToolSchema</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">m</span>.<span style="color:#a6e22e">tools</span>, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">m</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">MockMCPManager</span>) <span style="color:#a6e22e">CallTool</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">name</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">args</span> <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">interface</span>{}) (<span style="color:#66d9ef">interface</span>{}, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">result</span>, <span style="color:#a6e22e">exists</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">m</span>.<span style="color:#a6e22e">toolResults</span>[<span style="color:#a6e22e">name</span>]; <span style="color:#a6e22e">exists</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">result</span>, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>, <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;tool not found: %s&#34;</span>, <span style="color:#a6e22e">name</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Test with mock</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">TestAgentWithTools</span>(<span style="color:#a6e22e">t</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">testing</span>.<span style="color:#a6e22e">T</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">mockLLM</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">MockModelProvider</span>{}
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">mockMCP</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">NewMockMCPManager</span>()
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">agent</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">NewToolEnabledAgent</span>(<span style="color:#a6e22e">mockLLM</span>, <span style="color:#a6e22e">mockMCP</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Test tool integration</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">eventData</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">agentflow</span>.<span style="color:#a6e22e">EventData</span>{<span style="color:#e6db74">&#34;message&#34;</span>: <span style="color:#e6db74">&#34;Search for Go tutorials&#34;</span>}
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">event</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">agentflow</span>.<span style="color:#a6e22e">NewEvent</span>(<span style="color:#e6db74">&#34;test&#34;</span>, <span style="color:#a6e22e">eventData</span>, <span style="color:#66d9ef">nil</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">state</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">agentflow</span>.<span style="color:#a6e22e">NewState</span>()
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">result</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">agent</span>.<span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>(), <span style="color:#a6e22e">event</span>, <span style="color:#a6e22e">state</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">assert</span>.<span style="color:#a6e22e">NoError</span>(<span style="color:#a6e22e">t</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">assert</span>.<span style="color:#a6e22e">NotEmpty</span>(<span style="color:#a6e22e">t</span>, <span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">Result</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Verify tools were used</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">toolsUsed</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">State</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#e6db74">&#34;tools_used&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">assert</span>.<span style="color:#a6e22e">True</span>(<span style="color:#a6e22e">t</span>, <span style="color:#a6e22e">toolsUsed</span>.(<span style="color:#66d9ef">bool</span>))
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h2 id="performance-considerations">Performance Considerations</h2>
+<h3 id="tool-execution-optimization">Tool Execution Optimization</h3>
+<ol>
+<li><strong>Cache Tool Schemas</strong>: Tool discovery is cached automatically</li>
+<li><strong>Parallel Execution</strong>: Multiple tool calls execute concurrently</li>
+<li><strong>Timeout Management</strong>: Tools have configurable timeouts</li>
+<li><strong>Connection Pooling</strong>: MCP connections are reused</li>
+</ol>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Production MCP configuration</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">config</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">agentflow</span>.<span style="color:#a6e22e">MCPConfig</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">CacheEnabled</span>:     <span style="color:#66d9ef">true</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">CacheTTL</span>:        <span style="color:#ae81ff">5</span> <span style="color:#f92672">*</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Minute</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">ConnectionTimeout</span>: <span style="color:#ae81ff">30</span> <span style="color:#f92672">*</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Second</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">MaxRetries</span>:      <span style="color:#ae81ff">3</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">MaxConcurrentTools</span>: <span style="color:#ae81ff">5</span>,
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">mcpManager</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">agentflow</span>.<span style="color:#a6e22e">InitializeProductionMCP</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">config</span>)</span></span></code></pre></div>
+<h2 id="next-steps">Next Steps</h2>
+<ul>
+<li><strong><a href="/AgenticGoKitDocs/guides/providers/index.html">LLM Providers</a></strong> - Configure different LLM providers</li>
+<li><strong><a href="/AgenticGoKitDocs/guides/configuration/index.html">Configuration</a></strong> - Advanced configuration options</li>
+<li><strong><a href="/AgenticGoKitDocs/guides/customtools/index.html">Custom Tools</a></strong> - Build your own MCP servers</li>
+<li><strong><a href="Production.md">Production Deployment</a></strong> - Deploy with tool integration</li>
+</ul>
+
+  <footer class="footline">
+              <i class='fa-fw fas fa-calendar'></i> Jul 25, 2025
+  </footer>
+</article>
+        </div>
+      </main>
+    </div>
+    <aside id="R-sidebar" class="default-animation">
+      <div id="R-header-topbar" class="default-animation"></div>
+      <div id="R-header-wrapper" class="default-animation">
+        <div id="R-header" class="default-animation">
+          <a id="R-logo" class="R-default" href="/AgenticGoKitDocs/index.html">
+            <div class="logo-title">AgenticGoKit Docs</div>
+          </a>
+        </div>
+        <search><form action="/AgenticGoKitDocs/search/index.html" method="get">
+          <div class="searchbox default-animation">
+            <button class="search-detail" type="submit" title="Search (CTRL+ALT+f)"><i class="fas fa-search"></i></button>
+            <label class="a11y-only" for="R-search-by">Search</label>
+            <input data-search-input id="R-search-by" name="search-by" class="search-by" type="search" placeholder="Search...">
+            <button class="search-clear" type="button" data-search-clear="" title="Clear search"><i class="fas fa-times" title="Clear search"></i></button>
+          </div>
+        </form></search>
+      </div>
+      <div id="R-homelinks" class="default-animation homelinks">
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-homelinks">
+          <ul class="space collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/index.html"><a class="padding" href="/AgenticGoKitDocs/index.html"><i class="fa-fw fas fa-home"></i> Home</a></li>
+          </ul>
+        </div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-headercontrols">
+          <ul class="">
+          </ul>
+        </div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+      </div>
+      <div id="R-content-wrapper" class="highlightable">
+        <div class="R-sidebarmenu R-shortcutmenu-main">
+          <ul class="enlarge morespace collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/readme/index.html">content</a></li>
+            <li class="parent alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/index.html"><input type="checkbox" id="R-section-8fc2fd7736125e87cab8840a86c2af5a" aria-controls="R-subsections-8fc2fd7736125e87cab8840a86c2af5a" checked><label for="R-section-8fc2fd7736125e87cab8840a86c2af5a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu guides</span></label><a class="padding" href="/AgenticGoKitDocs/guides/index.html">guides</a><ul id="R-subsections-8fc2fd7736125e87cab8840a86c2af5a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/readme/index.html">guides</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/agentbasics/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/agentbasics/index.html">AgentBasics</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/examples/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/examples/index.html">Examples</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/configuration/index.html">Configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/customtools/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/customtools/index.html">CustomTools</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/providers/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/providers/index.html">Providers</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memoryprovidersetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memoryprovidersetup/index.html">MemoryProviderSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memorytroubleshooting/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memorytroubleshooting/index.html">MemoryTroubleshooting</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/embeddingmodelguide/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/embeddingmodelguide/index.html">EmbeddingModelGuide</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/ragconfiguration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/ragconfiguration/index.html">RAGConfiguration</a></li>
+            <li class="active " data-nav-id="/AgenticGoKitDocs/guides/toolintegration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/toolintegration/index.html">ToolIntegration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/pgvectorsetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/pgvectorsetup/index.html">PgVectorSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/weaviatesetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/weaviatesetup/index.html">WeaviateSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/performance/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/performance/index.html">Performance</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/errorhandling/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/errorhandling/index.html">ErrorHandling</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/deployment/index.html"><input type="checkbox" id="R-section-ecc839349395ef3c015a12132049dff2" aria-controls="R-subsections-ecc839349395ef3c015a12132049dff2" checked><label for="R-section-ecc839349395ef3c015a12132049dff2"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu deployment</span></label><a class="padding" href="/AgenticGoKitDocs/guides/deployment/index.html">deployment</a><ul id="R-subsections-ecc839349395ef3c015a12132049dff2" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/deployment/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/deployment/readme/index.html">deployment</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/development/index.html"><input type="checkbox" id="R-section-fff1f5eca5d0a93209b9c6262762c25a" aria-controls="R-subsections-fff1f5eca5d0a93209b9c6262762c25a" checked><label for="R-section-fff1f5eca5d0a93209b9c6262762c25a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu development</span></label><a class="padding" href="/AgenticGoKitDocs/guides/development/index.html">development</a><ul id="R-subsections-fff1f5eca5d0a93209b9c6262762c25a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/readme/index.html">development</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/best-practices/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/best-practices/index.html">best-practices</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/debugging/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/debugging/index.html">debugging</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/research-assistant/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/research-assistant/index.html">research-assistant</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/testing-agents/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/testing-agents/index.html">testing-agents</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/visualization/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/visualization/index.html">visualization</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/web-search-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/web-search-integration/index.html">web-search-integration</a></li></ul></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/framework-comparison/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/framework-comparison/index.html">framework-comparison</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memory/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memory/index.html">Memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/scaffoldmemoryguide/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/scaffoldmemoryguide/index.html">ScaffoldMemoryGuide</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/setup/index.html"><input type="checkbox" id="R-section-0124aed9abb5064d53391168f3c95c22" aria-controls="R-subsections-0124aed9abb5064d53391168f3c95c22" checked><label for="R-section-0124aed9abb5064d53391168f3c95c22"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu setup</span></label><a class="padding" href="/AgenticGoKitDocs/guides/setup/index.html">setup</a><ul id="R-subsections-0124aed9abb5064d53391168f3c95c22" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/readme/index.html">setup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/llm-providers/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/llm-providers/index.html">llm-providers</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/mcp-tools/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/mcp-tools/index.html">mcp-tools</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/orchestration-configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/orchestration-configuration/index.html">orchestration-configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/vector-databases/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/vector-databases/index.html">vector-databases</a></li></ul></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/troubleshooting/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/troubleshooting/index.html">troubleshooting</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/contributors/index.html"><input type="checkbox" id="R-section-190d9b328fbda7e13ab386f7a5417de5" aria-controls="R-subsections-190d9b328fbda7e13ab386f7a5417de5" checked><label for="R-section-190d9b328fbda7e13ab386f7a5417de5"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu contributors</span></label><a class="padding" href="/AgenticGoKitDocs/contributors/index.html">contributors</a><ul id="R-subsections-190d9b328fbda7e13ab386f7a5417de5" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/readme/index.html">contributors</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/contributorguide/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/contributorguide/index.html">ContributorGuide</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/codestyle/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/codestyle/index.html">CodeStyle</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/corevsinternal/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/corevsinternal/index.html">CoreVsInternal</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/addingfeatures/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/addingfeatures/index.html">AddingFeatures</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/testing/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/testing/index.html">Testing</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/docsstandards/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/docsstandards/index.html">DocsStandards</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/reference/index.html"><input type="checkbox" id="R-section-66002f201bef818664bb81aa67490c58" aria-controls="R-subsections-66002f201bef818664bb81aa67490c58" checked><label for="R-section-66002f201bef818664bb81aa67490c58"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu reference</span></label><a class="padding" href="/AgenticGoKitDocs/reference/index.html">reference</a><ul id="R-subsections-66002f201bef818664bb81aa67490c58" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/readme/index.html">reference</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/configuration/index.html">configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/cli/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/cli/index.html">cli</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/mcp/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/mcp/index.html">mcp</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/agent/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/agent/index.html">agent</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/memory/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/memory/index.html">memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/orchestration/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/orchestration/index.html">orchestration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/state-event/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/state-event/index.html">state-event</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/index.html"><input type="checkbox" id="R-section-e1e8c1e70c5500b49e8dda2dc550651a" aria-controls="R-subsections-e1e8c1e70c5500b49e8dda2dc550651a" checked><label for="R-section-e1e8c1e70c5500b49e8dda2dc550651a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu tutorials</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/index.html">tutorials</a><ul id="R-subsections-e1e8c1e70c5500b49e8dda2dc550651a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/readme/index.html">tutorials</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/advanced/index.html"><input type="checkbox" id="R-section-d3def5cd76adc8096d0ff9fda6b8e479" aria-controls="R-subsections-d3def5cd76adc8096d0ff9fda6b8e479" checked><label for="R-section-d3def5cd76adc8096d0ff9fda6b8e479"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu advanced</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/index.html">advanced</a><ul id="R-subsections-d3def5cd76adc8096d0ff9fda6b8e479" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/readme/index.html">advanced</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/circuit-breaker-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/circuit-breaker-patterns/index.html">circuit-breaker-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/load-balancing-scaling/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/load-balancing-scaling/index.html">load-balancing-scaling</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/retry-policies/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/retry-policies/index.html">retry-policies</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/testing-strategies/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/testing-strategies/index.html">testing-strategies</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/index.html"><input type="checkbox" id="R-section-212c6ccffb40ecdd78eb2136f98c4cac" aria-controls="R-subsections-212c6ccffb40ecdd78eb2136f98c4cac" checked><label for="R-section-212c6ccffb40ecdd78eb2136f98c4cac"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu core-concepts</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/index.html">core-concepts</a><ul id="R-subsections-212c6ccffb40ecdd78eb2136f98c4cac" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/readme/index.html">core-concepts</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/agent-lifecycle/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/agent-lifecycle/index.html">agent-lifecycle</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/error-handling/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/error-handling/index.html">error-handling</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/message-passing/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/message-passing/index.html">message-passing</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/orchestration-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/orchestration-patterns/index.html">orchestration-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/state-management/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/state-management/index.html">state-management</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/debugging/index.html"><input type="checkbox" id="R-section-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" aria-controls="R-subsections-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" checked><label for="R-section-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu debugging</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/index.html">debugging</a><ul id="R-subsections-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/readme/index.html">debugging</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/debugging-multi-agent-systems/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/debugging-multi-agent-systems/index.html">debugging-multi-agent-systems</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/logging-and-tracing/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/logging-and-tracing/index.html">logging-and-tracing</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/index.html"><input type="checkbox" id="R-section-e7f904c8b9d0f9bf1f07ca7d482d2247" aria-controls="R-subsections-e7f904c8b9d0f9bf1f07ca7d482d2247" checked><label for="R-section-e7f904c8b9d0f9bf1f07ca7d482d2247"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu getting-started</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/index.html">getting-started</a><ul id="R-subsections-e7f904c8b9d0f9bf1f07ca7d482d2247" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/readme/index.html">getting-started</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/memory-and-rag/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/memory-and-rag/index.html">memory-and-rag</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/multi-agent-collaboration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/multi-agent-collaboration/index.html">multi-agent-collaboration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/production-deployment/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/production-deployment/index.html">production-deployment</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/quickstart/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/quickstart/index.html">quickstart</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/tool-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/tool-integration/index.html">tool-integration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/your-first-agent/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/your-first-agent/index.html">your-first-agent</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/mcp/index.html"><input type="checkbox" id="R-section-153aac44598009a99dd5a60317a3eecc" aria-controls="R-subsections-153aac44598009a99dd5a60317a3eecc" checked><label for="R-section-153aac44598009a99dd5a60317a3eecc"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu mcp</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/index.html">mcp</a><ul id="R-subsections-153aac44598009a99dd5a60317a3eecc" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/readme/index.html">mcp</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/advanced-tool-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/advanced-tool-patterns/index.html">advanced-tool-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/tool-development/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/tool-development/index.html">tool-development</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/tool-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/tool-integration/index.html">tool-integration</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/index.html"><input type="checkbox" id="R-section-9c1a65f2d7b3888241dcafa51a0710e7" aria-controls="R-subsections-9c1a65f2d7b3888241dcafa51a0710e7" checked><label for="R-section-9c1a65f2d7b3888241dcafa51a0710e7"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu memory-systems</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/index.html">memory-systems</a><ul id="R-subsections-9c1a65f2d7b3888241dcafa51a0710e7" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/readme/index.html">memory-systems</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/basic-memory/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/basic-memory/index.html">basic-memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/document-ingestion/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/document-ingestion/index.html">document-ingestion</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/knowledge-bases/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/knowledge-bases/index.html">knowledge-bases</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/memory-optimization/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/memory-optimization/index.html">memory-optimization</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/rag-implementation/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/rag-implementation/index.html">rag-implementation</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/vector-databases/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/vector-databases/index.html">vector-databases</a></li></ul></li></ul></li>
+          </ul>
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-shortcuts">
+          <ul class="space collapsible-menu">
+          </ul>
+        </div>
+        <div id="R-footer-margin"></div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-footercontrols">
+          <ul class="">
+          </ul>
+        </div>
+<div id="R-footer"><p>Built with <a href="https://github.com/McShelby/hugo-theme-relearn" title="love"><i class="fas fa-heart"></i></a> by <a href="https://gohugo.io/">Hugo</a></p></div>
+      </div>
+    </aside>
+    <script src="/AgenticGoKitDocs/js/clipboard/clipboard.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/perfect-scrollbar/perfect-scrollbar.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/theme.js?1753430931" defer></script>
+  </body>
+</html>

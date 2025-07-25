@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="en-us" dir="ltr" itemscope itemtype="http://schema.org/Article" data-r-output-format="html">
+  <head><script src="/AgenticGoKitDocs/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=AgenticGoKitDocs/livereload" data-no-instant defer></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="height=device-height, width=device-width, initial-scale=1.0, minimum-scale=1.0">
+    <meta name="generator" content="Hugo 0.148.1">
+    <meta name="generator" content="Relearn 8.0.0+9803d5122ebb3276acea823f476e9eb44f607862">
+    <meta name="description" content="State Management and Data Flow in AgenticGoKit Overview State management is the backbone of data flow in AgenticGoKit. It determines how information is stored, passed between agents, and persisted across interactions. This tutorial explores how State objects work, how data flows through agent systems, and best practices for managing complex data transformations.
+Understanding state management is crucial because it’s how agents share information, maintain context, and build upon each other’s work.">
+    <meta name="author" content="">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="state-management :: AgenticGoKit Docs">
+    <meta name="twitter:description" content="State Management and Data Flow in AgenticGoKit Overview State management is the backbone of data flow in AgenticGoKit. It determines how information is stored, passed between agents, and persisted across interactions. This tutorial explores how State objects work, how data flows through agent systems, and best practices for managing complex data transformations.
+Understanding state management is crucial because it’s how agents share information, maintain context, and build upon each other’s work.">
+    <meta property="og:url" content="http://localhost:1313/AgenticGoKitDocs/tutorials/core-concepts/state-management/index.html">
+    <meta property="og:site_name" content="AgenticGoKit Docs">
+    <meta property="og:title" content="state-management :: AgenticGoKit Docs">
+    <meta property="og:description" content="State Management and Data Flow in AgenticGoKit Overview State management is the backbone of data flow in AgenticGoKit. It determines how information is stored, passed between agents, and persisted across interactions. This tutorial explores how State objects work, how data flows through agent systems, and best practices for managing complex data transformations.
+Understanding state management is crucial because it’s how agents share information, maintain context, and build upon each other’s work.">
+    <meta property="og:locale" content="en_us">
+    <meta property="og:type" content="article">
+    <meta property="article:section" content="tutorials">
+    <meta property="article:published_time" content="2025-07-25T00:00:00+00:00">
+    <meta property="article:modified_time" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="name" content="state-management :: AgenticGoKit Docs">
+    <meta itemprop="description" content="State Management and Data Flow in AgenticGoKit Overview State management is the backbone of data flow in AgenticGoKit. It determines how information is stored, passed between agents, and persisted across interactions. This tutorial explores how State objects work, how data flows through agent systems, and best practices for managing complex data transformations.
+Understanding state management is crucial because it’s how agents share information, maintain context, and build upon each other’s work.">
+    <meta itemprop="datePublished" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="dateModified" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="wordCount" content="2984">
+    <title>state-management :: AgenticGoKit Docs</title>
+    <link href="/AgenticGoKitDocs/css/auto-complete/auto-complete.min.css?1753430931" rel="stylesheet">
+    <script src="/AgenticGoKitDocs/js/auto-complete/auto-complete.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/search-lunr.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/search.js?1753430931" defer></script>
+    <script>
+      window.relearn = window.relearn || {};
+      window.relearn.index_js_url="/AgenticGoKitDocs/searchindex.en.js?1753430931";
+    </script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.stemmer.support.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.multi.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.en.min.js?1753430931" defer></script>
+    <script>
+      window.relearn = window.relearn || {};
+      window.relearn.contentLangs=['en'];
+    </script>
+    <link href="/AgenticGoKitDocs/fonts/fontawesome/css/fontawesome-all.min.css?1753430931" rel="stylesheet" media="print" onload="this.media='all';this.onload=null;"><noscript><link href="/AgenticGoKitDocs/fonts/fontawesome/css/fontawesome-all.min.css?1753430931" rel="stylesheet"></noscript>
+    <link href="/AgenticGoKitDocs/css/perfect-scrollbar/perfect-scrollbar.min.css?1753430931" rel="stylesheet">
+    <link href="/AgenticGoKitDocs/css/theme.css?1753430931" rel="stylesheet">
+    <link href="/AgenticGoKitDocs/css/format-html.css?1753430931" rel="stylesheet" id="R-format-style">
+    <script>
+      window.relearn = window.relearn || {};
+      // configuration
+      window.relearn.min = ``;
+      window.relearn.path='\/tutorials\/core-concepts\/state-management\/index.html';
+      window.relearn.relBasePath='..\/..\/..';
+      window.relearn.relBaseUri='..\/..\/..\/..';
+      window.relearn.absBaseUri='http:\/\/localhost:1313\/AgenticGoKitDocs';
+      window.relearn.disableAnchorCopy=false;
+      window.relearn.disableAnchorScrolling=false;
+      window.relearn.disableInlineCopyToClipboard=false;
+      window.relearn.enableBlockCodeWrap=true;
+      // legal
+      window.relearn.getItem = (s,n) => {return s.getItem(n)};
+      window.relearn.setItem = (s,n,v) => {return s.setItem(n,v)};
+      window.relearn.removeItem = (s,n) => {return s.removeItem(n)};
+      // translations
+      window.T_Copy_to_clipboard = `Copy to clipboard`;
+      window.T_Copied_to_clipboard = `Copied to clipboard!`;
+      window.T_Copy_link_to_clipboard = `Copy link to clipboard`;
+      window.T_Link_copied_to_clipboard = `Copied link to clipboard!`;
+      window.T_Reset_view = `Reset view`;
+      window.T_View_reset = `View reset!`;
+      window.T_No_results_found = `No results found for "{0}"`;
+      window.T_N_results_found = `{1} results found for "{0}"`;
+      // variant stuff
+      window.relearn.themevariants = [ 'blue' ];
+      window.relearn.customvariantname = "my-custom-variant";
+      window.relearn.changeVariant = function(variant) {
+        var oldVariant = document.documentElement.dataset.rThemeVariant;
+        window.relearn.setItem(window.localStorage, window.relearn.absBaseUri + "/variant", variant);
+        document.documentElement.dataset.rThemeVariant = variant;
+        if (oldVariant != variant) {
+          document.dispatchEvent( new CustomEvent('themeVariantLoaded', { detail: { variant, oldVariant } }) );
+          window.relearn.markVariant();
+        }
+      }
+      window.relearn.markVariant = function() {
+        var variant = window.relearn.getItem(window.localStorage, window.relearn.absBaseUri + "/variant");
+        document.querySelectorAll(".R-variantswitcher select").forEach((select) => {select.value = variant;});
+      }
+      window.relearn.initVariant = function() {
+        var variant = window.relearn.getItem(window.localStorage, window.relearn.absBaseUri + "/variant") ?? "";
+        if( variant == window.relearn.customvariantname ){
+        }else if( !variant || !window.relearn.themevariants.includes(variant) ){
+          variant = window.relearn.themevariants[0];
+          window.relearn.setItem(window.localStorage, window.relearn.absBaseUri + "/variant", variant);
+        }
+        document.documentElement.dataset.rThemeVariant = variant;
+      }
+      window.relearn.initVariant();
+      window.relearn.markVariant();
+    </script>
+  </head>
+  <body class="mobile-support html" data-url="/AgenticGoKitDocs/tutorials/core-concepts/state-management/index.html">
+    <div id="R-body" class="default-animation">
+      <div id="R-body-overlay"></div>
+      <nav id="R-topbar">
+        <div class="topbar-wrapper">
+          <div class="topbar-sidebar-divider"></div>
+          <div class="topbar-area topbar-area-start" data-area="start">
+            <div class="topbar-button topbar-button-sidebar" data-content-empty="disable" data-width-s="show" data-width-m="hide" data-width-l="hide"><button class="topbar-control" onclick="toggleNav()" type="button" title="Menu (CTRL&#43;ALT&#43;n)"><i class="fa-fw fas fa-bars"></i></button>
+            </div>
+            <div class="topbar-button topbar-button-toc" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show"><button class="topbar-control" onclick="toggleTopbarFlyout(this)" type="button" title="Table of Contents (CTRL&#43;ALT&#43;t)"><i class="fa-fw fas fa-list-alt"></i></button>
+              <div class="topbar-content">
+                <div class="topbar-content-wrapper">
+<nav class="TableOfContents">
+  <ul>
+    <li><a href="#overview">Overview</a></li>
+    <li><a href="#prerequisites">Prerequisites</a></li>
+    <li><a href="#core-concepts">Core Concepts</a>
+      <ul>
+        <li><a href="#state-the-agents-working-memory">State: The Agent&rsquo;s Working Memory</a></li>
+        <li><a href="#data-vs-metadata">Data vs Metadata</a></li>
+      </ul>
+    </li>
+    <li><a href="#state-lifecycle">State Lifecycle</a>
+      <ul>
+        <li><a href="#1-state-creation">1. State Creation</a></li>
+        <li><a href="#2-state-transformation">2. State Transformation</a></li>
+        <li><a href="#3-state-propagation">3. State Propagation</a></li>
+      </ul>
+    </li>
+    <li><a href="#data-flow-patterns">Data Flow Patterns</a>
+      <ul>
+        <li><a href="#1-linear-data-flow">1. Linear Data Flow</a></li>
+        <li><a href="#2-branching-data-flow">2. Branching Data Flow</a></li>
+        <li><a href="#3-merging-data-flow">3. Merging Data Flow</a></li>
+      </ul>
+    </li>
+    <li><a href="#advanced-state-management-patterns">Advanced State Management Patterns</a>
+      <ul>
+        <li><a href="#1-namespaced-state-keys">1. Namespaced State Keys</a></li>
+        <li><a href="#2-structured-state-data">2. Structured State Data</a></li>
+        <li><a href="#3-state-validation">3. State Validation</a></li>
+        <li><a href="#4-state-transformation-helpers">4. State Transformation Helpers</a></li>
+      </ul>
+    </li>
+    <li><a href="#state-persistence-and-serialization">State Persistence and Serialization</a>
+      <ul>
+        <li><a href="#1-json-serialization">1. JSON Serialization</a></li>
+        <li><a href="#2-state-snapshots">2. State Snapshots</a></li>
+      </ul>
+    </li>
+    <li><a href="#state-in-different-orchestration-patterns">State in Different Orchestration Patterns</a>
+      <ul>
+        <li><a href="#1-route-orchestration-state-flow">1. Route Orchestration State Flow</a></li>
+        <li><a href="#2-collaborative-orchestration-state-merging">2. Collaborative Orchestration State Merging</a></li>
+        <li><a href="#3-sequential-orchestration-state-pipeline">3. Sequential Orchestration State Pipeline</a></li>
+      </ul>
+    </li>
+    <li><a href="#performance-considerations">Performance Considerations</a>
+      <ul>
+        <li><a href="#1-state-cloning-optimization">1. State Cloning Optimization</a></li>
+        <li><a href="#2-state-size-management">2. State Size Management</a></li>
+        <li><a href="#3-state-caching">3. State Caching</a></li>
+      </ul>
+    </li>
+    <li><a href="#debugging-state-flow">Debugging State Flow</a>
+      <ul>
+        <li><a href="#1-state-tracing">1. State Tracing</a></li>
+        <li><a href="#2-state-visualization">2. State Visualization</a></li>
+      </ul>
+    </li>
+    <li><a href="#best-practices">Best Practices</a>
+      <ul>
+        <li><a href="#1-state-design-principles">1. State Design Principles</a></li>
+        <li><a href="#2-error-handling">2. Error Handling</a></li>
+        <li><a href="#3-state-documentation">3. State Documentation</a></li>
+      </ul>
+    </li>
+    <li><a href="#common-pitfalls-and-solutions">Common Pitfalls and Solutions</a>
+      <ul>
+        <li><a href="#1-state-mutation-issues">1. State Mutation Issues</a></li>
+        <li><a href="#2-memory-leaks">2. Memory Leaks</a></li>
+        <li><a href="#3-type-safety-issues">3. Type Safety Issues</a></li>
+      </ul>
+    </li>
+    <li><a href="#conclusion">Conclusion</a></li>
+    <li><a href="#next-steps">Next Steps</a></li>
+    <li><a href="#further-reading">Further Reading</a></li>
+  </ul>
+</nav>
+                </div>
+              </div>
+            </div>
+          </div>
+          <ol class="topbar-breadcrumbs breadcrumbs highlightable" itemscope itemtype="http://schema.org/BreadcrumbList"><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="/AgenticGoKitDocs/index.html"><span itemprop="name">content</span></a><meta itemprop="position" content="1">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="/AgenticGoKitDocs/tutorials/index.html"><span itemprop="name">tutorials</span></a><meta itemprop="position" content="2">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="/AgenticGoKitDocs/tutorials/core-concepts/index.html"><span itemprop="name">core-concepts</span></a><meta itemprop="position" content="3">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><span itemprop="name">state-management</span><meta itemprop="position" content="4"></li>
+          </ol>
+          <div class="topbar-area topbar-area-end" data-area="end">
+            <div class="topbar-button topbar-button-prev" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show"><a class="topbar-control" href="/AgenticGoKitDocs/tutorials/core-concepts/orchestration-patterns/index.html" title="orchestration-patterns (🡐)"><i class="fa-fw fas fa-chevron-left"></i></a>
+            </div>
+            <div class="topbar-button topbar-button-next" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show"><a class="topbar-control" href="/AgenticGoKitDocs/tutorials/debugging/index.html" title="debugging (🡒)"><i class="fa-fw fas fa-chevron-right"></i></a>
+            </div>
+            <div class="topbar-button topbar-button-more" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show"><button class="topbar-control" onclick="toggleTopbarFlyout(this)" type="button" title="More"><i class="fa-fw fas fa-ellipsis-v"></i></button>
+              <div class="topbar-content">
+                <div class="topbar-content-wrapper">
+                  <div class="topbar-area topbar-area-more" data-area="more">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+      <div id="R-main-overlay"></div>
+      <main id="R-body-inner" class="highlightable tutorials" tabindex="-1">
+        <div class="flex-block-wrapper">
+<article class="default">
+  <header class="headline">
+  </header>
+
+<h1 id="state-management">state-management</h1>
+
+<h1 id="state-management-and-data-flow-in-agenticgokit">State Management and Data Flow in AgenticGoKit</h1>
+<h2 id="overview">Overview</h2>
+<p>State management is the backbone of data flow in AgenticGoKit. It determines how information is stored, passed between agents, and persisted across interactions. This tutorial explores how State objects work, how data flows through agent systems, and best practices for managing complex data transformations.</p>
+<p>Understanding state management is crucial because it&rsquo;s how agents share information, maintain context, and build upon each other&rsquo;s work.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li>Understanding of <a href="/AgenticGoKitDocs/tutorials/core-concepts/message-passing/index.html">Message Passing and Event Flow</a></li>
+<li>Basic knowledge of Go interfaces and concurrency</li>
+<li>Familiarity with AgenticGoKit&rsquo;s core concepts</li>
+</ul>
+<h2 id="core-concepts">Core Concepts</h2>
+<h3 id="state-the-agents-working-memory">State: The Agent&rsquo;s Working Memory</h3>
+<p>State represents the current context and data an agent is working with. It&rsquo;s a thread-safe container that holds both data and metadata:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">State</span> <span style="color:#66d9ef">interface</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Data operations</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Get</span>(<span style="color:#a6e22e">key</span> <span style="color:#66d9ef">string</span>) (<span style="color:#66d9ef">any</span>, <span style="color:#66d9ef">bool</span>)     <span style="color:#75715e">// Retrieve a value by key</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Set</span>(<span style="color:#a6e22e">key</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">value</span> <span style="color:#66d9ef">any</span>)      <span style="color:#75715e">// Store a value by key</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Keys</span>() []<span style="color:#66d9ef">string</span>                 <span style="color:#75715e">// Get all data keys</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Metadata operations</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">GetMeta</span>(<span style="color:#a6e22e">key</span> <span style="color:#66d9ef">string</span>) (<span style="color:#66d9ef">string</span>, <span style="color:#66d9ef">bool</span>)  <span style="color:#75715e">// Retrieve metadata by key</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">SetMeta</span>(<span style="color:#a6e22e">key</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">value</span> <span style="color:#66d9ef">string</span>)   <span style="color:#75715e">// Store metadata by key</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">MetaKeys</span>() []<span style="color:#66d9ef">string</span>                 <span style="color:#75715e">// Get all metadata keys</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// State operations</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Clone</span>() <span style="color:#a6e22e">State</span>                   <span style="color:#75715e">// Create a deep copy</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Merge</span>(<span style="color:#a6e22e">source</span> <span style="color:#a6e22e">State</span>)             <span style="color:#75715e">// Merge another state into this one</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h3 id="data-vs-metadata">Data vs Metadata</h3>
+<p><strong>Data</strong> contains the actual information agents work with:</p>
+<ul>
+<li>User messages</li>
+<li>Processing results</li>
+<li>Intermediate calculations</li>
+<li>Business logic data</li>
+</ul>
+<p><strong>Metadata</strong> contains information about the data:</p>
+<ul>
+<li>Processing instructions</li>
+<li>Routing information</li>
+<li>Quality scores</li>
+<li>Timestamps and tracking info</li>
+</ul>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Example state with data and metadata</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">state</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewState</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Data - what the agent works with</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;user_message&#34;</span>, <span style="color:#e6db74">&#34;What&#39;s the weather in Paris?&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;location&#34;</span>, <span style="color:#e6db74">&#34;Paris&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;temperature&#34;</span>, <span style="color:#ae81ff">22.5</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Metadata - information about the data</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">SetMeta</span>(<span style="color:#e6db74">&#34;confidence&#34;</span>, <span style="color:#e6db74">&#34;0.95&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">SetMeta</span>(<span style="color:#e6db74">&#34;source&#34;</span>, <span style="color:#e6db74">&#34;weather-api&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">SetMeta</span>(<span style="color:#e6db74">&#34;timestamp&#34;</span>, <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Now</span>().<span style="color:#a6e22e">Format</span>(<span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">RFC3339</span>))</span></span></code></pre></div>
+<h2 id="state-lifecycle">State Lifecycle</h2>
+<h3 id="1-state-creation">1. State Creation</h3>
+<p>States are typically created at the beginning of agent processing:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Create empty state</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">state</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewState</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Create state with initial data</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">initialData</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">any</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;user_id&#34;</span>: <span style="color:#e6db74">&#34;user-123&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;session_id&#34;</span>: <span style="color:#e6db74">&#34;session-456&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;query&#34;</span>: <span style="color:#e6db74">&#34;Tell me about AI&#34;</span>,
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">state</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewStateWithData</span>(<span style="color:#a6e22e">initialData</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Alternative creation method</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">state</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewSimpleState</span>(<span style="color:#a6e22e">initialData</span>)</span></span></code></pre></div>
+<h3 id="2-state-transformation">2. State Transformation</h3>
+<p>Agents receive state as input and produce modified state as output:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">a</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">MyAgent</span>) <span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">event</span> <span style="color:#a6e22e">Event</span>, <span style="color:#a6e22e">inputState</span> <span style="color:#a6e22e">State</span>) (<span style="color:#a6e22e">AgentResult</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Read from input state</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">query</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">inputState</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#e6db74">&#34;query&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">ok</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">AgentResult</span>{}, <span style="color:#a6e22e">errors</span>.<span style="color:#a6e22e">New</span>(<span style="color:#e6db74">&#34;no query in state&#34;</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Process the query</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">response</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">a</span>.<span style="color:#a6e22e">processQuery</span>(<span style="color:#a6e22e">query</span>.(<span style="color:#66d9ef">string</span>))
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Create output state with new data</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">inputState</span>.<span style="color:#a6e22e">Clone</span>() <span style="color:#75715e">// Start with input state</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;response&#34;</span>, <span style="color:#a6e22e">response</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;processed_at&#34;</span>, <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Now</span>())
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span>.<span style="color:#a6e22e">SetMeta</span>(<span style="color:#e6db74">&#34;agent&#34;</span>, <span style="color:#a6e22e">a</span>.<span style="color:#a6e22e">name</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">AgentResult</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">OutputState</span>: <span style="color:#a6e22e">outputState</span>,
+</span></span><span style="display:flex;"><span>    }, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h3 id="3-state-propagation">3. State Propagation</h3>
+<p>State flows between agents through the orchestration system:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0"><code>┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐
+│ Initial │───▶│ Agent A │───▶│ Agent B │───▶│ Final   │
+│ State   │    │ State   │    │ State   │    │ State   │
+└─────────┘    └─────────┘    └─────────┘    └─────────┘</code></pre></div>
+<h2 id="data-flow-patterns">Data Flow Patterns</h2>
+<h3 id="1-linear-data-flow">1. Linear Data Flow</h3>
+<p>Data flows sequentially through agents, with each agent adding or modifying information:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Agent 1: Data Collection</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">a</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">CollectorAgent</span>) <span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">event</span> <span style="color:#a6e22e">Event</span>, <span style="color:#a6e22e">state</span> <span style="color:#a6e22e">State</span>) (<span style="color:#a6e22e">AgentResult</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Collect raw data</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">rawData</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">a</span>.<span style="color:#a6e22e">collectData</span>()
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Clone</span>()
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;raw_data&#34;</span>, <span style="color:#a6e22e">rawData</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span>.<span style="color:#a6e22e">SetMeta</span>(<span style="color:#e6db74">&#34;stage&#34;</span>, <span style="color:#e6db74">&#34;collection&#34;</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">AgentResult</span>{<span style="color:#a6e22e">OutputState</span>: <span style="color:#a6e22e">outputState</span>}, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Agent 2: Data Processing</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">a</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">ProcessorAgent</span>) <span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">event</span> <span style="color:#a6e22e">Event</span>, <span style="color:#a6e22e">state</span> <span style="color:#a6e22e">State</span>) (<span style="color:#a6e22e">AgentResult</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Get raw data from previous agent</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">rawData</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#e6db74">&#34;raw_data&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">ok</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">AgentResult</span>{}, <span style="color:#a6e22e">errors</span>.<span style="color:#a6e22e">New</span>(<span style="color:#e6db74">&#34;no raw data to process&#34;</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Process the data</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">processedData</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">a</span>.<span style="color:#a6e22e">processData</span>(<span style="color:#a6e22e">rawData</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Clone</span>()
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;processed_data&#34;</span>, <span style="color:#a6e22e">processedData</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span>.<span style="color:#a6e22e">SetMeta</span>(<span style="color:#e6db74">&#34;stage&#34;</span>, <span style="color:#e6db74">&#34;processing&#34;</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">AgentResult</span>{<span style="color:#a6e22e">OutputState</span>: <span style="color:#a6e22e">outputState</span>}, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Agent 3: Data Formatting</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">a</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">FormatterAgent</span>) <span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">event</span> <span style="color:#a6e22e">Event</span>, <span style="color:#a6e22e">state</span> <span style="color:#a6e22e">State</span>) (<span style="color:#a6e22e">AgentResult</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Get processed data</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">processedData</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#e6db74">&#34;processed_data&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">ok</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">AgentResult</span>{}, <span style="color:#a6e22e">errors</span>.<span style="color:#a6e22e">New</span>(<span style="color:#e6db74">&#34;no processed data to format&#34;</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Format the data</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">formattedData</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">a</span>.<span style="color:#a6e22e">formatData</span>(<span style="color:#a6e22e">processedData</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Clone</span>()
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;final_result&#34;</span>, <span style="color:#a6e22e">formattedData</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span>.<span style="color:#a6e22e">SetMeta</span>(<span style="color:#e6db74">&#34;stage&#34;</span>, <span style="color:#e6db74">&#34;formatting&#34;</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">AgentResult</span>{<span style="color:#a6e22e">OutputState</span>: <span style="color:#a6e22e">outputState</span>}, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h3 id="2-branching-data-flow">2. Branching Data Flow</h3>
+<p>Data flows to multiple agents, each processing different aspects:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Main agent creates branches</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">a</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">MainAgent</span>) <span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">event</span> <span style="color:#a6e22e">Event</span>, <span style="color:#a6e22e">state</span> <span style="color:#a6e22e">State</span>) (<span style="color:#a6e22e">AgentResult</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">query</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#e6db74">&#34;query&#34;</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Clone</span>()
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Create different processing branches</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;text_analysis_query&#34;</span>, <span style="color:#a6e22e">query</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;sentiment_analysis_query&#34;</span>, <span style="color:#a6e22e">query</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;entity_extraction_query&#34;</span>, <span style="color:#a6e22e">query</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Set routing for different agents</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span>.<span style="color:#a6e22e">SetMeta</span>(<span style="color:#e6db74">&#34;next_agents&#34;</span>, <span style="color:#e6db74">&#34;text_analyzer,sentiment_analyzer,entity_extractor&#34;</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">AgentResult</span>{<span style="color:#a6e22e">OutputState</span>: <span style="color:#a6e22e">outputState</span>}, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h3 id="3-merging-data-flow">3. Merging Data Flow</h3>
+<p>Multiple agents contribute to a shared state that gets combined:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Collaborative agents contribute to shared state</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">a</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">ResearchAgent</span>) <span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">event</span> <span style="color:#a6e22e">Event</span>, <span style="color:#a6e22e">state</span> <span style="color:#a6e22e">State</span>) (<span style="color:#a6e22e">AgentResult</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">query</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#e6db74">&#34;research_query&#34;</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Perform research</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">findings</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">a</span>.<span style="color:#a6e22e">research</span>(<span style="color:#a6e22e">query</span>.(<span style="color:#66d9ef">string</span>))
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Clone</span>()
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Add findings to shared research data</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">existingFindings</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">outputState</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#e6db74">&#34;research_findings&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">existingFindings</span> <span style="color:#f92672">==</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">existingFindings</span> = make([]<span style="color:#a6e22e">ResearchFinding</span>, <span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">allFindings</span> <span style="color:#f92672">:=</span> append(<span style="color:#a6e22e">existingFindings</span>.([]<span style="color:#a6e22e">ResearchFinding</span>), <span style="color:#a6e22e">findings</span><span style="color:#f92672">...</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;research_findings&#34;</span>, <span style="color:#a6e22e">allFindings</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span>.<span style="color:#a6e22e">SetMeta</span>(<span style="color:#e6db74">&#34;contributor&#34;</span>, <span style="color:#a6e22e">a</span>.<span style="color:#a6e22e">name</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">AgentResult</span>{<span style="color:#a6e22e">OutputState</span>: <span style="color:#a6e22e">outputState</span>}, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h2 id="advanced-state-management-patterns">Advanced State Management Patterns</h2>
+<h3 id="1-namespaced-state-keys">1. Namespaced State Keys</h3>
+<p>Use namespaces to organize state data and avoid conflicts:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Namespaced keys prevent conflicts</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;user.profile.name&#34;</span>, <span style="color:#e6db74">&#34;Alice&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;user.profile.preferences&#34;</span>, []<span style="color:#66d9ef">string</span>{<span style="color:#e6db74">&#34;history&#34;</span>, <span style="color:#e6db74">&#34;science&#34;</span>})
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;user.session.start_time&#34;</span>, <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Now</span>())
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;system.version&#34;</span>, <span style="color:#e6db74">&#34;1.0.0&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;system.environment&#34;</span>, <span style="color:#e6db74">&#34;production&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;processing.stage&#34;</span>, <span style="color:#e6db74">&#34;analysis&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;processing.confidence&#34;</span>, <span style="color:#ae81ff">0.95</span>)</span></span></code></pre></div>
+<h3 id="2-structured-state-data">2. Structured State Data</h3>
+<p>Store complex objects as structured data:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Define structured data types</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">UserProfile</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Name</span>        <span style="color:#66d9ef">string</span>    <span style="color:#e6db74">`json:&#34;name&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Email</span>       <span style="color:#66d9ef">string</span>    <span style="color:#e6db74">`json:&#34;email&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Preferences</span> []<span style="color:#66d9ef">string</span>  <span style="color:#e6db74">`json:&#34;preferences&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">LastSeen</span>    <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Time</span> <span style="color:#e6db74">`json:&#34;last_seen&#34;`</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">ProcessingContext</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Stage</span>       <span style="color:#66d9ef">string</span>            <span style="color:#e6db74">`json:&#34;stage&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Confidence</span>  <span style="color:#66d9ef">float64</span>           <span style="color:#e6db74">`json:&#34;confidence&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Metadata</span>    <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;metadata&#34;`</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Store structured data in state</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">profile</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">UserProfile</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Name</span>:        <span style="color:#e6db74">&#34;Alice&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Email</span>:       <span style="color:#e6db74">&#34;alice@example.com&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Preferences</span>: []<span style="color:#66d9ef">string</span>{<span style="color:#e6db74">&#34;AI&#34;</span>, <span style="color:#e6db74">&#34;Technology&#34;</span>},
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">LastSeen</span>:    <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Now</span>(),
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">context</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ProcessingContext</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Stage</span>:      <span style="color:#e6db74">&#34;analysis&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Confidence</span>: <span style="color:#ae81ff">0.95</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Metadata</span>:   <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">string</span>{<span style="color:#e6db74">&#34;source&#34;</span>: <span style="color:#e6db74">&#34;llm&#34;</span>},
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;user_profile&#34;</span>, <span style="color:#a6e22e">profile</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;processing_context&#34;</span>, <span style="color:#a6e22e">context</span>)</span></span></code></pre></div>
+<h3 id="3-state-validation">3. State Validation</h3>
+<p>Implement validation to ensure state integrity:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// State validator interface</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">StateValidator</span> <span style="color:#66d9ef">interface</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Validate</span>(<span style="color:#a6e22e">state</span> <span style="color:#a6e22e">State</span>) <span style="color:#66d9ef">error</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Example validator</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">UserQueryValidator</span> <span style="color:#66d9ef">struct</span>{}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">v</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">UserQueryValidator</span>) <span style="color:#a6e22e">Validate</span>(<span style="color:#a6e22e">state</span> <span style="color:#a6e22e">State</span>) <span style="color:#66d9ef">error</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Check required fields</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#e6db74">&#34;user_query&#34;</span>); !<span style="color:#a6e22e">ok</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">errors</span>.<span style="color:#a6e22e">New</span>(<span style="color:#e6db74">&#34;user_query is required&#34;</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#e6db74">&#34;user_id&#34;</span>); !<span style="color:#a6e22e">ok</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">errors</span>.<span style="color:#a6e22e">New</span>(<span style="color:#e6db74">&#34;user_id is required&#34;</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Validate data types</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">query</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#e6db74">&#34;user_query&#34;</span>); <span style="color:#a6e22e">ok</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">isString</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">query</span>.(<span style="color:#66d9ef">string</span>); !<span style="color:#a6e22e">isString</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">errors</span>.<span style="color:#a6e22e">New</span>(<span style="color:#e6db74">&#34;user_query must be a string&#34;</span>)
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Use validator in agent</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">a</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">MyAgent</span>) <span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">event</span> <span style="color:#a6e22e">Event</span>, <span style="color:#a6e22e">state</span> <span style="color:#a6e22e">State</span>) (<span style="color:#a6e22e">AgentResult</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">validator</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">UserQueryValidator</span>{}
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">validator</span>.<span style="color:#a6e22e">Validate</span>(<span style="color:#a6e22e">state</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">AgentResult</span>{}, <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;state validation failed: %w&#34;</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Continue with processing...</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h3 id="4-state-transformation-helpers">4. State Transformation Helpers</h3>
+<p>Create helper functions for common state transformations:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// State transformation helpers</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">AddUserContext</span>(<span style="color:#a6e22e">state</span> <span style="color:#a6e22e">State</span>, <span style="color:#a6e22e">userID</span>, <span style="color:#a6e22e">sessionID</span> <span style="color:#66d9ef">string</span>) <span style="color:#a6e22e">State</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">newState</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Clone</span>()
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">newState</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;user_id&#34;</span>, <span style="color:#a6e22e">userID</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">newState</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;session_id&#34;</span>, <span style="color:#a6e22e">sessionID</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">newState</span>.<span style="color:#a6e22e">SetMeta</span>(<span style="color:#e6db74">&#34;context_added&#34;</span>, <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Now</span>().<span style="color:#a6e22e">Format</span>(<span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">RFC3339</span>))
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">newState</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">AddProcessingMetadata</span>(<span style="color:#a6e22e">state</span> <span style="color:#a6e22e">State</span>, <span style="color:#a6e22e">agentName</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">confidence</span> <span style="color:#66d9ef">float64</span>) <span style="color:#a6e22e">State</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">newState</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Clone</span>()
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">newState</span>.<span style="color:#a6e22e">SetMeta</span>(<span style="color:#e6db74">&#34;processed_by&#34;</span>, <span style="color:#a6e22e">agentName</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">newState</span>.<span style="color:#a6e22e">SetMeta</span>(<span style="color:#e6db74">&#34;confidence&#34;</span>, <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;%.2f&#34;</span>, <span style="color:#a6e22e">confidence</span>))
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">newState</span>.<span style="color:#a6e22e">SetMeta</span>(<span style="color:#e6db74">&#34;processed_at&#34;</span>, <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Now</span>().<span style="color:#a6e22e">Format</span>(<span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">RFC3339</span>))
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">newState</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">ExtractUserQuery</span>(<span style="color:#a6e22e">state</span> <span style="color:#a6e22e">State</span>) (<span style="color:#66d9ef">string</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">query</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#e6db74">&#34;user_query&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">ok</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#e6db74">&#34;&#34;</span>, <span style="color:#a6e22e">errors</span>.<span style="color:#a6e22e">New</span>(<span style="color:#e6db74">&#34;no user query in state&#34;</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">queryStr</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">query</span>.(<span style="color:#66d9ef">string</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">ok</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#e6db74">&#34;&#34;</span>, <span style="color:#a6e22e">errors</span>.<span style="color:#a6e22e">New</span>(<span style="color:#e6db74">&#34;user query is not a string&#34;</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">queryStr</span>, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Usage in agents</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">a</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">MyAgent</span>) <span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">event</span> <span style="color:#a6e22e">Event</span>, <span style="color:#a6e22e">state</span> <span style="color:#a6e22e">State</span>) (<span style="color:#a6e22e">AgentResult</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Add context</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">state</span> = <span style="color:#a6e22e">AddUserContext</span>(<span style="color:#a6e22e">state</span>, <span style="color:#e6db74">&#34;user-123&#34;</span>, <span style="color:#e6db74">&#34;session-456&#34;</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Extract query</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">query</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ExtractUserQuery</span>(<span style="color:#a6e22e">state</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">AgentResult</span>{}, <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Process query</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">response</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">a</span>.<span style="color:#a6e22e">processQuery</span>(<span style="color:#a6e22e">query</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Add processing metadata</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">AddProcessingMetadata</span>(<span style="color:#a6e22e">state</span>, <span style="color:#a6e22e">a</span>.<span style="color:#a6e22e">name</span>, <span style="color:#ae81ff">0.95</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;response&#34;</span>, <span style="color:#a6e22e">response</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">AgentResult</span>{<span style="color:#a6e22e">OutputState</span>: <span style="color:#a6e22e">outputState</span>}, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h2 id="state-persistence-and-serialization">State Persistence and Serialization</h2>
+<h3 id="1-json-serialization">1. JSON Serialization</h3>
+<p>State objects can be serialized to JSON for storage or transmission:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Serialize state to JSON</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">SerializeState</span>(<span style="color:#a6e22e">state</span> <span style="color:#a6e22e">State</span>) ([]<span style="color:#66d9ef">byte</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">json</span>.<span style="color:#a6e22e">Marshal</span>(<span style="color:#a6e22e">state</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Deserialize state from JSON</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">DeserializeState</span>(<span style="color:#a6e22e">data</span> []<span style="color:#66d9ef">byte</span>) (<span style="color:#a6e22e">State</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">state</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">SimpleState</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">json</span>.<span style="color:#a6e22e">Unmarshal</span>(<span style="color:#a6e22e">data</span>, <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">state</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>, <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">state</span>, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Example usage</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">saveStateToFile</span>(<span style="color:#a6e22e">state</span> <span style="color:#a6e22e">State</span>, <span style="color:#a6e22e">filename</span> <span style="color:#66d9ef">string</span>) <span style="color:#66d9ef">error</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">data</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">SerializeState</span>(<span style="color:#a6e22e">state</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">WriteFile</span>(<span style="color:#a6e22e">filename</span>, <span style="color:#a6e22e">data</span>, <span style="color:#ae81ff">0644</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">loadStateFromFile</span>(<span style="color:#a6e22e">filename</span> <span style="color:#66d9ef">string</span>) (<span style="color:#a6e22e">State</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">data</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">ReadFile</span>(<span style="color:#a6e22e">filename</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>, <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">DeserializeState</span>(<span style="color:#a6e22e">data</span>)
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h3 id="2-state-snapshots">2. State Snapshots</h3>
+<p>Capture state at specific points for debugging or rollback:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// State snapshot manager</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">StateSnapshot</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Timestamp</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Time</span> <span style="color:#e6db74">`json:&#34;timestamp&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">AgentID</span>   <span style="color:#66d9ef">string</span>    <span style="color:#e6db74">`json:&#34;agent_id&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">State</span>     <span style="color:#a6e22e">State</span>     <span style="color:#e6db74">`json:&#34;state&#34;`</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">StateSnapshotManager</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">snapshots</span> []<span style="color:#a6e22e">StateSnapshot</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">mu</span>        <span style="color:#a6e22e">sync</span>.<span style="color:#a6e22e">RWMutex</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">sm</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">StateSnapshotManager</span>) <span style="color:#a6e22e">TakeSnapshot</span>(<span style="color:#a6e22e">agentID</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">state</span> <span style="color:#a6e22e">State</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">sm</span>.<span style="color:#a6e22e">mu</span>.<span style="color:#a6e22e">Lock</span>()
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">sm</span>.<span style="color:#a6e22e">mu</span>.<span style="color:#a6e22e">Unlock</span>()
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">snapshot</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">StateSnapshot</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Timestamp</span>: <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Now</span>(),
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">AgentID</span>:   <span style="color:#a6e22e">agentID</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">State</span>:     <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Clone</span>(),
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">sm</span>.<span style="color:#a6e22e">snapshots</span> = append(<span style="color:#a6e22e">sm</span>.<span style="color:#a6e22e">snapshots</span>, <span style="color:#a6e22e">snapshot</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">sm</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">StateSnapshotManager</span>) <span style="color:#a6e22e">GetSnapshots</span>() []<span style="color:#a6e22e">StateSnapshot</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">sm</span>.<span style="color:#a6e22e">mu</span>.<span style="color:#a6e22e">RLock</span>()
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">sm</span>.<span style="color:#a6e22e">mu</span>.<span style="color:#a6e22e">RUnlock</span>()
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Return a copy to avoid race conditions</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">snapshots</span> <span style="color:#f92672">:=</span> make([]<span style="color:#a6e22e">StateSnapshot</span>, len(<span style="color:#a6e22e">sm</span>.<span style="color:#a6e22e">snapshots</span>))
+</span></span><span style="display:flex;"><span>    copy(<span style="color:#a6e22e">snapshots</span>, <span style="color:#a6e22e">sm</span>.<span style="color:#a6e22e">snapshots</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">snapshots</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Usage in agent processing</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">snapshotManager</span> = <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">StateSnapshotManager</span>{}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">a</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">MyAgent</span>) <span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">event</span> <span style="color:#a6e22e">Event</span>, <span style="color:#a6e22e">state</span> <span style="color:#a6e22e">State</span>) (<span style="color:#a6e22e">AgentResult</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Take snapshot before processing</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">snapshotManager</span>.<span style="color:#a6e22e">TakeSnapshot</span>(<span style="color:#a6e22e">a</span>.<span style="color:#a6e22e">name</span><span style="color:#f92672">+</span><span style="color:#e6db74">&#34;-input&#34;</span>, <span style="color:#a6e22e">state</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Process...</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Clone</span>()
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;response&#34;</span>, <span style="color:#e6db74">&#34;processed&#34;</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Take snapshot after processing</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">snapshotManager</span>.<span style="color:#a6e22e">TakeSnapshot</span>(<span style="color:#a6e22e">a</span>.<span style="color:#a6e22e">name</span><span style="color:#f92672">+</span><span style="color:#e6db74">&#34;-output&#34;</span>, <span style="color:#a6e22e">outputState</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">AgentResult</span>{<span style="color:#a6e22e">OutputState</span>: <span style="color:#a6e22e">outputState</span>}, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h2 id="state-in-different-orchestration-patterns">State in Different Orchestration Patterns</h2>
+<h3 id="1-route-orchestration-state-flow">1. Route Orchestration State Flow</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Simple state passing between specific agents</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">event</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewEvent</span>(
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;agent-a&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">EventData</span>{<span style="color:#e6db74">&#34;input&#34;</span>: <span style="color:#e6db74">&#34;data&#34;</span>},
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">string</span>{<span style="color:#e6db74">&#34;route&#34;</span>: <span style="color:#e6db74">&#34;agent-a&#34;</span>},
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Agent A processes and routes to Agent B</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">a</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">AgentA</span>) <span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">event</span> <span style="color:#a6e22e">Event</span>, <span style="color:#a6e22e">state</span> <span style="color:#a6e22e">State</span>) (<span style="color:#a6e22e">AgentResult</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Process input</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">input</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#e6db74">&#34;input&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">result</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">a</span>.<span style="color:#a6e22e">process</span>(<span style="color:#a6e22e">input</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Clone</span>()
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;intermediate_result&#34;</span>, <span style="color:#a6e22e">result</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span>.<span style="color:#a6e22e">SetMeta</span>(<span style="color:#e6db74">&#34;route&#34;</span>, <span style="color:#e6db74">&#34;agent-b&#34;</span>) <span style="color:#75715e">// Route to next agent</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">AgentResult</span>{<span style="color:#a6e22e">OutputState</span>: <span style="color:#a6e22e">outputState</span>}, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h3 id="2-collaborative-orchestration-state-merging">2. Collaborative Orchestration State Merging</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Multiple agents contribute to shared state</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">CollaborativeStateManager</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">contributions</span> <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#a6e22e">State</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">mu</span>           <span style="color:#a6e22e">sync</span>.<span style="color:#a6e22e">RWMutex</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">csm</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">CollaborativeStateManager</span>) <span style="color:#a6e22e">AddContribution</span>(<span style="color:#a6e22e">agentID</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">state</span> <span style="color:#a6e22e">State</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">csm</span>.<span style="color:#a6e22e">mu</span>.<span style="color:#a6e22e">Lock</span>()
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">csm</span>.<span style="color:#a6e22e">mu</span>.<span style="color:#a6e22e">Unlock</span>()
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">csm</span>.<span style="color:#a6e22e">contributions</span> <span style="color:#f92672">==</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">csm</span>.<span style="color:#a6e22e">contributions</span> = make(<span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#a6e22e">State</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">csm</span>.<span style="color:#a6e22e">contributions</span>[<span style="color:#a6e22e">agentID</span>] = <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Clone</span>()
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">csm</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">CollaborativeStateManager</span>) <span style="color:#a6e22e">MergeContributions</span>() <span style="color:#a6e22e">State</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">csm</span>.<span style="color:#a6e22e">mu</span>.<span style="color:#a6e22e">RLock</span>()
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">csm</span>.<span style="color:#a6e22e">mu</span>.<span style="color:#a6e22e">RUnlock</span>()
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">mergedState</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewState</span>()
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">agentID</span>, <span style="color:#a6e22e">contribution</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">csm</span>.<span style="color:#a6e22e">contributions</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Merge each contribution</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">mergedState</span>.<span style="color:#a6e22e">Merge</span>(<span style="color:#a6e22e">contribution</span>)
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Add contributor metadata</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">mergedState</span>.<span style="color:#a6e22e">SetMeta</span>(<span style="color:#e6db74">&#34;contributor_&#34;</span><span style="color:#f92672">+</span><span style="color:#a6e22e">agentID</span>, <span style="color:#e6db74">&#34;true&#34;</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">mergedState</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h3 id="3-sequential-orchestration-state-pipeline">3. Sequential Orchestration State Pipeline</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// State flows through pipeline stages</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">PipelineStage</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Name</span>      <span style="color:#66d9ef">string</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Transform</span> <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">State</span>) (<span style="color:#a6e22e">State</span>, <span style="color:#66d9ef">error</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">ProcessPipeline</span>(<span style="color:#a6e22e">initialState</span> <span style="color:#a6e22e">State</span>, <span style="color:#a6e22e">stages</span> []<span style="color:#a6e22e">PipelineStage</span>) (<span style="color:#a6e22e">State</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">currentState</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">initialState</span>.<span style="color:#a6e22e">Clone</span>()
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">i</span>, <span style="color:#a6e22e">stage</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">stages</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Add stage metadata</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">currentState</span>.<span style="color:#a6e22e">SetMeta</span>(<span style="color:#e6db74">&#34;current_stage&#34;</span>, <span style="color:#a6e22e">stage</span>.<span style="color:#a6e22e">Name</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">currentState</span>.<span style="color:#a6e22e">SetMeta</span>(<span style="color:#e6db74">&#34;stage_number&#34;</span>, <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;%d&#34;</span>, <span style="color:#a6e22e">i</span><span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>))
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Transform state</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">newState</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">stage</span>.<span style="color:#a6e22e">Transform</span>(<span style="color:#a6e22e">currentState</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">currentState</span>, <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;stage %s failed: %w&#34;</span>, <span style="color:#a6e22e">stage</span>.<span style="color:#a6e22e">Name</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">currentState</span> = <span style="color:#a6e22e">newState</span>
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Add completion metadata</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">currentState</span>.<span style="color:#a6e22e">SetMeta</span>(<span style="color:#e6db74">&#34;completed_stage_&#34;</span><span style="color:#f92672">+</span><span style="color:#a6e22e">stage</span>.<span style="color:#a6e22e">Name</span>, <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Now</span>().<span style="color:#a6e22e">Format</span>(<span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">RFC3339</span>))
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">currentState</span>, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h2 id="performance-considerations">Performance Considerations</h2>
+<h3 id="1-state-cloning-optimization">1. State Cloning Optimization</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Efficient state cloning for large states</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">OptimizedState</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">*</span><span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">SimpleState</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">copyOnWrite</span> <span style="color:#66d9ef">bool</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">os</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">OptimizedState</span>) <span style="color:#a6e22e">Clone</span>() <span style="color:#a6e22e">State</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">copyOnWrite</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Shallow copy for read-only scenarios</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">OptimizedState</span>{
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">SimpleState</span>: <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">SimpleState</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">copyOnWrite</span>: <span style="color:#66d9ef">true</span>,
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Deep copy when modifications are needed</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">OptimizedState</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">SimpleState</span>: <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">SimpleState</span>.<span style="color:#a6e22e">Clone</span>().(<span style="color:#f92672">*</span><span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">SimpleState</span>),
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">copyOnWrite</span>: <span style="color:#66d9ef">false</span>,
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h3 id="2-state-size-management">2. State Size Management</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Monitor and limit state size</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">CheckStateSize</span>(<span style="color:#a6e22e">state</span> <span style="color:#a6e22e">State</span>) <span style="color:#66d9ef">error</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">data</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">json</span>.<span style="color:#a6e22e">Marshal</span>(<span style="color:#a6e22e">state</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">const</span> <span style="color:#a6e22e">maxStateSize</span> = <span style="color:#ae81ff">1024</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">1024</span> <span style="color:#75715e">// 1MB</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> len(<span style="color:#a6e22e">data</span>) &gt; <span style="color:#a6e22e">maxStateSize</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;state size %d exceeds maximum %d bytes&#34;</span>, len(<span style="color:#a6e22e">data</span>), <span style="color:#a6e22e">maxStateSize</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Compress large state data</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">CompressStateData</span>(<span style="color:#a6e22e">state</span> <span style="color:#a6e22e">State</span>, <span style="color:#a6e22e">key</span> <span style="color:#66d9ef">string</span>) <span style="color:#66d9ef">error</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">value</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#a6e22e">key</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">ok</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Serialize and compress large data</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">data</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">json</span>.<span style="color:#a6e22e">Marshal</span>(<span style="color:#a6e22e">value</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> len(<span style="color:#a6e22e">data</span>) &gt; <span style="color:#ae81ff">10240</span> { <span style="color:#75715e">// 10KB threshold</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">compressed</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">compress</span>(<span style="color:#a6e22e">data</span>) <span style="color:#75715e">// Your compression function</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#a6e22e">key</span><span style="color:#f92672">+</span><span style="color:#e6db74">&#34;_compressed&#34;</span>, <span style="color:#a6e22e">compressed</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">SetMeta</span>(<span style="color:#a6e22e">key</span><span style="color:#f92672">+</span><span style="color:#e6db74">&#34;_compressed&#34;</span>, <span style="color:#e6db74">&#34;true&#34;</span>)
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Remove original large data</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#a6e22e">key</span>, <span style="color:#66d9ef">nil</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h3 id="3-state-caching">3. State Caching</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// State cache for expensive computations</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">StateCache</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">cache</span> <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#a6e22e">State</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">mu</span>    <span style="color:#a6e22e">sync</span>.<span style="color:#a6e22e">RWMutex</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">ttl</span>   <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Duration</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewStateCache</span>(<span style="color:#a6e22e">ttl</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Duration</span>) <span style="color:#f92672">*</span><span style="color:#a6e22e">StateCache</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">StateCache</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">cache</span>: make(<span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#a6e22e">State</span>),
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">ttl</span>:   <span style="color:#a6e22e">ttl</span>,
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">sc</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">StateCache</span>) <span style="color:#a6e22e">Get</span>(<span style="color:#a6e22e">key</span> <span style="color:#66d9ef">string</span>) (<span style="color:#a6e22e">State</span>, <span style="color:#66d9ef">bool</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">sc</span>.<span style="color:#a6e22e">mu</span>.<span style="color:#a6e22e">RLock</span>()
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">sc</span>.<span style="color:#a6e22e">mu</span>.<span style="color:#a6e22e">RUnlock</span>()
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">state</span>, <span style="color:#a6e22e">exists</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">sc</span>.<span style="color:#a6e22e">cache</span>[<span style="color:#a6e22e">key</span>]
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">exists</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>, <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Check TTL</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">timestamp</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">GetMeta</span>(<span style="color:#e6db74">&#34;cached_at&#34;</span>); <span style="color:#a6e22e">ok</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">cachedAt</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Parse</span>(<span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">RFC3339</span>, <span style="color:#a6e22e">timestamp</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">==</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Since</span>(<span style="color:#a6e22e">cachedAt</span>) &gt; <span style="color:#a6e22e">sc</span>.<span style="color:#a6e22e">ttl</span> {
+</span></span><span style="display:flex;"><span>                delete(<span style="color:#a6e22e">sc</span>.<span style="color:#a6e22e">cache</span>, <span style="color:#a6e22e">key</span>)
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>, <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Clone</span>(), <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">sc</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">StateCache</span>) <span style="color:#a6e22e">Set</span>(<span style="color:#a6e22e">key</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">state</span> <span style="color:#a6e22e">State</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">sc</span>.<span style="color:#a6e22e">mu</span>.<span style="color:#a6e22e">Lock</span>()
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">sc</span>.<span style="color:#a6e22e">mu</span>.<span style="color:#a6e22e">Unlock</span>()
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">cachedState</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Clone</span>()
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">cachedState</span>.<span style="color:#a6e22e">SetMeta</span>(<span style="color:#e6db74">&#34;cached_at&#34;</span>, <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Now</span>().<span style="color:#a6e22e">Format</span>(<span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">RFC3339</span>))
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">sc</span>.<span style="color:#a6e22e">cache</span>[<span style="color:#a6e22e">key</span>] = <span style="color:#a6e22e">cachedState</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h2 id="debugging-state-flow">Debugging State Flow</h2>
+<h3 id="1-state-tracing">1. State Tracing</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// State tracer for debugging</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">StateTracer</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">traces</span> []<span style="color:#a6e22e">StateTrace</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">mu</span>     <span style="color:#a6e22e">sync</span>.<span style="color:#a6e22e">RWMutex</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">StateTrace</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Timestamp</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Time</span> <span style="color:#e6db74">`json:&#34;timestamp&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">AgentID</span>   <span style="color:#66d9ef">string</span>    <span style="color:#e6db74">`json:&#34;agent_id&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Operation</span> <span style="color:#66d9ef">string</span>    <span style="color:#e6db74">`json:&#34;operation&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Key</span>       <span style="color:#66d9ef">string</span>    <span style="color:#e6db74">`json:&#34;key,omitempty&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Value</span>     <span style="color:#66d9ef">any</span>       <span style="color:#e6db74">`json:&#34;value,omitempty&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">StateSize</span> <span style="color:#66d9ef">int</span>       <span style="color:#e6db74">`json:&#34;state_size&#34;`</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">st</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">StateTracer</span>) <span style="color:#a6e22e">TraceGet</span>(<span style="color:#a6e22e">agentID</span>, <span style="color:#a6e22e">key</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">value</span> <span style="color:#66d9ef">any</span>, <span style="color:#a6e22e">stateSize</span> <span style="color:#66d9ef">int</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">st</span>.<span style="color:#a6e22e">mu</span>.<span style="color:#a6e22e">Lock</span>()
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">st</span>.<span style="color:#a6e22e">mu</span>.<span style="color:#a6e22e">Unlock</span>()
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">st</span>.<span style="color:#a6e22e">traces</span> = append(<span style="color:#a6e22e">st</span>.<span style="color:#a6e22e">traces</span>, <span style="color:#a6e22e">StateTrace</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Timestamp</span>: <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Now</span>(),
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">AgentID</span>:   <span style="color:#a6e22e">agentID</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Operation</span>: <span style="color:#e6db74">&#34;GET&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Key</span>:       <span style="color:#a6e22e">key</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Value</span>:     <span style="color:#a6e22e">value</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">StateSize</span>: <span style="color:#a6e22e">stateSize</span>,
+</span></span><span style="display:flex;"><span>    })
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">st</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">StateTracer</span>) <span style="color:#a6e22e">TraceSet</span>(<span style="color:#a6e22e">agentID</span>, <span style="color:#a6e22e">key</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">value</span> <span style="color:#66d9ef">any</span>, <span style="color:#a6e22e">stateSize</span> <span style="color:#66d9ef">int</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">st</span>.<span style="color:#a6e22e">mu</span>.<span style="color:#a6e22e">Lock</span>()
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">st</span>.<span style="color:#a6e22e">mu</span>.<span style="color:#a6e22e">Unlock</span>()
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">st</span>.<span style="color:#a6e22e">traces</span> = append(<span style="color:#a6e22e">st</span>.<span style="color:#a6e22e">traces</span>, <span style="color:#a6e22e">StateTrace</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Timestamp</span>: <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Now</span>(),
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">AgentID</span>:   <span style="color:#a6e22e">agentID</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Operation</span>: <span style="color:#e6db74">&#34;SET&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Key</span>:       <span style="color:#a6e22e">key</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Value</span>:     <span style="color:#a6e22e">value</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">StateSize</span>: <span style="color:#a6e22e">stateSize</span>,
+</span></span><span style="display:flex;"><span>    })
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Traced state wrapper</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">TracedState</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">State</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">tracer</span>  <span style="color:#f92672">*</span><span style="color:#a6e22e">StateTracer</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">agentID</span> <span style="color:#66d9ef">string</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">ts</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">TracedState</span>) <span style="color:#a6e22e">Get</span>(<span style="color:#a6e22e">key</span> <span style="color:#66d9ef">string</span>) (<span style="color:#66d9ef">any</span>, <span style="color:#66d9ef">bool</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">value</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ts</span>.<span style="color:#a6e22e">State</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#a6e22e">key</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">ts</span>.<span style="color:#a6e22e">tracer</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">ts</span>.<span style="color:#a6e22e">tracer</span>.<span style="color:#a6e22e">TraceGet</span>(<span style="color:#a6e22e">ts</span>.<span style="color:#a6e22e">agentID</span>, <span style="color:#a6e22e">key</span>, <span style="color:#a6e22e">value</span>, len(<span style="color:#a6e22e">ts</span>.<span style="color:#a6e22e">State</span>.<span style="color:#a6e22e">Keys</span>()))
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">value</span>, <span style="color:#a6e22e">ok</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">ts</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">TracedState</span>) <span style="color:#a6e22e">Set</span>(<span style="color:#a6e22e">key</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">value</span> <span style="color:#66d9ef">any</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">ts</span>.<span style="color:#a6e22e">State</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#a6e22e">key</span>, <span style="color:#a6e22e">value</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">ts</span>.<span style="color:#a6e22e">tracer</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">ts</span>.<span style="color:#a6e22e">tracer</span>.<span style="color:#a6e22e">TraceSet</span>(<span style="color:#a6e22e">ts</span>.<span style="color:#a6e22e">agentID</span>, <span style="color:#a6e22e">key</span>, <span style="color:#a6e22e">value</span>, len(<span style="color:#a6e22e">ts</span>.<span style="color:#a6e22e">State</span>.<span style="color:#a6e22e">Keys</span>()))
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h3 id="2-state-visualization">2. State Visualization</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Generate state visualization</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">VisualizeState</span>(<span style="color:#a6e22e">state</span> <span style="color:#a6e22e">State</span>) <span style="color:#66d9ef">string</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">builder</span> <span style="color:#a6e22e">strings</span>.<span style="color:#a6e22e">Builder</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">builder</span>.<span style="color:#a6e22e">WriteString</span>(<span style="color:#e6db74">&#34;State Visualization\n&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">builder</span>.<span style="color:#a6e22e">WriteString</span>(<span style="color:#e6db74">&#34;==================\n\n&#34;</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Data section</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">builder</span>.<span style="color:#a6e22e">WriteString</span>(<span style="color:#e6db74">&#34;Data:\n&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">key</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Keys</span>() {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">value</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#a6e22e">key</span>); <span style="color:#a6e22e">ok</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">builder</span>.<span style="color:#a6e22e">WriteString</span>(<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;  %s: %v\n&#34;</span>, <span style="color:#a6e22e">key</span>, <span style="color:#a6e22e">value</span>))
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Metadata section</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">builder</span>.<span style="color:#a6e22e">WriteString</span>(<span style="color:#e6db74">&#34;\nMetadata:\n&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">key</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">MetaKeys</span>() {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">value</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">GetMeta</span>(<span style="color:#a6e22e">key</span>); <span style="color:#a6e22e">ok</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">builder</span>.<span style="color:#a6e22e">WriteString</span>(<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;  %s: %s\n&#34;</span>, <span style="color:#a6e22e">key</span>, <span style="color:#a6e22e">value</span>))
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">builder</span>.<span style="color:#a6e22e">String</span>()
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Generate state diff</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">DiffStates</span>(<span style="color:#a6e22e">before</span>, <span style="color:#a6e22e">after</span> <span style="color:#a6e22e">State</span>) <span style="color:#66d9ef">string</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">builder</span> <span style="color:#a6e22e">strings</span>.<span style="color:#a6e22e">Builder</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">builder</span>.<span style="color:#a6e22e">WriteString</span>(<span style="color:#e6db74">&#34;State Diff\n&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">builder</span>.<span style="color:#a6e22e">WriteString</span>(<span style="color:#e6db74">&#34;==========\n\n&#34;</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Check for added/modified data</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">key</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">after</span>.<span style="color:#a6e22e">Keys</span>() {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">afterValue</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">after</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#a6e22e">key</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">beforeValue</span>, <span style="color:#a6e22e">existed</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">before</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#a6e22e">key</span>)
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">existed</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">builder</span>.<span style="color:#a6e22e">WriteString</span>(<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;+ %s: %v\n&#34;</span>, <span style="color:#a6e22e">key</span>, <span style="color:#a6e22e">afterValue</span>))
+</span></span><span style="display:flex;"><span>        } <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">reflect</span>.<span style="color:#a6e22e">DeepEqual</span>(<span style="color:#a6e22e">beforeValue</span>, <span style="color:#a6e22e">afterValue</span>) {
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">builder</span>.<span style="color:#a6e22e">WriteString</span>(<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;~ %s: %v -&gt; %v\n&#34;</span>, <span style="color:#a6e22e">key</span>, <span style="color:#a6e22e">beforeValue</span>, <span style="color:#a6e22e">afterValue</span>))
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Check for removed data</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">key</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">before</span>.<span style="color:#a6e22e">Keys</span>() {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">exists</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">after</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#a6e22e">key</span>); !<span style="color:#a6e22e">exists</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">beforeValue</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">before</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#a6e22e">key</span>)
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">builder</span>.<span style="color:#a6e22e">WriteString</span>(<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;- %s: %v\n&#34;</span>, <span style="color:#a6e22e">key</span>, <span style="color:#a6e22e">beforeValue</span>))
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">builder</span>.<span style="color:#a6e22e">String</span>()
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h2 id="best-practices">Best Practices</h2>
+<h3 id="1-state-design-principles">1. State Design Principles</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Good: Clear, descriptive keys</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;user_query&#34;</span>, <span style="color:#e6db74">&#34;What&#39;s the weather?&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;weather_data&#34;</span>, <span style="color:#a6e22e">weatherInfo</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;response_confidence&#34;</span>, <span style="color:#ae81ff">0.95</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Bad: Unclear, abbreviated keys</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;q&#34;</span>, <span style="color:#e6db74">&#34;What&#39;s the weather?&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;wd&#34;</span>, <span style="color:#a6e22e">weatherInfo</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;conf&#34;</span>, <span style="color:#ae81ff">0.95</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Good: Consistent naming conventions</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;user_profile&#34;</span>, <span style="color:#a6e22e">profile</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;user_preferences&#34;</span>, <span style="color:#a6e22e">preferences</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;user_history&#34;</span>, <span style="color:#a6e22e">history</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Bad: Inconsistent naming</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;userProfile&#34;</span>, <span style="color:#a6e22e">profile</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;user_prefs&#34;</span>, <span style="color:#a6e22e">preferences</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;UserHistory&#34;</span>, <span style="color:#a6e22e">history</span>)</span></span></code></pre></div>
+<h3 id="2-error-handling">2. Error Handling</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Always check if values exist</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">SafeGetString</span>(<span style="color:#a6e22e">state</span> <span style="color:#a6e22e">State</span>, <span style="color:#a6e22e">key</span> <span style="color:#66d9ef">string</span>) (<span style="color:#66d9ef">string</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">value</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#a6e22e">key</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">ok</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#e6db74">&#34;&#34;</span>, <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;key %s not found in state&#34;</span>, <span style="color:#a6e22e">key</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">str</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">value</span>.(<span style="color:#66d9ef">string</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">ok</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#e6db74">&#34;&#34;</span>, <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;key %s is not a string, got %T&#34;</span>, <span style="color:#a6e22e">key</span>, <span style="color:#a6e22e">value</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">str</span>, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Use type-safe getters</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">GetUserID</span>(<span style="color:#a6e22e">state</span> <span style="color:#a6e22e">State</span>) (<span style="color:#66d9ef">string</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">SafeGetString</span>(<span style="color:#a6e22e">state</span>, <span style="color:#e6db74">&#34;user_id&#34;</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">GetConfidence</span>(<span style="color:#a6e22e">state</span> <span style="color:#a6e22e">State</span>) (<span style="color:#66d9ef">float64</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">value</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#e6db74">&#34;confidence&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">ok</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>, <span style="color:#a6e22e">errors</span>.<span style="color:#a6e22e">New</span>(<span style="color:#e6db74">&#34;confidence not found in state&#34;</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">confidence</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">value</span>.(<span style="color:#66d9ef">float64</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">ok</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>, <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;confidence is not a float64, got %T&#34;</span>, <span style="color:#a6e22e">value</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">confidence</span>, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h3 id="3-state-documentation">3. State Documentation</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Document expected state structure</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">ExpectedState</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Required fields</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">UserQuery</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;user_query&#34; required:&#34;true&#34; description:&#34;The user&#39;s input query&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">UserID</span>    <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;user_id&#34; required:&#34;true&#34; description:&#34;Unique user identifier&#34;`</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Optional fields</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Context</span>    <span style="color:#66d9ef">string</span>  <span style="color:#e6db74">`json:&#34;context,omitempty&#34; description:&#34;Additional context for the query&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Confidence</span> <span style="color:#66d9ef">float64</span> <span style="color:#e6db74">`json:&#34;confidence,omitempty&#34; description:&#34;Confidence score (0.0-1.0)&#34;`</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Metadata</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">ProcessedBy</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;processed_by,omitempty&#34; metadata:&#34;true&#34; description:&#34;Agent that processed this state&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Timestamp</span>   <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;timestamp,omitempty&#34; metadata:&#34;true&#34; description:&#34;Processing timestamp&#34;`</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Validate state against expected structure</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">ValidateExpectedState</span>(<span style="color:#a6e22e">state</span> <span style="color:#a6e22e">State</span>) <span style="color:#66d9ef">error</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Check required fields</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#e6db74">&#34;user_query&#34;</span>); !<span style="color:#a6e22e">ok</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">errors</span>.<span style="color:#a6e22e">New</span>(<span style="color:#e6db74">&#34;user_query is required&#34;</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#e6db74">&#34;user_id&#34;</span>); !<span style="color:#a6e22e">ok</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">errors</span>.<span style="color:#a6e22e">New</span>(<span style="color:#e6db74">&#34;user_id is required&#34;</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h2 id="common-pitfalls-and-solutions">Common Pitfalls and Solutions</h2>
+<h3 id="1-state-mutation-issues">1. State Mutation Issues</h3>
+<p><strong>Problem</strong>: Modifying shared state without proper cloning.</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Bad: Modifying shared state</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">a</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">BadAgent</span>) <span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">event</span> <span style="color:#a6e22e">Event</span>, <span style="color:#a6e22e">state</span> <span style="color:#a6e22e">State</span>) (<span style="color:#a6e22e">AgentResult</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;modified&#34;</span>, <span style="color:#66d9ef">true</span>) <span style="color:#75715e">// Modifies input state!</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">AgentResult</span>{<span style="color:#a6e22e">OutputState</span>: <span style="color:#a6e22e">state</span>}, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Good: Clone before modifying</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">a</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">GoodAgent</span>) <span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">event</span> <span style="color:#a6e22e">Event</span>, <span style="color:#a6e22e">state</span> <span style="color:#a6e22e">State</span>) (<span style="color:#a6e22e">AgentResult</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Clone</span>()
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;modified&#34;</span>, <span style="color:#66d9ef">true</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">AgentResult</span>{<span style="color:#a6e22e">OutputState</span>: <span style="color:#a6e22e">outputState</span>}, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h3 id="2-memory-leaks">2. Memory Leaks</h3>
+<p><strong>Problem</strong>: Accumulating large amounts of data in state without cleanup.</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Bad: Accumulating data indefinitely</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">a</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">BadAgent</span>) <span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">event</span> <span style="color:#a6e22e">Event</span>, <span style="color:#a6e22e">state</span> <span style="color:#a6e22e">State</span>) (<span style="color:#a6e22e">AgentResult</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">history</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#e6db74">&#34;processing_history&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">history</span> <span style="color:#f92672">==</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">history</span> = make([]<span style="color:#66d9ef">string</span>, <span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// This grows indefinitely!</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">newHistory</span> <span style="color:#f92672">:=</span> append(<span style="color:#a6e22e">history</span>.([]<span style="color:#66d9ef">string</span>), <span style="color:#e6db74">&#34;processed by &#34;</span><span style="color:#f92672">+</span><span style="color:#a6e22e">a</span>.<span style="color:#a6e22e">name</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Clone</span>()
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;processing_history&#34;</span>, <span style="color:#a6e22e">newHistory</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">AgentResult</span>{<span style="color:#a6e22e">OutputState</span>: <span style="color:#a6e22e">outputState</span>}, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Good: Limit data accumulation</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">a</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">GoodAgent</span>) <span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">event</span> <span style="color:#a6e22e">Event</span>, <span style="color:#a6e22e">state</span> <span style="color:#a6e22e">State</span>) (<span style="color:#a6e22e">AgentResult</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">history</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#e6db74">&#34;processing_history&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">history</span> <span style="color:#f92672">==</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">history</span> = make([]<span style="color:#66d9ef">string</span>, <span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">newHistory</span> <span style="color:#f92672">:=</span> append(<span style="color:#a6e22e">history</span>.([]<span style="color:#66d9ef">string</span>), <span style="color:#e6db74">&#34;processed by &#34;</span><span style="color:#f92672">+</span><span style="color:#a6e22e">a</span>.<span style="color:#a6e22e">name</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Keep only last 10 entries</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">const</span> <span style="color:#a6e22e">maxHistory</span> = <span style="color:#ae81ff">10</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> len(<span style="color:#a6e22e">newHistory</span>) &gt; <span style="color:#a6e22e">maxHistory</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">newHistory</span> = <span style="color:#a6e22e">newHistory</span>[len(<span style="color:#a6e22e">newHistory</span>)<span style="color:#f92672">-</span><span style="color:#a6e22e">maxHistory</span>:]
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Clone</span>()
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">outputState</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;processing_history&#34;</span>, <span style="color:#a6e22e">newHistory</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">AgentResult</span>{<span style="color:#a6e22e">OutputState</span>: <span style="color:#a6e22e">outputState</span>}, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h3 id="3-type-safety-issues">3. Type Safety Issues</h3>
+<p><strong>Problem</strong>: Assuming data types without checking.</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Bad: Assuming types</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">a</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">BadAgent</span>) <span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">event</span> <span style="color:#a6e22e">Event</span>, <span style="color:#a6e22e">state</span> <span style="color:#a6e22e">State</span>) (<span style="color:#a6e22e">AgentResult</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">query</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#e6db74">&#34;user_query&#34;</span>).(<span style="color:#66d9ef">string</span>) <span style="color:#75715e">// Panic if not string!</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// ...</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Good: Type checking</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">a</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">GoodAgent</span>) <span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">event</span> <span style="color:#a6e22e">Event</span>, <span style="color:#a6e22e">state</span> <span style="color:#a6e22e">State</span>) (<span style="color:#a6e22e">AgentResult</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">queryValue</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#e6db74">&#34;user_query&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">ok</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">AgentResult</span>{}, <span style="color:#a6e22e">errors</span>.<span style="color:#a6e22e">New</span>(<span style="color:#e6db74">&#34;user_query not found&#34;</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">query</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">queryValue</span>.(<span style="color:#66d9ef">string</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">ok</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">AgentResult</span>{}, <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;user_query is not a string, got %T&#34;</span>, <span style="color:#a6e22e">queryValue</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Safe to use query</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// ...</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h2 id="conclusion">Conclusion</h2>
+<p>State management is the foundation of data flow in AgenticGoKit. By understanding how State objects work, how data flows between agents, and following best practices, you can build robust multi-agent systems that handle complex data transformations reliably.</p>
+<p>Key takeaways:</p>
+<ul>
+<li><strong>Always clone state</strong> before modification</li>
+<li><strong>Use clear, consistent naming</strong> for state keys</li>
+<li><strong>Implement proper type checking</strong> and error handling</li>
+<li><strong>Monitor state size</strong> and prevent memory leaks</li>
+<li><strong>Document expected state structure</strong> for maintainability</li>
+<li><strong>Use namespaced keys</strong> to avoid conflicts</li>
+<li><strong>Implement validation</strong> for critical state data</li>
+</ul>
+<h2 id="next-steps">Next Steps</h2>
+<ul>
+<li><a href="/AgenticGoKitDocs/tutorials/memory-systems/readme/index.html">Memory Systems</a> - Learn about persistent state storage</li>
+<li><a href="/AgenticGoKitDocs/tutorials/core-concepts/error-handling/index.html">Error Handling</a> - Master robust error management with state</li>
+<li><a href="/AgenticGoKitDocs/tutorials/debugging/readme/index.html">Debugging Guide</a> - Learn to trace state flow</li>
+<li><a href="/AgenticGoKitDocs/tutorials/advanced/readme/index.html">Advanced Patterns</a> - Explore advanced state management patterns</li>
+</ul>
+<h2 id="further-reading">Further Reading</h2>
+<ul>
+<li><a href="/AgenticGoKitDocs/reference/api/state-event/index.html#state">API Reference: State Interface</a></li>
+<li><a href="../../examples/">Examples: State Management Patterns</a></li>
+<li><a href="/AgenticGoKitDocs/reference/api/configuration/index.html">Configuration Guide: State Settings</a></li>
+</ul>
+
+  <footer class="footline">
+              <i class='fa-fw fas fa-calendar'></i> Jul 25, 2025
+  </footer>
+</article>
+        </div>
+      </main>
+    </div>
+    <aside id="R-sidebar" class="default-animation">
+      <div id="R-header-topbar" class="default-animation"></div>
+      <div id="R-header-wrapper" class="default-animation">
+        <div id="R-header" class="default-animation">
+          <a id="R-logo" class="R-default" href="/AgenticGoKitDocs/index.html">
+            <div class="logo-title">AgenticGoKit Docs</div>
+          </a>
+        </div>
+        <search><form action="/AgenticGoKitDocs/search/index.html" method="get">
+          <div class="searchbox default-animation">
+            <button class="search-detail" type="submit" title="Search (CTRL+ALT+f)"><i class="fas fa-search"></i></button>
+            <label class="a11y-only" for="R-search-by">Search</label>
+            <input data-search-input id="R-search-by" name="search-by" class="search-by" type="search" placeholder="Search...">
+            <button class="search-clear" type="button" data-search-clear="" title="Clear search"><i class="fas fa-times" title="Clear search"></i></button>
+          </div>
+        </form></search>
+      </div>
+      <div id="R-homelinks" class="default-animation homelinks">
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-homelinks">
+          <ul class="space collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/index.html"><a class="padding" href="/AgenticGoKitDocs/index.html"><i class="fa-fw fas fa-home"></i> Home</a></li>
+          </ul>
+        </div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-headercontrols">
+          <ul class="">
+          </ul>
+        </div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+      </div>
+      <div id="R-content-wrapper" class="highlightable">
+        <div class="R-sidebarmenu R-shortcutmenu-main">
+          <ul class="enlarge morespace collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/readme/index.html">content</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/index.html"><input type="checkbox" id="R-section-8fc2fd7736125e87cab8840a86c2af5a" aria-controls="R-subsections-8fc2fd7736125e87cab8840a86c2af5a" checked><label for="R-section-8fc2fd7736125e87cab8840a86c2af5a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu guides</span></label><a class="padding" href="/AgenticGoKitDocs/guides/index.html">guides</a><ul id="R-subsections-8fc2fd7736125e87cab8840a86c2af5a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/readme/index.html">guides</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/agentbasics/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/agentbasics/index.html">AgentBasics</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/examples/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/examples/index.html">Examples</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/configuration/index.html">Configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/customtools/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/customtools/index.html">CustomTools</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/providers/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/providers/index.html">Providers</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memoryprovidersetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memoryprovidersetup/index.html">MemoryProviderSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memorytroubleshooting/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memorytroubleshooting/index.html">MemoryTroubleshooting</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/embeddingmodelguide/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/embeddingmodelguide/index.html">EmbeddingModelGuide</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/ragconfiguration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/ragconfiguration/index.html">RAGConfiguration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/toolintegration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/toolintegration/index.html">ToolIntegration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/pgvectorsetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/pgvectorsetup/index.html">PgVectorSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/weaviatesetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/weaviatesetup/index.html">WeaviateSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/performance/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/performance/index.html">Performance</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/errorhandling/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/errorhandling/index.html">ErrorHandling</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/deployment/index.html"><input type="checkbox" id="R-section-ecc839349395ef3c015a12132049dff2" aria-controls="R-subsections-ecc839349395ef3c015a12132049dff2" checked><label for="R-section-ecc839349395ef3c015a12132049dff2"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu deployment</span></label><a class="padding" href="/AgenticGoKitDocs/guides/deployment/index.html">deployment</a><ul id="R-subsections-ecc839349395ef3c015a12132049dff2" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/deployment/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/deployment/readme/index.html">deployment</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/development/index.html"><input type="checkbox" id="R-section-fff1f5eca5d0a93209b9c6262762c25a" aria-controls="R-subsections-fff1f5eca5d0a93209b9c6262762c25a" checked><label for="R-section-fff1f5eca5d0a93209b9c6262762c25a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu development</span></label><a class="padding" href="/AgenticGoKitDocs/guides/development/index.html">development</a><ul id="R-subsections-fff1f5eca5d0a93209b9c6262762c25a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/readme/index.html">development</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/best-practices/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/best-practices/index.html">best-practices</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/debugging/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/debugging/index.html">debugging</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/research-assistant/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/research-assistant/index.html">research-assistant</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/testing-agents/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/testing-agents/index.html">testing-agents</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/visualization/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/visualization/index.html">visualization</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/web-search-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/web-search-integration/index.html">web-search-integration</a></li></ul></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/framework-comparison/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/framework-comparison/index.html">framework-comparison</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memory/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memory/index.html">Memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/scaffoldmemoryguide/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/scaffoldmemoryguide/index.html">ScaffoldMemoryGuide</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/setup/index.html"><input type="checkbox" id="R-section-0124aed9abb5064d53391168f3c95c22" aria-controls="R-subsections-0124aed9abb5064d53391168f3c95c22" checked><label for="R-section-0124aed9abb5064d53391168f3c95c22"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu setup</span></label><a class="padding" href="/AgenticGoKitDocs/guides/setup/index.html">setup</a><ul id="R-subsections-0124aed9abb5064d53391168f3c95c22" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/readme/index.html">setup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/llm-providers/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/llm-providers/index.html">llm-providers</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/mcp-tools/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/mcp-tools/index.html">mcp-tools</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/orchestration-configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/orchestration-configuration/index.html">orchestration-configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/vector-databases/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/vector-databases/index.html">vector-databases</a></li></ul></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/troubleshooting/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/troubleshooting/index.html">troubleshooting</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/contributors/index.html"><input type="checkbox" id="R-section-190d9b328fbda7e13ab386f7a5417de5" aria-controls="R-subsections-190d9b328fbda7e13ab386f7a5417de5" checked><label for="R-section-190d9b328fbda7e13ab386f7a5417de5"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu contributors</span></label><a class="padding" href="/AgenticGoKitDocs/contributors/index.html">contributors</a><ul id="R-subsections-190d9b328fbda7e13ab386f7a5417de5" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/readme/index.html">contributors</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/contributorguide/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/contributorguide/index.html">ContributorGuide</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/codestyle/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/codestyle/index.html">CodeStyle</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/corevsinternal/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/corevsinternal/index.html">CoreVsInternal</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/addingfeatures/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/addingfeatures/index.html">AddingFeatures</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/testing/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/testing/index.html">Testing</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/docsstandards/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/docsstandards/index.html">DocsStandards</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/reference/index.html"><input type="checkbox" id="R-section-66002f201bef818664bb81aa67490c58" aria-controls="R-subsections-66002f201bef818664bb81aa67490c58" checked><label for="R-section-66002f201bef818664bb81aa67490c58"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu reference</span></label><a class="padding" href="/AgenticGoKitDocs/reference/index.html">reference</a><ul id="R-subsections-66002f201bef818664bb81aa67490c58" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/readme/index.html">reference</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/configuration/index.html">configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/cli/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/cli/index.html">cli</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/mcp/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/mcp/index.html">mcp</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/agent/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/agent/index.html">agent</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/memory/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/memory/index.html">memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/orchestration/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/orchestration/index.html">orchestration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/state-event/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/state-event/index.html">state-event</a></li></ul></li>
+            <li class="parent alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/index.html"><input type="checkbox" id="R-section-e1e8c1e70c5500b49e8dda2dc550651a" aria-controls="R-subsections-e1e8c1e70c5500b49e8dda2dc550651a" checked><label for="R-section-e1e8c1e70c5500b49e8dda2dc550651a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu tutorials</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/index.html">tutorials</a><ul id="R-subsections-e1e8c1e70c5500b49e8dda2dc550651a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/readme/index.html">tutorials</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/advanced/index.html"><input type="checkbox" id="R-section-d3def5cd76adc8096d0ff9fda6b8e479" aria-controls="R-subsections-d3def5cd76adc8096d0ff9fda6b8e479" checked><label for="R-section-d3def5cd76adc8096d0ff9fda6b8e479"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu advanced</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/index.html">advanced</a><ul id="R-subsections-d3def5cd76adc8096d0ff9fda6b8e479" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/readme/index.html">advanced</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/circuit-breaker-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/circuit-breaker-patterns/index.html">circuit-breaker-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/load-balancing-scaling/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/load-balancing-scaling/index.html">load-balancing-scaling</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/retry-policies/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/retry-policies/index.html">retry-policies</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/testing-strategies/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/testing-strategies/index.html">testing-strategies</a></li></ul></li>
+            <li class="parent alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/index.html"><input type="checkbox" id="R-section-212c6ccffb40ecdd78eb2136f98c4cac" aria-controls="R-subsections-212c6ccffb40ecdd78eb2136f98c4cac" checked><label for="R-section-212c6ccffb40ecdd78eb2136f98c4cac"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu core-concepts</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/index.html">core-concepts</a><ul id="R-subsections-212c6ccffb40ecdd78eb2136f98c4cac" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/readme/index.html">core-concepts</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/agent-lifecycle/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/agent-lifecycle/index.html">agent-lifecycle</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/error-handling/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/error-handling/index.html">error-handling</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/message-passing/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/message-passing/index.html">message-passing</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/orchestration-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/orchestration-patterns/index.html">orchestration-patterns</a></li>
+            <li class="active " data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/state-management/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/state-management/index.html">state-management</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/debugging/index.html"><input type="checkbox" id="R-section-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" aria-controls="R-subsections-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" checked><label for="R-section-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu debugging</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/index.html">debugging</a><ul id="R-subsections-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/readme/index.html">debugging</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/debugging-multi-agent-systems/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/debugging-multi-agent-systems/index.html">debugging-multi-agent-systems</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/logging-and-tracing/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/logging-and-tracing/index.html">logging-and-tracing</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/index.html"><input type="checkbox" id="R-section-e7f904c8b9d0f9bf1f07ca7d482d2247" aria-controls="R-subsections-e7f904c8b9d0f9bf1f07ca7d482d2247" checked><label for="R-section-e7f904c8b9d0f9bf1f07ca7d482d2247"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu getting-started</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/index.html">getting-started</a><ul id="R-subsections-e7f904c8b9d0f9bf1f07ca7d482d2247" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/readme/index.html">getting-started</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/memory-and-rag/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/memory-and-rag/index.html">memory-and-rag</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/multi-agent-collaboration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/multi-agent-collaboration/index.html">multi-agent-collaboration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/production-deployment/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/production-deployment/index.html">production-deployment</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/quickstart/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/quickstart/index.html">quickstart</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/tool-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/tool-integration/index.html">tool-integration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/your-first-agent/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/your-first-agent/index.html">your-first-agent</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/mcp/index.html"><input type="checkbox" id="R-section-153aac44598009a99dd5a60317a3eecc" aria-controls="R-subsections-153aac44598009a99dd5a60317a3eecc" checked><label for="R-section-153aac44598009a99dd5a60317a3eecc"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu mcp</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/index.html">mcp</a><ul id="R-subsections-153aac44598009a99dd5a60317a3eecc" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/readme/index.html">mcp</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/advanced-tool-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/advanced-tool-patterns/index.html">advanced-tool-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/tool-development/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/tool-development/index.html">tool-development</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/tool-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/tool-integration/index.html">tool-integration</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/index.html"><input type="checkbox" id="R-section-9c1a65f2d7b3888241dcafa51a0710e7" aria-controls="R-subsections-9c1a65f2d7b3888241dcafa51a0710e7" checked><label for="R-section-9c1a65f2d7b3888241dcafa51a0710e7"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu memory-systems</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/index.html">memory-systems</a><ul id="R-subsections-9c1a65f2d7b3888241dcafa51a0710e7" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/readme/index.html">memory-systems</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/basic-memory/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/basic-memory/index.html">basic-memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/document-ingestion/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/document-ingestion/index.html">document-ingestion</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/knowledge-bases/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/knowledge-bases/index.html">knowledge-bases</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/memory-optimization/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/memory-optimization/index.html">memory-optimization</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/rag-implementation/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/rag-implementation/index.html">rag-implementation</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/vector-databases/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/vector-databases/index.html">vector-databases</a></li></ul></li></ul></li>
+          </ul>
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-shortcuts">
+          <ul class="space collapsible-menu">
+          </ul>
+        </div>
+        <div id="R-footer-margin"></div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-footercontrols">
+          <ul class="">
+          </ul>
+        </div>
+<div id="R-footer"><p>Built with <a href="https://github.com/McShelby/hugo-theme-relearn" title="love"><i class="fas fa-heart"></i></a> by <a href="https://gohugo.io/">Hugo</a></p></div>
+      </div>
+    </aside>
+    <script src="/AgenticGoKitDocs/js/clipboard/clipboard.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/perfect-scrollbar/perfect-scrollbar.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/theme.js?1753430931" defer></script>
+  </body>
+</html>

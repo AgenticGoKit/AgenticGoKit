@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="en-us" dir="ltr" itemscope itemtype="http://schema.org/Article" data-r-output-format="html">
+  <head><script src="/AgenticGoKitDocs/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=AgenticGoKitDocs/livereload" data-no-instant defer></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="height=device-height, width=device-width, initial-scale=1.0, minimum-scale=1.0">
+    <meta name="generator" content="Hugo 0.148.1">
+    <meta name="generator" content="Relearn 8.0.0+9803d5122ebb3276acea823f476e9eb44f607862">
+    <meta name="description" content="RAG Configuration Guide Configuring Retrieval-Augmented Generation in AgentFlow
+AgentFlow provides comprehensive RAG (Retrieval-Augmented Generation) capabilities through flexible TOML configuration. This guide covers all configuration options for building knowledge-aware agents with document understanding and context assembly.
+📚 Table of Contents Overview Basic Configuration Advanced Configuration Configuration Examples Best Practices Performance Tuning Migration Guide Troubleshooting 🎯 Overview What is RAG? RAG (Retrieval-Augmented Generation) enhances LLM responses by:
+Retrieving relevant information from knowledge bases and personal memory Augmenting prompts with contextual information Generating informed responses based on retrieved knowledge Providing source attribution for transparency AgentFlow RAG Features Hybrid Search: Combines semantic similarity and keyword matching Document Processing: Automatic chunking and metadata extraction Context Assembly: Intelligent context building with token management Session Memory: Isolated memory per user or conversation Multiple Providers: Support for various vector databases ⚙️ Basic Configuration Minimal RAG Setup [memory] enabled = true provider = &#34;memory&#34; dimensions = 1536 [memory.embedding] provider = &#34;openai&#34; model = &#34;text-embedding-3-small&#34; [memory.rag] enabled = true chunk_size = 1000 top_k = 5Core Memory Settings [memory] enabled = true provider = &#34;pgvector&#34; # Options: memory, pgvector, weaviate connection = &#34;postgres://user:password@localhost:5432/agentflow&#34; max_results = 10 # Maximum personal memory results dimensions = 1536 # Vector embedding dimensions auto_embed = true # Automatically generate embeddingsRAG Configuration [memory.rag] enabled = true # Enable RAG functionality chunk_size = 1000 # Document chunk size in characters overlap = 200 # Overlap between chunks top_k = 5 # Number of results to retrieve score_threshold = 0.7 # Minimum similarity score hybrid_search = true # Enable hybrid search session_memory = true # Enable session isolation🔧 Advanced Configuration Document Processing [memory.documents] auto_chunk = true # Automatically chunk documents supported_types = [&#34;pdf&#34;, &#34;txt&#34;, &#34;md&#34;, &#34;web&#34;, &#34;code&#34;, &#34;json&#34;] max_file_size = &#34;10MB&#34; # Maximum file size enable_metadata_extraction = true # Extract document metadata enable_url_scraping = true # Enable web content scrapingEmbedding Configuration [memory.embedding] provider = &#34;openai&#34; # Options: openai, azure, ollama, dummy model = &#34;text-embedding-3-small&#34; # Embedding model api_key = &#34;${OPENAI_API_KEY}&#34; # API key (environment variable) base_url = &#34;&#34; # Custom endpoint (optional) max_batch_size = 50 # Batch size for embeddings timeout_seconds = 30 # Request timeout cache_embeddings = true # Cache embeddings for performanceSearch Configuration [memory.search] hybrid_search = true # Enable hybrid search keyword_weight = 0.3 # Weight for keyword search (BM25) semantic_weight = 0.7 # Weight for semantic search enable_reranking = false # Enable result re-ranking reranking_model = &#34;&#34; # Re-ranking model (optional) enable_query_expansion = false # Enable query expansionContext Assembly [memory.context] max_tokens = 4000 # Maximum context tokens personal_weight = 0.3 # Weight for personal memory knowledge_weight = 0.7 # Weight for knowledge base include_sources = true # Include source attribution include_history = true # Include chat history history_limit = 5 # Number of history messages📋 Configuration Examples Development Configuration # agentflow.dev.toml - Development setup [memory] enabled = true provider = &#34;memory&#34; # In-memory for fast iteration max_results = 10 dimensions = 1536 auto_embed = true [memory.embedding] provider = &#34;dummy&#34; # Dummy embeddings for testing model = &#34;text-embedding-3-small&#34; cache_embeddings = true [memory.rag] enabled = true chunk_size = 800 # Smaller chunks for testing overlap = 150 top_k = 3 # Fewer results for faster testing score_threshold = 0.5 # Lower threshold for development hybrid_search = false # Disable for simplicity session_memory = false [memory.documents] auto_chunk = true supported_types = [&#34;txt&#34;, &#34;md&#34;, &#34;code&#34;] max_file_size = &#34;5MB&#34; enable_metadata_extraction = false # Disable for speed enable_url_scraping = falseProduction Configuration # agentflow.prod.toml - Production deployment [memory] enabled = true provider = &#34;pgvector&#34; connection = &#34;postgres://user:password@localhost:5432/agentflow?sslmode=require&#34; max_results = 10 dimensions = 1536 auto_embed = true [memory.pgvector] table_name = &#34;agent_memory&#34; connection_pool_size = 25 [memory.embedding] provider = &#34;openai&#34; model = &#34;text-embedding-3-small&#34; api_key = &#34;${OPENAI_API_KEY}&#34; cache_embeddings = true max_batch_size = 100 timeout_seconds = 30 [memory.rag] enabled = true chunk_size = 1000 overlap = 200 top_k = 5 score_threshold = 0.7 hybrid_search = true session_memory = true [memory.documents] auto_chunk = true supported_types = [&#34;pdf&#34;, &#34;txt&#34;, &#34;md&#34;, &#34;web&#34;, &#34;code&#34;, &#34;json&#34;] max_file_size = &#34;10MB&#34; enable_metadata_extraction = true enable_url_scraping = true [memory.context] max_tokens = 4000 personal_weight = 0.3 knowledge_weight = 0.7 include_sources = true include_history = true history_limit = 5 [memory.search] hybrid_search = true keyword_weight = 0.3 semantic_weight = 0.7 enable_reranking = false enable_query_expansion = false [memory.advanced] retry_max_attempts = 3 retry_base_delay = &#34;100ms&#34; retry_max_delay = &#34;5s&#34; health_check_interval = &#34;1m&#34;Enterprise Configuration # agentflow.enterprise.toml - Large-scale deployment [memory] enabled = true provider = &#34;weaviate&#34; connection = &#34;https://weaviate.company.com:8080&#34; max_results = 15 dimensions = 1536 auto_embed = true [memory.weaviate] api_key = &#34;${WEAVIATE_API_KEY}&#34; class_name = &#34;AgentMemory&#34; timeout = &#34;30s&#34; max_retries = 3 [memory.embedding] provider = &#34;azure&#34; model = &#34;text-embedding-ada-002&#34; api_key = &#34;${AZURE_OPENAI_API_KEY}&#34; endpoint = &#34;${AZURE_OPENAI_ENDPOINT}&#34; cache_embeddings = true max_batch_size = 100 timeout_seconds = 45 [memory.rag] enabled = true chunk_size = 1200 overlap = 240 top_k = 8 score_threshold = 0.75 hybrid_search = true session_memory = true [memory.context] max_tokens = 6000 # Larger context for enterprise personal_weight = 0.2 knowledge_weight = 0.8 # Knowledge-focused include_sources = true include_history = true history_limit = 10 [memory.search] hybrid_search = true keyword_weight = 0.25 semantic_weight = 0.75 enable_reranking = true reranking_model = &#34;cross-encoder/ms-marco-MiniLM-L-12-v2&#34; enable_query_expansion = true🚀 Best Practices Provider Selection Use Case Recommended Provider Reason Development memory Fast iteration, no setup Production pgvector Reliable, performant, mature Enterprise weaviate Advanced features, clustering Prototyping memory Quick testing, temporary data Chunking Strategy # Document type specific chunking [memory.rag] # For technical documentation chunk_size = 1000 overlap = 200 # For code files chunk_size = 800 overlap = 100 # For research papers chunk_size = 1500 overlap = 300Guidelines:">
+    <meta name="author" content="">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="RAGConfiguration :: AgenticGoKit Docs">
+    <meta name="twitter:description" content="RAG Configuration Guide Configuring Retrieval-Augmented Generation in AgentFlow
+AgentFlow provides comprehensive RAG (Retrieval-Augmented Generation) capabilities through flexible TOML configuration. This guide covers all configuration options for building knowledge-aware agents with document understanding and context assembly.
+📚 Table of Contents Overview Basic Configuration Advanced Configuration Configuration Examples Best Practices Performance Tuning Migration Guide Troubleshooting 🎯 Overview What is RAG? RAG (Retrieval-Augmented Generation) enhances LLM responses by:
+Retrieving relevant information from knowledge bases and personal memory Augmenting prompts with contextual information Generating informed responses based on retrieved knowledge Providing source attribution for transparency AgentFlow RAG Features Hybrid Search: Combines semantic similarity and keyword matching Document Processing: Automatic chunking and metadata extraction Context Assembly: Intelligent context building with token management Session Memory: Isolated memory per user or conversation Multiple Providers: Support for various vector databases ⚙️ Basic Configuration Minimal RAG Setup [memory] enabled = true provider = &#34;memory&#34; dimensions = 1536 [memory.embedding] provider = &#34;openai&#34; model = &#34;text-embedding-3-small&#34; [memory.rag] enabled = true chunk_size = 1000 top_k = 5Core Memory Settings [memory] enabled = true provider = &#34;pgvector&#34; # Options: memory, pgvector, weaviate connection = &#34;postgres://user:password@localhost:5432/agentflow&#34; max_results = 10 # Maximum personal memory results dimensions = 1536 # Vector embedding dimensions auto_embed = true # Automatically generate embeddingsRAG Configuration [memory.rag] enabled = true # Enable RAG functionality chunk_size = 1000 # Document chunk size in characters overlap = 200 # Overlap between chunks top_k = 5 # Number of results to retrieve score_threshold = 0.7 # Minimum similarity score hybrid_search = true # Enable hybrid search session_memory = true # Enable session isolation🔧 Advanced Configuration Document Processing [memory.documents] auto_chunk = true # Automatically chunk documents supported_types = [&#34;pdf&#34;, &#34;txt&#34;, &#34;md&#34;, &#34;web&#34;, &#34;code&#34;, &#34;json&#34;] max_file_size = &#34;10MB&#34; # Maximum file size enable_metadata_extraction = true # Extract document metadata enable_url_scraping = true # Enable web content scrapingEmbedding Configuration [memory.embedding] provider = &#34;openai&#34; # Options: openai, azure, ollama, dummy model = &#34;text-embedding-3-small&#34; # Embedding model api_key = &#34;${OPENAI_API_KEY}&#34; # API key (environment variable) base_url = &#34;&#34; # Custom endpoint (optional) max_batch_size = 50 # Batch size for embeddings timeout_seconds = 30 # Request timeout cache_embeddings = true # Cache embeddings for performanceSearch Configuration [memory.search] hybrid_search = true # Enable hybrid search keyword_weight = 0.3 # Weight for keyword search (BM25) semantic_weight = 0.7 # Weight for semantic search enable_reranking = false # Enable result re-ranking reranking_model = &#34;&#34; # Re-ranking model (optional) enable_query_expansion = false # Enable query expansionContext Assembly [memory.context] max_tokens = 4000 # Maximum context tokens personal_weight = 0.3 # Weight for personal memory knowledge_weight = 0.7 # Weight for knowledge base include_sources = true # Include source attribution include_history = true # Include chat history history_limit = 5 # Number of history messages📋 Configuration Examples Development Configuration # agentflow.dev.toml - Development setup [memory] enabled = true provider = &#34;memory&#34; # In-memory for fast iteration max_results = 10 dimensions = 1536 auto_embed = true [memory.embedding] provider = &#34;dummy&#34; # Dummy embeddings for testing model = &#34;text-embedding-3-small&#34; cache_embeddings = true [memory.rag] enabled = true chunk_size = 800 # Smaller chunks for testing overlap = 150 top_k = 3 # Fewer results for faster testing score_threshold = 0.5 # Lower threshold for development hybrid_search = false # Disable for simplicity session_memory = false [memory.documents] auto_chunk = true supported_types = [&#34;txt&#34;, &#34;md&#34;, &#34;code&#34;] max_file_size = &#34;5MB&#34; enable_metadata_extraction = false # Disable for speed enable_url_scraping = falseProduction Configuration # agentflow.prod.toml - Production deployment [memory] enabled = true provider = &#34;pgvector&#34; connection = &#34;postgres://user:password@localhost:5432/agentflow?sslmode=require&#34; max_results = 10 dimensions = 1536 auto_embed = true [memory.pgvector] table_name = &#34;agent_memory&#34; connection_pool_size = 25 [memory.embedding] provider = &#34;openai&#34; model = &#34;text-embedding-3-small&#34; api_key = &#34;${OPENAI_API_KEY}&#34; cache_embeddings = true max_batch_size = 100 timeout_seconds = 30 [memory.rag] enabled = true chunk_size = 1000 overlap = 200 top_k = 5 score_threshold = 0.7 hybrid_search = true session_memory = true [memory.documents] auto_chunk = true supported_types = [&#34;pdf&#34;, &#34;txt&#34;, &#34;md&#34;, &#34;web&#34;, &#34;code&#34;, &#34;json&#34;] max_file_size = &#34;10MB&#34; enable_metadata_extraction = true enable_url_scraping = true [memory.context] max_tokens = 4000 personal_weight = 0.3 knowledge_weight = 0.7 include_sources = true include_history = true history_limit = 5 [memory.search] hybrid_search = true keyword_weight = 0.3 semantic_weight = 0.7 enable_reranking = false enable_query_expansion = false [memory.advanced] retry_max_attempts = 3 retry_base_delay = &#34;100ms&#34; retry_max_delay = &#34;5s&#34; health_check_interval = &#34;1m&#34;Enterprise Configuration # agentflow.enterprise.toml - Large-scale deployment [memory] enabled = true provider = &#34;weaviate&#34; connection = &#34;https://weaviate.company.com:8080&#34; max_results = 15 dimensions = 1536 auto_embed = true [memory.weaviate] api_key = &#34;${WEAVIATE_API_KEY}&#34; class_name = &#34;AgentMemory&#34; timeout = &#34;30s&#34; max_retries = 3 [memory.embedding] provider = &#34;azure&#34; model = &#34;text-embedding-ada-002&#34; api_key = &#34;${AZURE_OPENAI_API_KEY}&#34; endpoint = &#34;${AZURE_OPENAI_ENDPOINT}&#34; cache_embeddings = true max_batch_size = 100 timeout_seconds = 45 [memory.rag] enabled = true chunk_size = 1200 overlap = 240 top_k = 8 score_threshold = 0.75 hybrid_search = true session_memory = true [memory.context] max_tokens = 6000 # Larger context for enterprise personal_weight = 0.2 knowledge_weight = 0.8 # Knowledge-focused include_sources = true include_history = true history_limit = 10 [memory.search] hybrid_search = true keyword_weight = 0.25 semantic_weight = 0.75 enable_reranking = true reranking_model = &#34;cross-encoder/ms-marco-MiniLM-L-12-v2&#34; enable_query_expansion = true🚀 Best Practices Provider Selection Use Case Recommended Provider Reason Development memory Fast iteration, no setup Production pgvector Reliable, performant, mature Enterprise weaviate Advanced features, clustering Prototyping memory Quick testing, temporary data Chunking Strategy # Document type specific chunking [memory.rag] # For technical documentation chunk_size = 1000 overlap = 200 # For code files chunk_size = 800 overlap = 100 # For research papers chunk_size = 1500 overlap = 300Guidelines:">
+    <meta property="og:url" content="http://localhost:1313/AgenticGoKitDocs/guides/ragconfiguration/index.html">
+    <meta property="og:site_name" content="AgenticGoKit Docs">
+    <meta property="og:title" content="RAGConfiguration :: AgenticGoKit Docs">
+    <meta property="og:description" content="RAG Configuration Guide Configuring Retrieval-Augmented Generation in AgentFlow
+AgentFlow provides comprehensive RAG (Retrieval-Augmented Generation) capabilities through flexible TOML configuration. This guide covers all configuration options for building knowledge-aware agents with document understanding and context assembly.
+📚 Table of Contents Overview Basic Configuration Advanced Configuration Configuration Examples Best Practices Performance Tuning Migration Guide Troubleshooting 🎯 Overview What is RAG? RAG (Retrieval-Augmented Generation) enhances LLM responses by:
+Retrieving relevant information from knowledge bases and personal memory Augmenting prompts with contextual information Generating informed responses based on retrieved knowledge Providing source attribution for transparency AgentFlow RAG Features Hybrid Search: Combines semantic similarity and keyword matching Document Processing: Automatic chunking and metadata extraction Context Assembly: Intelligent context building with token management Session Memory: Isolated memory per user or conversation Multiple Providers: Support for various vector databases ⚙️ Basic Configuration Minimal RAG Setup [memory] enabled = true provider = &#34;memory&#34; dimensions = 1536 [memory.embedding] provider = &#34;openai&#34; model = &#34;text-embedding-3-small&#34; [memory.rag] enabled = true chunk_size = 1000 top_k = 5Core Memory Settings [memory] enabled = true provider = &#34;pgvector&#34; # Options: memory, pgvector, weaviate connection = &#34;postgres://user:password@localhost:5432/agentflow&#34; max_results = 10 # Maximum personal memory results dimensions = 1536 # Vector embedding dimensions auto_embed = true # Automatically generate embeddingsRAG Configuration [memory.rag] enabled = true # Enable RAG functionality chunk_size = 1000 # Document chunk size in characters overlap = 200 # Overlap between chunks top_k = 5 # Number of results to retrieve score_threshold = 0.7 # Minimum similarity score hybrid_search = true # Enable hybrid search session_memory = true # Enable session isolation🔧 Advanced Configuration Document Processing [memory.documents] auto_chunk = true # Automatically chunk documents supported_types = [&#34;pdf&#34;, &#34;txt&#34;, &#34;md&#34;, &#34;web&#34;, &#34;code&#34;, &#34;json&#34;] max_file_size = &#34;10MB&#34; # Maximum file size enable_metadata_extraction = true # Extract document metadata enable_url_scraping = true # Enable web content scrapingEmbedding Configuration [memory.embedding] provider = &#34;openai&#34; # Options: openai, azure, ollama, dummy model = &#34;text-embedding-3-small&#34; # Embedding model api_key = &#34;${OPENAI_API_KEY}&#34; # API key (environment variable) base_url = &#34;&#34; # Custom endpoint (optional) max_batch_size = 50 # Batch size for embeddings timeout_seconds = 30 # Request timeout cache_embeddings = true # Cache embeddings for performanceSearch Configuration [memory.search] hybrid_search = true # Enable hybrid search keyword_weight = 0.3 # Weight for keyword search (BM25) semantic_weight = 0.7 # Weight for semantic search enable_reranking = false # Enable result re-ranking reranking_model = &#34;&#34; # Re-ranking model (optional) enable_query_expansion = false # Enable query expansionContext Assembly [memory.context] max_tokens = 4000 # Maximum context tokens personal_weight = 0.3 # Weight for personal memory knowledge_weight = 0.7 # Weight for knowledge base include_sources = true # Include source attribution include_history = true # Include chat history history_limit = 5 # Number of history messages📋 Configuration Examples Development Configuration # agentflow.dev.toml - Development setup [memory] enabled = true provider = &#34;memory&#34; # In-memory for fast iteration max_results = 10 dimensions = 1536 auto_embed = true [memory.embedding] provider = &#34;dummy&#34; # Dummy embeddings for testing model = &#34;text-embedding-3-small&#34; cache_embeddings = true [memory.rag] enabled = true chunk_size = 800 # Smaller chunks for testing overlap = 150 top_k = 3 # Fewer results for faster testing score_threshold = 0.5 # Lower threshold for development hybrid_search = false # Disable for simplicity session_memory = false [memory.documents] auto_chunk = true supported_types = [&#34;txt&#34;, &#34;md&#34;, &#34;code&#34;] max_file_size = &#34;5MB&#34; enable_metadata_extraction = false # Disable for speed enable_url_scraping = falseProduction Configuration # agentflow.prod.toml - Production deployment [memory] enabled = true provider = &#34;pgvector&#34; connection = &#34;postgres://user:password@localhost:5432/agentflow?sslmode=require&#34; max_results = 10 dimensions = 1536 auto_embed = true [memory.pgvector] table_name = &#34;agent_memory&#34; connection_pool_size = 25 [memory.embedding] provider = &#34;openai&#34; model = &#34;text-embedding-3-small&#34; api_key = &#34;${OPENAI_API_KEY}&#34; cache_embeddings = true max_batch_size = 100 timeout_seconds = 30 [memory.rag] enabled = true chunk_size = 1000 overlap = 200 top_k = 5 score_threshold = 0.7 hybrid_search = true session_memory = true [memory.documents] auto_chunk = true supported_types = [&#34;pdf&#34;, &#34;txt&#34;, &#34;md&#34;, &#34;web&#34;, &#34;code&#34;, &#34;json&#34;] max_file_size = &#34;10MB&#34; enable_metadata_extraction = true enable_url_scraping = true [memory.context] max_tokens = 4000 personal_weight = 0.3 knowledge_weight = 0.7 include_sources = true include_history = true history_limit = 5 [memory.search] hybrid_search = true keyword_weight = 0.3 semantic_weight = 0.7 enable_reranking = false enable_query_expansion = false [memory.advanced] retry_max_attempts = 3 retry_base_delay = &#34;100ms&#34; retry_max_delay = &#34;5s&#34; health_check_interval = &#34;1m&#34;Enterprise Configuration # agentflow.enterprise.toml - Large-scale deployment [memory] enabled = true provider = &#34;weaviate&#34; connection = &#34;https://weaviate.company.com:8080&#34; max_results = 15 dimensions = 1536 auto_embed = true [memory.weaviate] api_key = &#34;${WEAVIATE_API_KEY}&#34; class_name = &#34;AgentMemory&#34; timeout = &#34;30s&#34; max_retries = 3 [memory.embedding] provider = &#34;azure&#34; model = &#34;text-embedding-ada-002&#34; api_key = &#34;${AZURE_OPENAI_API_KEY}&#34; endpoint = &#34;${AZURE_OPENAI_ENDPOINT}&#34; cache_embeddings = true max_batch_size = 100 timeout_seconds = 45 [memory.rag] enabled = true chunk_size = 1200 overlap = 240 top_k = 8 score_threshold = 0.75 hybrid_search = true session_memory = true [memory.context] max_tokens = 6000 # Larger context for enterprise personal_weight = 0.2 knowledge_weight = 0.8 # Knowledge-focused include_sources = true include_history = true history_limit = 10 [memory.search] hybrid_search = true keyword_weight = 0.25 semantic_weight = 0.75 enable_reranking = true reranking_model = &#34;cross-encoder/ms-marco-MiniLM-L-12-v2&#34; enable_query_expansion = true🚀 Best Practices Provider Selection Use Case Recommended Provider Reason Development memory Fast iteration, no setup Production pgvector Reliable, performant, mature Enterprise weaviate Advanced features, clustering Prototyping memory Quick testing, temporary data Chunking Strategy # Document type specific chunking [memory.rag] # For technical documentation chunk_size = 1000 overlap = 200 # For code files chunk_size = 800 overlap = 100 # For research papers chunk_size = 1500 overlap = 300Guidelines:">
+    <meta property="og:locale" content="en_us">
+    <meta property="og:type" content="article">
+    <meta property="article:section" content="guides">
+    <meta property="article:published_time" content="2025-07-25T00:00:00+00:00">
+    <meta property="article:modified_time" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="name" content="RAGConfiguration :: AgenticGoKit Docs">
+    <meta itemprop="description" content="RAG Configuration Guide Configuring Retrieval-Augmented Generation in AgentFlow
+AgentFlow provides comprehensive RAG (Retrieval-Augmented Generation) capabilities through flexible TOML configuration. This guide covers all configuration options for building knowledge-aware agents with document understanding and context assembly.
+📚 Table of Contents Overview Basic Configuration Advanced Configuration Configuration Examples Best Practices Performance Tuning Migration Guide Troubleshooting 🎯 Overview What is RAG? RAG (Retrieval-Augmented Generation) enhances LLM responses by:
+Retrieving relevant information from knowledge bases and personal memory Augmenting prompts with contextual information Generating informed responses based on retrieved knowledge Providing source attribution for transparency AgentFlow RAG Features Hybrid Search: Combines semantic similarity and keyword matching Document Processing: Automatic chunking and metadata extraction Context Assembly: Intelligent context building with token management Session Memory: Isolated memory per user or conversation Multiple Providers: Support for various vector databases ⚙️ Basic Configuration Minimal RAG Setup [memory] enabled = true provider = &#34;memory&#34; dimensions = 1536 [memory.embedding] provider = &#34;openai&#34; model = &#34;text-embedding-3-small&#34; [memory.rag] enabled = true chunk_size = 1000 top_k = 5Core Memory Settings [memory] enabled = true provider = &#34;pgvector&#34; # Options: memory, pgvector, weaviate connection = &#34;postgres://user:password@localhost:5432/agentflow&#34; max_results = 10 # Maximum personal memory results dimensions = 1536 # Vector embedding dimensions auto_embed = true # Automatically generate embeddingsRAG Configuration [memory.rag] enabled = true # Enable RAG functionality chunk_size = 1000 # Document chunk size in characters overlap = 200 # Overlap between chunks top_k = 5 # Number of results to retrieve score_threshold = 0.7 # Minimum similarity score hybrid_search = true # Enable hybrid search session_memory = true # Enable session isolation🔧 Advanced Configuration Document Processing [memory.documents] auto_chunk = true # Automatically chunk documents supported_types = [&#34;pdf&#34;, &#34;txt&#34;, &#34;md&#34;, &#34;web&#34;, &#34;code&#34;, &#34;json&#34;] max_file_size = &#34;10MB&#34; # Maximum file size enable_metadata_extraction = true # Extract document metadata enable_url_scraping = true # Enable web content scrapingEmbedding Configuration [memory.embedding] provider = &#34;openai&#34; # Options: openai, azure, ollama, dummy model = &#34;text-embedding-3-small&#34; # Embedding model api_key = &#34;${OPENAI_API_KEY}&#34; # API key (environment variable) base_url = &#34;&#34; # Custom endpoint (optional) max_batch_size = 50 # Batch size for embeddings timeout_seconds = 30 # Request timeout cache_embeddings = true # Cache embeddings for performanceSearch Configuration [memory.search] hybrid_search = true # Enable hybrid search keyword_weight = 0.3 # Weight for keyword search (BM25) semantic_weight = 0.7 # Weight for semantic search enable_reranking = false # Enable result re-ranking reranking_model = &#34;&#34; # Re-ranking model (optional) enable_query_expansion = false # Enable query expansionContext Assembly [memory.context] max_tokens = 4000 # Maximum context tokens personal_weight = 0.3 # Weight for personal memory knowledge_weight = 0.7 # Weight for knowledge base include_sources = true # Include source attribution include_history = true # Include chat history history_limit = 5 # Number of history messages📋 Configuration Examples Development Configuration # agentflow.dev.toml - Development setup [memory] enabled = true provider = &#34;memory&#34; # In-memory for fast iteration max_results = 10 dimensions = 1536 auto_embed = true [memory.embedding] provider = &#34;dummy&#34; # Dummy embeddings for testing model = &#34;text-embedding-3-small&#34; cache_embeddings = true [memory.rag] enabled = true chunk_size = 800 # Smaller chunks for testing overlap = 150 top_k = 3 # Fewer results for faster testing score_threshold = 0.5 # Lower threshold for development hybrid_search = false # Disable for simplicity session_memory = false [memory.documents] auto_chunk = true supported_types = [&#34;txt&#34;, &#34;md&#34;, &#34;code&#34;] max_file_size = &#34;5MB&#34; enable_metadata_extraction = false # Disable for speed enable_url_scraping = falseProduction Configuration # agentflow.prod.toml - Production deployment [memory] enabled = true provider = &#34;pgvector&#34; connection = &#34;postgres://user:password@localhost:5432/agentflow?sslmode=require&#34; max_results = 10 dimensions = 1536 auto_embed = true [memory.pgvector] table_name = &#34;agent_memory&#34; connection_pool_size = 25 [memory.embedding] provider = &#34;openai&#34; model = &#34;text-embedding-3-small&#34; api_key = &#34;${OPENAI_API_KEY}&#34; cache_embeddings = true max_batch_size = 100 timeout_seconds = 30 [memory.rag] enabled = true chunk_size = 1000 overlap = 200 top_k = 5 score_threshold = 0.7 hybrid_search = true session_memory = true [memory.documents] auto_chunk = true supported_types = [&#34;pdf&#34;, &#34;txt&#34;, &#34;md&#34;, &#34;web&#34;, &#34;code&#34;, &#34;json&#34;] max_file_size = &#34;10MB&#34; enable_metadata_extraction = true enable_url_scraping = true [memory.context] max_tokens = 4000 personal_weight = 0.3 knowledge_weight = 0.7 include_sources = true include_history = true history_limit = 5 [memory.search] hybrid_search = true keyword_weight = 0.3 semantic_weight = 0.7 enable_reranking = false enable_query_expansion = false [memory.advanced] retry_max_attempts = 3 retry_base_delay = &#34;100ms&#34; retry_max_delay = &#34;5s&#34; health_check_interval = &#34;1m&#34;Enterprise Configuration # agentflow.enterprise.toml - Large-scale deployment [memory] enabled = true provider = &#34;weaviate&#34; connection = &#34;https://weaviate.company.com:8080&#34; max_results = 15 dimensions = 1536 auto_embed = true [memory.weaviate] api_key = &#34;${WEAVIATE_API_KEY}&#34; class_name = &#34;AgentMemory&#34; timeout = &#34;30s&#34; max_retries = 3 [memory.embedding] provider = &#34;azure&#34; model = &#34;text-embedding-ada-002&#34; api_key = &#34;${AZURE_OPENAI_API_KEY}&#34; endpoint = &#34;${AZURE_OPENAI_ENDPOINT}&#34; cache_embeddings = true max_batch_size = 100 timeout_seconds = 45 [memory.rag] enabled = true chunk_size = 1200 overlap = 240 top_k = 8 score_threshold = 0.75 hybrid_search = true session_memory = true [memory.context] max_tokens = 6000 # Larger context for enterprise personal_weight = 0.2 knowledge_weight = 0.8 # Knowledge-focused include_sources = true include_history = true history_limit = 10 [memory.search] hybrid_search = true keyword_weight = 0.25 semantic_weight = 0.75 enable_reranking = true reranking_model = &#34;cross-encoder/ms-marco-MiniLM-L-12-v2&#34; enable_query_expansion = true🚀 Best Practices Provider Selection Use Case Recommended Provider Reason Development memory Fast iteration, no setup Production pgvector Reliable, performant, mature Enterprise weaviate Advanced features, clustering Prototyping memory Quick testing, temporary data Chunking Strategy # Document type specific chunking [memory.rag] # For technical documentation chunk_size = 1000 overlap = 200 # For code files chunk_size = 800 overlap = 100 # For research papers chunk_size = 1500 overlap = 300Guidelines:">
+    <meta itemprop="datePublished" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="dateModified" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="wordCount" content="1921">
+    <title>RAGConfiguration :: AgenticGoKit Docs</title>
+    <link href="/AgenticGoKitDocs/css/auto-complete/auto-complete.min.css?1753430931" rel="stylesheet">
+    <script src="/AgenticGoKitDocs/js/auto-complete/auto-complete.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/search-lunr.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/search.js?1753430931" defer></script>
+    <script>
+      window.relearn = window.relearn || {};
+      window.relearn.index_js_url="/AgenticGoKitDocs/searchindex.en.js?1753430931";
+    </script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.stemmer.support.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.multi.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.en.min.js?1753430931" defer></script>
+    <script>
+      window.relearn = window.relearn || {};
+      window.relearn.contentLangs=['en'];
+    </script>
+    <link href="/AgenticGoKitDocs/fonts/fontawesome/css/fontawesome-all.min.css?1753430931" rel="stylesheet" media="print" onload="this.media='all';this.onload=null;"><noscript><link href="/AgenticGoKitDocs/fonts/fontawesome/css/fontawesome-all.min.css?1753430931" rel="stylesheet"></noscript>
+    <link href="/AgenticGoKitDocs/css/perfect-scrollbar/perfect-scrollbar.min.css?1753430931" rel="stylesheet">
+    <link href="/AgenticGoKitDocs/css/theme.css?1753430931" rel="stylesheet">
+    <link href="/AgenticGoKitDocs/css/format-html.css?1753430931" rel="stylesheet" id="R-format-style">
+    <script>
+      window.relearn = window.relearn || {};
+      // configuration
+      window.relearn.min = ``;
+      window.relearn.path='\/guides\/ragconfiguration\/index.html';
+      window.relearn.relBasePath='..\/..';
+      window.relearn.relBaseUri='..\/..\/..';
+      window.relearn.absBaseUri='http:\/\/localhost:1313\/AgenticGoKitDocs';
+      window.relearn.disableAnchorCopy=false;
+      window.relearn.disableAnchorScrolling=false;
+      window.relearn.disableInlineCopyToClipboard=false;
+      window.relearn.enableBlockCodeWrap=true;
+      // legal
+      window.relearn.getItem = (s,n) => {return s.getItem(n)};
+      window.relearn.setItem = (s,n,v) => {return s.setItem(n,v)};
+      window.relearn.removeItem = (s,n) => {return s.removeItem(n)};
+      // translations
+      window.T_Copy_to_clipboard = `Copy to clipboard`;
+      window.T_Copied_to_clipboard = `Copied to clipboard!`;
+      window.T_Copy_link_to_clipboard = `Copy link to clipboard`;
+      window.T_Link_copied_to_clipboard = `Copied link to clipboard!`;
+      window.T_Reset_view = `Reset view`;
+      window.T_View_reset = `View reset!`;
+      window.T_No_results_found = `No results found for "{0}"`;
+      window.T_N_results_found = `{1} results found for "{0}"`;
+      // variant stuff
+      window.relearn.themevariants = [ 'blue' ];
+      window.relearn.customvariantname = "my-custom-variant";
+      window.relearn.changeVariant = function(variant) {
+        var oldVariant = document.documentElement.dataset.rThemeVariant;
+        window.relearn.setItem(window.localStorage, window.relearn.absBaseUri + "/variant", variant);
+        document.documentElement.dataset.rThemeVariant = variant;
+        if (oldVariant != variant) {
+          document.dispatchEvent( new CustomEvent('themeVariantLoaded', { detail: { variant, oldVariant } }) );
+          window.relearn.markVariant();
+        }
+      }
+      window.relearn.markVariant = function() {
+        var variant = window.relearn.getItem(window.localStorage, window.relearn.absBaseUri + "/variant");
+        document.querySelectorAll(".R-variantswitcher select").forEach((select) => {select.value = variant;});
+      }
+      window.relearn.initVariant = function() {
+        var variant = window.relearn.getItem(window.localStorage, window.relearn.absBaseUri + "/variant") ?? "";
+        if( variant == window.relearn.customvariantname ){
+        }else if( !variant || !window.relearn.themevariants.includes(variant) ){
+          variant = window.relearn.themevariants[0];
+          window.relearn.setItem(window.localStorage, window.relearn.absBaseUri + "/variant", variant);
+        }
+        document.documentElement.dataset.rThemeVariant = variant;
+      }
+      window.relearn.initVariant();
+      window.relearn.markVariant();
+    </script>
+  </head>
+  <body class="mobile-support html" data-url="/AgenticGoKitDocs/guides/ragconfiguration/index.html">
+    <div id="R-body" class="default-animation">
+      <div id="R-body-overlay"></div>
+      <nav id="R-topbar">
+        <div class="topbar-wrapper">
+          <div class="topbar-sidebar-divider"></div>
+          <div class="topbar-area topbar-area-start" data-area="start">
+            <div class="topbar-button topbar-button-sidebar" data-content-empty="disable" data-width-s="show" data-width-m="hide" data-width-l="hide"><button class="topbar-control" onclick="toggleNav()" type="button" title="Menu (CTRL&#43;ALT&#43;n)"><i class="fa-fw fas fa-bars"></i></button>
+            </div>
+            <div class="topbar-button topbar-button-toc" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show"><button class="topbar-control" onclick="toggleTopbarFlyout(this)" type="button" title="Table of Contents (CTRL&#43;ALT&#43;t)"><i class="fa-fw fas fa-list-alt"></i></button>
+              <div class="topbar-content">
+                <div class="topbar-content-wrapper">
+<nav class="TableOfContents">
+  <ul>
+    <li><a href="#-table-of-contents">📚 Table of Contents</a></li>
+    <li><a href="#-overview">🎯 Overview</a>
+      <ul>
+        <li><a href="#what-is-rag">What is RAG?</a></li>
+        <li><a href="#agentflow-rag-features">AgentFlow RAG Features</a></li>
+      </ul>
+    </li>
+    <li><a href="#-basic-configuration">⚙️ Basic Configuration</a>
+      <ul>
+        <li><a href="#minimal-rag-setup">Minimal RAG Setup</a></li>
+        <li><a href="#core-memory-settings">Core Memory Settings</a></li>
+        <li><a href="#rag-configuration">RAG Configuration</a></li>
+      </ul>
+    </li>
+    <li><a href="#-advanced-configuration">🔧 Advanced Configuration</a>
+      <ul>
+        <li><a href="#document-processing">Document Processing</a></li>
+        <li><a href="#embedding-configuration">Embedding Configuration</a></li>
+        <li><a href="#search-configuration">Search Configuration</a></li>
+        <li><a href="#context-assembly">Context Assembly</a></li>
+      </ul>
+    </li>
+    <li><a href="#-configuration-examples">📋 Configuration Examples</a>
+      <ul>
+        <li><a href="#development-configuration">Development Configuration</a></li>
+        <li><a href="#production-configuration">Production Configuration</a></li>
+        <li><a href="#enterprise-configuration">Enterprise Configuration</a></li>
+      </ul>
+    </li>
+    <li><a href="#-best-practices">🚀 Best Practices</a>
+      <ul>
+        <li><a href="#provider-selection">Provider Selection</a></li>
+        <li><a href="#chunking-strategy">Chunking Strategy</a></li>
+        <li><a href="#context-weighting">Context Weighting</a></li>
+        <li><a href="#score-thresholds">Score Thresholds</a></li>
+        <li><a href="#context-limits-by-model">Context Limits by Model</a></li>
+      </ul>
+    </li>
+    <li><a href="#-performance-tuning">⚡ Performance Tuning</a>
+      <ul>
+        <li><a href="#memory-provider-optimization">Memory Provider Optimization</a></li>
+        <li><a href="#embedding-optimization">Embedding Optimization</a></li>
+        <li><a href="#search-optimization">Search Optimization</a></li>
+        <li><a href="#database-optimization">Database Optimization</a></li>
+      </ul>
+    </li>
+    <li><a href="#-migration-guide">🔄 Migration Guide</a>
+      <ul>
+        <li><a href="#from-basic-to-rag-configuration">From Basic to RAG Configuration</a></li>
+        <li><a href="#from-memory-to-pgvector">From Memory to PgVector</a></li>
+        <li><a href="#adding-hybrid-search">Adding Hybrid Search</a></li>
+      </ul>
+    </li>
+    <li><a href="#-troubleshooting">🔧 Troubleshooting</a>
+      <ul>
+        <li><a href="#common-configuration-issues">Common Configuration Issues</a></li>
+        <li><a href="#validation-errors">Validation Errors</a></li>
+        <li><a href="#performance-issues">Performance Issues</a></li>
+        <li><a href="#debug-configuration">Debug Configuration</a></li>
+      </ul>
+    </li>
+    <li><a href="#-configuration-validation">📊 Configuration Validation</a>
+      <ul>
+        <li><a href="#weight-validation">Weight Validation</a></li>
+        <li><a href="#range-validation">Range Validation</a></li>
+        <li><a href="#provider-validation">Provider Validation</a></li>
+      </ul>
+    </li>
+    <li><a href="#-environment-variables">🎛️ Environment Variables</a>
+      <ul>
+        <li><a href="#required-variables">Required Variables</a></li>
+        <li><a href="#optional-variables">Optional Variables</a></li>
+        <li><a href="#using-in-configuration">Using in Configuration</a></li>
+      </ul>
+    </li>
+    <li><a href="#-complete-configuration-reference">📚 Complete Configuration Reference</a></li>
+    <li><a href="#-summary">🎯 Summary</a></li>
+  </ul>
+</nav>
+                </div>
+              </div>
+            </div>
+          </div>
+          <ol class="topbar-breadcrumbs breadcrumbs highlightable" itemscope itemtype="http://schema.org/BreadcrumbList"><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="/AgenticGoKitDocs/index.html"><span itemprop="name">content</span></a><meta itemprop="position" content="1">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="/AgenticGoKitDocs/guides/index.html"><span itemprop="name">guides</span></a><meta itemprop="position" content="2">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><span itemprop="name">RAGConfiguration</span><meta itemprop="position" content="3"></li>
+          </ol>
+          <div class="topbar-area topbar-area-end" data-area="end">
+            <div class="topbar-button topbar-button-prev" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show"><a class="topbar-control" href="/AgenticGoKitDocs/guides/embeddingmodelguide/index.html" title="EmbeddingModelGuide (🡐)"><i class="fa-fw fas fa-chevron-left"></i></a>
+            </div>
+            <div class="topbar-button topbar-button-next" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show"><a class="topbar-control" href="/AgenticGoKitDocs/guides/toolintegration/index.html" title="ToolIntegration (🡒)"><i class="fa-fw fas fa-chevron-right"></i></a>
+            </div>
+            <div class="topbar-button topbar-button-more" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show"><button class="topbar-control" onclick="toggleTopbarFlyout(this)" type="button" title="More"><i class="fa-fw fas fa-ellipsis-v"></i></button>
+              <div class="topbar-content">
+                <div class="topbar-content-wrapper">
+                  <div class="topbar-area topbar-area-more" data-area="more">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+      <div id="R-main-overlay"></div>
+      <main id="R-body-inner" class="highlightable guides" tabindex="-1">
+        <div class="flex-block-wrapper">
+<article class="default">
+  <header class="headline">
+  </header>
+
+<h1 id="ragconfiguration">RAGConfiguration</h1>
+
+<h1 id="rag-configuration-guide">RAG Configuration Guide</h1>
+<p><strong>Configuring Retrieval-Augmented Generation in AgentFlow</strong></p>
+<p>AgentFlow provides comprehensive RAG (Retrieval-Augmented Generation) capabilities through flexible TOML configuration. This guide covers all configuration options for building knowledge-aware agents with document understanding and context assembly.</p>
+<h2 id="-table-of-contents">📚 Table of Contents</h2>
+<ul>
+<li><a href="/AgenticGoKitDocs/guides/ragconfiguration/index.html#overview">Overview</a></li>
+<li><a href="/AgenticGoKitDocs/guides/ragconfiguration/index.html#basic-configuration">Basic Configuration</a></li>
+<li><a href="/AgenticGoKitDocs/guides/ragconfiguration/index.html#advanced-configuration">Advanced Configuration</a></li>
+<li><a href="/AgenticGoKitDocs/guides/ragconfiguration/index.html#configuration-examples">Configuration Examples</a></li>
+<li><a href="/AgenticGoKitDocs/guides/ragconfiguration/index.html#best-practices">Best Practices</a></li>
+<li><a href="/AgenticGoKitDocs/guides/ragconfiguration/index.html#performance-tuning">Performance Tuning</a></li>
+<li><a href="/AgenticGoKitDocs/guides/ragconfiguration/index.html#migration-guide">Migration Guide</a></li>
+<li><a href="/AgenticGoKitDocs/guides/ragconfiguration/index.html#troubleshooting">Troubleshooting</a></li>
+</ul>
+<h2 id="-overview">🎯 Overview</h2>
+<h3 id="what-is-rag">What is RAG?</h3>
+<p>RAG (Retrieval-Augmented Generation) enhances LLM responses by:</p>
+<ul>
+<li><strong>Retrieving relevant information</strong> from knowledge bases and personal memory</li>
+<li><strong>Augmenting prompts</strong> with contextual information</li>
+<li><strong>Generating informed responses</strong> based on retrieved knowledge</li>
+<li><strong>Providing source attribution</strong> for transparency</li>
+</ul>
+<h3 id="agentflow-rag-features">AgentFlow RAG Features</h3>
+<ul>
+<li><strong>Hybrid Search</strong>: Combines semantic similarity and keyword matching</li>
+<li><strong>Document Processing</strong>: Automatic chunking and metadata extraction</li>
+<li><strong>Context Assembly</strong>: Intelligent context building with token management</li>
+<li><strong>Session Memory</strong>: Isolated memory per user or conversation</li>
+<li><strong>Multiple Providers</strong>: Support for various vector databases</li>
+</ul>
+<h2 id="-basic-configuration">⚙️ Basic Configuration</h2>
+<h3 id="minimal-rag-setup">Minimal RAG Setup</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enabled</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;memory&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">dimensions</span> = <span style="color:#ae81ff">1536</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">embedding</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;openai&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">model</span> = <span style="color:#e6db74">&#34;text-embedding-3-small&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">rag</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enabled</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">chunk_size</span> = <span style="color:#ae81ff">1000</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">top_k</span> = <span style="color:#ae81ff">5</span></span></span></code></pre></div>
+<h3 id="core-memory-settings">Core Memory Settings</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enabled</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;pgvector&#34;</span>                    <span style="color:#75715e"># Options: memory, pgvector, weaviate</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">connection</span> = <span style="color:#e6db74">&#34;postgres://user:password@localhost:5432/agentflow&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_results</span> = <span style="color:#ae81ff">10</span>                         <span style="color:#75715e"># Maximum personal memory results</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">dimensions</span> = <span style="color:#ae81ff">1536</span>                        <span style="color:#75715e"># Vector embedding dimensions</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">auto_embed</span> = <span style="color:#66d9ef">true</span>                        <span style="color:#75715e"># Automatically generate embeddings</span></span></span></code></pre></div>
+<h3 id="rag-configuration">RAG Configuration</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">rag</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enabled</span> = <span style="color:#66d9ef">true</span>                           <span style="color:#75715e"># Enable RAG functionality</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">chunk_size</span> = <span style="color:#ae81ff">1000</span>                        <span style="color:#75715e"># Document chunk size in characters</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">overlap</span> = <span style="color:#ae81ff">200</span>                            <span style="color:#75715e"># Overlap between chunks</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">top_k</span> = <span style="color:#ae81ff">5</span>                               <span style="color:#75715e"># Number of results to retrieve</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">score_threshold</span> = <span style="color:#ae81ff">0.7</span>                   <span style="color:#75715e"># Minimum similarity score</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">hybrid_search</span> = <span style="color:#66d9ef">true</span>                     <span style="color:#75715e"># Enable hybrid search</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">session_memory</span> = <span style="color:#66d9ef">true</span>                    <span style="color:#75715e"># Enable session isolation</span></span></span></code></pre></div>
+<h2 id="-advanced-configuration">🔧 Advanced Configuration</h2>
+<h3 id="document-processing">Document Processing</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">documents</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">auto_chunk</span> = <span style="color:#66d9ef">true</span>                        <span style="color:#75715e"># Automatically chunk documents</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">supported_types</span> = [<span style="color:#e6db74">&#34;pdf&#34;</span>, <span style="color:#e6db74">&#34;txt&#34;</span>, <span style="color:#e6db74">&#34;md&#34;</span>, <span style="color:#e6db74">&#34;web&#34;</span>, <span style="color:#e6db74">&#34;code&#34;</span>, <span style="color:#e6db74">&#34;json&#34;</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_file_size</span> = <span style="color:#e6db74">&#34;10MB&#34;</span>                  <span style="color:#75715e"># Maximum file size</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enable_metadata_extraction</span> = <span style="color:#66d9ef">true</span>        <span style="color:#75715e"># Extract document metadata</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enable_url_scraping</span> = <span style="color:#66d9ef">true</span>              <span style="color:#75715e"># Enable web content scraping</span></span></span></code></pre></div>
+<h3 id="embedding-configuration">Embedding Configuration</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">embedding</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;openai&#34;</span>                      <span style="color:#75715e"># Options: openai, azure, ollama, dummy</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">model</span> = <span style="color:#e6db74">&#34;text-embedding-3-small&#34;</span>        <span style="color:#75715e"># Embedding model</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">api_key</span> = <span style="color:#e6db74">&#34;${OPENAI_API_KEY}&#34;</span>           <span style="color:#75715e"># API key (environment variable)</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">base_url</span> = <span style="color:#e6db74">&#34;&#34;</span>                           <span style="color:#75715e"># Custom endpoint (optional)</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_batch_size</span> = <span style="color:#ae81ff">50</span>                     <span style="color:#75715e"># Batch size for embeddings</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">timeout_seconds</span> = <span style="color:#ae81ff">30</span>                    <span style="color:#75715e"># Request timeout</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">cache_embeddings</span> = <span style="color:#66d9ef">true</span>                 <span style="color:#75715e"># Cache embeddings for performance</span></span></span></code></pre></div>
+<h3 id="search-configuration">Search Configuration</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">search</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">hybrid_search</span> = <span style="color:#66d9ef">true</span>                     <span style="color:#75715e"># Enable hybrid search</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">keyword_weight</span> = <span style="color:#ae81ff">0.3</span>                    <span style="color:#75715e"># Weight for keyword search (BM25)</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">semantic_weight</span> = <span style="color:#ae81ff">0.7</span>                   <span style="color:#75715e"># Weight for semantic search</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enable_reranking</span> = <span style="color:#66d9ef">false</span>                <span style="color:#75715e"># Enable result re-ranking</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">reranking_model</span> = <span style="color:#e6db74">&#34;&#34;</span>                    <span style="color:#75715e"># Re-ranking model (optional)</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enable_query_expansion</span> = <span style="color:#66d9ef">false</span>          <span style="color:#75715e"># Enable query expansion</span></span></span></code></pre></div>
+<h3 id="context-assembly">Context Assembly</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">context</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_tokens</span> = <span style="color:#ae81ff">4000</span>                       <span style="color:#75715e"># Maximum context tokens</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">personal_weight</span> = <span style="color:#ae81ff">0.3</span>                   <span style="color:#75715e"># Weight for personal memory</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">knowledge_weight</span> = <span style="color:#ae81ff">0.7</span>                  <span style="color:#75715e"># Weight for knowledge base</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">include_sources</span> = <span style="color:#66d9ef">true</span>                  <span style="color:#75715e"># Include source attribution</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">include_history</span> = <span style="color:#66d9ef">true</span>                  <span style="color:#75715e"># Include chat history</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">history_limit</span> = <span style="color:#ae81ff">5</span>                       <span style="color:#75715e"># Number of history messages</span></span></span></code></pre></div>
+<h2 id="-configuration-examples">📋 Configuration Examples</h2>
+<h3 id="development-configuration">Development Configuration</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span><span style="color:#75715e"># agentflow.dev.toml - Development setup</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enabled</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;memory&#34;</span>                      <span style="color:#75715e"># In-memory for fast iteration</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_results</span> = <span style="color:#ae81ff">10</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">dimensions</span> = <span style="color:#ae81ff">1536</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">auto_embed</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">embedding</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;dummy&#34;</span>                       <span style="color:#75715e"># Dummy embeddings for testing</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">model</span> = <span style="color:#e6db74">&#34;text-embedding-3-small&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">cache_embeddings</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">rag</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enabled</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">chunk_size</span> = <span style="color:#ae81ff">800</span>                        <span style="color:#75715e"># Smaller chunks for testing</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">overlap</span> = <span style="color:#ae81ff">150</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">top_k</span> = <span style="color:#ae81ff">3</span>                               <span style="color:#75715e"># Fewer results for faster testing</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">score_threshold</span> = <span style="color:#ae81ff">0.5</span>                   <span style="color:#75715e"># Lower threshold for development</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">hybrid_search</span> = <span style="color:#66d9ef">false</span>                   <span style="color:#75715e"># Disable for simplicity</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">session_memory</span> = <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">documents</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">auto_chunk</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">supported_types</span> = [<span style="color:#e6db74">&#34;txt&#34;</span>, <span style="color:#e6db74">&#34;md&#34;</span>, <span style="color:#e6db74">&#34;code&#34;</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_file_size</span> = <span style="color:#e6db74">&#34;5MB&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enable_metadata_extraction</span> = <span style="color:#66d9ef">false</span>      <span style="color:#75715e"># Disable for speed</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enable_url_scraping</span> = <span style="color:#66d9ef">false</span></span></span></code></pre></div>
+<h3 id="production-configuration">Production Configuration</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span><span style="color:#75715e"># agentflow.prod.toml - Production deployment</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enabled</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;pgvector&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">connection</span> = <span style="color:#e6db74">&#34;postgres://user:password@localhost:5432/agentflow?sslmode=require&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_results</span> = <span style="color:#ae81ff">10</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">dimensions</span> = <span style="color:#ae81ff">1536</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">auto_embed</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">pgvector</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">table_name</span> = <span style="color:#e6db74">&#34;agent_memory&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">connection_pool_size</span> = <span style="color:#ae81ff">25</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">embedding</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;openai&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">model</span> = <span style="color:#e6db74">&#34;text-embedding-3-small&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">api_key</span> = <span style="color:#e6db74">&#34;${OPENAI_API_KEY}&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">cache_embeddings</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_batch_size</span> = <span style="color:#ae81ff">100</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">timeout_seconds</span> = <span style="color:#ae81ff">30</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">rag</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enabled</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">chunk_size</span> = <span style="color:#ae81ff">1000</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">overlap</span> = <span style="color:#ae81ff">200</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">top_k</span> = <span style="color:#ae81ff">5</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">score_threshold</span> = <span style="color:#ae81ff">0.7</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">hybrid_search</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">session_memory</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">documents</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">auto_chunk</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">supported_types</span> = [<span style="color:#e6db74">&#34;pdf&#34;</span>, <span style="color:#e6db74">&#34;txt&#34;</span>, <span style="color:#e6db74">&#34;md&#34;</span>, <span style="color:#e6db74">&#34;web&#34;</span>, <span style="color:#e6db74">&#34;code&#34;</span>, <span style="color:#e6db74">&#34;json&#34;</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_file_size</span> = <span style="color:#e6db74">&#34;10MB&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enable_metadata_extraction</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enable_url_scraping</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">context</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_tokens</span> = <span style="color:#ae81ff">4000</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">personal_weight</span> = <span style="color:#ae81ff">0.3</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">knowledge_weight</span> = <span style="color:#ae81ff">0.7</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">include_sources</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">include_history</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">history_limit</span> = <span style="color:#ae81ff">5</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">search</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">hybrid_search</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">keyword_weight</span> = <span style="color:#ae81ff">0.3</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">semantic_weight</span> = <span style="color:#ae81ff">0.7</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enable_reranking</span> = <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enable_query_expansion</span> = <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">advanced</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">retry_max_attempts</span> = <span style="color:#ae81ff">3</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">retry_base_delay</span> = <span style="color:#e6db74">&#34;100ms&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">retry_max_delay</span> = <span style="color:#e6db74">&#34;5s&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">health_check_interval</span> = <span style="color:#e6db74">&#34;1m&#34;</span></span></span></code></pre></div>
+<h3 id="enterprise-configuration">Enterprise Configuration</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span><span style="color:#75715e"># agentflow.enterprise.toml - Large-scale deployment</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enabled</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;weaviate&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">connection</span> = <span style="color:#e6db74">&#34;https://weaviate.company.com:8080&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_results</span> = <span style="color:#ae81ff">15</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">dimensions</span> = <span style="color:#ae81ff">1536</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">auto_embed</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">weaviate</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">api_key</span> = <span style="color:#e6db74">&#34;${WEAVIATE_API_KEY}&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">class_name</span> = <span style="color:#e6db74">&#34;AgentMemory&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">timeout</span> = <span style="color:#e6db74">&#34;30s&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_retries</span> = <span style="color:#ae81ff">3</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">embedding</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;azure&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">model</span> = <span style="color:#e6db74">&#34;text-embedding-ada-002&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">api_key</span> = <span style="color:#e6db74">&#34;${AZURE_OPENAI_API_KEY}&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">endpoint</span> = <span style="color:#e6db74">&#34;${AZURE_OPENAI_ENDPOINT}&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">cache_embeddings</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_batch_size</span> = <span style="color:#ae81ff">100</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">timeout_seconds</span> = <span style="color:#ae81ff">45</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">rag</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enabled</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">chunk_size</span> = <span style="color:#ae81ff">1200</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">overlap</span> = <span style="color:#ae81ff">240</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">top_k</span> = <span style="color:#ae81ff">8</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">score_threshold</span> = <span style="color:#ae81ff">0.75</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">hybrid_search</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">session_memory</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">context</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_tokens</span> = <span style="color:#ae81ff">6000</span>                       <span style="color:#75715e"># Larger context for enterprise</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">personal_weight</span> = <span style="color:#ae81ff">0.2</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">knowledge_weight</span> = <span style="color:#ae81ff">0.8</span>                  <span style="color:#75715e"># Knowledge-focused</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">include_sources</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">include_history</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">history_limit</span> = <span style="color:#ae81ff">10</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">search</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">hybrid_search</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">keyword_weight</span> = <span style="color:#ae81ff">0.25</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">semantic_weight</span> = <span style="color:#ae81ff">0.75</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enable_reranking</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">reranking_model</span> = <span style="color:#e6db74">&#34;cross-encoder/ms-marco-MiniLM-L-12-v2&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enable_query_expansion</span> = <span style="color:#66d9ef">true</span></span></span></code></pre></div>
+<h2 id="-best-practices">🚀 Best Practices</h2>
+<h3 id="provider-selection">Provider Selection</h3>
+<table>
+  <thead>
+      <tr>
+          <th>Use Case</th>
+          <th>Recommended Provider</th>
+          <th>Reason</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td><strong>Development</strong></td>
+          <td><code>memory</code></td>
+          <td>Fast iteration, no setup</td>
+      </tr>
+      <tr>
+          <td><strong>Production</strong></td>
+          <td><code>pgvector</code></td>
+          <td>Reliable, performant, mature</td>
+      </tr>
+      <tr>
+          <td><strong>Enterprise</strong></td>
+          <td><code>weaviate</code></td>
+          <td>Advanced features, clustering</td>
+      </tr>
+      <tr>
+          <td><strong>Prototyping</strong></td>
+          <td><code>memory</code></td>
+          <td>Quick testing, temporary data</td>
+      </tr>
+  </tbody>
+</table>
+<h3 id="chunking-strategy">Chunking Strategy</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span><span style="color:#75715e"># Document type specific chunking</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">rag</span>]
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># For technical documentation</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">chunk_size</span> = <span style="color:#ae81ff">1000</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">overlap</span> = <span style="color:#ae81ff">200</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># For code files</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">chunk_size</span> = <span style="color:#ae81ff">800</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">overlap</span> = <span style="color:#ae81ff">100</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># For research papers</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">chunk_size</span> = <span style="color:#ae81ff">1500</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">overlap</span> = <span style="color:#ae81ff">300</span></span></span></code></pre></div>
+<p><strong>Guidelines:</strong></p>
+<ul>
+<li><strong>Small documents</strong> (&lt; 5KB): chunk_size = 500-800, overlap = 100-150</li>
+<li><strong>Medium documents</strong> (5-50KB): chunk_size = 1000-1200, overlap = 200-250</li>
+<li><strong>Large documents</strong> (&gt; 50KB): chunk_size = 1200-1500, overlap = 250-300</li>
+<li><strong>Code files</strong>: chunk_size = 600-1000, overlap = 50-100</li>
+</ul>
+<h3 id="context-weighting">Context Weighting</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">context</span>]
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Knowledge-focused (documentation, Q&amp;A)</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">personal_weight</span> = <span style="color:#ae81ff">0.2</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">knowledge_weight</span> = <span style="color:#ae81ff">0.8</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Balanced (general purpose)</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">personal_weight</span> = <span style="color:#ae81ff">0.5</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">knowledge_weight</span> = <span style="color:#ae81ff">0.5</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Personal-focused (assistant, preferences)</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">personal_weight</span> = <span style="color:#ae81ff">0.7</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">knowledge_weight</span> = <span style="color:#ae81ff">0.3</span></span></span></code></pre></div>
+<h3 id="score-thresholds">Score Thresholds</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">rag</span>]
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># High precision (strict matching)</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">score_threshold</span> = <span style="color:#ae81ff">0.8</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Balanced (recommended)</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">score_threshold</span> = <span style="color:#ae81ff">0.7</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># High recall (permissive)</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">score_threshold</span> = <span style="color:#ae81ff">0.5</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Development/testing</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">score_threshold</span> = <span style="color:#ae81ff">0.3</span></span></span></code></pre></div>
+<h3 id="context-limits-by-model">Context Limits by Model</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">context</span>]
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># GPT-3.5 Turbo</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_tokens</span> = <span style="color:#ae81ff">3000</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># GPT-4</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_tokens</span> = <span style="color:#ae81ff">6000</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># GPT-4 Turbo</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_tokens</span> = <span style="color:#ae81ff">8000</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Claude 3</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_tokens</span> = <span style="color:#ae81ff">10000</span></span></span></code></pre></div>
+<h2 id="-performance-tuning">⚡ Performance Tuning</h2>
+<h3 id="memory-provider-optimization">Memory Provider Optimization</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>]
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Reduce for faster queries</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_results</span> = <span style="color:#ae81ff">5</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">rag</span>]
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Optimize retrieval</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">top_k</span> = <span style="color:#ae81ff">3</span>                               <span style="color:#75715e"># Fewer results = faster</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">score_threshold</span> = <span style="color:#ae81ff">0.8</span>                   <span style="color:#75715e"># Higher threshold = fewer results</span></span></span></code></pre></div>
+<h3 id="embedding-optimization">Embedding Optimization</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">embedding</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">cache_embeddings</span> = <span style="color:#66d9ef">true</span>                 <span style="color:#75715e"># Essential for performance</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_batch_size</span> = <span style="color:#ae81ff">100</span>                    <span style="color:#75715e"># Larger batches = fewer API calls</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">timeout_seconds</span> = <span style="color:#ae81ff">30</span>                    <span style="color:#75715e"># Reasonable timeout</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Provider-specific optimizations</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">embedding</span>.<span style="color:#a6e22e">openai</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_requests_per_minute</span> = <span style="color:#ae81ff">3000</span>          <span style="color:#75715e"># Respect rate limits</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">embedding</span>.<span style="color:#a6e22e">azure</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">deployment_name</span> = <span style="color:#e6db74">&#34;text-embedding-ada-002&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">api_version</span> = <span style="color:#e6db74">&#34;2023-05-15&#34;</span></span></span></code></pre></div>
+<h3 id="search-optimization">Search Optimization</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">search</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">hybrid_search</span> = <span style="color:#66d9ef">true</span>                    <span style="color:#75715e"># Best balance of speed/accuracy</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">keyword_weight</span> = <span style="color:#ae81ff">0.3</span>                    <span style="color:#75715e"># Adjust based on query types</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">semantic_weight</span> = <span style="color:#ae81ff">0.7</span>                   <span style="color:#75715e"># Higher for conceptual queries</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enable_reranking</span> = <span style="color:#66d9ef">false</span>                <span style="color:#75715e"># Disable if not needed (faster)</span></span></span></code></pre></div>
+<h3 id="database-optimization">Database Optimization</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span><span style="color:#75715e"># PostgreSQL + pgvector</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">pgvector</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">connection</span> = <span style="color:#e6db74">&#34;postgres://user:password@localhost:5432/agentflow?pool_max_conns=25&amp;pool_min_conns=5&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Weaviate</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">weaviate</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">timeout</span> = <span style="color:#e6db74">&#34;15s&#34;</span>                         <span style="color:#75715e"># Shorter timeout for faster failures</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_retries</span> = <span style="color:#ae81ff">2</span>                         <span style="color:#75715e"># Fewer retries</span></span></span></code></pre></div>
+<h2 id="-migration-guide">🔄 Migration Guide</h2>
+<h3 id="from-basic-to-rag-configuration">From Basic to RAG Configuration</h3>
+<h4 id="step-1-enable-rag">Step 1: Enable RAG</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span><span style="color:#75715e"># Add to existing configuration</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">rag</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enabled</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">chunk_size</span> = <span style="color:#ae81ff">1000</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">top_k</span> = <span style="color:#ae81ff">5</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">score_threshold</span> = <span style="color:#ae81ff">0.7</span></span></span></code></pre></div>
+<h4 id="step-2-configure-document-processing">Step 2: Configure Document Processing</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">documents</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">auto_chunk</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">supported_types</span> = [<span style="color:#e6db74">&#34;txt&#34;</span>, <span style="color:#e6db74">&#34;md&#34;</span>, <span style="color:#e6db74">&#34;pdf&#34;</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_file_size</span> = <span style="color:#e6db74">&#34;10MB&#34;</span></span></span></code></pre></div>
+<h4 id="step-3-set-up-embeddings">Step 3: Set Up Embeddings</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">embedding</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;openai&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">model</span> = <span style="color:#e6db74">&#34;text-embedding-3-small&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">api_key</span> = <span style="color:#e6db74">&#34;${OPENAI_API_KEY}&#34;</span></span></span></code></pre></div>
+<h4 id="step-4-test-configuration">Step 4: Test Configuration</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Test with AgentFlow CLI</span>
+</span></span><span style="display:flex;"><span>agentcli create test-rag --memory-enabled --rag-enabled --memory-provider pgvector
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Verify configuration</span>
+</span></span><span style="display:flex;"><span>cd test-rag
+</span></span><span style="display:flex;"><span>go run . -m <span style="color:#e6db74">&#34;Test RAG functionality&#34;</span></span></span></code></pre></div>
+<h3 id="from-memory-to-pgvector">From Memory to PgVector</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span><span style="color:#75715e"># Before</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;memory&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># After</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;pgvector&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">connection</span> = <span style="color:#e6db74">&#34;postgres://user:password@localhost:5432/agentflow&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">pgvector</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">table_name</span> = <span style="color:#e6db74">&#34;agent_memory&#34;</span></span></span></code></pre></div>
+<h3 id="adding-hybrid-search">Adding Hybrid Search</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span><span style="color:#75715e"># Add to existing RAG configuration</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">search</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">hybrid_search</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">keyword_weight</span> = <span style="color:#ae81ff">0.3</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">semantic_weight</span> = <span style="color:#ae81ff">0.7</span></span></span></code></pre></div>
+<h2 id="-troubleshooting">🔧 Troubleshooting</h2>
+<h3 id="common-configuration-issues">Common Configuration Issues</h3>
+<h4 id="1-invalid-weight-configuration">1. Invalid Weight Configuration</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span><span style="color:#75715e"># ❌ Wrong - weights don&#39;t sum to 1.0</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">context</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">personal_weight</span> = <span style="color:#ae81ff">0.5</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">knowledge_weight</span> = <span style="color:#ae81ff">0.8</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># ✅ Correct - weights sum to 1.0</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">context</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">personal_weight</span> = <span style="color:#ae81ff">0.3</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">knowledge_weight</span> = <span style="color:#ae81ff">0.7</span></span></span></code></pre></div>
+<h4 id="2-chunk-overlap-too-large">2. Chunk Overlap Too Large</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span><span style="color:#75715e"># ❌ Wrong - overlap &gt;= chunk_size</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">rag</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">chunk_size</span> = <span style="color:#ae81ff">1000</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">overlap</span> = <span style="color:#ae81ff">1000</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># ✅ Correct - overlap &lt; chunk_size</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">rag</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">chunk_size</span> = <span style="color:#ae81ff">1000</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">overlap</span> = <span style="color:#ae81ff">200</span></span></span></code></pre></div>
+<h4 id="3-missing-environment-variables">3. Missing Environment Variables</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Check required variables</span>
+</span></span><span style="display:flex;"><span>echo $OPENAI_API_KEY
+</span></span><span style="display:flex;"><span>echo $DATABASE_URL
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Set if missing</span>
+</span></span><span style="display:flex;"><span>export OPENAI_API_KEY<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;your-api-key&#34;</span>
+</span></span><span style="display:flex;"><span>export DATABASE_URL<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;postgres://user:password@localhost:5432/agentflow&#34;</span></span></span></code></pre></div>
+<h3 id="validation-errors">Validation Errors</h3>
+<p>AgentFlow automatically validates configurations:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Common validation messages</span>
+</span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;RAG weights must sum to 1.0 (current: 1.3)&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;Chunk overlap must be less than chunk size&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;Score threshold must be between 0.0 and 1.0&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;Provider &#39;invalid&#39; not supported&#34;</span></span></span></code></pre></div>
+<h3 id="performance-issues">Performance Issues</h3>
+<h4 id="slow-rag-queries">Slow RAG Queries</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span><span style="color:#75715e"># Reduce context size</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">context</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_tokens</span> = <span style="color:#ae81ff">2000</span>                       <span style="color:#75715e"># Smaller context</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">rag</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">top_k</span> = <span style="color:#ae81ff">3</span>                              <span style="color:#75715e"># Fewer results</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">score_threshold</span> = <span style="color:#ae81ff">0.8</span>                  <span style="color:#75715e"># Higher threshold</span></span></span></code></pre></div>
+<h4 id="high-memory-usage">High Memory Usage</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span><span style="color:#75715e"># Optimize embedding cache</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">embedding</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">cache_embeddings</span> = <span style="color:#66d9ef">false</span>               <span style="color:#75715e"># Disable if memory constrained</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_batch_size</span> = <span style="color:#ae81ff">25</span>                    <span style="color:#75715e"># Smaller batches</span></span></span></code></pre></div>
+<h3 id="debug-configuration">Debug Configuration</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span><span style="color:#75715e"># Enable debug logging</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">logging</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">level</span> = <span style="color:#e6db74">&#34;debug&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Test configuration</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">advanced</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">health_check_interval</span> = <span style="color:#e6db74">&#34;30s&#34;</span>          <span style="color:#75715e"># More frequent health checks</span></span></span></code></pre></div>
+<h2 id="-configuration-validation">📊 Configuration Validation</h2>
+<p>AgentFlow provides automatic validation with helpful error messages:</p>
+<h3 id="weight-validation">Weight Validation</h3>
+<ul>
+<li>RAG weights (personal + knowledge) must sum to 1.0</li>
+<li>Search weights (keyword + semantic) must sum to 1.0</li>
+</ul>
+<h3 id="range-validation">Range Validation</h3>
+<ul>
+<li>Score thresholds must be between 0.0 and 1.0</li>
+<li>Chunk overlap must be less than chunk size</li>
+<li>Token limits must be positive integers</li>
+</ul>
+<h3 id="provider-validation">Provider Validation</h3>
+<ul>
+<li>Ensures provider-specific settings are correct</li>
+<li>Validates connection strings and API keys</li>
+<li>Checks for required dependencies</li>
+</ul>
+<h2 id="-environment-variables">🎛️ Environment Variables</h2>
+<h3 id="required-variables">Required Variables</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># LLM Provider</span>
+</span></span><span style="display:flex;"><span>export OPENAI_API_KEY<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;your-openai-api-key&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># or</span>
+</span></span><span style="display:flex;"><span>export AZURE_OPENAI_API_KEY<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;your-azure-api-key&#34;</span>
+</span></span><span style="display:flex;"><span>export AZURE_OPENAI_ENDPOINT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;https://your-resource.openai.azure.com/&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Database (if using pgvector)</span>
+</span></span><span style="display:flex;"><span>export DATABASE_URL<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;postgres://user:password@localhost:5432/agentflow&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Weaviate (if using weaviate)</span>
+</span></span><span style="display:flex;"><span>export WEAVIATE_URL<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;http://localhost:8080&#34;</span>
+</span></span><span style="display:flex;"><span>export WEAVIATE_API_KEY<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;your-weaviate-api-key&#34;</span></span></span></code></pre></div>
+<h3 id="optional-variables">Optional Variables</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Ollama (for local embeddings)</span>
+</span></span><span style="display:flex;"><span>export OLLAMA_BASE_URL<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;http://localhost:11434&#34;</span>
+</span></span><span style="display:flex;"><span>export OLLAMA_MODEL<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;mxbai-embed-large&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Configuration</span>
+</span></span><span style="display:flex;"><span>export AGENTFLOW_CONFIG_PATH<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/path/to/agentflow.toml&#34;</span>
+</span></span><span style="display:flex;"><span>export AGENTFLOW_LOG_LEVEL<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;debug&#34;</span></span></span></code></pre></div>
+<h3 id="using-in-configuration">Using in Configuration</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">embedding</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">api_key</span> = <span style="color:#e6db74">&#34;${OPENAI_API_KEY}&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">endpoint</span> = <span style="color:#e6db74">&#34;${AZURE_OPENAI_ENDPOINT}&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">pgvector</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">connection</span> = <span style="color:#e6db74">&#34;${DATABASE_URL}&#34;</span></span></span></code></pre></div>
+<h2 id="-complete-configuration-reference">📚 Complete Configuration Reference</h2>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>]
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Core settings</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enabled</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;memory|pgvector|weaviate&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">connection</span> = <span style="color:#e6db74">&#34;connection-string&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_results</span> = <span style="color:#ae81ff">10</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">dimensions</span> = <span style="color:#ae81ff">1536</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">auto_embed</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># RAG settings</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">rag</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enabled</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">chunk_size</span> = <span style="color:#ae81ff">1000</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">overlap</span> = <span style="color:#ae81ff">200</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">top_k</span> = <span style="color:#ae81ff">5</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">score_threshold</span> = <span style="color:#ae81ff">0.7</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">hybrid_search</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">session_memory</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Document processing</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">documents</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">auto_chunk</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">supported_types</span> = [<span style="color:#e6db74">&#34;pdf&#34;</span>, <span style="color:#e6db74">&#34;txt&#34;</span>, <span style="color:#e6db74">&#34;md&#34;</span>, <span style="color:#e6db74">&#34;web&#34;</span>, <span style="color:#e6db74">&#34;code&#34;</span>, <span style="color:#e6db74">&#34;json&#34;</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_file_size</span> = <span style="color:#e6db74">&#34;10MB&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enable_metadata_extraction</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enable_url_scraping</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Embedding service</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">embedding</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;openai|azure|ollama|dummy&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">model</span> = <span style="color:#e6db74">&#34;text-embedding-3-small&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">api_key</span> = <span style="color:#e6db74">&#34;${API_KEY}&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">endpoint</span> = <span style="color:#e6db74">&#34;${ENDPOINT}&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">cache_embeddings</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_batch_size</span> = <span style="color:#ae81ff">50</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">timeout_seconds</span> = <span style="color:#ae81ff">30</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Search configuration</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">search</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">hybrid_search</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">keyword_weight</span> = <span style="color:#ae81ff">0.3</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">semantic_weight</span> = <span style="color:#ae81ff">0.7</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enable_reranking</span> = <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">reranking_model</span> = <span style="color:#e6db74">&#34;&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enable_query_expansion</span> = <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Context assembly</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">context</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_tokens</span> = <span style="color:#ae81ff">4000</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">personal_weight</span> = <span style="color:#ae81ff">0.3</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">knowledge_weight</span> = <span style="color:#ae81ff">0.7</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">include_sources</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">include_history</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">history_limit</span> = <span style="color:#ae81ff">5</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Advanced settings</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">advanced</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">retry_max_attempts</span> = <span style="color:#ae81ff">3</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">retry_base_delay</span> = <span style="color:#e6db74">&#34;100ms&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">retry_max_delay</span> = <span style="color:#e6db74">&#34;5s&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">connection_pool_size</span> = <span style="color:#ae81ff">25</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">health_check_interval</span> = <span style="color:#e6db74">&#34;1m&#34;</span></span></span></code></pre></div>
+<hr>
+<h2 id="-summary">🎯 Summary</h2>
+<p>AgentFlow&rsquo;s RAG configuration system provides:</p>
+<p>✅ <strong>Flexible Configuration</strong>: TOML-based configuration with environment variable support<br>
+✅ <strong>Multiple Providers</strong>: Support for in-memory, PostgreSQL, and Weaviate backends<br>
+✅ <strong>Advanced Features</strong>: Hybrid search, context assembly, session isolation<br>
+✅ <strong>Performance Tuning</strong>: Extensive optimization options for production use<br>
+✅ <strong>Validation</strong>: Built-in configuration validation with helpful error messages<br>
+✅ <strong>Production Ready</strong>: Enterprise-grade features with monitoring and health checks</p>
+<p>The RAG system enables building sophisticated knowledge-aware agents that can understand documents, maintain context, and provide informed responses with source attribution.</p>
+<p>For more information:</p>
+<ul>
+<li><strong><a href="/AgenticGoKitDocs/guides/memory/index.html">Memory System Guide</a></strong> - Complete memory API reference</li>
+<li><strong><a href="/AgenticGoKitDocs/guides/memoryprovidersetup/index.html">Memory Provider Setup</a></strong> - Provider installation guides</li>
+<li><strong><a href="/AgenticGoKitDocs/guides/configuration/index.html">Configuration Guide</a></strong> - General configuration patterns</li>
+</ul>
+
+  <footer class="footline">
+              <i class='fa-fw fas fa-calendar'></i> Jul 25, 2025
+  </footer>
+</article>
+        </div>
+      </main>
+    </div>
+    <aside id="R-sidebar" class="default-animation">
+      <div id="R-header-topbar" class="default-animation"></div>
+      <div id="R-header-wrapper" class="default-animation">
+        <div id="R-header" class="default-animation">
+          <a id="R-logo" class="R-default" href="/AgenticGoKitDocs/index.html">
+            <div class="logo-title">AgenticGoKit Docs</div>
+          </a>
+        </div>
+        <search><form action="/AgenticGoKitDocs/search/index.html" method="get">
+          <div class="searchbox default-animation">
+            <button class="search-detail" type="submit" title="Search (CTRL+ALT+f)"><i class="fas fa-search"></i></button>
+            <label class="a11y-only" for="R-search-by">Search</label>
+            <input data-search-input id="R-search-by" name="search-by" class="search-by" type="search" placeholder="Search...">
+            <button class="search-clear" type="button" data-search-clear="" title="Clear search"><i class="fas fa-times" title="Clear search"></i></button>
+          </div>
+        </form></search>
+      </div>
+      <div id="R-homelinks" class="default-animation homelinks">
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-homelinks">
+          <ul class="space collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/index.html"><a class="padding" href="/AgenticGoKitDocs/index.html"><i class="fa-fw fas fa-home"></i> Home</a></li>
+          </ul>
+        </div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-headercontrols">
+          <ul class="">
+          </ul>
+        </div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+      </div>
+      <div id="R-content-wrapper" class="highlightable">
+        <div class="R-sidebarmenu R-shortcutmenu-main">
+          <ul class="enlarge morespace collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/readme/index.html">content</a></li>
+            <li class="parent alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/index.html"><input type="checkbox" id="R-section-8fc2fd7736125e87cab8840a86c2af5a" aria-controls="R-subsections-8fc2fd7736125e87cab8840a86c2af5a" checked><label for="R-section-8fc2fd7736125e87cab8840a86c2af5a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu guides</span></label><a class="padding" href="/AgenticGoKitDocs/guides/index.html">guides</a><ul id="R-subsections-8fc2fd7736125e87cab8840a86c2af5a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/readme/index.html">guides</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/agentbasics/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/agentbasics/index.html">AgentBasics</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/examples/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/examples/index.html">Examples</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/configuration/index.html">Configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/customtools/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/customtools/index.html">CustomTools</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/providers/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/providers/index.html">Providers</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memoryprovidersetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memoryprovidersetup/index.html">MemoryProviderSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memorytroubleshooting/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memorytroubleshooting/index.html">MemoryTroubleshooting</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/embeddingmodelguide/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/embeddingmodelguide/index.html">EmbeddingModelGuide</a></li>
+            <li class="active " data-nav-id="/AgenticGoKitDocs/guides/ragconfiguration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/ragconfiguration/index.html">RAGConfiguration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/toolintegration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/toolintegration/index.html">ToolIntegration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/pgvectorsetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/pgvectorsetup/index.html">PgVectorSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/weaviatesetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/weaviatesetup/index.html">WeaviateSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/performance/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/performance/index.html">Performance</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/errorhandling/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/errorhandling/index.html">ErrorHandling</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/deployment/index.html"><input type="checkbox" id="R-section-ecc839349395ef3c015a12132049dff2" aria-controls="R-subsections-ecc839349395ef3c015a12132049dff2" checked><label for="R-section-ecc839349395ef3c015a12132049dff2"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu deployment</span></label><a class="padding" href="/AgenticGoKitDocs/guides/deployment/index.html">deployment</a><ul id="R-subsections-ecc839349395ef3c015a12132049dff2" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/deployment/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/deployment/readme/index.html">deployment</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/development/index.html"><input type="checkbox" id="R-section-fff1f5eca5d0a93209b9c6262762c25a" aria-controls="R-subsections-fff1f5eca5d0a93209b9c6262762c25a" checked><label for="R-section-fff1f5eca5d0a93209b9c6262762c25a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu development</span></label><a class="padding" href="/AgenticGoKitDocs/guides/development/index.html">development</a><ul id="R-subsections-fff1f5eca5d0a93209b9c6262762c25a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/readme/index.html">development</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/best-practices/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/best-practices/index.html">best-practices</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/debugging/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/debugging/index.html">debugging</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/research-assistant/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/research-assistant/index.html">research-assistant</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/testing-agents/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/testing-agents/index.html">testing-agents</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/visualization/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/visualization/index.html">visualization</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/web-search-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/web-search-integration/index.html">web-search-integration</a></li></ul></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/framework-comparison/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/framework-comparison/index.html">framework-comparison</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memory/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memory/index.html">Memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/scaffoldmemoryguide/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/scaffoldmemoryguide/index.html">ScaffoldMemoryGuide</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/setup/index.html"><input type="checkbox" id="R-section-0124aed9abb5064d53391168f3c95c22" aria-controls="R-subsections-0124aed9abb5064d53391168f3c95c22" checked><label for="R-section-0124aed9abb5064d53391168f3c95c22"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu setup</span></label><a class="padding" href="/AgenticGoKitDocs/guides/setup/index.html">setup</a><ul id="R-subsections-0124aed9abb5064d53391168f3c95c22" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/readme/index.html">setup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/llm-providers/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/llm-providers/index.html">llm-providers</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/mcp-tools/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/mcp-tools/index.html">mcp-tools</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/orchestration-configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/orchestration-configuration/index.html">orchestration-configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/vector-databases/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/vector-databases/index.html">vector-databases</a></li></ul></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/troubleshooting/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/troubleshooting/index.html">troubleshooting</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/contributors/index.html"><input type="checkbox" id="R-section-190d9b328fbda7e13ab386f7a5417de5" aria-controls="R-subsections-190d9b328fbda7e13ab386f7a5417de5" checked><label for="R-section-190d9b328fbda7e13ab386f7a5417de5"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu contributors</span></label><a class="padding" href="/AgenticGoKitDocs/contributors/index.html">contributors</a><ul id="R-subsections-190d9b328fbda7e13ab386f7a5417de5" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/readme/index.html">contributors</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/contributorguide/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/contributorguide/index.html">ContributorGuide</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/codestyle/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/codestyle/index.html">CodeStyle</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/corevsinternal/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/corevsinternal/index.html">CoreVsInternal</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/addingfeatures/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/addingfeatures/index.html">AddingFeatures</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/testing/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/testing/index.html">Testing</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/docsstandards/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/docsstandards/index.html">DocsStandards</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/reference/index.html"><input type="checkbox" id="R-section-66002f201bef818664bb81aa67490c58" aria-controls="R-subsections-66002f201bef818664bb81aa67490c58" checked><label for="R-section-66002f201bef818664bb81aa67490c58"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu reference</span></label><a class="padding" href="/AgenticGoKitDocs/reference/index.html">reference</a><ul id="R-subsections-66002f201bef818664bb81aa67490c58" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/readme/index.html">reference</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/configuration/index.html">configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/cli/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/cli/index.html">cli</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/mcp/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/mcp/index.html">mcp</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/agent/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/agent/index.html">agent</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/memory/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/memory/index.html">memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/orchestration/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/orchestration/index.html">orchestration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/state-event/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/state-event/index.html">state-event</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/index.html"><input type="checkbox" id="R-section-e1e8c1e70c5500b49e8dda2dc550651a" aria-controls="R-subsections-e1e8c1e70c5500b49e8dda2dc550651a" checked><label for="R-section-e1e8c1e70c5500b49e8dda2dc550651a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu tutorials</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/index.html">tutorials</a><ul id="R-subsections-e1e8c1e70c5500b49e8dda2dc550651a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/readme/index.html">tutorials</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/advanced/index.html"><input type="checkbox" id="R-section-d3def5cd76adc8096d0ff9fda6b8e479" aria-controls="R-subsections-d3def5cd76adc8096d0ff9fda6b8e479" checked><label for="R-section-d3def5cd76adc8096d0ff9fda6b8e479"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu advanced</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/index.html">advanced</a><ul id="R-subsections-d3def5cd76adc8096d0ff9fda6b8e479" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/readme/index.html">advanced</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/circuit-breaker-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/circuit-breaker-patterns/index.html">circuit-breaker-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/load-balancing-scaling/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/load-balancing-scaling/index.html">load-balancing-scaling</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/retry-policies/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/retry-policies/index.html">retry-policies</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/testing-strategies/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/testing-strategies/index.html">testing-strategies</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/index.html"><input type="checkbox" id="R-section-212c6ccffb40ecdd78eb2136f98c4cac" aria-controls="R-subsections-212c6ccffb40ecdd78eb2136f98c4cac" checked><label for="R-section-212c6ccffb40ecdd78eb2136f98c4cac"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu core-concepts</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/index.html">core-concepts</a><ul id="R-subsections-212c6ccffb40ecdd78eb2136f98c4cac" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/readme/index.html">core-concepts</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/agent-lifecycle/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/agent-lifecycle/index.html">agent-lifecycle</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/error-handling/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/error-handling/index.html">error-handling</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/message-passing/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/message-passing/index.html">message-passing</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/orchestration-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/orchestration-patterns/index.html">orchestration-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/state-management/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/state-management/index.html">state-management</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/debugging/index.html"><input type="checkbox" id="R-section-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" aria-controls="R-subsections-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" checked><label for="R-section-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu debugging</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/index.html">debugging</a><ul id="R-subsections-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/readme/index.html">debugging</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/debugging-multi-agent-systems/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/debugging-multi-agent-systems/index.html">debugging-multi-agent-systems</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/logging-and-tracing/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/logging-and-tracing/index.html">logging-and-tracing</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/index.html"><input type="checkbox" id="R-section-e7f904c8b9d0f9bf1f07ca7d482d2247" aria-controls="R-subsections-e7f904c8b9d0f9bf1f07ca7d482d2247" checked><label for="R-section-e7f904c8b9d0f9bf1f07ca7d482d2247"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu getting-started</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/index.html">getting-started</a><ul id="R-subsections-e7f904c8b9d0f9bf1f07ca7d482d2247" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/readme/index.html">getting-started</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/memory-and-rag/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/memory-and-rag/index.html">memory-and-rag</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/multi-agent-collaboration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/multi-agent-collaboration/index.html">multi-agent-collaboration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/production-deployment/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/production-deployment/index.html">production-deployment</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/quickstart/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/quickstart/index.html">quickstart</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/tool-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/tool-integration/index.html">tool-integration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/your-first-agent/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/your-first-agent/index.html">your-first-agent</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/mcp/index.html"><input type="checkbox" id="R-section-153aac44598009a99dd5a60317a3eecc" aria-controls="R-subsections-153aac44598009a99dd5a60317a3eecc" checked><label for="R-section-153aac44598009a99dd5a60317a3eecc"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu mcp</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/index.html">mcp</a><ul id="R-subsections-153aac44598009a99dd5a60317a3eecc" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/readme/index.html">mcp</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/advanced-tool-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/advanced-tool-patterns/index.html">advanced-tool-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/tool-development/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/tool-development/index.html">tool-development</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/tool-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/tool-integration/index.html">tool-integration</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/index.html"><input type="checkbox" id="R-section-9c1a65f2d7b3888241dcafa51a0710e7" aria-controls="R-subsections-9c1a65f2d7b3888241dcafa51a0710e7" checked><label for="R-section-9c1a65f2d7b3888241dcafa51a0710e7"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu memory-systems</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/index.html">memory-systems</a><ul id="R-subsections-9c1a65f2d7b3888241dcafa51a0710e7" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/readme/index.html">memory-systems</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/basic-memory/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/basic-memory/index.html">basic-memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/document-ingestion/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/document-ingestion/index.html">document-ingestion</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/knowledge-bases/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/knowledge-bases/index.html">knowledge-bases</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/memory-optimization/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/memory-optimization/index.html">memory-optimization</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/rag-implementation/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/rag-implementation/index.html">rag-implementation</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/vector-databases/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/vector-databases/index.html">vector-databases</a></li></ul></li></ul></li>
+          </ul>
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-shortcuts">
+          <ul class="space collapsible-menu">
+          </ul>
+        </div>
+        <div id="R-footer-margin"></div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-footercontrols">
+          <ul class="">
+          </ul>
+        </div>
+<div id="R-footer"><p>Built with <a href="https://github.com/McShelby/hugo-theme-relearn" title="love"><i class="fas fa-heart"></i></a> by <a href="https://gohugo.io/">Hugo</a></p></div>
+      </div>
+    </aside>
+    <script src="/AgenticGoKitDocs/js/clipboard/clipboard.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/perfect-scrollbar/perfect-scrollbar.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/theme.js?1753430931" defer></script>
+  </body>
+</html>

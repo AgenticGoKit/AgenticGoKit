@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>debugging :: AgenticGoKit Docs</title>
+    <link>http://localhost:1313/AgenticGoKitDocs/tutorials/debugging/index.html</link>
+    <description>Debugging and Monitoring in AgenticGoKit Overview This section covers comprehensive debugging and monitoring strategies for AgenticGoKit applications. You’ll learn how to troubleshoot multi-agent systems, implement effective logging, set up monitoring, and optimize performance in production environments.&#xA;Debugging multi-agent systems presents unique challenges due to their distributed nature, asynchronous execution, and complex interaction patterns. This guide provides practical tools and techniques to help you identify, diagnose, and resolve issues effectively.&#xA;What You’ll Learn Debugging Multi-Agent Systems: Techniques for troubleshooting complex agent interactions Logging and Tracing: Implementing structured logging and distributed tracing Performance Monitoring: Setting up metrics, alerts, and performance optimization Production Troubleshooting: Common issues and their solutions in production environments Prerequisites Before diving into debugging and monitoring, you should be familiar with:</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <lastBuildDate>Fri, 25 Jul 2025 00:00:00 +0000</lastBuildDate>
+    <atom:link href="http://localhost:1313/AgenticGoKitDocs/tutorials/debugging/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>debugging</title>
+      <link>http://localhost:1313/AgenticGoKitDocs/tutorials/debugging/readme/index.html</link>
+      <pubDate>Fri, 25 Jul 2025 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/AgenticGoKitDocs/tutorials/debugging/readme/index.html</guid>
+      <description>Debugging and Monitoring in AgenticGoKit Overview This section covers comprehensive debugging and monitoring strategies for AgenticGoKit applications. You’ll learn how to troubleshoot multi-agent systems, implement effective logging, set up monitoring, and optimize performance in production environments.&#xA;Debugging multi-agent systems presents unique challenges due to their distributed nature, asynchronous execution, and complex interaction patterns. This guide provides practical tools and techniques to help you identify, diagnose, and resolve issues effectively.&#xA;What You’ll Learn Debugging Multi-Agent Systems: Techniques for troubleshooting complex agent interactions Logging and Tracing: Implementing structured logging and distributed tracing Performance Monitoring: Setting up metrics, alerts, and performance optimization Production Troubleshooting: Common issues and their solutions in production environments Prerequisites Before diving into debugging and monitoring, you should be familiar with:</description>
+    </item>
+    <item>
+      <title>debugging-multi-agent-systems</title>
+      <link>http://localhost:1313/AgenticGoKitDocs/tutorials/debugging/debugging-multi-agent-systems/index.html</link>
+      <pubDate>Fri, 25 Jul 2025 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/AgenticGoKitDocs/tutorials/debugging/debugging-multi-agent-systems/index.html</guid>
+      <description>Debugging Multi-Agent Systems in AgenticGoKit Overview Debugging multi-agent systems requires specialized techniques due to their distributed, asynchronous nature. This guide covers practical strategies for identifying, isolating, and resolving issues in complex agent interactions using AgenticGoKit’s built-in tracing and debugging capabilities.&#xA;AgenticGoKit provides comprehensive tracing through the agentcli tool and structured logging through the zerolog library, making it easier to understand agent interactions and diagnose issues.&#xA;Prerequisites Understanding of Agent Lifecycle Familiarity with Orchestration Patterns Basic knowledge of Go debugging tools AgenticGoKit project with agentflow.toml configuration Common Debugging Scenarios 1. Agent Not Responding When an agent stops responding to events, follow this systematic approach:</description>
+    </item>
+    <item>
+      <title>logging-and-tracing</title>
+      <link>http://localhost:1313/AgenticGoKitDocs/tutorials/debugging/logging-and-tracing/index.html</link>
+      <pubDate>Fri, 25 Jul 2025 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/AgenticGoKitDocs/tutorials/debugging/logging-and-tracing/index.html</guid>
+      <description>Logging and Tracing in AgenticGoKit Overview AgenticGoKit provides comprehensive logging and tracing capabilities through structured logging with zerolog and built-in trace collection. This guide covers how to configure logging, use the tracing system, and analyze execution traces to debug multi-agent systems effectively.&#xA;Prerequisites Understanding of Agent Lifecycle Familiarity with Debugging Multi-Agent Systems AgenticGoKit project with agentflow.toml configuration Logging System Configuration AgenticGoKit uses structured logging with configurable levels and formats. Configure logging in your agentflow.toml:</description>
+    </item>
+  </channel>
+</rss>

@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="en-us" dir="ltr" itemscope itemtype="http://schema.org/Article" data-r-output-format="html">
+  <head><script src="/AgenticGoKitDocs/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=AgenticGoKitDocs/livereload" data-no-instant defer></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="height=device-height, width=device-width, initial-scale=1.0, minimum-scale=1.0">
+    <meta name="generator" content="Hugo 0.148.1">
+    <meta name="generator" content="Relearn 8.0.0+9803d5122ebb3276acea823f476e9eb44f607862">
+    <meta name="description" content="AgenticGoKit Memory System - Complete Implementation Guide 🎯 Overview AgenticGoKit provides a powerful, production-ready memory system that enables agents to maintain persistent context, conversation history, and knowledge bases. The system supports multiple storage backends, RAG (Retrieval-Augmented Generation) capabilities, and advanced features like vector embeddings, batch operations, and intelligent retry logic.
+📚 Table of Contents Quick Start Core Concepts Configuration Memory Providers API Reference RAG (Retrieval-Augmented Generation) Advanced Features Examples Performance &amp; Optimization Troubleshooting 🚀 Quick Start 1. Basic Setup package main import ( &#34;context&#34; &#34;log&#34; &#34;github.com/kunalkushwaha/agenticgokit/core&#34; ) func main() { // Create memory configuration config := core.AgentMemoryConfig{ Provider: &#34;memory&#34;, // In-memory for development Connection: &#34;memory&#34;, Dimensions: 1536, Embedding: core.EmbeddingConfig{ Provider: &#34;dummy&#34;, // For testing Model: &#34;text-embedding-3-small&#34;, }, } // Create memory provider memory, err := core.NewMemory(config) if err != nil { log.Fatal(err) } defer memory.Close() // Create context with session ctx := memory.SetSession(context.Background(), &#34;user-123&#34;) // Store a memory err = memory.Store(ctx, &#34;I love programming in Go&#34;, &#34;programming&#34;, &#34;preference&#34;) if err != nil { log.Fatal(err) } // Query memories results, err := memory.Query(ctx, &#34;programming languages&#34;, 5) if err != nil { log.Fatal(err) } for _, result := range results { fmt.Printf(&#34;Content: %s, Score: %.2f\n&#34;, result.Content, result.Score) } }2. Configuration File Setup Create an agentflow.toml configuration file:">
+    <meta name="author" content="">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Memory :: AgenticGoKit Docs">
+    <meta name="twitter:description" content="AgenticGoKit Memory System - Complete Implementation Guide 🎯 Overview AgenticGoKit provides a powerful, production-ready memory system that enables agents to maintain persistent context, conversation history, and knowledge bases. The system supports multiple storage backends, RAG (Retrieval-Augmented Generation) capabilities, and advanced features like vector embeddings, batch operations, and intelligent retry logic.
+📚 Table of Contents Quick Start Core Concepts Configuration Memory Providers API Reference RAG (Retrieval-Augmented Generation) Advanced Features Examples Performance &amp; Optimization Troubleshooting 🚀 Quick Start 1. Basic Setup package main import ( &#34;context&#34; &#34;log&#34; &#34;github.com/kunalkushwaha/agenticgokit/core&#34; ) func main() { // Create memory configuration config := core.AgentMemoryConfig{ Provider: &#34;memory&#34;, // In-memory for development Connection: &#34;memory&#34;, Dimensions: 1536, Embedding: core.EmbeddingConfig{ Provider: &#34;dummy&#34;, // For testing Model: &#34;text-embedding-3-small&#34;, }, } // Create memory provider memory, err := core.NewMemory(config) if err != nil { log.Fatal(err) } defer memory.Close() // Create context with session ctx := memory.SetSession(context.Background(), &#34;user-123&#34;) // Store a memory err = memory.Store(ctx, &#34;I love programming in Go&#34;, &#34;programming&#34;, &#34;preference&#34;) if err != nil { log.Fatal(err) } // Query memories results, err := memory.Query(ctx, &#34;programming languages&#34;, 5) if err != nil { log.Fatal(err) } for _, result := range results { fmt.Printf(&#34;Content: %s, Score: %.2f\n&#34;, result.Content, result.Score) } }2. Configuration File Setup Create an agentflow.toml configuration file:">
+    <meta property="og:url" content="http://localhost:1313/AgenticGoKitDocs/guides/memory/index.html">
+    <meta property="og:site_name" content="AgenticGoKit Docs">
+    <meta property="og:title" content="Memory :: AgenticGoKit Docs">
+    <meta property="og:description" content="AgenticGoKit Memory System - Complete Implementation Guide 🎯 Overview AgenticGoKit provides a powerful, production-ready memory system that enables agents to maintain persistent context, conversation history, and knowledge bases. The system supports multiple storage backends, RAG (Retrieval-Augmented Generation) capabilities, and advanced features like vector embeddings, batch operations, and intelligent retry logic.
+📚 Table of Contents Quick Start Core Concepts Configuration Memory Providers API Reference RAG (Retrieval-Augmented Generation) Advanced Features Examples Performance &amp; Optimization Troubleshooting 🚀 Quick Start 1. Basic Setup package main import ( &#34;context&#34; &#34;log&#34; &#34;github.com/kunalkushwaha/agenticgokit/core&#34; ) func main() { // Create memory configuration config := core.AgentMemoryConfig{ Provider: &#34;memory&#34;, // In-memory for development Connection: &#34;memory&#34;, Dimensions: 1536, Embedding: core.EmbeddingConfig{ Provider: &#34;dummy&#34;, // For testing Model: &#34;text-embedding-3-small&#34;, }, } // Create memory provider memory, err := core.NewMemory(config) if err != nil { log.Fatal(err) } defer memory.Close() // Create context with session ctx := memory.SetSession(context.Background(), &#34;user-123&#34;) // Store a memory err = memory.Store(ctx, &#34;I love programming in Go&#34;, &#34;programming&#34;, &#34;preference&#34;) if err != nil { log.Fatal(err) } // Query memories results, err := memory.Query(ctx, &#34;programming languages&#34;, 5) if err != nil { log.Fatal(err) } for _, result := range results { fmt.Printf(&#34;Content: %s, Score: %.2f\n&#34;, result.Content, result.Score) } }2. Configuration File Setup Create an agentflow.toml configuration file:">
+    <meta property="og:locale" content="en_us">
+    <meta property="og:type" content="article">
+    <meta property="article:section" content="guides">
+    <meta property="article:published_time" content="2025-07-25T00:00:00+00:00">
+    <meta property="article:modified_time" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="name" content="Memory :: AgenticGoKit Docs">
+    <meta itemprop="description" content="AgenticGoKit Memory System - Complete Implementation Guide 🎯 Overview AgenticGoKit provides a powerful, production-ready memory system that enables agents to maintain persistent context, conversation history, and knowledge bases. The system supports multiple storage backends, RAG (Retrieval-Augmented Generation) capabilities, and advanced features like vector embeddings, batch operations, and intelligent retry logic.
+📚 Table of Contents Quick Start Core Concepts Configuration Memory Providers API Reference RAG (Retrieval-Augmented Generation) Advanced Features Examples Performance &amp; Optimization Troubleshooting 🚀 Quick Start 1. Basic Setup package main import ( &#34;context&#34; &#34;log&#34; &#34;github.com/kunalkushwaha/agenticgokit/core&#34; ) func main() { // Create memory configuration config := core.AgentMemoryConfig{ Provider: &#34;memory&#34;, // In-memory for development Connection: &#34;memory&#34;, Dimensions: 1536, Embedding: core.EmbeddingConfig{ Provider: &#34;dummy&#34;, // For testing Model: &#34;text-embedding-3-small&#34;, }, } // Create memory provider memory, err := core.NewMemory(config) if err != nil { log.Fatal(err) } defer memory.Close() // Create context with session ctx := memory.SetSession(context.Background(), &#34;user-123&#34;) // Store a memory err = memory.Store(ctx, &#34;I love programming in Go&#34;, &#34;programming&#34;, &#34;preference&#34;) if err != nil { log.Fatal(err) } // Query memories results, err := memory.Query(ctx, &#34;programming languages&#34;, 5) if err != nil { log.Fatal(err) } for _, result := range results { fmt.Printf(&#34;Content: %s, Score: %.2f\n&#34;, result.Content, result.Score) } }2. Configuration File Setup Create an agentflow.toml configuration file:">
+    <meta itemprop="datePublished" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="dateModified" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="wordCount" content="2934">
+    <title>Memory :: AgenticGoKit Docs</title>
+    <link href="/AgenticGoKitDocs/css/auto-complete/auto-complete.min.css?1753430931" rel="stylesheet">
+    <script src="/AgenticGoKitDocs/js/auto-complete/auto-complete.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/search-lunr.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/search.js?1753430931" defer></script>
+    <script>
+      window.relearn = window.relearn || {};
+      window.relearn.index_js_url="/AgenticGoKitDocs/searchindex.en.js?1753430931";
+    </script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.stemmer.support.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.multi.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.en.min.js?1753430931" defer></script>
+    <script>
+      window.relearn = window.relearn || {};
+      window.relearn.contentLangs=['en'];
+    </script>
+    <link href="/AgenticGoKitDocs/fonts/fontawesome/css/fontawesome-all.min.css?1753430931" rel="stylesheet" media="print" onload="this.media='all';this.onload=null;"><noscript><link href="/AgenticGoKitDocs/fonts/fontawesome/css/fontawesome-all.min.css?1753430931" rel="stylesheet"></noscript>
+    <link href="/AgenticGoKitDocs/css/perfect-scrollbar/perfect-scrollbar.min.css?1753430931" rel="stylesheet">
+    <link href="/AgenticGoKitDocs/css/theme.css?1753430931" rel="stylesheet">
+    <link href="/AgenticGoKitDocs/css/format-html.css?1753430931" rel="stylesheet" id="R-format-style">
+    <script>
+      window.relearn = window.relearn || {};
+      // configuration
+      window.relearn.min = ``;
+      window.relearn.path='\/guides\/memory\/index.html';
+      window.relearn.relBasePath='..\/..';
+      window.relearn.relBaseUri='..\/..\/..';
+      window.relearn.absBaseUri='http:\/\/localhost:1313\/AgenticGoKitDocs';
+      window.relearn.disableAnchorCopy=false;
+      window.relearn.disableAnchorScrolling=false;
+      window.relearn.disableInlineCopyToClipboard=false;
+      window.relearn.enableBlockCodeWrap=true;
+      // legal
+      window.relearn.getItem = (s,n) => {return s.getItem(n)};
+      window.relearn.setItem = (s,n,v) => {return s.setItem(n,v)};
+      window.relearn.removeItem = (s,n) => {return s.removeItem(n)};
+      // translations
+      window.T_Copy_to_clipboard = `Copy to clipboard`;
+      window.T_Copied_to_clipboard = `Copied to clipboard!`;
+      window.T_Copy_link_to_clipboard = `Copy link to clipboard`;
+      window.T_Link_copied_to_clipboard = `Copied link to clipboard!`;
+      window.T_Reset_view = `Reset view`;
+      window.T_View_reset = `View reset!`;
+      window.T_No_results_found = `No results found for "{0}"`;
+      window.T_N_results_found = `{1} results found for "{0}"`;
+      // variant stuff
+      window.relearn.themevariants = [ 'blue' ];
+      window.relearn.customvariantname = "my-custom-variant";
+      window.relearn.changeVariant = function(variant) {
+        var oldVariant = document.documentElement.dataset.rThemeVariant;
+        window.relearn.setItem(window.localStorage, window.relearn.absBaseUri + "/variant", variant);
+        document.documentElement.dataset.rThemeVariant = variant;
+        if (oldVariant != variant) {
+          document.dispatchEvent( new CustomEvent('themeVariantLoaded', { detail: { variant, oldVariant } }) );
+          window.relearn.markVariant();
+        }
+      }
+      window.relearn.markVariant = function() {
+        var variant = window.relearn.getItem(window.localStorage, window.relearn.absBaseUri + "/variant");
+        document.querySelectorAll(".R-variantswitcher select").forEach((select) => {select.value = variant;});
+      }
+      window.relearn.initVariant = function() {
+        var variant = window.relearn.getItem(window.localStorage, window.relearn.absBaseUri + "/variant") ?? "";
+        if( variant == window.relearn.customvariantname ){
+        }else if( !variant || !window.relearn.themevariants.includes(variant) ){
+          variant = window.relearn.themevariants[0];
+          window.relearn.setItem(window.localStorage, window.relearn.absBaseUri + "/variant", variant);
+        }
+        document.documentElement.dataset.rThemeVariant = variant;
+      }
+      window.relearn.initVariant();
+      window.relearn.markVariant();
+    </script>
+  </head>
+  <body class="mobile-support html" data-url="/AgenticGoKitDocs/guides/memory/index.html">
+    <div id="R-body" class="default-animation">
+      <div id="R-body-overlay"></div>
+      <nav id="R-topbar">
+        <div class="topbar-wrapper">
+          <div class="topbar-sidebar-divider"></div>
+          <div class="topbar-area topbar-area-start" data-area="start">
+            <div class="topbar-button topbar-button-sidebar" data-content-empty="disable" data-width-s="show" data-width-m="hide" data-width-l="hide"><button class="topbar-control" onclick="toggleNav()" type="button" title="Menu (CTRL&#43;ALT&#43;n)"><i class="fa-fw fas fa-bars"></i></button>
+            </div>
+            <div class="topbar-button topbar-button-toc" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show"><button class="topbar-control" onclick="toggleTopbarFlyout(this)" type="button" title="Table of Contents (CTRL&#43;ALT&#43;t)"><i class="fa-fw fas fa-list-alt"></i></button>
+              <div class="topbar-content">
+                <div class="topbar-content-wrapper">
+<nav class="TableOfContents">
+  <ul>
+    <li><a href="#-overview">🎯 Overview</a></li>
+    <li><a href="#-table-of-contents">📚 Table of Contents</a></li>
+    <li><a href="#-quick-start">🚀 Quick Start</a>
+      <ul>
+        <li><a href="#1-basic-setup">1. Basic Setup</a></li>
+        <li><a href="#2-configuration-file-setup">2. Configuration File Setup</a></li>
+      </ul>
+    </li>
+    <li><a href="#-core-concepts">🧠 Core Concepts</a>
+      <ul>
+        <li><a href="#memory-interface">Memory Interface</a></li>
+        <li><a href="#session-management">Session Management</a></li>
+        <li><a href="#data-types">Data Types</a></li>
+      </ul>
+    </li>
+    <li><a href="#-configuration">⚙️ Configuration</a>
+      <ul>
+        <li><a href="#complete-configuration-reference">Complete Configuration Reference</a></li>
+        <li><a href="#environment-variables">Environment Variables</a></li>
+      </ul>
+    </li>
+    <li><a href="#-memory-providers">💾 Memory Providers</a>
+      <ul>
+        <li><a href="#1-in-memory-provider-memory">1. In-Memory Provider (<code>memory</code>)</a></li>
+        <li><a href="#2-postgresql--pgvector-pgvector">2. PostgreSQL + pgvector (<code>pgvector</code>)</a></li>
+        <li><a href="#3-weaviate-weaviate">3. Weaviate (<code>weaviate</code>)</a></li>
+      </ul>
+    </li>
+    <li><a href="#-api-reference">📖 API Reference</a>
+      <ul>
+        <li><a href="#personal-memory-operations">Personal Memory Operations</a></li>
+        <li><a href="#key-value-storage">Key-Value Storage</a></li>
+        <li><a href="#chat-history">Chat History</a></li>
+        <li><a href="#knowledge-base-operations">Knowledge Base Operations</a></li>
+        <li><a href="#advanced-search-options">Advanced Search Options</a></li>
+      </ul>
+    </li>
+    <li><a href="#-rag-retrieval-augmented-generation">🔄 RAG (Retrieval-Augmented Generation)</a>
+      <ul>
+        <li><a href="#hybrid-search">Hybrid Search</a></li>
+        <li><a href="#rag-context-building">RAG Context Building</a></li>
+        <li><a href="#context-configuration">Context Configuration</a></li>
+      </ul>
+    </li>
+    <li><a href="#-advanced-features">🚀 Advanced Features</a>
+      <ul>
+        <li><a href="#batch-operations-pgvectorprovider">Batch Operations (PgVectorProvider)</a></li>
+        <li><a href="#retry-logic-and-error-handling">Retry Logic and Error Handling</a></li>
+        <li><a href="#connection-pooling">Connection Pooling</a></li>
+        <li><a href="#session-management-1">Session Management</a></li>
+      </ul>
+    </li>
+    <li><a href="#-examples">💡 Examples</a>
+      <ul>
+        <li><a href="#example-1-personal-assistant-with-memory">Example 1: Personal Assistant with Memory</a></li>
+        <li><a href="#example-2-document-based-qa-system">Example 2: Document-Based Q&amp;A System</a></li>
+        <li><a href="#example-3-multi-user-chat-application">Example 3: Multi-User Chat Application</a></li>
+      </ul>
+    </li>
+    <li><a href="#-performance--optimization">⚡ Performance &amp; Optimization</a>
+      <ul>
+        <li><a href="#performance-benchmarks">Performance Benchmarks</a></li>
+        <li><a href="#optimization-tips">Optimization Tips</a></li>
+        <li><a href="#memory-usage-guidelines">Memory Usage Guidelines</a></li>
+      </ul>
+    </li>
+    <li><a href="#-troubleshooting">🔧 Troubleshooting</a>
+      <ul>
+        <li><a href="#common-issues">Common Issues</a></li>
+        <li><a href="#debugging-tips">Debugging Tips</a></li>
+        <li><a href="#database-setup-pgvector">Database Setup (PgVector)</a></li>
+        <li><a href="#environment-variables-reference">Environment Variables Reference</a></li>
+      </ul>
+    </li>
+    <li><a href="#-monitoring--metrics">📊 Monitoring &amp; Metrics</a>
+      <ul>
+        <li><a href="#built-in-metrics">Built-in Metrics</a></li>
+        <li><a href="#health-checks">Health Checks</a></li>
+      </ul>
+    </li>
+    <li><a href="#-summary">🎯 Summary</a></li>
+  </ul>
+</nav>
+                </div>
+              </div>
+            </div>
+          </div>
+          <ol class="topbar-breadcrumbs breadcrumbs highlightable" itemscope itemtype="http://schema.org/BreadcrumbList"><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="/AgenticGoKitDocs/index.html"><span itemprop="name">content</span></a><meta itemprop="position" content="1">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="/AgenticGoKitDocs/guides/index.html"><span itemprop="name">guides</span></a><meta itemprop="position" content="2">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><span itemprop="name">Memory</span><meta itemprop="position" content="3"></li>
+          </ol>
+          <div class="topbar-area topbar-area-end" data-area="end">
+            <div class="topbar-button topbar-button-prev" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show"><a class="topbar-control" href="/AgenticGoKitDocs/guides/framework-comparison/index.html" title="framework-comparison (🡐)"><i class="fa-fw fas fa-chevron-left"></i></a>
+            </div>
+            <div class="topbar-button topbar-button-next" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show"><a class="topbar-control" href="/AgenticGoKitDocs/guides/scaffoldmemoryguide/index.html" title="ScaffoldMemoryGuide (🡒)"><i class="fa-fw fas fa-chevron-right"></i></a>
+            </div>
+            <div class="topbar-button topbar-button-more" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show"><button class="topbar-control" onclick="toggleTopbarFlyout(this)" type="button" title="More"><i class="fa-fw fas fa-ellipsis-v"></i></button>
+              <div class="topbar-content">
+                <div class="topbar-content-wrapper">
+                  <div class="topbar-area topbar-area-more" data-area="more">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+      <div id="R-main-overlay"></div>
+      <main id="R-body-inner" class="highlightable guides" tabindex="-1">
+        <div class="flex-block-wrapper">
+<article class="default">
+  <header class="headline">
+  </header>
+
+<h1 id="memory">Memory</h1>
+
+<h1 id="agenticgokit-memory-system---complete-implementation-guide">AgenticGoKit Memory System - Complete Implementation Guide</h1>
+<h2 id="-overview">🎯 Overview</h2>
+<p>AgenticGoKit provides a powerful, production-ready memory system that enables agents to maintain persistent context, conversation history, and knowledge bases. The system supports multiple storage backends, RAG (Retrieval-Augmented Generation) capabilities, and advanced features like vector embeddings, batch operations, and intelligent retry logic.</p>
+<h2 id="-table-of-contents">📚 Table of Contents</h2>
+<ul>
+<li><a href="/AgenticGoKitDocs/guides/memory/index.html#quick-start">Quick Start</a></li>
+<li><a href="/AgenticGoKitDocs/guides/memory/index.html#core-concepts">Core Concepts</a></li>
+<li><a href="/AgenticGoKitDocs/guides/memory/index.html#configuration">Configuration</a></li>
+<li><a href="/AgenticGoKitDocs/guides/memory/index.html#memory-providers">Memory Providers</a></li>
+<li><a href="/AgenticGoKitDocs/guides/memory/index.html#api-reference">API Reference</a></li>
+<li><a href="/AgenticGoKitDocs/guides/memory/index.html#rag-retrieval-augmented-generation">RAG (Retrieval-Augmented Generation)</a></li>
+<li><a href="/AgenticGoKitDocs/guides/memory/index.html#advanced-features">Advanced Features</a></li>
+<li><a href="/AgenticGoKitDocs/guides/memory/index.html#examples">Examples</a></li>
+<li><a href="/AgenticGoKitDocs/guides/memory/index.html#performance--optimization">Performance &amp; Optimization</a></li>
+<li><a href="/AgenticGoKitDocs/guides/memory/index.html#troubleshooting">Troubleshooting</a></li>
+</ul>
+<h2 id="-quick-start">🚀 Quick Start</h2>
+<h3 id="1-basic-setup">1. Basic Setup</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;context&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;log&#34;</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;github.com/kunalkushwaha/agenticgokit/core&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Create memory configuration</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">config</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">AgentMemoryConfig</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Provider</span>:   <span style="color:#e6db74">&#34;memory&#34;</span>,    <span style="color:#75715e">// In-memory for development</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Connection</span>: <span style="color:#e6db74">&#34;memory&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Dimensions</span>: <span style="color:#ae81ff">1536</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Embedding</span>: <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">EmbeddingConfig</span>{
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">Provider</span>: <span style="color:#e6db74">&#34;dummy&#34;</span>,   <span style="color:#75715e">// For testing</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">Model</span>:    <span style="color:#e6db74">&#34;text-embedding-3-small&#34;</span>,
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Create memory provider</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">memory</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewMemory</span>(<span style="color:#a6e22e">config</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">Close</span>()
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Create context with session</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">SetSession</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>(), <span style="color:#e6db74">&#34;user-123&#34;</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Store a memory</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">err</span> = <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">Store</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#e6db74">&#34;I love programming in Go&#34;</span>, <span style="color:#e6db74">&#34;programming&#34;</span>, <span style="color:#e6db74">&#34;preference&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Query memories</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">results</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">Query</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#e6db74">&#34;programming languages&#34;</span>, <span style="color:#ae81ff">5</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">result</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">results</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Content: %s, Score: %.2f\n&#34;</span>, <span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">Content</span>, <span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">Score</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h3 id="2-configuration-file-setup">2. Configuration File Setup</h3>
+<p>Create an <code>agentflow.toml</code> configuration file:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">agent_memory</span>]
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Basic settings</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;pgvector&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">connection</span> = <span style="color:#e6db74">&#34;postgres://user:password@localhost:5432/agentflow&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_results</span> = <span style="color:#ae81ff">10</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">dimensions</span> = <span style="color:#ae81ff">1536</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">auto_embed</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># RAG settings</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enable_knowledge_base</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">knowledge_max_results</span> = <span style="color:#ae81ff">20</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">knowledge_score_threshold</span> = <span style="color:#ae81ff">0.7</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enable_rag</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">rag_max_context_tokens</span> = <span style="color:#ae81ff">4000</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">rag_personal_weight</span> = <span style="color:#ae81ff">0.3</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">rag_knowledge_weight</span> = <span style="color:#ae81ff">0.7</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">rag_include_sources</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Embedding configuration</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">agent_memory</span>.<span style="color:#a6e22e">embedding</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;openai&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">api_key</span> = <span style="color:#e6db74">&#34;${OPENAI_API_KEY}&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">model</span> = <span style="color:#e6db74">&#34;text-embedding-3-small&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_batch_size</span> = <span style="color:#ae81ff">50</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">timeout_seconds</span> = <span style="color:#ae81ff">30</span></span></span></code></pre></div>
+<h2 id="-core-concepts">🧠 Core Concepts</h2>
+<h3 id="memory-interface">Memory Interface</h3>
+<p>The unified Memory interface provides all memory operations:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Memory</span> <span style="color:#66d9ef">interface</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Personal memory operations</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Store</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">content</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">tags</span> <span style="color:#f92672">...</span><span style="color:#66d9ef">string</span>) <span style="color:#66d9ef">error</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Query</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">query</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">limit</span> <span style="color:#f92672">...</span><span style="color:#66d9ef">int</span>) ([]<span style="color:#a6e22e">Result</span>, <span style="color:#66d9ef">error</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Key-value storage</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Remember</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">key</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">value</span> <span style="color:#66d9ef">any</span>) <span style="color:#66d9ef">error</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Recall</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">key</span> <span style="color:#66d9ef">string</span>) (<span style="color:#66d9ef">any</span>, <span style="color:#66d9ef">error</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Chat history</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">AddMessage</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">role</span>, <span style="color:#a6e22e">content</span> <span style="color:#66d9ef">string</span>) <span style="color:#66d9ef">error</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">GetHistory</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">limit</span> <span style="color:#f92672">...</span><span style="color:#66d9ef">int</span>) ([]<span style="color:#a6e22e">Message</span>, <span style="color:#66d9ef">error</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Knowledge base (RAG)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">IngestDocument</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">doc</span> <span style="color:#a6e22e">Document</span>) <span style="color:#66d9ef">error</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">IngestDocuments</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">docs</span> []<span style="color:#a6e22e">Document</span>) <span style="color:#66d9ef">error</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">SearchKnowledge</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">query</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">options</span> <span style="color:#f92672">...</span><span style="color:#a6e22e">SearchOption</span>) ([]<span style="color:#a6e22e">KnowledgeResult</span>, <span style="color:#66d9ef">error</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">SearchAll</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">query</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">options</span> <span style="color:#f92672">...</span><span style="color:#a6e22e">SearchOption</span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">HybridResult</span>, <span style="color:#66d9ef">error</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">BuildContext</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">query</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">options</span> <span style="color:#f92672">...</span><span style="color:#a6e22e">ContextOption</span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">RAGContext</span>, <span style="color:#66d9ef">error</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Session management</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">NewSession</span>() <span style="color:#66d9ef">string</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">SetSession</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">sessionID</span> <span style="color:#66d9ef">string</span>) <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">ClearSession</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>) <span style="color:#66d9ef">error</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Close</span>() <span style="color:#66d9ef">error</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h3 id="session-management">Session Management</h3>
+<p>All memory operations are session-scoped, providing complete isolation between different users or conversation threads:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Create new session</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">sessionID</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">NewSession</span>()
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">SetSession</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>(), <span style="color:#a6e22e">sessionID</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Different sessions see different data</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">ctx1</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">SetSession</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>(), <span style="color:#e6db74">&#34;user-1&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">ctx2</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">SetSession</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>(), <span style="color:#e6db74">&#34;user-2&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">Store</span>(<span style="color:#a6e22e">ctx1</span>, <span style="color:#e6db74">&#34;I like coffee&#34;</span>, <span style="color:#e6db74">&#34;preference&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">Store</span>(<span style="color:#a6e22e">ctx2</span>, <span style="color:#e6db74">&#34;I like tea&#34;</span>, <span style="color:#e6db74">&#34;preference&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Queries are isolated by session</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">results1</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">Query</span>(<span style="color:#a6e22e">ctx1</span>, <span style="color:#e6db74">&#34;beverages&#34;</span>, <span style="color:#ae81ff">5</span>)  <span style="color:#75715e">// Returns coffee preference</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">results2</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">Query</span>(<span style="color:#a6e22e">ctx2</span>, <span style="color:#e6db74">&#34;beverages&#34;</span>, <span style="color:#ae81ff">5</span>)  <span style="color:#75715e">// Returns tea preference</span></span></span></code></pre></div>
+<h3 id="data-types">Data Types</h3>
+<h4 id="personal-memory-result">Personal Memory Result</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Result</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Content</span>   <span style="color:#66d9ef">string</span>      <span style="color:#e6db74">`json:&#34;content&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Score</span>     <span style="color:#66d9ef">float32</span>     <span style="color:#e6db74">`json:&#34;score&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Tags</span>      []<span style="color:#66d9ef">string</span>    <span style="color:#e6db74">`json:&#34;tags&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">CreatedAt</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Time</span>   <span style="color:#e6db74">`json:&#34;created_at&#34;`</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h4 id="knowledge-base-result">Knowledge Base Result</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">KnowledgeResult</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Content</span>    <span style="color:#66d9ef">string</span>         <span style="color:#e6db74">`json:&#34;content&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Score</span>      <span style="color:#66d9ef">float32</span>        <span style="color:#e6db74">`json:&#34;score&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Source</span>     <span style="color:#66d9ef">string</span>         <span style="color:#e6db74">`json:&#34;source&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Title</span>      <span style="color:#66d9ef">string</span>         <span style="color:#e6db74">`json:&#34;title&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">DocumentID</span> <span style="color:#66d9ef">string</span>         <span style="color:#e6db74">`json:&#34;document_id&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Metadata</span>   <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">any</span> <span style="color:#e6db74">`json:&#34;metadata&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Tags</span>       []<span style="color:#66d9ef">string</span>       <span style="color:#e6db74">`json:&#34;tags&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">CreatedAt</span>  <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Time</span>      <span style="color:#e6db74">`json:&#34;created_at&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">ChunkIndex</span> <span style="color:#66d9ef">int</span>            <span style="color:#e6db74">`json:&#34;chunk_index&#34;`</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h4 id="document-structure">Document Structure</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Document</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">ID</span>         <span style="color:#66d9ef">string</span>         <span style="color:#e6db74">`json:&#34;id&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Title</span>      <span style="color:#66d9ef">string</span>         <span style="color:#e6db74">`json:&#34;title&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Content</span>    <span style="color:#66d9ef">string</span>         <span style="color:#e6db74">`json:&#34;content&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Source</span>     <span style="color:#66d9ef">string</span>         <span style="color:#e6db74">`json:&#34;source&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Type</span>       <span style="color:#a6e22e">DocumentType</span>   <span style="color:#e6db74">`json:&#34;type&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Metadata</span>   <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">any</span> <span style="color:#e6db74">`json:&#34;metadata&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Tags</span>       []<span style="color:#66d9ef">string</span>       <span style="color:#e6db74">`json:&#34;tags&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">CreatedAt</span>  <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Time</span>      <span style="color:#e6db74">`json:&#34;created_at&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">UpdatedAt</span>  <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Time</span>      <span style="color:#e6db74">`json:&#34;updated_at&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">ChunkIndex</span> <span style="color:#66d9ef">int</span>            <span style="color:#e6db74">`json:&#34;chunk_index&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">ChunkTotal</span> <span style="color:#66d9ef">int</span>            <span style="color:#e6db74">`json:&#34;chunk_total&#34;`</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h2 id="-configuration">⚙️ Configuration</h2>
+<h3 id="complete-configuration-reference">Complete Configuration Reference</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">agent_memory</span>]
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Provider Selection</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;pgvector&#34;</span>  <span style="color:#75715e"># Options: memory, pgvector, weaviate</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">connection</span> = <span style="color:#e6db74">&#34;postgres://user:password@localhost:5432/agentflow&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Core Settings</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_results</span> = <span style="color:#ae81ff">10</span>                    <span style="color:#75715e"># Maximum results for personal memory queries</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">dimensions</span> = <span style="color:#ae81ff">1536</span>                   <span style="color:#75715e"># Vector embedding dimensions</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">auto_embed</span> = <span style="color:#66d9ef">true</span>                   <span style="color:#75715e"># Automatically generate embeddings</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Knowledge Base Settings</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enable_knowledge_base</span> = <span style="color:#66d9ef">true</span>        <span style="color:#75715e"># Enable document ingestion and search</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">knowledge_max_results</span> = <span style="color:#ae81ff">20</span>          <span style="color:#75715e"># Maximum results from knowledge base</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">knowledge_score_threshold</span> = <span style="color:#ae81ff">0.7</span>     <span style="color:#75715e"># Minimum relevance score (0.0-1.0)</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">chunk_size</span> = <span style="color:#ae81ff">1000</span>                  <span style="color:#75715e"># Document chunk size in characters</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">chunk_overlap</span> = <span style="color:#ae81ff">200</span>                <span style="color:#75715e"># Overlap between chunks in characters</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># RAG Context Assembly</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enable_rag</span> = <span style="color:#66d9ef">true</span>                  <span style="color:#75715e"># Enable RAG context building</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">rag_max_context_tokens</span> = <span style="color:#ae81ff">4000</span>      <span style="color:#75715e"># Maximum tokens in assembled context</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">rag_personal_weight</span> = <span style="color:#ae81ff">0.3</span>          <span style="color:#75715e"># Weight for personal memory (0.0-1.0)</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">rag_knowledge_weight</span> = <span style="color:#ae81ff">0.7</span>         <span style="color:#75715e"># Weight for knowledge base (0.0-1.0)</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">rag_include_sources</span> = <span style="color:#66d9ef">true</span>         <span style="color:#75715e"># Include source attribution in context</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Embedding Service Configuration</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">agent_memory</span>.<span style="color:#a6e22e">embedding</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;openai&#34;</span>                <span style="color:#75715e"># Options: openai, azure, ollama, dummy</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">api_key</span> = <span style="color:#e6db74">&#34;${OPENAI_API_KEY}&#34;</span>      <span style="color:#75715e"># API key (supports environment variables)</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">model</span> = <span style="color:#e6db74">&#34;text-embedding-3-small&#34;</span>   <span style="color:#75715e"># Embedding model</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">base_url</span> = <span style="color:#e6db74">&#34;&#34;</span>                      <span style="color:#75715e"># Custom base URL (for local/custom endpoints)</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_batch_size</span> = <span style="color:#ae81ff">50</span>                <span style="color:#75715e"># Maximum items per batch request</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">timeout_seconds</span> = <span style="color:#ae81ff">30</span>               <span style="color:#75715e"># Request timeout</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">cache_embeddings</span> = <span style="color:#66d9ef">true</span>            <span style="color:#75715e"># Cache embeddings for repeated content</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Advanced Settings (Optional)</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">agent_memory</span>.<span style="color:#a6e22e">advanced</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">retry_max_attempts</span> = <span style="color:#ae81ff">3</span>             <span style="color:#75715e"># Maximum retry attempts for failed operations</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">retry_base_delay</span> = <span style="color:#e6db74">&#34;100ms&#34;</span>         <span style="color:#75715e"># Base delay between retries</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">retry_max_delay</span> = <span style="color:#e6db74">&#34;5s&#34;</span>             <span style="color:#75715e"># Maximum delay between retries</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">connection_pool_size</span> = <span style="color:#ae81ff">25</span>          <span style="color:#75715e"># Database connection pool size</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">health_check_interval</span> = <span style="color:#e6db74">&#34;1m&#34;</span>       <span style="color:#75715e"># Health check interval for connections</span></span></span></code></pre></div>
+<h3 id="environment-variables">Environment Variables</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Database connection</span>
+</span></span><span style="display:flex;"><span>export AGENTFLOW_DB_URL<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;postgres://user:password@localhost:5432/agentflow&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Embedding service</span>
+</span></span><span style="display:flex;"><span>export OPENAI_API_KEY<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;your-openai-api-key&#34;</span>
+</span></span><span style="display:flex;"><span>export AZURE_OPENAI_ENDPOINT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;https://your-resource.openai.azure.com/&#34;</span>
+</span></span><span style="display:flex;"><span>export AZURE_OPENAI_API_KEY<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;your-azure-api-key&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Optional: Custom configuration file</span>
+</span></span><span style="display:flex;"><span>export AGENTFLOW_CONFIG_PATH<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/path/to/agentflow.toml&#34;</span></span></span></code></pre></div>
+<h2 id="-memory-providers">💾 Memory Providers</h2>
+<h3 id="1-in-memory-provider-memory">1. In-Memory Provider (<code>memory</code>)</h3>
+<p><strong>Best for</strong>: Development, testing, temporary sessions</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#a6e22e">config</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">AgentMemoryConfig</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Provider</span>:   <span style="color:#e6db74">&#34;memory&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Connection</span>: <span style="color:#e6db74">&#34;memory&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Dimensions</span>: <span style="color:#ae81ff">1536</span>,
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<p><strong>Features</strong>:</p>
+<ul>
+<li>✅ All memory operations</li>
+<li>✅ Session isolation</li>
+<li>✅ RAG capabilities</li>
+<li>❌ No persistence (data lost on restart)</li>
+<li>❌ No scaling across instances</li>
+</ul>
+<h3 id="2-postgresql--pgvector-pgvector">2. PostgreSQL + pgvector (<code>pgvector</code>)</h3>
+<p><strong>Best for</strong>: Production deployments, persistent storage</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#a6e22e">config</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">AgentMemoryConfig</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Provider</span>:   <span style="color:#e6db74">&#34;pgvector&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Connection</span>: <span style="color:#e6db74">&#34;postgres://user:password@localhost:5432/agentflow&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Dimensions</span>: <span style="color:#ae81ff">1536</span>,
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<p><strong>Features</strong>:</p>
+<ul>
+<li>✅ Full persistence</li>
+<li>✅ Excellent performance (~45ms queries)</li>
+<li>✅ Enhanced retry logic with exponential backoff</li>
+<li>✅ Advanced connection pooling</li>
+<li>✅ Batch operations for efficiency</li>
+<li>✅ ACID transactions</li>
+<li>✅ Vector similarity search with indexing</li>
+</ul>
+<p><strong>Setup Requirements</strong>:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#75715e">-- Install pgvector extension
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">CREATE</span> EXTENSION <span style="color:#66d9ef">IF</span> <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">EXISTS</span> vector;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- Tables are created automatically by AgentFlow</span></span></span></code></pre></div>
+<h3 id="3-weaviate-weaviate">3. Weaviate (<code>weaviate</code>)</h3>
+<p><strong>Best for</strong>: Large-scale vector operations, advanced search</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#a6e22e">config</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">AgentMemoryConfig</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Provider</span>:   <span style="color:#e6db74">&#34;weaviate&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Connection</span>: <span style="color:#e6db74">&#34;http://localhost:8080&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Dimensions</span>: <span style="color:#ae81ff">1536</span>,
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<p><strong>Note</strong>: Currently in development. Basic implementation available.</p>
+<h2 id="-api-reference">📖 API Reference</h2>
+<h3 id="personal-memory-operations">Personal Memory Operations</h3>
+<h4 id="store-memory">Store Memory</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Store with tags</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">Store</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#e6db74">&#34;I prefer dark roast coffee&#34;</span>, <span style="color:#e6db74">&#34;preference&#34;</span>, <span style="color:#e6db74">&#34;coffee&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Store without tags</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">Store</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#e6db74">&#34;Meeting scheduled for tomorrow&#34;</span>)</span></span></code></pre></div>
+<h4 id="query-memory">Query Memory</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Basic query</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">results</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">Query</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#e6db74">&#34;coffee preferences&#34;</span>, <span style="color:#ae81ff">5</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Query with custom limit</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">results</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">Query</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#e6db74">&#34;meetings&#34;</span>)  <span style="color:#75715e">// Uses default limit from config</span></span></span></code></pre></div>
+<h3 id="key-value-storage">Key-Value Storage</h3>
+<h4 id="rememberrecall">Remember/Recall</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Store structured data</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">Remember</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#e6db74">&#34;user_preferences&#34;</span>, <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">interface</span>{}{
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;theme&#34;</span>: <span style="color:#e6db74">&#34;dark&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;language&#34;</span>: <span style="color:#e6db74">&#34;en&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;timezone&#34;</span>: <span style="color:#e6db74">&#34;UTC&#34;</span>,
+</span></span><span style="display:flex;"><span>})
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Retrieve data</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">prefs</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">Recall</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#e6db74">&#34;user_preferences&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">prefs</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">preferences</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">prefs</span>.(<span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">interface</span>{})
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">theme</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">preferences</span>[<span style="color:#e6db74">&#34;theme&#34;</span>].(<span style="color:#66d9ef">string</span>)
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h3 id="chat-history">Chat History</h3>
+<h4 id="add-messages">Add Messages</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Add user message</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">AddMessage</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#e6db74">&#34;user&#34;</span>, <span style="color:#e6db74">&#34;How do I configure memory in AgentFlow?&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Add assistant response</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">AddMessage</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#e6db74">&#34;assistant&#34;</span>, <span style="color:#e6db74">&#34;You can configure memory using the agent_memory section in your TOML file...&#34;</span>)</span></span></code></pre></div>
+<h4 id="get-history">Get History</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Get all history</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">history</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">GetHistory</span>(<span style="color:#a6e22e">ctx</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Get recent N messages</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">recent</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">GetHistory</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#ae81ff">10</span>)</span></span></code></pre></div>
+<h3 id="knowledge-base-operations">Knowledge Base Operations</h3>
+<h4 id="document-ingestion">Document Ingestion</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Single document</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">doc</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">Document</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">ID</span>:      <span style="color:#e6db74">&#34;guide-001&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Title</span>:   <span style="color:#e6db74">&#34;AgentFlow Memory Guide&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Content</span>: <span style="color:#e6db74">&#34;AgentFlow provides a powerful memory system...&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Source</span>:  <span style="color:#e6db74">&#34;docs/memory-guide.md&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Type</span>:    <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">DocumentTypeText</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Tags</span>:    []<span style="color:#66d9ef">string</span>{<span style="color:#e6db74">&#34;documentation&#34;</span>, <span style="color:#e6db74">&#34;memory&#34;</span>},
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Metadata</span>: <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">any</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;author&#34;</span>: <span style="color:#e6db74">&#34;AgentFlow Team&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;version&#34;</span>: <span style="color:#e6db74">&#34;1.0&#34;</span>,
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">IngestDocument</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">doc</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Multiple documents (more efficient)</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">docs</span> <span style="color:#f92672">:=</span> []<span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">Document</span>{<span style="color:#a6e22e">doc1</span>, <span style="color:#a6e22e">doc2</span>, <span style="color:#a6e22e">doc3</span>}
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">IngestDocuments</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">docs</span>)</span></span></code></pre></div>
+<h4 id="knowledge-search">Knowledge Search</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Basic search</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">results</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">SearchKnowledge</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#e6db74">&#34;memory configuration&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Advanced search with options</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">results</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">SearchKnowledge</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#e6db74">&#34;vector databases&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">WithScoreThreshold</span>(<span style="color:#ae81ff">0.8</span>),
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">WithSources</span>([]<span style="color:#66d9ef">string</span>{<span style="color:#e6db74">&#34;docs/&#34;</span>}),
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">WithTags</span>([]<span style="color:#66d9ef">string</span>{<span style="color:#e6db74">&#34;database&#34;</span>, <span style="color:#e6db74">&#34;vector&#34;</span>}),
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">WithLimit</span>(<span style="color:#ae81ff">10</span>),
+</span></span><span style="display:flex;"><span>)</span></span></code></pre></div>
+<h3 id="advanced-search-options">Advanced Search Options</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Search options</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">SearchOption</span> <span style="color:#66d9ef">func</span>(<span style="color:#f92672">*</span><span style="color:#a6e22e">SearchConfig</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">WithLimit</span>(<span style="color:#a6e22e">limit</span> <span style="color:#66d9ef">int</span>) <span style="color:#a6e22e">SearchOption</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">WithScoreThreshold</span>(<span style="color:#a6e22e">threshold</span> <span style="color:#66d9ef">float32</span>) <span style="color:#a6e22e">SearchOption</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">WithSources</span>(<span style="color:#a6e22e">sources</span> []<span style="color:#66d9ef">string</span>) <span style="color:#a6e22e">SearchOption</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">WithTags</span>(<span style="color:#a6e22e">tags</span> []<span style="color:#66d9ef">string</span>) <span style="color:#a6e22e">SearchOption</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">WithDocumentTypes</span>(<span style="color:#a6e22e">types</span> []<span style="color:#a6e22e">DocumentType</span>) <span style="color:#a6e22e">SearchOption</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">WithDateRange</span>(<span style="color:#a6e22e">start</span>, <span style="color:#a6e22e">end</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Time</span>) <span style="color:#a6e22e">SearchOption</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">WithIncludePersonal</span>(<span style="color:#a6e22e">include</span> <span style="color:#66d9ef">bool</span>) <span style="color:#a6e22e">SearchOption</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">WithIncludeKnowledge</span>(<span style="color:#a6e22e">include</span> <span style="color:#66d9ef">bool</span>) <span style="color:#a6e22e">SearchOption</span></span></span></code></pre></div>
+<h2 id="-rag-retrieval-augmented-generation">🔄 RAG (Retrieval-Augmented Generation)</h2>
+<h3 id="hybrid-search">Hybrid Search</h3>
+<p>Combine personal memory and knowledge base searches:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Hybrid search across both personal memory and knowledge base</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">result</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">SearchAll</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#e6db74">&#34;database best practices&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Personal memories: %d\n&#34;</span>, len(<span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">PersonalMemory</span>))
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Knowledge results: %d\n&#34;</span>, len(<span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">Knowledge</span>))
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Total results: %d\n&#34;</span>, <span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">TotalResults</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Search time: %v\n&#34;</span>, <span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">SearchTime</span>)</span></span></code></pre></div>
+<h3 id="rag-context-building">RAG Context Building</h3>
+<p>Automatically assemble context for LLM prompts:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Build RAG context</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">ragContext</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">BuildContext</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#e6db74">&#34;How do I optimize database performance?&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Use in LLM prompt</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">prompt</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">`
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">Context:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">%s
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">Question: %s
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">Please provide a comprehensive answer based on the context above.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">`</span>, <span style="color:#a6e22e">ragContext</span>.<span style="color:#a6e22e">ContextText</span>, <span style="color:#a6e22e">ragContext</span>.<span style="color:#a6e22e">Query</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// ragContext contains:</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// - PersonalMemory: Relevant personal memories</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// - Knowledge: Relevant knowledge base entries  </span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// - ChatHistory: Recent conversation</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// - ContextText: Formatted text ready for LLM</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// - Sources: List of source documents</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// - TokenCount: Estimated token count</span></span></span></code></pre></div>
+<h3 id="context-configuration">Context Configuration</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Configure context building</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">ragContext</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">BuildContext</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#e6db74">&#34;database question&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">WithMaxTokens</span>(<span style="color:#ae81ff">3000</span>),
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">WithPersonalWeight</span>(<span style="color:#ae81ff">0.4</span>),      <span style="color:#75715e">// 40% personal memory</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">WithKnowledgeWeight</span>(<span style="color:#ae81ff">0.6</span>),     <span style="color:#75715e">// 60% knowledge base</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">WithHistoryLimit</span>(<span style="color:#ae81ff">5</span>),          <span style="color:#75715e">// Include last 5 messages</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">WithIncludeSources</span>(<span style="color:#66d9ef">true</span>),     <span style="color:#75715e">// Include source attribution</span>
+</span></span><span style="display:flex;"><span>)</span></span></code></pre></div>
+<h2 id="-advanced-features">🚀 Advanced Features</h2>
+<h3 id="batch-operations-pgvectorprovider">Batch Operations (PgVectorProvider)</h3>
+<p>For improved performance with large datasets:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Cast to access enhanced features</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">provider</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.(<span style="color:#f92672">*</span><span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">PgVectorProvider</span>); <span style="color:#a6e22e">ok</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Batch store multiple memories</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">batchRequests</span> <span style="color:#f92672">:=</span> []<span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">BatchStoreRequest</span>{
+</span></span><span style="display:flex;"><span>        {<span style="color:#a6e22e">Content</span>: <span style="color:#e6db74">&#34;First item&#34;</span>, <span style="color:#a6e22e">Tags</span>: []<span style="color:#66d9ef">string</span>{<span style="color:#e6db74">&#34;batch&#34;</span>, <span style="color:#e6db74">&#34;test&#34;</span>}},
+</span></span><span style="display:flex;"><span>        {<span style="color:#a6e22e">Content</span>: <span style="color:#e6db74">&#34;Second item&#34;</span>, <span style="color:#a6e22e">Tags</span>: []<span style="color:#66d9ef">string</span>{<span style="color:#e6db74">&#34;batch&#34;</span>, <span style="color:#e6db74">&#34;test&#34;</span>}},
+</span></span><span style="display:flex;"><span>        {<span style="color:#a6e22e">Content</span>: <span style="color:#e6db74">&#34;Third item&#34;</span>, <span style="color:#a6e22e">Tags</span>: []<span style="color:#66d9ef">string</span>{<span style="color:#e6db74">&#34;batch&#34;</span>, <span style="color:#e6db74">&#34;test&#34;</span>}},
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">provider</span>.<span style="color:#a6e22e">BatchStore</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">batchRequests</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Batch ingest documents</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">docs</span> <span style="color:#f92672">:=</span> []<span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">Document</span>{<span style="color:#a6e22e">doc1</span>, <span style="color:#a6e22e">doc2</span>, <span style="color:#a6e22e">doc3</span>}
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">provider</span>.<span style="color:#a6e22e">BatchIngestDocuments</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">docs</span>)
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h3 id="retry-logic-and-error-handling">Retry Logic and Error Handling</h3>
+<p>The PgVectorProvider includes sophisticated retry logic:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Automatic retry with exponential backoff</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// - 3 retry attempts by default</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// - 100ms → 200ms → 400ms → 5s max delay</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// - Intelligent error classification</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// - Context cancellation support</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Configure retry behavior</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">retryConfig</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">DefaultRetryConfig</span>()
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">retryConfig</span>.<span style="color:#a6e22e">MaxRetries</span> = <span style="color:#ae81ff">5</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">retryConfig</span>.<span style="color:#a6e22e">BackoffDuration</span> = <span style="color:#ae81ff">200</span> <span style="color:#f92672">*</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Millisecond</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">retryConfig</span>.<span style="color:#a6e22e">MaxBackoff</span> = <span style="color:#ae81ff">10</span> <span style="color:#f92672">*</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Second</span></span></span></code></pre></div>
+<h3 id="connection-pooling">Connection Pooling</h3>
+<p>Optimized database connections:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// PgVectorProvider automatically configures:</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// - MaxConns: 25 connections</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// - MinConns: 5 connections  </span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// - Connection lifetime: 1 hour</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// - Health checks: every minute</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// - Statement timeouts: 30 seconds</span></span></span></code></pre></div>
+<h3 id="session-management-1">Session Management</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Create new session</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">sessionID</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">NewSession</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Set session context</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">SetSession</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>(), <span style="color:#a6e22e">sessionID</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Get current session ID</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">currentSession</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">GetSessionID</span>(<span style="color:#a6e22e">ctx</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Clear all data for session</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">ClearSession</span>(<span style="color:#a6e22e">ctx</span>)</span></span></code></pre></div>
+<h2 id="-examples">💡 Examples</h2>
+<h3 id="example-1-personal-assistant-with-memory">Example 1: Personal Assistant with Memory</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;context&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;fmt&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;log&#34;</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;github.com/kunalkushwaha/agentflow/core&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">personalAssistantExample</span>() {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Setup memory</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">config</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">AgentMemoryConfig</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Provider</span>:   <span style="color:#e6db74">&#34;pgvector&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Connection</span>: <span style="color:#e6db74">&#34;postgres://user:password@localhost:5432/agentflow&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Dimensions</span>: <span style="color:#ae81ff">1536</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Embedding</span>: <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">EmbeddingConfig</span>{
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">Provider</span>: <span style="color:#e6db74">&#34;openai&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">APIKey</span>:   <span style="color:#e6db74">&#34;your-api-key&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">Model</span>:    <span style="color:#e6db74">&#34;text-embedding-3-small&#34;</span>,
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">memory</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewMemory</span>(<span style="color:#a6e22e">config</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">Close</span>()
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// User session</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">SetSession</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>(), <span style="color:#e6db74">&#34;alice-123&#34;</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Store user preferences</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">Store</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#e6db74">&#34;I prefer morning meetings&#34;</span>, <span style="color:#e6db74">&#34;scheduling&#34;</span>, <span style="color:#e6db74">&#34;preference&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">Store</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#e6db74">&#34;I work in Pacific Time Zone&#34;</span>, <span style="color:#e6db74">&#34;timezone&#34;</span>, <span style="color:#e6db74">&#34;preference&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">Remember</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#e6db74">&#34;notification_preferences&#34;</span>, <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">interface</span>{}{
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;email&#34;</span>: <span style="color:#66d9ef">true</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;slack&#34;</span>: <span style="color:#66d9ef">false</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;phone&#34;</span>: <span style="color:#66d9ef">false</span>,
+</span></span><span style="display:flex;"><span>    })
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// User asks a question</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">AddMessage</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#e6db74">&#34;user&#34;</span>, <span style="color:#e6db74">&#34;Schedule a meeting for me&#34;</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Query relevant memories</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">results</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">Query</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#e6db74">&#34;scheduling preferences&#34;</span>, <span style="color:#ae81ff">3</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Build context for LLM</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">ragContext</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">BuildContext</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#e6db74">&#34;schedule meeting preferences&#34;</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Generate response using LLM with context</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">response</span> <span style="color:#f92672">:=</span> <span style="color:#e6db74">&#34;Based on your preferences for morning meetings and Pacific Time Zone...&#34;</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Store assistant response</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">AddMessage</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#e6db74">&#34;assistant&#34;</span>, <span style="color:#a6e22e">response</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;Personal assistant conversation stored in memory!&#34;</span>)
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h3 id="example-2-document-based-qa-system">Example 2: Document-Based Q&amp;A System</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">documentQAExample</span>() {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">memory</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewMemory</span>(<span style="color:#a6e22e">config</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">Close</span>()
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>()
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Ingest documentation</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">docs</span> <span style="color:#f92672">:=</span> []<span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">Document</span>{
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">ID</span>:      <span style="color:#e6db74">&#34;memory-guide&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">Title</span>:   <span style="color:#e6db74">&#34;Memory System Guide&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">Content</span>: <span style="color:#e6db74">&#34;AgentFlow memory system provides persistent storage...&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">Source</span>:  <span style="color:#e6db74">&#34;docs/memory.md&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">Type</span>:    <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">DocumentTypeText</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">Tags</span>:    []<span style="color:#66d9ef">string</span>{<span style="color:#e6db74">&#34;documentation&#34;</span>, <span style="color:#e6db74">&#34;memory&#34;</span>},
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">ID</span>:      <span style="color:#e6db74">&#34;config-guide&#34;</span>, 
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">Title</span>:   <span style="color:#e6db74">&#34;Configuration Guide&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">Content</span>: <span style="color:#e6db74">&#34;Configure AgentFlow using TOML files...&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">Source</span>:  <span style="color:#e6db74">&#34;docs/config.md&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">Type</span>:    <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">DocumentTypeText</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">Tags</span>:    []<span style="color:#66d9ef">string</span>{<span style="color:#e6db74">&#34;documentation&#34;</span>, <span style="color:#e6db74">&#34;configuration&#34;</span>},
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">err</span> = <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">IngestDocuments</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">docs</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Answer user questions using knowledge base</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">questions</span> <span style="color:#f92672">:=</span> []<span style="color:#66d9ef">string</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;How do I configure memory?&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;What providers are available?&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;How does RAG work?&#34;</span>,
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">question</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">questions</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Build RAG context</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">ragContext</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">BuildContext</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">question</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Error building context: %v&#34;</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">continue</span>
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Question: %s\n&#34;</span>, <span style="color:#a6e22e">question</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Context (%d tokens):\n%s\n&#34;</span>, <span style="color:#a6e22e">ragContext</span>.<span style="color:#a6e22e">TokenCount</span>, <span style="color:#a6e22e">ragContext</span>.<span style="color:#a6e22e">ContextText</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Sources: %v\n\n&#34;</span>, <span style="color:#a6e22e">ragContext</span>.<span style="color:#a6e22e">Sources</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h3 id="example-3-multi-user-chat-application">Example 3: Multi-User Chat Application</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">multiUserChatExample</span>() {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">memory</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewMemory</span>(<span style="color:#a6e22e">config</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">Close</span>()
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Different users with isolated sessions</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">users</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">string</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;alice&#34;</span>: <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">NewSession</span>(),
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;bob&#34;</span>:   <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">NewSession</span>(),
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;charlie&#34;</span>: <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">NewSession</span>(),
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Each user stores different preferences</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">username</span>, <span style="color:#a6e22e">sessionID</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">users</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">userCtx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">SetSession</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>(), <span style="color:#a6e22e">sessionID</span>)
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">Store</span>(<span style="color:#a6e22e">userCtx</span>, <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;I am %s&#34;</span>, <span style="color:#a6e22e">username</span>), <span style="color:#e6db74">&#34;identity&#34;</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">Remember</span>(<span style="color:#a6e22e">userCtx</span>, <span style="color:#e6db74">&#34;username&#34;</span>, <span style="color:#a6e22e">username</span>)
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Chat history is isolated per user</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">AddMessage</span>(<span style="color:#a6e22e">userCtx</span>, <span style="color:#e6db74">&#34;user&#34;</span>, <span style="color:#e6db74">&#34;Hello, I&#39;m &#34;</span><span style="color:#f92672">+</span><span style="color:#a6e22e">username</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">AddMessage</span>(<span style="color:#a6e22e">userCtx</span>, <span style="color:#e6db74">&#34;assistant&#34;</span>, <span style="color:#e6db74">&#34;Hello &#34;</span><span style="color:#f92672">+</span><span style="color:#a6e22e">username</span><span style="color:#f92672">+</span><span style="color:#e6db74">&#34;! How can I help you?&#34;</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Query each user&#39;s isolated data</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">username</span>, <span style="color:#a6e22e">sessionID</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">users</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">userCtx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">SetSession</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>(), <span style="color:#a6e22e">sessionID</span>)
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">results</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">Query</span>(<span style="color:#a6e22e">userCtx</span>, <span style="color:#e6db74">&#34;identity&#34;</span>, <span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">storedUsername</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">Recall</span>(<span style="color:#a6e22e">userCtx</span>, <span style="color:#e6db74">&#34;username&#34;</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">history</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">GetHistory</span>(<span style="color:#a6e22e">userCtx</span>)
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;User: %s\n&#34;</span>, <span style="color:#a6e22e">username</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;  Memory: %s\n&#34;</span>, <span style="color:#a6e22e">results</span>[<span style="color:#ae81ff">0</span>].<span style="color:#a6e22e">Content</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;  Stored username: %s\n&#34;</span>, <span style="color:#a6e22e">storedUsername</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;  Messages: %d\n\n&#34;</span>, len(<span style="color:#a6e22e">history</span>))
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h2 id="-performance--optimization">⚡ Performance &amp; Optimization</h2>
+<h3 id="performance-benchmarks">Performance Benchmarks</h3>
+<p>Based on comprehensive testing:</p>
+<table>
+  <thead>
+      <tr>
+          <th>Operation</th>
+          <th>Provider</th>
+          <th>Performance</th>
+          <th>Notes</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>Single Store</td>
+          <td>PgVector</td>
+          <td>~50ms</td>
+          <td>With retry logic</td>
+      </tr>
+      <tr>
+          <td>Batch Store (50 items)</td>
+          <td>PgVector</td>
+          <td>~2.3s</td>
+          <td>~22 ops/sec</td>
+      </tr>
+      <tr>
+          <td>Query (10 results)</td>
+          <td>PgVector</td>
+          <td>~45ms</td>
+          <td>With vector similarity</td>
+      </tr>
+      <tr>
+          <td>Knowledge Search</td>
+          <td>PgVector</td>
+          <td>~45ms</td>
+          <td>Indexed search</td>
+      </tr>
+      <tr>
+          <td>RAG Context Build</td>
+          <td>PgVector</td>
+          <td>~90ms</td>
+          <td>Full hybrid search</td>
+      </tr>
+      <tr>
+          <td>Document Ingest</td>
+          <td>PgVector</td>
+          <td>~150ms</td>
+          <td>Per document</td>
+      </tr>
+      <tr>
+          <td>Batch Document Ingest</td>
+          <td>PgVector</td>
+          <td>~150ms</td>
+          <td>Per 3 documents</td>
+      </tr>
+  </tbody>
+</table>
+<h3 id="optimization-tips">Optimization Tips</h3>
+<h4 id="1-use-batch-operations">1. Use Batch Operations</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Instead of multiple Store() calls</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">item</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">items</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">Store</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">item</span>.<span style="color:#a6e22e">Content</span>, <span style="color:#a6e22e">item</span>.<span style="color:#a6e22e">Tags</span><span style="color:#f92672">...</span>)  <span style="color:#75715e">// Slower</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Use batch operations (PgVectorProvider)</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">provider</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.(<span style="color:#f92672">*</span><span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">PgVectorProvider</span>); <span style="color:#a6e22e">ok</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">provider</span>.<span style="color:#a6e22e">BatchStore</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">batchRequests</span>)  <span style="color:#75715e">// Much faster</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h4 id="2-configure-appropriate-limits">2. Configure Appropriate Limits</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">agent_memory</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_results</span> = <span style="color:#ae81ff">10</span>              <span style="color:#75715e"># Don&#39;t fetch more than needed</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">knowledge_max_results</span> = <span style="color:#ae81ff">20</span>    <span style="color:#75715e"># Limit knowledge base results</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">rag_max_context_tokens</span> = <span style="color:#ae81ff">4000</span> <span style="color:#75715e"># Balance context size vs performance</span></span></span></code></pre></div>
+<h4 id="3-use-score-thresholds">3. Use Score Thresholds</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Filter low-quality results</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">results</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">SearchKnowledge</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#e6db74">&#34;query&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">WithScoreThreshold</span>(<span style="color:#ae81ff">0.7</span>),  <span style="color:#75715e">// Only high-relevance results</span>
+</span></span><span style="display:flex;"><span>)</span></span></code></pre></div>
+<h4 id="4-embedding-service-optimization">4. Embedding Service Optimization</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">agent_memory</span>.<span style="color:#a6e22e">embedding</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_batch_size</span> = <span style="color:#ae81ff">50</span>           <span style="color:#75715e"># Batch embedding requests</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">cache_embeddings</span> = <span style="color:#66d9ef">true</span>       <span style="color:#75715e"># Cache repeated content</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">timeout_seconds</span> = <span style="color:#ae81ff">30</span>          <span style="color:#75715e"># Reasonable timeout</span></span></span></code></pre></div>
+<h4 id="5-connection-pooling-pgvector">5. Connection Pooling (PgVector)</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">agent_memory</span>.<span style="color:#a6e22e">advanced</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">connection_pool_size</span> = <span style="color:#ae81ff">25</span>     <span style="color:#75715e"># Optimize for your workload</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">health_check_interval</span> = <span style="color:#e6db74">&#34;1m&#34;</span>  <span style="color:#75715e"># Monitor connection health</span></span></span></code></pre></div>
+<h3 id="memory-usage-guidelines">Memory Usage Guidelines</h3>
+<h4 id="session-management-2">Session Management</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Clean up unused sessions periodically</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">ClearSession</span>(<span style="color:#a6e22e">ctx</span>)  <span style="color:#75715e">// Removes all session data</span></span></span></code></pre></div>
+<h4 id="document-chunking">Document Chunking</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">agent_memory</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">chunk_size</span> = <span style="color:#ae81ff">1000</span>     <span style="color:#75715e"># Smaller chunks = more granular search</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">chunk_overlap</span> = <span style="color:#ae81ff">200</span>   <span style="color:#75715e"># Overlap preserves context across chunks</span></span></span></code></pre></div>
+<h2 id="-troubleshooting">🔧 Troubleshooting</h2>
+<h3 id="common-issues">Common Issues</h3>
+<h4 id="1-connection-errors">1. Connection Errors</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Error: failed to ping database</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Solution: Check connection string and database accessibility</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">config</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">AgentMemoryConfig</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Provider</span>:   <span style="color:#e6db74">&#34;pgvector&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Connection</span>: <span style="color:#e6db74">&#34;postgres://user:password@localhost:5432/agentflow?sslmode=disable&#34;</span>,
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h4 id="2-embedding-service-errors">2. Embedding Service Errors</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Error: failed to generate embedding</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Solution: Verify API key and provider configuration</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">config</span>.<span style="color:#a6e22e">Embedding</span> = <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">EmbeddingConfig</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Provider</span>: <span style="color:#e6db74">&#34;openai&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">APIKey</span>:   <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Getenv</span>(<span style="color:#e6db74">&#34;OPENAI_API_KEY&#34;</span>),  <span style="color:#75715e">// Ensure API key is set</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Model</span>:    <span style="color:#e6db74">&#34;text-embedding-3-small&#34;</span>,
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h4 id="3-low-search-scores">3. Low Search Scores</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Issue: All similarity scores are very low</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Solution: Use appropriate score thresholds for your embedding provider</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// For dummy embeddings (testing)</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">WithScoreThreshold</span>(<span style="color:#f92672">-</span><span style="color:#ae81ff">0.1</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// For real embeddings</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">WithScoreThreshold</span>(<span style="color:#ae81ff">0.7</span>)</span></span></code></pre></div>
+<h4 id="4-performance-issues">4. Performance Issues</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Issue: Slow queries</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Solutions:</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// 1. Reduce result limits</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">results</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">Query</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#e6db74">&#34;query&#34;</span>, <span style="color:#ae81ff">5</span>)  <span style="color:#75715e">// Instead of 50</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// 2. Use batch operations</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span>.<span style="color:#a6e22e">BatchStore</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">requests</span>)  <span style="color:#75715e">// Instead of individual stores</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// 3. Optimize embedding batch size</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">config</span>.<span style="color:#a6e22e">Embedding</span>.<span style="color:#a6e22e">MaxBatchSize</span> = <span style="color:#ae81ff">25</span>  <span style="color:#75715e">// Tune for your provider</span></span></span></code></pre></div>
+<h3 id="debugging-tips">Debugging Tips</h3>
+<h4 id="enable-debug-logging">Enable Debug Logging</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#f92672">import</span> <span style="color:#e6db74">&#34;log&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Set up debug logging</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">SetFlags</span>(<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">LstdFlags</span> | <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Lshortfile</span>)</span></span></code></pre></div>
+<h4 id="check-session-isolation">Check Session Isolation</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Verify session ID</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">sessionID</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">GetSessionID</span>(<span style="color:#a6e22e">ctx</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Current session: %s\n&#34;</span>, <span style="color:#a6e22e">sessionID</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Test with known session</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">ctx</span> = <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">SetSession</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>(), <span style="color:#e6db74">&#34;test-session&#34;</span>)</span></span></code></pre></div>
+<h4 id="validate-configuration">Validate Configuration</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Test basic memory operations</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">Store</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#e6db74">&#34;test content&#34;</span>, <span style="color:#e6db74">&#34;test&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Store failed: %v&#34;</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">results</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">Query</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#e6db74">&#34;test&#34;</span>, <span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Query failed: %v&#34;</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>} <span style="color:#66d9ef">else</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Found %d results&#34;</span>, len(<span style="color:#a6e22e">results</span>))
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h3 id="database-setup-pgvector">Database Setup (PgVector)</h3>
+<h4 id="postgresql-with-pgvector">PostgreSQL with pgvector</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#75715e">-- Install pgvector extension
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">CREATE</span> EXTENSION <span style="color:#66d9ef">IF</span> <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">EXISTS</span> vector;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- Verify installation
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">SELECT</span> <span style="color:#f92672">*</span> <span style="color:#66d9ef">FROM</span> pg_extension <span style="color:#66d9ef">WHERE</span> extname <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;vector&#39;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- Check tables (created automatically by AgentFlow)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">\</span>dt
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- Tables created:
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">-- - personal_memory (session-scoped memories)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">-- - key_value_store (session-scoped key-value pairs)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">-- - chat_history (conversation messages)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">-- - documents (document metadata)
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">-- - knowledge_base (document embeddings)</span></span></span></code></pre></div>
+<h4 id="docker-setup">Docker Setup</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Run PostgreSQL with pgvector</span>
+</span></span><span style="display:flex;"><span>docker run -d <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --name agentflow-postgres <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -e POSTGRES_DB<span style="color:#f92672">=</span>agentflow <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -e POSTGRES_USER<span style="color:#f92672">=</span>agentflow <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -e POSTGRES_PASSWORD<span style="color:#f92672">=</span>password <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -p 5432:5432 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  pgvector/pgvector:pg16
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Test connection</span>
+</span></span><span style="display:flex;"><span>psql <span style="color:#e6db74">&#34;postgres://agentflow:password@localhost:5432/agentflow&#34;</span></span></span></code></pre></div>
+<h3 id="environment-variables-reference">Environment Variables Reference</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Required</span>
+</span></span><span style="display:flex;"><span>export AGENTFLOW_DB_URL<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;postgres://user:password@localhost:5432/agentflow&#34;</span>
+</span></span><span style="display:flex;"><span>export OPENAI_API_KEY<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;your-openai-api-key&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Optional</span>
+</span></span><span style="display:flex;"><span>export AGENTFLOW_CONFIG_PATH<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/path/to/agentflow.toml&#34;</span>
+</span></span><span style="display:flex;"><span>export AGENTFLOW_LOG_LEVEL<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;debug&#34;</span>
+</span></span><span style="display:flex;"><span>export AGENTFLOW_EMBEDDING_CACHE<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;true&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Azure OpenAI (if using Azure)</span>
+</span></span><span style="display:flex;"><span>export AZURE_OPENAI_ENDPOINT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;https://your-resource.openai.azure.com/&#34;</span>
+</span></span><span style="display:flex;"><span>export AZURE_OPENAI_API_KEY<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;your-azure-api-key&#34;</span>
+</span></span><span style="display:flex;"><span>export AZURE_OPENAI_DEPLOYMENT_NAME<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;your-deployment-name&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Testing</span>
+</span></span><span style="display:flex;"><span>export AGENTFLOW_TEST_DB_URL<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;postgres://agentflow:password@localhost:5432/agentflow_test&#34;</span></span></span></code></pre></div>
+<h2 id="-monitoring--metrics">📊 Monitoring &amp; Metrics</h2>
+<h3 id="built-in-metrics">Built-in Metrics</h3>
+<p>AgentFlow memory operations provide timing and performance metrics:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Hybrid search includes timing</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">result</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">SearchAll</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#e6db74">&#34;query&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Search took: %v\n&#34;</span>, <span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">SearchTime</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Total results: %d\n&#34;</span>, <span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">TotalResults</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// RAG context includes token counting</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">ragContext</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">BuildContext</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#e6db74">&#34;query&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Context tokens: %d\n&#34;</span>, <span style="color:#a6e22e">ragContext</span>.<span style="color:#a6e22e">TokenCount</span>)</span></span></code></pre></div>
+<h3 id="health-checks">Health Checks</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Test memory health</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">checkMemoryHealth</span>(<span style="color:#a6e22e">memory</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">Memory</span>) <span style="color:#66d9ef">error</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">SetSession</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>(), <span style="color:#e6db74">&#34;health-check&#34;</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Test basic operations</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">Store</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#e6db74">&#34;health check&#34;</span>, <span style="color:#e6db74">&#34;test&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;store failed: %w&#34;</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">results</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">Query</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#e6db74">&#34;health&#34;</span>, <span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;query failed: %w&#34;</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> len(<span style="color:#a6e22e">results</span>) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;no results returned&#34;</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Cleanup</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">ClearSession</span>(<span style="color:#a6e22e">ctx</span>)
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<hr>
+<h2 id="-summary">🎯 Summary</h2>
+<p>The AgentFlow Memory System provides:</p>
+<p>✅ <strong>Unified Interface</strong>: Single API for all memory operations<br>
+✅ <strong>Multiple Providers</strong>: In-memory, PostgreSQL+pgvector, Weaviate<br>
+✅ <strong>Session Isolation</strong>: Complete data separation between users/sessions<br>
+✅ <strong>RAG Capabilities</strong>: Document ingestion, knowledge search, context building<br>
+✅ <strong>Advanced Features</strong>: Batch operations, retry logic, connection pooling<br>
+✅ <strong>Production Ready</strong>: Comprehensive error handling, performance optimization<br>
+✅ <strong>Easy Configuration</strong>: TOML-based configuration with environment variable support<br>
+✅ <strong>Comprehensive Testing</strong>: Full test coverage with integration tests</p>
+<p>The system is designed for production use with enterprise-grade features while maintaining simplicity for development and testing scenarios.</p>
+<p>For more examples and advanced usage, see the <code>/examples</code> directory in the AgentFlow repository.</p>
+<p>For detailed RAG configuration options, see the <strong><a href="/AgenticGoKitDocs/guides/ragconfiguration/index.html">RAG Configuration Guide</a></strong>.</p>
+
+  <footer class="footline">
+              <i class='fa-fw fas fa-calendar'></i> Jul 25, 2025
+  </footer>
+</article>
+        </div>
+      </main>
+    </div>
+    <aside id="R-sidebar" class="default-animation">
+      <div id="R-header-topbar" class="default-animation"></div>
+      <div id="R-header-wrapper" class="default-animation">
+        <div id="R-header" class="default-animation">
+          <a id="R-logo" class="R-default" href="/AgenticGoKitDocs/index.html">
+            <div class="logo-title">AgenticGoKit Docs</div>
+          </a>
+        </div>
+        <search><form action="/AgenticGoKitDocs/search/index.html" method="get">
+          <div class="searchbox default-animation">
+            <button class="search-detail" type="submit" title="Search (CTRL+ALT+f)"><i class="fas fa-search"></i></button>
+            <label class="a11y-only" for="R-search-by">Search</label>
+            <input data-search-input id="R-search-by" name="search-by" class="search-by" type="search" placeholder="Search...">
+            <button class="search-clear" type="button" data-search-clear="" title="Clear search"><i class="fas fa-times" title="Clear search"></i></button>
+          </div>
+        </form></search>
+      </div>
+      <div id="R-homelinks" class="default-animation homelinks">
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-homelinks">
+          <ul class="space collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/index.html"><a class="padding" href="/AgenticGoKitDocs/index.html"><i class="fa-fw fas fa-home"></i> Home</a></li>
+          </ul>
+        </div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-headercontrols">
+          <ul class="">
+          </ul>
+        </div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+      </div>
+      <div id="R-content-wrapper" class="highlightable">
+        <div class="R-sidebarmenu R-shortcutmenu-main">
+          <ul class="enlarge morespace collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/readme/index.html">content</a></li>
+            <li class="parent alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/index.html"><input type="checkbox" id="R-section-8fc2fd7736125e87cab8840a86c2af5a" aria-controls="R-subsections-8fc2fd7736125e87cab8840a86c2af5a" checked><label for="R-section-8fc2fd7736125e87cab8840a86c2af5a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu guides</span></label><a class="padding" href="/AgenticGoKitDocs/guides/index.html">guides</a><ul id="R-subsections-8fc2fd7736125e87cab8840a86c2af5a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/readme/index.html">guides</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/agentbasics/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/agentbasics/index.html">AgentBasics</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/examples/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/examples/index.html">Examples</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/configuration/index.html">Configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/customtools/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/customtools/index.html">CustomTools</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/providers/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/providers/index.html">Providers</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memoryprovidersetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memoryprovidersetup/index.html">MemoryProviderSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memorytroubleshooting/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memorytroubleshooting/index.html">MemoryTroubleshooting</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/embeddingmodelguide/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/embeddingmodelguide/index.html">EmbeddingModelGuide</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/ragconfiguration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/ragconfiguration/index.html">RAGConfiguration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/toolintegration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/toolintegration/index.html">ToolIntegration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/pgvectorsetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/pgvectorsetup/index.html">PgVectorSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/weaviatesetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/weaviatesetup/index.html">WeaviateSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/performance/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/performance/index.html">Performance</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/errorhandling/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/errorhandling/index.html">ErrorHandling</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/deployment/index.html"><input type="checkbox" id="R-section-ecc839349395ef3c015a12132049dff2" aria-controls="R-subsections-ecc839349395ef3c015a12132049dff2" checked><label for="R-section-ecc839349395ef3c015a12132049dff2"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu deployment</span></label><a class="padding" href="/AgenticGoKitDocs/guides/deployment/index.html">deployment</a><ul id="R-subsections-ecc839349395ef3c015a12132049dff2" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/deployment/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/deployment/readme/index.html">deployment</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/development/index.html"><input type="checkbox" id="R-section-fff1f5eca5d0a93209b9c6262762c25a" aria-controls="R-subsections-fff1f5eca5d0a93209b9c6262762c25a" checked><label for="R-section-fff1f5eca5d0a93209b9c6262762c25a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu development</span></label><a class="padding" href="/AgenticGoKitDocs/guides/development/index.html">development</a><ul id="R-subsections-fff1f5eca5d0a93209b9c6262762c25a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/readme/index.html">development</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/best-practices/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/best-practices/index.html">best-practices</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/debugging/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/debugging/index.html">debugging</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/research-assistant/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/research-assistant/index.html">research-assistant</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/testing-agents/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/testing-agents/index.html">testing-agents</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/visualization/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/visualization/index.html">visualization</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/web-search-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/web-search-integration/index.html">web-search-integration</a></li></ul></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/framework-comparison/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/framework-comparison/index.html">framework-comparison</a></li>
+            <li class="active " data-nav-id="/AgenticGoKitDocs/guides/memory/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memory/index.html">Memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/scaffoldmemoryguide/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/scaffoldmemoryguide/index.html">ScaffoldMemoryGuide</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/setup/index.html"><input type="checkbox" id="R-section-0124aed9abb5064d53391168f3c95c22" aria-controls="R-subsections-0124aed9abb5064d53391168f3c95c22" checked><label for="R-section-0124aed9abb5064d53391168f3c95c22"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu setup</span></label><a class="padding" href="/AgenticGoKitDocs/guides/setup/index.html">setup</a><ul id="R-subsections-0124aed9abb5064d53391168f3c95c22" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/readme/index.html">setup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/llm-providers/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/llm-providers/index.html">llm-providers</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/mcp-tools/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/mcp-tools/index.html">mcp-tools</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/orchestration-configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/orchestration-configuration/index.html">orchestration-configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/vector-databases/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/vector-databases/index.html">vector-databases</a></li></ul></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/troubleshooting/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/troubleshooting/index.html">troubleshooting</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/contributors/index.html"><input type="checkbox" id="R-section-190d9b328fbda7e13ab386f7a5417de5" aria-controls="R-subsections-190d9b328fbda7e13ab386f7a5417de5" checked><label for="R-section-190d9b328fbda7e13ab386f7a5417de5"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu contributors</span></label><a class="padding" href="/AgenticGoKitDocs/contributors/index.html">contributors</a><ul id="R-subsections-190d9b328fbda7e13ab386f7a5417de5" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/readme/index.html">contributors</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/contributorguide/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/contributorguide/index.html">ContributorGuide</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/codestyle/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/codestyle/index.html">CodeStyle</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/corevsinternal/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/corevsinternal/index.html">CoreVsInternal</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/addingfeatures/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/addingfeatures/index.html">AddingFeatures</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/testing/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/testing/index.html">Testing</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/docsstandards/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/docsstandards/index.html">DocsStandards</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/reference/index.html"><input type="checkbox" id="R-section-66002f201bef818664bb81aa67490c58" aria-controls="R-subsections-66002f201bef818664bb81aa67490c58" checked><label for="R-section-66002f201bef818664bb81aa67490c58"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu reference</span></label><a class="padding" href="/AgenticGoKitDocs/reference/index.html">reference</a><ul id="R-subsections-66002f201bef818664bb81aa67490c58" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/readme/index.html">reference</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/configuration/index.html">configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/cli/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/cli/index.html">cli</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/mcp/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/mcp/index.html">mcp</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/agent/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/agent/index.html">agent</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/memory/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/memory/index.html">memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/orchestration/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/orchestration/index.html">orchestration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/state-event/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/state-event/index.html">state-event</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/index.html"><input type="checkbox" id="R-section-e1e8c1e70c5500b49e8dda2dc550651a" aria-controls="R-subsections-e1e8c1e70c5500b49e8dda2dc550651a" checked><label for="R-section-e1e8c1e70c5500b49e8dda2dc550651a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu tutorials</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/index.html">tutorials</a><ul id="R-subsections-e1e8c1e70c5500b49e8dda2dc550651a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/readme/index.html">tutorials</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/advanced/index.html"><input type="checkbox" id="R-section-d3def5cd76adc8096d0ff9fda6b8e479" aria-controls="R-subsections-d3def5cd76adc8096d0ff9fda6b8e479" checked><label for="R-section-d3def5cd76adc8096d0ff9fda6b8e479"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu advanced</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/index.html">advanced</a><ul id="R-subsections-d3def5cd76adc8096d0ff9fda6b8e479" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/readme/index.html">advanced</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/circuit-breaker-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/circuit-breaker-patterns/index.html">circuit-breaker-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/load-balancing-scaling/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/load-balancing-scaling/index.html">load-balancing-scaling</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/retry-policies/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/retry-policies/index.html">retry-policies</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/testing-strategies/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/testing-strategies/index.html">testing-strategies</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/index.html"><input type="checkbox" id="R-section-212c6ccffb40ecdd78eb2136f98c4cac" aria-controls="R-subsections-212c6ccffb40ecdd78eb2136f98c4cac" checked><label for="R-section-212c6ccffb40ecdd78eb2136f98c4cac"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu core-concepts</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/index.html">core-concepts</a><ul id="R-subsections-212c6ccffb40ecdd78eb2136f98c4cac" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/readme/index.html">core-concepts</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/agent-lifecycle/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/agent-lifecycle/index.html">agent-lifecycle</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/error-handling/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/error-handling/index.html">error-handling</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/message-passing/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/message-passing/index.html">message-passing</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/orchestration-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/orchestration-patterns/index.html">orchestration-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/state-management/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/state-management/index.html">state-management</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/debugging/index.html"><input type="checkbox" id="R-section-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" aria-controls="R-subsections-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" checked><label for="R-section-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu debugging</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/index.html">debugging</a><ul id="R-subsections-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/readme/index.html">debugging</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/debugging-multi-agent-systems/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/debugging-multi-agent-systems/index.html">debugging-multi-agent-systems</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/logging-and-tracing/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/logging-and-tracing/index.html">logging-and-tracing</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/index.html"><input type="checkbox" id="R-section-e7f904c8b9d0f9bf1f07ca7d482d2247" aria-controls="R-subsections-e7f904c8b9d0f9bf1f07ca7d482d2247" checked><label for="R-section-e7f904c8b9d0f9bf1f07ca7d482d2247"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu getting-started</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/index.html">getting-started</a><ul id="R-subsections-e7f904c8b9d0f9bf1f07ca7d482d2247" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/readme/index.html">getting-started</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/memory-and-rag/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/memory-and-rag/index.html">memory-and-rag</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/multi-agent-collaboration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/multi-agent-collaboration/index.html">multi-agent-collaboration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/production-deployment/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/production-deployment/index.html">production-deployment</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/quickstart/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/quickstart/index.html">quickstart</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/tool-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/tool-integration/index.html">tool-integration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/your-first-agent/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/your-first-agent/index.html">your-first-agent</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/mcp/index.html"><input type="checkbox" id="R-section-153aac44598009a99dd5a60317a3eecc" aria-controls="R-subsections-153aac44598009a99dd5a60317a3eecc" checked><label for="R-section-153aac44598009a99dd5a60317a3eecc"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu mcp</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/index.html">mcp</a><ul id="R-subsections-153aac44598009a99dd5a60317a3eecc" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/readme/index.html">mcp</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/advanced-tool-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/advanced-tool-patterns/index.html">advanced-tool-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/tool-development/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/tool-development/index.html">tool-development</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/tool-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/tool-integration/index.html">tool-integration</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/index.html"><input type="checkbox" id="R-section-9c1a65f2d7b3888241dcafa51a0710e7" aria-controls="R-subsections-9c1a65f2d7b3888241dcafa51a0710e7" checked><label for="R-section-9c1a65f2d7b3888241dcafa51a0710e7"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu memory-systems</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/index.html">memory-systems</a><ul id="R-subsections-9c1a65f2d7b3888241dcafa51a0710e7" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/readme/index.html">memory-systems</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/basic-memory/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/basic-memory/index.html">basic-memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/document-ingestion/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/document-ingestion/index.html">document-ingestion</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/knowledge-bases/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/knowledge-bases/index.html">knowledge-bases</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/memory-optimization/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/memory-optimization/index.html">memory-optimization</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/rag-implementation/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/rag-implementation/index.html">rag-implementation</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/vector-databases/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/vector-databases/index.html">vector-databases</a></li></ul></li></ul></li>
+          </ul>
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-shortcuts">
+          <ul class="space collapsible-menu">
+          </ul>
+        </div>
+        <div id="R-footer-margin"></div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-footercontrols">
+          <ul class="">
+          </ul>
+        </div>
+<div id="R-footer"><p>Built with <a href="https://github.com/McShelby/hugo-theme-relearn" title="love"><i class="fas fa-heart"></i></a> by <a href="https://gohugo.io/">Hugo</a></p></div>
+      </div>
+    </aside>
+    <script src="/AgenticGoKitDocs/js/clipboard/clipboard.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/perfect-scrollbar/perfect-scrollbar.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/theme.js?1753430931" defer></script>
+  </body>
+</html>

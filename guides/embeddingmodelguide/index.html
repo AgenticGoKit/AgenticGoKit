@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en-us" dir="ltr" itemscope itemtype="http://schema.org/Article" data-r-output-format="html">
+  <head><script src="/AgenticGoKitDocs/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=AgenticGoKitDocs/livereload" data-no-instant defer></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="height=device-height, width=device-width, initial-scale=1.0, minimum-scale=1.0">
+    <meta name="generator" content="Hugo 0.148.1">
+    <meta name="generator" content="Relearn 8.0.0+9803d5122ebb3276acea823f476e9eb44f607862">
+    <meta name="description" content="Embedding Model Intelligence Guide AgentFlow includes an intelligent embedding model system that automatically configures appropriate settings based on your embedding model choice. This guide explains how to use and benefit from this system.
+Overview The Embedding Model Intelligence system:
+Automatically configures dimensions based on your chosen embedding model Validates compatibility between embedding models and memory providers Provides recommendations for optimal model selection Offers troubleshooting guidance for common issues Supported Models Ollama Models (Recommended for Local Development) nomic-embed-text:latest ⭐ Recommended Dimensions: 768 Provider: ollama Notes: Excellent general-purpose embedding model with good performance Best for: Local development, privacy-focused applications # Install and use ollama pull nomic-embed-text:latest agentcli create myproject --memory-enabled --embedding-provider ollama --embedding-model nomic-embed-text:latestmxbai-embed-large Dimensions: 1024 Provider: ollama Notes: Larger model with better quality, requires more resources Best for: Applications requiring higher embedding quality ollama pull mxbai-embed-large agentcli create myproject --memory-enabled --embedding-provider ollama --embedding-model mxbai-embed-largeall-minilm Dimensions: 384 Provider: ollama Notes: Lightweight and fast, good for development Best for: Resource-constrained environments, rapid prototyping ollama pull all-minilm agentcli create myproject --memory-enabled --embedding-provider ollama --embedding-model all-minilmOpenAI Models (Production Ready) text-embedding-3-small ⭐ Recommended Dimensions: 1536 Provider: openai Notes: Cost-effective OpenAI embedding model with good performance Best for: Production applications with budget considerations export OPENAI_API_KEY=&#34;your-api-key&#34; agentcli create myproject --memory-enabled --embedding-provider openai --embedding-model text-embedding-3-smalltext-embedding-3-large Dimensions: 3072 Provider: openai Notes: Highest quality OpenAI embedding model, more expensive Best for: Applications requiring maximum embedding quality agentcli create myproject --memory-enabled --embedding-provider openai --embedding-model text-embedding-3-largetext-embedding-ada-002 (Legacy) Dimensions: 1536 Provider: openai Notes: Legacy OpenAI model, use text-embedding-3-small instead Status: Not recommended for new projects Testing Models dummy Dimensions: 1536 Provider: dummy Notes: Simple embeddings for testing only, not suitable for production Best for: Testing, development without external dependencies Automatic Configuration When you create a project, the system automatically:">
+    <meta name="author" content="">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="EmbeddingModelGuide :: AgenticGoKit Docs">
+    <meta name="twitter:description" content="Embedding Model Intelligence Guide AgentFlow includes an intelligent embedding model system that automatically configures appropriate settings based on your embedding model choice. This guide explains how to use and benefit from this system.
+Overview The Embedding Model Intelligence system:
+Automatically configures dimensions based on your chosen embedding model Validates compatibility between embedding models and memory providers Provides recommendations for optimal model selection Offers troubleshooting guidance for common issues Supported Models Ollama Models (Recommended for Local Development) nomic-embed-text:latest ⭐ Recommended Dimensions: 768 Provider: ollama Notes: Excellent general-purpose embedding model with good performance Best for: Local development, privacy-focused applications # Install and use ollama pull nomic-embed-text:latest agentcli create myproject --memory-enabled --embedding-provider ollama --embedding-model nomic-embed-text:latestmxbai-embed-large Dimensions: 1024 Provider: ollama Notes: Larger model with better quality, requires more resources Best for: Applications requiring higher embedding quality ollama pull mxbai-embed-large agentcli create myproject --memory-enabled --embedding-provider ollama --embedding-model mxbai-embed-largeall-minilm Dimensions: 384 Provider: ollama Notes: Lightweight and fast, good for development Best for: Resource-constrained environments, rapid prototyping ollama pull all-minilm agentcli create myproject --memory-enabled --embedding-provider ollama --embedding-model all-minilmOpenAI Models (Production Ready) text-embedding-3-small ⭐ Recommended Dimensions: 1536 Provider: openai Notes: Cost-effective OpenAI embedding model with good performance Best for: Production applications with budget considerations export OPENAI_API_KEY=&#34;your-api-key&#34; agentcli create myproject --memory-enabled --embedding-provider openai --embedding-model text-embedding-3-smalltext-embedding-3-large Dimensions: 3072 Provider: openai Notes: Highest quality OpenAI embedding model, more expensive Best for: Applications requiring maximum embedding quality agentcli create myproject --memory-enabled --embedding-provider openai --embedding-model text-embedding-3-largetext-embedding-ada-002 (Legacy) Dimensions: 1536 Provider: openai Notes: Legacy OpenAI model, use text-embedding-3-small instead Status: Not recommended for new projects Testing Models dummy Dimensions: 1536 Provider: dummy Notes: Simple embeddings for testing only, not suitable for production Best for: Testing, development without external dependencies Automatic Configuration When you create a project, the system automatically:">
+    <meta property="og:url" content="http://localhost:1313/AgenticGoKitDocs/guides/embeddingmodelguide/index.html">
+    <meta property="og:site_name" content="AgenticGoKit Docs">
+    <meta property="og:title" content="EmbeddingModelGuide :: AgenticGoKit Docs">
+    <meta property="og:description" content="Embedding Model Intelligence Guide AgentFlow includes an intelligent embedding model system that automatically configures appropriate settings based on your embedding model choice. This guide explains how to use and benefit from this system.
+Overview The Embedding Model Intelligence system:
+Automatically configures dimensions based on your chosen embedding model Validates compatibility between embedding models and memory providers Provides recommendations for optimal model selection Offers troubleshooting guidance for common issues Supported Models Ollama Models (Recommended for Local Development) nomic-embed-text:latest ⭐ Recommended Dimensions: 768 Provider: ollama Notes: Excellent general-purpose embedding model with good performance Best for: Local development, privacy-focused applications # Install and use ollama pull nomic-embed-text:latest agentcli create myproject --memory-enabled --embedding-provider ollama --embedding-model nomic-embed-text:latestmxbai-embed-large Dimensions: 1024 Provider: ollama Notes: Larger model with better quality, requires more resources Best for: Applications requiring higher embedding quality ollama pull mxbai-embed-large agentcli create myproject --memory-enabled --embedding-provider ollama --embedding-model mxbai-embed-largeall-minilm Dimensions: 384 Provider: ollama Notes: Lightweight and fast, good for development Best for: Resource-constrained environments, rapid prototyping ollama pull all-minilm agentcli create myproject --memory-enabled --embedding-provider ollama --embedding-model all-minilmOpenAI Models (Production Ready) text-embedding-3-small ⭐ Recommended Dimensions: 1536 Provider: openai Notes: Cost-effective OpenAI embedding model with good performance Best for: Production applications with budget considerations export OPENAI_API_KEY=&#34;your-api-key&#34; agentcli create myproject --memory-enabled --embedding-provider openai --embedding-model text-embedding-3-smalltext-embedding-3-large Dimensions: 3072 Provider: openai Notes: Highest quality OpenAI embedding model, more expensive Best for: Applications requiring maximum embedding quality agentcli create myproject --memory-enabled --embedding-provider openai --embedding-model text-embedding-3-largetext-embedding-ada-002 (Legacy) Dimensions: 1536 Provider: openai Notes: Legacy OpenAI model, use text-embedding-3-small instead Status: Not recommended for new projects Testing Models dummy Dimensions: 1536 Provider: dummy Notes: Simple embeddings for testing only, not suitable for production Best for: Testing, development without external dependencies Automatic Configuration When you create a project, the system automatically:">
+    <meta property="og:locale" content="en_us">
+    <meta property="og:type" content="article">
+    <meta property="article:section" content="guides">
+    <meta property="article:published_time" content="2025-07-25T00:00:00+00:00">
+    <meta property="article:modified_time" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="name" content="EmbeddingModelGuide :: AgenticGoKit Docs">
+    <meta itemprop="description" content="Embedding Model Intelligence Guide AgentFlow includes an intelligent embedding model system that automatically configures appropriate settings based on your embedding model choice. This guide explains how to use and benefit from this system.
+Overview The Embedding Model Intelligence system:
+Automatically configures dimensions based on your chosen embedding model Validates compatibility between embedding models and memory providers Provides recommendations for optimal model selection Offers troubleshooting guidance for common issues Supported Models Ollama Models (Recommended for Local Development) nomic-embed-text:latest ⭐ Recommended Dimensions: 768 Provider: ollama Notes: Excellent general-purpose embedding model with good performance Best for: Local development, privacy-focused applications # Install and use ollama pull nomic-embed-text:latest agentcli create myproject --memory-enabled --embedding-provider ollama --embedding-model nomic-embed-text:latestmxbai-embed-large Dimensions: 1024 Provider: ollama Notes: Larger model with better quality, requires more resources Best for: Applications requiring higher embedding quality ollama pull mxbai-embed-large agentcli create myproject --memory-enabled --embedding-provider ollama --embedding-model mxbai-embed-largeall-minilm Dimensions: 384 Provider: ollama Notes: Lightweight and fast, good for development Best for: Resource-constrained environments, rapid prototyping ollama pull all-minilm agentcli create myproject --memory-enabled --embedding-provider ollama --embedding-model all-minilmOpenAI Models (Production Ready) text-embedding-3-small ⭐ Recommended Dimensions: 1536 Provider: openai Notes: Cost-effective OpenAI embedding model with good performance Best for: Production applications with budget considerations export OPENAI_API_KEY=&#34;your-api-key&#34; agentcli create myproject --memory-enabled --embedding-provider openai --embedding-model text-embedding-3-smalltext-embedding-3-large Dimensions: 3072 Provider: openai Notes: Highest quality OpenAI embedding model, more expensive Best for: Applications requiring maximum embedding quality agentcli create myproject --memory-enabled --embedding-provider openai --embedding-model text-embedding-3-largetext-embedding-ada-002 (Legacy) Dimensions: 1536 Provider: openai Notes: Legacy OpenAI model, use text-embedding-3-small instead Status: Not recommended for new projects Testing Models dummy Dimensions: 1536 Provider: dummy Notes: Simple embeddings for testing only, not suitable for production Best for: Testing, development without external dependencies Automatic Configuration When you create a project, the system automatically:">
+    <meta itemprop="datePublished" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="dateModified" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="wordCount" content="1166">
+    <title>EmbeddingModelGuide :: AgenticGoKit Docs</title>
+    <link href="/AgenticGoKitDocs/css/auto-complete/auto-complete.min.css?1753430931" rel="stylesheet">
+    <script src="/AgenticGoKitDocs/js/auto-complete/auto-complete.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/search-lunr.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/search.js?1753430931" defer></script>
+    <script>
+      window.relearn = window.relearn || {};
+      window.relearn.index_js_url="/AgenticGoKitDocs/searchindex.en.js?1753430931";
+    </script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.stemmer.support.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.multi.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.en.min.js?1753430931" defer></script>
+    <script>
+      window.relearn = window.relearn || {};
+      window.relearn.contentLangs=['en'];
+    </script>
+    <link href="/AgenticGoKitDocs/fonts/fontawesome/css/fontawesome-all.min.css?1753430931" rel="stylesheet" media="print" onload="this.media='all';this.onload=null;"><noscript><link href="/AgenticGoKitDocs/fonts/fontawesome/css/fontawesome-all.min.css?1753430931" rel="stylesheet"></noscript>
+    <link href="/AgenticGoKitDocs/css/perfect-scrollbar/perfect-scrollbar.min.css?1753430931" rel="stylesheet">
+    <link href="/AgenticGoKitDocs/css/theme.css?1753430931" rel="stylesheet">
+    <link href="/AgenticGoKitDocs/css/format-html.css?1753430931" rel="stylesheet" id="R-format-style">
+    <script>
+      window.relearn = window.relearn || {};
+      // configuration
+      window.relearn.min = ``;
+      window.relearn.path='\/guides\/embeddingmodelguide\/index.html';
+      window.relearn.relBasePath='..\/..';
+      window.relearn.relBaseUri='..\/..\/..';
+      window.relearn.absBaseUri='http:\/\/localhost:1313\/AgenticGoKitDocs';
+      window.relearn.disableAnchorCopy=false;
+      window.relearn.disableAnchorScrolling=false;
+      window.relearn.disableInlineCopyToClipboard=false;
+      window.relearn.enableBlockCodeWrap=true;
+      // legal
+      window.relearn.getItem = (s,n) => {return s.getItem(n)};
+      window.relearn.setItem = (s,n,v) => {return s.setItem(n,v)};
+      window.relearn.removeItem = (s,n) => {return s.removeItem(n)};
+      // translations
+      window.T_Copy_to_clipboard = `Copy to clipboard`;
+      window.T_Copied_to_clipboard = `Copied to clipboard!`;
+      window.T_Copy_link_to_clipboard = `Copy link to clipboard`;
+      window.T_Link_copied_to_clipboard = `Copied link to clipboard!`;
+      window.T_Reset_view = `Reset view`;
+      window.T_View_reset = `View reset!`;
+      window.T_No_results_found = `No results found for "{0}"`;
+      window.T_N_results_found = `{1} results found for "{0}"`;
+      // variant stuff
+      window.relearn.themevariants = [ 'blue' ];
+      window.relearn.customvariantname = "my-custom-variant";
+      window.relearn.changeVariant = function(variant) {
+        var oldVariant = document.documentElement.dataset.rThemeVariant;
+        window.relearn.setItem(window.localStorage, window.relearn.absBaseUri + "/variant", variant);
+        document.documentElement.dataset.rThemeVariant = variant;
+        if (oldVariant != variant) {
+          document.dispatchEvent( new CustomEvent('themeVariantLoaded', { detail: { variant, oldVariant } }) );
+          window.relearn.markVariant();
+        }
+      }
+      window.relearn.markVariant = function() {
+        var variant = window.relearn.getItem(window.localStorage, window.relearn.absBaseUri + "/variant");
+        document.querySelectorAll(".R-variantswitcher select").forEach((select) => {select.value = variant;});
+      }
+      window.relearn.initVariant = function() {
+        var variant = window.relearn.getItem(window.localStorage, window.relearn.absBaseUri + "/variant") ?? "";
+        if( variant == window.relearn.customvariantname ){
+        }else if( !variant || !window.relearn.themevariants.includes(variant) ){
+          variant = window.relearn.themevariants[0];
+          window.relearn.setItem(window.localStorage, window.relearn.absBaseUri + "/variant", variant);
+        }
+        document.documentElement.dataset.rThemeVariant = variant;
+      }
+      window.relearn.initVariant();
+      window.relearn.markVariant();
+    </script>
+  </head>
+  <body class="mobile-support html" data-url="/AgenticGoKitDocs/guides/embeddingmodelguide/index.html">
+    <div id="R-body" class="default-animation">
+      <div id="R-body-overlay"></div>
+      <nav id="R-topbar">
+        <div class="topbar-wrapper">
+          <div class="topbar-sidebar-divider"></div>
+          <div class="topbar-area topbar-area-start" data-area="start">
+            <div class="topbar-button topbar-button-sidebar" data-content-empty="disable" data-width-s="show" data-width-m="hide" data-width-l="hide"><button class="topbar-control" onclick="toggleNav()" type="button" title="Menu (CTRL&#43;ALT&#43;n)"><i class="fa-fw fas fa-bars"></i></button>
+            </div>
+            <div class="topbar-button topbar-button-toc" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show"><button class="topbar-control" onclick="toggleTopbarFlyout(this)" type="button" title="Table of Contents (CTRL&#43;ALT&#43;t)"><i class="fa-fw fas fa-list-alt"></i></button>
+              <div class="topbar-content">
+                <div class="topbar-content-wrapper">
+<nav class="TableOfContents">
+  <ul>
+    <li><a href="#overview">Overview</a></li>
+    <li><a href="#supported-models">Supported Models</a>
+      <ul>
+        <li><a href="#ollama-models-recommended-for-local-development">Ollama Models (Recommended for Local Development)</a></li>
+        <li><a href="#openai-models-production-ready">OpenAI Models (Production Ready)</a></li>
+        <li><a href="#testing-models">Testing Models</a></li>
+      </ul>
+    </li>
+    <li><a href="#automatic-configuration">Automatic Configuration</a></li>
+    <li><a href="#model-selection-guide">Model Selection Guide</a>
+      <ul>
+        <li><a href="#for-local-development">For Local Development</a></li>
+        <li><a href="#for-production-applications">For Production Applications</a></li>
+        <li><a href="#for-resource-constrained-environments">For Resource-Constrained Environments</a></li>
+      </ul>
+    </li>
+    <li><a href="#compatibility-matrix">Compatibility Matrix</a></li>
+    <li><a href="#configuration-examples">Configuration Examples</a>
+      <ul>
+        <li><a href="#complete-configuration-examples">Complete Configuration Examples</a></li>
+      </ul>
+    </li>
+    <li><a href="#validation-and-troubleshooting">Validation and Troubleshooting</a>
+      <ul>
+        <li><a href="#using-the-intelligence-system">Using the Intelligence System</a></li>
+        <li><a href="#manual-validation">Manual Validation</a></li>
+        <li><a href="#common-issues-and-solutions">Common Issues and Solutions</a></li>
+      </ul>
+    </li>
+    <li><a href="#advanced-usage">Advanced Usage</a>
+      <ul>
+        <li><a href="#custom-model-integration">Custom Model Integration</a></li>
+        <li><a href="#performance-optimization">Performance Optimization</a></li>
+      </ul>
+    </li>
+    <li><a href="#migration-between-models">Migration Between Models</a>
+      <ul>
+        <li><a href="#changing-embedding-models">Changing Embedding Models</a></li>
+      </ul>
+    </li>
+    <li><a href="#best-practices">Best Practices</a>
+      <ul>
+        <li><a href="#model-selection">Model Selection</a></li>
+        <li><a href="#configuration">Configuration</a></li>
+        <li><a href="#development-workflow">Development Workflow</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+                </div>
+              </div>
+            </div>
+          </div>
+          <ol class="topbar-breadcrumbs breadcrumbs highlightable" itemscope itemtype="http://schema.org/BreadcrumbList"><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="/AgenticGoKitDocs/index.html"><span itemprop="name">content</span></a><meta itemprop="position" content="1">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="/AgenticGoKitDocs/guides/index.html"><span itemprop="name">guides</span></a><meta itemprop="position" content="2">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><span itemprop="name">EmbeddingModelGuide</span><meta itemprop="position" content="3"></li>
+          </ol>
+          <div class="topbar-area topbar-area-end" data-area="end">
+            <div class="topbar-button topbar-button-prev" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show"><a class="topbar-control" href="/AgenticGoKitDocs/guides/memorytroubleshooting/index.html" title="MemoryTroubleshooting (🡐)"><i class="fa-fw fas fa-chevron-left"></i></a>
+            </div>
+            <div class="topbar-button topbar-button-next" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show"><a class="topbar-control" href="/AgenticGoKitDocs/guides/ragconfiguration/index.html" title="RAGConfiguration (🡒)"><i class="fa-fw fas fa-chevron-right"></i></a>
+            </div>
+            <div class="topbar-button topbar-button-more" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show"><button class="topbar-control" onclick="toggleTopbarFlyout(this)" type="button" title="More"><i class="fa-fw fas fa-ellipsis-v"></i></button>
+              <div class="topbar-content">
+                <div class="topbar-content-wrapper">
+                  <div class="topbar-area topbar-area-more" data-area="more">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+      <div id="R-main-overlay"></div>
+      <main id="R-body-inner" class="highlightable guides" tabindex="-1">
+        <div class="flex-block-wrapper">
+<article class="default">
+  <header class="headline">
+  </header>
+
+<h1 id="embeddingmodelguide">EmbeddingModelGuide</h1>
+
+<h1 id="embedding-model-intelligence-guide">Embedding Model Intelligence Guide</h1>
+<p>AgentFlow includes an intelligent embedding model system that automatically configures appropriate settings based on your embedding model choice. This guide explains how to use and benefit from this system.</p>
+<h2 id="overview">Overview</h2>
+<p>The Embedding Model Intelligence system:</p>
+<ul>
+<li><strong>Automatically configures dimensions</strong> based on your chosen embedding model</li>
+<li><strong>Validates compatibility</strong> between embedding models and memory providers</li>
+<li><strong>Provides recommendations</strong> for optimal model selection</li>
+<li><strong>Offers troubleshooting guidance</strong> for common issues</li>
+</ul>
+<h2 id="supported-models">Supported Models</h2>
+<h3 id="ollama-models-recommended-for-local-development">Ollama Models (Recommended for Local Development)</h3>
+<h4 id="nomic-embed-textlatest--recommended">nomic-embed-text:latest ⭐ <strong>Recommended</strong></h4>
+<ul>
+<li><strong>Dimensions:</strong> 768</li>
+<li><strong>Provider:</strong> ollama</li>
+<li><strong>Notes:</strong> Excellent general-purpose embedding model with good performance</li>
+<li><strong>Best for:</strong> Local development, privacy-focused applications</li>
+</ul>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Install and use</span>
+</span></span><span style="display:flex;"><span>ollama pull nomic-embed-text:latest
+</span></span><span style="display:flex;"><span>agentcli create myproject --memory-enabled --embedding-provider ollama --embedding-model nomic-embed-text:latest</span></span></code></pre></div>
+<h4 id="mxbai-embed-large">mxbai-embed-large</h4>
+<ul>
+<li><strong>Dimensions:</strong> 1024</li>
+<li><strong>Provider:</strong> ollama</li>
+<li><strong>Notes:</strong> Larger model with better quality, requires more resources</li>
+<li><strong>Best for:</strong> Applications requiring higher embedding quality</li>
+</ul>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>ollama pull mxbai-embed-large
+</span></span><span style="display:flex;"><span>agentcli create myproject --memory-enabled --embedding-provider ollama --embedding-model mxbai-embed-large</span></span></code></pre></div>
+<h4 id="all-minilm">all-minilm</h4>
+<ul>
+<li><strong>Dimensions:</strong> 384</li>
+<li><strong>Provider:</strong> ollama</li>
+<li><strong>Notes:</strong> Lightweight and fast, good for development</li>
+<li><strong>Best for:</strong> Resource-constrained environments, rapid prototyping</li>
+</ul>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>ollama pull all-minilm
+</span></span><span style="display:flex;"><span>agentcli create myproject --memory-enabled --embedding-provider ollama --embedding-model all-minilm</span></span></code></pre></div>
+<h3 id="openai-models-production-ready">OpenAI Models (Production Ready)</h3>
+<h4 id="text-embedding-3-small--recommended">text-embedding-3-small ⭐ <strong>Recommended</strong></h4>
+<ul>
+<li><strong>Dimensions:</strong> 1536</li>
+<li><strong>Provider:</strong> openai</li>
+<li><strong>Notes:</strong> Cost-effective OpenAI embedding model with good performance</li>
+<li><strong>Best for:</strong> Production applications with budget considerations</li>
+</ul>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>export OPENAI_API_KEY<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;your-api-key&#34;</span>
+</span></span><span style="display:flex;"><span>agentcli create myproject --memory-enabled --embedding-provider openai --embedding-model text-embedding-3-small</span></span></code></pre></div>
+<h4 id="text-embedding-3-large">text-embedding-3-large</h4>
+<ul>
+<li><strong>Dimensions:</strong> 3072</li>
+<li><strong>Provider:</strong> openai</li>
+<li><strong>Notes:</strong> Highest quality OpenAI embedding model, more expensive</li>
+<li><strong>Best for:</strong> Applications requiring maximum embedding quality</li>
+</ul>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>agentcli create myproject --memory-enabled --embedding-provider openai --embedding-model text-embedding-3-large</span></span></code></pre></div>
+<h4 id="text-embedding-ada-002-legacy">text-embedding-ada-002 (Legacy)</h4>
+<ul>
+<li><strong>Dimensions:</strong> 1536</li>
+<li><strong>Provider:</strong> openai</li>
+<li><strong>Notes:</strong> Legacy OpenAI model, use text-embedding-3-small instead</li>
+<li><strong>Status:</strong> Not recommended for new projects</li>
+</ul>
+<h3 id="testing-models">Testing Models</h3>
+<h4 id="dummy">dummy</h4>
+<ul>
+<li><strong>Dimensions:</strong> 1536</li>
+<li><strong>Provider:</strong> dummy</li>
+<li><strong>Notes:</strong> Simple embeddings for testing only, not suitable for production</li>
+<li><strong>Best for:</strong> Testing, development without external dependencies</li>
+</ul>
+<h2 id="automatic-configuration">Automatic Configuration</h2>
+<p>When you create a project, the system automatically:</p>
+<ol>
+<li>
+<p><strong>Detects model dimensions:</strong></p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>agentcli create myproject --memory-enabled --embedding-model nomic-embed-text:latest
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Automatically configures 768 dimensions</span></span></span></code></pre></div>
+</li>
+<li>
+<p><strong>Validates compatibility:</strong></p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># System checks if the model works with your memory provider</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Warns about potential issues</span></span></span></code></pre></div>
+</li>
+<li>
+<p><strong>Provides helpful information:</strong></p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0"><code>✓ Using embedding model: nomic-embed-text:latest (768 dimensions)
+  Excellent general-purpose embedding model with good performance</code></pre></div>
+</li>
+</ol>
+<h2 id="model-selection-guide">Model Selection Guide</h2>
+<h3 id="for-local-development">For Local Development</h3>
+<p><strong>Recommended:</strong> <code>nomic-embed-text:latest</code> with Ollama</p>
+<ul>
+<li>No API costs</li>
+<li>Good performance</li>
+<li>Privacy-friendly</li>
+<li>Easy to set up</li>
+</ul>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Setup</span>
+</span></span><span style="display:flex;"><span>ollama serve
+</span></span><span style="display:flex;"><span>ollama pull nomic-embed-text:latest
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Create project</span>
+</span></span><span style="display:flex;"><span>agentcli create myproject --memory-enabled <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --memory-provider pgvector <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --embedding-provider ollama <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --embedding-model nomic-embed-text:latest</span></span></code></pre></div>
+<h3 id="for-production-applications">For Production Applications</h3>
+<p><strong>Budget-conscious:</strong> <code>text-embedding-3-small</code> with OpenAI</p>
+<ul>
+<li>Good quality-to-cost ratio</li>
+<li>Reliable and fast</li>
+<li>Well-supported</li>
+</ul>
+<p><strong>High-quality:</strong> <code>text-embedding-3-large</code> with OpenAI</p>
+<ul>
+<li>Best embedding quality</li>
+<li>Higher cost</li>
+<li>Suitable for critical applications</li>
+</ul>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Setup</span>
+</span></span><span style="display:flex;"><span>export OPENAI_API_KEY<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;your-api-key&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Create project</span>
+</span></span><span style="display:flex;"><span>agentcli create myproject --memory-enabled <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --memory-provider pgvector <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --embedding-provider openai <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --embedding-model text-embedding-3-small</span></span></code></pre></div>
+<h3 id="for-resource-constrained-environments">For Resource-Constrained Environments</h3>
+<p><strong>Lightweight:</strong> <code>all-minilm</code> with Ollama</p>
+<ul>
+<li>Smallest dimensions (384)</li>
+<li>Fast processing</li>
+<li>Lower memory usage</li>
+</ul>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>agentcli create myproject --memory-enabled <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --memory-provider memory <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --embedding-provider ollama <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --embedding-model all-minilm</span></span></code></pre></div>
+<h2 id="compatibility-matrix">Compatibility Matrix</h2>
+<table>
+  <thead>
+      <tr>
+          <th>Embedding Model</th>
+          <th>Dimensions</th>
+          <th>Memory Provider</th>
+          <th>Compatibility</th>
+          <th>Notes</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>nomic-embed-text:latest</td>
+          <td>768</td>
+          <td>pgvector</td>
+          <td>✅ Excellent</td>
+          <td>Recommended combination</td>
+      </tr>
+      <tr>
+          <td>nomic-embed-text:latest</td>
+          <td>768</td>
+          <td>weaviate</td>
+          <td>✅ Excellent</td>
+          <td>Good for large scale</td>
+      </tr>
+      <tr>
+          <td>nomic-embed-text:latest</td>
+          <td>768</td>
+          <td>memory</td>
+          <td>✅ Good</td>
+          <td>Development only</td>
+      </tr>
+      <tr>
+          <td>text-embedding-3-small</td>
+          <td>1536</td>
+          <td>pgvector</td>
+          <td>✅ Excellent</td>
+          <td>Production ready</td>
+      </tr>
+      <tr>
+          <td>text-embedding-3-large</td>
+          <td>3072</td>
+          <td>pgvector</td>
+          <td>⚠️ Good</td>
+          <td>May impact performance</td>
+      </tr>
+      <tr>
+          <td>text-embedding-3-large</td>
+          <td>3072</td>
+          <td>weaviate</td>
+          <td>✅ Excellent</td>
+          <td>Handles large dimensions well</td>
+      </tr>
+      <tr>
+          <td>dummy</td>
+          <td>1536</td>
+          <td>weaviate</td>
+          <td>❌ Poor</td>
+          <td>Not recommended</td>
+      </tr>
+      <tr>
+          <td>all-minilm</td>
+          <td>384</td>
+          <td>pgvector</td>
+          <td>✅ Excellent</td>
+          <td>Very fast</td>
+      </tr>
+  </tbody>
+</table>
+<h2 id="configuration-examples">Configuration Examples</h2>
+<h3 id="complete-configuration-examples">Complete Configuration Examples</h3>
+<h4 id="local-development-setup">Local Development Setup</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">agent_memory</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;pgvector&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">connection</span> = <span style="color:#e6db74">&#34;postgres://user:password@localhost:5432/agentflow?sslmode=disable&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">dimensions</span> = <span style="color:#ae81ff">768</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">auto_embed</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enable_rag</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">chunk_size</span> = <span style="color:#ae81ff">1000</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">chunk_overlap</span> = <span style="color:#ae81ff">100</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">agent_memory</span>.<span style="color:#a6e22e">embedding</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;ollama&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">model</span> = <span style="color:#e6db74">&#34;nomic-embed-text:latest&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">base_url</span> = <span style="color:#e6db74">&#34;http://localhost:11434&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">cache_embeddings</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">timeout_seconds</span> = <span style="color:#ae81ff">30</span></span></span></code></pre></div>
+<h4 id="production-setup">Production Setup</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">agent_memory</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;pgvector&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">connection</span> = <span style="color:#e6db74">&#34;postgres://user:password@prod-db:5432/agentflow?sslmode=require&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">dimensions</span> = <span style="color:#ae81ff">1536</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">auto_embed</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enable_rag</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">chunk_size</span> = <span style="color:#ae81ff">1000</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">chunk_overlap</span> = <span style="color:#ae81ff">100</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">knowledge_score_threshold</span> = <span style="color:#ae81ff">0.75</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">agent_memory</span>.<span style="color:#a6e22e">embedding</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;openai&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">model</span> = <span style="color:#e6db74">&#34;text-embedding-3-small&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">cache_embeddings</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_batch_size</span> = <span style="color:#ae81ff">100</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">timeout_seconds</span> = <span style="color:#ae81ff">30</span></span></span></code></pre></div>
+<h4 id="high-performance-setup">High-Performance Setup</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">agent_memory</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;weaviate&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">connection</span> = <span style="color:#e6db74">&#34;http://weaviate:8080&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">dimensions</span> = <span style="color:#ae81ff">3072</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">auto_embed</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enable_rag</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">chunk_size</span> = <span style="color:#ae81ff">2000</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">chunk_overlap</span> = <span style="color:#ae81ff">200</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">agent_memory</span>.<span style="color:#a6e22e">embedding</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;openai&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">model</span> = <span style="color:#e6db74">&#34;text-embedding-3-large&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">cache_embeddings</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_batch_size</span> = <span style="color:#ae81ff">50</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">timeout_seconds</span> = <span style="color:#ae81ff">60</span></span></span></code></pre></div>
+<h2 id="validation-and-troubleshooting">Validation and Troubleshooting</h2>
+<h3 id="using-the-intelligence-system">Using the Intelligence System</h3>
+<p>The system provides automatic validation:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Check if your model is recognized</span>
+</span></span><span style="display:flex;"><span>agentcli create myproject --memory-enabled --embedding-model unknown-model
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Output: ⚠️ Unknown embedding model: ollama/unknown-model</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#         💡 Recommended models for this provider:</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#            • nomic-embed-text:latest (768 dimensions) - Excellent general-purpose...</span></span></span></code></pre></div>
+<h3 id="manual-validation">Manual Validation</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Validate your configuration</span>
+</span></span><span style="display:flex;"><span>agentcli memory --validate
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Check current configuration</span>
+</span></span><span style="display:flex;"><span>agentcli memory --config
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Test search with your embeddings</span>
+</span></span><span style="display:flex;"><span>agentcli memory --search <span style="color:#e6db74">&#34;test query&#34;</span></span></span></code></pre></div>
+<h3 id="common-issues-and-solutions">Common Issues and Solutions</h3>
+<h4 id="unknown-model-warning">Unknown Model Warning</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0"><code>⚠️ Unknown embedding model: ollama/custom-model</code></pre></div>
+<p><strong>Solution:</strong> Use a recognized model or verify your custom model&rsquo;s dimensions:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Check available models</span>
+</span></span><span style="display:flex;"><span>agentcli create --help | grep -A <span style="color:#ae81ff">10</span> <span style="color:#e6db74">&#34;EMBEDDING PROVIDERS&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Or use a recommended model</span>
+</span></span><span style="display:flex;"><span>agentcli create myproject --embedding-model nomic-embed-text:latest</span></span></code></pre></div>
+<h4 id="dimension-mismatch">Dimension Mismatch</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0"><code>❌ Configuration Error: nomic-embed-text requires 768 dimensions, but 1536 configured</code></pre></div>
+<p><strong>Solution:</strong> The system automatically prevents this, but if you encounter it:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">agent_memory</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">dimensions</span> = <span style="color:#ae81ff">768</span>  <span style="color:#75715e"># Match your embedding model</span></span></span></code></pre></div>
+<h4 id="performance-warnings">Performance Warnings</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0"><code>⚠️ Large embedding dimensions (3072) may impact performance</code></pre></div>
+<p><strong>Solution:</strong> Consider using a smaller model for better performance:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Instead of text-embedding-3-large (3072 dims)</span>
+</span></span><span style="display:flex;"><span>agentcli create myproject --embedding-model text-embedding-3-small  <span style="color:#75715e"># 1536 dims</span></span></span></code></pre></div>
+<h2 id="advanced-usage">Advanced Usage</h2>
+<h3 id="custom-model-integration">Custom Model Integration</h3>
+<p>If you need to use a custom embedding model:</p>
+<ol>
+<li>
+<p><strong>Add it to the intelligence system</strong> (for developers):</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// In internal/scaffold/embedding_intelligence.go</span>
+</span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;custom-provider&#34;</span>: {
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;custom-model&#34;</span>: {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Provider</span>: <span style="color:#e6db74">&#34;custom-provider&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Model</span>: <span style="color:#e6db74">&#34;custom-model&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Dimensions</span>: <span style="color:#ae81ff">512</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Notes</span>: <span style="color:#e6db74">&#34;Custom embedding model&#34;</span>,
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+</li>
+<li>
+<p><strong>Use fallback dimensions:</strong></p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># System will use provider defaults</span>
+</span></span><span style="display:flex;"><span>agentcli create myproject --embedding-provider ollama --embedding-model custom-model</span></span></code></pre></div>
+</li>
+</ol>
+<h3 id="performance-optimization">Performance Optimization</h3>
+<h4 id="dimension-selection">Dimension Selection</h4>
+<ul>
+<li><strong>384 dimensions:</strong> Fastest, lowest memory usage</li>
+<li><strong>768 dimensions:</strong> Good balance of speed and quality</li>
+<li><strong>1536 dimensions:</strong> Standard quality, moderate performance</li>
+<li><strong>3072 dimensions:</strong> Highest quality, slower performance</li>
+</ul>
+<h4 id="provider-selection">Provider Selection</h4>
+<ul>
+<li><strong>Ollama:</strong> Best for local development, no API costs</li>
+<li><strong>OpenAI:</strong> Best for production, consistent quality</li>
+<li><strong>Dummy:</strong> Only for testing, no real embeddings</li>
+</ul>
+<h4 id="memory-provider-pairing">Memory Provider Pairing</h4>
+<ul>
+<li><strong>Small dimensions (384-768) + PgVector:</strong> Excellent performance</li>
+<li><strong>Large dimensions (1536-3072) + Weaviate:</strong> Better handling of high-dimensional vectors</li>
+<li><strong>Any dimensions + Memory:</strong> Fast but non-persistent</li>
+</ul>
+<h2 id="migration-between-models">Migration Between Models</h2>
+<h3 id="changing-embedding-models">Changing Embedding Models</h3>
+<p>When switching embedding models:</p>
+<ol>
+<li>
+<p><strong>Update configuration:</strong></p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">agent_memory</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">dimensions</span> = <span style="color:#ae81ff">1536</span>  <span style="color:#75715e"># New model dimensions</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">agent_memory</span>.<span style="color:#a6e22e">embedding</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">model</span> = <span style="color:#e6db74">&#34;text-embedding-3-small&#34;</span>  <span style="color:#75715e"># New model</span></span></span></code></pre></div>
+</li>
+<li>
+<p><strong>Handle existing data:</strong></p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Option 1: Clear and restart (loses data)</span>
+</span></span><span style="display:flex;"><span>agentcli memory --clear
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Option 2: Re-embed existing content (custom script needed)</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Option 3: Keep old embeddings (may reduce search quality)</span></span></span></code></pre></div>
+</li>
+<li>
+<p><strong>Test the new setup:</strong></p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>agentcli memory --validate
+</span></span><span style="display:flex;"><span>agentcli memory --search <span style="color:#e6db74">&#34;test query&#34;</span></span></span></code></pre></div>
+</li>
+</ol>
+<h2 id="best-practices">Best Practices</h2>
+<h3 id="model-selection">Model Selection</h3>
+<ol>
+<li><strong>Start with recommended models</strong> (nomic-embed-text:latest or text-embedding-3-small)</li>
+<li><strong>Consider your use case</strong> (local vs. production, cost vs. quality)</li>
+<li><strong>Test performance</strong> with your specific data and queries</li>
+<li><strong>Monitor resource usage</strong> and adjust as needed</li>
+</ol>
+<h3 id="configuration">Configuration</h3>
+<ol>
+<li><strong>Use the intelligence system</strong> - let it configure dimensions automatically</li>
+<li><strong>Validate your setup</strong> with <code>agentcli memory --validate</code></li>
+<li><strong>Test thoroughly</strong> before production deployment</li>
+<li><strong>Monitor performance</strong> and adjust settings as needed</li>
+</ol>
+<h3 id="development-workflow">Development Workflow</h3>
+<ol>
+<li><strong>Start local</strong> with Ollama and nomic-embed-text:latest</li>
+<li><strong>Test functionality</strong> with in-memory or pgvector</li>
+<li><strong>Optimize configuration</strong> based on your data</li>
+<li><strong>Deploy to production</strong> with appropriate model and provider</li>
+</ol>
+<p>This guide should help you make informed decisions about embedding models and get the most out of AgentFlow&rsquo;s intelligent configuration system.</p>
+
+  <footer class="footline">
+              <i class='fa-fw fas fa-calendar'></i> Jul 25, 2025
+  </footer>
+</article>
+        </div>
+      </main>
+    </div>
+    <aside id="R-sidebar" class="default-animation">
+      <div id="R-header-topbar" class="default-animation"></div>
+      <div id="R-header-wrapper" class="default-animation">
+        <div id="R-header" class="default-animation">
+          <a id="R-logo" class="R-default" href="/AgenticGoKitDocs/index.html">
+            <div class="logo-title">AgenticGoKit Docs</div>
+          </a>
+        </div>
+        <search><form action="/AgenticGoKitDocs/search/index.html" method="get">
+          <div class="searchbox default-animation">
+            <button class="search-detail" type="submit" title="Search (CTRL+ALT+f)"><i class="fas fa-search"></i></button>
+            <label class="a11y-only" for="R-search-by">Search</label>
+            <input data-search-input id="R-search-by" name="search-by" class="search-by" type="search" placeholder="Search...">
+            <button class="search-clear" type="button" data-search-clear="" title="Clear search"><i class="fas fa-times" title="Clear search"></i></button>
+          </div>
+        </form></search>
+      </div>
+      <div id="R-homelinks" class="default-animation homelinks">
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-homelinks">
+          <ul class="space collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/index.html"><a class="padding" href="/AgenticGoKitDocs/index.html"><i class="fa-fw fas fa-home"></i> Home</a></li>
+          </ul>
+        </div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-headercontrols">
+          <ul class="">
+          </ul>
+        </div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+      </div>
+      <div id="R-content-wrapper" class="highlightable">
+        <div class="R-sidebarmenu R-shortcutmenu-main">
+          <ul class="enlarge morespace collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/readme/index.html">content</a></li>
+            <li class="parent alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/index.html"><input type="checkbox" id="R-section-8fc2fd7736125e87cab8840a86c2af5a" aria-controls="R-subsections-8fc2fd7736125e87cab8840a86c2af5a" checked><label for="R-section-8fc2fd7736125e87cab8840a86c2af5a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu guides</span></label><a class="padding" href="/AgenticGoKitDocs/guides/index.html">guides</a><ul id="R-subsections-8fc2fd7736125e87cab8840a86c2af5a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/readme/index.html">guides</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/agentbasics/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/agentbasics/index.html">AgentBasics</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/examples/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/examples/index.html">Examples</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/configuration/index.html">Configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/customtools/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/customtools/index.html">CustomTools</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/providers/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/providers/index.html">Providers</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memoryprovidersetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memoryprovidersetup/index.html">MemoryProviderSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memorytroubleshooting/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memorytroubleshooting/index.html">MemoryTroubleshooting</a></li>
+            <li class="active " data-nav-id="/AgenticGoKitDocs/guides/embeddingmodelguide/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/embeddingmodelguide/index.html">EmbeddingModelGuide</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/ragconfiguration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/ragconfiguration/index.html">RAGConfiguration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/toolintegration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/toolintegration/index.html">ToolIntegration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/pgvectorsetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/pgvectorsetup/index.html">PgVectorSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/weaviatesetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/weaviatesetup/index.html">WeaviateSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/performance/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/performance/index.html">Performance</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/errorhandling/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/errorhandling/index.html">ErrorHandling</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/deployment/index.html"><input type="checkbox" id="R-section-ecc839349395ef3c015a12132049dff2" aria-controls="R-subsections-ecc839349395ef3c015a12132049dff2" checked><label for="R-section-ecc839349395ef3c015a12132049dff2"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu deployment</span></label><a class="padding" href="/AgenticGoKitDocs/guides/deployment/index.html">deployment</a><ul id="R-subsections-ecc839349395ef3c015a12132049dff2" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/deployment/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/deployment/readme/index.html">deployment</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/development/index.html"><input type="checkbox" id="R-section-fff1f5eca5d0a93209b9c6262762c25a" aria-controls="R-subsections-fff1f5eca5d0a93209b9c6262762c25a" checked><label for="R-section-fff1f5eca5d0a93209b9c6262762c25a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu development</span></label><a class="padding" href="/AgenticGoKitDocs/guides/development/index.html">development</a><ul id="R-subsections-fff1f5eca5d0a93209b9c6262762c25a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/readme/index.html">development</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/best-practices/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/best-practices/index.html">best-practices</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/debugging/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/debugging/index.html">debugging</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/research-assistant/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/research-assistant/index.html">research-assistant</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/testing-agents/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/testing-agents/index.html">testing-agents</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/visualization/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/visualization/index.html">visualization</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/web-search-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/web-search-integration/index.html">web-search-integration</a></li></ul></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/framework-comparison/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/framework-comparison/index.html">framework-comparison</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memory/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memory/index.html">Memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/scaffoldmemoryguide/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/scaffoldmemoryguide/index.html">ScaffoldMemoryGuide</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/setup/index.html"><input type="checkbox" id="R-section-0124aed9abb5064d53391168f3c95c22" aria-controls="R-subsections-0124aed9abb5064d53391168f3c95c22" checked><label for="R-section-0124aed9abb5064d53391168f3c95c22"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu setup</span></label><a class="padding" href="/AgenticGoKitDocs/guides/setup/index.html">setup</a><ul id="R-subsections-0124aed9abb5064d53391168f3c95c22" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/readme/index.html">setup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/llm-providers/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/llm-providers/index.html">llm-providers</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/mcp-tools/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/mcp-tools/index.html">mcp-tools</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/orchestration-configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/orchestration-configuration/index.html">orchestration-configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/vector-databases/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/vector-databases/index.html">vector-databases</a></li></ul></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/troubleshooting/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/troubleshooting/index.html">troubleshooting</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/contributors/index.html"><input type="checkbox" id="R-section-190d9b328fbda7e13ab386f7a5417de5" aria-controls="R-subsections-190d9b328fbda7e13ab386f7a5417de5" checked><label for="R-section-190d9b328fbda7e13ab386f7a5417de5"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu contributors</span></label><a class="padding" href="/AgenticGoKitDocs/contributors/index.html">contributors</a><ul id="R-subsections-190d9b328fbda7e13ab386f7a5417de5" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/readme/index.html">contributors</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/contributorguide/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/contributorguide/index.html">ContributorGuide</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/codestyle/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/codestyle/index.html">CodeStyle</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/corevsinternal/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/corevsinternal/index.html">CoreVsInternal</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/addingfeatures/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/addingfeatures/index.html">AddingFeatures</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/testing/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/testing/index.html">Testing</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/docsstandards/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/docsstandards/index.html">DocsStandards</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/reference/index.html"><input type="checkbox" id="R-section-66002f201bef818664bb81aa67490c58" aria-controls="R-subsections-66002f201bef818664bb81aa67490c58" checked><label for="R-section-66002f201bef818664bb81aa67490c58"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu reference</span></label><a class="padding" href="/AgenticGoKitDocs/reference/index.html">reference</a><ul id="R-subsections-66002f201bef818664bb81aa67490c58" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/readme/index.html">reference</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/configuration/index.html">configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/cli/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/cli/index.html">cli</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/mcp/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/mcp/index.html">mcp</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/agent/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/agent/index.html">agent</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/memory/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/memory/index.html">memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/orchestration/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/orchestration/index.html">orchestration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/state-event/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/state-event/index.html">state-event</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/index.html"><input type="checkbox" id="R-section-e1e8c1e70c5500b49e8dda2dc550651a" aria-controls="R-subsections-e1e8c1e70c5500b49e8dda2dc550651a" checked><label for="R-section-e1e8c1e70c5500b49e8dda2dc550651a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu tutorials</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/index.html">tutorials</a><ul id="R-subsections-e1e8c1e70c5500b49e8dda2dc550651a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/readme/index.html">tutorials</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/advanced/index.html"><input type="checkbox" id="R-section-d3def5cd76adc8096d0ff9fda6b8e479" aria-controls="R-subsections-d3def5cd76adc8096d0ff9fda6b8e479" checked><label for="R-section-d3def5cd76adc8096d0ff9fda6b8e479"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu advanced</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/index.html">advanced</a><ul id="R-subsections-d3def5cd76adc8096d0ff9fda6b8e479" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/readme/index.html">advanced</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/circuit-breaker-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/circuit-breaker-patterns/index.html">circuit-breaker-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/load-balancing-scaling/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/load-balancing-scaling/index.html">load-balancing-scaling</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/retry-policies/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/retry-policies/index.html">retry-policies</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/testing-strategies/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/testing-strategies/index.html">testing-strategies</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/index.html"><input type="checkbox" id="R-section-212c6ccffb40ecdd78eb2136f98c4cac" aria-controls="R-subsections-212c6ccffb40ecdd78eb2136f98c4cac" checked><label for="R-section-212c6ccffb40ecdd78eb2136f98c4cac"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu core-concepts</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/index.html">core-concepts</a><ul id="R-subsections-212c6ccffb40ecdd78eb2136f98c4cac" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/readme/index.html">core-concepts</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/agent-lifecycle/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/agent-lifecycle/index.html">agent-lifecycle</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/error-handling/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/error-handling/index.html">error-handling</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/message-passing/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/message-passing/index.html">message-passing</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/orchestration-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/orchestration-patterns/index.html">orchestration-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/state-management/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/state-management/index.html">state-management</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/debugging/index.html"><input type="checkbox" id="R-section-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" aria-controls="R-subsections-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" checked><label for="R-section-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu debugging</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/index.html">debugging</a><ul id="R-subsections-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/readme/index.html">debugging</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/debugging-multi-agent-systems/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/debugging-multi-agent-systems/index.html">debugging-multi-agent-systems</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/logging-and-tracing/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/logging-and-tracing/index.html">logging-and-tracing</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/index.html"><input type="checkbox" id="R-section-e7f904c8b9d0f9bf1f07ca7d482d2247" aria-controls="R-subsections-e7f904c8b9d0f9bf1f07ca7d482d2247" checked><label for="R-section-e7f904c8b9d0f9bf1f07ca7d482d2247"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu getting-started</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/index.html">getting-started</a><ul id="R-subsections-e7f904c8b9d0f9bf1f07ca7d482d2247" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/readme/index.html">getting-started</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/memory-and-rag/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/memory-and-rag/index.html">memory-and-rag</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/multi-agent-collaboration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/multi-agent-collaboration/index.html">multi-agent-collaboration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/production-deployment/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/production-deployment/index.html">production-deployment</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/quickstart/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/quickstart/index.html">quickstart</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/tool-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/tool-integration/index.html">tool-integration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/your-first-agent/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/your-first-agent/index.html">your-first-agent</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/mcp/index.html"><input type="checkbox" id="R-section-153aac44598009a99dd5a60317a3eecc" aria-controls="R-subsections-153aac44598009a99dd5a60317a3eecc" checked><label for="R-section-153aac44598009a99dd5a60317a3eecc"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu mcp</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/index.html">mcp</a><ul id="R-subsections-153aac44598009a99dd5a60317a3eecc" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/readme/index.html">mcp</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/advanced-tool-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/advanced-tool-patterns/index.html">advanced-tool-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/tool-development/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/tool-development/index.html">tool-development</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/tool-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/tool-integration/index.html">tool-integration</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/index.html"><input type="checkbox" id="R-section-9c1a65f2d7b3888241dcafa51a0710e7" aria-controls="R-subsections-9c1a65f2d7b3888241dcafa51a0710e7" checked><label for="R-section-9c1a65f2d7b3888241dcafa51a0710e7"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu memory-systems</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/index.html">memory-systems</a><ul id="R-subsections-9c1a65f2d7b3888241dcafa51a0710e7" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/readme/index.html">memory-systems</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/basic-memory/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/basic-memory/index.html">basic-memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/document-ingestion/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/document-ingestion/index.html">document-ingestion</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/knowledge-bases/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/knowledge-bases/index.html">knowledge-bases</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/memory-optimization/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/memory-optimization/index.html">memory-optimization</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/rag-implementation/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/rag-implementation/index.html">rag-implementation</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/vector-databases/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/vector-databases/index.html">vector-databases</a></li></ul></li></ul></li>
+          </ul>
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-shortcuts">
+          <ul class="space collapsible-menu">
+          </ul>
+        </div>
+        <div id="R-footer-margin"></div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-footercontrols">
+          <ul class="">
+          </ul>
+        </div>
+<div id="R-footer"><p>Built with <a href="https://github.com/McShelby/hugo-theme-relearn" title="love"><i class="fas fa-heart"></i></a> by <a href="https://gohugo.io/">Hugo</a></p></div>
+      </div>
+    </aside>
+    <script src="/AgenticGoKitDocs/js/clipboard/clipboard.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/perfect-scrollbar/perfect-scrollbar.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/theme.js?1753430931" defer></script>
+  </body>
+</html>

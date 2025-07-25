@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>tutorials :: AgenticGoKit Docs</title>
+    <link>http://localhost:1313/AgenticGoKitDocs/tutorials/index.html</link>
+    <description>Tutorials Navigation: Documentation Home → Tutorials&#xA;Learning-oriented guides to help you understand and use AgenticGoKit effectively.&#xA;Learning Paths Beginner Path Start here if you’re new to AgenticGoKit:&#xA;Your First Agent - Create a simple agent Multi-Agent Collaboration - Learn agent orchestration Memory and RAG - Add knowledge capabilities Tool Integration - Connect external tools Production Deployment - Deploy to production Core Concepts Path Understand the fundamental concepts:&#xA;Agent Lifecycle - How agents work internally State Management - Data flow between agents Error Handling - Robust error management Orchestration Patterns - Multi-agent coordination Advanced Path For experienced users building complex systems:</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <lastBuildDate>Fri, 25 Jul 2025 00:00:00 +0000</lastBuildDate>
+    <atom:link href="http://localhost:1313/AgenticGoKitDocs/tutorials/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>tutorials</title>
+      <link>http://localhost:1313/AgenticGoKitDocs/tutorials/readme/index.html</link>
+      <pubDate>Fri, 25 Jul 2025 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/AgenticGoKitDocs/tutorials/readme/index.html</guid>
+      <description>Tutorials Navigation: Documentation Home → Tutorials&#xA;Learning-oriented guides to help you understand and use AgenticGoKit effectively.&#xA;Learning Paths Beginner Path Start here if you’re new to AgenticGoKit:&#xA;Your First Agent - Create a simple agent Multi-Agent Collaboration - Learn agent orchestration Memory and RAG - Add knowledge capabilities Tool Integration - Connect external tools Production Deployment - Deploy to production Core Concepts Path Understand the fundamental concepts:&#xA;Agent Lifecycle - How agents work internally State Management - Data flow between agents Error Handling - Robust error management Orchestration Patterns - Multi-agent coordination Advanced Path For experienced users building complex systems:</description>
+    </item>
+    <item>
+      <title>advanced</title>
+      <link>http://localhost:1313/AgenticGoKitDocs/tutorials/advanced/index.html</link>
+      <pubDate>Fri, 25 Jul 2025 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/AgenticGoKitDocs/tutorials/advanced/index.html</guid>
+      <description>Advanced Tutorials Production patterns and optimization techniques&#xA;This section covers advanced topics for building production-ready agent systems with AgenticGoKit. These tutorials assume familiarity with basic AgenticGoKit concepts.&#xA;Advanced Topics Circuit Breaker Patterns - Implement resilient agent systems Retry Policies - Handle failures gracefully Testing Strategies - Test multi-agent systems effectively Load Balancing and Scaling - Scale agents horizontally Prerequisites Before starting these tutorials, you should:&#xA;Complete the Getting Started tutorials Understand Core Concepts Have experience with Go testing and production deployment Production Focus These tutorials emphasize:</description>
+    </item>
+    <item>
+      <title>core-concepts</title>
+      <link>http://localhost:1313/AgenticGoKitDocs/tutorials/core-concepts/index.html</link>
+      <pubDate>Fri, 25 Jul 2025 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/AgenticGoKitDocs/tutorials/core-concepts/index.html</guid>
+      <description>Core Concepts Overview Navigation: Documentation Home → Tutorials → Core Concepts&#xA;Understanding AgenticGoKit’s core concepts is essential for building effective multi-agent systems. This section covers the fundamental building blocks that power the framework.&#xA;The Big Picture AgenticGoKit is built around a few key concepts that work together to create a powerful multi-agent system:&#xA;graph TB&#xD;Event[Event] --&gt; Runner[Runner]&#xD;Runner --&gt; Orchestrator[Orchestrator]&#xD;Orchestrator --&gt; Agent[Agent]&#xD;Agent --&gt; State[State]&#xD;State --&gt; Memory[Memory]&#xD;subgraph &#34;Core Flow&#34;&#xD;Event --&gt; State&#xD;State --&gt; Agent&#xD;Agent --&gt; State&#xD;end&#xD;subgraph &#34;Orchestration&#34;&#xD;Orchestrator --&gt; AgentA[Agent A]&#xD;Orchestrator --&gt; AgentB[Agent B]&#xD;Orchestrator --&gt; AgentC[Agent C]&#xD;end&#xD;Key Components 1. Events - The Message System Events are the messages that flow through your agent system. They carry data, metadata, and routing information.</description>
+    </item>
+    <item>
+      <title>debugging</title>
+      <link>http://localhost:1313/AgenticGoKitDocs/tutorials/debugging/index.html</link>
+      <pubDate>Fri, 25 Jul 2025 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/AgenticGoKitDocs/tutorials/debugging/index.html</guid>
+      <description>Debugging and Monitoring in AgenticGoKit Overview This section covers comprehensive debugging and monitoring strategies for AgenticGoKit applications. You’ll learn how to troubleshoot multi-agent systems, implement effective logging, set up monitoring, and optimize performance in production environments.&#xA;Debugging multi-agent systems presents unique challenges due to their distributed nature, asynchronous execution, and complex interaction patterns. This guide provides practical tools and techniques to help you identify, diagnose, and resolve issues effectively.&#xA;What You’ll Learn Debugging Multi-Agent Systems: Techniques for troubleshooting complex agent interactions Logging and Tracing: Implementing structured logging and distributed tracing Performance Monitoring: Setting up metrics, alerts, and performance optimization Production Troubleshooting: Common issues and their solutions in production environments Prerequisites Before diving into debugging and monitoring, you should be familiar with:</description>
+    </item>
+    <item>
+      <title>getting-started</title>
+      <link>http://localhost:1313/AgenticGoKitDocs/tutorials/getting-started/index.html</link>
+      <pubDate>Fri, 25 Jul 2025 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/AgenticGoKitDocs/tutorials/getting-started/index.html</guid>
+      <description>Getting Started Tutorials Beginner-friendly tutorials to get you up and running with AgenticGoKit quickly.&#xA;Tutorial Series Follow these tutorials in order for the best learning experience:&#xA;0. 5-Minute Quickstart Time: 5 minutes&#xA;Get a multi-agent system running immediately with minimal setup.&#xA;You’ll learn:&#xA;Fastest way to create agents Basic orchestration patterns CLI vs code-first approaches 1. Your First Agent Time: 10 minutes&#xA;Create your first AgenticGoKit agent and understand the basic concepts.</description>
+    </item>
+    <item>
+      <title>mcp</title>
+      <link>http://localhost:1313/AgenticGoKitDocs/tutorials/mcp/index.html</link>
+      <pubDate>Fri, 25 Jul 2025 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/AgenticGoKitDocs/tutorials/mcp/index.html</guid>
+      <description>Model Context Protocol (MCP) in AgenticGoKit Navigation: Documentation Home → Tutorials → MCP (Tools)&#xA;Overview The Model Context Protocol (MCP) is a powerful framework within AgenticGoKit that enables agents to interact with external tools, APIs, and services. MCP bridges the gap between language models and the outside world, allowing agents to perform actions beyond text generation.&#xA;With MCP, agents can search the web, access databases, call APIs, manipulate files, perform calculations, and much more. This capability transforms agents from simple text processors into powerful assistants that can take meaningful actions.</description>
+    </item>
+    <item>
+      <title>memory-systems</title>
+      <link>http://localhost:1313/AgenticGoKitDocs/tutorials/memory-systems/index.html</link>
+      <pubDate>Fri, 25 Jul 2025 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/AgenticGoKitDocs/tutorials/memory-systems/index.html</guid>
+      <description>Memory Systems in AgenticGoKit Navigation: Documentation Home → Tutorials → Memory Systems&#xA;Overview Memory systems are crucial for building intelligent agents that can learn, remember, and build upon previous interactions. This tutorial series explores AgenticGoKit’s memory capabilities, from basic in-memory storage to advanced RAG (Retrieval-Augmented Generation) systems with vector databases.&#xA;Memory systems enable agents to maintain context across conversations, store knowledge, and retrieve relevant information to enhance their responses.&#xA;Prerequisites Understanding of Core Concepts Basic knowledge of databases and data storage Familiarity with vector embeddings and similarity search Memory System Architecture AgenticGoKit’s memory system is built on a flexible architecture that supports multiple storage backends and retrieval strategies:</description>
+    </item>
+  </channel>
+</rss>

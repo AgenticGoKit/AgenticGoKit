@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en-us" dir="ltr" itemscope itemtype="http://schema.org/Article" data-r-output-format="html">
+  <head><script src="/AgenticGoKitDocs/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=AgenticGoKitDocs/livereload" data-no-instant defer></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="height=device-height, width=device-width, initial-scale=1.0, minimum-scale=1.0">
+    <meta name="generator" content="Hugo 0.148.1">
+    <meta name="generator" content="Relearn 8.0.0+9803d5122ebb3276acea823f476e9eb44f607862">
+    <meta name="description" content="AgenticGoKit Workflow Visualization Guide Overview AgenticGoKit provides comprehensive workflow visualization capabilities using Mermaid diagrams. You can visualize multi-agent compositions, orchestrations, and complex workflow patterns to better understand and document your agent systems.
+Features 1. Composition Builder Visualization Sequential workflows: Step-by-step agent processing pipelines Parallel processing: Fan-out/fan-in patterns for concurrent execution Loop patterns: Retry and iteration logic with conditions 2. Orchestration Builder Visualization Collaborative orchestration: Broadcast events to multiple agents Routing patterns: Conditional routing based on event types Mixed orchestration modes: Sequential, parallel, and loop orchestrations 3. AgentBuilder Integration Multi-agent composition visualization: Preview compositions before building Pre-build diagram generation: Generate diagrams during agent construction Configuration validation: Visualize settings like timeouts and error strategies 4. Advanced Features Custom diagram configuration: Control direction, themes, and metadata display Pre-built workflow patterns: Map-reduce, pipeline, and other common patterns File export: Save diagrams as .mmd files for documentation Styling and metadata: Professional diagrams with execution details Quick Start Examples Basic Sequential Workflow // Create agents orderAgent := createAgent(&#34;OrderProcessor&#34;) paymentAgent := createAgent(&#34;PaymentProcessor&#34;) shippingAgent := createAgent(&#34;ShippingService&#34;) // Build sequential composition pipeline := core.NewComposition(&#34;order-pipeline&#34;). WithAgents(orderAgent, paymentAgent, shippingAgent). AsSequential(). WithTimeout(2 * time.Minute) // Generate diagram diagram := pipeline.GenerateMermaidDiagram() fmt.Println(diagram)Parallel Processing // Create analysis agents sentimentAgent := createAgent(&#34;SentimentAnalyzer&#34;) keywordAgent := createAgent(&#34;KeywordExtractor&#34;) languageAgent := createAgent(&#34;LanguageDetector&#34;) // Build parallel composition analysis := core.NewComposition(&#34;content-analysis&#34;). WithAgents(sentimentAgent, keywordAgent, languageAgent). AsParallel(). WithTimeout(30 * time.Second). WithErrorStrategy(core.ErrorStrategyCollectAll) // Generate custom diagram (left-to-right) config := core.MermaidConfig{ DiagramType: core.MermaidFlowchart, Title: &#34;Content Analysis System&#34;, Direction: &#34;LR&#34;, ShowMetadata: true, ShowAgentTypes: true, } diagram := analysis.GenerateMermaidDiagramWithConfig(config)AgentBuilder with Visualization // Build agent with multi-agent composition builder := core.NewAgent(&#34;DataProcessor&#34;). WithParallelAgents(dataAgent, analyticsAgent, reportAgent). WithMultiAgentConfig(core.MultiAgentConfig{ Timeout: 90 * time.Second, MaxConcurrency: 8, ErrorStrategy: core.ErrorStrategyCollectAll, StateStrategy: core.StateStrategyMerge, }) // Check if it can be visualized if builder.CanVisualize() { diagram := builder.GenerateMermaidDiagram() // Save to file os.WriteFile(&#34;workflow.mmd&#34;, []byte(diagram), 0644) } // Build the actual agent agent, err := builder.Build()Loop with Conditions qualityAgent := createAgent(&#34;QualityChecker&#34;) // Define stop condition condition := func(state core.State) bool { if score, exists := state.Get(&#34;quality_score&#34;); exists { if qualityScore, ok := score.(float64); ok { return qualityScore &gt;= 0.95 // Stop at 95% quality } } return false } // Build loop composition qualityLoop := core.NewComposition(&#34;quality-monitor&#34;). WithAgents(qualityAgent). AsLoop(10, condition). // Max 10 iterations WithTimeout(5 * time.Minute) diagram := qualityLoop.GenerateMermaidDiagram()Orchestration Patterns // Collaborative microservices serviceHandlers := map[string]core.AgentHandler{ &#34;user-service&#34;: core.ConvertAgentToHandler(userAgent), &#34;order-service&#34;: core.ConvertAgentToHandler(orderAgent), &#34;payment-service&#34;: core.ConvertAgentToHandler(paymentAgent), } collaboration := core.NewOrchestrationBuilder(core.OrchestrationCollaborate). WithAgents(serviceHandlers). WithTimeout(1 * time.Minute). WithMaxConcurrency(20) diagram := collaboration.GenerateMermaidDiagram() // API routing routing := core.NewOrchestrationBuilder(core.OrchestrationRoute). WithAgents(serviceHandlers). WithTimeout(30 * time.Second) routingDiagram := routing.GenerateMermaidDiagram()Configuration Options MermaidConfig Structure type MermaidConfig struct { DiagramType MermaidDiagramType // flowchart, sequenceDiagram, etc. Title string // Custom diagram title Direction string // &#34;TD&#34;, &#34;LR&#34;, &#34;BT&#34;, &#34;RL&#34; Theme string // &#34;default&#34;, &#34;dark&#34;, &#34;forest&#34; ShowMetadata bool // Include timeout/error info ShowAgentTypes bool // Show agent type details CompactMode bool // Generate compact diagrams }Available Directions &#34;TD&#34; or &#34;TB&#34;: Top to Bottom (default) &#34;LR&#34;: Left to Right &#34;BT&#34;: Bottom to Top &#34;RL&#34;: Right to Left Themes &#34;default&#34;: Standard Mermaid theme &#34;dark&#34;: Dark theme for presentations &#34;forest&#34;: Green theme &#34;base&#34;: Minimal theme Workflow Patterns Pre-built Patterns // Map-Reduce pattern agents := []core.Agent{dataAgent, processor1, processor2, reducer} mapReduceDiagram := core.GenerateWorkflowPatternDiagram(&#34;map-reduce&#34;, agents) // Pipeline pattern pipelineAgents := []core.Agent{input, transform, validate, output} pipelineDiagram := core.GenerateWorkflowPatternDiagram(&#34;pipeline&#34;, pipelineAgents)File Export and Integration Save Diagrams to Files // Create output directory outputDir := &#34;workflow_diagrams&#34; os.MkdirAll(outputDir, 0755) // Save diagram as Markdown file filename := filepath.Join(outputDir, &#34;my_workflow.md&#34;) err := core.SaveDiagramAsMarkdown(filename, &#34;My Workflow&#34;, diagram) // Save with metadata metadata := map[string]interface{}{ &#34;Pattern&#34;: &#34;Sequential Processing&#34;, &#34;Agents&#34;: 4, &#34;Timeout&#34;: &#34;2 minutes&#34;, &#34;Error Strategy&#34;: &#34;Fail Fast&#34;, } err = core.SaveDiagramWithMetadata(filename, &#34;My Workflow&#34;, &#34;Description of the workflow&#34;, diagram, metadata)View Diagrams VS Code/GitHub/GitLab: Open .md files directly - Mermaid diagrams render automatically Online: Copy Mermaid code to Mermaid Live Editor Documentation: Include .md files in project documentation Presentations: Export from Mermaid Live as PNG/SVG Integration in Documentation # My Workflow Here&#39;s how our order processing works: \`\`\`mermaid --- title: Order Processing Pipeline --- flowchart TD INPUT[&#34;🎯 Order Request&#34;] AGENT1[&#34;🤖 InventoryChecker&#34;] INPUT --&gt; AGENT1 AGENT2[&#34;🤖 PaymentProcessor&#34;] AGENT1 --&gt; AGENT2 AGENT3[&#34;🤖 ShippingService&#34;] AGENT2 --&gt; AGENT3 OUTPUT[&#34;✅ Order Complete&#34;] AGENT3 --&gt; OUTPUT \`\`\`Best Practices 1. Use Descriptive Agent Names ✅ &#34;OrderProcessor&#34;, &#34;PaymentGateway&#34; ❌ &#34;Agent1&#34;, &#34;Worker&#34; 2. Choose Appropriate Directions Sequential workflows: Top-to-bottom (&#34;TD&#34;) Data flows: Left-to-right (&#34;LR&#34;) Process hierarchies: Top-to-bottom (&#34;TD&#34;) 3. Include Metadata for Complex Systems config := core.MermaidConfig{ ShowMetadata: true, // Show timeouts, error strategies ShowAgentTypes: true, // Show agent capabilities }Save Diagrams During Development // Always save diagrams for documentation if builder.CanVisualize() { diagram := builder.GenerateMermaidDiagram() filename := fmt.Sprintf(&#34;docs/%s.md&#34;, builder.Name()) core.SaveDiagramAsMarkdown(filename, builder.Name(), diagram) }5. Use Custom Titles for Clarity config := core.MermaidConfig{ Title: &#34;E-commerce Order Processing Pipeline v2.1&#34;, }Troubleshooting Common Issues Empty Diagram: Check if composition has agents and a mode set">
+    <meta name="author" content="">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="visualization :: AgenticGoKit Docs">
+    <meta name="twitter:description" content="AgenticGoKit Workflow Visualization Guide Overview AgenticGoKit provides comprehensive workflow visualization capabilities using Mermaid diagrams. You can visualize multi-agent compositions, orchestrations, and complex workflow patterns to better understand and document your agent systems.
+Features 1. Composition Builder Visualization Sequential workflows: Step-by-step agent processing pipelines Parallel processing: Fan-out/fan-in patterns for concurrent execution Loop patterns: Retry and iteration logic with conditions 2. Orchestration Builder Visualization Collaborative orchestration: Broadcast events to multiple agents Routing patterns: Conditional routing based on event types Mixed orchestration modes: Sequential, parallel, and loop orchestrations 3. AgentBuilder Integration Multi-agent composition visualization: Preview compositions before building Pre-build diagram generation: Generate diagrams during agent construction Configuration validation: Visualize settings like timeouts and error strategies 4. Advanced Features Custom diagram configuration: Control direction, themes, and metadata display Pre-built workflow patterns: Map-reduce, pipeline, and other common patterns File export: Save diagrams as .mmd files for documentation Styling and metadata: Professional diagrams with execution details Quick Start Examples Basic Sequential Workflow // Create agents orderAgent := createAgent(&#34;OrderProcessor&#34;) paymentAgent := createAgent(&#34;PaymentProcessor&#34;) shippingAgent := createAgent(&#34;ShippingService&#34;) // Build sequential composition pipeline := core.NewComposition(&#34;order-pipeline&#34;). WithAgents(orderAgent, paymentAgent, shippingAgent). AsSequential(). WithTimeout(2 * time.Minute) // Generate diagram diagram := pipeline.GenerateMermaidDiagram() fmt.Println(diagram)Parallel Processing // Create analysis agents sentimentAgent := createAgent(&#34;SentimentAnalyzer&#34;) keywordAgent := createAgent(&#34;KeywordExtractor&#34;) languageAgent := createAgent(&#34;LanguageDetector&#34;) // Build parallel composition analysis := core.NewComposition(&#34;content-analysis&#34;). WithAgents(sentimentAgent, keywordAgent, languageAgent). AsParallel(). WithTimeout(30 * time.Second). WithErrorStrategy(core.ErrorStrategyCollectAll) // Generate custom diagram (left-to-right) config := core.MermaidConfig{ DiagramType: core.MermaidFlowchart, Title: &#34;Content Analysis System&#34;, Direction: &#34;LR&#34;, ShowMetadata: true, ShowAgentTypes: true, } diagram := analysis.GenerateMermaidDiagramWithConfig(config)AgentBuilder with Visualization // Build agent with multi-agent composition builder := core.NewAgent(&#34;DataProcessor&#34;). WithParallelAgents(dataAgent, analyticsAgent, reportAgent). WithMultiAgentConfig(core.MultiAgentConfig{ Timeout: 90 * time.Second, MaxConcurrency: 8, ErrorStrategy: core.ErrorStrategyCollectAll, StateStrategy: core.StateStrategyMerge, }) // Check if it can be visualized if builder.CanVisualize() { diagram := builder.GenerateMermaidDiagram() // Save to file os.WriteFile(&#34;workflow.mmd&#34;, []byte(diagram), 0644) } // Build the actual agent agent, err := builder.Build()Loop with Conditions qualityAgent := createAgent(&#34;QualityChecker&#34;) // Define stop condition condition := func(state core.State) bool { if score, exists := state.Get(&#34;quality_score&#34;); exists { if qualityScore, ok := score.(float64); ok { return qualityScore &gt;= 0.95 // Stop at 95% quality } } return false } // Build loop composition qualityLoop := core.NewComposition(&#34;quality-monitor&#34;). WithAgents(qualityAgent). AsLoop(10, condition). // Max 10 iterations WithTimeout(5 * time.Minute) diagram := qualityLoop.GenerateMermaidDiagram()Orchestration Patterns // Collaborative microservices serviceHandlers := map[string]core.AgentHandler{ &#34;user-service&#34;: core.ConvertAgentToHandler(userAgent), &#34;order-service&#34;: core.ConvertAgentToHandler(orderAgent), &#34;payment-service&#34;: core.ConvertAgentToHandler(paymentAgent), } collaboration := core.NewOrchestrationBuilder(core.OrchestrationCollaborate). WithAgents(serviceHandlers). WithTimeout(1 * time.Minute). WithMaxConcurrency(20) diagram := collaboration.GenerateMermaidDiagram() // API routing routing := core.NewOrchestrationBuilder(core.OrchestrationRoute). WithAgents(serviceHandlers). WithTimeout(30 * time.Second) routingDiagram := routing.GenerateMermaidDiagram()Configuration Options MermaidConfig Structure type MermaidConfig struct { DiagramType MermaidDiagramType // flowchart, sequenceDiagram, etc. Title string // Custom diagram title Direction string // &#34;TD&#34;, &#34;LR&#34;, &#34;BT&#34;, &#34;RL&#34; Theme string // &#34;default&#34;, &#34;dark&#34;, &#34;forest&#34; ShowMetadata bool // Include timeout/error info ShowAgentTypes bool // Show agent type details CompactMode bool // Generate compact diagrams }Available Directions &#34;TD&#34; or &#34;TB&#34;: Top to Bottom (default) &#34;LR&#34;: Left to Right &#34;BT&#34;: Bottom to Top &#34;RL&#34;: Right to Left Themes &#34;default&#34;: Standard Mermaid theme &#34;dark&#34;: Dark theme for presentations &#34;forest&#34;: Green theme &#34;base&#34;: Minimal theme Workflow Patterns Pre-built Patterns // Map-Reduce pattern agents := []core.Agent{dataAgent, processor1, processor2, reducer} mapReduceDiagram := core.GenerateWorkflowPatternDiagram(&#34;map-reduce&#34;, agents) // Pipeline pattern pipelineAgents := []core.Agent{input, transform, validate, output} pipelineDiagram := core.GenerateWorkflowPatternDiagram(&#34;pipeline&#34;, pipelineAgents)File Export and Integration Save Diagrams to Files // Create output directory outputDir := &#34;workflow_diagrams&#34; os.MkdirAll(outputDir, 0755) // Save diagram as Markdown file filename := filepath.Join(outputDir, &#34;my_workflow.md&#34;) err := core.SaveDiagramAsMarkdown(filename, &#34;My Workflow&#34;, diagram) // Save with metadata metadata := map[string]interface{}{ &#34;Pattern&#34;: &#34;Sequential Processing&#34;, &#34;Agents&#34;: 4, &#34;Timeout&#34;: &#34;2 minutes&#34;, &#34;Error Strategy&#34;: &#34;Fail Fast&#34;, } err = core.SaveDiagramWithMetadata(filename, &#34;My Workflow&#34;, &#34;Description of the workflow&#34;, diagram, metadata)View Diagrams VS Code/GitHub/GitLab: Open .md files directly - Mermaid diagrams render automatically Online: Copy Mermaid code to Mermaid Live Editor Documentation: Include .md files in project documentation Presentations: Export from Mermaid Live as PNG/SVG Integration in Documentation # My Workflow Here&#39;s how our order processing works: \`\`\`mermaid --- title: Order Processing Pipeline --- flowchart TD INPUT[&#34;🎯 Order Request&#34;] AGENT1[&#34;🤖 InventoryChecker&#34;] INPUT --&gt; AGENT1 AGENT2[&#34;🤖 PaymentProcessor&#34;] AGENT1 --&gt; AGENT2 AGENT3[&#34;🤖 ShippingService&#34;] AGENT2 --&gt; AGENT3 OUTPUT[&#34;✅ Order Complete&#34;] AGENT3 --&gt; OUTPUT \`\`\`Best Practices 1. Use Descriptive Agent Names ✅ &#34;OrderProcessor&#34;, &#34;PaymentGateway&#34; ❌ &#34;Agent1&#34;, &#34;Worker&#34; 2. Choose Appropriate Directions Sequential workflows: Top-to-bottom (&#34;TD&#34;) Data flows: Left-to-right (&#34;LR&#34;) Process hierarchies: Top-to-bottom (&#34;TD&#34;) 3. Include Metadata for Complex Systems config := core.MermaidConfig{ ShowMetadata: true, // Show timeouts, error strategies ShowAgentTypes: true, // Show agent capabilities }Save Diagrams During Development // Always save diagrams for documentation if builder.CanVisualize() { diagram := builder.GenerateMermaidDiagram() filename := fmt.Sprintf(&#34;docs/%s.md&#34;, builder.Name()) core.SaveDiagramAsMarkdown(filename, builder.Name(), diagram) }5. Use Custom Titles for Clarity config := core.MermaidConfig{ Title: &#34;E-commerce Order Processing Pipeline v2.1&#34;, }Troubleshooting Common Issues Empty Diagram: Check if composition has agents and a mode set">
+    <meta property="og:url" content="http://localhost:1313/AgenticGoKitDocs/guides/development/visualization/index.html">
+    <meta property="og:site_name" content="AgenticGoKit Docs">
+    <meta property="og:title" content="visualization :: AgenticGoKit Docs">
+    <meta property="og:description" content="AgenticGoKit Workflow Visualization Guide Overview AgenticGoKit provides comprehensive workflow visualization capabilities using Mermaid diagrams. You can visualize multi-agent compositions, orchestrations, and complex workflow patterns to better understand and document your agent systems.
+Features 1. Composition Builder Visualization Sequential workflows: Step-by-step agent processing pipelines Parallel processing: Fan-out/fan-in patterns for concurrent execution Loop patterns: Retry and iteration logic with conditions 2. Orchestration Builder Visualization Collaborative orchestration: Broadcast events to multiple agents Routing patterns: Conditional routing based on event types Mixed orchestration modes: Sequential, parallel, and loop orchestrations 3. AgentBuilder Integration Multi-agent composition visualization: Preview compositions before building Pre-build diagram generation: Generate diagrams during agent construction Configuration validation: Visualize settings like timeouts and error strategies 4. Advanced Features Custom diagram configuration: Control direction, themes, and metadata display Pre-built workflow patterns: Map-reduce, pipeline, and other common patterns File export: Save diagrams as .mmd files for documentation Styling and metadata: Professional diagrams with execution details Quick Start Examples Basic Sequential Workflow // Create agents orderAgent := createAgent(&#34;OrderProcessor&#34;) paymentAgent := createAgent(&#34;PaymentProcessor&#34;) shippingAgent := createAgent(&#34;ShippingService&#34;) // Build sequential composition pipeline := core.NewComposition(&#34;order-pipeline&#34;). WithAgents(orderAgent, paymentAgent, shippingAgent). AsSequential(). WithTimeout(2 * time.Minute) // Generate diagram diagram := pipeline.GenerateMermaidDiagram() fmt.Println(diagram)Parallel Processing // Create analysis agents sentimentAgent := createAgent(&#34;SentimentAnalyzer&#34;) keywordAgent := createAgent(&#34;KeywordExtractor&#34;) languageAgent := createAgent(&#34;LanguageDetector&#34;) // Build parallel composition analysis := core.NewComposition(&#34;content-analysis&#34;). WithAgents(sentimentAgent, keywordAgent, languageAgent). AsParallel(). WithTimeout(30 * time.Second). WithErrorStrategy(core.ErrorStrategyCollectAll) // Generate custom diagram (left-to-right) config := core.MermaidConfig{ DiagramType: core.MermaidFlowchart, Title: &#34;Content Analysis System&#34;, Direction: &#34;LR&#34;, ShowMetadata: true, ShowAgentTypes: true, } diagram := analysis.GenerateMermaidDiagramWithConfig(config)AgentBuilder with Visualization // Build agent with multi-agent composition builder := core.NewAgent(&#34;DataProcessor&#34;). WithParallelAgents(dataAgent, analyticsAgent, reportAgent). WithMultiAgentConfig(core.MultiAgentConfig{ Timeout: 90 * time.Second, MaxConcurrency: 8, ErrorStrategy: core.ErrorStrategyCollectAll, StateStrategy: core.StateStrategyMerge, }) // Check if it can be visualized if builder.CanVisualize() { diagram := builder.GenerateMermaidDiagram() // Save to file os.WriteFile(&#34;workflow.mmd&#34;, []byte(diagram), 0644) } // Build the actual agent agent, err := builder.Build()Loop with Conditions qualityAgent := createAgent(&#34;QualityChecker&#34;) // Define stop condition condition := func(state core.State) bool { if score, exists := state.Get(&#34;quality_score&#34;); exists { if qualityScore, ok := score.(float64); ok { return qualityScore &gt;= 0.95 // Stop at 95% quality } } return false } // Build loop composition qualityLoop := core.NewComposition(&#34;quality-monitor&#34;). WithAgents(qualityAgent). AsLoop(10, condition). // Max 10 iterations WithTimeout(5 * time.Minute) diagram := qualityLoop.GenerateMermaidDiagram()Orchestration Patterns // Collaborative microservices serviceHandlers := map[string]core.AgentHandler{ &#34;user-service&#34;: core.ConvertAgentToHandler(userAgent), &#34;order-service&#34;: core.ConvertAgentToHandler(orderAgent), &#34;payment-service&#34;: core.ConvertAgentToHandler(paymentAgent), } collaboration := core.NewOrchestrationBuilder(core.OrchestrationCollaborate). WithAgents(serviceHandlers). WithTimeout(1 * time.Minute). WithMaxConcurrency(20) diagram := collaboration.GenerateMermaidDiagram() // API routing routing := core.NewOrchestrationBuilder(core.OrchestrationRoute). WithAgents(serviceHandlers). WithTimeout(30 * time.Second) routingDiagram := routing.GenerateMermaidDiagram()Configuration Options MermaidConfig Structure type MermaidConfig struct { DiagramType MermaidDiagramType // flowchart, sequenceDiagram, etc. Title string // Custom diagram title Direction string // &#34;TD&#34;, &#34;LR&#34;, &#34;BT&#34;, &#34;RL&#34; Theme string // &#34;default&#34;, &#34;dark&#34;, &#34;forest&#34; ShowMetadata bool // Include timeout/error info ShowAgentTypes bool // Show agent type details CompactMode bool // Generate compact diagrams }Available Directions &#34;TD&#34; or &#34;TB&#34;: Top to Bottom (default) &#34;LR&#34;: Left to Right &#34;BT&#34;: Bottom to Top &#34;RL&#34;: Right to Left Themes &#34;default&#34;: Standard Mermaid theme &#34;dark&#34;: Dark theme for presentations &#34;forest&#34;: Green theme &#34;base&#34;: Minimal theme Workflow Patterns Pre-built Patterns // Map-Reduce pattern agents := []core.Agent{dataAgent, processor1, processor2, reducer} mapReduceDiagram := core.GenerateWorkflowPatternDiagram(&#34;map-reduce&#34;, agents) // Pipeline pattern pipelineAgents := []core.Agent{input, transform, validate, output} pipelineDiagram := core.GenerateWorkflowPatternDiagram(&#34;pipeline&#34;, pipelineAgents)File Export and Integration Save Diagrams to Files // Create output directory outputDir := &#34;workflow_diagrams&#34; os.MkdirAll(outputDir, 0755) // Save diagram as Markdown file filename := filepath.Join(outputDir, &#34;my_workflow.md&#34;) err := core.SaveDiagramAsMarkdown(filename, &#34;My Workflow&#34;, diagram) // Save with metadata metadata := map[string]interface{}{ &#34;Pattern&#34;: &#34;Sequential Processing&#34;, &#34;Agents&#34;: 4, &#34;Timeout&#34;: &#34;2 minutes&#34;, &#34;Error Strategy&#34;: &#34;Fail Fast&#34;, } err = core.SaveDiagramWithMetadata(filename, &#34;My Workflow&#34;, &#34;Description of the workflow&#34;, diagram, metadata)View Diagrams VS Code/GitHub/GitLab: Open .md files directly - Mermaid diagrams render automatically Online: Copy Mermaid code to Mermaid Live Editor Documentation: Include .md files in project documentation Presentations: Export from Mermaid Live as PNG/SVG Integration in Documentation # My Workflow Here&#39;s how our order processing works: \`\`\`mermaid --- title: Order Processing Pipeline --- flowchart TD INPUT[&#34;🎯 Order Request&#34;] AGENT1[&#34;🤖 InventoryChecker&#34;] INPUT --&gt; AGENT1 AGENT2[&#34;🤖 PaymentProcessor&#34;] AGENT1 --&gt; AGENT2 AGENT3[&#34;🤖 ShippingService&#34;] AGENT2 --&gt; AGENT3 OUTPUT[&#34;✅ Order Complete&#34;] AGENT3 --&gt; OUTPUT \`\`\`Best Practices 1. Use Descriptive Agent Names ✅ &#34;OrderProcessor&#34;, &#34;PaymentGateway&#34; ❌ &#34;Agent1&#34;, &#34;Worker&#34; 2. Choose Appropriate Directions Sequential workflows: Top-to-bottom (&#34;TD&#34;) Data flows: Left-to-right (&#34;LR&#34;) Process hierarchies: Top-to-bottom (&#34;TD&#34;) 3. Include Metadata for Complex Systems config := core.MermaidConfig{ ShowMetadata: true, // Show timeouts, error strategies ShowAgentTypes: true, // Show agent capabilities }Save Diagrams During Development // Always save diagrams for documentation if builder.CanVisualize() { diagram := builder.GenerateMermaidDiagram() filename := fmt.Sprintf(&#34;docs/%s.md&#34;, builder.Name()) core.SaveDiagramAsMarkdown(filename, builder.Name(), diagram) }5. Use Custom Titles for Clarity config := core.MermaidConfig{ Title: &#34;E-commerce Order Processing Pipeline v2.1&#34;, }Troubleshooting Common Issues Empty Diagram: Check if composition has agents and a mode set">
+    <meta property="og:locale" content="en_us">
+    <meta property="og:type" content="article">
+    <meta property="article:section" content="guides">
+    <meta property="article:published_time" content="2025-07-25T00:00:00+00:00">
+    <meta property="article:modified_time" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="name" content="visualization :: AgenticGoKit Docs">
+    <meta itemprop="description" content="AgenticGoKit Workflow Visualization Guide Overview AgenticGoKit provides comprehensive workflow visualization capabilities using Mermaid diagrams. You can visualize multi-agent compositions, orchestrations, and complex workflow patterns to better understand and document your agent systems.
+Features 1. Composition Builder Visualization Sequential workflows: Step-by-step agent processing pipelines Parallel processing: Fan-out/fan-in patterns for concurrent execution Loop patterns: Retry and iteration logic with conditions 2. Orchestration Builder Visualization Collaborative orchestration: Broadcast events to multiple agents Routing patterns: Conditional routing based on event types Mixed orchestration modes: Sequential, parallel, and loop orchestrations 3. AgentBuilder Integration Multi-agent composition visualization: Preview compositions before building Pre-build diagram generation: Generate diagrams during agent construction Configuration validation: Visualize settings like timeouts and error strategies 4. Advanced Features Custom diagram configuration: Control direction, themes, and metadata display Pre-built workflow patterns: Map-reduce, pipeline, and other common patterns File export: Save diagrams as .mmd files for documentation Styling and metadata: Professional diagrams with execution details Quick Start Examples Basic Sequential Workflow // Create agents orderAgent := createAgent(&#34;OrderProcessor&#34;) paymentAgent := createAgent(&#34;PaymentProcessor&#34;) shippingAgent := createAgent(&#34;ShippingService&#34;) // Build sequential composition pipeline := core.NewComposition(&#34;order-pipeline&#34;). WithAgents(orderAgent, paymentAgent, shippingAgent). AsSequential(). WithTimeout(2 * time.Minute) // Generate diagram diagram := pipeline.GenerateMermaidDiagram() fmt.Println(diagram)Parallel Processing // Create analysis agents sentimentAgent := createAgent(&#34;SentimentAnalyzer&#34;) keywordAgent := createAgent(&#34;KeywordExtractor&#34;) languageAgent := createAgent(&#34;LanguageDetector&#34;) // Build parallel composition analysis := core.NewComposition(&#34;content-analysis&#34;). WithAgents(sentimentAgent, keywordAgent, languageAgent). AsParallel(). WithTimeout(30 * time.Second). WithErrorStrategy(core.ErrorStrategyCollectAll) // Generate custom diagram (left-to-right) config := core.MermaidConfig{ DiagramType: core.MermaidFlowchart, Title: &#34;Content Analysis System&#34;, Direction: &#34;LR&#34;, ShowMetadata: true, ShowAgentTypes: true, } diagram := analysis.GenerateMermaidDiagramWithConfig(config)AgentBuilder with Visualization // Build agent with multi-agent composition builder := core.NewAgent(&#34;DataProcessor&#34;). WithParallelAgents(dataAgent, analyticsAgent, reportAgent). WithMultiAgentConfig(core.MultiAgentConfig{ Timeout: 90 * time.Second, MaxConcurrency: 8, ErrorStrategy: core.ErrorStrategyCollectAll, StateStrategy: core.StateStrategyMerge, }) // Check if it can be visualized if builder.CanVisualize() { diagram := builder.GenerateMermaidDiagram() // Save to file os.WriteFile(&#34;workflow.mmd&#34;, []byte(diagram), 0644) } // Build the actual agent agent, err := builder.Build()Loop with Conditions qualityAgent := createAgent(&#34;QualityChecker&#34;) // Define stop condition condition := func(state core.State) bool { if score, exists := state.Get(&#34;quality_score&#34;); exists { if qualityScore, ok := score.(float64); ok { return qualityScore &gt;= 0.95 // Stop at 95% quality } } return false } // Build loop composition qualityLoop := core.NewComposition(&#34;quality-monitor&#34;). WithAgents(qualityAgent). AsLoop(10, condition). // Max 10 iterations WithTimeout(5 * time.Minute) diagram := qualityLoop.GenerateMermaidDiagram()Orchestration Patterns // Collaborative microservices serviceHandlers := map[string]core.AgentHandler{ &#34;user-service&#34;: core.ConvertAgentToHandler(userAgent), &#34;order-service&#34;: core.ConvertAgentToHandler(orderAgent), &#34;payment-service&#34;: core.ConvertAgentToHandler(paymentAgent), } collaboration := core.NewOrchestrationBuilder(core.OrchestrationCollaborate). WithAgents(serviceHandlers). WithTimeout(1 * time.Minute). WithMaxConcurrency(20) diagram := collaboration.GenerateMermaidDiagram() // API routing routing := core.NewOrchestrationBuilder(core.OrchestrationRoute). WithAgents(serviceHandlers). WithTimeout(30 * time.Second) routingDiagram := routing.GenerateMermaidDiagram()Configuration Options MermaidConfig Structure type MermaidConfig struct { DiagramType MermaidDiagramType // flowchart, sequenceDiagram, etc. Title string // Custom diagram title Direction string // &#34;TD&#34;, &#34;LR&#34;, &#34;BT&#34;, &#34;RL&#34; Theme string // &#34;default&#34;, &#34;dark&#34;, &#34;forest&#34; ShowMetadata bool // Include timeout/error info ShowAgentTypes bool // Show agent type details CompactMode bool // Generate compact diagrams }Available Directions &#34;TD&#34; or &#34;TB&#34;: Top to Bottom (default) &#34;LR&#34;: Left to Right &#34;BT&#34;: Bottom to Top &#34;RL&#34;: Right to Left Themes &#34;default&#34;: Standard Mermaid theme &#34;dark&#34;: Dark theme for presentations &#34;forest&#34;: Green theme &#34;base&#34;: Minimal theme Workflow Patterns Pre-built Patterns // Map-Reduce pattern agents := []core.Agent{dataAgent, processor1, processor2, reducer} mapReduceDiagram := core.GenerateWorkflowPatternDiagram(&#34;map-reduce&#34;, agents) // Pipeline pattern pipelineAgents := []core.Agent{input, transform, validate, output} pipelineDiagram := core.GenerateWorkflowPatternDiagram(&#34;pipeline&#34;, pipelineAgents)File Export and Integration Save Diagrams to Files // Create output directory outputDir := &#34;workflow_diagrams&#34; os.MkdirAll(outputDir, 0755) // Save diagram as Markdown file filename := filepath.Join(outputDir, &#34;my_workflow.md&#34;) err := core.SaveDiagramAsMarkdown(filename, &#34;My Workflow&#34;, diagram) // Save with metadata metadata := map[string]interface{}{ &#34;Pattern&#34;: &#34;Sequential Processing&#34;, &#34;Agents&#34;: 4, &#34;Timeout&#34;: &#34;2 minutes&#34;, &#34;Error Strategy&#34;: &#34;Fail Fast&#34;, } err = core.SaveDiagramWithMetadata(filename, &#34;My Workflow&#34;, &#34;Description of the workflow&#34;, diagram, metadata)View Diagrams VS Code/GitHub/GitLab: Open .md files directly - Mermaid diagrams render automatically Online: Copy Mermaid code to Mermaid Live Editor Documentation: Include .md files in project documentation Presentations: Export from Mermaid Live as PNG/SVG Integration in Documentation # My Workflow Here&#39;s how our order processing works: \`\`\`mermaid --- title: Order Processing Pipeline --- flowchart TD INPUT[&#34;🎯 Order Request&#34;] AGENT1[&#34;🤖 InventoryChecker&#34;] INPUT --&gt; AGENT1 AGENT2[&#34;🤖 PaymentProcessor&#34;] AGENT1 --&gt; AGENT2 AGENT3[&#34;🤖 ShippingService&#34;] AGENT2 --&gt; AGENT3 OUTPUT[&#34;✅ Order Complete&#34;] AGENT3 --&gt; OUTPUT \`\`\`Best Practices 1. Use Descriptive Agent Names ✅ &#34;OrderProcessor&#34;, &#34;PaymentGateway&#34; ❌ &#34;Agent1&#34;, &#34;Worker&#34; 2. Choose Appropriate Directions Sequential workflows: Top-to-bottom (&#34;TD&#34;) Data flows: Left-to-right (&#34;LR&#34;) Process hierarchies: Top-to-bottom (&#34;TD&#34;) 3. Include Metadata for Complex Systems config := core.MermaidConfig{ ShowMetadata: true, // Show timeouts, error strategies ShowAgentTypes: true, // Show agent capabilities }Save Diagrams During Development // Always save diagrams for documentation if builder.CanVisualize() { diagram := builder.GenerateMermaidDiagram() filename := fmt.Sprintf(&#34;docs/%s.md&#34;, builder.Name()) core.SaveDiagramAsMarkdown(filename, builder.Name(), diagram) }5. Use Custom Titles for Clarity config := core.MermaidConfig{ Title: &#34;E-commerce Order Processing Pipeline v2.1&#34;, }Troubleshooting Common Issues Empty Diagram: Check if composition has agents and a mode set">
+    <meta itemprop="datePublished" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="dateModified" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="wordCount" content="958">
+    <title>visualization :: AgenticGoKit Docs</title>
+    <link href="/AgenticGoKitDocs/css/auto-complete/auto-complete.min.css?1753430931" rel="stylesheet">
+    <script src="/AgenticGoKitDocs/js/auto-complete/auto-complete.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/search-lunr.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/search.js?1753430931" defer></script>
+    <script>
+      window.relearn = window.relearn || {};
+      window.relearn.index_js_url="/AgenticGoKitDocs/searchindex.en.js?1753430931";
+    </script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.stemmer.support.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.multi.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.en.min.js?1753430931" defer></script>
+    <script>
+      window.relearn = window.relearn || {};
+      window.relearn.contentLangs=['en'];
+    </script>
+    <link href="/AgenticGoKitDocs/fonts/fontawesome/css/fontawesome-all.min.css?1753430931" rel="stylesheet" media="print" onload="this.media='all';this.onload=null;"><noscript><link href="/AgenticGoKitDocs/fonts/fontawesome/css/fontawesome-all.min.css?1753430931" rel="stylesheet"></noscript>
+    <link href="/AgenticGoKitDocs/css/perfect-scrollbar/perfect-scrollbar.min.css?1753430931" rel="stylesheet">
+    <link href="/AgenticGoKitDocs/css/theme.css?1753430931" rel="stylesheet">
+    <link href="/AgenticGoKitDocs/css/format-html.css?1753430931" rel="stylesheet" id="R-format-style">
+    <script>
+      window.relearn = window.relearn || {};
+      // configuration
+      window.relearn.min = ``;
+      window.relearn.path='\/guides\/development\/visualization\/index.html';
+      window.relearn.relBasePath='..\/..\/..';
+      window.relearn.relBaseUri='..\/..\/..\/..';
+      window.relearn.absBaseUri='http:\/\/localhost:1313\/AgenticGoKitDocs';
+      window.relearn.disableAnchorCopy=false;
+      window.relearn.disableAnchorScrolling=false;
+      window.relearn.disableInlineCopyToClipboard=false;
+      window.relearn.enableBlockCodeWrap=true;
+      // legal
+      window.relearn.getItem = (s,n) => {return s.getItem(n)};
+      window.relearn.setItem = (s,n,v) => {return s.setItem(n,v)};
+      window.relearn.removeItem = (s,n) => {return s.removeItem(n)};
+      // translations
+      window.T_Copy_to_clipboard = `Copy to clipboard`;
+      window.T_Copied_to_clipboard = `Copied to clipboard!`;
+      window.T_Copy_link_to_clipboard = `Copy link to clipboard`;
+      window.T_Link_copied_to_clipboard = `Copied link to clipboard!`;
+      window.T_Reset_view = `Reset view`;
+      window.T_View_reset = `View reset!`;
+      window.T_No_results_found = `No results found for "{0}"`;
+      window.T_N_results_found = `{1} results found for "{0}"`;
+      // variant stuff
+      window.relearn.themevariants = [ 'blue' ];
+      window.relearn.customvariantname = "my-custom-variant";
+      window.relearn.changeVariant = function(variant) {
+        var oldVariant = document.documentElement.dataset.rThemeVariant;
+        window.relearn.setItem(window.localStorage, window.relearn.absBaseUri + "/variant", variant);
+        document.documentElement.dataset.rThemeVariant = variant;
+        if (oldVariant != variant) {
+          document.dispatchEvent( new CustomEvent('themeVariantLoaded', { detail: { variant, oldVariant } }) );
+          window.relearn.markVariant();
+        }
+      }
+      window.relearn.markVariant = function() {
+        var variant = window.relearn.getItem(window.localStorage, window.relearn.absBaseUri + "/variant");
+        document.querySelectorAll(".R-variantswitcher select").forEach((select) => {select.value = variant;});
+      }
+      window.relearn.initVariant = function() {
+        var variant = window.relearn.getItem(window.localStorage, window.relearn.absBaseUri + "/variant") ?? "";
+        if( variant == window.relearn.customvariantname ){
+        }else if( !variant || !window.relearn.themevariants.includes(variant) ){
+          variant = window.relearn.themevariants[0];
+          window.relearn.setItem(window.localStorage, window.relearn.absBaseUri + "/variant", variant);
+        }
+        document.documentElement.dataset.rThemeVariant = variant;
+      }
+      window.relearn.initVariant();
+      window.relearn.markVariant();
+    </script>
+  </head>
+  <body class="mobile-support html" data-url="/AgenticGoKitDocs/guides/development/visualization/index.html">
+    <div id="R-body" class="default-animation">
+      <div id="R-body-overlay"></div>
+      <nav id="R-topbar">
+        <div class="topbar-wrapper">
+          <div class="topbar-sidebar-divider"></div>
+          <div class="topbar-area topbar-area-start" data-area="start">
+            <div class="topbar-button topbar-button-sidebar" data-content-empty="disable" data-width-s="show" data-width-m="hide" data-width-l="hide"><button class="topbar-control" onclick="toggleNav()" type="button" title="Menu (CTRL&#43;ALT&#43;n)"><i class="fa-fw fas fa-bars"></i></button>
+            </div>
+            <div class="topbar-button topbar-button-toc" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show"><button class="topbar-control" onclick="toggleTopbarFlyout(this)" type="button" title="Table of Contents (CTRL&#43;ALT&#43;t)"><i class="fa-fw fas fa-list-alt"></i></button>
+              <div class="topbar-content">
+                <div class="topbar-content-wrapper">
+<nav class="TableOfContents">
+  <ul>
+    <li><a href="#overview">Overview</a></li>
+    <li><a href="#features">Features</a>
+      <ul>
+        <li><a href="#1-composition-builder-visualization">1. Composition Builder Visualization</a></li>
+        <li><a href="#2-orchestration-builder-visualization">2. Orchestration Builder Visualization</a></li>
+        <li><a href="#3-agentbuilder-integration">3. AgentBuilder Integration</a></li>
+        <li><a href="#4-advanced-features">4. Advanced Features</a></li>
+      </ul>
+    </li>
+    <li><a href="#quick-start-examples">Quick Start Examples</a>
+      <ul>
+        <li><a href="#basic-sequential-workflow">Basic Sequential Workflow</a></li>
+        <li><a href="#parallel-processing">Parallel Processing</a></li>
+        <li><a href="#agentbuilder-with-visualization">AgentBuilder with Visualization</a></li>
+        <li><a href="#loop-with-conditions">Loop with Conditions</a></li>
+        <li><a href="#orchestration-patterns">Orchestration Patterns</a></li>
+      </ul>
+    </li>
+    <li><a href="#configuration-options">Configuration Options</a>
+      <ul>
+        <li><a href="#mermaidconfig-structure">MermaidConfig Structure</a></li>
+        <li><a href="#available-directions">Available Directions</a></li>
+        <li><a href="#themes">Themes</a></li>
+      </ul>
+    </li>
+    <li><a href="#workflow-patterns">Workflow Patterns</a>
+      <ul>
+        <li><a href="#pre-built-patterns">Pre-built Patterns</a></li>
+      </ul>
+    </li>
+    <li><a href="#file-export-and-integration">File Export and Integration</a>
+      <ul>
+        <li><a href="#save-diagrams-to-files">Save Diagrams to Files</a></li>
+        <li><a href="#view-diagrams">View Diagrams</a></li>
+        <li><a href="#integration-in-documentation">Integration in Documentation</a></li>
+      </ul>
+    </li>
+    <li><a href="#best-practices">Best Practices</a>
+      <ul>
+        <li><a href="#1-use-descriptive-agent-names">1. Use Descriptive Agent Names</a></li>
+        <li><a href="#2-choose-appropriate-directions">2. Choose Appropriate Directions</a></li>
+        <li><a href="#3-include-metadata-for-complex-systems">3. Include Metadata for Complex Systems</a></li>
+        <li><a href="#save-diagrams-during-development">Save Diagrams During Development</a></li>
+        <li><a href="#5-use-custom-titles-for-clarity">5. Use Custom Titles for Clarity</a></li>
+      </ul>
+    </li>
+    <li><a href="#troubleshooting">Troubleshooting</a>
+      <ul>
+        <li><a href="#common-issues">Common Issues</a></li>
+        <li><a href="#validation">Validation</a></li>
+      </ul>
+    </li>
+    <li><a href="#api-reference">API Reference</a>
+      <ul>
+        <li><a href="#composition-builder">Composition Builder</a></li>
+        <li><a href="#orchestration-builder">Orchestration Builder</a></li>
+        <li><a href="#agent-builder">Agent Builder</a></li>
+        <li><a href="#workflow-patterns-1">Workflow Patterns</a></li>
+        <li><a href="#file-export-utilities">File Export Utilities</a></li>
+      </ul>
+    </li>
+    <li><a href="#examples-repository">Examples Repository</a></li>
+    <li><a href="#next-steps">Next Steps</a></li>
+  </ul>
+</nav>
+                </div>
+              </div>
+            </div>
+          </div>
+          <ol class="topbar-breadcrumbs breadcrumbs highlightable" itemscope itemtype="http://schema.org/BreadcrumbList"><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="/AgenticGoKitDocs/index.html"><span itemprop="name">content</span></a><meta itemprop="position" content="1">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="/AgenticGoKitDocs/guides/index.html"><span itemprop="name">guides</span></a><meta itemprop="position" content="2">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="/AgenticGoKitDocs/guides/development/index.html"><span itemprop="name">development</span></a><meta itemprop="position" content="3">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><span itemprop="name">visualization</span><meta itemprop="position" content="4"></li>
+          </ol>
+          <div class="topbar-area topbar-area-end" data-area="end">
+            <div class="topbar-button topbar-button-prev" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show"><a class="topbar-control" href="/AgenticGoKitDocs/guides/development/testing-agents/index.html" title="testing-agents (🡐)"><i class="fa-fw fas fa-chevron-left"></i></a>
+            </div>
+            <div class="topbar-button topbar-button-next" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show"><a class="topbar-control" href="/AgenticGoKitDocs/guides/development/web-search-integration/index.html" title="web-search-integration (🡒)"><i class="fa-fw fas fa-chevron-right"></i></a>
+            </div>
+            <div class="topbar-button topbar-button-more" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show"><button class="topbar-control" onclick="toggleTopbarFlyout(this)" type="button" title="More"><i class="fa-fw fas fa-ellipsis-v"></i></button>
+              <div class="topbar-content">
+                <div class="topbar-content-wrapper">
+                  <div class="topbar-area topbar-area-more" data-area="more">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+      <div id="R-main-overlay"></div>
+      <main id="R-body-inner" class="highlightable guides" tabindex="-1">
+        <div class="flex-block-wrapper">
+<article class="default">
+  <header class="headline">
+  </header>
+
+<h1 id="visualization">visualization</h1>
+
+<h1 id="agenticgokit-workflow-visualization-guide">AgenticGoKit Workflow Visualization Guide</h1>
+<h2 id="overview">Overview</h2>
+<p>AgenticGoKit provides comprehensive workflow visualization capabilities using Mermaid diagrams. You can visualize multi-agent compositions, orchestrations, and complex workflow patterns to better understand and document your agent systems.</p>
+<h2 id="features">Features</h2>
+<h3 id="1-composition-builder-visualization">1. Composition Builder Visualization</h3>
+<ul>
+<li><strong>Sequential workflows</strong>: Step-by-step agent processing pipelines</li>
+<li><strong>Parallel processing</strong>: Fan-out/fan-in patterns for concurrent execution</li>
+<li><strong>Loop patterns</strong>: Retry and iteration logic with conditions</li>
+</ul>
+<h3 id="2-orchestration-builder-visualization">2. Orchestration Builder Visualization</h3>
+<ul>
+<li><strong>Collaborative orchestration</strong>: Broadcast events to multiple agents</li>
+<li><strong>Routing patterns</strong>: Conditional routing based on event types</li>
+<li><strong>Mixed orchestration modes</strong>: Sequential, parallel, and loop orchestrations</li>
+</ul>
+<h3 id="3-agentbuilder-integration">3. AgentBuilder Integration</h3>
+<ul>
+<li><strong>Multi-agent composition visualization</strong>: Preview compositions before building</li>
+<li><strong>Pre-build diagram generation</strong>: Generate diagrams during agent construction</li>
+<li><strong>Configuration validation</strong>: Visualize settings like timeouts and error strategies</li>
+</ul>
+<h3 id="4-advanced-features">4. Advanced Features</h3>
+<ul>
+<li><strong>Custom diagram configuration</strong>: Control direction, themes, and metadata display</li>
+<li><strong>Pre-built workflow patterns</strong>: Map-reduce, pipeline, and other common patterns</li>
+<li><strong>File export</strong>: Save diagrams as .mmd files for documentation</li>
+<li><strong>Styling and metadata</strong>: Professional diagrams with execution details</li>
+</ul>
+<h2 id="quick-start-examples">Quick Start Examples</h2>
+<h3 id="basic-sequential-workflow">Basic Sequential Workflow</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Create agents</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">orderAgent</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">createAgent</span>(<span style="color:#e6db74">&#34;OrderProcessor&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">paymentAgent</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">createAgent</span>(<span style="color:#e6db74">&#34;PaymentProcessor&#34;</span>) 
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">shippingAgent</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">createAgent</span>(<span style="color:#e6db74">&#34;ShippingService&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Build sequential composition</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">pipeline</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewComposition</span>(<span style="color:#e6db74">&#34;order-pipeline&#34;</span>).
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">WithAgents</span>(<span style="color:#a6e22e">orderAgent</span>, <span style="color:#a6e22e">paymentAgent</span>, <span style="color:#a6e22e">shippingAgent</span>).
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">AsSequential</span>().
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">WithTimeout</span>(<span style="color:#ae81ff">2</span> <span style="color:#f92672">*</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Minute</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Generate diagram</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">diagram</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">pipeline</span>.<span style="color:#a6e22e">GenerateMermaidDiagram</span>()
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#a6e22e">diagram</span>)</span></span></code></pre></div>
+<h3 id="parallel-processing">Parallel Processing</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Create analysis agents</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">sentimentAgent</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">createAgent</span>(<span style="color:#e6db74">&#34;SentimentAnalyzer&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">keywordAgent</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">createAgent</span>(<span style="color:#e6db74">&#34;KeywordExtractor&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">languageAgent</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">createAgent</span>(<span style="color:#e6db74">&#34;LanguageDetector&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Build parallel composition</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">analysis</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewComposition</span>(<span style="color:#e6db74">&#34;content-analysis&#34;</span>).
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">WithAgents</span>(<span style="color:#a6e22e">sentimentAgent</span>, <span style="color:#a6e22e">keywordAgent</span>, <span style="color:#a6e22e">languageAgent</span>).
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">AsParallel</span>().
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">WithTimeout</span>(<span style="color:#ae81ff">30</span> <span style="color:#f92672">*</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Second</span>).
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">WithErrorStrategy</span>(<span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">ErrorStrategyCollectAll</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Generate custom diagram (left-to-right)</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">config</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">MermaidConfig</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">DiagramType</span>:    <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">MermaidFlowchart</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Title</span>:          <span style="color:#e6db74">&#34;Content Analysis System&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Direction</span>:      <span style="color:#e6db74">&#34;LR&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">ShowMetadata</span>:   <span style="color:#66d9ef">true</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">ShowAgentTypes</span>: <span style="color:#66d9ef">true</span>,
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">diagram</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">analysis</span>.<span style="color:#a6e22e">GenerateMermaidDiagramWithConfig</span>(<span style="color:#a6e22e">config</span>)</span></span></code></pre></div>
+<h3 id="agentbuilder-with-visualization">AgentBuilder with Visualization</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Build agent with multi-agent composition</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">builder</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewAgent</span>(<span style="color:#e6db74">&#34;DataProcessor&#34;</span>).
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">WithParallelAgents</span>(<span style="color:#a6e22e">dataAgent</span>, <span style="color:#a6e22e">analyticsAgent</span>, <span style="color:#a6e22e">reportAgent</span>).
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">WithMultiAgentConfig</span>(<span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">MultiAgentConfig</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Timeout</span>:        <span style="color:#ae81ff">90</span> <span style="color:#f92672">*</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Second</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">MaxConcurrency</span>: <span style="color:#ae81ff">8</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">ErrorStrategy</span>:  <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">ErrorStrategyCollectAll</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">StateStrategy</span>:  <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">StateStrategyMerge</span>,
+</span></span><span style="display:flex;"><span>    })
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Check if it can be visualized</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">builder</span>.<span style="color:#a6e22e">CanVisualize</span>() {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">diagram</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">builder</span>.<span style="color:#a6e22e">GenerateMermaidDiagram</span>()
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Save to file</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">WriteFile</span>(<span style="color:#e6db74">&#34;workflow.mmd&#34;</span>, []byte(<span style="color:#a6e22e">diagram</span>), <span style="color:#ae81ff">0644</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Build the actual agent</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">agent</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">builder</span>.<span style="color:#a6e22e">Build</span>()</span></span></code></pre></div>
+<h3 id="loop-with-conditions">Loop with Conditions</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#a6e22e">qualityAgent</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">createAgent</span>(<span style="color:#e6db74">&#34;QualityChecker&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Define stop condition</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">condition</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">state</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">State</span>) <span style="color:#66d9ef">bool</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">score</span>, <span style="color:#a6e22e">exists</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">state</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#e6db74">&#34;quality_score&#34;</span>); <span style="color:#a6e22e">exists</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">qualityScore</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">score</span>.(<span style="color:#66d9ef">float64</span>); <span style="color:#a6e22e">ok</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">qualityScore</span> <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">0.95</span> <span style="color:#75715e">// Stop at 95% quality</span>
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Build loop composition</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">qualityLoop</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewComposition</span>(<span style="color:#e6db74">&#34;quality-monitor&#34;</span>).
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">WithAgents</span>(<span style="color:#a6e22e">qualityAgent</span>).
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">AsLoop</span>(<span style="color:#ae81ff">10</span>, <span style="color:#a6e22e">condition</span>). <span style="color:#75715e">// Max 10 iterations</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">WithTimeout</span>(<span style="color:#ae81ff">5</span> <span style="color:#f92672">*</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Minute</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">diagram</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">qualityLoop</span>.<span style="color:#a6e22e">GenerateMermaidDiagram</span>()</span></span></code></pre></div>
+<h3 id="orchestration-patterns">Orchestration Patterns</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Collaborative microservices</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">serviceHandlers</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">AgentHandler</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;user-service&#34;</span>:    <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">ConvertAgentToHandler</span>(<span style="color:#a6e22e">userAgent</span>),
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;order-service&#34;</span>:   <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">ConvertAgentToHandler</span>(<span style="color:#a6e22e">orderAgent</span>),
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;payment-service&#34;</span>: <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">ConvertAgentToHandler</span>(<span style="color:#a6e22e">paymentAgent</span>),
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">collaboration</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewOrchestrationBuilder</span>(<span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">OrchestrationCollaborate</span>).
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">WithAgents</span>(<span style="color:#a6e22e">serviceHandlers</span>).
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">WithTimeout</span>(<span style="color:#ae81ff">1</span> <span style="color:#f92672">*</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Minute</span>).
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">WithMaxConcurrency</span>(<span style="color:#ae81ff">20</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">diagram</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">collaboration</span>.<span style="color:#a6e22e">GenerateMermaidDiagram</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// API routing</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">routing</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewOrchestrationBuilder</span>(<span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">OrchestrationRoute</span>).
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">WithAgents</span>(<span style="color:#a6e22e">serviceHandlers</span>).
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">WithTimeout</span>(<span style="color:#ae81ff">30</span> <span style="color:#f92672">*</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Second</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">routingDiagram</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">routing</span>.<span style="color:#a6e22e">GenerateMermaidDiagram</span>()</span></span></code></pre></div>
+<h2 id="configuration-options">Configuration Options</h2>
+<h3 id="mermaidconfig-structure">MermaidConfig Structure</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">MermaidConfig</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">DiagramType</span>    <span style="color:#a6e22e">MermaidDiagramType</span> <span style="color:#75715e">// flowchart, sequenceDiagram, etc.</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Title</span>          <span style="color:#66d9ef">string</span>             <span style="color:#75715e">// Custom diagram title  </span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Direction</span>      <span style="color:#66d9ef">string</span>             <span style="color:#75715e">// &#34;TD&#34;, &#34;LR&#34;, &#34;BT&#34;, &#34;RL&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Theme</span>          <span style="color:#66d9ef">string</span>             <span style="color:#75715e">// &#34;default&#34;, &#34;dark&#34;, &#34;forest&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">ShowMetadata</span>   <span style="color:#66d9ef">bool</span>               <span style="color:#75715e">// Include timeout/error info</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">ShowAgentTypes</span> <span style="color:#66d9ef">bool</span>               <span style="color:#75715e">// Show agent type details</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">CompactMode</span>    <span style="color:#66d9ef">bool</span>               <span style="color:#75715e">// Generate compact diagrams</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h3 id="available-directions">Available Directions</h3>
+<ul>
+<li><code>&quot;TD&quot;</code> or <code>&quot;TB&quot;</code>: Top to Bottom (default)</li>
+<li><code>&quot;LR&quot;</code>: Left to Right</li>
+<li><code>&quot;BT&quot;</code>: Bottom to Top</li>
+<li><code>&quot;RL&quot;</code>: Right to Left</li>
+</ul>
+<h3 id="themes">Themes</h3>
+<ul>
+<li><code>&quot;default&quot;</code>: Standard Mermaid theme</li>
+<li><code>&quot;dark&quot;</code>: Dark theme for presentations</li>
+<li><code>&quot;forest&quot;</code>: Green theme</li>
+<li><code>&quot;base&quot;</code>: Minimal theme</li>
+</ul>
+<h2 id="workflow-patterns">Workflow Patterns</h2>
+<h3 id="pre-built-patterns">Pre-built Patterns</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Map-Reduce pattern</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">agents</span> <span style="color:#f92672">:=</span> []<span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">Agent</span>{<span style="color:#a6e22e">dataAgent</span>, <span style="color:#a6e22e">processor1</span>, <span style="color:#a6e22e">processor2</span>, <span style="color:#a6e22e">reducer</span>}
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">mapReduceDiagram</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">GenerateWorkflowPatternDiagram</span>(<span style="color:#e6db74">&#34;map-reduce&#34;</span>, <span style="color:#a6e22e">agents</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Pipeline pattern  </span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">pipelineAgents</span> <span style="color:#f92672">:=</span> []<span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">Agent</span>{<span style="color:#a6e22e">input</span>, <span style="color:#a6e22e">transform</span>, <span style="color:#a6e22e">validate</span>, <span style="color:#a6e22e">output</span>}
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">pipelineDiagram</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">GenerateWorkflowPatternDiagram</span>(<span style="color:#e6db74">&#34;pipeline&#34;</span>, <span style="color:#a6e22e">pipelineAgents</span>)</span></span></code></pre></div>
+<h2 id="file-export-and-integration">File Export and Integration</h2>
+<h3 id="save-diagrams-to-files">Save Diagrams to Files</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Create output directory</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">outputDir</span> <span style="color:#f92672">:=</span> <span style="color:#e6db74">&#34;workflow_diagrams&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">MkdirAll</span>(<span style="color:#a6e22e">outputDir</span>, <span style="color:#ae81ff">0755</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Save diagram as Markdown file</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">filename</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">filepath</span>.<span style="color:#a6e22e">Join</span>(<span style="color:#a6e22e">outputDir</span>, <span style="color:#e6db74">&#34;my_workflow.md&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">SaveDiagramAsMarkdown</span>(<span style="color:#a6e22e">filename</span>, <span style="color:#e6db74">&#34;My Workflow&#34;</span>, <span style="color:#a6e22e">diagram</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Save with metadata</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">metadata</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">interface</span>{}{
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;Pattern&#34;</span>:      <span style="color:#e6db74">&#34;Sequential Processing&#34;</span>, 
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;Agents&#34;</span>:       <span style="color:#ae81ff">4</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;Timeout&#34;</span>:      <span style="color:#e6db74">&#34;2 minutes&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;Error Strategy&#34;</span>: <span style="color:#e6db74">&#34;Fail Fast&#34;</span>,
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">err</span> = <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">SaveDiagramWithMetadata</span>(<span style="color:#a6e22e">filename</span>, <span style="color:#e6db74">&#34;My Workflow&#34;</span>, 
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;Description of the workflow&#34;</span>, <span style="color:#a6e22e">diagram</span>, <span style="color:#a6e22e">metadata</span>)</span></span></code></pre></div>
+<h3 id="view-diagrams">View Diagrams</h3>
+<ol>
+<li><strong>VS Code/GitHub/GitLab</strong>: Open <code>.md</code> files directly - Mermaid diagrams render automatically</li>
+<li><strong>Online</strong>: Copy Mermaid code to <a href="https://mermaid.live" rel="external" target="_blank">Mermaid Live Editor</a></li>
+<li><strong>Documentation</strong>: Include <code>.md</code> files in project documentation</li>
+<li><strong>Presentations</strong>: Export from Mermaid Live as PNG/SVG</li>
+</ol>
+<h3 id="integration-in-documentation">Integration in Documentation</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-markdown" data-lang="markdown"><span style="display:flex;"><span># My Workflow
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Here&#39;s how our order processing works:
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>\`\`\`mermaid
+</span></span><span style="display:flex;"><span>---
+</span></span><span style="display:flex;"><span>title: Order Processing Pipeline
+</span></span><span style="display:flex;"><span>---
+</span></span><span style="display:flex;"><span>flowchart TD
+</span></span><span style="display:flex;"><span>    INPUT[&#34;🎯 Order Request&#34;]
+</span></span><span style="display:flex;"><span>    AGENT1[&#34;🤖 InventoryChecker&#34;]
+</span></span><span style="display:flex;"><span>    INPUT --&gt; AGENT1
+</span></span><span style="display:flex;"><span>    AGENT2[&#34;🤖 PaymentProcessor&#34;] 
+</span></span><span style="display:flex;"><span>    AGENT1 --&gt; AGENT2
+</span></span><span style="display:flex;"><span>    AGENT3[&#34;🤖 ShippingService&#34;]
+</span></span><span style="display:flex;"><span>    AGENT2 --&gt; AGENT3
+</span></span><span style="display:flex;"><span>    OUTPUT[&#34;✅ Order Complete&#34;]
+</span></span><span style="display:flex;"><span>    AGENT3 --&gt; OUTPUT
+</span></span><span style="display:flex;"><span>\`\`\`</span></span></code></pre></div>
+<h2 id="best-practices">Best Practices</h2>
+<h3 id="1-use-descriptive-agent-names">1. Use Descriptive Agent Names</h3>
+<ul>
+<li>✅ <code>&quot;OrderProcessor&quot;</code>, <code>&quot;PaymentGateway&quot;</code></li>
+<li>❌ <code>&quot;Agent1&quot;</code>, <code>&quot;Worker&quot;</code></li>
+</ul>
+<h3 id="2-choose-appropriate-directions">2. Choose Appropriate Directions</h3>
+<ul>
+<li><strong>Sequential workflows</strong>: Top-to-bottom (<code>&quot;TD&quot;</code>)</li>
+<li><strong>Data flows</strong>: Left-to-right (<code>&quot;LR&quot;</code>)</li>
+<li><strong>Process hierarchies</strong>: Top-to-bottom (<code>&quot;TD&quot;</code>)</li>
+</ul>
+<h3 id="3-include-metadata-for-complex-systems">3. Include Metadata for Complex Systems</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#a6e22e">config</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">MermaidConfig</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">ShowMetadata</span>:   <span style="color:#66d9ef">true</span>,  <span style="color:#75715e">// Show timeouts, error strategies</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">ShowAgentTypes</span>: <span style="color:#66d9ef">true</span>,  <span style="color:#75715e">// Show agent capabilities</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h3 id="save-diagrams-during-development">Save Diagrams During Development</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Always save diagrams for documentation</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">builder</span>.<span style="color:#a6e22e">CanVisualize</span>() {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">diagram</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">builder</span>.<span style="color:#a6e22e">GenerateMermaidDiagram</span>()
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">filename</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;docs/%s.md&#34;</span>, <span style="color:#a6e22e">builder</span>.<span style="color:#a6e22e">Name</span>())
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">SaveDiagramAsMarkdown</span>(<span style="color:#a6e22e">filename</span>, <span style="color:#a6e22e">builder</span>.<span style="color:#a6e22e">Name</span>(), <span style="color:#a6e22e">diagram</span>)
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h3 id="5-use-custom-titles-for-clarity">5. Use Custom Titles for Clarity</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#a6e22e">config</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">MermaidConfig</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Title</span>: <span style="color:#e6db74">&#34;E-commerce Order Processing Pipeline v2.1&#34;</span>,
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<h3 id="common-issues">Common Issues</h3>
+<ol>
+<li>
+<p><strong>Empty Diagram</strong>: Check if composition has agents and a mode set</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">builder</span>.<span style="color:#a6e22e">CanVisualize</span>() {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Safe to generate diagram</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+</li>
+<li>
+<p><strong>Missing Styling</strong>: Ensure metadata is enabled</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#a6e22e">config</span>.<span style="color:#a6e22e">ShowMetadata</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">config</span>.<span style="color:#a6e22e">ShowAgentTypes</span> = <span style="color:#66d9ef">true</span></span></span></code></pre></div>
+</li>
+<li>
+<p><strong>Complex Diagrams</strong>: Use compact mode for large compositions</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#a6e22e">config</span>.<span style="color:#a6e22e">CompactMode</span> = <span style="color:#66d9ef">true</span></span></span></code></pre></div>
+</li>
+</ol>
+<h3 id="validation">Validation</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Validate before visualization</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">builder</span>.<span style="color:#a6e22e">Validate</span>(); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Builder error: %v\n&#34;</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Check visualization capability</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">builder</span>.<span style="color:#a6e22e">CanVisualize</span>() {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;No multi-agent composition to visualize&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h2 id="api-reference">API Reference</h2>
+<h3 id="composition-builder">Composition Builder</h3>
+<ul>
+<li><code>GenerateMermaidDiagram() string</code></li>
+<li><code>GenerateMermaidDiagramWithConfig(config MermaidConfig) string</code></li>
+</ul>
+<h3 id="orchestration-builder">Orchestration Builder</h3>
+<ul>
+<li><code>GenerateMermaidDiagram() string</code></li>
+<li><code>GenerateMermaidDiagramWithConfig(config MermaidConfig) string</code></li>
+</ul>
+<h3 id="agent-builder">Agent Builder</h3>
+<ul>
+<li><code>CanVisualize() bool</code></li>
+<li><code>GenerateMermaidDiagram() string</code></li>
+<li><code>GenerateMermaidDiagramWithConfig(config MermaidConfig) string</code></li>
+</ul>
+<h3 id="workflow-patterns-1">Workflow Patterns</h3>
+<ul>
+<li><code>GenerateWorkflowPatternDiagram(pattern string, agents []Agent) string</code></li>
+</ul>
+<h3 id="file-export-utilities">File Export Utilities</h3>
+<ul>
+<li><code>SaveDiagramAsMarkdown(filename, title, diagram string) error</code></li>
+<li><code>SaveDiagramWithMetadata(filename, title, description, diagram string, metadata map[string]interface{}) error</code></li>
+<li><code>ConvertMmdToMarkdown(mmdFile, title string) error</code></li>
+</ul>
+<p>Supported patterns: <code>&quot;map-reduce&quot;</code>, <code>&quot;pipeline&quot;</code>, <code>&quot;scatter-gather&quot;</code></p>
+<h2 id="examples-repository">Examples Repository</h2>
+<p>See the <code>examples/visualization/</code> directory for complete working examples:</p>
+<ul>
+<li><code>demo.go</code>: Basic visualization examples</li>
+<li><code>comprehensive_demo.go</code>: Advanced patterns and configurations</li>
+<li>Generated <code>.mmd</code> files for reference</li>
+</ul>
+<h2 id="next-steps">Next Steps</h2>
+<ol>
+<li><strong>Explore Examples</strong>: Run the demo programs to see all features</li>
+<li><strong>Create Custom Patterns</strong>: Build your own workflow visualizations</li>
+<li><strong>Integrate Documentation</strong>: Add diagrams to your project documentation</li>
+<li><strong>Share Diagrams</strong>: Export and share workflow visualizations with your team</li>
+</ol>
+
+  <footer class="footline">
+              <i class='fa-fw fas fa-calendar'></i> Jul 25, 2025
+  </footer>
+</article>
+        </div>
+      </main>
+    </div>
+    <aside id="R-sidebar" class="default-animation">
+      <div id="R-header-topbar" class="default-animation"></div>
+      <div id="R-header-wrapper" class="default-animation">
+        <div id="R-header" class="default-animation">
+          <a id="R-logo" class="R-default" href="/AgenticGoKitDocs/index.html">
+            <div class="logo-title">AgenticGoKit Docs</div>
+          </a>
+        </div>
+        <search><form action="/AgenticGoKitDocs/search/index.html" method="get">
+          <div class="searchbox default-animation">
+            <button class="search-detail" type="submit" title="Search (CTRL+ALT+f)"><i class="fas fa-search"></i></button>
+            <label class="a11y-only" for="R-search-by">Search</label>
+            <input data-search-input id="R-search-by" name="search-by" class="search-by" type="search" placeholder="Search...">
+            <button class="search-clear" type="button" data-search-clear="" title="Clear search"><i class="fas fa-times" title="Clear search"></i></button>
+          </div>
+        </form></search>
+      </div>
+      <div id="R-homelinks" class="default-animation homelinks">
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-homelinks">
+          <ul class="space collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/index.html"><a class="padding" href="/AgenticGoKitDocs/index.html"><i class="fa-fw fas fa-home"></i> Home</a></li>
+          </ul>
+        </div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-headercontrols">
+          <ul class="">
+          </ul>
+        </div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+      </div>
+      <div id="R-content-wrapper" class="highlightable">
+        <div class="R-sidebarmenu R-shortcutmenu-main">
+          <ul class="enlarge morespace collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/readme/index.html">content</a></li>
+            <li class="parent alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/index.html"><input type="checkbox" id="R-section-8fc2fd7736125e87cab8840a86c2af5a" aria-controls="R-subsections-8fc2fd7736125e87cab8840a86c2af5a" checked><label for="R-section-8fc2fd7736125e87cab8840a86c2af5a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu guides</span></label><a class="padding" href="/AgenticGoKitDocs/guides/index.html">guides</a><ul id="R-subsections-8fc2fd7736125e87cab8840a86c2af5a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/readme/index.html">guides</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/agentbasics/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/agentbasics/index.html">AgentBasics</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/examples/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/examples/index.html">Examples</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/configuration/index.html">Configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/customtools/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/customtools/index.html">CustomTools</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/providers/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/providers/index.html">Providers</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memoryprovidersetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memoryprovidersetup/index.html">MemoryProviderSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memorytroubleshooting/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memorytroubleshooting/index.html">MemoryTroubleshooting</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/embeddingmodelguide/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/embeddingmodelguide/index.html">EmbeddingModelGuide</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/ragconfiguration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/ragconfiguration/index.html">RAGConfiguration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/toolintegration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/toolintegration/index.html">ToolIntegration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/pgvectorsetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/pgvectorsetup/index.html">PgVectorSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/weaviatesetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/weaviatesetup/index.html">WeaviateSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/performance/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/performance/index.html">Performance</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/errorhandling/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/errorhandling/index.html">ErrorHandling</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/deployment/index.html"><input type="checkbox" id="R-section-ecc839349395ef3c015a12132049dff2" aria-controls="R-subsections-ecc839349395ef3c015a12132049dff2" checked><label for="R-section-ecc839349395ef3c015a12132049dff2"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu deployment</span></label><a class="padding" href="/AgenticGoKitDocs/guides/deployment/index.html">deployment</a><ul id="R-subsections-ecc839349395ef3c015a12132049dff2" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/deployment/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/deployment/readme/index.html">deployment</a></li></ul></li>
+            <li class="parent alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/development/index.html"><input type="checkbox" id="R-section-fff1f5eca5d0a93209b9c6262762c25a" aria-controls="R-subsections-fff1f5eca5d0a93209b9c6262762c25a" checked><label for="R-section-fff1f5eca5d0a93209b9c6262762c25a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu development</span></label><a class="padding" href="/AgenticGoKitDocs/guides/development/index.html">development</a><ul id="R-subsections-fff1f5eca5d0a93209b9c6262762c25a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/readme/index.html">development</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/best-practices/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/best-practices/index.html">best-practices</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/debugging/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/debugging/index.html">debugging</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/research-assistant/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/research-assistant/index.html">research-assistant</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/testing-agents/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/testing-agents/index.html">testing-agents</a></li>
+            <li class="active " data-nav-id="/AgenticGoKitDocs/guides/development/visualization/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/visualization/index.html">visualization</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/web-search-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/web-search-integration/index.html">web-search-integration</a></li></ul></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/framework-comparison/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/framework-comparison/index.html">framework-comparison</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memory/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memory/index.html">Memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/scaffoldmemoryguide/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/scaffoldmemoryguide/index.html">ScaffoldMemoryGuide</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/setup/index.html"><input type="checkbox" id="R-section-0124aed9abb5064d53391168f3c95c22" aria-controls="R-subsections-0124aed9abb5064d53391168f3c95c22" checked><label for="R-section-0124aed9abb5064d53391168f3c95c22"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu setup</span></label><a class="padding" href="/AgenticGoKitDocs/guides/setup/index.html">setup</a><ul id="R-subsections-0124aed9abb5064d53391168f3c95c22" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/readme/index.html">setup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/llm-providers/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/llm-providers/index.html">llm-providers</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/mcp-tools/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/mcp-tools/index.html">mcp-tools</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/orchestration-configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/orchestration-configuration/index.html">orchestration-configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/vector-databases/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/vector-databases/index.html">vector-databases</a></li></ul></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/troubleshooting/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/troubleshooting/index.html">troubleshooting</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/contributors/index.html"><input type="checkbox" id="R-section-190d9b328fbda7e13ab386f7a5417de5" aria-controls="R-subsections-190d9b328fbda7e13ab386f7a5417de5" checked><label for="R-section-190d9b328fbda7e13ab386f7a5417de5"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu contributors</span></label><a class="padding" href="/AgenticGoKitDocs/contributors/index.html">contributors</a><ul id="R-subsections-190d9b328fbda7e13ab386f7a5417de5" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/readme/index.html">contributors</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/contributorguide/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/contributorguide/index.html">ContributorGuide</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/codestyle/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/codestyle/index.html">CodeStyle</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/corevsinternal/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/corevsinternal/index.html">CoreVsInternal</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/addingfeatures/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/addingfeatures/index.html">AddingFeatures</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/testing/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/testing/index.html">Testing</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/docsstandards/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/docsstandards/index.html">DocsStandards</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/reference/index.html"><input type="checkbox" id="R-section-66002f201bef818664bb81aa67490c58" aria-controls="R-subsections-66002f201bef818664bb81aa67490c58" checked><label for="R-section-66002f201bef818664bb81aa67490c58"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu reference</span></label><a class="padding" href="/AgenticGoKitDocs/reference/index.html">reference</a><ul id="R-subsections-66002f201bef818664bb81aa67490c58" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/readme/index.html">reference</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/configuration/index.html">configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/cli/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/cli/index.html">cli</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/mcp/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/mcp/index.html">mcp</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/agent/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/agent/index.html">agent</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/memory/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/memory/index.html">memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/orchestration/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/orchestration/index.html">orchestration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/state-event/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/state-event/index.html">state-event</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/index.html"><input type="checkbox" id="R-section-e1e8c1e70c5500b49e8dda2dc550651a" aria-controls="R-subsections-e1e8c1e70c5500b49e8dda2dc550651a" checked><label for="R-section-e1e8c1e70c5500b49e8dda2dc550651a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu tutorials</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/index.html">tutorials</a><ul id="R-subsections-e1e8c1e70c5500b49e8dda2dc550651a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/readme/index.html">tutorials</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/advanced/index.html"><input type="checkbox" id="R-section-d3def5cd76adc8096d0ff9fda6b8e479" aria-controls="R-subsections-d3def5cd76adc8096d0ff9fda6b8e479" checked><label for="R-section-d3def5cd76adc8096d0ff9fda6b8e479"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu advanced</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/index.html">advanced</a><ul id="R-subsections-d3def5cd76adc8096d0ff9fda6b8e479" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/readme/index.html">advanced</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/circuit-breaker-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/circuit-breaker-patterns/index.html">circuit-breaker-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/load-balancing-scaling/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/load-balancing-scaling/index.html">load-balancing-scaling</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/retry-policies/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/retry-policies/index.html">retry-policies</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/testing-strategies/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/testing-strategies/index.html">testing-strategies</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/index.html"><input type="checkbox" id="R-section-212c6ccffb40ecdd78eb2136f98c4cac" aria-controls="R-subsections-212c6ccffb40ecdd78eb2136f98c4cac" checked><label for="R-section-212c6ccffb40ecdd78eb2136f98c4cac"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu core-concepts</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/index.html">core-concepts</a><ul id="R-subsections-212c6ccffb40ecdd78eb2136f98c4cac" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/readme/index.html">core-concepts</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/agent-lifecycle/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/agent-lifecycle/index.html">agent-lifecycle</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/error-handling/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/error-handling/index.html">error-handling</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/message-passing/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/message-passing/index.html">message-passing</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/orchestration-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/orchestration-patterns/index.html">orchestration-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/state-management/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/state-management/index.html">state-management</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/debugging/index.html"><input type="checkbox" id="R-section-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" aria-controls="R-subsections-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" checked><label for="R-section-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu debugging</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/index.html">debugging</a><ul id="R-subsections-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/readme/index.html">debugging</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/debugging-multi-agent-systems/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/debugging-multi-agent-systems/index.html">debugging-multi-agent-systems</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/logging-and-tracing/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/logging-and-tracing/index.html">logging-and-tracing</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/index.html"><input type="checkbox" id="R-section-e7f904c8b9d0f9bf1f07ca7d482d2247" aria-controls="R-subsections-e7f904c8b9d0f9bf1f07ca7d482d2247" checked><label for="R-section-e7f904c8b9d0f9bf1f07ca7d482d2247"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu getting-started</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/index.html">getting-started</a><ul id="R-subsections-e7f904c8b9d0f9bf1f07ca7d482d2247" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/readme/index.html">getting-started</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/memory-and-rag/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/memory-and-rag/index.html">memory-and-rag</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/multi-agent-collaboration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/multi-agent-collaboration/index.html">multi-agent-collaboration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/production-deployment/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/production-deployment/index.html">production-deployment</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/quickstart/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/quickstart/index.html">quickstart</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/tool-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/tool-integration/index.html">tool-integration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/your-first-agent/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/your-first-agent/index.html">your-first-agent</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/mcp/index.html"><input type="checkbox" id="R-section-153aac44598009a99dd5a60317a3eecc" aria-controls="R-subsections-153aac44598009a99dd5a60317a3eecc" checked><label for="R-section-153aac44598009a99dd5a60317a3eecc"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu mcp</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/index.html">mcp</a><ul id="R-subsections-153aac44598009a99dd5a60317a3eecc" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/readme/index.html">mcp</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/advanced-tool-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/advanced-tool-patterns/index.html">advanced-tool-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/tool-development/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/tool-development/index.html">tool-development</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/tool-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/tool-integration/index.html">tool-integration</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/index.html"><input type="checkbox" id="R-section-9c1a65f2d7b3888241dcafa51a0710e7" aria-controls="R-subsections-9c1a65f2d7b3888241dcafa51a0710e7" checked><label for="R-section-9c1a65f2d7b3888241dcafa51a0710e7"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu memory-systems</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/index.html">memory-systems</a><ul id="R-subsections-9c1a65f2d7b3888241dcafa51a0710e7" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/readme/index.html">memory-systems</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/basic-memory/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/basic-memory/index.html">basic-memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/document-ingestion/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/document-ingestion/index.html">document-ingestion</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/knowledge-bases/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/knowledge-bases/index.html">knowledge-bases</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/memory-optimization/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/memory-optimization/index.html">memory-optimization</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/rag-implementation/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/rag-implementation/index.html">rag-implementation</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/vector-databases/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/vector-databases/index.html">vector-databases</a></li></ul></li></ul></li>
+          </ul>
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-shortcuts">
+          <ul class="space collapsible-menu">
+          </ul>
+        </div>
+        <div id="R-footer-margin"></div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-footercontrols">
+          <ul class="">
+          </ul>
+        </div>
+<div id="R-footer"><p>Built with <a href="https://github.com/McShelby/hugo-theme-relearn" title="love"><i class="fas fa-heart"></i></a> by <a href="https://gohugo.io/">Hugo</a></p></div>
+      </div>
+    </aside>
+    <script src="/AgenticGoKitDocs/js/clipboard/clipboard.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/perfect-scrollbar/perfect-scrollbar.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/theme.js?1753430931" defer></script>
+  </body>
+</html>

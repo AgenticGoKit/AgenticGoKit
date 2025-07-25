@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>deployment :: AgenticGoKit Docs</title>
+    <link>http://localhost:1313/AgenticGoKitDocs/guides/deployment/index.html</link>
+    <description>Deployment &amp; Operations Guides Guides for deploying and operating AgenticGoKit applications in production.&#xA;Available Guides Docker Deployment Containerize your AgenticGoKit applications with Docker, including multi-stage builds and optimization techniques.&#xA;When to use: Deploying agents in containerized environments or cloud platforms.&#xA;Monitoring Set up comprehensive monitoring for agent performance, including metrics, logging, and alerting.&#xA;When to use: Running agents in production and need visibility into system health and performance.&#xA;Scaling Scale AgenticGoKit applications horizontally, including load balancing and distributed deployment patterns.</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <lastBuildDate>Fri, 25 Jul 2025 00:00:00 +0000</lastBuildDate>
+    <atom:link href="http://localhost:1313/AgenticGoKitDocs/guides/deployment/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>deployment</title>
+      <link>http://localhost:1313/AgenticGoKitDocs/guides/deployment/readme/index.html</link>
+      <pubDate>Fri, 25 Jul 2025 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/AgenticGoKitDocs/guides/deployment/readme/index.html</guid>
+      <description>Deployment &amp; Operations Guides Guides for deploying and operating AgenticGoKit applications in production.&#xA;Available Guides Docker Deployment Containerize your AgenticGoKit applications with Docker, including multi-stage builds and optimization techniques.&#xA;When to use: Deploying agents in containerized environments or cloud platforms.&#xA;Monitoring Set up comprehensive monitoring for agent performance, including metrics, logging, and alerting.&#xA;When to use: Running agents in production and need visibility into system health and performance.&#xA;Scaling Scale AgenticGoKit applications horizontally, including load balancing and distributed deployment patterns.</description>
+    </item>
+  </channel>
+</rss>

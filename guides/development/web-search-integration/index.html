@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en-us" dir="ltr" itemscope itemtype="http://schema.org/Article" data-r-output-format="html">
+  <head><script src="/AgenticGoKitDocs/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=AgenticGoKitDocs/livereload" data-no-instant defer></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="height=device-height, width=device-width, initial-scale=1.0, minimum-scale=1.0">
+    <meta name="generator" content="Hugo 0.148.1">
+    <meta name="generator" content="Relearn 8.0.0+9803d5122ebb3276acea823f476e9eb44f607862">
+    <meta name="description" content="Web Search Integration Give your agents the ability to search the web for real-time information
+This guide shows you how to integrate web search capabilities into your AgenticGoKit agents using MCP (Model Context Protocol) tools. You’ll learn to set up web search, handle results, and optimize for different use cases.
+Prerequisites Basic AgenticGoKit project setup Understanding of MCP tool integration API key for a search service (optional for basic setup) What You’ll Build An agent system that can:">
+    <meta name="author" content="">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="web-search-integration :: AgenticGoKit Docs">
+    <meta name="twitter:description" content="Web Search Integration Give your agents the ability to search the web for real-time information
+This guide shows you how to integrate web search capabilities into your AgenticGoKit agents using MCP (Model Context Protocol) tools. You’ll learn to set up web search, handle results, and optimize for different use cases.
+Prerequisites Basic AgenticGoKit project setup Understanding of MCP tool integration API key for a search service (optional for basic setup) What You’ll Build An agent system that can:">
+    <meta property="og:url" content="http://localhost:1313/AgenticGoKitDocs/guides/development/web-search-integration/index.html">
+    <meta property="og:site_name" content="AgenticGoKit Docs">
+    <meta property="og:title" content="web-search-integration :: AgenticGoKit Docs">
+    <meta property="og:description" content="Web Search Integration Give your agents the ability to search the web for real-time information
+This guide shows you how to integrate web search capabilities into your AgenticGoKit agents using MCP (Model Context Protocol) tools. You’ll learn to set up web search, handle results, and optimize for different use cases.
+Prerequisites Basic AgenticGoKit project setup Understanding of MCP tool integration API key for a search service (optional for basic setup) What You’ll Build An agent system that can:">
+    <meta property="og:locale" content="en_us">
+    <meta property="og:type" content="article">
+    <meta property="article:section" content="guides">
+    <meta property="article:published_time" content="2025-07-25T00:00:00+00:00">
+    <meta property="article:modified_time" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="name" content="web-search-integration :: AgenticGoKit Docs">
+    <meta itemprop="description" content="Web Search Integration Give your agents the ability to search the web for real-time information
+This guide shows you how to integrate web search capabilities into your AgenticGoKit agents using MCP (Model Context Protocol) tools. You’ll learn to set up web search, handle results, and optimize for different use cases.
+Prerequisites Basic AgenticGoKit project setup Understanding of MCP tool integration API key for a search service (optional for basic setup) What You’ll Build An agent system that can:">
+    <meta itemprop="datePublished" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="dateModified" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="wordCount" content="1070">
+    <title>web-search-integration :: AgenticGoKit Docs</title>
+    <link href="/AgenticGoKitDocs/css/auto-complete/auto-complete.min.css?1753430931" rel="stylesheet">
+    <script src="/AgenticGoKitDocs/js/auto-complete/auto-complete.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/search-lunr.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/search.js?1753430931" defer></script>
+    <script>
+      window.relearn = window.relearn || {};
+      window.relearn.index_js_url="/AgenticGoKitDocs/searchindex.en.js?1753430931";
+    </script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.stemmer.support.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.multi.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.en.min.js?1753430931" defer></script>
+    <script>
+      window.relearn = window.relearn || {};
+      window.relearn.contentLangs=['en'];
+    </script>
+    <link href="/AgenticGoKitDocs/fonts/fontawesome/css/fontawesome-all.min.css?1753430931" rel="stylesheet" media="print" onload="this.media='all';this.onload=null;"><noscript><link href="/AgenticGoKitDocs/fonts/fontawesome/css/fontawesome-all.min.css?1753430931" rel="stylesheet"></noscript>
+    <link href="/AgenticGoKitDocs/css/perfect-scrollbar/perfect-scrollbar.min.css?1753430931" rel="stylesheet">
+    <link href="/AgenticGoKitDocs/css/theme.css?1753430931" rel="stylesheet">
+    <link href="/AgenticGoKitDocs/css/format-html.css?1753430931" rel="stylesheet" id="R-format-style">
+    <script>
+      window.relearn = window.relearn || {};
+      // configuration
+      window.relearn.min = ``;
+      window.relearn.path='\/guides\/development\/web-search-integration\/index.html';
+      window.relearn.relBasePath='..\/..\/..';
+      window.relearn.relBaseUri='..\/..\/..\/..';
+      window.relearn.absBaseUri='http:\/\/localhost:1313\/AgenticGoKitDocs';
+      window.relearn.disableAnchorCopy=false;
+      window.relearn.disableAnchorScrolling=false;
+      window.relearn.disableInlineCopyToClipboard=false;
+      window.relearn.enableBlockCodeWrap=true;
+      // legal
+      window.relearn.getItem = (s,n) => {return s.getItem(n)};
+      window.relearn.setItem = (s,n,v) => {return s.setItem(n,v)};
+      window.relearn.removeItem = (s,n) => {return s.removeItem(n)};
+      // translations
+      window.T_Copy_to_clipboard = `Copy to clipboard`;
+      window.T_Copied_to_clipboard = `Copied to clipboard!`;
+      window.T_Copy_link_to_clipboard = `Copy link to clipboard`;
+      window.T_Link_copied_to_clipboard = `Copied link to clipboard!`;
+      window.T_Reset_view = `Reset view`;
+      window.T_View_reset = `View reset!`;
+      window.T_No_results_found = `No results found for "{0}"`;
+      window.T_N_results_found = `{1} results found for "{0}"`;
+      // variant stuff
+      window.relearn.themevariants = [ 'blue' ];
+      window.relearn.customvariantname = "my-custom-variant";
+      window.relearn.changeVariant = function(variant) {
+        var oldVariant = document.documentElement.dataset.rThemeVariant;
+        window.relearn.setItem(window.localStorage, window.relearn.absBaseUri + "/variant", variant);
+        document.documentElement.dataset.rThemeVariant = variant;
+        if (oldVariant != variant) {
+          document.dispatchEvent( new CustomEvent('themeVariantLoaded', { detail: { variant, oldVariant } }) );
+          window.relearn.markVariant();
+        }
+      }
+      window.relearn.markVariant = function() {
+        var variant = window.relearn.getItem(window.localStorage, window.relearn.absBaseUri + "/variant");
+        document.querySelectorAll(".R-variantswitcher select").forEach((select) => {select.value = variant;});
+      }
+      window.relearn.initVariant = function() {
+        var variant = window.relearn.getItem(window.localStorage, window.relearn.absBaseUri + "/variant") ?? "";
+        if( variant == window.relearn.customvariantname ){
+        }else if( !variant || !window.relearn.themevariants.includes(variant) ){
+          variant = window.relearn.themevariants[0];
+          window.relearn.setItem(window.localStorage, window.relearn.absBaseUri + "/variant", variant);
+        }
+        document.documentElement.dataset.rThemeVariant = variant;
+      }
+      window.relearn.initVariant();
+      window.relearn.markVariant();
+    </script>
+  </head>
+  <body class="mobile-support html" data-url="/AgenticGoKitDocs/guides/development/web-search-integration/index.html">
+    <div id="R-body" class="default-animation">
+      <div id="R-body-overlay"></div>
+      <nav id="R-topbar">
+        <div class="topbar-wrapper">
+          <div class="topbar-sidebar-divider"></div>
+          <div class="topbar-area topbar-area-start" data-area="start">
+            <div class="topbar-button topbar-button-sidebar" data-content-empty="disable" data-width-s="show" data-width-m="hide" data-width-l="hide"><button class="topbar-control" onclick="toggleNav()" type="button" title="Menu (CTRL&#43;ALT&#43;n)"><i class="fa-fw fas fa-bars"></i></button>
+            </div>
+            <div class="topbar-button topbar-button-toc" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show"><button class="topbar-control" onclick="toggleTopbarFlyout(this)" type="button" title="Table of Contents (CTRL&#43;ALT&#43;t)"><i class="fa-fw fas fa-list-alt"></i></button>
+              <div class="topbar-content">
+                <div class="topbar-content-wrapper">
+<nav class="TableOfContents">
+  <ul>
+    <li><a href="#prerequisites">Prerequisites</a></li>
+    <li><a href="#what-youll-build">What You&rsquo;ll Build</a></li>
+    <li><a href="#quick-start">Quick Start</a>
+      <ul>
+        <li><a href="#1-create-a-project-with-web-search">1. Create a Project with Web Search</a></li>
+        <li><a href="#2-configure-search-provider">2. Configure Search Provider</a></li>
+        <li><a href="#3-set-up-environment">3. Set Up Environment</a></li>
+        <li><a href="#4-test-web-search">4. Test Web Search</a></li>
+      </ul>
+    </li>
+    <li><a href="#available-search-providers">Available Search Providers</a></li>
+    <li><a href="#custom-search-integration">Custom Search Integration</a></li>
+    <li><a href="#advanced-patterns">Advanced Patterns</a>
+      <ul>
+        <li><a href="#search-result-processing">Search Result Processing</a></li>
+        <li><a href="#error-handling">Error Handling</a></li>
+      </ul>
+    </li>
+    <li><a href="#performance-optimization">Performance Optimization</a>
+      <ul>
+        <li><a href="#rate-limiting">Rate Limiting</a></li>
+        <li><a href="#caching-strategy">Caching Strategy</a></li>
+      </ul>
+    </li>
+    <li><a href="#troubleshooting">Troubleshooting</a>
+      <ul>
+        <li><a href="#common-issues">Common Issues</a></li>
+      </ul>
+    </li>
+    <li><a href="#security-considerations">Security Considerations</a>
+      <ul>
+        <li><a href="#api-key-management">API Key Management</a></li>
+        <li><a href="#input-validation">Input Validation</a></li>
+      </ul>
+    </li>
+    <li><a href="#next-steps">Next Steps</a></li>
+    <li><a href="#related-guides">Related Guides</a></li>
+  </ul>
+</nav>
+                </div>
+              </div>
+            </div>
+          </div>
+          <ol class="topbar-breadcrumbs breadcrumbs highlightable" itemscope itemtype="http://schema.org/BreadcrumbList"><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="/AgenticGoKitDocs/index.html"><span itemprop="name">content</span></a><meta itemprop="position" content="1">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="/AgenticGoKitDocs/guides/index.html"><span itemprop="name">guides</span></a><meta itemprop="position" content="2">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="/AgenticGoKitDocs/guides/development/index.html"><span itemprop="name">development</span></a><meta itemprop="position" content="3">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><span itemprop="name">web-search-integration</span><meta itemprop="position" content="4"></li>
+          </ol>
+          <div class="topbar-area topbar-area-end" data-area="end">
+            <div class="topbar-button topbar-button-prev" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show"><a class="topbar-control" href="/AgenticGoKitDocs/guides/development/visualization/index.html" title="visualization (🡐)"><i class="fa-fw fas fa-chevron-left"></i></a>
+            </div>
+            <div class="topbar-button topbar-button-next" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show"><a class="topbar-control" href="/AgenticGoKitDocs/guides/framework-comparison/index.html" title="framework-comparison (🡒)"><i class="fa-fw fas fa-chevron-right"></i></a>
+            </div>
+            <div class="topbar-button topbar-button-more" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show"><button class="topbar-control" onclick="toggleTopbarFlyout(this)" type="button" title="More"><i class="fa-fw fas fa-ellipsis-v"></i></button>
+              <div class="topbar-content">
+                <div class="topbar-content-wrapper">
+                  <div class="topbar-area topbar-area-more" data-area="more">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+      <div id="R-main-overlay"></div>
+      <main id="R-body-inner" class="highlightable guides" tabindex="-1">
+        <div class="flex-block-wrapper">
+<article class="default">
+  <header class="headline">
+  </header>
+
+<h1 id="web-search-integration">web-search-integration</h1>
+
+<h1 id="web-search-integration">Web Search Integration</h1>
+<p><strong>Give your agents the ability to search the web for real-time information</strong></p>
+<p>This guide shows you how to integrate web search capabilities into your AgenticGoKit agents using MCP (Model Context Protocol) tools. You&rsquo;ll learn to set up web search, handle results, and optimize for different use cases.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li>Basic AgenticGoKit project setup</li>
+<li>Understanding of MCP tool integration</li>
+<li>API key for a search service (optional for basic setup)</li>
+</ul>
+<h2 id="what-youll-build">What You&rsquo;ll Build</h2>
+<p>An agent system that can:</p>
+<ul>
+<li>Search the web for current information</li>
+<li>Process and summarize search results</li>
+<li>Handle search errors gracefully</li>
+<li>Cache results for performance</li>
+</ul>
+<h2 id="quick-start">Quick Start</h2>
+<h3 id="1-create-a-project-with-web-search">1. Create a Project with Web Search</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Create project with MCP web search enabled</span>
+</span></span><span style="display:flex;"><span>agentcli create web-search-agent --mcp-enabled --agents <span style="color:#ae81ff">2</span> <span style="color:#ae81ff">\\</span>
+</span></span><span style="display:flex;"><span>  --mcp-tools <span style="color:#ae81ff">\&#34;</span>web_search,summarize<span style="color:#ae81ff">\&#34;</span>
+</span></span><span style="display:flex;"><span>cd web-search-agent</span></span></code></pre></div>
+<h3 id="2-configure-search-provider">2. Configure Search Provider</h3>
+<p>The generated <code>agentflow.toml</code> includes MCP server configuration:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">mcp</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enabled</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enable_discovery</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">connection_timeout</span> = <span style="color:#ae81ff">5000</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_retries</span> = <span style="color:#ae81ff">3</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enable_caching</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">cache_timeout</span> = <span style="color:#ae81ff">300000</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Configure search server (example)</span>
+</span></span><span style="display:flex;"><span>[[<span style="color:#a6e22e">mcp</span>.<span style="color:#a6e22e">servers</span>]]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">name</span> = <span style="color:#960050;background-color:#1e0010">\</span><span style="color:#e6db74">&#34;brave-search\&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">type = \&#34;stdio\&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">command = \&#34;npx @modelcontextprotocol/server-brave-search\&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enabled</span> = <span style="color:#66d9ef">true</span>  <span style="color:#75715e"># Enable this server</span></span></span></code></pre></div>
+<h3 id="3-set-up-environment">3. Set Up Environment</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># If using Brave Search (free tier available)</span>
+</span></span><span style="display:flex;"><span>export BRAVE_API_KEY<span style="color:#f92672">=</span>your-brave-api-key
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Or use other search providers</span>
+</span></span><span style="display:flex;"><span>export SERP_API_KEY<span style="color:#f92672">=</span>your-serp-api-key</span></span></code></pre></div>
+<h3 id="4-test-web-search">4. Test Web Search</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Set your LLM provider key</span>
+</span></span><span style="display:flex;"><span>export OPENAI_API_KEY<span style="color:#f92672">=</span>your-openai-key
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Run the agent</span>
+</span></span><span style="display:flex;"><span>go run . -m <span style="color:#ae81ff">\&#34;</span>What are the latest developments in AI?<span style="color:#ae81ff">\&#34;</span></span></span></code></pre></div>
+<h2 id="available-search-providers">Available Search Providers</h2>
+<table>
+  <thead>
+      <tr>
+          <th>Provider</th>
+          <th>MCP Server</th>
+          <th>Free Tier</th>
+          <th>Rate Limits</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td><strong>Brave Search</strong></td>
+          <td><code>@modelcontextprotocol/server-brave-search</code></td>
+          <td>2,000 queries/month</td>
+          <td>1 req/sec</td>
+      </tr>
+      <tr>
+          <td><strong>SerpAPI</strong></td>
+          <td><code>@modelcontextprotocol/server-serpapi</code></td>
+          <td>100 queries/month</td>
+          <td>Varies</td>
+      </tr>
+      <tr>
+          <td><strong>DuckDuckGo</strong></td>
+          <td><code>@modelcontextprotocol/server-duckduckgo</code></td>
+          <td>Unlimited</td>
+          <td>Rate limited</td>
+      </tr>
+  </tbody>
+</table>
+<h2 id="custom-search-integration">Custom Search Integration</h2>
+<p>If you need a specific search provider, you can create a custom tool:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">tools</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>    <span style="color:#960050;background-color:#1e0010">\</span><span style="color:#e6db74">&#34;context\&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    \&#34;encoding/json\&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    \&#34;fmt\&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    \&#34;net/http\&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    \&#34;net/url\&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">type CustomSearchTool struct {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    apiKey     string
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    httpClient *http.Client
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">}
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">func NewCustomSearchTool(apiKey string) *CustomSearchTool {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    return &amp;CustomSearchTool{
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        apiKey:     apiKey,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        httpClient: &amp;http.Client{Timeout: 10 * time.Second},
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    }
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">}
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">func (t *CustomSearchTool) Name() string {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    return \&#34;custom_search\&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">}
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">func (t *CustomSearchTool) Description() string {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    return \&#34;Search the web using custom search API\&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">}
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">func (t *CustomSearchTool) Execute(ctx context.Context, params map[string]interface{}) (interface{}, error) {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    query, ok := params[\&#34;query\&#34;].(string)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    if !ok || query == \&#34;\&#34; {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        return nil, fmt.Errorf(\&#34;query parameter is required\&#34;)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    }
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    numResults := 5
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    if nr, ok := params[\&#34;num_results\&#34;].(float64); ok {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        numResults = int(nr)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    }
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    // Build search URL (example using a hypothetical API)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    searchURL := fmt.Sprintf(\&#34;https://api.example-search.com/search?q=%s&amp;count=%d&amp;key=%s\&#34;,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        url.QueryEscape(query), numResults, t.apiKey)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    req, err := http.NewRequestWithContext(ctx, \&#34;GET\&#34;, searchURL, nil)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    if err != nil {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        return nil, fmt.Errorf(\&#34;failed to create request: %w\&#34;, err)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    }
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    resp, err := t.httpClient.Do(req)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    if err != nil {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        return nil, fmt.Errorf(\&#34;search request failed: %w\&#34;, err)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    }
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    defer resp.Body.Close()
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    if resp.StatusCode != http.StatusOK {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        return nil, fmt.Errorf(\&#34;search API returned status %d\&#34;, resp.StatusCode)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    }
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    var searchResults map[string]interface{}
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    if err := json.NewDecoder(resp.Body).Decode(&amp;searchResults); err != nil {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        return nil, fmt.Errorf(\&#34;failed to parse search results: %w\&#34;</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">searchResults</span>, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h2 id="advanced-patterns">Advanced Patterns</h2>
+<h3 id="search-result-processing">Search Result Processing</h3>
+<p>Create an agent specifically for processing search results:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">SearchProcessorAgent</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">name</span>        <span style="color:#66d9ef">string</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">llmProvider</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">ModelProvider</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">a</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">SearchProcessorAgent</span>) <span style="color:#a6e22e">Execute</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">event</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">Event</span>, <span style="color:#a6e22e">state</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">State</span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">AgentResult</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">searchResults</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">event</span>.<span style="color:#a6e22e">Data</span>[<span style="color:#960050;background-color:#1e0010">\</span><span style="color:#e6db74">&#34;search_results\&#34;]
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    if !ok {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        return nil, fmt.Errorf(\&#34;no search results provided\&#34;)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    }
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    prompt := fmt.Sprintf(`
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">Analyze these search results and provide a comprehensive summary:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">%v
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">Please provide:
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">1. Key findings and insights
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">2. Source credibility assessment
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">3. Conflicting information (if any)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">4. Recommended follow-up searches
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">Format your response as structured JSON.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">`, searchResults)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    response, err := a.llmProvider.GenerateResponse(ctx, prompt, nil)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    if err != nil {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        return nil, fmt.Errorf(\&#34;failed to process search results: %w\&#34;, err)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    }
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    return &amp;core.AgentResult{
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        Data: map[string]interface{}{
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            \&#34;processed_results\&#34;: response,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            \&#34;source_count\&#34;</span>:      <span style="color:#a6e22e">extractSourceCount</span>(<span style="color:#a6e22e">searchResults</span>),
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>    }, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h3 id="error-handling">Error Handling</h3>
+<p>Implement robust error handling for search operations:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">a</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">SearchAgent</span>) <span style="color:#a6e22e">Execute</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>, <span style="color:#a6e22e">event</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">Event</span>, <span style="color:#a6e22e">state</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">State</span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">AgentResult</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">query</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">event</span>.<span style="color:#a6e22e">Data</span>[<span style="color:#960050;background-color:#1e0010">\</span><span style="color:#e6db74">&#34;query\&#34;].(string)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    // Try primary search method
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    results, err := a.performSearch(ctx, query)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    if err != nil {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        // Log the error but don&#39;t fail immediately
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        log.Printf(\&#34;Primary search failed: %v\&#34;, err)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        // Try fallback search method
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        results, err = a.performFallbackSearch(ctx, query)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        if err != nil {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            // If both fail, return a graceful response
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            return &amp;core.AgentResult{
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">                Data: map[string]interface{}{
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">                    \&#34;error\&#34;:   \&#34;Search temporarily unavailable\&#34;,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">                    \&#34;message\&#34;: \&#34;Unable to perform web search at this time. Please try again later.\&#34;,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">                },
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            }, nil
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        }
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    }
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    return &amp;core.AgentResult{
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        Data: map[string]interface{}{
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            \&#34;search_results\&#34;: results,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            \&#34;query\&#34;:         query,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            \&#34;timestamp\&#34;</span>:     <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Now</span>().<span style="color:#a6e22e">Unix</span>(),
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>    }, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h2 id="performance-optimization">Performance Optimization</h2>
+<h3 id="rate-limiting">Rate Limiting</h3>
+<p>Implement rate limiting to stay within API limits:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#f92672">import</span> <span style="color:#960050;background-color:#1e0010">\</span><span style="color:#e6db74">&#34;golang.org/x/time/rate\&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">type RateLimitedSearchTool struct {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    *CustomSearchTool
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    limiter *rate.Limiter
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">}
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">func NewRateLimitedSearchTool(apiKey string, requestsPerSecond float64) *RateLimitedSearchTool {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    return &amp;RateLimitedSearchTool{
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        CustomSearchTool: NewCustomSearchTool(apiKey),
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        limiter:         rate.NewLimiter(rate.Limit(requestsPerSecond), 1),
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    }
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">}
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">func (t *RateLimitedSearchTool) Execute(ctx context.Context, params map[string]interface{}) (interface{}, error) {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    // Wait for rate limiter
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    if err := t.limiter.Wait(ctx); err != nil {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        return nil, fmt.Errorf(\&#34;rate limit wait failed: %w\&#34;</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">t</span>.<span style="color:#a6e22e">CustomSearchTool</span>.<span style="color:#a6e22e">Execute</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">params</span>)
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h3 id="caching-strategy">Caching Strategy</h3>
+<p>Configure caching for search results to improve performance and reduce API costs:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">mcp</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enabled</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enable_caching</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">cache_timeout</span> = <span style="color:#ae81ff">1800000</span>  <span style="color:#75715e"># 30 minutes for search results</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Longer cache for stable queries</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">mcp</span>.<span style="color:#a6e22e">cache_rules</span>]
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">\</span><span style="color:#e6db74">&#34;news_*\&#34; = 300000      # 5 minutes for news queries
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">\&#34;weather_*\&#34; = 1800000  # 30 minutes for weather
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">\&#34;facts_*\&#34;</span> = <span style="color:#ae81ff">86400000</span>   <span style="color:#75715e"># 24 hours for factual queries</span></span></span></code></pre></div>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<h3 id="common-issues">Common Issues</h3>
+<p><strong>Search not working:</strong></p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Check MCP server status</span>
+</span></span><span style="display:flex;"><span>agentcli mcp list --status
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Verify tool availability</span>
+</span></span><span style="display:flex;"><span>agentcli mcp list --tools
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Check configuration</span>
+</span></span><span style="display:flex;"><span>cat agentflow.toml | grep -A <span style="color:#ae81ff">10</span> <span style="color:#ae81ff">\&#34;\\</span><span style="color:#f92672">[</span>mcp<span style="color:#ae81ff">\\</span><span style="color:#f92672">]</span><span style="color:#ae81ff">\&#34;</span></span></span></code></pre></div>
+<p><strong>API rate limits:</strong></p>
+<ul>
+<li>Implement exponential backoff</li>
+<li>Use multiple API keys with rotation</li>
+<li>Cache results aggressively</li>
+<li>Filter queries to reduce API calls</li>
+</ul>
+<p><strong>Poor search quality:</strong></p>
+<ul>
+<li>Refine search queries programmatically</li>
+<li>Use multiple search sources</li>
+<li>Implement result ranking</li>
+<li>Add domain-specific filters</li>
+</ul>
+<h2 id="security-considerations">Security Considerations</h2>
+<h3 id="api-key-management">API Key Management</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Use environment variables</span>
+</span></span><span style="display:flex;"><span>export SEARCH_API_KEY<span style="color:#f92672">=</span><span style="color:#ae81ff">\&#34;</span>your-key-here<span style="color:#ae81ff">\&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Or use a secrets manager</span>
+</span></span><span style="display:flex;"><span>export SEARCH_API_KEY<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>vault kv get -field<span style="color:#f92672">=</span>key secret/search-api<span style="color:#66d9ef">)</span></span></span></code></pre></div>
+<h3 id="input-validation">Input Validation</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">validateSearchQuery</span>(<span style="color:#a6e22e">query</span> <span style="color:#66d9ef">string</span>) <span style="color:#66d9ef">error</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> len(<span style="color:#a6e22e">query</span>) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#960050;background-color:#1e0010">\</span><span style="color:#e6db74">&#34;search query cannot be empty\&#34;)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    }
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    if len(query) &gt; 500 {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        return fmt.Errorf(\&#34;search query too long (max 500 characters)\&#34;)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    }
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    // Check for potentially harmful content
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    if containsHarmfulContent(query) {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        return fmt.Errorf(\&#34;search query contains inappropriate content\&#34;</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h2 id="next-steps">Next Steps</h2>
+<p>Now that you have web search capabilities:</p>
+<ol>
+<li><strong>Combine with RAG</strong>: Use search results to enhance your knowledge base</li>
+<li><strong>Add Fact Checking</strong>: Cross-reference search results with trusted sources</li>
+<li><strong>Implement News Monitoring</strong>: Set up automated news tracking</li>
+<li><strong>Build Research Workflows</strong>: Create multi-step research processes</li>
+</ol>
+<h2 id="related-guides">Related Guides</h2>
+<ul>
+<li><a href="/AgenticGoKitDocs/guides/development/research-assistant/index.html">Research Assistant</a> - Complete research system</li>
+<li><a href="/AgenticGoKitDocs/guides/setup/mcp-tools/index.html">MCP Tools</a> - MCP tool integration</li>
+<li><a href="/AgenticGoKitDocs/guides/development/best-practices/index.html">Best Practices</a> - Development guidelines</li>
+<li><a href="/AgenticGoKitDocs/guides/development/debugging/index.html">Debugging</a> - Troubleshooting tools</li>
+</ul>
+<p>This guide covers web search integration in AgenticGoKit, enabling your agents to access real-time information from the web.</p>
+
+  <footer class="footline">
+              <i class='fa-fw fas fa-calendar'></i> Jul 25, 2025
+  </footer>
+</article>
+        </div>
+      </main>
+    </div>
+    <aside id="R-sidebar" class="default-animation">
+      <div id="R-header-topbar" class="default-animation"></div>
+      <div id="R-header-wrapper" class="default-animation">
+        <div id="R-header" class="default-animation">
+          <a id="R-logo" class="R-default" href="/AgenticGoKitDocs/index.html">
+            <div class="logo-title">AgenticGoKit Docs</div>
+          </a>
+        </div>
+        <search><form action="/AgenticGoKitDocs/search/index.html" method="get">
+          <div class="searchbox default-animation">
+            <button class="search-detail" type="submit" title="Search (CTRL+ALT+f)"><i class="fas fa-search"></i></button>
+            <label class="a11y-only" for="R-search-by">Search</label>
+            <input data-search-input id="R-search-by" name="search-by" class="search-by" type="search" placeholder="Search...">
+            <button class="search-clear" type="button" data-search-clear="" title="Clear search"><i class="fas fa-times" title="Clear search"></i></button>
+          </div>
+        </form></search>
+      </div>
+      <div id="R-homelinks" class="default-animation homelinks">
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-homelinks">
+          <ul class="space collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/index.html"><a class="padding" href="/AgenticGoKitDocs/index.html"><i class="fa-fw fas fa-home"></i> Home</a></li>
+          </ul>
+        </div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-headercontrols">
+          <ul class="">
+          </ul>
+        </div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+      </div>
+      <div id="R-content-wrapper" class="highlightable">
+        <div class="R-sidebarmenu R-shortcutmenu-main">
+          <ul class="enlarge morespace collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/readme/index.html">content</a></li>
+            <li class="parent alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/index.html"><input type="checkbox" id="R-section-8fc2fd7736125e87cab8840a86c2af5a" aria-controls="R-subsections-8fc2fd7736125e87cab8840a86c2af5a" checked><label for="R-section-8fc2fd7736125e87cab8840a86c2af5a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu guides</span></label><a class="padding" href="/AgenticGoKitDocs/guides/index.html">guides</a><ul id="R-subsections-8fc2fd7736125e87cab8840a86c2af5a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/readme/index.html">guides</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/agentbasics/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/agentbasics/index.html">AgentBasics</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/examples/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/examples/index.html">Examples</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/configuration/index.html">Configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/customtools/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/customtools/index.html">CustomTools</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/providers/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/providers/index.html">Providers</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memoryprovidersetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memoryprovidersetup/index.html">MemoryProviderSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memorytroubleshooting/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memorytroubleshooting/index.html">MemoryTroubleshooting</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/embeddingmodelguide/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/embeddingmodelguide/index.html">EmbeddingModelGuide</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/ragconfiguration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/ragconfiguration/index.html">RAGConfiguration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/toolintegration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/toolintegration/index.html">ToolIntegration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/pgvectorsetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/pgvectorsetup/index.html">PgVectorSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/weaviatesetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/weaviatesetup/index.html">WeaviateSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/performance/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/performance/index.html">Performance</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/errorhandling/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/errorhandling/index.html">ErrorHandling</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/deployment/index.html"><input type="checkbox" id="R-section-ecc839349395ef3c015a12132049dff2" aria-controls="R-subsections-ecc839349395ef3c015a12132049dff2" checked><label for="R-section-ecc839349395ef3c015a12132049dff2"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu deployment</span></label><a class="padding" href="/AgenticGoKitDocs/guides/deployment/index.html">deployment</a><ul id="R-subsections-ecc839349395ef3c015a12132049dff2" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/deployment/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/deployment/readme/index.html">deployment</a></li></ul></li>
+            <li class="parent alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/development/index.html"><input type="checkbox" id="R-section-fff1f5eca5d0a93209b9c6262762c25a" aria-controls="R-subsections-fff1f5eca5d0a93209b9c6262762c25a" checked><label for="R-section-fff1f5eca5d0a93209b9c6262762c25a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu development</span></label><a class="padding" href="/AgenticGoKitDocs/guides/development/index.html">development</a><ul id="R-subsections-fff1f5eca5d0a93209b9c6262762c25a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/readme/index.html">development</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/best-practices/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/best-practices/index.html">best-practices</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/debugging/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/debugging/index.html">debugging</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/research-assistant/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/research-assistant/index.html">research-assistant</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/testing-agents/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/testing-agents/index.html">testing-agents</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/visualization/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/visualization/index.html">visualization</a></li>
+            <li class="active " data-nav-id="/AgenticGoKitDocs/guides/development/web-search-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/web-search-integration/index.html">web-search-integration</a></li></ul></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/framework-comparison/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/framework-comparison/index.html">framework-comparison</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memory/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memory/index.html">Memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/scaffoldmemoryguide/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/scaffoldmemoryguide/index.html">ScaffoldMemoryGuide</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/setup/index.html"><input type="checkbox" id="R-section-0124aed9abb5064d53391168f3c95c22" aria-controls="R-subsections-0124aed9abb5064d53391168f3c95c22" checked><label for="R-section-0124aed9abb5064d53391168f3c95c22"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu setup</span></label><a class="padding" href="/AgenticGoKitDocs/guides/setup/index.html">setup</a><ul id="R-subsections-0124aed9abb5064d53391168f3c95c22" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/readme/index.html">setup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/llm-providers/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/llm-providers/index.html">llm-providers</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/mcp-tools/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/mcp-tools/index.html">mcp-tools</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/orchestration-configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/orchestration-configuration/index.html">orchestration-configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/vector-databases/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/vector-databases/index.html">vector-databases</a></li></ul></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/troubleshooting/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/troubleshooting/index.html">troubleshooting</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/contributors/index.html"><input type="checkbox" id="R-section-190d9b328fbda7e13ab386f7a5417de5" aria-controls="R-subsections-190d9b328fbda7e13ab386f7a5417de5" checked><label for="R-section-190d9b328fbda7e13ab386f7a5417de5"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu contributors</span></label><a class="padding" href="/AgenticGoKitDocs/contributors/index.html">contributors</a><ul id="R-subsections-190d9b328fbda7e13ab386f7a5417de5" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/readme/index.html">contributors</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/contributorguide/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/contributorguide/index.html">ContributorGuide</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/codestyle/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/codestyle/index.html">CodeStyle</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/corevsinternal/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/corevsinternal/index.html">CoreVsInternal</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/addingfeatures/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/addingfeatures/index.html">AddingFeatures</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/testing/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/testing/index.html">Testing</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/docsstandards/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/docsstandards/index.html">DocsStandards</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/reference/index.html"><input type="checkbox" id="R-section-66002f201bef818664bb81aa67490c58" aria-controls="R-subsections-66002f201bef818664bb81aa67490c58" checked><label for="R-section-66002f201bef818664bb81aa67490c58"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu reference</span></label><a class="padding" href="/AgenticGoKitDocs/reference/index.html">reference</a><ul id="R-subsections-66002f201bef818664bb81aa67490c58" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/readme/index.html">reference</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/configuration/index.html">configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/cli/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/cli/index.html">cli</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/mcp/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/mcp/index.html">mcp</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/agent/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/agent/index.html">agent</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/memory/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/memory/index.html">memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/orchestration/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/orchestration/index.html">orchestration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/state-event/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/state-event/index.html">state-event</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/index.html"><input type="checkbox" id="R-section-e1e8c1e70c5500b49e8dda2dc550651a" aria-controls="R-subsections-e1e8c1e70c5500b49e8dda2dc550651a" checked><label for="R-section-e1e8c1e70c5500b49e8dda2dc550651a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu tutorials</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/index.html">tutorials</a><ul id="R-subsections-e1e8c1e70c5500b49e8dda2dc550651a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/readme/index.html">tutorials</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/advanced/index.html"><input type="checkbox" id="R-section-d3def5cd76adc8096d0ff9fda6b8e479" aria-controls="R-subsections-d3def5cd76adc8096d0ff9fda6b8e479" checked><label for="R-section-d3def5cd76adc8096d0ff9fda6b8e479"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu advanced</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/index.html">advanced</a><ul id="R-subsections-d3def5cd76adc8096d0ff9fda6b8e479" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/readme/index.html">advanced</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/circuit-breaker-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/circuit-breaker-patterns/index.html">circuit-breaker-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/load-balancing-scaling/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/load-balancing-scaling/index.html">load-balancing-scaling</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/retry-policies/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/retry-policies/index.html">retry-policies</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/testing-strategies/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/testing-strategies/index.html">testing-strategies</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/index.html"><input type="checkbox" id="R-section-212c6ccffb40ecdd78eb2136f98c4cac" aria-controls="R-subsections-212c6ccffb40ecdd78eb2136f98c4cac" checked><label for="R-section-212c6ccffb40ecdd78eb2136f98c4cac"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu core-concepts</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/index.html">core-concepts</a><ul id="R-subsections-212c6ccffb40ecdd78eb2136f98c4cac" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/readme/index.html">core-concepts</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/agent-lifecycle/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/agent-lifecycle/index.html">agent-lifecycle</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/error-handling/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/error-handling/index.html">error-handling</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/message-passing/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/message-passing/index.html">message-passing</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/orchestration-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/orchestration-patterns/index.html">orchestration-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/state-management/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/state-management/index.html">state-management</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/debugging/index.html"><input type="checkbox" id="R-section-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" aria-controls="R-subsections-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" checked><label for="R-section-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu debugging</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/index.html">debugging</a><ul id="R-subsections-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/readme/index.html">debugging</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/debugging-multi-agent-systems/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/debugging-multi-agent-systems/index.html">debugging-multi-agent-systems</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/logging-and-tracing/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/logging-and-tracing/index.html">logging-and-tracing</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/index.html"><input type="checkbox" id="R-section-e7f904c8b9d0f9bf1f07ca7d482d2247" aria-controls="R-subsections-e7f904c8b9d0f9bf1f07ca7d482d2247" checked><label for="R-section-e7f904c8b9d0f9bf1f07ca7d482d2247"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu getting-started</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/index.html">getting-started</a><ul id="R-subsections-e7f904c8b9d0f9bf1f07ca7d482d2247" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/readme/index.html">getting-started</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/memory-and-rag/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/memory-and-rag/index.html">memory-and-rag</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/multi-agent-collaboration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/multi-agent-collaboration/index.html">multi-agent-collaboration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/production-deployment/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/production-deployment/index.html">production-deployment</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/quickstart/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/quickstart/index.html">quickstart</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/tool-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/tool-integration/index.html">tool-integration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/your-first-agent/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/your-first-agent/index.html">your-first-agent</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/mcp/index.html"><input type="checkbox" id="R-section-153aac44598009a99dd5a60317a3eecc" aria-controls="R-subsections-153aac44598009a99dd5a60317a3eecc" checked><label for="R-section-153aac44598009a99dd5a60317a3eecc"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu mcp</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/index.html">mcp</a><ul id="R-subsections-153aac44598009a99dd5a60317a3eecc" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/readme/index.html">mcp</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/advanced-tool-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/advanced-tool-patterns/index.html">advanced-tool-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/tool-development/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/tool-development/index.html">tool-development</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/tool-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/tool-integration/index.html">tool-integration</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/index.html"><input type="checkbox" id="R-section-9c1a65f2d7b3888241dcafa51a0710e7" aria-controls="R-subsections-9c1a65f2d7b3888241dcafa51a0710e7" checked><label for="R-section-9c1a65f2d7b3888241dcafa51a0710e7"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu memory-systems</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/index.html">memory-systems</a><ul id="R-subsections-9c1a65f2d7b3888241dcafa51a0710e7" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/readme/index.html">memory-systems</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/basic-memory/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/basic-memory/index.html">basic-memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/document-ingestion/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/document-ingestion/index.html">document-ingestion</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/knowledge-bases/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/knowledge-bases/index.html">knowledge-bases</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/memory-optimization/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/memory-optimization/index.html">memory-optimization</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/rag-implementation/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/rag-implementation/index.html">rag-implementation</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/vector-databases/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/vector-databases/index.html">vector-databases</a></li></ul></li></ul></li>
+          </ul>
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-shortcuts">
+          <ul class="space collapsible-menu">
+          </ul>
+        </div>
+        <div id="R-footer-margin"></div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-footercontrols">
+          <ul class="">
+          </ul>
+        </div>
+<div id="R-footer"><p>Built with <a href="https://github.com/McShelby/hugo-theme-relearn" title="love"><i class="fas fa-heart"></i></a> by <a href="https://gohugo.io/">Hugo</a></p></div>
+      </div>
+    </aside>
+    <script src="/AgenticGoKitDocs/js/clipboard/clipboard.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/perfect-scrollbar/perfect-scrollbar.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/theme.js?1753430931" defer></script>
+  </body>
+</html>

@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en-us" dir="ltr" itemscope itemtype="http://schema.org/Article" data-r-output-format="html">
+  <head><script src="/AgenticGoKitDocs/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=AgenticGoKitDocs/livereload" data-no-instant defer></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="height=device-height, width=device-width, initial-scale=1.0, minimum-scale=1.0">
+    <meta name="generator" content="Hugo 0.148.1">
+    <meta name="generator" content="Relearn 8.0.0+9803d5122ebb3276acea823f476e9eb44f607862">
+    <meta name="description" content="Release Process This document describes the comprehensive release process for AgenticGoKit, including versioning, testing, documentation, and deployment procedures.
+🎯 Release Philosophy AgenticGoKit follows a disciplined release process to ensure:
+Stability: Thorough testing before releases Predictability: Regular release schedule and clear versioning Transparency: Open communication about changes and timeline Quality: Comprehensive validation and rollback capabilities 📅 Release Schedule Regular Release Cycle Release Type Frequency Content Timeline Major Every 6 months Breaking changes, major features January, July Minor Monthly New features, improvements First Tuesday of each month Patch As needed Bug fixes, security updates Within 1-2 weeks of issue Pre-release Weekly Development snapshots Every Friday Special Releases Security Releases: Immediate for critical security issues Hotfixes: Same day for critical production bugs LTS Releases: Long-term support versions (annual) 📝 Versioning Strategy Semantic Versioning (SemVer) AgenticGoKit uses semantic versioning: MAJOR.MINOR.PATCH">
+    <meta name="author" content="">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="ReleaseProcess :: AgenticGoKit Docs">
+    <meta name="twitter:description" content="Release Process This document describes the comprehensive release process for AgenticGoKit, including versioning, testing, documentation, and deployment procedures.
+🎯 Release Philosophy AgenticGoKit follows a disciplined release process to ensure:
+Stability: Thorough testing before releases Predictability: Regular release schedule and clear versioning Transparency: Open communication about changes and timeline Quality: Comprehensive validation and rollback capabilities 📅 Release Schedule Regular Release Cycle Release Type Frequency Content Timeline Major Every 6 months Breaking changes, major features January, July Minor Monthly New features, improvements First Tuesday of each month Patch As needed Bug fixes, security updates Within 1-2 weeks of issue Pre-release Weekly Development snapshots Every Friday Special Releases Security Releases: Immediate for critical security issues Hotfixes: Same day for critical production bugs LTS Releases: Long-term support versions (annual) 📝 Versioning Strategy Semantic Versioning (SemVer) AgenticGoKit uses semantic versioning: MAJOR.MINOR.PATCH">
+    <meta property="og:url" content="http://localhost:1313/AgenticGoKitDocs/contributors/releaseprocess/index.html">
+    <meta property="og:site_name" content="AgenticGoKit Docs">
+    <meta property="og:title" content="ReleaseProcess :: AgenticGoKit Docs">
+    <meta property="og:description" content="Release Process This document describes the comprehensive release process for AgenticGoKit, including versioning, testing, documentation, and deployment procedures.
+🎯 Release Philosophy AgenticGoKit follows a disciplined release process to ensure:
+Stability: Thorough testing before releases Predictability: Regular release schedule and clear versioning Transparency: Open communication about changes and timeline Quality: Comprehensive validation and rollback capabilities 📅 Release Schedule Regular Release Cycle Release Type Frequency Content Timeline Major Every 6 months Breaking changes, major features January, July Minor Monthly New features, improvements First Tuesday of each month Patch As needed Bug fixes, security updates Within 1-2 weeks of issue Pre-release Weekly Development snapshots Every Friday Special Releases Security Releases: Immediate for critical security issues Hotfixes: Same day for critical production bugs LTS Releases: Long-term support versions (annual) 📝 Versioning Strategy Semantic Versioning (SemVer) AgenticGoKit uses semantic versioning: MAJOR.MINOR.PATCH">
+    <meta property="og:locale" content="en_us">
+    <meta property="og:type" content="article">
+    <meta property="article:section" content="contributors">
+    <meta property="article:published_time" content="2025-07-25T00:00:00+00:00">
+    <meta property="article:modified_time" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="name" content="ReleaseProcess :: AgenticGoKit Docs">
+    <meta itemprop="description" content="Release Process This document describes the comprehensive release process for AgenticGoKit, including versioning, testing, documentation, and deployment procedures.
+🎯 Release Philosophy AgenticGoKit follows a disciplined release process to ensure:
+Stability: Thorough testing before releases Predictability: Regular release schedule and clear versioning Transparency: Open communication about changes and timeline Quality: Comprehensive validation and rollback capabilities 📅 Release Schedule Regular Release Cycle Release Type Frequency Content Timeline Major Every 6 months Breaking changes, major features January, July Minor Monthly New features, improvements First Tuesday of each month Patch As needed Bug fixes, security updates Within 1-2 weeks of issue Pre-release Weekly Development snapshots Every Friday Special Releases Security Releases: Immediate for critical security issues Hotfixes: Same day for critical production bugs LTS Releases: Long-term support versions (annual) 📝 Versioning Strategy Semantic Versioning (SemVer) AgenticGoKit uses semantic versioning: MAJOR.MINOR.PATCH">
+    <meta itemprop="datePublished" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="dateModified" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="wordCount" content="1457">
+    <title>ReleaseProcess :: AgenticGoKit Docs</title>
+    <link href="/AgenticGoKitDocs/css/auto-complete/auto-complete.min.css?1753429882" rel="stylesheet">
+    <script src="/AgenticGoKitDocs/js/auto-complete/auto-complete.min.js?1753429882" defer></script>
+    <script src="/AgenticGoKitDocs/js/search-lunr.js?1753429882" defer></script>
+    <script src="/AgenticGoKitDocs/js/search.js?1753429882" defer></script>
+    <script>
+      window.relearn = window.relearn || {};
+      window.relearn.index_js_url="/AgenticGoKitDocs/searchindex.en.js?1753429882";
+    </script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.min.js?1753429882" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.stemmer.support.min.js?1753429882" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.multi.min.js?1753429882" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.en.min.js?1753429882" defer></script>
+    <script>
+      window.relearn = window.relearn || {};
+      window.relearn.contentLangs=['en'];
+    </script>
+    <link href="/AgenticGoKitDocs/fonts/fontawesome/css/fontawesome-all.min.css?1753429882" rel="stylesheet" media="print" onload="this.media='all';this.onload=null;"><noscript><link href="/AgenticGoKitDocs/fonts/fontawesome/css/fontawesome-all.min.css?1753429882" rel="stylesheet"></noscript>
+    <link href="/AgenticGoKitDocs/css/perfect-scrollbar/perfect-scrollbar.min.css?1753429882" rel="stylesheet">
+    <link href="/AgenticGoKitDocs/css/theme.css?1753429882" rel="stylesheet">
+    <link href="/AgenticGoKitDocs/css/format-html.css?1753429882" rel="stylesheet" id="R-format-style">
+    <script>
+      window.relearn = window.relearn || {};
+      // configuration
+      window.relearn.min = ``;
+      window.relearn.path='\/contributors\/releaseprocess\/index.html';
+      window.relearn.relBasePath='..\/..';
+      window.relearn.relBaseUri='..\/..\/..';
+      window.relearn.absBaseUri='http:\/\/localhost:1313\/AgenticGoKitDocs';
+      window.relearn.disableAnchorCopy=false;
+      window.relearn.disableAnchorScrolling=false;
+      window.relearn.disableInlineCopyToClipboard=false;
+      window.relearn.enableBlockCodeWrap=true;
+      // legal
+      window.relearn.getItem = (s,n) => {return s.getItem(n)};
+      window.relearn.setItem = (s,n,v) => {return s.setItem(n,v)};
+      window.relearn.removeItem = (s,n) => {return s.removeItem(n)};
+      // translations
+      window.T_Copy_to_clipboard = `Copy to clipboard`;
+      window.T_Copied_to_clipboard = `Copied to clipboard!`;
+      window.T_Copy_link_to_clipboard = `Copy link to clipboard`;
+      window.T_Link_copied_to_clipboard = `Copied link to clipboard!`;
+      window.T_Reset_view = `Reset view`;
+      window.T_View_reset = `View reset!`;
+      window.T_No_results_found = `No results found for "{0}"`;
+      window.T_N_results_found = `{1} results found for "{0}"`;
+      // variant stuff
+      window.relearn.themevariants = [ 'blue' ];
+      window.relearn.customvariantname = "my-custom-variant";
+      window.relearn.changeVariant = function(variant) {
+        var oldVariant = document.documentElement.dataset.rThemeVariant;
+        window.relearn.setItem(window.localStorage, window.relearn.absBaseUri + "/variant", variant);
+        document.documentElement.dataset.rThemeVariant = variant;
+        if (oldVariant != variant) {
+          document.dispatchEvent( new CustomEvent('themeVariantLoaded', { detail: { variant, oldVariant } }) );
+          window.relearn.markVariant();
+        }
+      }
+      window.relearn.markVariant = function() {
+        var variant = window.relearn.getItem(window.localStorage, window.relearn.absBaseUri + "/variant");
+        document.querySelectorAll(".R-variantswitcher select").forEach((select) => {select.value = variant;});
+      }
+      window.relearn.initVariant = function() {
+        var variant = window.relearn.getItem(window.localStorage, window.relearn.absBaseUri + "/variant") ?? "";
+        if( variant == window.relearn.customvariantname ){
+        }else if( !variant || !window.relearn.themevariants.includes(variant) ){
+          variant = window.relearn.themevariants[0];
+          window.relearn.setItem(window.localStorage, window.relearn.absBaseUri + "/variant", variant);
+        }
+        document.documentElement.dataset.rThemeVariant = variant;
+      }
+      window.relearn.initVariant();
+      window.relearn.markVariant();
+    </script>
+  </head>
+  <body class="mobile-support html" data-url="/AgenticGoKitDocs/contributors/releaseprocess/index.html">
+    <div id="R-body" class="default-animation">
+      <div id="R-body-overlay"></div>
+      <nav id="R-topbar">
+        <div class="topbar-wrapper">
+          <div class="topbar-sidebar-divider"></div>
+          <div class="topbar-area topbar-area-start" data-area="start">
+            <div class="topbar-button topbar-button-sidebar" data-content-empty="disable" data-width-s="show" data-width-m="hide" data-width-l="hide"><button class="topbar-control" onclick="toggleNav()" type="button" title="Menu (CTRL&#43;ALT&#43;n)"><i class="fa-fw fas fa-bars"></i></button>
+            </div>
+            <div class="topbar-button topbar-button-toc" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show"><button class="topbar-control" onclick="toggleTopbarFlyout(this)" type="button" title="Table of Contents (CTRL&#43;ALT&#43;t)"><i class="fa-fw fas fa-list-alt"></i></button>
+              <div class="topbar-content">
+                <div class="topbar-content-wrapper">
+<nav class="TableOfContents">
+  <ul>
+    <li><a href="#-release-philosophy">🎯 Release Philosophy</a></li>
+    <li><a href="#-release-schedule">📅 Release Schedule</a>
+      <ul>
+        <li><a href="#regular-release-cycle">Regular Release Cycle</a></li>
+        <li><a href="#special-releases">Special Releases</a></li>
+      </ul>
+    </li>
+    <li><a href="#-versioning-strategy">📝 Versioning Strategy</a>
+      <ul>
+        <li><a href="#semantic-versioning-semver">Semantic Versioning (SemVer)</a></li>
+        <li><a href="#version-examples">Version Examples</a></li>
+        <li><a href="#pre-release-identifiers">Pre-release Identifiers</a></li>
+      </ul>
+    </li>
+    <li><a href="#-release-process-workflow">🚀 Release Process Workflow</a>
+      <ul>
+        <li><a href="#1-planning-phase-2-weeks-before-release">1. Planning Phase (2 weeks before release)</a></li>
+        <li><a href="#2-development-freeze-1-week-before-release">2. Development Freeze (1 week before release)</a></li>
+        <li><a href="#3-release-testing-3-5-days">3. Release Testing (3-5 days)</a></li>
+        <li><a href="#4-documentation-update">4. Documentation Update</a></li>
+        <li><a href="#5-release-preparation">5. Release Preparation</a></li>
+        <li><a href="#6-release-execution">6. Release Execution</a></li>
+        <li><a href="#7-post-release-activities">7. Post-Release Activities</a></li>
+      </ul>
+    </li>
+    <li><a href="#-release-tools-and-scripts">🔧 Release Tools and Scripts</a>
+      <ul>
+        <li><a href="#version-management-script">Version Management Script</a></li>
+        <li><a href="#build-script">Build Script</a></li>
+        <li><a href="#release-validation-script">Release Validation Script</a></li>
+      </ul>
+    </li>
+    <li><a href="#-hotfix-process">🚨 Hotfix Process</a>
+      <ul>
+        <li><a href="#emergency-hotfix-workflow">Emergency Hotfix Workflow</a></li>
+        <li><a href="#hotfix-criteria">Hotfix Criteria</a></li>
+      </ul>
+    </li>
+    <li><a href="#-release-metrics-and-kpis">📊 Release Metrics and KPIs</a>
+      <ul>
+        <li><a href="#success-metrics">Success Metrics</a></li>
+        <li><a href="#release-health-dashboard">Release Health Dashboard</a></li>
+      </ul>
+    </li>
+    <li><a href="#-stakeholder-communication">🤝 Stakeholder Communication</a>
+      <ul>
+        <li><a href="#internal-communication">Internal Communication</a></li>
+        <li><a href="#external-communication">External Communication</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+                </div>
+              </div>
+            </div>
+          </div>
+          <ol class="topbar-breadcrumbs breadcrumbs highlightable" itemscope itemtype="http://schema.org/BreadcrumbList"><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="/AgenticGoKitDocs/index.html"><span itemprop="name">content</span></a><meta itemprop="position" content="1">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="/AgenticGoKitDocs/contributors/index.html"><span itemprop="name">contributors</span></a><meta itemprop="position" content="2">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><span itemprop="name">ReleaseProcess</span><meta itemprop="position" content="3"></li>
+          </ol>
+          <div class="topbar-area topbar-area-end" data-area="end">
+            <div class="topbar-button topbar-button-prev" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show"><a class="topbar-control" href="/AgenticGoKitDocs/contributors/docsstandards/index.html" title="DocsStandards (🡐)"><i class="fa-fw fas fa-chevron-left"></i></a>
+            </div>
+            <div class="topbar-button topbar-button-next" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show"><a class="topbar-control" href="/AgenticGoKitDocs/roadmap/index.html" title="ROADMAP (🡒)"><i class="fa-fw fas fa-chevron-right"></i></a>
+            </div>
+            <div class="topbar-button topbar-button-more" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show"><button class="topbar-control" onclick="toggleTopbarFlyout(this)" type="button" title="More"><i class="fa-fw fas fa-ellipsis-v"></i></button>
+              <div class="topbar-content">
+                <div class="topbar-content-wrapper">
+                  <div class="topbar-area topbar-area-more" data-area="more">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+      <div id="R-main-overlay"></div>
+      <main id="R-body-inner" class="highlightable contributors" tabindex="-1">
+        <div class="flex-block-wrapper">
+<article class="default">
+  <header class="headline">
+  </header>
+
+<h1 id="releaseprocess">ReleaseProcess</h1>
+
+<h1 id="release-process">Release Process</h1>
+<p>This document describes the comprehensive release process for AgenticGoKit, including versioning, testing, documentation, and deployment procedures.</p>
+<h2 id="-release-philosophy">🎯 Release Philosophy</h2>
+<p>AgenticGoKit follows a disciplined release process to ensure:</p>
+<ul>
+<li><strong>Stability</strong>: Thorough testing before releases</li>
+<li><strong>Predictability</strong>: Regular release schedule and clear versioning</li>
+<li><strong>Transparency</strong>: Open communication about changes and timeline</li>
+<li><strong>Quality</strong>: Comprehensive validation and rollback capabilities</li>
+</ul>
+<h2 id="-release-schedule">📅 Release Schedule</h2>
+<h3 id="regular-release-cycle">Regular Release Cycle</h3>
+<table>
+  <thead>
+      <tr>
+          <th>Release Type</th>
+          <th>Frequency</th>
+          <th>Content</th>
+          <th>Timeline</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td><strong>Major</strong></td>
+          <td>Every 6 months</td>
+          <td>Breaking changes, major features</td>
+          <td>January, July</td>
+      </tr>
+      <tr>
+          <td><strong>Minor</strong></td>
+          <td>Monthly</td>
+          <td>New features, improvements</td>
+          <td>First Tuesday of each month</td>
+      </tr>
+      <tr>
+          <td><strong>Patch</strong></td>
+          <td>As needed</td>
+          <td>Bug fixes, security updates</td>
+          <td>Within 1-2 weeks of issue</td>
+      </tr>
+      <tr>
+          <td><strong>Pre-release</strong></td>
+          <td>Weekly</td>
+          <td>Development snapshots</td>
+          <td>Every Friday</td>
+      </tr>
+  </tbody>
+</table>
+<h3 id="special-releases">Special Releases</h3>
+<ul>
+<li><strong>Security Releases</strong>: Immediate for critical security issues</li>
+<li><strong>Hotfixes</strong>: Same day for critical production bugs</li>
+<li><strong>LTS Releases</strong>: Long-term support versions (annual)</li>
+</ul>
+<h2 id="-versioning-strategy">📝 Versioning Strategy</h2>
+<h3 id="semantic-versioning-semver">Semantic Versioning (SemVer)</h3>
+<p>AgenticGoKit uses semantic versioning: <code>MAJOR.MINOR.PATCH</code></p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0"><code>v2.3.1
+│ │ │
+│ │ └─ Patch: Bug fixes, security updates
+│ └─── Minor: New features, improvements (backward compatible)
+└───── Major: Breaking changes, architectural updates</code></pre></div>
+<h3 id="version-examples">Version Examples</h3>
+<table>
+  <thead>
+      <tr>
+          <th>Version</th>
+          <th>Type</th>
+          <th>Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td><code>v1.0.0</code></td>
+          <td>Major</td>
+          <td>Initial stable release</td>
+      </tr>
+      <tr>
+          <td><code>v1.1.0</code></td>
+          <td>Minor</td>
+          <td>Added MCP caching, new CLI commands</td>
+      </tr>
+      <tr>
+          <td><code>v1.1.1</code></td>
+          <td>Patch</td>
+          <td>Fixed memory leak in tool execution</td>
+      </tr>
+      <tr>
+          <td><code>v2.0.0</code></td>
+          <td>Major</td>
+          <td>New agent interface, breaking config changes</td>
+      </tr>
+      <tr>
+          <td><code>v2.1.0-rc.1</code></td>
+          <td>Pre-release</td>
+          <td>Release candidate with new features</td>
+      </tr>
+      <tr>
+          <td><code>v1.5.0-lts</code></td>
+          <td>LTS</td>
+          <td>Long-term support release</td>
+      </tr>
+  </tbody>
+</table>
+<h3 id="pre-release-identifiers">Pre-release Identifiers</h3>
+<ul>
+<li><code>alpha</code>: Early development, unstable</li>
+<li><code>beta</code>: Feature complete, testing phase</li>
+<li><code>rc</code>: Release candidate, production ready</li>
+</ul>
+<p>Examples: <code>v1.2.0-alpha.1</code>, <code>v1.2.0-beta.2</code>, <code>v1.2.0-rc.1</code></p>
+<h2 id="-release-process-workflow">🚀 Release Process Workflow</h2>
+<h3 id="1-planning-phase-2-weeks-before-release">1. Planning Phase (2 weeks before release)</h3>
+<h4 id="release-planning-meeting">Release Planning Meeting</h4>
+<ul>
+<li>Review completed features and fixes</li>
+<li>Assess breaking changes and migration needs</li>
+<li>Plan documentation updates</li>
+<li>Set release timeline and responsibilities</li>
+</ul>
+<h4 id="create-release-branch">Create Release Branch</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>git checkout main
+</span></span><span style="display:flex;"><span>git pull origin main
+</span></span><span style="display:flex;"><span>git checkout -b release/v1.2.0
+</span></span><span style="display:flex;"><span>git push origin release/v1.2.0</span></span></code></pre></div>
+<h4 id="update-version-information">Update Version Information</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Update version in all relevant files</span>
+</span></span><span style="display:flex;"><span>./scripts/update-version.sh v1.2.0
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Files typically updated:</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># - go.mod</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># - cmd/agentcli/main.go</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># - docs/README.md</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># - CHANGELOG.md</span></span></span></code></pre></div>
+<h3 id="2-development-freeze-1-week-before-release">2. Development Freeze (1 week before release)</h3>
+<h4 id="code-freeze">Code Freeze</h4>
+<ul>
+<li>No new features added to release branch</li>
+<li>Only critical bug fixes allowed</li>
+<li>All changes require release manager approval</li>
+</ul>
+<h4 id="pre-release-testing">Pre-release Testing</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Create pre-release</span>
+</span></span><span style="display:flex;"><span>git tag v1.2.0-rc.1
+</span></span><span style="display:flex;"><span>git push origin v1.2.0-rc.1
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Trigger CI/CD pipeline</span>
+</span></span><span style="display:flex;"><span>gh workflow run release.yml --ref v1.2.0-rc.1</span></span></code></pre></div>
+<h3 id="3-release-testing-3-5-days">3. Release Testing (3-5 days)</h3>
+<h4 id="automated-testing">Automated Testing</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># .github/workflows/release-testing.yml</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">name</span>: <span style="color:#ae81ff">Release Testing</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">on</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">push</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">tags</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#e6db74">&#39;v*-rc.*&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">jobs</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">comprehensive-testing</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">runs-on</span>: <span style="color:#ae81ff">ubuntu-latest</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">steps</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Unit Tests</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">run</span>: <span style="color:#ae81ff">go test -v ./...</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Integration Tests</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">run</span>: <span style="color:#ae81ff">go test -v -tags=integration ./integration/...</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Performance Tests</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">run</span>: <span style="color:#ae81ff">go test -bench=. ./benchmarks/...</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Security Scan</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">uses</span>: <span style="color:#ae81ff">securecodewarrior/github-action-add-sarif@v1</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">with</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">sarif-file</span>: <span style="color:#ae81ff">security-scan.sarif</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Compatibility Tests</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">run</span>: <span style="color:#ae81ff">./scripts/test-compatibility.sh</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Load Tests</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">run</span>: <span style="color:#ae81ff">./scripts/run-load-tests.sh</span></span></span></code></pre></div>
+<h4 id="manual-testing-checklist">Manual Testing Checklist</h4>
+<h5 id="core-functionality">Core Functionality</h5>
+<ul>
+<li><input disabled="" type="checkbox"> Agent creation and execution</li>
+<li><input disabled="" type="checkbox"> MCP tool discovery and usage</li>
+<li><input disabled="" type="checkbox"> Multi-agent orchestration</li>
+<li><input disabled="" type="checkbox"> Configuration management</li>
+<li><input disabled="" type="checkbox"> Error handling and recovery</li>
+</ul>
+<h5 id="cli-testing">CLI Testing</h5>
+<ul>
+<li><input disabled="" type="checkbox"> Project creation (<code>agentcli create</code>)</li>
+<li><input disabled="" type="checkbox"> MCP server management</li>
+<li><input disabled="" type="checkbox"> Cache operations</li>
+<li><input disabled="" type="checkbox"> Tracing and debugging</li>
+<li><input disabled="" type="checkbox"> Configuration commands</li>
+</ul>
+<h5 id="integration-testing">Integration Testing</h5>
+<ul>
+<li><input disabled="" type="checkbox"> Azure OpenAI integration</li>
+<li><input disabled="" type="checkbox"> OpenAI integration</li>
+<li><input disabled="" type="checkbox"> Ollama integration</li>
+<li><input disabled="" type="checkbox"> Docker-based MCP servers</li>
+<li><input disabled="" type="checkbox"> File system operations</li>
+</ul>
+<h5 id="performance-testing">Performance Testing</h5>
+<ul>
+<li><input disabled="" type="checkbox"> Memory usage under load</li>
+<li><input disabled="" type="checkbox"> Concurrent agent execution</li>
+<li><input disabled="" type="checkbox"> Tool execution performance</li>
+<li><input disabled="" type="checkbox"> Cache effectiveness</li>
+</ul>
+<h3 id="4-documentation-update">4. Documentation Update</h3>
+<h4 id="update-documentation">Update Documentation</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Generate API documentation</span>
+</span></span><span style="display:flex;"><span>go run ./cmd/gendocs
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Update user guides</span>
+</span></span><span style="display:flex;"><span>./scripts/update-docs.sh v1.2.0
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Update examples</span>
+</span></span><span style="display:flex;"><span>./scripts/update-examples.sh v1.2.0</span></span></code></pre></div>
+<h4 id="documentation-checklist">Documentation Checklist</h4>
+<ul>
+<li><input disabled="" type="checkbox"> API reference updated</li>
+<li><input disabled="" type="checkbox"> User guides reflect new features</li>
+<li><input disabled="" type="checkbox"> Migration guide for breaking changes</li>
+<li><input disabled="" type="checkbox"> Examples updated and tested</li>
+<li><input disabled="" type="checkbox"> CHANGELOG.md completed</li>
+<li><input disabled="" type="checkbox"> README.md version badges updated</li>
+</ul>
+<h3 id="5-release-preparation">5. Release Preparation</h3>
+<h4 id="create-release-notes">Create Release Notes</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-markdown" data-lang="markdown"><span style="display:flex;"><span># AgenticGoKit v1.2.0 Release Notes
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## 🚀 New Features
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">-</span> **MCP Caching**: Intelligent caching of tool results for improved performance
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">-</span> **Enhanced CLI**: New <span style="color:#e6db74">`agentcli benchmark`</span> command for performance testing
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">-</span> **Multi-Provider Support**: Added Anthropic Claude integration
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## 🔧 Improvements
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">-</span> Improved error messages with contextual information
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">-</span> Better handling of MCP server failures
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">-</span> Enhanced configuration validation
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## 🐛 Bug Fixes
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">-</span> Fixed memory leak in long-running agent sessions
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">-</span> Resolved race condition in concurrent tool execution
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">-</span> Fixed configuration parsing edge cases
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## 💥 Breaking Changes
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">-</span> Changed signature of <span style="color:#e6db74">`AgentHandler.Run()`</span> to include context
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">-</span> Renamed configuration field <span style="color:#e6db74">`mcp.enabled`</span> to <span style="color:#e6db74">`mcp.enable`</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">-</span> Removed deprecated <span style="color:#e6db74">`LegacyAgent`</span> interface
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## 🔄 Migration Guide
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>See [<span style="color:#f92672">Migration Guide</span>](<span style="color:#a6e22e">docs/migration/v1.1-to-v1.2.md</span>) for detailed upgrade instructions.
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## 📦 Downloads
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">-</span> [<span style="color:#f92672">Linux x64</span>](<span style="color:#a6e22e">releases/agentcli-linux-amd64.tar.gz</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">-</span> [<span style="color:#f92672">macOS x64</span>](<span style="color:#a6e22e">releases/agentcli-darwin-amd64.tar.gz</span>)
+</span></span><span style="display:flex;"><span>- [<span style="color:#f92672">Windows x64</span>](<span style="color:#a6e22e">releases/agentcli-windows-amd64.zip</span>)</span></span></code></pre></div>
+<h4 id="final-validation">Final Validation</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Run full test suite</span>
+</span></span><span style="display:flex;"><span>make test-all
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Validate documentation</span>
+</span></span><span style="display:flex;"><span>make docs-validate
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Check for security issues</span>
+</span></span><span style="display:flex;"><span>make security-scan
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Verify build works on all platforms</span>
+</span></span><span style="display:flex;"><span>make build-all</span></span></code></pre></div>
+<h3 id="6-release-execution">6. Release Execution</h3>
+<h4 id="create-final-release">Create Final Release</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Merge release branch to main</span>
+</span></span><span style="display:flex;"><span>git checkout main
+</span></span><span style="display:flex;"><span>git merge release/v1.2.0
+</span></span><span style="display:flex;"><span>git tag v1.2.0
+</span></span><span style="display:flex;"><span>git push origin main
+</span></span><span style="display:flex;"><span>git push origin v1.2.0
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Trigger release pipeline</span>
+</span></span><span style="display:flex;"><span>gh workflow run release.yml --ref v1.2.0</span></span></code></pre></div>
+<h4 id="automated-release-pipeline">Automated Release Pipeline</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># .github/workflows/release.yml</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">name</span>: <span style="color:#ae81ff">Release</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">on</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">push</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">tags</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#e6db74">&#39;v*&#39;</span>
+</span></span><span style="display:flex;"><span>      - <span style="color:#e6db74">&#39;!v*-rc.*&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">jobs</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">release</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">runs-on</span>: <span style="color:#ae81ff">ubuntu-latest</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">steps</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Checkout</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">uses</span>: <span style="color:#ae81ff">actions/checkout@v4</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Setup Go</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">uses</span>: <span style="color:#ae81ff">actions/setup-go@v4</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">with</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">go-version</span>: <span style="color:#e6db74">&#39;1.21&#39;</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Run tests</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">run</span>: <span style="color:#ae81ff">make test-all</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Build binaries</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">run</span>: <span style="color:#ae81ff">make build-all</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Generate checksums</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">run</span>: <span style="color:#ae81ff">make checksums</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Create GitHub release</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">uses</span>: <span style="color:#ae81ff">softprops/action-gh-release@v1</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">with</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">files</span>: |<span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">          dist/*
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">          checksums.txt</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">body_path</span>: <span style="color:#ae81ff">RELEASE_NOTES.md</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">draft</span>: <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">prerelease</span>: <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Update Homebrew formula</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">run</span>: <span style="color:#ae81ff">./scripts/update-homebrew.sh</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Update documentation site</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">run</span>: <span style="color:#ae81ff">./scripts/deploy-docs.sh</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">Notify stakeholders</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">run</span>: <span style="color:#ae81ff">./scripts/notify-release.sh</span></span></span></code></pre></div>
+<h3 id="7-post-release-activities">7. Post-Release Activities</h3>
+<h4 id="immediate-post-release-same-day">Immediate Post-Release (Same Day)</h4>
+<ul>
+<li><input disabled="" type="checkbox"> Verify release artifacts are available</li>
+<li><input disabled="" type="checkbox"> Test installation from official sources</li>
+<li><input disabled="" type="checkbox"> Monitor for immediate issues</li>
+<li><input disabled="" type="checkbox"> Update project management boards</li>
+<li><input disabled="" type="checkbox"> Announce release on communication channels</li>
+</ul>
+<h4 id="short-term-follow-up-1-3-days">Short-term Follow-up (1-3 days)</h4>
+<ul>
+<li><input disabled="" type="checkbox"> Monitor error reports and metrics</li>
+<li><input disabled="" type="checkbox"> Address any critical issues with hotfixes</li>
+<li><input disabled="" type="checkbox"> Update documentation based on user feedback</li>
+<li><input disabled="" type="checkbox"> Review release process effectiveness</li>
+</ul>
+<h4 id="long-term-follow-up-1-2-weeks">Long-term Follow-up (1-2 weeks)</h4>
+<ul>
+<li><input disabled="" type="checkbox"> Analyze adoption metrics</li>
+<li><input disabled="" type="checkbox"> Collect user feedback</li>
+<li><input disabled="" type="checkbox"> Plan improvements for next release</li>
+<li><input disabled="" type="checkbox"> Update contributor documentation</li>
+</ul>
+<h2 id="-release-tools-and-scripts">🔧 Release Tools and Scripts</h2>
+<h3 id="version-management-script">Version Management Script</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e">#!/bin/bash
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e"># scripts/update-version.sh</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>set -e
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>NEW_VERSION<span style="color:#f92672">=</span>$1
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#f92672">[[</span> -z <span style="color:#e6db74">&#34;</span>$NEW_VERSION<span style="color:#e6db74">&#34;</span> <span style="color:#f92672">]]</span>; <span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;Usage: </span>$0<span style="color:#e6db74"> &lt;version&gt;&#34;</span>
+</span></span><span style="display:flex;"><span>    exit <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fi</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;Updating version to </span>$NEW_VERSION<span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Update version in Go files</span>
+</span></span><span style="display:flex;"><span>sed -i <span style="color:#e6db74">&#34;s/Version = \&#34;.*\&#34;/Version = \&#34;</span>$NEW_VERSION<span style="color:#e6db74">\&#34;/&#34;</span> cmd/agentcli/main.go
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Update version in documentation</span>
+</span></span><span style="display:flex;"><span>sed -i <span style="color:#e6db74">&#34;s/version: .*/version: </span>$NEW_VERSION<span style="color:#e6db74">/&#34;</span> docs/README.md
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Update CHANGELOG</span>
+</span></span><span style="display:flex;"><span>./scripts/update-changelog.sh <span style="color:#e6db74">&#34;</span>$NEW_VERSION<span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;Version updated to </span>$NEW_VERSION<span style="color:#e6db74">&#34;</span></span></span></code></pre></div>
+<h3 id="build-script">Build Script</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e">#!/bin/bash
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e"># scripts/build-all.sh</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>set -e
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>VERSION<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>git describe --tags --always<span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span>LDFLAGS<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;-X main.Version=</span>$VERSION<span style="color:#e6db74"> -X main.BuildTime=</span><span style="color:#66d9ef">$(</span>date -u +%Y-%m-%dT%H:%M:%SZ<span style="color:#66d9ef">)</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>PLATFORMS<span style="color:#f92672">=(</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;linux/amd64&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;linux/arm64&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;darwin/amd64&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;darwin/arm64&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;windows/amd64&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>mkdir -p dist
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> platform in <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>PLATFORMS[@]<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>; <span style="color:#66d9ef">do</span>
+</span></span><span style="display:flex;"><span>    IFS<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;/&#39;</span> read -r OS ARCH <span style="color:#f92672">&lt;&lt;&lt;</span> <span style="color:#e6db74">&#34;</span>$platform<span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>    output<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;dist/agentcli-</span>$OS<span style="color:#e6db74">-</span>$ARCH<span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#f92672">[[</span> <span style="color:#e6db74">&#34;</span>$OS<span style="color:#e6db74">&#34;</span> <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;windows&#34;</span> <span style="color:#f92672">]]</span>; <span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>        output<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span>$output<span style="color:#e6db74">.exe&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">fi</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;Building for </span>$OS<span style="color:#e6db74">/</span>$ARCH<span style="color:#e6db74">...&#34;</span>
+</span></span><span style="display:flex;"><span>    GOOS<span style="color:#f92672">=</span>$OS GOARCH<span style="color:#f92672">=</span>$ARCH go build -ldflags <span style="color:#e6db74">&#34;</span>$LDFLAGS<span style="color:#e6db74">&#34;</span> -o <span style="color:#e6db74">&#34;</span>$output<span style="color:#e6db74">&#34;</span> ./cmd/agentcli
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Create archive</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#f92672">[[</span> <span style="color:#e6db74">&#34;</span>$OS<span style="color:#e6db74">&#34;</span> <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;windows&#34;</span> <span style="color:#f92672">]]</span>; <span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>        zip -q <span style="color:#e6db74">&#34;dist/agentcli-</span>$OS<span style="color:#e6db74">-</span>$ARCH<span style="color:#e6db74">.zip&#34;</span> <span style="color:#e6db74">&#34;</span>$output<span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>        rm <span style="color:#e6db74">&#34;</span>$output<span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">else</span>
+</span></span><span style="display:flex;"><span>        tar -czf <span style="color:#e6db74">&#34;dist/agentcli-</span>$OS<span style="color:#e6db74">-</span>$ARCH<span style="color:#e6db74">.tar.gz&#34;</span> -C dist <span style="color:#e6db74">&#34;</span><span style="color:#66d9ef">$(</span>basename <span style="color:#e6db74">&#34;</span>$output<span style="color:#e6db74">&#34;</span><span style="color:#66d9ef">)</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>        rm <span style="color:#e6db74">&#34;</span>$output<span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">fi</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">done</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;Build complete. Artifacts in dist/&#34;</span></span></span></code></pre></div>
+<h3 id="release-validation-script">Release Validation Script</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e">#!/bin/bash
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e"># scripts/validate-release.sh</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>set -e
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>VERSION<span style="color:#f92672">=</span>$1
+</span></span><span style="display:flex;"><span>ARTIFACTS_DIR<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;dist&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;Validating release </span>$VERSION<span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Check all required artifacts exist</span>
+</span></span><span style="display:flex;"><span>REQUIRED_ARTIFACTS<span style="color:#f92672">=(</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;agentcli-linux-amd64.tar.gz&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;agentcli-linux-arm64.tar.gz&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;agentcli-darwin-amd64.tar.gz&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;agentcli-darwin-arm64.tar.gz&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;agentcli-windows-amd64.zip&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;checksums.txt&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> artifact in <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>REQUIRED_ARTIFACTS[@]<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>; <span style="color:#66d9ef">do</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#f92672">[[</span> ! -f <span style="color:#e6db74">&#34;</span>$ARTIFACTS_DIR<span style="color:#e6db74">/</span>$artifact<span style="color:#e6db74">&#34;</span> <span style="color:#f92672">]]</span>; <span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>        echo <span style="color:#e6db74">&#34;ERROR: Missing artifact: </span>$artifact<span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>        exit <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">fi</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">done</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Validate checksums</span>
+</span></span><span style="display:flex;"><span>cd <span style="color:#e6db74">&#34;</span>$ARTIFACTS_DIR<span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>sha256sum -c checksums.txt <span style="color:#f92672">||</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;ERROR: Checksum validation failed&#34;</span>
+</span></span><span style="display:flex;"><span>    exit <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;Release validation passed&#34;</span></span></span></code></pre></div>
+<h2 id="-hotfix-process">🚨 Hotfix Process</h2>
+<h3 id="emergency-hotfix-workflow">Emergency Hotfix Workflow</h3>
+<p>For critical production issues requiring immediate fixes:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># 1. Create hotfix branch from main</span>
+</span></span><span style="display:flex;"><span>git checkout main
+</span></span><span style="display:flex;"><span>git checkout -b hotfix/v1.2.1
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 2. Apply minimal fix</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Edit necessary files</span>
+</span></span><span style="display:flex;"><span>git add .
+</span></span><span style="display:flex;"><span>git commit -m <span style="color:#e6db74">&#34;fix: critical security vulnerability in MCP authentication&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 3. Update version</span>
+</span></span><span style="display:flex;"><span>./scripts/update-version.sh v1.2.1
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 4. Run critical tests</span>
+</span></span><span style="display:flex;"><span>make test-security
+</span></span><span style="display:flex;"><span>make test-integration
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 5. Create hotfix release</span>
+</span></span><span style="display:flex;"><span>git tag v1.2.1
+</span></span><span style="display:flex;"><span>git push origin hotfix/v1.2.1
+</span></span><span style="display:flex;"><span>git push origin v1.2.1
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 6. Merge back to main and develop</span>
+</span></span><span style="display:flex;"><span>git checkout main
+</span></span><span style="display:flex;"><span>git merge hotfix/v1.2.1
+</span></span><span style="display:flex;"><span>git push origin main
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 7. Trigger emergency release</span>
+</span></span><span style="display:flex;"><span>gh workflow run hotfix-release.yml --ref v1.2.1</span></span></code></pre></div>
+<h3 id="hotfix-criteria">Hotfix Criteria</h3>
+<p>Hotfixes are reserved for:</p>
+<ul>
+<li><strong>Security vulnerabilities</strong> (especially those with public disclosure)</li>
+<li><strong>Data corruption or loss</strong> issues</li>
+<li><strong>Complete system failures</strong> affecting all users</li>
+<li><strong>Legal compliance</strong> issues requiring immediate resolution</li>
+</ul>
+<h2 id="-release-metrics-and-kpis">📊 Release Metrics and KPIs</h2>
+<h3 id="success-metrics">Success Metrics</h3>
+<table>
+  <thead>
+      <tr>
+          <th>Metric</th>
+          <th>Target</th>
+          <th>Measurement</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td><strong>Release Frequency</strong></td>
+          <td>Monthly minor releases</td>
+          <td>Calendar tracking</td>
+      </tr>
+      <tr>
+          <td><strong>Time to Release</strong></td>
+          <td>&lt; 2 weeks from freeze</td>
+          <td>Process timing</td>
+      </tr>
+      <tr>
+          <td><strong>Release Quality</strong></td>
+          <td>&lt; 5 critical bugs post-release</td>
+          <td>Issue tracking</td>
+      </tr>
+      <tr>
+          <td><strong>Adoption Rate</strong></td>
+          <td>&gt; 50% upgrade within 30 days</td>
+          <td>Download metrics</td>
+      </tr>
+      <tr>
+          <td><strong>Rollback Rate</strong></td>
+          <td>&lt; 5% of releases</td>
+          <td>Deployment tracking</td>
+      </tr>
+  </tbody>
+</table>
+<h3 id="release-health-dashboard">Release Health Dashboard</h3>
+<p>Monitor key indicators:</p>
+<ul>
+<li>Build success rate</li>
+<li>Test pass rate</li>
+<li>Security scan results</li>
+<li>Performance regression alerts</li>
+<li>User adoption metrics</li>
+<li>Support ticket volume</li>
+</ul>
+<h2 id="-stakeholder-communication">🤝 Stakeholder Communication</h2>
+<h3 id="internal-communication">Internal Communication</h3>
+<h4 id="release-status-updates">Release Status Updates</h4>
+<p>Weekly updates during release cycle to:</p>
+<ul>
+<li>Engineering teams</li>
+<li>Product management</li>
+<li>QA/Testing teams</li>
+<li>DevOps/Infrastructure</li>
+<li>Support teams</li>
+</ul>
+<h4 id="release-readiness-review">Release Readiness Review</h4>
+<p>Final go/no-go meeting with:</p>
+<ul>
+<li>Release manager</li>
+<li>Engineering lead</li>
+<li>QA lead</li>
+<li>Product owner</li>
+<li>Support manager</li>
+</ul>
+<h3 id="external-communication">External Communication</h3>
+<h4 id="community-updates">Community Updates</h4>
+<ul>
+<li>GitHub Discussions announcements</li>
+<li>Blog post for major releases</li>
+<li>Social media updates</li>
+<li>Newsletter inclusions</li>
+</ul>
+<h4 id="user-notifications">User Notifications</h4>
+<ul>
+<li>In-app update notifications</li>
+<li>Documentation site banners</li>
+<li>CLI version check messages</li>
+<li>Community forum posts</li>
+</ul>
+<p>This comprehensive release process ensures AgenticGoKit maintains high quality and reliability while delivering regular value to users and maintaining contributor confidence.</p>
+
+  <footer class="footline">
+              <i class='fa-fw fas fa-calendar'></i> Jul 25, 2025
+  </footer>
+</article>
+        </div>
+      </main>
+    </div>
+    <aside id="R-sidebar" class="default-animation">
+      <div id="R-header-topbar" class="default-animation"></div>
+      <div id="R-header-wrapper" class="default-animation">
+        <div id="R-header" class="default-animation">
+          <a id="R-logo" class="R-default" href="/AgenticGoKitDocs/index.html">
+            <div class="logo-title">AgenticGoKit Docs</div>
+          </a>
+        </div>
+        <search><form action="/AgenticGoKitDocs/search/index.html" method="get">
+          <div class="searchbox default-animation">
+            <button class="search-detail" type="submit" title="Search (CTRL+ALT+f)"><i class="fas fa-search"></i></button>
+            <label class="a11y-only" for="R-search-by">Search</label>
+            <input data-search-input id="R-search-by" name="search-by" class="search-by" type="search" placeholder="Search...">
+            <button class="search-clear" type="button" data-search-clear="" title="Clear search"><i class="fas fa-times" title="Clear search"></i></button>
+          </div>
+        </form></search>
+      </div>
+      <div id="R-homelinks" class="default-animation homelinks">
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-homelinks">
+          <ul class="space collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/index.html"><a class="padding" href="/AgenticGoKitDocs/index.html"><i class="fa-fw fas fa-home"></i> Home</a></li>
+          </ul>
+        </div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-headercontrols">
+          <ul class="">
+          </ul>
+        </div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+      </div>
+      <div id="R-content-wrapper" class="highlightable">
+        <div class="R-sidebarmenu R-shortcutmenu-main">
+          <ul class="enlarge morespace collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/readme/index.html">content</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/index.html"><input type="checkbox" id="R-section-8fc2fd7736125e87cab8840a86c2af5a" aria-controls="R-subsections-8fc2fd7736125e87cab8840a86c2af5a" checked><label for="R-section-8fc2fd7736125e87cab8840a86c2af5a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu guides</span></label><a class="padding" href="/AgenticGoKitDocs/guides/index.html">guides</a><ul id="R-subsections-8fc2fd7736125e87cab8840a86c2af5a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/readme/index.html">guides</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/agentbasics/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/agentbasics/index.html">AgentBasics</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/examples/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/examples/index.html">Examples</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/configuration/index.html">Configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/customtools/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/customtools/index.html">CustomTools</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/providers/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/providers/index.html">Providers</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memoryprovidersetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memoryprovidersetup/index.html">MemoryProviderSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memorytroubleshooting/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memorytroubleshooting/index.html">MemoryTroubleshooting</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/embeddingmodelguide/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/embeddingmodelguide/index.html">EmbeddingModelGuide</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/ragconfiguration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/ragconfiguration/index.html">RAGConfiguration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/toolintegration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/toolintegration/index.html">ToolIntegration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/pgvectorsetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/pgvectorsetup/index.html">PgVectorSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/weaviatesetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/weaviatesetup/index.html">WeaviateSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/performance/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/performance/index.html">Performance</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/errorhandling/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/errorhandling/index.html">ErrorHandling</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/deployment/index.html"><input type="checkbox" id="R-section-ecc839349395ef3c015a12132049dff2" aria-controls="R-subsections-ecc839349395ef3c015a12132049dff2" checked><label for="R-section-ecc839349395ef3c015a12132049dff2"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu deployment</span></label><a class="padding" href="/AgenticGoKitDocs/guides/deployment/index.html">deployment</a><ul id="R-subsections-ecc839349395ef3c015a12132049dff2" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/deployment/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/deployment/readme/index.html">deployment</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/development/index.html"><input type="checkbox" id="R-section-fff1f5eca5d0a93209b9c6262762c25a" aria-controls="R-subsections-fff1f5eca5d0a93209b9c6262762c25a" checked><label for="R-section-fff1f5eca5d0a93209b9c6262762c25a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu development</span></label><a class="padding" href="/AgenticGoKitDocs/guides/development/index.html">development</a><ul id="R-subsections-fff1f5eca5d0a93209b9c6262762c25a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/readme/index.html">development</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/best-practices/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/best-practices/index.html">best-practices</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/debugging/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/debugging/index.html">debugging</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/research-assistant/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/research-assistant/index.html">research-assistant</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/testing-agents/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/testing-agents/index.html">testing-agents</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/visualization/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/visualization/index.html">visualization</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/web-search-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/web-search-integration/index.html">web-search-integration</a></li></ul></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/framework-comparison/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/framework-comparison/index.html">framework-comparison</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memory/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memory/index.html">Memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/scaffoldmemoryguide/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/scaffoldmemoryguide/index.html">ScaffoldMemoryGuide</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/setup/index.html"><input type="checkbox" id="R-section-0124aed9abb5064d53391168f3c95c22" aria-controls="R-subsections-0124aed9abb5064d53391168f3c95c22" checked><label for="R-section-0124aed9abb5064d53391168f3c95c22"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu setup</span></label><a class="padding" href="/AgenticGoKitDocs/guides/setup/index.html">setup</a><ul id="R-subsections-0124aed9abb5064d53391168f3c95c22" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/readme/index.html">setup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/llm-providers/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/llm-providers/index.html">llm-providers</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/mcp-tools/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/mcp-tools/index.html">mcp-tools</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/orchestration-configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/orchestration-configuration/index.html">orchestration-configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/vector-databases/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/vector-databases/index.html">vector-databases</a></li></ul></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/troubleshooting/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/troubleshooting/index.html">troubleshooting</a></li></ul></li>
+            <li class="parent alwaysopen " data-nav-id="/AgenticGoKitDocs/contributors/index.html"><input type="checkbox" id="R-section-190d9b328fbda7e13ab386f7a5417de5" aria-controls="R-subsections-190d9b328fbda7e13ab386f7a5417de5" checked><label for="R-section-190d9b328fbda7e13ab386f7a5417de5"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu contributors</span></label><a class="padding" href="/AgenticGoKitDocs/contributors/index.html">contributors</a><ul id="R-subsections-190d9b328fbda7e13ab386f7a5417de5" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/readme/index.html">contributors</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/contributorguide/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/contributorguide/index.html">ContributorGuide</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/codestyle/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/codestyle/index.html">CodeStyle</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/corevsinternal/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/corevsinternal/index.html">CoreVsInternal</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/addingfeatures/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/addingfeatures/index.html">AddingFeatures</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/testing/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/testing/index.html">Testing</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/docsstandards/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/docsstandards/index.html">DocsStandards</a></li>
+            <li class="active " data-nav-id="/AgenticGoKitDocs/contributors/releaseprocess/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/releaseprocess/index.html">ReleaseProcess</a></li></ul></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/roadmap/index.html"><a class="padding" href="/AgenticGoKitDocs/roadmap/index.html">ROADMAP</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/reference/index.html"><input type="checkbox" id="R-section-66002f201bef818664bb81aa67490c58" aria-controls="R-subsections-66002f201bef818664bb81aa67490c58" checked><label for="R-section-66002f201bef818664bb81aa67490c58"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu reference</span></label><a class="padding" href="/AgenticGoKitDocs/reference/index.html">reference</a><ul id="R-subsections-66002f201bef818664bb81aa67490c58" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/readme/index.html">reference</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/configuration/index.html">configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/cli/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/cli/index.html">cli</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/mcp/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/mcp/index.html">mcp</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/agent/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/agent/index.html">agent</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/memory/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/memory/index.html">memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/orchestration/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/orchestration/index.html">orchestration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/state-event/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/state-event/index.html">state-event</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/index.html"><input type="checkbox" id="R-section-e1e8c1e70c5500b49e8dda2dc550651a" aria-controls="R-subsections-e1e8c1e70c5500b49e8dda2dc550651a" checked><label for="R-section-e1e8c1e70c5500b49e8dda2dc550651a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu tutorials</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/index.html">tutorials</a><ul id="R-subsections-e1e8c1e70c5500b49e8dda2dc550651a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/readme/index.html">tutorials</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/advanced/index.html"><input type="checkbox" id="R-section-d3def5cd76adc8096d0ff9fda6b8e479" aria-controls="R-subsections-d3def5cd76adc8096d0ff9fda6b8e479" checked><label for="R-section-d3def5cd76adc8096d0ff9fda6b8e479"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu advanced</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/index.html">advanced</a><ul id="R-subsections-d3def5cd76adc8096d0ff9fda6b8e479" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/readme/index.html">advanced</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/circuit-breaker-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/circuit-breaker-patterns/index.html">circuit-breaker-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/load-balancing-scaling/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/load-balancing-scaling/index.html">load-balancing-scaling</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/retry-policies/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/retry-policies/index.html">retry-policies</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/testing-strategies/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/testing-strategies/index.html">testing-strategies</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/index.html"><input type="checkbox" id="R-section-212c6ccffb40ecdd78eb2136f98c4cac" aria-controls="R-subsections-212c6ccffb40ecdd78eb2136f98c4cac" checked><label for="R-section-212c6ccffb40ecdd78eb2136f98c4cac"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu core-concepts</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/index.html">core-concepts</a><ul id="R-subsections-212c6ccffb40ecdd78eb2136f98c4cac" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/readme/index.html">core-concepts</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/agent-lifecycle/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/agent-lifecycle/index.html">agent-lifecycle</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/error-handling/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/error-handling/index.html">error-handling</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/message-passing/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/message-passing/index.html">message-passing</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/orchestration-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/orchestration-patterns/index.html">orchestration-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/state-management/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/state-management/index.html">state-management</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/debugging/index.html"><input type="checkbox" id="R-section-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" aria-controls="R-subsections-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" checked><label for="R-section-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu debugging</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/index.html">debugging</a><ul id="R-subsections-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/readme/index.html">debugging</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/debugging-multi-agent-systems/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/debugging-multi-agent-systems/index.html">debugging-multi-agent-systems</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/logging-and-tracing/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/logging-and-tracing/index.html">logging-and-tracing</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/index.html"><input type="checkbox" id="R-section-e7f904c8b9d0f9bf1f07ca7d482d2247" aria-controls="R-subsections-e7f904c8b9d0f9bf1f07ca7d482d2247" checked><label for="R-section-e7f904c8b9d0f9bf1f07ca7d482d2247"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu getting-started</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/index.html">getting-started</a><ul id="R-subsections-e7f904c8b9d0f9bf1f07ca7d482d2247" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/readme/index.html">getting-started</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/memory-and-rag/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/memory-and-rag/index.html">memory-and-rag</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/multi-agent-collaboration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/multi-agent-collaboration/index.html">multi-agent-collaboration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/production-deployment/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/production-deployment/index.html">production-deployment</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/quickstart/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/quickstart/index.html">quickstart</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/tool-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/tool-integration/index.html">tool-integration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/your-first-agent/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/your-first-agent/index.html">your-first-agent</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/mcp/index.html"><input type="checkbox" id="R-section-153aac44598009a99dd5a60317a3eecc" aria-controls="R-subsections-153aac44598009a99dd5a60317a3eecc" checked><label for="R-section-153aac44598009a99dd5a60317a3eecc"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu mcp</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/index.html">mcp</a><ul id="R-subsections-153aac44598009a99dd5a60317a3eecc" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/readme/index.html">mcp</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/advanced-tool-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/advanced-tool-patterns/index.html">advanced-tool-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/tool-development/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/tool-development/index.html">tool-development</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/tool-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/tool-integration/index.html">tool-integration</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/index.html"><input type="checkbox" id="R-section-9c1a65f2d7b3888241dcafa51a0710e7" aria-controls="R-subsections-9c1a65f2d7b3888241dcafa51a0710e7" checked><label for="R-section-9c1a65f2d7b3888241dcafa51a0710e7"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu memory-systems</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/index.html">memory-systems</a><ul id="R-subsections-9c1a65f2d7b3888241dcafa51a0710e7" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/readme/index.html">memory-systems</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/basic-memory/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/basic-memory/index.html">basic-memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/document-ingestion/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/document-ingestion/index.html">document-ingestion</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/knowledge-bases/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/knowledge-bases/index.html">knowledge-bases</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/memory-optimization/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/memory-optimization/index.html">memory-optimization</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/rag-implementation/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/rag-implementation/index.html">rag-implementation</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/vector-databases/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/vector-databases/index.html">vector-databases</a></li></ul></li></ul></li>
+          </ul>
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-shortcuts">
+          <ul class="space collapsible-menu">
+          </ul>
+        </div>
+        <div id="R-footer-margin"></div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-footercontrols">
+          <ul class="">
+          </ul>
+        </div>
+<div id="R-footer"><p>Built with <a href="https://github.com/McShelby/hugo-theme-relearn" title="love"><i class="fas fa-heart"></i></a> by <a href="https://gohugo.io/">Hugo</a></p></div>
+      </div>
+    </aside>
+    <script src="/AgenticGoKitDocs/js/clipboard/clipboard.min.js?1753429882" defer></script>
+    <script src="/AgenticGoKitDocs/js/perfect-scrollbar/perfect-scrollbar.min.js?1753429882" defer></script>
+    <script src="/AgenticGoKitDocs/js/theme.js?1753429882" defer></script>
+  </body>
+</html>

@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en-us" dir="ltr" itemscope itemtype="http://schema.org/Article" data-r-output-format="html">
+  <head><script src="/AgenticGoKitDocs/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=AgenticGoKitDocs/livereload" data-no-instant defer></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="height=device-height, width=device-width, initial-scale=1.0, minimum-scale=1.0">
+    <meta name="generator" content="Hugo 0.148.1">
+    <meta name="generator" content="Relearn 8.0.0+9803d5122ebb3276acea823f476e9eb44f607862">
+    <meta name="description" content="AgenticGoKit Documentation The Go Framework for Building Multi-Agent AI Systems
+Build intelligent agent workflows with dynamic tool integration, multi-provider LLM support, and enterprise-grade orchestration patterns. Go-native performance meets AI agent systems.">
+    <meta name="author" content="">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="content :: AgenticGoKit Docs">
+    <meta name="twitter:description" content="AgenticGoKit Documentation The Go Framework for Building Multi-Agent AI Systems
+Build intelligent agent workflows with dynamic tool integration, multi-provider LLM support, and enterprise-grade orchestration patterns. Go-native performance meets AI agent systems.">
+    <meta property="og:url" content="http://localhost:1313/AgenticGoKitDocs/index.html">
+    <meta property="og:site_name" content="AgenticGoKit Docs">
+    <meta property="og:title" content="content :: AgenticGoKit Docs">
+    <meta property="og:description" content="AgenticGoKit Documentation The Go Framework for Building Multi-Agent AI Systems
+Build intelligent agent workflows with dynamic tool integration, multi-provider LLM support, and enterprise-grade orchestration patterns. Go-native performance meets AI agent systems.">
+    <meta property="og:locale" content="en_us">
+    <meta property="og:type" content="website">
+    <meta itemprop="name" content="content :: AgenticGoKit Docs">
+    <meta itemprop="description" content="AgenticGoKit Documentation The Go Framework for Building Multi-Agent AI Systems
+Build intelligent agent workflows with dynamic tool integration, multi-provider LLM support, and enterprise-grade orchestration patterns. Go-native performance meets AI agent systems.">
+    <meta itemprop="datePublished" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="dateModified" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="wordCount" content="1056">
+    <title>content :: AgenticGoKit Docs</title>
+    <link href="/AgenticGoKitDocs/index.xml" rel="alternate" type="application/rss+xml" title="content :: AgenticGoKit Docs">
+    <link href="/AgenticGoKitDocs/css/auto-complete/auto-complete.min.css?1753430931" rel="stylesheet">
+    <script src="/AgenticGoKitDocs/js/auto-complete/auto-complete.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/search-lunr.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/search.js?1753430931" defer></script>
+    <script>
+      window.relearn = window.relearn || {};
+      window.relearn.index_js_url="/AgenticGoKitDocs/searchindex.en.js?1753430931";
+    </script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.stemmer.support.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.multi.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.en.min.js?1753430931" defer></script>
+    <script>
+      window.relearn = window.relearn || {};
+      window.relearn.contentLangs=['en'];
+    </script>
+    <link href="/AgenticGoKitDocs/fonts/fontawesome/css/fontawesome-all.min.css?1753430931" rel="stylesheet" media="print" onload="this.media='all';this.onload=null;"><noscript><link href="/AgenticGoKitDocs/fonts/fontawesome/css/fontawesome-all.min.css?1753430931" rel="stylesheet"></noscript>
+    <link href="/AgenticGoKitDocs/css/perfect-scrollbar/perfect-scrollbar.min.css?1753430931" rel="stylesheet">
+    <link href="/AgenticGoKitDocs/css/theme.css?1753430931" rel="stylesheet">
+    <link href="/AgenticGoKitDocs/css/format-html.css?1753430931" rel="stylesheet" id="R-format-style">
+    <script>
+      window.relearn = window.relearn || {};
+      // configuration
+      window.relearn.min = ``;
+      window.relearn.path='\/index.html';
+      window.relearn.relBasePath='.';
+      window.relearn.relBaseUri='..';
+      window.relearn.absBaseUri='http:\/\/localhost:1313\/AgenticGoKitDocs';
+      window.relearn.disableAnchorCopy=false;
+      window.relearn.disableAnchorScrolling=false;
+      window.relearn.disableInlineCopyToClipboard=false;
+      window.relearn.enableBlockCodeWrap=true;
+      // legal
+      window.relearn.getItem = (s,n) => {return s.getItem(n)};
+      window.relearn.setItem = (s,n,v) => {return s.setItem(n,v)};
+      window.relearn.removeItem = (s,n) => {return s.removeItem(n)};
+      // translations
+      window.T_Copy_to_clipboard = `Copy to clipboard`;
+      window.T_Copied_to_clipboard = `Copied to clipboard!`;
+      window.T_Copy_link_to_clipboard = `Copy link to clipboard`;
+      window.T_Link_copied_to_clipboard = `Copied link to clipboard!`;
+      window.T_Reset_view = `Reset view`;
+      window.T_View_reset = `View reset!`;
+      window.T_No_results_found = `No results found for "{0}"`;
+      window.T_N_results_found = `{1} results found for "{0}"`;
+      // variant stuff
+      window.relearn.themevariants = [ 'blue' ];
+      window.relearn.customvariantname = "my-custom-variant";
+      window.relearn.changeVariant = function(variant) {
+        var oldVariant = document.documentElement.dataset.rThemeVariant;
+        window.relearn.setItem(window.localStorage, window.relearn.absBaseUri + "/variant", variant);
+        document.documentElement.dataset.rThemeVariant = variant;
+        if (oldVariant != variant) {
+          document.dispatchEvent( new CustomEvent('themeVariantLoaded', { detail: { variant, oldVariant } }) );
+          window.relearn.markVariant();
+        }
+      }
+      window.relearn.markVariant = function() {
+        var variant = window.relearn.getItem(window.localStorage, window.relearn.absBaseUri + "/variant");
+        document.querySelectorAll(".R-variantswitcher select").forEach((select) => {select.value = variant;});
+      }
+      window.relearn.initVariant = function() {
+        var variant = window.relearn.getItem(window.localStorage, window.relearn.absBaseUri + "/variant") ?? "";
+        if( variant == window.relearn.customvariantname ){
+        }else if( !variant || !window.relearn.themevariants.includes(variant) ){
+          variant = window.relearn.themevariants[0];
+          window.relearn.setItem(window.localStorage, window.relearn.absBaseUri + "/variant", variant);
+        }
+        document.documentElement.dataset.rThemeVariant = variant;
+      }
+      window.relearn.initVariant();
+      window.relearn.markVariant();
+    </script>
+  </head>
+  <body class="mobile-support html" data-url="/AgenticGoKitDocs/index.html">
+    <div id="R-body" class="default-animation">
+      <div id="R-body-overlay"></div>
+      <nav id="R-topbar">
+        <div class="topbar-wrapper">
+          <div class="topbar-sidebar-divider"></div>
+          <div class="topbar-area topbar-area-start" data-area="start">
+            <div class="topbar-button topbar-button-sidebar" data-content-empty="disable" data-width-s="show" data-width-m="hide" data-width-l="hide"><button class="topbar-control" onclick="toggleNav()" type="button" title="Menu (CTRL&#43;ALT&#43;n)"><i class="fa-fw fas fa-bars"></i></button>
+            </div>
+            <div class="topbar-button topbar-button-toc" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show"><button class="topbar-control" onclick="toggleTopbarFlyout(this)" type="button" title="Table of Contents (CTRL&#43;ALT&#43;t)"><i class="fa-fw fas fa-list-alt"></i></button>
+              <div class="topbar-content">
+                <div class="topbar-content-wrapper">
+<nav class="TableOfContents">
+  <ul>
+    <li><a href="#-5-minute-demo">⚡ 5-Minute Demo</a></li>
+    <li><a href="#-why-agenticgokit">🚀 Why AgenticGoKit?</a>
+      <ul>
+        <li><a href="#-for-developers">🏃‍♂️ <strong>For Developers</strong></a></li>
+        <li><a href="#-for-ai-systems">🤖 <strong>For AI Systems</strong></a></li>
+      </ul>
+    </li>
+    <li><a href="#-quick-start-paths">🎯 Quick Start Paths</a>
+      <ul>
+        <li><a href="#-5-minute-start">🏃‍♂️ <strong>5-Minute Start</strong></a></li>
+        <li><a href="#-learn-step-by-step">🎓 <strong>Learn Step-by-Step</strong></a></li>
+        <li><a href="#-explore-examples">🚀 <strong>Explore Examples</strong></a></li>
+      </ul>
+    </li>
+    <li><a href="#-what-you-can-build">🏗️ What You Can Build</a>
+      <ul>
+        <li><a href="#-research-assistants">🔍 <strong>Research Assistants</strong></a></li>
+        <li><a href="#-data-processing-pipelines">📊 <strong>Data Processing Pipelines</strong></a></li>
+        <li><a href="#-conversational-systems">💬 <strong>Conversational Systems</strong></a></li>
+        <li><a href="#-knowledge-bases">📚 <strong>Knowledge Bases</strong></a></li>
+      </ul>
+    </li>
+    <li><a href="#-documentation-structure">📚 Documentation Structure</a>
+      <ul>
+        <li><a href="#-learning-paths">🚀 <strong>Learning Paths</strong></a></li>
+      </ul>
+    </li>
+    <li><a href="#-documentation-sections">📖 Documentation Sections</a>
+      <ul>
+        <li><a href="#-tutorials">📚 <strong><a href="tutorials/README.md">Tutorials</a></strong></a></li>
+        <li><a href="#-how-to-guides">🛠️ <strong><a href="guides/README.md">How-To Guides</a></strong></a></li>
+        <li><a href="#-reference">📋 <strong><a href="reference/README.md">Reference</a></strong></a></li>
+        <li><a href="#-contributors">👥 <strong><a href="contributors/README.md">Contributors</a></strong></a></li>
+      </ul>
+    </li>
+    <li><a href="#-core-concepts">🧠 Core Concepts</a>
+      <ul>
+        <li><a href="#multi-agent-orchestration"><strong>Multi-Agent Orchestration</strong></a></li>
+        <li><a href="#configuration-based-setup"><strong>Configuration-Based Setup</strong></a></li>
+        <li><a href="#memory--rag-integration"><strong>Memory &amp; RAG Integration</strong></a></li>
+        <li><a href="#tool-integration-mcp"><strong>Tool Integration (MCP)</strong></a></li>
+      </ul>
+    </li>
+    <li><a href="#-current-features">🌟 Current Features</a></li>
+    <li><a href="#-installation--setup">🚀 Installation &amp; Setup</a>
+      <ul>
+        <li><a href="#option-1-cli-tool-recommended"><strong>Option 1: CLI Tool (Recommended)</strong></a></li>
+        <li><a href="#option-2-go-module"><strong>Option 2: Go Module</strong></a></li>
+        <li><a href="#environment-setup"><strong>Environment Setup</strong></a></li>
+      </ul>
+    </li>
+    <li><a href="#-community--support">🌍 Community &amp; Support</a>
+      <ul>
+        <li><a href="#-get-help">💬 <strong>Get Help</strong></a></li>
+        <li><a href="#-contribute">🤝 <strong>Contribute</strong></a></li>
+        <li><a href="#-stay-updated">📢 <strong>Stay Updated</strong></a></li>
+      </ul>
+    </li>
+    <li><a href="#-why-choose-agenticgokit">🏆 Why Choose AgenticGoKit?</a>
+      <ul>
+        <li><a href="#-performance">🚀 <strong>Performance</strong></a></li>
+        <li><a href="#-developer-experience">🛠️ <strong>Developer Experience</strong></a></li>
+        <li><a href="#-ai-first-design">🤖 <strong>AI-First Design</strong></a></li>
+        <li><a href="#-production-ready">🏭 <strong>Production Ready</strong></a></li>
+      </ul>
+    </li>
+    <li><a href="#-ready-to-build">🚀 Ready to Build?</a>
+      <ul>
+        <li><a href="#heading"><a href="tutorials/getting-started/quickstart.md">🏃‍♂️ <strong>Start with 5-Minute Quickstart</strong></a></a></li>
+        <li><a href="#heading-1"><a href="tutorials/getting-started/README.md">🎓 <strong>Follow the Learning Path</strong></a></a></li>
+        <li><a href="#heading-2"><a href="https://github.com/kunalkushwaha/agenticgokit/tree/main/examples">🚀 <strong>Explore Live Examples</strong></a></a></li>
+      </ul>
+    </li>
+    <li><a href="#license">License</a></li>
+  </ul>
+</nav>
+                </div>
+              </div>
+            </div>
+          </div>
+          <ol class="topbar-breadcrumbs breadcrumbs highlightable" itemscope itemtype="http://schema.org/BreadcrumbList"><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><span itemprop="name">content</span><meta itemprop="position" content="1"></li>
+          </ol>
+          <div class="topbar-area topbar-area-end" data-area="end">
+            <div class="topbar-button topbar-button-prev" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show"><span class="topbar-control"><i class="fa-fw fas fa-chevron-left"></i></span>
+            </div>
+            <div class="topbar-button topbar-button-next" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show"><a class="topbar-control" href="/AgenticGoKitDocs/readme/index.html" title="content (🡒)"><i class="fa-fw fas fa-chevron-right"></i></a>
+            </div>
+            <div class="topbar-button topbar-button-more" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show"><button class="topbar-control" onclick="toggleTopbarFlyout(this)" type="button" title="More"><i class="fa-fw fas fa-ellipsis-v"></i></button>
+              <div class="topbar-content">
+                <div class="topbar-content-wrapper">
+                  <div class="topbar-area topbar-area-more" data-area="more">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+      <div id="R-main-overlay"></div>
+      <main id="R-body-inner" class="highlightable page" tabindex="-1">
+        <div class="flex-block-wrapper">
+<article class="default">
+  <header class="headline">
+  </header>
+
+<h1 id="content">content</h1>
+
+<h1 id="agenticgokit-documentation">AgenticGoKit Documentation</h1>
+<p><strong>The Go Framework for Building Multi-Agent AI Systems</strong></p>
+<p><a href="https://golang.org" rel="external" target="_blank"><a href="#R-image-b9f3e4a18f67230f65b68cc402353ebf" class="lightbox-link"><img alt="Go Version" class="lazy lightbox figure-image" loading="lazy" src="https://img.shields.io/badge/Go-1.21+-blue.svg" style=" height: auto; width: auto;"></a>
+<a href="javascript:history.back();" class="lightbox-back" id="R-image-b9f3e4a18f67230f65b68cc402353ebf"><img alt="Go Version" class="lazy lightbox lightbox-image" loading="lazy" src="https://img.shields.io/badge/Go-1.21+-blue.svg"></a></a>
+<a href="https://github.com/kunalkushwaha/agenticgokit/blob/main/LICENSE" rel="external" target="_blank"><a href="#R-image-ee1ee9d8a0f53727a780c31c7e8eac1e" class="lightbox-link"><img alt="License" class="lazy lightbox figure-image" loading="lazy" src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" style=" height: auto; width: auto;"></a>
+<a href="javascript:history.back();" class="lightbox-back" id="R-image-ee1ee9d8a0f53727a780c31c7e8eac1e"><img alt="License" class="lazy lightbox lightbox-image" loading="lazy" src="https://img.shields.io/badge/License-Apache%202.0-blue.svg"></a></a>
+<a href="https://goreportcard.com/report/github.com/kunalkushwaha/agenticgokit" rel="external" target="_blank"><a href="#R-image-6cc85820cc9c08fe7ba6d2568b5fd745" class="lightbox-link"><img alt="Go Report Card" class="lazy lightbox figure-image" loading="lazy" src="https://goreportcard.com/badge/github.com/kunalkushwaha/agenticgokit" style=" height: auto; width: auto;"></a>
+<a href="javascript:history.back();" class="lightbox-back" id="R-image-6cc85820cc9c08fe7ba6d2568b5fd745"><img alt="Go Report Card" class="lazy lightbox lightbox-image" loading="lazy" src="https://goreportcard.com/badge/github.com/kunalkushwaha/agenticgokit"></a></a>
+<a href="https://github.com/kunalkushwaha/agenticgokit" rel="external" target="_blank"><a href="#R-image-0b58f94bd25af46541a6b592be90b099" class="lightbox-link"><img alt="GitHub Stars" class="lazy lightbox figure-image" loading="lazy" src="https://img.shields.io/github/stars/kunalkushwaha/agenticgokit?style=social" style=" height: auto; width: auto;"></a>
+<a href="javascript:history.back();" class="lightbox-back" id="R-image-0b58f94bd25af46541a6b592be90b099"><img alt="GitHub Stars" class="lazy lightbox lightbox-image" loading="lazy" src="https://img.shields.io/github/stars/kunalkushwaha/agenticgokit?style=social"></a></a></p>
+<p>Build intelligent agent workflows with dynamic tool integration, multi-provider LLM support, and enterprise-grade orchestration patterns. <strong>Go-native performance meets AI agent systems.</strong></p>
+<hr>
+<h2 id="-5-minute-demo">⚡ 5-Minute Demo</h2>
+<p>Create a collaborative multi-agent system with one command:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Install the CLI</span>
+</span></span><span style="display:flex;"><span>go install github.com/kunalkushwaha/agenticgokit/cmd/agentcli@latest
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Create a multi-agent research team</span>
+</span></span><span style="display:flex;"><span>agentcli create research-team --orchestration-mode collaborative --agents <span style="color:#ae81ff">3</span> --visualize
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>cd research-team
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Set your API key</span>
+</span></span><span style="display:flex;"><span>export AZURE_OPENAI_API_KEY<span style="color:#f92672">=</span>your-key-here
+</span></span><span style="display:flex;"><span>export AZURE_OPENAI_ENDPOINT<span style="color:#f92672">=</span>https://your-resource.openai.azure.com/
+</span></span><span style="display:flex;"><span>export AZURE_OPENAI_DEPLOYMENT<span style="color:#f92672">=</span>your-deployment-name
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Run the collaborative system</span>
+</span></span><span style="display:flex;"><span>go run . -m <span style="color:#e6db74">&#34;Research the latest developments in AI agent frameworks&#34;</span></span></span></code></pre></div>
+<p><strong>What you get:</strong></p>
+<ul>
+<li>✅ Complete Go project with <code>main.go</code>, <code>agentflow.toml</code>, and <code>go.mod</code></li>
+<li>✅ Three specialized agents working in parallel</li>
+<li>✅ Automatic result synthesis and error handling</li>
+<li>✅ Mermaid workflow diagrams generated</li>
+<li>✅ Production-ready project structure</li>
+</ul>
+<hr>
+<h2 id="-why-agenticgokit">🚀 Why AgenticGoKit?</h2>
+<!-- raw HTML omitted -->
+<h3 id="-for-developers">🏃‍♂️ <strong>For Developers</strong></h3>
+<ul>
+<li><strong>Go-Native Performance</strong>: Compiled binaries, efficient memory usage</li>
+<li><strong>Type Safety</strong>: Compile-time error checking prevents runtime issues</li>
+<li><strong>Simple Deployment</strong>: Single binary, no complex Python environments</li>
+<li><strong>Native Concurrency</strong>: Goroutines for true parallel agent execution</li>
+</ul>
+<!-- raw HTML omitted -->
+<h3 id="-for-ai-systems">🤖 <strong>For AI Systems</strong></h3>
+<ul>
+<li><strong>Multi-Agent Focus</strong>: Built specifically for agent orchestration</li>
+<li><strong>Memory &amp; RAG</strong>: Built-in vector databases and knowledge management</li>
+<li><strong>Tool Integration</strong>: MCP protocol for dynamic tool discovery</li>
+<li><strong>Production Ready</strong>: Error handling, monitoring, scaling patterns</li>
+</ul>
+<!-- raw HTML omitted -->
+<hr>
+<h2 id="-quick-start-paths">🎯 Quick Start Paths</h2>
+<!-- raw HTML omitted -->
+<h3 id="-5-minute-start">🏃‍♂️ <strong>5-Minute Start</strong></h3>
+<p>Get your first agent running immediately</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>go get github.com/kunalkushwaha/agenticgokit</span></span></code></pre></div>
+<p><strong><a href="/AgenticGoKitDocs/tutorials/getting-started/quickstart/index.html">→ Start Building</a></strong></p>
+<!-- raw HTML omitted -->
+<h3 id="-learn-step-by-step">🎓 <strong>Learn Step-by-Step</strong></h3>
+<p>Follow guided tutorials to master concepts</p>
+<ul>
+<li><a href="/AgenticGoKitDocs/tutorials/getting-started/your-first-agent/index.html">Your First Agent</a></li>
+<li><a href="/AgenticGoKitDocs/tutorials/getting-started/multi-agent-collaboration/index.html">Multi-Agent Collaboration</a></li>
+<li><a href="/AgenticGoKitDocs/tutorials/getting-started/memory-and-rag/index.html">Memory &amp; RAG</a></li>
+<li><a href="/AgenticGoKitDocs/tutorials/getting-started/tool-integration/index.html">Tool Integration</a></li>
+</ul>
+<p><strong><a href="/AgenticGoKitDocs/tutorials/getting-started/readme/index.html">→ Start Learning</a></strong></p>
+<!-- raw HTML omitted -->
+<h3 id="-explore-examples">🚀 <strong>Explore Examples</strong></h3>
+<p>Run working examples and demos</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>git clone https://github.com/kunalkushwaha/agenticgokit
+</span></span><span style="display:flex;"><span>cd examples/04-rag-knowledge-base
+</span></span><span style="display:flex;"><span>docker-compose up -d
+</span></span><span style="display:flex;"><span>go run main.go</span></span></code></pre></div>
+<p><strong><a href="https://github.com/kunalkushwaha/agenticgokit/tree/main/examples" rel="external" target="_blank">→ Browse Examples</a></strong></p>
+<!-- raw HTML omitted -->
+<hr>
+<h2 id="-what-you-can-build">🏗️ What You Can Build</h2>
+<!-- raw HTML omitted -->
+<h3 id="-research-assistants">🔍 <strong>Research Assistants</strong></h3>
+<p>Multi-agent research teams with web search, analysis, and synthesis</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>agentcli create research-team <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --orchestration-mode collaborative <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --agents <span style="color:#ae81ff">3</span> --mcp-enabled --visualize</span></span></code></pre></div>
+<!-- raw HTML omitted -->
+<h3 id="-data-processing-pipelines">📊 <strong>Data Processing Pipelines</strong></h3>
+<p>Sequential workflows with error handling and monitoring</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>agentcli create data-pipeline <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --orchestration-mode sequential <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --agents <span style="color:#ae81ff">4</span> --visualize</span></span></code></pre></div>
+<!-- raw HTML omitted -->
+<h3 id="-conversational-systems">💬 <strong>Conversational Systems</strong></h3>
+<p>Chat agents with persistent memory and context</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>agentcli create chat-system <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --agents <span style="color:#ae81ff">2</span> --visualize</span></span></code></pre></div>
+<!-- raw HTML omitted -->
+<h3 id="-knowledge-bases">📚 <strong>Knowledge Bases</strong></h3>
+<p>RAG-powered Q&amp;A with document ingestion and vector search</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>agentcli create knowledge-base <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --orchestration-mode collaborative <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --agents <span style="color:#ae81ff">3</span> --visualize</span></span></code></pre></div>
+<!-- raw HTML omitted -->
+<hr>
+<h2 id="-documentation-structure">📚 Documentation Structure</h2>
+<h3 id="-learning-paths">🚀 <strong>Learning Paths</strong></h3>
+<p><strong>New to AgenticGoKit?</strong> Follow these guided paths:</p>
+<h4 id="beginner-path-30-minutes"><strong>Beginner Path</strong> (30 minutes)</h4>
+<ol>
+<li><a href="/AgenticGoKitDocs/tutorials/getting-started/quickstart/index.html">5-Minute Quickstart</a> - Get running immediately</li>
+<li><a href="/AgenticGoKitDocs/tutorials/getting-started/your-first-agent/index.html">Your First Agent</a> - Build a simple agent</li>
+<li><a href="/AgenticGoKitDocs/tutorials/getting-started/multi-agent-collaboration/index.html">Multi-Agent Collaboration</a> - Agents working together</li>
+</ol>
+<h4 id="intermediate-path-1-hour"><strong>Intermediate Path</strong> (1 hour)</h4>
+<ol>
+<li><a href="/AgenticGoKitDocs/tutorials/getting-started/memory-and-rag/index.html">Memory &amp; RAG</a> - Add knowledge capabilities</li>
+<li><a href="/AgenticGoKitDocs/tutorials/getting-started/tool-integration/index.html">Tool Integration</a> - Connect external tools</li>
+<li><a href="/AgenticGoKitDocs/tutorials/core-concepts/readme/index.html">Core Concepts</a> - Deep dive into fundamentals</li>
+</ol>
+<h4 id="advanced-path-2-hours"><strong>Advanced Path</strong> (2+ hours)</h4>
+<ol>
+<li><a href="/AgenticGoKitDocs/tutorials/advanced/readme/index.html">Advanced Patterns</a> - Complex orchestration patterns</li>
+<li><a href="/AgenticGoKitDocs/tutorials/getting-started/production-deployment/index.html">Production Deployment</a> - Deploy to production</li>
+<li><a href="/AgenticGoKitDocs/tutorials/advanced/load-balancing-scaling/index.html">Performance Optimization</a> - Scale your systems</li>
+</ol>
+<hr>
+<h2 id="-documentation-sections">📖 Documentation Sections</h2>
+<!-- raw HTML omitted -->
+<h3 id="-tutorials">📚 <strong><a href="/AgenticGoKitDocs/tutorials/readme/index.html">Tutorials</a></strong></h3>
+<p>Learning-oriented guides to help you understand AgenticGoKit:</p>
+<ul>
+<li><strong><a href="/AgenticGoKitDocs/tutorials/getting-started/readme/index.html">Getting Started</a></strong> - Step-by-step beginner tutorials</li>
+<li><strong><a href="/AgenticGoKitDocs/tutorials/core-concepts/readme/index.html">Core Concepts</a></strong> - Fundamental concepts and patterns</li>
+<li><strong><a href="/AgenticGoKitDocs/tutorials/memory-systems/readme/index.html">Memory Systems</a></strong> - RAG and knowledge management</li>
+<li><strong><a href="/AgenticGoKitDocs/tutorials/mcp/readme/index.html">MCP Tools</a></strong> - Tool integration and development</li>
+<li><strong><a href="/AgenticGoKitDocs/tutorials/advanced/readme/index.html">Advanced Patterns</a></strong> - Complex orchestration patterns</li>
+<li><strong><a href="/AgenticGoKitDocs/tutorials/debugging/readme/index.html">Debugging</a></strong> - Debugging and troubleshooting</li>
+</ul>
+<!-- raw HTML omitted -->
+<h3 id="-how-to-guides">🛠️ <strong><a href="/AgenticGoKitDocs/guides/readme/index.html">How-To Guides</a></strong></h3>
+<p>Task-oriented guides for specific scenarios:</p>
+<ul>
+<li><strong><a href="/AgenticGoKitDocs/guides/setup/readme/index.html">Setup</a></strong> - Configuration and environment setup</li>
+<li><strong><a href="/AgenticGoKitDocs/guides/development/readme/index.html">Development</a></strong> - Development patterns and best practices</li>
+<li><strong><a href="/AgenticGoKitDocs/guides/deployment/readme/index.html">Deployment</a></strong> - Production deployment and scaling</li>
+<li><strong><a href="/AgenticGoKitDocs/guides/framework-comparison/index.html">Framework Comparison</a></strong> - vs LangChain, AutoGen, CrewAI</li>
+</ul>
+<!-- raw HTML omitted -->
+<h3 id="-reference">📋 <strong><a href="/AgenticGoKitDocs/reference/readme/index.html">Reference</a></strong></h3>
+<p>Information-oriented documentation:</p>
+<ul>
+<li><strong><a href="/AgenticGoKitDocs/readme/index.html">API Reference</a></strong> - Complete API documentation</li>
+<li><strong><a href="/AgenticGoKitDocs/reference/cli/index.html">CLI Reference</a></strong> - Command-line interface documentation</li>
+<li><strong><a href="/AgenticGoKitDocs/reference/api/configuration/index.html">Configuration Reference</a></strong> - Configuration options</li>
+</ul>
+<!-- raw HTML omitted -->
+<h3 id="-contributors">👥 <strong><a href="/AgenticGoKitDocs/contributors/readme/index.html">Contributors</a></strong></h3>
+<p>For developers contributing to AgenticGoKit:</p>
+<ul>
+<li><strong><a href="/AgenticGoKitDocs/contributors/contributorguide/index.html">Contributor Guide</a></strong> - Development setup and workflow</li>
+<li><strong><a href="/AgenticGoKitDocs/contributors/codestyle/index.html">Code Style</a></strong> - Coding standards and conventions</li>
+<li><strong><a href="/AgenticGoKitDocs/contributors/testing/index.html">Testing</a></strong> - Testing strategies and guidelines</li>
+</ul>
+<!-- raw HTML omitted -->
+<hr>
+<h2 id="-core-concepts">🧠 Core Concepts</h2>
+<h3 id="multi-agent-orchestration"><strong>Multi-Agent Orchestration</strong></h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Collaborative agents (parallel execution)</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">agents</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">AgentHandler</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;researcher&#34;</span>: <span style="color:#a6e22e">NewResearchAgent</span>(),
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;analyzer&#34;</span>:   <span style="color:#a6e22e">NewAnalysisAgent</span>(),
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;validator&#34;</span>:  <span style="color:#a6e22e">NewValidationAgent</span>(),
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">runner</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">CreateCollaborativeRunner</span>(<span style="color:#a6e22e">agents</span>, <span style="color:#ae81ff">30</span><span style="color:#f92672">*</span><span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Second</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">result</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">runner</span>.<span style="color:#a6e22e">ProcessEvent</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">event</span>)</span></span></code></pre></div>
+<h3 id="configuration-based-setup"><strong>Configuration-Based Setup</strong></h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span><span style="color:#75715e"># agentflow.toml</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">orchestration</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">mode</span> = <span style="color:#e6db74">&#34;collaborative&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">timeout_seconds</span> = <span style="color:#ae81ff">30</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">agent_memory</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;pgvector&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enable_rag</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">chunk_size</span> = <span style="color:#ae81ff">1000</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">mcp</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enabled</span> = <span style="color:#66d9ef">true</span></span></span></code></pre></div>
+<h3 id="memory--rag-integration"><strong>Memory &amp; RAG Integration</strong></h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Configure persistent memory with vector search</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">memory</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewMemory</span>(<span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">AgentMemoryConfig</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Provider</span>: <span style="color:#e6db74">&#34;pgvector&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">EnableRAG</span>: <span style="color:#66d9ef">true</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">EnableKnowledgeBase</span>: <span style="color:#66d9ef">true</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">ChunkSize</span>: <span style="color:#ae81ff">1000</span>,
+</span></span><span style="display:flex;"><span>})</span></span></code></pre></div>
+<h3 id="tool-integration-mcp"><strong>Tool Integration (MCP)</strong></h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// MCP tools are automatically discovered and integrated</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Agents can use web search, file operations, and custom tools</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">agent</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">agents</span>.<span style="color:#a6e22e">NewToolEnabledAgent</span>(<span style="color:#e6db74">&#34;assistant&#34;</span>, <span style="color:#a6e22e">llmProvider</span>, <span style="color:#a6e22e">toolManager</span>)</span></span></code></pre></div>
+<hr>
+<h2 id="-current-features">🌟 Current Features</h2>
+<ul>
+<li><strong>🤖 Multi-Agent Orchestration</strong>: Collaborative, sequential, loop, and mixed patterns</li>
+<li><strong>🧠 Memory &amp; RAG</strong>: PostgreSQL pgvector, Weaviate, and in-memory providers</li>
+<li><strong>🔧 Tool Integration</strong>: MCP protocol support for dynamic tool discovery</li>
+<li><strong>⚙️ Configuration Management</strong>: TOML-based configuration with environment overrides</li>
+<li><strong>📊 Workflow Visualization</strong>: Automatic Mermaid diagram generation</li>
+<li><strong>🎯 CLI Scaffolding</strong>: Generate complete projects with one command</li>
+<li><strong>📈 Production Patterns</strong>: Error handling, retry logic, and monitoring hooks</li>
+</ul>
+<hr>
+<h2 id="-installation--setup">🚀 Installation &amp; Setup</h2>
+<h3 id="option-1-cli-tool-recommended"><strong>Option 1: CLI Tool (Recommended)</strong></h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Install the CLI</span>
+</span></span><span style="display:flex;"><span>go install github.com/kunalkushwaha/agenticgokit/cmd/agentcli@latest
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Create your first project</span>
+</span></span><span style="display:flex;"><span>agentcli create my-agents --orchestration-mode collaborative --agents <span style="color:#ae81ff">3</span> --visualize
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>cd my-agents</span></span></code></pre></div>
+<h3 id="option-2-go-module"><strong>Option 2: Go Module</strong></h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>go mod init my-agent-project
+</span></span><span style="display:flex;"><span>go get github.com/kunalkushwaha/agenticgokit
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Create agentflow.toml configuration file</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># See reference/api/configuration.md for details</span></span></span></code></pre></div>
+<h3 id="environment-setup"><strong>Environment Setup</strong></h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># For Azure OpenAI (recommended)</span>
+</span></span><span style="display:flex;"><span>export AZURE_OPENAI_API_KEY<span style="color:#f92672">=</span>your-key-here
+</span></span><span style="display:flex;"><span>export AZURE_OPENAI_ENDPOINT<span style="color:#f92672">=</span>https://your-resource.openai.azure.com/
+</span></span><span style="display:flex;"><span>export AZURE_OPENAI_DEPLOYMENT<span style="color:#f92672">=</span>your-deployment-name
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># For OpenAI</span>
+</span></span><span style="display:flex;"><span>export OPENAI_API_KEY<span style="color:#f92672">=</span>your-key-here
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># For Ollama (local)</span>
+</span></span><span style="display:flex;"><span>export OLLAMA_HOST<span style="color:#f92672">=</span>http://localhost:11434</span></span></code></pre></div>
+<hr>
+<h2 id="-community--support">🌍 Community &amp; Support</h2>
+<!-- raw HTML omitted -->
+<h3 id="-get-help">💬 <strong>Get Help</strong></h3>
+<ul>
+<li><a href="https://github.com/kunalkushwaha/agenticgokit/discussions" rel="external" target="_blank">GitHub Discussions</a> - Q&amp;A and community</li>
+<li><a href="https://github.com/kunalkushwaha/agenticgokit/issues" rel="external" target="_blank">GitHub Issues</a> - Bug reports and features</li>
+<li><a href="/AgenticGoKitDocs/guides/troubleshooting/index.html">Troubleshooting Guide</a> - Common solutions</li>
+</ul>
+<!-- raw HTML omitted -->
+<h3 id="-contribute">🤝 <strong>Contribute</strong></h3>
+<ul>
+<li><a href="/AgenticGoKitDocs/contributors/contributorguide/index.html">Contributor Guide</a> - How to contribute</li>
+<li><a href="https://github.com/kunalkushwaha/agenticgokit/labels/good%20first%20issue" rel="external" target="_blank">Good First Issues</a> - Start here</li>
+<li><a href="https://github.com/kunalkushwaha/agenticgokit/projects" rel="external" target="_blank">Roadmap</a> - Future plans</li>
+</ul>
+<!-- raw HTML omitted -->
+<h3 id="-stay-updated">📢 <strong>Stay Updated</strong></h3>
+<ul>
+<li><a href="https://github.com/kunalkushwaha/agenticgokit/releases" rel="external" target="_blank">GitHub Releases</a> - Latest updates</li>
+<li><a href="https://github.com/kunalkushwaha/agenticgokit" rel="external" target="_blank">Star the Repo</a> - Get notifications</li>
+<li><a href="https://github.com/kunalkushwaha/agenticgokit/pulse" rel="external" target="_blank">Follow Development</a> - Activity</li>
+</ul>
+<!-- raw HTML omitted -->
+<hr>
+<h2 id="-why-choose-agenticgokit">🏆 Why Choose AgenticGoKit?</h2>
+<!-- raw HTML omitted -->
+<h3 id="-performance">🚀 <strong>Performance</strong></h3>
+<ul>
+<li><strong>Compiled Go</strong>: Native performance, efficient memory usage</li>
+<li><strong>Concurrent Processing</strong>: True parallel agent execution with goroutines</li>
+<li><strong>Single Binary</strong>: No complex runtime dependencies</li>
+<li><strong>Fast Startup</strong>: Instant initialization, no warm-up time</li>
+</ul>
+<!-- raw HTML omitted -->
+<h3 id="-developer-experience">🛠️ <strong>Developer Experience</strong></h3>
+<ul>
+<li><strong>Type Safety</strong>: Compile-time error checking</li>
+<li><strong>CLI Scaffolding</strong>: Generate complete projects instantly</li>
+<li><strong>Configuration-Driven</strong>: Change behavior without code changes</li>
+<li><strong>Workflow Visualization</strong>: Automatic Mermaid diagrams</li>
+</ul>
+<!-- raw HTML omitted -->
+<h3 id="-ai-first-design">🤖 <strong>AI-First Design</strong></h3>
+<ul>
+<li><strong>Multi-Agent Focus</strong>: Built specifically for agent orchestration</li>
+<li><strong>Memory Integration</strong>: Built-in vector databases and RAG</li>
+<li><strong>Tool Ecosystem</strong>: MCP protocol for dynamic capabilities</li>
+<li><strong>Production Patterns</strong>: Error handling, retry logic, monitoring</li>
+</ul>
+<!-- raw HTML omitted -->
+<h3 id="-production-ready">🏭 <strong>Production Ready</strong></h3>
+<ul>
+<li><strong>Error Handling</strong>: Comprehensive error routing and recovery</li>
+<li><strong>Monitoring</strong>: Built-in logging and tracing capabilities</li>
+<li><strong>Scalability</strong>: Designed for horizontal scaling patterns</li>
+<li><strong>Configuration</strong>: Environment-based configuration management</li>
+</ul>
+<!-- raw HTML omitted -->
+<hr>
+<h2 id="-ready-to-build">🚀 Ready to Build?</h2>
+<!-- raw HTML omitted -->
+<h3 id="heading"><a href="/AgenticGoKitDocs/tutorials/getting-started/quickstart/index.html">🏃‍♂️ <strong>Start with 5-Minute Quickstart</strong></a></h3>
+<p><em>Build your first multi-agent system in 5 minutes</em></p>
+<h3 id="heading-1"><a href="/AgenticGoKitDocs/tutorials/getting-started/readme/index.html">🎓 <strong>Follow the Learning Path</strong></a></h3>
+<p><em>Master AgenticGoKit with step-by-step tutorials</em></p>
+<h3 id="heading-2"><a href="https://github.com/kunalkushwaha/agenticgokit/tree/main/examples" rel="external" target="_blank">🚀 <strong>Explore Live Examples</strong></a></h3>
+<p><em>See working multi-agent systems in action</em></p>
+<hr>
+<p><strong><a href="https://github.com/kunalkushwaha/agenticgokit" rel="external" target="_blank">⭐ Star us on GitHub</a></strong> • <strong><a href="/AgenticGoKitDocs/readme/index.html">📖 Read the Docs</a></strong> • <strong><a href="https://github.com/kunalkushwaha/agenticgokit/discussions" rel="external" target="_blank">💬 Join Discussions</a></strong></p>
+<!-- raw HTML omitted -->
+<hr>
+<h2 id="license">License</h2>
+<p>Apache 2.0 - see <a href="https://github.com/kunalkushwaha/agenticgokit/blob/main/LICENSE" rel="external" target="_blank">LICENSE</a> for details.</p>
+<hr>
+<p><em>AgenticGoKit: Where Go performance meets AI agent intelligence.</em></p>
+
+  <footer class="footline">
+              <i class='fa-fw fas fa-calendar'></i> Jul 25, 2025
+  </footer>
+</article>
+        </div>
+      </main>
+    </div>
+    <aside id="R-sidebar" class="default-animation">
+      <div id="R-header-topbar" class="default-animation"></div>
+      <div id="R-header-wrapper" class="default-animation">
+        <div id="R-header" class="default-animation">
+          <a id="R-logo" class="R-default" href="/AgenticGoKitDocs/index.html">
+            <div class="logo-title">AgenticGoKit Docs</div>
+          </a>
+        </div>
+        <search><form action="/AgenticGoKitDocs/search/index.html" method="get">
+          <div class="searchbox default-animation">
+            <button class="search-detail" type="submit" title="Search (CTRL+ALT+f)"><i class="fas fa-search"></i></button>
+            <label class="a11y-only" for="R-search-by">Search</label>
+            <input data-search-input id="R-search-by" name="search-by" class="search-by" type="search" placeholder="Search...">
+            <button class="search-clear" type="button" data-search-clear="" title="Clear search"><i class="fas fa-times" title="Clear search"></i></button>
+          </div>
+        </form></search>
+      </div>
+      <div id="R-homelinks" class="default-animation homelinks">
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-homelinks">
+          <ul class="space collapsible-menu">
+            <li class="active " data-nav-id="/AgenticGoKitDocs/index.html"><a class="padding" href="/AgenticGoKitDocs/index.html"><i class="fa-fw fas fa-home"></i> Home</a></li>
+          </ul>
+        </div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-headercontrols">
+          <ul class="">
+          </ul>
+        </div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+      </div>
+      <div id="R-content-wrapper" class="highlightable">
+        <div class="R-sidebarmenu R-shortcutmenu-main">
+          <ul class="enlarge morespace collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/readme/index.html">content</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/index.html"><input type="checkbox" id="R-section-8fc2fd7736125e87cab8840a86c2af5a" aria-controls="R-subsections-8fc2fd7736125e87cab8840a86c2af5a" checked><label for="R-section-8fc2fd7736125e87cab8840a86c2af5a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu guides</span></label><a class="padding" href="/AgenticGoKitDocs/guides/index.html">guides</a><ul id="R-subsections-8fc2fd7736125e87cab8840a86c2af5a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/readme/index.html">guides</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/agentbasics/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/agentbasics/index.html">AgentBasics</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/examples/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/examples/index.html">Examples</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/configuration/index.html">Configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/customtools/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/customtools/index.html">CustomTools</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/providers/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/providers/index.html">Providers</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memoryprovidersetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memoryprovidersetup/index.html">MemoryProviderSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memorytroubleshooting/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memorytroubleshooting/index.html">MemoryTroubleshooting</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/embeddingmodelguide/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/embeddingmodelguide/index.html">EmbeddingModelGuide</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/ragconfiguration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/ragconfiguration/index.html">RAGConfiguration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/toolintegration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/toolintegration/index.html">ToolIntegration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/pgvectorsetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/pgvectorsetup/index.html">PgVectorSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/weaviatesetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/weaviatesetup/index.html">WeaviateSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/performance/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/performance/index.html">Performance</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/errorhandling/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/errorhandling/index.html">ErrorHandling</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/deployment/index.html"><input type="checkbox" id="R-section-ecc839349395ef3c015a12132049dff2" aria-controls="R-subsections-ecc839349395ef3c015a12132049dff2" checked><label for="R-section-ecc839349395ef3c015a12132049dff2"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu deployment</span></label><a class="padding" href="/AgenticGoKitDocs/guides/deployment/index.html">deployment</a><ul id="R-subsections-ecc839349395ef3c015a12132049dff2" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/deployment/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/deployment/readme/index.html">deployment</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/development/index.html"><input type="checkbox" id="R-section-fff1f5eca5d0a93209b9c6262762c25a" aria-controls="R-subsections-fff1f5eca5d0a93209b9c6262762c25a" checked><label for="R-section-fff1f5eca5d0a93209b9c6262762c25a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu development</span></label><a class="padding" href="/AgenticGoKitDocs/guides/development/index.html">development</a><ul id="R-subsections-fff1f5eca5d0a93209b9c6262762c25a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/readme/index.html">development</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/best-practices/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/best-practices/index.html">best-practices</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/debugging/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/debugging/index.html">debugging</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/research-assistant/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/research-assistant/index.html">research-assistant</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/testing-agents/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/testing-agents/index.html">testing-agents</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/visualization/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/visualization/index.html">visualization</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/web-search-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/web-search-integration/index.html">web-search-integration</a></li></ul></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/framework-comparison/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/framework-comparison/index.html">framework-comparison</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memory/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memory/index.html">Memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/scaffoldmemoryguide/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/scaffoldmemoryguide/index.html">ScaffoldMemoryGuide</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/setup/index.html"><input type="checkbox" id="R-section-0124aed9abb5064d53391168f3c95c22" aria-controls="R-subsections-0124aed9abb5064d53391168f3c95c22" checked><label for="R-section-0124aed9abb5064d53391168f3c95c22"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu setup</span></label><a class="padding" href="/AgenticGoKitDocs/guides/setup/index.html">setup</a><ul id="R-subsections-0124aed9abb5064d53391168f3c95c22" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/readme/index.html">setup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/llm-providers/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/llm-providers/index.html">llm-providers</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/mcp-tools/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/mcp-tools/index.html">mcp-tools</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/orchestration-configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/orchestration-configuration/index.html">orchestration-configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/vector-databases/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/vector-databases/index.html">vector-databases</a></li></ul></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/troubleshooting/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/troubleshooting/index.html">troubleshooting</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/contributors/index.html"><input type="checkbox" id="R-section-190d9b328fbda7e13ab386f7a5417de5" aria-controls="R-subsections-190d9b328fbda7e13ab386f7a5417de5" checked><label for="R-section-190d9b328fbda7e13ab386f7a5417de5"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu contributors</span></label><a class="padding" href="/AgenticGoKitDocs/contributors/index.html">contributors</a><ul id="R-subsections-190d9b328fbda7e13ab386f7a5417de5" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/readme/index.html">contributors</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/contributorguide/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/contributorguide/index.html">ContributorGuide</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/codestyle/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/codestyle/index.html">CodeStyle</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/corevsinternal/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/corevsinternal/index.html">CoreVsInternal</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/addingfeatures/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/addingfeatures/index.html">AddingFeatures</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/testing/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/testing/index.html">Testing</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/docsstandards/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/docsstandards/index.html">DocsStandards</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/reference/index.html"><input type="checkbox" id="R-section-66002f201bef818664bb81aa67490c58" aria-controls="R-subsections-66002f201bef818664bb81aa67490c58" checked><label for="R-section-66002f201bef818664bb81aa67490c58"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu reference</span></label><a class="padding" href="/AgenticGoKitDocs/reference/index.html">reference</a><ul id="R-subsections-66002f201bef818664bb81aa67490c58" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/readme/index.html">reference</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/configuration/index.html">configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/cli/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/cli/index.html">cli</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/mcp/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/mcp/index.html">mcp</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/agent/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/agent/index.html">agent</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/memory/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/memory/index.html">memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/orchestration/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/orchestration/index.html">orchestration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/state-event/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/state-event/index.html">state-event</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/index.html"><input type="checkbox" id="R-section-e1e8c1e70c5500b49e8dda2dc550651a" aria-controls="R-subsections-e1e8c1e70c5500b49e8dda2dc550651a" checked><label for="R-section-e1e8c1e70c5500b49e8dda2dc550651a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu tutorials</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/index.html">tutorials</a><ul id="R-subsections-e1e8c1e70c5500b49e8dda2dc550651a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/readme/index.html">tutorials</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/advanced/index.html"><input type="checkbox" id="R-section-d3def5cd76adc8096d0ff9fda6b8e479" aria-controls="R-subsections-d3def5cd76adc8096d0ff9fda6b8e479" checked><label for="R-section-d3def5cd76adc8096d0ff9fda6b8e479"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu advanced</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/index.html">advanced</a><ul id="R-subsections-d3def5cd76adc8096d0ff9fda6b8e479" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/readme/index.html">advanced</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/circuit-breaker-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/circuit-breaker-patterns/index.html">circuit-breaker-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/load-balancing-scaling/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/load-balancing-scaling/index.html">load-balancing-scaling</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/retry-policies/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/retry-policies/index.html">retry-policies</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/testing-strategies/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/testing-strategies/index.html">testing-strategies</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/index.html"><input type="checkbox" id="R-section-212c6ccffb40ecdd78eb2136f98c4cac" aria-controls="R-subsections-212c6ccffb40ecdd78eb2136f98c4cac" checked><label for="R-section-212c6ccffb40ecdd78eb2136f98c4cac"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu core-concepts</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/index.html">core-concepts</a><ul id="R-subsections-212c6ccffb40ecdd78eb2136f98c4cac" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/readme/index.html">core-concepts</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/agent-lifecycle/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/agent-lifecycle/index.html">agent-lifecycle</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/error-handling/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/error-handling/index.html">error-handling</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/message-passing/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/message-passing/index.html">message-passing</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/orchestration-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/orchestration-patterns/index.html">orchestration-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/state-management/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/state-management/index.html">state-management</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/debugging/index.html"><input type="checkbox" id="R-section-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" aria-controls="R-subsections-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" checked><label for="R-section-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu debugging</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/index.html">debugging</a><ul id="R-subsections-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/readme/index.html">debugging</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/debugging-multi-agent-systems/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/debugging-multi-agent-systems/index.html">debugging-multi-agent-systems</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/logging-and-tracing/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/logging-and-tracing/index.html">logging-and-tracing</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/index.html"><input type="checkbox" id="R-section-e7f904c8b9d0f9bf1f07ca7d482d2247" aria-controls="R-subsections-e7f904c8b9d0f9bf1f07ca7d482d2247" checked><label for="R-section-e7f904c8b9d0f9bf1f07ca7d482d2247"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu getting-started</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/index.html">getting-started</a><ul id="R-subsections-e7f904c8b9d0f9bf1f07ca7d482d2247" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/readme/index.html">getting-started</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/memory-and-rag/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/memory-and-rag/index.html">memory-and-rag</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/multi-agent-collaboration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/multi-agent-collaboration/index.html">multi-agent-collaboration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/production-deployment/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/production-deployment/index.html">production-deployment</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/quickstart/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/quickstart/index.html">quickstart</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/tool-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/tool-integration/index.html">tool-integration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/your-first-agent/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/your-first-agent/index.html">your-first-agent</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/mcp/index.html"><input type="checkbox" id="R-section-153aac44598009a99dd5a60317a3eecc" aria-controls="R-subsections-153aac44598009a99dd5a60317a3eecc" checked><label for="R-section-153aac44598009a99dd5a60317a3eecc"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu mcp</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/index.html">mcp</a><ul id="R-subsections-153aac44598009a99dd5a60317a3eecc" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/readme/index.html">mcp</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/advanced-tool-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/advanced-tool-patterns/index.html">advanced-tool-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/tool-development/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/tool-development/index.html">tool-development</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/tool-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/tool-integration/index.html">tool-integration</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/index.html"><input type="checkbox" id="R-section-9c1a65f2d7b3888241dcafa51a0710e7" aria-controls="R-subsections-9c1a65f2d7b3888241dcafa51a0710e7" checked><label for="R-section-9c1a65f2d7b3888241dcafa51a0710e7"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu memory-systems</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/index.html">memory-systems</a><ul id="R-subsections-9c1a65f2d7b3888241dcafa51a0710e7" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/readme/index.html">memory-systems</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/basic-memory/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/basic-memory/index.html">basic-memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/document-ingestion/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/document-ingestion/index.html">document-ingestion</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/knowledge-bases/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/knowledge-bases/index.html">knowledge-bases</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/memory-optimization/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/memory-optimization/index.html">memory-optimization</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/rag-implementation/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/rag-implementation/index.html">rag-implementation</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/vector-databases/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/vector-databases/index.html">vector-databases</a></li></ul></li></ul></li>
+          </ul>
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-shortcuts">
+          <ul class="space collapsible-menu">
+          </ul>
+        </div>
+        <div id="R-footer-margin"></div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-footercontrols">
+          <ul class="">
+          </ul>
+        </div>
+<div id="R-footer"><p>Built with <a href="https://github.com/McShelby/hugo-theme-relearn" title="love"><i class="fas fa-heart"></i></a> by <a href="https://gohugo.io/">Hugo</a></p></div>
+      </div>
+    </aside>
+    <script src="/AgenticGoKitDocs/js/clipboard/clipboard.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/perfect-scrollbar/perfect-scrollbar.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/theme.js?1753430931" defer></script>
+  </body>
+</html>

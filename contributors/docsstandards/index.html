@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en-us" dir="ltr" itemscope itemtype="http://schema.org/Article" data-r-output-format="html">
+  <head><script src="/AgenticGoKitDocs/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=AgenticGoKitDocs/livereload" data-no-instant defer></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="height=device-height, width=device-width, initial-scale=1.0, minimum-scale=1.0">
+    <meta name="generator" content="Hugo 0.148.1">
+    <meta name="generator" content="Relearn 8.0.0+9803d5122ebb3276acea823f476e9eb44f607862">
+    <meta name="description" content="Documentation Standards This guide outlines the standards and best practices for writing and maintaining AgenticGoKit documentation.
+Table of Contents Documentation Philosophy Structure and Organization Writing Guidelines Code Examples File Naming and Organization Maintenance and Updates Documentation Philosophy AgenticGoKit documentation follows these core principles:
+1. User-Centric Approach Start with the user’s goal - What are they trying to accomplish? Provide immediate value - Get users to success quickly Explain the “why” not just the “how” Include real-world context and use cases 2. Clarity and Accessibility Write for beginners while providing depth for experts Use clear, concise language - avoid jargon when possible Structure content logically with clear headings and flow Make content scannable with bullet points, code blocks, and visual breaks 3. Accuracy and Completeness Keep examples working - test all code samples Stay current with the codebase - documentation should never lag behind features Provide complete context - don’t assume prior knowledge Link between related concepts to build understanding 4. Separation of Concerns User docs focus on building with AgenticGoKit Contributor docs focus on extending AgenticGoKit API reference provides comprehensive technical details Examples demonstrate practical applications Structure and Organization Documentation Hierarchy docs/├── README.md # Main documentation index├── Architecture.md # High-level system overview├── ROADMAP.md # Project roadmap (maintained separately)├── guides/ # User-focused tutorials and guides│ ├── AgentBasics.md # Getting started with agents│ ├── Examples.md # Practical code examples│ ├── ToolIntegration.md # MCP and tool usage│ ├── Providers.md # LLM provider setup│ ├── Configuration.md # Project configuration│ ├── Production.md # Deployment and scaling│ ├── ErrorHandling.md # Error handling patterns│ ├── CustomTools.md # Building MCP servers│ └── Performance.md # Optimization guide├── api/ # Technical API reference│ ├── core.md # Core package API│ ├── agents.md # Agent interfaces│ ├── mcp.md # MCP integration API│ └── cli.md # CLI command reference├── contributors/ # Contributor-focused documentation│ ├── ContributorGuide.md # Getting started contributing│ ├── CoreVsInternal.md # Codebase architecture│ ├── Testing.md # Testing strategy│ ├── ReleaseProcess.md # Release management│ ├── AddingFeatures.md # Feature development│ ├── CodeStyle.md # Code standards│ └── DocsStandards.md # This document└── archive/ # Archived/outdated documents└── ... # Migration docs, old plans, etc.Cross-References Always provide clear navigation paths:">
+    <meta name="author" content="">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="DocsStandards :: AgenticGoKit Docs">
+    <meta name="twitter:description" content="Documentation Standards This guide outlines the standards and best practices for writing and maintaining AgenticGoKit documentation.
+Table of Contents Documentation Philosophy Structure and Organization Writing Guidelines Code Examples File Naming and Organization Maintenance and Updates Documentation Philosophy AgenticGoKit documentation follows these core principles:
+1. User-Centric Approach Start with the user’s goal - What are they trying to accomplish? Provide immediate value - Get users to success quickly Explain the “why” not just the “how” Include real-world context and use cases 2. Clarity and Accessibility Write for beginners while providing depth for experts Use clear, concise language - avoid jargon when possible Structure content logically with clear headings and flow Make content scannable with bullet points, code blocks, and visual breaks 3. Accuracy and Completeness Keep examples working - test all code samples Stay current with the codebase - documentation should never lag behind features Provide complete context - don’t assume prior knowledge Link between related concepts to build understanding 4. Separation of Concerns User docs focus on building with AgenticGoKit Contributor docs focus on extending AgenticGoKit API reference provides comprehensive technical details Examples demonstrate practical applications Structure and Organization Documentation Hierarchy docs/├── README.md # Main documentation index├── Architecture.md # High-level system overview├── ROADMAP.md # Project roadmap (maintained separately)├── guides/ # User-focused tutorials and guides│ ├── AgentBasics.md # Getting started with agents│ ├── Examples.md # Practical code examples│ ├── ToolIntegration.md # MCP and tool usage│ ├── Providers.md # LLM provider setup│ ├── Configuration.md # Project configuration│ ├── Production.md # Deployment and scaling│ ├── ErrorHandling.md # Error handling patterns│ ├── CustomTools.md # Building MCP servers│ └── Performance.md # Optimization guide├── api/ # Technical API reference│ ├── core.md # Core package API│ ├── agents.md # Agent interfaces│ ├── mcp.md # MCP integration API│ └── cli.md # CLI command reference├── contributors/ # Contributor-focused documentation│ ├── ContributorGuide.md # Getting started contributing│ ├── CoreVsInternal.md # Codebase architecture│ ├── Testing.md # Testing strategy│ ├── ReleaseProcess.md # Release management│ ├── AddingFeatures.md # Feature development│ ├── CodeStyle.md # Code standards│ └── DocsStandards.md # This document└── archive/ # Archived/outdated documents└── ... # Migration docs, old plans, etc.Cross-References Always provide clear navigation paths:">
+    <meta property="og:url" content="http://localhost:1313/AgenticGoKitDocs/contributors/docsstandards/index.html">
+    <meta property="og:site_name" content="AgenticGoKit Docs">
+    <meta property="og:title" content="DocsStandards :: AgenticGoKit Docs">
+    <meta property="og:description" content="Documentation Standards This guide outlines the standards and best practices for writing and maintaining AgenticGoKit documentation.
+Table of Contents Documentation Philosophy Structure and Organization Writing Guidelines Code Examples File Naming and Organization Maintenance and Updates Documentation Philosophy AgenticGoKit documentation follows these core principles:
+1. User-Centric Approach Start with the user’s goal - What are they trying to accomplish? Provide immediate value - Get users to success quickly Explain the “why” not just the “how” Include real-world context and use cases 2. Clarity and Accessibility Write for beginners while providing depth for experts Use clear, concise language - avoid jargon when possible Structure content logically with clear headings and flow Make content scannable with bullet points, code blocks, and visual breaks 3. Accuracy and Completeness Keep examples working - test all code samples Stay current with the codebase - documentation should never lag behind features Provide complete context - don’t assume prior knowledge Link between related concepts to build understanding 4. Separation of Concerns User docs focus on building with AgenticGoKit Contributor docs focus on extending AgenticGoKit API reference provides comprehensive technical details Examples demonstrate practical applications Structure and Organization Documentation Hierarchy docs/├── README.md # Main documentation index├── Architecture.md # High-level system overview├── ROADMAP.md # Project roadmap (maintained separately)├── guides/ # User-focused tutorials and guides│ ├── AgentBasics.md # Getting started with agents│ ├── Examples.md # Practical code examples│ ├── ToolIntegration.md # MCP and tool usage│ ├── Providers.md # LLM provider setup│ ├── Configuration.md # Project configuration│ ├── Production.md # Deployment and scaling│ ├── ErrorHandling.md # Error handling patterns│ ├── CustomTools.md # Building MCP servers│ └── Performance.md # Optimization guide├── api/ # Technical API reference│ ├── core.md # Core package API│ ├── agents.md # Agent interfaces│ ├── mcp.md # MCP integration API│ └── cli.md # CLI command reference├── contributors/ # Contributor-focused documentation│ ├── ContributorGuide.md # Getting started contributing│ ├── CoreVsInternal.md # Codebase architecture│ ├── Testing.md # Testing strategy│ ├── ReleaseProcess.md # Release management│ ├── AddingFeatures.md # Feature development│ ├── CodeStyle.md # Code standards│ └── DocsStandards.md # This document└── archive/ # Archived/outdated documents└── ... # Migration docs, old plans, etc.Cross-References Always provide clear navigation paths:">
+    <meta property="og:locale" content="en_us">
+    <meta property="og:type" content="article">
+    <meta property="article:section" content="contributors">
+    <meta property="article:published_time" content="2025-07-25T00:00:00+00:00">
+    <meta property="article:modified_time" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="name" content="DocsStandards :: AgenticGoKit Docs">
+    <meta itemprop="description" content="Documentation Standards This guide outlines the standards and best practices for writing and maintaining AgenticGoKit documentation.
+Table of Contents Documentation Philosophy Structure and Organization Writing Guidelines Code Examples File Naming and Organization Maintenance and Updates Documentation Philosophy AgenticGoKit documentation follows these core principles:
+1. User-Centric Approach Start with the user’s goal - What are they trying to accomplish? Provide immediate value - Get users to success quickly Explain the “why” not just the “how” Include real-world context and use cases 2. Clarity and Accessibility Write for beginners while providing depth for experts Use clear, concise language - avoid jargon when possible Structure content logically with clear headings and flow Make content scannable with bullet points, code blocks, and visual breaks 3. Accuracy and Completeness Keep examples working - test all code samples Stay current with the codebase - documentation should never lag behind features Provide complete context - don’t assume prior knowledge Link between related concepts to build understanding 4. Separation of Concerns User docs focus on building with AgenticGoKit Contributor docs focus on extending AgenticGoKit API reference provides comprehensive technical details Examples demonstrate practical applications Structure and Organization Documentation Hierarchy docs/├── README.md # Main documentation index├── Architecture.md # High-level system overview├── ROADMAP.md # Project roadmap (maintained separately)├── guides/ # User-focused tutorials and guides│ ├── AgentBasics.md # Getting started with agents│ ├── Examples.md # Practical code examples│ ├── ToolIntegration.md # MCP and tool usage│ ├── Providers.md # LLM provider setup│ ├── Configuration.md # Project configuration│ ├── Production.md # Deployment and scaling│ ├── ErrorHandling.md # Error handling patterns│ ├── CustomTools.md # Building MCP servers│ └── Performance.md # Optimization guide├── api/ # Technical API reference│ ├── core.md # Core package API│ ├── agents.md # Agent interfaces│ ├── mcp.md # MCP integration API│ └── cli.md # CLI command reference├── contributors/ # Contributor-focused documentation│ ├── ContributorGuide.md # Getting started contributing│ ├── CoreVsInternal.md # Codebase architecture│ ├── Testing.md # Testing strategy│ ├── ReleaseProcess.md # Release management│ ├── AddingFeatures.md # Feature development│ ├── CodeStyle.md # Code standards│ └── DocsStandards.md # This document└── archive/ # Archived/outdated documents└── ... # Migration docs, old plans, etc.Cross-References Always provide clear navigation paths:">
+    <meta itemprop="datePublished" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="dateModified" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="wordCount" content="1695">
+    <title>DocsStandards :: AgenticGoKit Docs</title>
+    <link href="/AgenticGoKitDocs/css/auto-complete/auto-complete.min.css?1753430931" rel="stylesheet">
+    <script src="/AgenticGoKitDocs/js/auto-complete/auto-complete.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/search-lunr.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/search.js?1753430931" defer></script>
+    <script>
+      window.relearn = window.relearn || {};
+      window.relearn.index_js_url="/AgenticGoKitDocs/searchindex.en.js?1753430931";
+    </script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.stemmer.support.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.multi.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.en.min.js?1753430931" defer></script>
+    <script>
+      window.relearn = window.relearn || {};
+      window.relearn.contentLangs=['en'];
+    </script>
+    <link href="/AgenticGoKitDocs/fonts/fontawesome/css/fontawesome-all.min.css?1753430931" rel="stylesheet" media="print" onload="this.media='all';this.onload=null;"><noscript><link href="/AgenticGoKitDocs/fonts/fontawesome/css/fontawesome-all.min.css?1753430931" rel="stylesheet"></noscript>
+    <link href="/AgenticGoKitDocs/css/perfect-scrollbar/perfect-scrollbar.min.css?1753430931" rel="stylesheet">
+    <link href="/AgenticGoKitDocs/css/theme.css?1753430931" rel="stylesheet">
+    <link href="/AgenticGoKitDocs/css/format-html.css?1753430931" rel="stylesheet" id="R-format-style">
+    <script>
+      window.relearn = window.relearn || {};
+      // configuration
+      window.relearn.min = ``;
+      window.relearn.path='\/contributors\/docsstandards\/index.html';
+      window.relearn.relBasePath='..\/..';
+      window.relearn.relBaseUri='..\/..\/..';
+      window.relearn.absBaseUri='http:\/\/localhost:1313\/AgenticGoKitDocs';
+      window.relearn.disableAnchorCopy=false;
+      window.relearn.disableAnchorScrolling=false;
+      window.relearn.disableInlineCopyToClipboard=false;
+      window.relearn.enableBlockCodeWrap=true;
+      // legal
+      window.relearn.getItem = (s,n) => {return s.getItem(n)};
+      window.relearn.setItem = (s,n,v) => {return s.setItem(n,v)};
+      window.relearn.removeItem = (s,n) => {return s.removeItem(n)};
+      // translations
+      window.T_Copy_to_clipboard = `Copy to clipboard`;
+      window.T_Copied_to_clipboard = `Copied to clipboard!`;
+      window.T_Copy_link_to_clipboard = `Copy link to clipboard`;
+      window.T_Link_copied_to_clipboard = `Copied link to clipboard!`;
+      window.T_Reset_view = `Reset view`;
+      window.T_View_reset = `View reset!`;
+      window.T_No_results_found = `No results found for "{0}"`;
+      window.T_N_results_found = `{1} results found for "{0}"`;
+      // variant stuff
+      window.relearn.themevariants = [ 'blue' ];
+      window.relearn.customvariantname = "my-custom-variant";
+      window.relearn.changeVariant = function(variant) {
+        var oldVariant = document.documentElement.dataset.rThemeVariant;
+        window.relearn.setItem(window.localStorage, window.relearn.absBaseUri + "/variant", variant);
+        document.documentElement.dataset.rThemeVariant = variant;
+        if (oldVariant != variant) {
+          document.dispatchEvent( new CustomEvent('themeVariantLoaded', { detail: { variant, oldVariant } }) );
+          window.relearn.markVariant();
+        }
+      }
+      window.relearn.markVariant = function() {
+        var variant = window.relearn.getItem(window.localStorage, window.relearn.absBaseUri + "/variant");
+        document.querySelectorAll(".R-variantswitcher select").forEach((select) => {select.value = variant;});
+      }
+      window.relearn.initVariant = function() {
+        var variant = window.relearn.getItem(window.localStorage, window.relearn.absBaseUri + "/variant") ?? "";
+        if( variant == window.relearn.customvariantname ){
+        }else if( !variant || !window.relearn.themevariants.includes(variant) ){
+          variant = window.relearn.themevariants[0];
+          window.relearn.setItem(window.localStorage, window.relearn.absBaseUri + "/variant", variant);
+        }
+        document.documentElement.dataset.rThemeVariant = variant;
+      }
+      window.relearn.initVariant();
+      window.relearn.markVariant();
+    </script>
+  </head>
+  <body class="mobile-support html" data-url="/AgenticGoKitDocs/contributors/docsstandards/index.html">
+    <div id="R-body" class="default-animation">
+      <div id="R-body-overlay"></div>
+      <nav id="R-topbar">
+        <div class="topbar-wrapper">
+          <div class="topbar-sidebar-divider"></div>
+          <div class="topbar-area topbar-area-start" data-area="start">
+            <div class="topbar-button topbar-button-sidebar" data-content-empty="disable" data-width-s="show" data-width-m="hide" data-width-l="hide"><button class="topbar-control" onclick="toggleNav()" type="button" title="Menu (CTRL&#43;ALT&#43;n)"><i class="fa-fw fas fa-bars"></i></button>
+            </div>
+            <div class="topbar-button topbar-button-toc" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show"><button class="topbar-control" onclick="toggleTopbarFlyout(this)" type="button" title="Table of Contents (CTRL&#43;ALT&#43;t)"><i class="fa-fw fas fa-list-alt"></i></button>
+              <div class="topbar-content">
+                <div class="topbar-content-wrapper">
+<nav class="TableOfContents">
+  <ul>
+    <li><a href="#table-of-contents">Table of Contents</a></li>
+    <li><a href="#documentation-philosophy">Documentation Philosophy</a>
+      <ul>
+        <li><a href="#1-user-centric-approach">1. User-Centric Approach</a></li>
+        <li><a href="#2-clarity-and-accessibility">2. Clarity and Accessibility</a></li>
+        <li><a href="#3-accuracy-and-completeness">3. Accuracy and Completeness</a></li>
+        <li><a href="#4-separation-of-concerns">4. Separation of Concerns</a></li>
+      </ul>
+    </li>
+    <li><a href="#structure-and-organization">Structure and Organization</a>
+      <ul>
+        <li><a href="#documentation-hierarchy">Documentation Hierarchy</a></li>
+        <li><a href="#cross-references">Cross-References</a></li>
+      </ul>
+    </li>
+    <li><a href="#writing-guidelines">Writing Guidelines</a>
+      <ul>
+        <li><a href="#voice-and-tone">Voice and Tone</a></li>
+        <li><a href="#structure-templates">Structure Templates</a></li>
+      </ul>
+    </li>
+    <li><a href="#functions">Functions</a>
+      <ul>
+        <li><a href="#functionname">FunctionName</a></li>
+        <li><a href="#error-handling-in-examples">Error Handling in Examples</a></li>
+        <li><a href="#configuration-examples">Configuration Examples</a></li>
+      </ul>
+    </li>
+    <li><a href="#file-naming-and-organization">File Naming and Organization</a>
+      <ul>
+        <li><a href="#file-naming-conventions">File Naming Conventions</a></li>
+        <li><a href="#cross-file-dependencies">Cross-File Dependencies</a></li>
+      </ul>
+    </li>
+    <li><a href="#maintenance-and-updates">Maintenance and Updates</a>
+      <ul>
+        <li><a href="#keeping-documentation-current">Keeping Documentation Current</a></li>
+        <li><a href="#documentation-review-process">Documentation Review Process</a></li>
+        <li><a href="#measuring-documentation-quality">Measuring Documentation Quality</a></li>
+        <li><a href="#common-maintenance-tasks">Common Maintenance Tasks</a></li>
+      </ul>
+    </li>
+    <li><a href="#style-reference">Style Reference</a>
+      <ul>
+        <li><a href="#formatting-standards">Formatting Standards</a></li>
+        <li><a href="#common-terminology">Common Terminology</a></li>
+      </ul>
+    </li>
+    <li><a href="#templates-and-tools">Templates and Tools</a>
+      <ul>
+        <li><a href="#documentation-templates">Documentation Templates</a></li>
+        <li><a href="#useful-tools">Useful Tools</a></li>
+      </ul>
+    </li>
+    <li><a href="#contributing-to-documentation">Contributing to Documentation</a>
+      <ul>
+        <li><a href="#getting-started">Getting Started</a></li>
+        <li><a href="#making-changes">Making Changes</a></li>
+        <li><a href="#review-process">Review Process</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+                </div>
+              </div>
+            </div>
+          </div>
+          <ol class="topbar-breadcrumbs breadcrumbs highlightable" itemscope itemtype="http://schema.org/BreadcrumbList"><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="/AgenticGoKitDocs/index.html"><span itemprop="name">content</span></a><meta itemprop="position" content="1">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="/AgenticGoKitDocs/contributors/index.html"><span itemprop="name">contributors</span></a><meta itemprop="position" content="2">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><span itemprop="name">DocsStandards</span><meta itemprop="position" content="3"></li>
+          </ol>
+          <div class="topbar-area topbar-area-end" data-area="end">
+            <div class="topbar-button topbar-button-prev" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show"><a class="topbar-control" href="/AgenticGoKitDocs/contributors/testing/index.html" title="Testing (🡐)"><i class="fa-fw fas fa-chevron-left"></i></a>
+            </div>
+            <div class="topbar-button topbar-button-next" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show"><a class="topbar-control" href="/AgenticGoKitDocs/reference/index.html" title="reference (🡒)"><i class="fa-fw fas fa-chevron-right"></i></a>
+            </div>
+            <div class="topbar-button topbar-button-more" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show"><button class="topbar-control" onclick="toggleTopbarFlyout(this)" type="button" title="More"><i class="fa-fw fas fa-ellipsis-v"></i></button>
+              <div class="topbar-content">
+                <div class="topbar-content-wrapper">
+                  <div class="topbar-area topbar-area-more" data-area="more">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+      <div id="R-main-overlay"></div>
+      <main id="R-body-inner" class="highlightable contributors" tabindex="-1">
+        <div class="flex-block-wrapper">
+<article class="default">
+  <header class="headline">
+  </header>
+
+<h1 id="docsstandards">DocsStandards</h1>
+
+<h1 id="documentation-standards">Documentation Standards</h1>
+<p>This guide outlines the standards and best practices for writing and maintaining AgenticGoKit documentation.</p>
+<h2 id="table-of-contents">Table of Contents</h2>
+<ul>
+<li><a href="/AgenticGoKitDocs/contributors/docsstandards/index.html#documentation-philosophy">Documentation Philosophy</a></li>
+<li><a href="/AgenticGoKitDocs/contributors/docsstandards/index.html#structure-and-organization">Structure and Organization</a></li>
+<li><a href="/AgenticGoKitDocs/contributors/docsstandards/index.html#writing-guidelines">Writing Guidelines</a></li>
+<li><a href="/AgenticGoKitDocs/contributors/docsstandards/index.html#code-examples">Code Examples</a></li>
+<li><a href="/AgenticGoKitDocs/contributors/docsstandards/index.html#file-naming-and-organization">File Naming and Organization</a></li>
+<li><a href="/AgenticGoKitDocs/contributors/docsstandards/index.html#maintenance-and-updates">Maintenance and Updates</a></li>
+</ul>
+<h2 id="documentation-philosophy">Documentation Philosophy</h2>
+<p>AgenticGoKit documentation follows these core principles:</p>
+<h3 id="1-user-centric-approach">1. User-Centric Approach</h3>
+<ul>
+<li><strong>Start with the user&rsquo;s goal</strong> - What are they trying to accomplish?</li>
+<li><strong>Provide immediate value</strong> - Get users to success quickly</li>
+<li><strong>Explain the &ldquo;why&rdquo;</strong> not just the &ldquo;how&rdquo;</li>
+<li><strong>Include real-world context</strong> and use cases</li>
+</ul>
+<h3 id="2-clarity-and-accessibility">2. Clarity and Accessibility</h3>
+<ul>
+<li><strong>Write for beginners</strong> while providing depth for experts</li>
+<li><strong>Use clear, concise language</strong> - avoid jargon when possible</li>
+<li><strong>Structure content logically</strong> with clear headings and flow</li>
+<li><strong>Make content scannable</strong> with bullet points, code blocks, and visual breaks</li>
+</ul>
+<h3 id="3-accuracy-and-completeness">3. Accuracy and Completeness</h3>
+<ul>
+<li><strong>Keep examples working</strong> - test all code samples</li>
+<li><strong>Stay current</strong> with the codebase - documentation should never lag behind features</li>
+<li><strong>Provide complete context</strong> - don&rsquo;t assume prior knowledge</li>
+<li><strong>Link between related concepts</strong> to build understanding</li>
+</ul>
+<h3 id="4-separation-of-concerns">4. Separation of Concerns</h3>
+<ul>
+<li><strong>User docs</strong> focus on building with AgenticGoKit</li>
+<li><strong>Contributor docs</strong> focus on extending AgenticGoKit</li>
+<li><strong>API reference</strong> provides comprehensive technical details</li>
+<li><strong>Examples</strong> demonstrate practical applications</li>
+</ul>
+<h2 id="structure-and-organization">Structure and Organization</h2>
+<h3 id="documentation-hierarchy">Documentation Hierarchy</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0"><code>docs/
+├── README.md                    # Main documentation index
+├── Architecture.md              # High-level system overview
+├── ROADMAP.md                   # Project roadmap (maintained separately)
+├── guides/                      # User-focused tutorials and guides
+│   ├── AgentBasics.md          # Getting started with agents
+│   ├── Examples.md             # Practical code examples
+│   ├── ToolIntegration.md      # MCP and tool usage
+│   ├── Providers.md            # LLM provider setup
+│   ├── Configuration.md        # Project configuration
+│   ├── Production.md           # Deployment and scaling
+│   ├── ErrorHandling.md        # Error handling patterns
+│   ├── CustomTools.md          # Building MCP servers
+│   └── Performance.md          # Optimization guide
+├── api/                        # Technical API reference
+│   ├── core.md                 # Core package API
+│   ├── agents.md              # Agent interfaces
+│   ├── mcp.md                 # MCP integration API
+│   └── cli.md                 # CLI command reference
+├── contributors/               # Contributor-focused documentation
+│   ├── ContributorGuide.md    # Getting started contributing
+│   ├── CoreVsInternal.md      # Codebase architecture
+│   ├── Testing.md             # Testing strategy
+│   ├── ReleaseProcess.md      # Release management
+│   ├── AddingFeatures.md      # Feature development
+│   ├── CodeStyle.md           # Code standards
+│   └── DocsStandards.md       # This document
+└── archive/                   # Archived/outdated documents
+    └── ...                    # Migration docs, old plans, etc.</code></pre></div>
+<h3 id="cross-references">Cross-References</h3>
+<p>Always provide clear navigation paths:</p>
+<ul>
+<li><strong>Forward references</strong>: Link to related concepts users will need</li>
+<li><strong>Backward references</strong>: Link to prerequisite knowledge</li>
+<li><strong>Lateral references</strong>: Link to alternative approaches or related topics</li>
+</ul>
+<p>Example:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-markdown" data-lang="markdown"><span style="display:flex;"><span><span style="color:#75715e">## Configuration
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span>Before configuring agents, make sure you&#39;ve completed the [<span style="color:#f92672">basic setup</span>](<span style="color:#a6e22e">../guides/AgentBasics.md#setup</span>).
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>For production deployments, see the [<span style="color:#f92672">Production Guide</span>](<span style="color:#a6e22e">Production.md</span>) for advanced configuration options.
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Related: [<span style="color:#f92672">LLM Providers</span>](<span style="color:#a6e22e">../guides/Providers.md</span>) | [<span style="color:#f92672">Error Handling</span>](<span style="color:#a6e22e">../guides/ErrorHandling.md</span>)</span></span></code></pre></div>
+<h2 id="writing-guidelines">Writing Guidelines</h2>
+<h3 id="voice-and-tone">Voice and Tone</h3>
+<p><strong>For User Documentation:</strong></p>
+<ul>
+<li><strong>Encouraging and supportive</strong> - &ldquo;You can easily&hellip;&rdquo;</li>
+<li><strong>Direct and action-oriented</strong> - Use imperative mood (&ldquo;Create an agent&hellip;&rdquo;)</li>
+<li><strong>Confident but not arrogant</strong> - &ldquo;This approach works well&rdquo; vs &ldquo;This is the only way&rdquo;</li>
+</ul>
+<p><strong>For Contributor Documentation:</strong></p>
+<ul>
+<li><strong>Technical but approachable</strong> - Assume programming knowledge but explain AgenticGoKit-specific concepts</li>
+<li><strong>Collaborative</strong> - &ldquo;We use this pattern because&hellip;&rdquo;</li>
+<li><strong>Detailed and precise</strong> - Include implementation details and reasoning</li>
+</ul>
+<h3 id="structure-templates">Structure Templates</h3>
+<p><strong>Guide Template:</strong></p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-markdown" data-lang="markdown"><span style="display:flex;"><span># Guide Title
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Brief description of what this guide covers and who it&#39;s for.
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## Table of Contents
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">-</span> [<span style="color:#f92672">Section 1</span>](<span style="color:#a6e22e">#section-1</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">-</span> [<span style="color:#f92672">Section 2</span>](<span style="color:#a6e22e">#section-2</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## Prerequisites
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">-</span> What users need to know/have before starting
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">-</span> Links to required setup
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## Main Content
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">### Step-by-step sections with:
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">-</span> Clear headings
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">-</span> Code examples
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">-</span> Expected output
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">-</span> Common pitfalls
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## Next Steps
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">-</span> Where to go from here
+</span></span><span style="display:flex;"><span>- Related guides</span></span></code></pre></div>
+<p><strong>API Reference Template:</strong></p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-markdown" data-lang="markdown"><span style="display:flex;"><span># Package/Interface Name
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Overview of the package/interface purpose.
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## Types
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">### TypeName
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>Description of the type and its purpose.
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>```go
+</span></span><span style="display:flex;"><span>type TypeName struct {
+</span></span><span style="display:flex;"><span>    Field1 string // Description
+</span></span><span style="display:flex;"><span>    Field2 int    // Description
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<p><strong>Fields:</strong></p>
+<ul>
+<li><code>Field1</code>: Detailed description, constraints, examples</li>
+<li><code>Field2</code>: Detailed description, constraints, examples</li>
+</ul>
+<h2 id="functions">Functions</h2>
+<h3 id="functionname">FunctionName</h3>
+<p>Brief description.</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">FunctionName</span>(<span style="color:#a6e22e">param1</span> <span style="color:#a6e22e">Type1</span>, <span style="color:#a6e22e">param2</span> <span style="color:#a6e22e">Type2</span>) (<span style="color:#a6e22e">ReturnType</span>, <span style="color:#66d9ef">error</span>)</span></span></code></pre></div>
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><code>param1</code>: Description and constraints</li>
+<li><code>param2</code>: Description and constraints</li>
+</ul>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>ReturnType</code>: Description of return value</li>
+<li><code>error</code>: When and why errors occur</li>
+</ul>
+<p><strong>Example:</strong></p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Working example with context</span></span></span></code></pre></div>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0"><code>### Headings and Structure
+
+- **Use consistent heading levels**
+  - H1 (`#`) for document title
+  - H2 (`##`) for major sections
+  - H3 (`###`) for subsections
+  - H4+ for detailed breakdowns if needed
+
+- **Make headings descriptive**
+  - Good: &#34;Creating Your First Agent&#34;
+  - Bad: &#34;Getting Started&#34;
+
+- **Use parallel structure** in lists and headings
+  - &#34;Creating agents&#34;, &#34;Configuring tools&#34;, &#34;Running workflows&#34;
+  - Not: &#34;Create agents&#34;, &#34;Tool configuration&#34;, &#34;How to run workflows&#34;
+
+### Language and Style
+
+**Do:**
+- Use active voice: &#34;The agent processes the request&#34;
+- Use present tense: &#34;The function returns a result&#34;
+- Use specific verbs: &#34;configure&#34;, &#34;initialize&#34;, &#34;execute&#34;
+- Define acronyms on first use: &#34;Model Context Protocol (MCP)&#34;
+- Include units and constraints: &#34;timeout (30 seconds max)&#34;, &#34;1-100 agents&#34;
+
+**Don&#39;t:**
+- Use passive voice unnecessarily: &#34;The request is processed by the agent&#34;
+- Use future tense unless discussing roadmap: &#34;The function will return&#34;
+- Use vague language: &#34;some&#34;, &#34;various&#34;, &#34;might&#34;
+- Assume knowledge of other systems without context
+
+## Code Examples
+
+### Principles
+
+1. **All examples must work** - Test every code sample
+2. **Show complete context** - Include imports, setup, error handling
+3. **Focus on the concept** - Don&#39;t include unrelated complexity
+4. **Include expected output** when relevant
+
+### Code Block Standards
+
+**Complete, runnable examples:**
+```go
+package main
+
+import (
+    &#34;context&#34;
+    &#34;fmt&#34;
+    &#34;log&#34;
+    
+    &#34;github.com/kunalkushwaha/agenticgokit/core&#34;
+)
+
+func main() {
+    // Initialize MCP for tool discovery
+    core.QuickStartMCP()
+    
+    // Create agent with Azure OpenAI
+    config := core.LLMConfig{
+        Provider: &#34;azure-openai&#34;,
+        APIKey:   &#34;your-api-key&#34;,
+        BaseURL:  &#34;https://your-resource.openai.azure.com&#34;,
+    }
+    
+    llm := core.NewAzureOpenAIAdapter(config)
+    agent, err := core.NewMCPAgent(&#34;helper&#34;, llm)
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    // Create state and run agent
+    state := core.NewState()
+    state.Set(&#34;query&#34;, &#34;What is the capital of France?&#34;)
+    
+    result, err := agent.Run(context.Background(), state)
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    fmt.Println(&#34;Response:&#34;, result.GetResult())
+}
+
+// Expected output:
+// Response: The capital of France is Paris.</code></pre></div>
+<p><strong>Code snippets (when full context isn&rsquo;t needed):</strong></p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Create an agent</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">agent</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewMCPAgent</span>(<span style="color:#e6db74">&#34;helper&#34;</span>, <span style="color:#a6e22e">llmProvider</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h3 id="error-handling-in-examples">Error Handling in Examples</h3>
+<p>Always show proper error handling:</p>
+<p><strong>Good:</strong></p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#a6e22e">result</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">agent</span>.<span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">state</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Agent failed: %v&#34;</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<p><strong>Bad:</strong></p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#a6e22e">result</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">agent</span>.<span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">state</span>) <span style="color:#75715e">// Don&#39;t ignore errors in docs</span></span></span></code></pre></div>
+<h3 id="configuration-examples">Configuration Examples</h3>
+<p>Use realistic but safe configuration values:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Good - Shows structure with placeholder values</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">config</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">LLMConfig</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Provider</span>: <span style="color:#e6db74">&#34;azure-openai&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">APIKey</span>:   <span style="color:#e6db74">&#34;your-api-key&#34;</span>,                    <span style="color:#75715e">// Clear placeholder</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">BaseURL</span>:  <span style="color:#e6db74">&#34;https://your-resource.openai.azure.com&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Model</span>:    <span style="color:#e6db74">&#34;gpt-4&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Timeout</span>:  <span style="color:#ae81ff">30</span> <span style="color:#f92672">*</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Second</span>,
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Bad - Fake values that might be confusing</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">config</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">LLMConfig</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">APIKey</span>:  <span style="color:#e6db74">&#34;sk-abc123&#34;</span>,                        <span style="color:#75715e">// Looks real but fake</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">BaseURL</span>: <span style="color:#e6db74">&#34;https://api.openai.com&#34;</span>,           <span style="color:#75715e">// Wrong for Azure</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h2 id="file-naming-and-organization">File Naming and Organization</h2>
+<h3 id="file-naming-conventions">File Naming Conventions</h3>
+<ul>
+<li><strong>Use PascalCase</strong> for multi-word concepts: <code>ErrorHandling.md</code>, <code>CustomTools.md</code></li>
+<li><strong>Be descriptive</strong> but concise: <code>AgentBasics.md</code> not <code>Agents.md</code></li>
+<li><strong>Avoid abbreviations</strong> unless they&rsquo;re widely known: <code>Configuration.md</code> not <code>Config.md</code></li>
+<li><strong>Group related files</strong> in subdirectories</li>
+</ul>
+<h3 id="cross-file-dependencies">Cross-File Dependencies</h3>
+<p><strong>Minimize dependencies</strong> between guides:</p>
+<ul>
+<li>Each guide should be mostly self-contained</li>
+<li>Link to prerequisites clearly</li>
+<li>Don&rsquo;t duplicate content - reference other guides instead</li>
+</ul>
+<p><strong>Good dependency pattern:</strong></p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0"><code>AgentBasics.md (foundation)
+    ↓
+Examples.md (builds on basics)
+    ↓
+Production.md (builds on examples)</code></pre></div>
+<p><strong>Bad dependency pattern:</strong></p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0"><code>AgentBasics.md ←→ ToolIntegration.md ←→ Configuration.md
+(circular dependencies make docs hard to follow)</code></pre></div>
+<h2 id="maintenance-and-updates">Maintenance and Updates</h2>
+<h3 id="keeping-documentation-current">Keeping Documentation Current</h3>
+<ol>
+<li>
+<p><strong>Update docs with code changes</strong></p>
+<ul>
+<li>Documentation PRs should accompany feature PRs</li>
+<li>Breaking changes require documentation updates</li>
+<li>Deprecations need clear migration paths</li>
+</ul>
+</li>
+<li>
+<p><strong>Regular audits</strong></p>
+<ul>
+<li>Quarterly review of all user guides</li>
+<li>Annual review of contributor documentation</li>
+<li>Continuous monitoring of code examples</li>
+</ul>
+</li>
+<li>
+<p><strong>Version compatibility</strong></p>
+<ul>
+<li>Specify which version examples target</li>
+<li>Archive old documentation when appropriate</li>
+<li>Maintain migration guides for major changes</li>
+</ul>
+</li>
+</ol>
+<h3 id="documentation-review-process">Documentation Review Process</h3>
+<p><strong>For new documentation:</strong></p>
+<ol>
+<li>Technical accuracy review (by code owner)</li>
+<li>Clarity review (by someone unfamiliar with the feature)</li>
+<li>Structure review (by documentation maintainer)</li>
+</ol>
+<p><strong>For updates:</strong></p>
+<ol>
+<li>Verify all code examples still work</li>
+<li>Check links are still valid</li>
+<li>Ensure consistent voice and style</li>
+</ol>
+<h3 id="measuring-documentation-quality">Measuring Documentation Quality</h3>
+<p><strong>Quantitative metrics:</strong></p>
+<ul>
+<li>User completion rates on tutorials</li>
+<li>Time spent on documentation pages</li>
+<li>Support questions that are answered in docs</li>
+</ul>
+<p><strong>Qualitative feedback:</strong></p>
+<ul>
+<li>User feedback on clarity and usefulness</li>
+<li>Contributor feedback on development documentation</li>
+<li>Regular surveys and interviews</li>
+</ul>
+<h3 id="common-maintenance-tasks">Common Maintenance Tasks</h3>
+<p><strong>Monthly:</strong></p>
+<ul>
+<li>Test all code examples in user guides</li>
+<li>Check for broken links</li>
+<li>Update any references to specific versions</li>
+</ul>
+<p><strong>Quarterly:</strong></p>
+<ul>
+<li>Review and update API documentation</li>
+<li>Audit cross-references and navigation</li>
+<li>Update screenshots and visual elements</li>
+</ul>
+<p><strong>Annually:</strong></p>
+<ul>
+<li>Major reorganization if needed</li>
+<li>Archive outdated documentation</li>
+<li>Review and update writing standards</li>
+</ul>
+<h2 id="style-reference">Style Reference</h2>
+<h3 id="formatting-standards">Formatting Standards</h3>
+<p><strong>Code references in text:</strong></p>
+<ul>
+<li>Use backticks for: <code>function names</code>, <code>package names</code>, <code>file names</code></li>
+<li>Use code blocks for: multi-line code, configuration files</li>
+</ul>
+<p><strong>Emphasis:</strong></p>
+<ul>
+<li><strong>Bold</strong> for UI elements, important concepts, section headers in lists</li>
+<li><em>Italic</em> for emphasis, new terms on first use</li>
+<li><code>Code formatting</code> for technical terms, values, commands</li>
+</ul>
+<p><strong>Lists:</strong></p>
+<ul>
+<li>Use bullet points for unordered concepts</li>
+<li>Use numbers for sequential steps</li>
+<li>Use consistent parallel structure</li>
+</ul>
+<p><strong>Links:</strong></p>
+<ul>
+<li>Use descriptive link text: &ldquo;<a href="/AgenticGoKitDocs/guides/agentbasics/index.html">Agent Basics guide</a>&rdquo;</li>
+<li>Not: &ldquo;Click <a href="/AgenticGoKitDocs/guides/agentbasics/index.html">here</a> for agent basics&rdquo;</li>
+</ul>
+<h3 id="common-terminology">Common Terminology</h3>
+<p><strong>Consistent terms:</strong></p>
+<ul>
+<li>&ldquo;AgenticGoKit&rdquo; (not &ldquo;agenticgokit&rdquo; or &ldquo;Agentic Go Kit&rdquo;) - the framework</li>
+<li>&ldquo;agent&rdquo; (lowercase) - an instance of an agent</li>
+<li>&ldquo;MCP&rdquo; - Model Context Protocol (define on first use)</li>
+<li>&ldquo;LLM&rdquo; - Large Language Model (define on first use)</li>
+</ul>
+<p><strong>Preferred usage:</strong></p>
+<ul>
+<li>&ldquo;configuration&rdquo; not &ldquo;config&rdquo; (in formal documentation)</li>
+<li>&ldquo;initialize&rdquo; not &ldquo;init&rdquo; (in explanatory text)</li>
+<li>&ldquo;function&rdquo; not &ldquo;func&rdquo; (except in code)</li>
+</ul>
+<h2 id="templates-and-tools">Templates and Tools</h2>
+<h3 id="documentation-templates">Documentation Templates</h3>
+<p>See the structure templates in <a href="/AgenticGoKitDocs/contributors/docsstandards/index.html#structure-templates">Structure Templates</a> above.</p>
+<h3 id="useful-tools">Useful Tools</h3>
+<p><strong>For writing:</strong></p>
+<ul>
+<li>Use VS Code with Markdown preview</li>
+<li>Check spelling and grammar with tools like Grammarly</li>
+<li>Validate links with link checkers</li>
+</ul>
+<p><strong>For code examples:</strong></p>
+<ul>
+<li>Test all Go code with <code>go run</code> or <code>go test</code></li>
+<li>Use <code>gofmt</code> to ensure consistent formatting</li>
+<li>Validate JSON and YAML configuration examples</li>
+</ul>
+<p><strong>For maintenance:</strong></p>
+<ul>
+<li>Use GitHub Issues to track documentation debt</li>
+<li>Create checklists for common update tasks</li>
+<li>Use automation for link checking and code validation</li>
+</ul>
+<h2 id="contributing-to-documentation">Contributing to Documentation</h2>
+<h3 id="getting-started">Getting Started</h3>
+<ol>
+<li>Read this standards guide</li>
+<li>Look at existing documentation for examples</li>
+<li>Start with small improvements to get familiar with the style</li>
+<li>Ask questions in GitHub Discussions if unsure</li>
+</ol>
+<h3 id="making-changes">Making Changes</h3>
+<ol>
+<li><strong>Small fixes</strong> (typos, broken links): Submit PR directly</li>
+<li><strong>Content updates</strong>: Open issue first to discuss approach</li>
+<li><strong>Major reorganization</strong>: Discuss in GitHub Discussions</li>
+</ol>
+<h3 id="review-process">Review Process</h3>
+<p>All documentation changes go through the same review process as code:</p>
+<ul>
+<li>Technical accuracy</li>
+<li>Adherence to these standards</li>
+<li>User experience and clarity</li>
+</ul>
+<hr>
+<p><em>This standards guide is a living document. Updates and improvements are welcome through the standard PR process.</em></p>
+
+  <footer class="footline">
+              <i class='fa-fw fas fa-calendar'></i> Jul 25, 2025
+  </footer>
+</article>
+        </div>
+      </main>
+    </div>
+    <aside id="R-sidebar" class="default-animation">
+      <div id="R-header-topbar" class="default-animation"></div>
+      <div id="R-header-wrapper" class="default-animation">
+        <div id="R-header" class="default-animation">
+          <a id="R-logo" class="R-default" href="/AgenticGoKitDocs/index.html">
+            <div class="logo-title">AgenticGoKit Docs</div>
+          </a>
+        </div>
+        <search><form action="/AgenticGoKitDocs/search/index.html" method="get">
+          <div class="searchbox default-animation">
+            <button class="search-detail" type="submit" title="Search (CTRL+ALT+f)"><i class="fas fa-search"></i></button>
+            <label class="a11y-only" for="R-search-by">Search</label>
+            <input data-search-input id="R-search-by" name="search-by" class="search-by" type="search" placeholder="Search...">
+            <button class="search-clear" type="button" data-search-clear="" title="Clear search"><i class="fas fa-times" title="Clear search"></i></button>
+          </div>
+        </form></search>
+      </div>
+      <div id="R-homelinks" class="default-animation homelinks">
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-homelinks">
+          <ul class="space collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/index.html"><a class="padding" href="/AgenticGoKitDocs/index.html"><i class="fa-fw fas fa-home"></i> Home</a></li>
+          </ul>
+        </div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-headercontrols">
+          <ul class="">
+          </ul>
+        </div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+      </div>
+      <div id="R-content-wrapper" class="highlightable">
+        <div class="R-sidebarmenu R-shortcutmenu-main">
+          <ul class="enlarge morespace collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/readme/index.html">content</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/index.html"><input type="checkbox" id="R-section-8fc2fd7736125e87cab8840a86c2af5a" aria-controls="R-subsections-8fc2fd7736125e87cab8840a86c2af5a" checked><label for="R-section-8fc2fd7736125e87cab8840a86c2af5a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu guides</span></label><a class="padding" href="/AgenticGoKitDocs/guides/index.html">guides</a><ul id="R-subsections-8fc2fd7736125e87cab8840a86c2af5a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/readme/index.html">guides</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/agentbasics/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/agentbasics/index.html">AgentBasics</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/examples/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/examples/index.html">Examples</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/configuration/index.html">Configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/customtools/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/customtools/index.html">CustomTools</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/providers/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/providers/index.html">Providers</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memoryprovidersetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memoryprovidersetup/index.html">MemoryProviderSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memorytroubleshooting/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memorytroubleshooting/index.html">MemoryTroubleshooting</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/embeddingmodelguide/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/embeddingmodelguide/index.html">EmbeddingModelGuide</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/ragconfiguration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/ragconfiguration/index.html">RAGConfiguration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/toolintegration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/toolintegration/index.html">ToolIntegration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/pgvectorsetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/pgvectorsetup/index.html">PgVectorSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/weaviatesetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/weaviatesetup/index.html">WeaviateSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/performance/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/performance/index.html">Performance</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/errorhandling/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/errorhandling/index.html">ErrorHandling</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/deployment/index.html"><input type="checkbox" id="R-section-ecc839349395ef3c015a12132049dff2" aria-controls="R-subsections-ecc839349395ef3c015a12132049dff2" checked><label for="R-section-ecc839349395ef3c015a12132049dff2"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu deployment</span></label><a class="padding" href="/AgenticGoKitDocs/guides/deployment/index.html">deployment</a><ul id="R-subsections-ecc839349395ef3c015a12132049dff2" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/deployment/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/deployment/readme/index.html">deployment</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/development/index.html"><input type="checkbox" id="R-section-fff1f5eca5d0a93209b9c6262762c25a" aria-controls="R-subsections-fff1f5eca5d0a93209b9c6262762c25a" checked><label for="R-section-fff1f5eca5d0a93209b9c6262762c25a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu development</span></label><a class="padding" href="/AgenticGoKitDocs/guides/development/index.html">development</a><ul id="R-subsections-fff1f5eca5d0a93209b9c6262762c25a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/readme/index.html">development</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/best-practices/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/best-practices/index.html">best-practices</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/debugging/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/debugging/index.html">debugging</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/research-assistant/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/research-assistant/index.html">research-assistant</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/testing-agents/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/testing-agents/index.html">testing-agents</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/visualization/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/visualization/index.html">visualization</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/web-search-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/web-search-integration/index.html">web-search-integration</a></li></ul></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/framework-comparison/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/framework-comparison/index.html">framework-comparison</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memory/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memory/index.html">Memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/scaffoldmemoryguide/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/scaffoldmemoryguide/index.html">ScaffoldMemoryGuide</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/setup/index.html"><input type="checkbox" id="R-section-0124aed9abb5064d53391168f3c95c22" aria-controls="R-subsections-0124aed9abb5064d53391168f3c95c22" checked><label for="R-section-0124aed9abb5064d53391168f3c95c22"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu setup</span></label><a class="padding" href="/AgenticGoKitDocs/guides/setup/index.html">setup</a><ul id="R-subsections-0124aed9abb5064d53391168f3c95c22" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/readme/index.html">setup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/llm-providers/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/llm-providers/index.html">llm-providers</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/mcp-tools/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/mcp-tools/index.html">mcp-tools</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/orchestration-configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/orchestration-configuration/index.html">orchestration-configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/vector-databases/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/vector-databases/index.html">vector-databases</a></li></ul></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/troubleshooting/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/troubleshooting/index.html">troubleshooting</a></li></ul></li>
+            <li class="parent alwaysopen " data-nav-id="/AgenticGoKitDocs/contributors/index.html"><input type="checkbox" id="R-section-190d9b328fbda7e13ab386f7a5417de5" aria-controls="R-subsections-190d9b328fbda7e13ab386f7a5417de5" checked><label for="R-section-190d9b328fbda7e13ab386f7a5417de5"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu contributors</span></label><a class="padding" href="/AgenticGoKitDocs/contributors/index.html">contributors</a><ul id="R-subsections-190d9b328fbda7e13ab386f7a5417de5" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/readme/index.html">contributors</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/contributorguide/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/contributorguide/index.html">ContributorGuide</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/codestyle/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/codestyle/index.html">CodeStyle</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/corevsinternal/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/corevsinternal/index.html">CoreVsInternal</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/addingfeatures/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/addingfeatures/index.html">AddingFeatures</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/testing/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/testing/index.html">Testing</a></li>
+            <li class="active " data-nav-id="/AgenticGoKitDocs/contributors/docsstandards/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/docsstandards/index.html">DocsStandards</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/reference/index.html"><input type="checkbox" id="R-section-66002f201bef818664bb81aa67490c58" aria-controls="R-subsections-66002f201bef818664bb81aa67490c58" checked><label for="R-section-66002f201bef818664bb81aa67490c58"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu reference</span></label><a class="padding" href="/AgenticGoKitDocs/reference/index.html">reference</a><ul id="R-subsections-66002f201bef818664bb81aa67490c58" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/readme/index.html">reference</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/configuration/index.html">configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/cli/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/cli/index.html">cli</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/mcp/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/mcp/index.html">mcp</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/agent/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/agent/index.html">agent</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/memory/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/memory/index.html">memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/orchestration/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/orchestration/index.html">orchestration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/state-event/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/state-event/index.html">state-event</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/index.html"><input type="checkbox" id="R-section-e1e8c1e70c5500b49e8dda2dc550651a" aria-controls="R-subsections-e1e8c1e70c5500b49e8dda2dc550651a" checked><label for="R-section-e1e8c1e70c5500b49e8dda2dc550651a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu tutorials</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/index.html">tutorials</a><ul id="R-subsections-e1e8c1e70c5500b49e8dda2dc550651a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/readme/index.html">tutorials</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/advanced/index.html"><input type="checkbox" id="R-section-d3def5cd76adc8096d0ff9fda6b8e479" aria-controls="R-subsections-d3def5cd76adc8096d0ff9fda6b8e479" checked><label for="R-section-d3def5cd76adc8096d0ff9fda6b8e479"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu advanced</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/index.html">advanced</a><ul id="R-subsections-d3def5cd76adc8096d0ff9fda6b8e479" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/readme/index.html">advanced</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/circuit-breaker-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/circuit-breaker-patterns/index.html">circuit-breaker-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/load-balancing-scaling/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/load-balancing-scaling/index.html">load-balancing-scaling</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/retry-policies/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/retry-policies/index.html">retry-policies</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/testing-strategies/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/testing-strategies/index.html">testing-strategies</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/index.html"><input type="checkbox" id="R-section-212c6ccffb40ecdd78eb2136f98c4cac" aria-controls="R-subsections-212c6ccffb40ecdd78eb2136f98c4cac" checked><label for="R-section-212c6ccffb40ecdd78eb2136f98c4cac"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu core-concepts</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/index.html">core-concepts</a><ul id="R-subsections-212c6ccffb40ecdd78eb2136f98c4cac" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/readme/index.html">core-concepts</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/agent-lifecycle/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/agent-lifecycle/index.html">agent-lifecycle</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/error-handling/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/error-handling/index.html">error-handling</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/message-passing/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/message-passing/index.html">message-passing</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/orchestration-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/orchestration-patterns/index.html">orchestration-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/state-management/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/state-management/index.html">state-management</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/debugging/index.html"><input type="checkbox" id="R-section-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" aria-controls="R-subsections-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" checked><label for="R-section-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu debugging</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/index.html">debugging</a><ul id="R-subsections-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/readme/index.html">debugging</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/debugging-multi-agent-systems/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/debugging-multi-agent-systems/index.html">debugging-multi-agent-systems</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/logging-and-tracing/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/logging-and-tracing/index.html">logging-and-tracing</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/index.html"><input type="checkbox" id="R-section-e7f904c8b9d0f9bf1f07ca7d482d2247" aria-controls="R-subsections-e7f904c8b9d0f9bf1f07ca7d482d2247" checked><label for="R-section-e7f904c8b9d0f9bf1f07ca7d482d2247"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu getting-started</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/index.html">getting-started</a><ul id="R-subsections-e7f904c8b9d0f9bf1f07ca7d482d2247" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/readme/index.html">getting-started</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/memory-and-rag/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/memory-and-rag/index.html">memory-and-rag</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/multi-agent-collaboration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/multi-agent-collaboration/index.html">multi-agent-collaboration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/production-deployment/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/production-deployment/index.html">production-deployment</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/quickstart/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/quickstart/index.html">quickstart</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/tool-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/tool-integration/index.html">tool-integration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/your-first-agent/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/your-first-agent/index.html">your-first-agent</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/mcp/index.html"><input type="checkbox" id="R-section-153aac44598009a99dd5a60317a3eecc" aria-controls="R-subsections-153aac44598009a99dd5a60317a3eecc" checked><label for="R-section-153aac44598009a99dd5a60317a3eecc"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu mcp</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/index.html">mcp</a><ul id="R-subsections-153aac44598009a99dd5a60317a3eecc" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/readme/index.html">mcp</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/advanced-tool-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/advanced-tool-patterns/index.html">advanced-tool-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/tool-development/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/tool-development/index.html">tool-development</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/tool-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/tool-integration/index.html">tool-integration</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/index.html"><input type="checkbox" id="R-section-9c1a65f2d7b3888241dcafa51a0710e7" aria-controls="R-subsections-9c1a65f2d7b3888241dcafa51a0710e7" checked><label for="R-section-9c1a65f2d7b3888241dcafa51a0710e7"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu memory-systems</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/index.html">memory-systems</a><ul id="R-subsections-9c1a65f2d7b3888241dcafa51a0710e7" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/readme/index.html">memory-systems</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/basic-memory/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/basic-memory/index.html">basic-memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/document-ingestion/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/document-ingestion/index.html">document-ingestion</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/knowledge-bases/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/knowledge-bases/index.html">knowledge-bases</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/memory-optimization/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/memory-optimization/index.html">memory-optimization</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/rag-implementation/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/rag-implementation/index.html">rag-implementation</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/vector-databases/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/vector-databases/index.html">vector-databases</a></li></ul></li></ul></li>
+          </ul>
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-shortcuts">
+          <ul class="space collapsible-menu">
+          </ul>
+        </div>
+        <div id="R-footer-margin"></div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-footercontrols">
+          <ul class="">
+          </ul>
+        </div>
+<div id="R-footer"><p>Built with <a href="https://github.com/McShelby/hugo-theme-relearn" title="love"><i class="fas fa-heart"></i></a> by <a href="https://gohugo.io/">Hugo</a></p></div>
+      </div>
+    </aside>
+    <script src="/AgenticGoKitDocs/js/clipboard/clipboard.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/perfect-scrollbar/perfect-scrollbar.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/theme.js?1753430931" defer></script>
+  </body>
+</html>

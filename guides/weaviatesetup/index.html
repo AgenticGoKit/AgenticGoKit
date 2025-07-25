@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="en-us" dir="ltr" itemscope itemtype="http://schema.org/Article" data-r-output-format="html">
+  <head><script src="/AgenticGoKitDocs/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=AgenticGoKitDocs/livereload" data-no-instant defer></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="height=device-height, width=device-width, initial-scale=1.0, minimum-scale=1.0">
+    <meta name="generator" content="Hugo 0.148.1">
+    <meta name="generator" content="Relearn 8.0.0+9803d5122ebb3276acea823f476e9eb44f607862">
+    <meta name="description" content="Weaviate Setup Guide Complete guide for setting up Weaviate vector database for AgentFlow memory
+This guide provides detailed instructions for setting up Weaviate as a vector database backend for AgentFlow’s memory system, from development to production deployment.
+🎯 Overview Weaviate provides:
+Purpose-built vector database optimized for similarity search GraphQL API for flexible queries and data management Built-in clustering for horizontal scalability Advanced search features including hybrid search and filtering Rich ecosystem with integrations and modules 📋 Prerequisites Docker (recommended) OR Kubernetes 4GB&#43; RAM available (8GB&#43; recommended for production) Network access to Weaviate port (8080) Basic command line knowledge 🚀 Quick Start (Docker) Step 1: Run Weaviate # Create and start Weaviate container docker run -d \ --name agentflow-weaviate \ -p 8080:8080 \ -e QUERY_DEFAULTS_LIMIT=25 \ -e AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED=&#39;true&#39; \ -e PERSISTENCE_DATA_PATH=&#39;/var/lib/weaviate&#39; \ -e DEFAULT_VECTORIZER_MODULE=&#39;none&#39; \ -e CLUSTER_HOSTNAME=&#39;node1&#39; \ -e ENABLE_MODULES=&#39;text2vec-openai,text2vec-cohere,text2vec-huggingface,ref2vec-centroid,generative-openai,qna-openai&#39; \ -v weaviate_data:/var/lib/weaviate \ semitechnologies/weaviate:1.22.4 # Wait for startup echo &#34;Waiting for Weaviate to start...&#34; sleep 15 # Verify Weaviate is running curl http://localhost:8080/v1/.well-known/readyStep 2: Test Connection # Check Weaviate status curl http://localhost:8080/v1/meta # Expected response: JSON with version and modules infoStep 3: Configure AgentFlow Create agentflow.toml:">
+    <meta name="author" content="">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="WeaviateSetup :: AgenticGoKit Docs">
+    <meta name="twitter:description" content="Weaviate Setup Guide Complete guide for setting up Weaviate vector database for AgentFlow memory
+This guide provides detailed instructions for setting up Weaviate as a vector database backend for AgentFlow’s memory system, from development to production deployment.
+🎯 Overview Weaviate provides:
+Purpose-built vector database optimized for similarity search GraphQL API for flexible queries and data management Built-in clustering for horizontal scalability Advanced search features including hybrid search and filtering Rich ecosystem with integrations and modules 📋 Prerequisites Docker (recommended) OR Kubernetes 4GB&#43; RAM available (8GB&#43; recommended for production) Network access to Weaviate port (8080) Basic command line knowledge 🚀 Quick Start (Docker) Step 1: Run Weaviate # Create and start Weaviate container docker run -d \ --name agentflow-weaviate \ -p 8080:8080 \ -e QUERY_DEFAULTS_LIMIT=25 \ -e AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED=&#39;true&#39; \ -e PERSISTENCE_DATA_PATH=&#39;/var/lib/weaviate&#39; \ -e DEFAULT_VECTORIZER_MODULE=&#39;none&#39; \ -e CLUSTER_HOSTNAME=&#39;node1&#39; \ -e ENABLE_MODULES=&#39;text2vec-openai,text2vec-cohere,text2vec-huggingface,ref2vec-centroid,generative-openai,qna-openai&#39; \ -v weaviate_data:/var/lib/weaviate \ semitechnologies/weaviate:1.22.4 # Wait for startup echo &#34;Waiting for Weaviate to start...&#34; sleep 15 # Verify Weaviate is running curl http://localhost:8080/v1/.well-known/readyStep 2: Test Connection # Check Weaviate status curl http://localhost:8080/v1/meta # Expected response: JSON with version and modules infoStep 3: Configure AgentFlow Create agentflow.toml:">
+    <meta property="og:url" content="http://localhost:1313/AgenticGoKitDocs/guides/weaviatesetup/index.html">
+    <meta property="og:site_name" content="AgenticGoKit Docs">
+    <meta property="og:title" content="WeaviateSetup :: AgenticGoKit Docs">
+    <meta property="og:description" content="Weaviate Setup Guide Complete guide for setting up Weaviate vector database for AgentFlow memory
+This guide provides detailed instructions for setting up Weaviate as a vector database backend for AgentFlow’s memory system, from development to production deployment.
+🎯 Overview Weaviate provides:
+Purpose-built vector database optimized for similarity search GraphQL API for flexible queries and data management Built-in clustering for horizontal scalability Advanced search features including hybrid search and filtering Rich ecosystem with integrations and modules 📋 Prerequisites Docker (recommended) OR Kubernetes 4GB&#43; RAM available (8GB&#43; recommended for production) Network access to Weaviate port (8080) Basic command line knowledge 🚀 Quick Start (Docker) Step 1: Run Weaviate # Create and start Weaviate container docker run -d \ --name agentflow-weaviate \ -p 8080:8080 \ -e QUERY_DEFAULTS_LIMIT=25 \ -e AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED=&#39;true&#39; \ -e PERSISTENCE_DATA_PATH=&#39;/var/lib/weaviate&#39; \ -e DEFAULT_VECTORIZER_MODULE=&#39;none&#39; \ -e CLUSTER_HOSTNAME=&#39;node1&#39; \ -e ENABLE_MODULES=&#39;text2vec-openai,text2vec-cohere,text2vec-huggingface,ref2vec-centroid,generative-openai,qna-openai&#39; \ -v weaviate_data:/var/lib/weaviate \ semitechnologies/weaviate:1.22.4 # Wait for startup echo &#34;Waiting for Weaviate to start...&#34; sleep 15 # Verify Weaviate is running curl http://localhost:8080/v1/.well-known/readyStep 2: Test Connection # Check Weaviate status curl http://localhost:8080/v1/meta # Expected response: JSON with version and modules infoStep 3: Configure AgentFlow Create agentflow.toml:">
+    <meta property="og:locale" content="en_us">
+    <meta property="og:type" content="article">
+    <meta property="article:section" content="guides">
+    <meta property="article:published_time" content="2025-07-25T00:00:00+00:00">
+    <meta property="article:modified_time" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="name" content="WeaviateSetup :: AgenticGoKit Docs">
+    <meta itemprop="description" content="Weaviate Setup Guide Complete guide for setting up Weaviate vector database for AgentFlow memory
+This guide provides detailed instructions for setting up Weaviate as a vector database backend for AgentFlow’s memory system, from development to production deployment.
+🎯 Overview Weaviate provides:
+Purpose-built vector database optimized for similarity search GraphQL API for flexible queries and data management Built-in clustering for horizontal scalability Advanced search features including hybrid search and filtering Rich ecosystem with integrations and modules 📋 Prerequisites Docker (recommended) OR Kubernetes 4GB&#43; RAM available (8GB&#43; recommended for production) Network access to Weaviate port (8080) Basic command line knowledge 🚀 Quick Start (Docker) Step 1: Run Weaviate # Create and start Weaviate container docker run -d \ --name agentflow-weaviate \ -p 8080:8080 \ -e QUERY_DEFAULTS_LIMIT=25 \ -e AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED=&#39;true&#39; \ -e PERSISTENCE_DATA_PATH=&#39;/var/lib/weaviate&#39; \ -e DEFAULT_VECTORIZER_MODULE=&#39;none&#39; \ -e CLUSTER_HOSTNAME=&#39;node1&#39; \ -e ENABLE_MODULES=&#39;text2vec-openai,text2vec-cohere,text2vec-huggingface,ref2vec-centroid,generative-openai,qna-openai&#39; \ -v weaviate_data:/var/lib/weaviate \ semitechnologies/weaviate:1.22.4 # Wait for startup echo &#34;Waiting for Weaviate to start...&#34; sleep 15 # Verify Weaviate is running curl http://localhost:8080/v1/.well-known/readyStep 2: Test Connection # Check Weaviate status curl http://localhost:8080/v1/meta # Expected response: JSON with version and modules infoStep 3: Configure AgentFlow Create agentflow.toml:">
+    <meta itemprop="datePublished" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="dateModified" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="wordCount" content="2016">
+    <title>WeaviateSetup :: AgenticGoKit Docs</title>
+    <link href="/AgenticGoKitDocs/css/auto-complete/auto-complete.min.css?1753430931" rel="stylesheet">
+    <script src="/AgenticGoKitDocs/js/auto-complete/auto-complete.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/search-lunr.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/search.js?1753430931" defer></script>
+    <script>
+      window.relearn = window.relearn || {};
+      window.relearn.index_js_url="/AgenticGoKitDocs/searchindex.en.js?1753430931";
+    </script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.stemmer.support.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.multi.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.en.min.js?1753430931" defer></script>
+    <script>
+      window.relearn = window.relearn || {};
+      window.relearn.contentLangs=['en'];
+    </script>
+    <link href="/AgenticGoKitDocs/fonts/fontawesome/css/fontawesome-all.min.css?1753430931" rel="stylesheet" media="print" onload="this.media='all';this.onload=null;"><noscript><link href="/AgenticGoKitDocs/fonts/fontawesome/css/fontawesome-all.min.css?1753430931" rel="stylesheet"></noscript>
+    <link href="/AgenticGoKitDocs/css/perfect-scrollbar/perfect-scrollbar.min.css?1753430931" rel="stylesheet">
+    <link href="/AgenticGoKitDocs/css/theme.css?1753430931" rel="stylesheet">
+    <link href="/AgenticGoKitDocs/css/format-html.css?1753430931" rel="stylesheet" id="R-format-style">
+    <script>
+      window.relearn = window.relearn || {};
+      // configuration
+      window.relearn.min = ``;
+      window.relearn.path='\/guides\/weaviatesetup\/index.html';
+      window.relearn.relBasePath='..\/..';
+      window.relearn.relBaseUri='..\/..\/..';
+      window.relearn.absBaseUri='http:\/\/localhost:1313\/AgenticGoKitDocs';
+      window.relearn.disableAnchorCopy=false;
+      window.relearn.disableAnchorScrolling=false;
+      window.relearn.disableInlineCopyToClipboard=false;
+      window.relearn.enableBlockCodeWrap=true;
+      // legal
+      window.relearn.getItem = (s,n) => {return s.getItem(n)};
+      window.relearn.setItem = (s,n,v) => {return s.setItem(n,v)};
+      window.relearn.removeItem = (s,n) => {return s.removeItem(n)};
+      // translations
+      window.T_Copy_to_clipboard = `Copy to clipboard`;
+      window.T_Copied_to_clipboard = `Copied to clipboard!`;
+      window.T_Copy_link_to_clipboard = `Copy link to clipboard`;
+      window.T_Link_copied_to_clipboard = `Copied link to clipboard!`;
+      window.T_Reset_view = `Reset view`;
+      window.T_View_reset = `View reset!`;
+      window.T_No_results_found = `No results found for "{0}"`;
+      window.T_N_results_found = `{1} results found for "{0}"`;
+      // variant stuff
+      window.relearn.themevariants = [ 'blue' ];
+      window.relearn.customvariantname = "my-custom-variant";
+      window.relearn.changeVariant = function(variant) {
+        var oldVariant = document.documentElement.dataset.rThemeVariant;
+        window.relearn.setItem(window.localStorage, window.relearn.absBaseUri + "/variant", variant);
+        document.documentElement.dataset.rThemeVariant = variant;
+        if (oldVariant != variant) {
+          document.dispatchEvent( new CustomEvent('themeVariantLoaded', { detail: { variant, oldVariant } }) );
+          window.relearn.markVariant();
+        }
+      }
+      window.relearn.markVariant = function() {
+        var variant = window.relearn.getItem(window.localStorage, window.relearn.absBaseUri + "/variant");
+        document.querySelectorAll(".R-variantswitcher select").forEach((select) => {select.value = variant;});
+      }
+      window.relearn.initVariant = function() {
+        var variant = window.relearn.getItem(window.localStorage, window.relearn.absBaseUri + "/variant") ?? "";
+        if( variant == window.relearn.customvariantname ){
+        }else if( !variant || !window.relearn.themevariants.includes(variant) ){
+          variant = window.relearn.themevariants[0];
+          window.relearn.setItem(window.localStorage, window.relearn.absBaseUri + "/variant", variant);
+        }
+        document.documentElement.dataset.rThemeVariant = variant;
+      }
+      window.relearn.initVariant();
+      window.relearn.markVariant();
+    </script>
+  </head>
+  <body class="mobile-support html" data-url="/AgenticGoKitDocs/guides/weaviatesetup/index.html">
+    <div id="R-body" class="default-animation">
+      <div id="R-body-overlay"></div>
+      <nav id="R-topbar">
+        <div class="topbar-wrapper">
+          <div class="topbar-sidebar-divider"></div>
+          <div class="topbar-area topbar-area-start" data-area="start">
+            <div class="topbar-button topbar-button-sidebar" data-content-empty="disable" data-width-s="show" data-width-m="hide" data-width-l="hide"><button class="topbar-control" onclick="toggleNav()" type="button" title="Menu (CTRL&#43;ALT&#43;n)"><i class="fa-fw fas fa-bars"></i></button>
+            </div>
+            <div class="topbar-button topbar-button-toc" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show"><button class="topbar-control" onclick="toggleTopbarFlyout(this)" type="button" title="Table of Contents (CTRL&#43;ALT&#43;t)"><i class="fa-fw fas fa-list-alt"></i></button>
+              <div class="topbar-content">
+                <div class="topbar-content-wrapper">
+<nav class="TableOfContents">
+  <ul>
+    <li><a href="#-overview">🎯 Overview</a></li>
+    <li><a href="#-prerequisites">📋 Prerequisites</a></li>
+    <li><a href="#-quick-start-docker">🚀 Quick Start (Docker)</a>
+      <ul>
+        <li><a href="#step-1-run-weaviate">Step 1: Run Weaviate</a></li>
+        <li><a href="#step-2-test-connection">Step 2: Test Connection</a></li>
+        <li><a href="#step-3-configure-agentflow">Step 3: Configure AgentFlow</a></li>
+      </ul>
+    </li>
+    <li><a href="#-detailed-setup-options">🔧 Detailed Setup Options</a>
+      <ul>
+        <li><a href="#option-1-docker-compose-recommended">Option 1: Docker Compose (Recommended)</a></li>
+        <li><a href="#option-2-production-docker-compose">Option 2: Production Docker Compose</a></li>
+        <li><a href="#option-3-kubernetes-deployment">Option 3: Kubernetes Deployment</a></li>
+      </ul>
+    </li>
+    <li><a href="#-configuration">⚙️ Configuration</a>
+      <ul>
+        <li><a href="#connection-options">Connection Options</a></li>
+        <li><a href="#agentflow-configuration">AgentFlow Configuration</a></li>
+        <li><a href="#environment-variables">Environment Variables</a></li>
+      </ul>
+    </li>
+    <li><a href="#-advanced-features">🚀 Advanced Features</a>
+      <ul>
+        <li><a href="#authentication-setup">Authentication Setup</a></li>
+        <li><a href="#clustering-setup">Clustering Setup</a></li>
+        <li><a href="#backup-and-restore">Backup and Restore</a></li>
+      </ul>
+    </li>
+    <li><a href="#-monitoring-and-maintenance">📊 Monitoring and Maintenance</a>
+      <ul>
+        <li><a href="#health-checks">Health Checks</a></li>
+        <li><a href="#performance-monitoring">Performance Monitoring</a></li>
+        <li><a href="#graphql-queries">GraphQL Queries</a></li>
+        <li><a href="#maintenance-tasks">Maintenance Tasks</a></li>
+      </ul>
+    </li>
+    <li><a href="#-troubleshooting">🔧 Troubleshooting</a>
+      <ul>
+        <li><a href="#common-issues">Common Issues</a></li>
+        <li><a href="#debug-mode">Debug Mode</a></li>
+        <li><a href="#recovery-procedures">Recovery Procedures</a></li>
+      </ul>
+    </li>
+    <li><a href="#-production-deployment">🎯 Production Deployment</a>
+      <ul>
+        <li><a href="#security-checklist">Security Checklist</a></li>
+        <li><a href="#load-balancer-setup">Load Balancer Setup</a></li>
+        <li><a href="#monitoring-setup">Monitoring Setup</a></li>
+      </ul>
+    </li>
+    <li><a href="#-summary">🎉 Summary</a>
+      <ul>
+        <li><a href="#next-steps">Next Steps</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+                </div>
+              </div>
+            </div>
+          </div>
+          <ol class="topbar-breadcrumbs breadcrumbs highlightable" itemscope itemtype="http://schema.org/BreadcrumbList"><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="/AgenticGoKitDocs/index.html"><span itemprop="name">content</span></a><meta itemprop="position" content="1">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="/AgenticGoKitDocs/guides/index.html"><span itemprop="name">guides</span></a><meta itemprop="position" content="2">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><span itemprop="name">WeaviateSetup</span><meta itemprop="position" content="3"></li>
+          </ol>
+          <div class="topbar-area topbar-area-end" data-area="end">
+            <div class="topbar-button topbar-button-prev" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show"><a class="topbar-control" href="/AgenticGoKitDocs/guides/pgvectorsetup/index.html" title="PgVectorSetup (🡐)"><i class="fa-fw fas fa-chevron-left"></i></a>
+            </div>
+            <div class="topbar-button topbar-button-next" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show"><a class="topbar-control" href="/AgenticGoKitDocs/guides/performance/index.html" title="Performance (🡒)"><i class="fa-fw fas fa-chevron-right"></i></a>
+            </div>
+            <div class="topbar-button topbar-button-more" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show"><button class="topbar-control" onclick="toggleTopbarFlyout(this)" type="button" title="More"><i class="fa-fw fas fa-ellipsis-v"></i></button>
+              <div class="topbar-content">
+                <div class="topbar-content-wrapper">
+                  <div class="topbar-area topbar-area-more" data-area="more">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+      <div id="R-main-overlay"></div>
+      <main id="R-body-inner" class="highlightable guides" tabindex="-1">
+        <div class="flex-block-wrapper">
+<article class="default">
+  <header class="headline">
+  </header>
+
+<h1 id="weaviatesetup">WeaviateSetup</h1>
+
+<h1 id="weaviate-setup-guide">Weaviate Setup Guide</h1>
+<p><strong>Complete guide for setting up Weaviate vector database for AgentFlow memory</strong></p>
+<p>This guide provides detailed instructions for setting up Weaviate as a vector database backend for AgentFlow&rsquo;s memory system, from development to production deployment.</p>
+<h2 id="-overview">🎯 Overview</h2>
+<p>Weaviate provides:</p>
+<ul>
+<li><strong>Purpose-built vector database</strong> optimized for similarity search</li>
+<li><strong>GraphQL API</strong> for flexible queries and data management</li>
+<li><strong>Built-in clustering</strong> for horizontal scalability</li>
+<li><strong>Advanced search features</strong> including hybrid search and filtering</li>
+<li><strong>Rich ecosystem</strong> with integrations and modules</li>
+</ul>
+<h2 id="-prerequisites">📋 Prerequisites</h2>
+<ul>
+<li>Docker (recommended) OR Kubernetes</li>
+<li>4GB+ RAM available (8GB+ recommended for production)</li>
+<li>Network access to Weaviate port (8080)</li>
+<li>Basic command line knowledge</li>
+</ul>
+<h2 id="-quick-start-docker">🚀 Quick Start (Docker)</h2>
+<h3 id="step-1-run-weaviate">Step 1: Run Weaviate</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Create and start Weaviate container</span>
+</span></span><span style="display:flex;"><span>docker run -d <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --name agentflow-weaviate <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -p 8080:8080 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -e QUERY_DEFAULTS_LIMIT<span style="color:#f92672">=</span><span style="color:#ae81ff">25</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -e AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;true&#39;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -e PERSISTENCE_DATA_PATH<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;/var/lib/weaviate&#39;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -e DEFAULT_VECTORIZER_MODULE<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;none&#39;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -e CLUSTER_HOSTNAME<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;node1&#39;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -e ENABLE_MODULES<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;text2vec-openai,text2vec-cohere,text2vec-huggingface,ref2vec-centroid,generative-openai,qna-openai&#39;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -v weaviate_data:/var/lib/weaviate <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  semitechnologies/weaviate:1.22.4
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Wait for startup</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;Waiting for Weaviate to start...&#34;</span>
+</span></span><span style="display:flex;"><span>sleep <span style="color:#ae81ff">15</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Verify Weaviate is running</span>
+</span></span><span style="display:flex;"><span>curl http://localhost:8080/v1/.well-known/ready</span></span></code></pre></div>
+<h3 id="step-2-test-connection">Step 2: Test Connection</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Check Weaviate status</span>
+</span></span><span style="display:flex;"><span>curl http://localhost:8080/v1/meta
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Expected response: JSON with version and modules info</span></span></span></code></pre></div>
+<h3 id="step-3-configure-agentflow">Step 3: Configure AgentFlow</h3>
+<p>Create <code>agentflow.toml</code>:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enabled</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;weaviate&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_results</span> = <span style="color:#ae81ff">10</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">dimensions</span> = <span style="color:#ae81ff">1536</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">auto_embed</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">weaviate</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">connection</span> = <span style="color:#e6db74">&#34;http://localhost:8080&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">class_name</span> = <span style="color:#e6db74">&#34;AgentMemory&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">embedding</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;openai&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">model</span> = <span style="color:#e6db74">&#34;text-embedding-3-small&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">rag</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enabled</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">chunk_size</span> = <span style="color:#ae81ff">1000</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">overlap</span> = <span style="color:#ae81ff">100</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">top_k</span> = <span style="color:#ae81ff">5</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">score_threshold</span> = <span style="color:#ae81ff">0.7</span></span></span></code></pre></div>
+<p>Set environment variables:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>export WEAVIATE_URL<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;http://localhost:8080&#34;</span>
+</span></span><span style="display:flex;"><span>export OPENAI_API_KEY<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;your-openai-api-key&#34;</span></span></span></code></pre></div>
+<p><strong>✅ You&rsquo;re ready to use AgentFlow with Weaviate!</strong></p>
+<hr>
+<h2 id="-detailed-setup-options">🔧 Detailed Setup Options</h2>
+<h3 id="option-1-docker-compose-recommended">Option 1: Docker Compose (Recommended)</h3>
+<p>Create <code>docker-compose.yml</code>:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">version</span>: <span style="color:#e6db74">&#39;3.8&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">services</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">weaviate</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">image</span>: <span style="color:#ae81ff">semitechnologies/weaviate:1.22.4</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">container_name</span>: <span style="color:#ae81ff">agentflow-weaviate</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">ports</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#e6db74">&#34;8080:8080&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">environment</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">QUERY_DEFAULTS_LIMIT</span>: <span style="color:#ae81ff">25</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED</span>: <span style="color:#e6db74">&#39;true&#39;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">PERSISTENCE_DATA_PATH</span>: <span style="color:#e6db74">&#39;/var/lib/weaviate&#39;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">DEFAULT_VECTORIZER_MODULE</span>: <span style="color:#e6db74">&#39;none&#39;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">CLUSTER_HOSTNAME</span>: <span style="color:#e6db74">&#39;node1&#39;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">ENABLE_MODULES</span>: <span style="color:#e6db74">&#39;text2vec-openai,text2vec-cohere,text2vec-huggingface,ref2vec-centroid,generative-openai,qna-openai&#39;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">volumes</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">weaviate_data:/var/lib/weaviate</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">healthcheck</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">test</span>: [<span style="color:#e6db74">&#34;CMD&#34;</span>, <span style="color:#e6db74">&#34;curl&#34;</span>, <span style="color:#e6db74">&#34;-f&#34;</span>, <span style="color:#e6db74">&#34;http://localhost:8080/v1/.well-known/ready&#34;</span>]
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">interval</span>: <span style="color:#ae81ff">10s</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">timeout</span>: <span style="color:#ae81ff">5s</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">retries</span>: <span style="color:#ae81ff">5</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">start_period</span>: <span style="color:#ae81ff">30s</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">restart</span>: <span style="color:#ae81ff">unless-stopped</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">volumes</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">weaviate_data</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">driver</span>: <span style="color:#ae81ff">local</span></span></span></code></pre></div>
+<p>Start Weaviate:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Start Weaviate</span>
+</span></span><span style="display:flex;"><span>docker-compose up -d
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Check logs</span>
+</span></span><span style="display:flex;"><span>docker-compose logs weaviate
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Test connection</span>
+</span></span><span style="display:flex;"><span>curl http://localhost:8080/v1/.well-known/ready
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Stop when needed</span>
+</span></span><span style="display:flex;"><span>docker-compose down</span></span></code></pre></div>
+<h3 id="option-2-production-docker-compose">Option 2: Production Docker Compose</h3>
+<p>Create <code>docker-compose.prod.yml</code>:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">version</span>: <span style="color:#e6db74">&#39;3.8&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">services</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">weaviate</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">image</span>: <span style="color:#ae81ff">semitechnologies/weaviate:1.22.4</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">container_name</span>: <span style="color:#ae81ff">agentflow-weaviate-prod</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">ports</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#e6db74">&#34;8080:8080&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">environment</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e"># Core settings</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">QUERY_DEFAULTS_LIMIT</span>: <span style="color:#ae81ff">25</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">PERSISTENCE_DATA_PATH</span>: <span style="color:#e6db74">&#39;/var/lib/weaviate&#39;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">DEFAULT_VECTORIZER_MODULE</span>: <span style="color:#e6db74">&#39;none&#39;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">CLUSTER_HOSTNAME</span>: <span style="color:#e6db74">&#39;node1&#39;</span>
+</span></span><span style="display:flex;"><span>      
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e"># Authentication (production)</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED</span>: <span style="color:#e6db74">&#39;false&#39;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">AUTHENTICATION_APIKEY_ENABLED</span>: <span style="color:#e6db74">&#39;true&#39;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">AUTHENTICATION_APIKEY_ALLOWED_KEYS</span>: <span style="color:#e6db74">&#39;your-secret-api-key&#39;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">AUTHENTICATION_APIKEY_USERS</span>: <span style="color:#e6db74">&#39;admin&#39;</span>
+</span></span><span style="display:flex;"><span>      
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e"># Modules</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">ENABLE_MODULES</span>: <span style="color:#e6db74">&#39;text2vec-openai,text2vec-cohere,text2vec-huggingface,ref2vec-centroid,generative-openai,qna-openai&#39;</span>
+</span></span><span style="display:flex;"><span>      
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e"># Performance settings</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">LIMIT_RESOURCES</span>: <span style="color:#e6db74">&#39;true&#39;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">GOMEMLIMIT</span>: <span style="color:#e6db74">&#39;4GiB&#39;</span>
+</span></span><span style="display:flex;"><span>      
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e"># Backup settings</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">BACKUP_FILESYSTEM_PATH</span>: <span style="color:#e6db74">&#39;/var/lib/weaviate/backups&#39;</span>
+</span></span><span style="display:flex;"><span>      
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">volumes</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">weaviate_data:/var/lib/weaviate</span>
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">weaviate_backups:/var/lib/weaviate/backups</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">healthcheck</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">test</span>: [<span style="color:#e6db74">&#34;CMD&#34;</span>, <span style="color:#e6db74">&#34;curl&#34;</span>, <span style="color:#e6db74">&#34;-f&#34;</span>, <span style="color:#e6db74">&#34;-H&#34;</span>, <span style="color:#e6db74">&#34;Authorization: Bearer your-secret-api-key&#34;</span>, <span style="color:#e6db74">&#34;http://localhost:8080/v1/.well-known/ready&#34;</span>]
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">interval</span>: <span style="color:#ae81ff">30s</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">timeout</span>: <span style="color:#ae81ff">10s</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">retries</span>: <span style="color:#ae81ff">3</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">start_period</span>: <span style="color:#ae81ff">60s</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">restart</span>: <span style="color:#ae81ff">unless-stopped</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">deploy</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">resources</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">limits</span>:
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">memory</span>: <span style="color:#ae81ff">4G</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">cpus</span>: <span style="color:#e6db74">&#39;2.0&#39;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">reservations</span>:
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">memory</span>: <span style="color:#ae81ff">2G</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">cpus</span>: <span style="color:#e6db74">&#39;1.0&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">volumes</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">weaviate_data</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">driver</span>: <span style="color:#ae81ff">local</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">weaviate_backups</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">driver</span>: <span style="color:#ae81ff">local</span></span></span></code></pre></div>
+<h3 id="option-3-kubernetes-deployment">Option 3: Kubernetes Deployment</h3>
+<p>Create <code>weaviate-k8s.yaml</code>:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">apps/v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Deployment</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">weaviate</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">app</span>: <span style="color:#ae81ff">weaviate</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">replicas</span>: <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">selector</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">matchLabels</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">app</span>: <span style="color:#ae81ff">weaviate</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">template</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">labels</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">app</span>: <span style="color:#ae81ff">weaviate</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">containers</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">weaviate</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">image</span>: <span style="color:#ae81ff">semitechnologies/weaviate:1.22.4</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">ports</span>:
+</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">containerPort</span>: <span style="color:#ae81ff">8080</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">env</span>:
+</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">QUERY_DEFAULTS_LIMIT</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;25&#34;</span>
+</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;true&#34;</span>
+</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">PERSISTENCE_DATA_PATH</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;/var/lib/weaviate&#34;</span>
+</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">DEFAULT_VECTORIZER_MODULE</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;none&#34;</span>
+</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">CLUSTER_HOSTNAME</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;node1&#34;</span>
+</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">ENABLE_MODULES</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;text2vec-openai,text2vec-cohere,text2vec-huggingface,ref2vec-centroid,generative-openai,qna-openai&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">volumeMounts</span>:
+</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">weaviate-storage</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">mountPath</span>: <span style="color:#ae81ff">/var/lib/weaviate</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">resources</span>:
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">requests</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">memory</span>: <span style="color:#e6db74">&#34;2Gi&#34;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">cpu</span>: <span style="color:#e6db74">&#34;1&#34;</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">limits</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">memory</span>: <span style="color:#e6db74">&#34;4Gi&#34;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">cpu</span>: <span style="color:#e6db74">&#34;2&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">livenessProbe</span>:
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">httpGet</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">path</span>: <span style="color:#ae81ff">/v1/.well-known/ready</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">port</span>: <span style="color:#ae81ff">8080</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">initialDelaySeconds</span>: <span style="color:#ae81ff">30</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">periodSeconds</span>: <span style="color:#ae81ff">30</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">readinessProbe</span>:
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">httpGet</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">path</span>: <span style="color:#ae81ff">/v1/.well-known/ready</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">port</span>: <span style="color:#ae81ff">8080</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">initialDelaySeconds</span>: <span style="color:#ae81ff">10</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">periodSeconds</span>: <span style="color:#ae81ff">10</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">volumes</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">weaviate-storage</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">persistentVolumeClaim</span>:
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">claimName</span>: <span style="color:#ae81ff">weaviate-pvc</span>
+</span></span><span style="display:flex;"><span>---
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">PersistentVolumeClaim</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">weaviate-pvc</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">accessModes</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#ae81ff">ReadWriteOnce</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">resources</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">requests</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">storage</span>: <span style="color:#ae81ff">20Gi</span>
+</span></span><span style="display:flex;"><span>---
+</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Service</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">weaviate-service</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">selector</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">app</span>: <span style="color:#ae81ff">weaviate</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">ports</span>:
+</span></span><span style="display:flex;"><span>    - <span style="color:#f92672">protocol</span>: <span style="color:#ae81ff">TCP</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">port</span>: <span style="color:#ae81ff">8080</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">targetPort</span>: <span style="color:#ae81ff">8080</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">type</span>: <span style="color:#ae81ff">LoadBalancer</span></span></span></code></pre></div>
+<p>Deploy to Kubernetes:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Apply the configuration</span>
+</span></span><span style="display:flex;"><span>kubectl apply -f weaviate-k8s.yaml
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Check deployment status</span>
+</span></span><span style="display:flex;"><span>kubectl get pods -l app<span style="color:#f92672">=</span>weaviate
+</span></span><span style="display:flex;"><span>kubectl get services weaviate-service
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Get external IP</span>
+</span></span><span style="display:flex;"><span>kubectl get service weaviate-service</span></span></code></pre></div>
+<hr>
+<h2 id="-configuration">⚙️ Configuration</h2>
+<h3 id="connection-options">Connection Options</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Basic connection</span>
+</span></span><span style="display:flex;"><span>http://localhost:8080
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># With authentication</span>
+</span></span><span style="display:flex;"><span>http://localhost:8080 <span style="color:#f92672">(</span>with API key header<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Remote connection</span>
+</span></span><span style="display:flex;"><span>http://your-weaviate-host:8080
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># HTTPS (production)</span>
+</span></span><span style="display:flex;"><span>https://your-weaviate-host:8080</span></span></code></pre></div>
+<h3 id="agentflow-configuration">AgentFlow Configuration</h3>
+<h4 id="basic-configuration">Basic Configuration</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enabled</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;weaviate&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_results</span> = <span style="color:#ae81ff">10</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">dimensions</span> = <span style="color:#ae81ff">1536</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">auto_embed</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">weaviate</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">connection</span> = <span style="color:#e6db74">&#34;http://localhost:8080&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">class_name</span> = <span style="color:#e6db74">&#34;AgentMemory&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">embedding</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;openai&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">model</span> = <span style="color:#e6db74">&#34;text-embedding-3-small&#34;</span></span></span></code></pre></div>
+<h4 id="production-configuration">Production Configuration</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enabled</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;weaviate&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_results</span> = <span style="color:#ae81ff">10</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">dimensions</span> = <span style="color:#ae81ff">1536</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">auto_embed</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">weaviate</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">connection</span> = <span style="color:#e6db74">&#34;https://your-weaviate-host:8080&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">api_key</span> = <span style="color:#e6db74">&#34;${WEAVIATE_API_KEY}&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">class_name</span> = <span style="color:#e6db74">&#34;AgentMemory&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">timeout</span> = <span style="color:#e6db74">&#34;30s&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_retries</span> = <span style="color:#ae81ff">3</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">embedding</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;openai&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">model</span> = <span style="color:#e6db74">&#34;text-embedding-3-small&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">cache_embeddings</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_batch_size</span> = <span style="color:#ae81ff">50</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">timeout_seconds</span> = <span style="color:#ae81ff">30</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">rag</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enabled</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">chunk_size</span> = <span style="color:#ae81ff">1000</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">overlap</span> = <span style="color:#ae81ff">100</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">top_k</span> = <span style="color:#ae81ff">5</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">score_threshold</span> = <span style="color:#ae81ff">0.7</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">hybrid_search</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">session_memory</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">advanced</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">retry_max_attempts</span> = <span style="color:#ae81ff">3</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">retry_base_delay</span> = <span style="color:#e6db74">&#34;100ms&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">retry_max_delay</span> = <span style="color:#e6db74">&#34;5s&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">health_check_interval</span> = <span style="color:#e6db74">&#34;1m&#34;</span></span></span></code></pre></div>
+<h3 id="environment-variables">Environment Variables</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Weaviate connection</span>
+</span></span><span style="display:flex;"><span>export WEAVIATE_URL<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;http://localhost:8080&#34;</span>
+</span></span><span style="display:flex;"><span>export WEAVIATE_API_KEY<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;your-secret-api-key&#34;</span>  <span style="color:#75715e"># For production</span>
+</span></span><span style="display:flex;"><span>export WEAVIATE_CLASS_NAME<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;AgentMemory&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># OpenAI API (if using OpenAI embeddings)</span>
+</span></span><span style="display:flex;"><span>export OPENAI_API_KEY<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;your-openai-api-key&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Azure OpenAI (alternative)</span>
+</span></span><span style="display:flex;"><span>export AZURE_OPENAI_API_KEY<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;your-azure-api-key&#34;</span>
+</span></span><span style="display:flex;"><span>export AZURE_OPENAI_ENDPOINT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;https://your-resource.openai.azure.com/&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Ollama (for local embeddings)</span>
+</span></span><span style="display:flex;"><span>export OLLAMA_BASE_URL<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;http://localhost:11434&#34;</span>
+</span></span><span style="display:flex;"><span>export OLLAMA_MODEL<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;mxbai-embed-large&#34;</span></span></span></code></pre></div>
+<hr>
+<h2 id="-advanced-features">🚀 Advanced Features</h2>
+<h3 id="authentication-setup">Authentication Setup</h3>
+<h4 id="api-key-authentication">API Key Authentication</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># docker-compose.yml with authentication</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">services</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">weaviate</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">environment</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED</span>: <span style="color:#e6db74">&#39;false&#39;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">AUTHENTICATION_APIKEY_ENABLED</span>: <span style="color:#e6db74">&#39;true&#39;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">AUTHENTICATION_APIKEY_ALLOWED_KEYS</span>: <span style="color:#e6db74">&#39;your-secret-key,another-key&#39;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">AUTHENTICATION_APIKEY_USERS</span>: <span style="color:#e6db74">&#39;admin,user&#39;</span></span></span></code></pre></div>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span><span style="color:#75715e"># agentflow.toml with authentication</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">weaviate</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">connection</span> = <span style="color:#e6db74">&#34;http://localhost:8080&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">api_key</span> = <span style="color:#e6db74">&#34;your-secret-key&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">class_name</span> = <span style="color:#e6db74">&#34;AgentMemory&#34;</span></span></span></code></pre></div>
+<h4 id="oidc-authentication">OIDC Authentication</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">services</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">weaviate</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">environment</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED</span>: <span style="color:#e6db74">&#39;false&#39;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">AUTHENTICATION_OIDC_ENABLED</span>: <span style="color:#e6db74">&#39;true&#39;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">AUTHENTICATION_OIDC_ISSUER</span>: <span style="color:#e6db74">&#39;https://your-oidc-provider.com&#39;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">AUTHENTICATION_OIDC_CLIENT_ID</span>: <span style="color:#e6db74">&#39;your-client-id&#39;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">AUTHENTICATION_OIDC_USERNAME_CLAIM</span>: <span style="color:#e6db74">&#39;email&#39;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">AUTHENTICATION_OIDC_GROUPS_CLAIM</span>: <span style="color:#e6db74">&#39;groups&#39;</span></span></span></code></pre></div>
+<h3 id="clustering-setup">Clustering Setup</h3>
+<h4 id="multi-node-cluster">Multi-Node Cluster</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># docker-compose.cluster.yml</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">version</span>: <span style="color:#e6db74">&#39;3.8&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">services</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">weaviate-node1</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">image</span>: <span style="color:#ae81ff">semitechnologies/weaviate:1.22.4</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">container_name</span>: <span style="color:#ae81ff">weaviate-node1</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">ports</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#e6db74">&#34;8080:8080&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">environment</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">CLUSTER_HOSTNAME</span>: <span style="color:#e6db74">&#39;node1&#39;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">CLUSTER_GOSSIP_BIND_PORT</span>: <span style="color:#e6db74">&#39;7100&#39;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">CLUSTER_DATA_BIND_PORT</span>: <span style="color:#e6db74">&#39;7101&#39;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">PERSISTENCE_DATA_PATH</span>: <span style="color:#e6db74">&#39;/var/lib/weaviate&#39;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">DEFAULT_VECTORIZER_MODULE</span>: <span style="color:#e6db74">&#39;none&#39;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">ENABLE_MODULES</span>: <span style="color:#e6db74">&#39;text2vec-openai,text2vec-cohere,text2vec-huggingface&#39;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">volumes</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">weaviate_node1_data:/var/lib/weaviate</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">networks</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">weaviate-cluster</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">weaviate-node2</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">image</span>: <span style="color:#ae81ff">semitechnologies/weaviate:1.22.4</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">container_name</span>: <span style="color:#ae81ff">weaviate-node2</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">ports</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#e6db74">&#34;8081:8080&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">environment</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">CLUSTER_HOSTNAME</span>: <span style="color:#e6db74">&#39;node2&#39;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">CLUSTER_GOSSIP_BIND_PORT</span>: <span style="color:#e6db74">&#39;7102&#39;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">CLUSTER_DATA_BIND_PORT</span>: <span style="color:#e6db74">&#39;7103&#39;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">CLUSTER_JOIN</span>: <span style="color:#e6db74">&#39;node1:7100&#39;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">PERSISTENCE_DATA_PATH</span>: <span style="color:#e6db74">&#39;/var/lib/weaviate&#39;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">DEFAULT_VECTORIZER_MODULE</span>: <span style="color:#e6db74">&#39;none&#39;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">ENABLE_MODULES</span>: <span style="color:#e6db74">&#39;text2vec-openai,text2vec-cohere,text2vec-huggingface&#39;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">volumes</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">weaviate_node2_data:/var/lib/weaviate</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">networks</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">weaviate-cluster</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">depends_on</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">weaviate-node1</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">weaviate-node3</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">image</span>: <span style="color:#ae81ff">semitechnologies/weaviate:1.22.4</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">container_name</span>: <span style="color:#ae81ff">weaviate-node3</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">ports</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#e6db74">&#34;8082:8080&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">environment</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">CLUSTER_HOSTNAME</span>: <span style="color:#e6db74">&#39;node3&#39;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">CLUSTER_GOSSIP_BIND_PORT</span>: <span style="color:#e6db74">&#39;7104&#39;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">CLUSTER_DATA_BIND_PORT</span>: <span style="color:#e6db74">&#39;7105&#39;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">CLUSTER_JOIN</span>: <span style="color:#e6db74">&#39;node1:7100&#39;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">PERSISTENCE_DATA_PATH</span>: <span style="color:#e6db74">&#39;/var/lib/weaviate&#39;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">DEFAULT_VECTORIZER_MODULE</span>: <span style="color:#e6db74">&#39;none&#39;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">ENABLE_MODULES</span>: <span style="color:#e6db74">&#39;text2vec-openai,text2vec-cohere,text2vec-huggingface&#39;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">volumes</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">weaviate_node3_data:/var/lib/weaviate</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">networks</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">weaviate-cluster</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">depends_on</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">weaviate-node1</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">volumes</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">weaviate_node1_data</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">weaviate_node2_data</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">weaviate_node3_data</span>:
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">networks</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">weaviate-cluster</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">driver</span>: <span style="color:#ae81ff">bridge</span></span></span></code></pre></div>
+<h3 id="backup-and-restore">Backup and Restore</h3>
+<h4 id="automated-backups">Automated Backups</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># Add backup service to docker-compose.yml</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">services</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">weaviate-backup</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">image</span>: <span style="color:#ae81ff">curlimages/curl:latest</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">container_name</span>: <span style="color:#ae81ff">weaviate-backup</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">volumes</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">./backups:/backups</span>
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">./scripts:/scripts</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">command</span>: <span style="color:#ae81ff">/scripts/backup.sh</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">depends_on</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">weaviate</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">restart</span>: <span style="color:#e6db74">&#34;no&#34;</span></span></span></code></pre></div>
+<p>Create <code>scripts/backup.sh</code>:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e">#!/bin/sh
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e"># backup.sh</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>WEAVIATE_URL<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;http://weaviate:8080&#34;</span>
+</span></span><span style="display:flex;"><span>BACKUP_DIR<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/backups&#34;</span>
+</span></span><span style="display:flex;"><span>DATE<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>date +%Y%m%d_%H%M%S<span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;Creating Weaviate backup...&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Create backup</span>
+</span></span><span style="display:flex;"><span>curl -X POST <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  <span style="color:#e6db74">&#34;</span>$WEAVIATE_URL<span style="color:#e6db74">/v1/backups/filesystem&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -H <span style="color:#e6db74">&#34;Content-Type: application/json&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -d <span style="color:#e6db74">&#34;{
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    \&#34;id\&#34;: \&#34;backup_</span>$DATE<span style="color:#e6db74">\&#34;,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    \&#34;include\&#34;: [\&#34;AgentMemory\&#34;, \&#34;Documents\&#34;, \&#34;ChatHistory\&#34;]
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  }&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Wait for backup to complete</span>
+</span></span><span style="display:flex;"><span>sleep <span style="color:#ae81ff">30</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Check backup status</span>
+</span></span><span style="display:flex;"><span>curl <span style="color:#e6db74">&#34;</span>$WEAVIATE_URL<span style="color:#e6db74">/v1/backups/filesystem/backup_</span>$DATE<span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;Backup completed: backup_</span>$DATE<span style="color:#e6db74">&#34;</span></span></span></code></pre></div>
+<h4 id="manual-backup">Manual Backup</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Create backup</span>
+</span></span><span style="display:flex;"><span>curl -X POST <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  <span style="color:#e6db74">&#34;http://localhost:8080/v1/backups/filesystem&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -H <span style="color:#e6db74">&#34;Content-Type: application/json&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -d <span style="color:#e6db74">&#39;{
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;id&#34;: &#34;my-backup-2024&#34;,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;include&#34;: [&#34;AgentMemory&#34;]
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  }&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Check backup status</span>
+</span></span><span style="display:flex;"><span>curl <span style="color:#e6db74">&#34;http://localhost:8080/v1/backups/filesystem/my-backup-2024&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># List all backups</span>
+</span></span><span style="display:flex;"><span>curl <span style="color:#e6db74">&#34;http://localhost:8080/v1/backups/filesystem&#34;</span></span></span></code></pre></div>
+<h4 id="restore-from-backup">Restore from Backup</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Restore backup</span>
+</span></span><span style="display:flex;"><span>curl -X POST <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  <span style="color:#e6db74">&#34;http://localhost:8080/v1/backups/filesystem/my-backup-2024/restore&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -H <span style="color:#e6db74">&#34;Content-Type: application/json&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -d <span style="color:#e6db74">&#39;{
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;include&#34;: [&#34;AgentMemory&#34;]
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  }&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Check restore status</span>
+</span></span><span style="display:flex;"><span>curl <span style="color:#e6db74">&#34;http://localhost:8080/v1/backups/filesystem/my-backup-2024/restore&#34;</span></span></span></code></pre></div>
+<hr>
+<h2 id="-monitoring-and-maintenance">📊 Monitoring and Maintenance</h2>
+<h3 id="health-checks">Health Checks</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e">#!/bin/bash
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e"># health-check.sh</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>WEAVIATE_URL<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;http://localhost:8080&#34;</span>
+</span></span><span style="display:flex;"><span>API_KEY<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;&#34;</span>  <span style="color:#75715e"># Set if using authentication</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;🔍 Checking Weaviate health...&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Test connection</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> curl -f <span style="color:#e6db74">&#34;</span>$WEAVIATE_URL<span style="color:#e6db74">/v1/.well-known/ready&#34;</span> &gt; /dev/null 2&gt;&amp;1; <span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;✅ Weaviate connection successful&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">else</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;❌ Weaviate connection failed&#34;</span>
+</span></span><span style="display:flex;"><span>    exit <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fi</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Check cluster status</span>
+</span></span><span style="display:flex;"><span>NODES<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>curl -s <span style="color:#e6db74">&#34;</span>$WEAVIATE_URL<span style="color:#e6db74">/v1/nodes&#34;</span> | jq -r <span style="color:#e6db74">&#39;.nodes | length&#39;</span><span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#f92672">[</span> <span style="color:#e6db74">&#34;</span>$NODES<span style="color:#e6db74">&#34;</span> -gt <span style="color:#ae81ff">0</span> <span style="color:#f92672">]</span>; <span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;✅ Cluster has </span>$NODES<span style="color:#e6db74"> node(s)&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">else</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;⚠️  No cluster nodes found&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fi</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Check schema</span>
+</span></span><span style="display:flex;"><span>CLASSES<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>curl -s <span style="color:#e6db74">&#34;</span>$WEAVIATE_URL<span style="color:#e6db74">/v1/schema&#34;</span> | jq -r <span style="color:#e6db74">&#39;.classes | length&#39;</span><span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;ℹ️  Schema has </span>$CLASSES<span style="color:#e6db74"> class(es)&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Check disk space (Docker)</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> command -v docker &amp;&gt; /dev/null; <span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>    CONTAINER_ID<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>docker ps -q -f name<span style="color:#f92672">=</span>weaviate<span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#f92672">[</span> -n <span style="color:#e6db74">&#34;</span>$CONTAINER_ID<span style="color:#e6db74">&#34;</span> <span style="color:#f92672">]</span>; <span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>        DISK_USAGE<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>docker exec <span style="color:#e6db74">&#34;</span>$CONTAINER_ID<span style="color:#e6db74">&#34;</span> df -h /var/lib/weaviate | awk <span style="color:#e6db74">&#39;NR==2 {print $5}&#39;</span> | sed <span style="color:#e6db74">&#39;s/%//&#39;</span><span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> <span style="color:#f92672">[</span> <span style="color:#e6db74">&#34;</span>$DISK_USAGE<span style="color:#e6db74">&#34;</span> -gt <span style="color:#ae81ff">80</span> <span style="color:#f92672">]</span>; <span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>            echo <span style="color:#e6db74">&#34;⚠️  Disk usage high: </span><span style="color:#e6db74">${</span>DISK_USAGE<span style="color:#e6db74">}</span><span style="color:#e6db74">%&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">else</span>
+</span></span><span style="display:flex;"><span>            echo <span style="color:#e6db74">&#34;✅ Disk usage OK: </span><span style="color:#e6db74">${</span>DISK_USAGE<span style="color:#e6db74">}</span><span style="color:#e6db74">%&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">fi</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">fi</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fi</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;✅ All health checks passed&#34;</span></span></span></code></pre></div>
+<h3 id="performance-monitoring">Performance Monitoring</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Monitor Weaviate metrics</span>
+</span></span><span style="display:flex;"><span>curl <span style="color:#e6db74">&#34;http://localhost:8080/v1/meta&#34;</span> | jq <span style="color:#e6db74">&#39;.&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Check cluster statistics</span>
+</span></span><span style="display:flex;"><span>curl <span style="color:#e6db74">&#34;http://localhost:8080/v1/nodes&#34;</span> | jq <span style="color:#e6db74">&#39;.nodes[] | {name: .name, status: .status, stats: .stats}&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Monitor specific class</span>
+</span></span><span style="display:flex;"><span>curl <span style="color:#e6db74">&#34;http://localhost:8080/v1/schema/AgentMemory&#34;</span> | jq <span style="color:#e6db74">&#39;.&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Get object count</span>
+</span></span><span style="display:flex;"><span>curl <span style="color:#e6db74">&#34;http://localhost:8080/v1/objects?class=AgentMemory&amp;limit=0&#34;</span> | jq <span style="color:#e6db74">&#39;.totalResults&#39;</span></span></span></code></pre></div>
+<h3 id="graphql-queries">GraphQL Queries</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Query objects with GraphQL</span>
+</span></span><span style="display:flex;"><span>curl -X POST <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  <span style="color:#e6db74">&#34;http://localhost:8080/v1/graphql&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -H <span style="color:#e6db74">&#34;Content-Type: application/json&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -d <span style="color:#e6db74">&#39;{
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;query&#34;: &#34;{ Get { AgentMemory(limit: 10) { content tags _additional { id creationTimeUnix } } } }&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  }&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Aggregate queries</span>
+</span></span><span style="display:flex;"><span>curl -X POST <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  <span style="color:#e6db74">&#34;http://localhost:8080/v1/graphql&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -H <span style="color:#e6db74">&#34;Content-Type: application/json&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -d <span style="color:#e6db74">&#39;{
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;query&#34;: &#34;{ Aggregate { AgentMemory { meta { count } } } }&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  }&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Vector search with GraphQL</span>
+</span></span><span style="display:flex;"><span>curl -X POST <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  <span style="color:#e6db74">&#34;http://localhost:8080/v1/graphql&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -H <span style="color:#e6db74">&#34;Content-Type: application/json&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -d <span style="color:#e6db74">&#39;{
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;query&#34;: &#34;{ Get { AgentMemory(nearVector: {vector: [0.1, 0.2, 0.3]}, limit: 5) { content _additional { distance } } } }&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  }&#39;</span></span></span></code></pre></div>
+<h3 id="maintenance-tasks">Maintenance Tasks</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e">#!/bin/bash
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e"># maintenance.sh</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>WEAVIATE_URL<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;http://localhost:8080&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;🔧 Running Weaviate maintenance tasks...&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Check cluster health</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;Checking cluster health...&#34;</span>
+</span></span><span style="display:flex;"><span>curl -s <span style="color:#e6db74">&#34;</span>$WEAVIATE_URL<span style="color:#e6db74">/v1/nodes&#34;</span> | jq <span style="color:#e6db74">&#39;.nodes[] | {name: .name, status: .status}&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Optimize indexes (if needed)</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;Checking index status...&#34;</span>
+</span></span><span style="display:flex;"><span>curl -s <span style="color:#e6db74">&#34;</span>$WEAVIATE_URL<span style="color:#e6db74">/v1/schema&#34;</span> | jq <span style="color:#e6db74">&#39;.classes[] | {class: .class, vectorIndexType: .vectorIndexType}&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Clean up old backups (keep last 7)</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;Cleaning up old backups...&#34;</span>
+</span></span><span style="display:flex;"><span>BACKUPS<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>curl -s <span style="color:#e6db74">&#34;</span>$WEAVIATE_URL<span style="color:#e6db74">/v1/backups/filesystem&#34;</span> | jq -r <span style="color:#e6db74">&#39;.[] | select(.status == &#34;SUCCESS&#34;) | .id&#39;</span> | sort -r | tail -n +8<span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> backup in $BACKUPS; <span style="color:#66d9ef">do</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;Deleting old backup: </span>$backup<span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>    curl -X DELETE <span style="color:#e6db74">&#34;</span>$WEAVIATE_URL<span style="color:#e6db74">/v1/backups/filesystem/</span>$backup<span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">done</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;✅ Maintenance completed&#34;</span></span></span></code></pre></div>
+<hr>
+<h2 id="-troubleshooting">🔧 Troubleshooting</h2>
+<h3 id="common-issues">Common Issues</h3>
+<h4 id="1-connection-refused">1. Connection Refused</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Check if Weaviate is running</span>
+</span></span><span style="display:flex;"><span>docker ps | grep weaviate
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Check logs</span>
+</span></span><span style="display:flex;"><span>docker logs agentflow-weaviate
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Check port availability</span>
+</span></span><span style="display:flex;"><span>netstat -tlnp | grep <span style="color:#ae81ff">8080</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Test connection</span>
+</span></span><span style="display:flex;"><span>curl http://localhost:8080/v1/.well-known/ready</span></span></code></pre></div>
+<h4 id="2-authentication-errors">2. Authentication Errors</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Test with API key</span>
+</span></span><span style="display:flex;"><span>curl -H <span style="color:#e6db74">&#34;Authorization: Bearer your-api-key&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  <span style="color:#e6db74">&#34;http://localhost:8080/v1/.well-known/ready&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Check authentication configuration</span>
+</span></span><span style="display:flex;"><span>docker exec agentflow-weaviate env | grep AUTH</span></span></code></pre></div>
+<h4 id="3-schema-issues">3. Schema Issues</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Check current schema</span>
+</span></span><span style="display:flex;"><span>curl <span style="color:#e6db74">&#34;http://localhost:8080/v1/schema&#34;</span> | jq <span style="color:#e6db74">&#39;.&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Delete class (careful!)</span>
+</span></span><span style="display:flex;"><span>curl -X DELETE <span style="color:#e6db74">&#34;http://localhost:8080/v1/schema/AgentMemory&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Schema will be recreated automatically by AgentFlow</span></span></span></code></pre></div>
+<h4 id="4-performance-issues">4. Performance Issues</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Check resource usage</span>
+</span></span><span style="display:flex;"><span>docker stats agentflow-weaviate
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Monitor memory usage</span>
+</span></span><span style="display:flex;"><span>curl <span style="color:#e6db74">&#34;http://localhost:8080/v1/meta&#34;</span> | jq <span style="color:#e6db74">&#39;.hostname, .version&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Check for memory leaks</span>
+</span></span><span style="display:flex;"><span>docker exec agentflow-weaviate ps aux</span></span></code></pre></div>
+<h4 id="5-cluster-issues">5. Cluster Issues</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Check cluster status</span>
+</span></span><span style="display:flex;"><span>curl <span style="color:#e6db74">&#34;http://localhost:8080/v1/nodes&#34;</span> | jq <span style="color:#e6db74">&#39;.nodes[] | {name: .name, status: .status}&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Check gossip protocol</span>
+</span></span><span style="display:flex;"><span>docker logs agentflow-weaviate | grep -i gossip
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Restart problematic nodes</span>
+</span></span><span style="display:flex;"><span>docker restart weaviate-node2</span></span></code></pre></div>
+<h3 id="debug-mode">Debug Mode</h3>
+<p>Enable debug logging:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># docker-compose.yml</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">services</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">weaviate</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">environment</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">LOG_LEVEL</span>: <span style="color:#e6db74">&#39;debug&#39;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">PROMETHEUS_MONITORING_ENABLED</span>: <span style="color:#e6db74">&#39;true&#39;</span></span></span></code></pre></div>
+<h3 id="recovery-procedures">Recovery Procedures</h3>
+<h4 id="reset-weaviate">Reset Weaviate</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># ⚠️ WARNING: This will delete all data!</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Stop Weaviate</span>
+</span></span><span style="display:flex;"><span>docker-compose down
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Remove data volume</span>
+</span></span><span style="display:flex;"><span>docker volume rm <span style="color:#66d9ef">$(</span>docker volume ls -q | grep weaviate<span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Restart Weaviate</span>
+</span></span><span style="display:flex;"><span>docker-compose up -d
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Schema and data will be recreated by AgentFlow</span></span></span></code></pre></div>
+<h4 id="cluster-recovery">Cluster Recovery</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># If cluster is in split-brain state:</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Stop all nodes</span>
+</span></span><span style="display:flex;"><span>docker-compose down
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Start nodes one by one</span>
+</span></span><span style="display:flex;"><span>docker-compose up -d weaviate-node1
+</span></span><span style="display:flex;"><span>sleep <span style="color:#ae81ff">30</span>
+</span></span><span style="display:flex;"><span>docker-compose up -d weaviate-node2
+</span></span><span style="display:flex;"><span>sleep <span style="color:#ae81ff">30</span>
+</span></span><span style="display:flex;"><span>docker-compose up -d weaviate-node3
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Check cluster status</span>
+</span></span><span style="display:flex;"><span>curl <span style="color:#e6db74">&#34;http://localhost:8080/v1/nodes&#34;</span></span></span></code></pre></div>
+<hr>
+<h2 id="-production-deployment">🎯 Production Deployment</h2>
+<h3 id="security-checklist">Security Checklist</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># ✅ Enable authentication</span>
+</span></span><span style="display:flex;"><span>AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: <span style="color:#e6db74">&#39;false&#39;</span>
+</span></span><span style="display:flex;"><span>AUTHENTICATION_APIKEY_ENABLED: <span style="color:#e6db74">&#39;true&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># ✅ Use HTTPS in production</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Configure reverse proxy (nginx, traefik, etc.)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># ✅ Restrict network access</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Use firewall rules or security groups</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># ✅ Regular backups</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Automated backup schedule</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># ✅ Monitor resource usage</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Set up alerts for CPU, memory, disk</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># ✅ Update regularly</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Keep Weaviate version up to date</span></span></span></code></pre></div>
+<h3 id="load-balancer-setup">Load Balancer Setup</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-nginx" data-lang="nginx"><span style="display:flex;"><span><span style="color:#75715e"># nginx.conf
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">upstream</span> <span style="color:#e6db74">weaviate_cluster</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">server</span> weaviate-node1:<span style="color:#ae81ff">8080</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">server</span> weaviate-node2:<span style="color:#ae81ff">8080</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">server</span> weaviate-node3:<span style="color:#ae81ff">8080</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">server</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">listen</span> <span style="color:#ae81ff">80</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">server_name</span> <span style="color:#e6db74">your-weaviate-domain.com</span>;
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">location</span> <span style="color:#e6db74">/</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">proxy_pass</span> <span style="color:#e6db74">http://weaviate_cluster</span>;
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">proxy_set_header</span> <span style="color:#e6db74">Host</span> $host;
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">proxy_set_header</span> <span style="color:#e6db74">X-Real-IP</span> $remote_addr;
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">proxy_set_header</span> <span style="color:#e6db74">X-Forwarded-For</span> $proxy_add_x_forwarded_for;
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">proxy_set_header</span> <span style="color:#e6db74">X-Forwarded-Proto</span> $scheme;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h3 id="monitoring-setup">Monitoring Setup</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># Add Prometheus monitoring</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">services</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">weaviate</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">environment</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">PROMETHEUS_MONITORING_ENABLED</span>: <span style="color:#e6db74">&#39;true&#39;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">PROMETHEUS_MONITORING_PORT</span>: <span style="color:#e6db74">&#39;2112&#39;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">ports</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#e6db74">&#34;2112:2112&#34;</span>  <span style="color:#75715e"># Prometheus metrics</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">prometheus</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">image</span>: <span style="color:#ae81ff">prom/prometheus</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">ports</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#e6db74">&#34;9090:9090&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">volumes</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">./prometheus.yml:/etc/prometheus/prometheus.yml</span></span></span></code></pre></div>
+<hr>
+<h2 id="-summary">🎉 Summary</h2>
+<p>You now have a complete Weaviate setup for AgentFlow:</p>
+<p>✅ <strong>Vector Database</strong>: Purpose-built Weaviate vector database<br>
+✅ <strong>Scalability</strong>: Clustering and load balancing support<br>
+✅ <strong>Security</strong>: Authentication and access control<br>
+✅ <strong>Monitoring</strong>: Health checks, metrics, and maintenance<br>
+✅ <strong>Production Ready</strong>: Backup, recovery, and deployment procedures</p>
+<h3 id="next-steps">Next Steps</h3>
+<ol>
+<li><strong>Test your setup</strong> with the provided health check script</li>
+<li><strong>Configure AgentFlow</strong> with your Weaviate connection</li>
+<li><strong>Set up monitoring</strong> and backup procedures</li>
+<li><strong>Scale horizontally</strong> with clustering if needed</li>
+</ol>
+<p>For more information:</p>
+<ul>
+<li><strong><a href="/AgenticGoKitDocs/guides/memory/index.html">Memory System Guide</a></strong> - Complete API reference</li>
+<li><strong><a href="/AgenticGoKitDocs/guides/memoryprovidersetup/index.html">Memory Provider Setup</a></strong> - All provider options</li>
+<li><strong><a href="/AgenticGoKitDocs/guides/configuration/index.html">Configuration Guide</a></strong> - Advanced configuration</li>
+</ul>
+
+  <footer class="footline">
+              <i class='fa-fw fas fa-calendar'></i> Jul 25, 2025
+  </footer>
+</article>
+        </div>
+      </main>
+    </div>
+    <aside id="R-sidebar" class="default-animation">
+      <div id="R-header-topbar" class="default-animation"></div>
+      <div id="R-header-wrapper" class="default-animation">
+        <div id="R-header" class="default-animation">
+          <a id="R-logo" class="R-default" href="/AgenticGoKitDocs/index.html">
+            <div class="logo-title">AgenticGoKit Docs</div>
+          </a>
+        </div>
+        <search><form action="/AgenticGoKitDocs/search/index.html" method="get">
+          <div class="searchbox default-animation">
+            <button class="search-detail" type="submit" title="Search (CTRL+ALT+f)"><i class="fas fa-search"></i></button>
+            <label class="a11y-only" for="R-search-by">Search</label>
+            <input data-search-input id="R-search-by" name="search-by" class="search-by" type="search" placeholder="Search...">
+            <button class="search-clear" type="button" data-search-clear="" title="Clear search"><i class="fas fa-times" title="Clear search"></i></button>
+          </div>
+        </form></search>
+      </div>
+      <div id="R-homelinks" class="default-animation homelinks">
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-homelinks">
+          <ul class="space collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/index.html"><a class="padding" href="/AgenticGoKitDocs/index.html"><i class="fa-fw fas fa-home"></i> Home</a></li>
+          </ul>
+        </div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-headercontrols">
+          <ul class="">
+          </ul>
+        </div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+      </div>
+      <div id="R-content-wrapper" class="highlightable">
+        <div class="R-sidebarmenu R-shortcutmenu-main">
+          <ul class="enlarge morespace collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/readme/index.html">content</a></li>
+            <li class="parent alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/index.html"><input type="checkbox" id="R-section-8fc2fd7736125e87cab8840a86c2af5a" aria-controls="R-subsections-8fc2fd7736125e87cab8840a86c2af5a" checked><label for="R-section-8fc2fd7736125e87cab8840a86c2af5a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu guides</span></label><a class="padding" href="/AgenticGoKitDocs/guides/index.html">guides</a><ul id="R-subsections-8fc2fd7736125e87cab8840a86c2af5a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/readme/index.html">guides</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/agentbasics/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/agentbasics/index.html">AgentBasics</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/examples/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/examples/index.html">Examples</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/configuration/index.html">Configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/customtools/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/customtools/index.html">CustomTools</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/providers/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/providers/index.html">Providers</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memoryprovidersetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memoryprovidersetup/index.html">MemoryProviderSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memorytroubleshooting/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memorytroubleshooting/index.html">MemoryTroubleshooting</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/embeddingmodelguide/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/embeddingmodelguide/index.html">EmbeddingModelGuide</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/ragconfiguration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/ragconfiguration/index.html">RAGConfiguration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/toolintegration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/toolintegration/index.html">ToolIntegration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/pgvectorsetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/pgvectorsetup/index.html">PgVectorSetup</a></li>
+            <li class="active " data-nav-id="/AgenticGoKitDocs/guides/weaviatesetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/weaviatesetup/index.html">WeaviateSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/performance/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/performance/index.html">Performance</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/errorhandling/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/errorhandling/index.html">ErrorHandling</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/deployment/index.html"><input type="checkbox" id="R-section-ecc839349395ef3c015a12132049dff2" aria-controls="R-subsections-ecc839349395ef3c015a12132049dff2" checked><label for="R-section-ecc839349395ef3c015a12132049dff2"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu deployment</span></label><a class="padding" href="/AgenticGoKitDocs/guides/deployment/index.html">deployment</a><ul id="R-subsections-ecc839349395ef3c015a12132049dff2" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/deployment/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/deployment/readme/index.html">deployment</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/development/index.html"><input type="checkbox" id="R-section-fff1f5eca5d0a93209b9c6262762c25a" aria-controls="R-subsections-fff1f5eca5d0a93209b9c6262762c25a" checked><label for="R-section-fff1f5eca5d0a93209b9c6262762c25a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu development</span></label><a class="padding" href="/AgenticGoKitDocs/guides/development/index.html">development</a><ul id="R-subsections-fff1f5eca5d0a93209b9c6262762c25a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/readme/index.html">development</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/best-practices/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/best-practices/index.html">best-practices</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/debugging/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/debugging/index.html">debugging</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/research-assistant/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/research-assistant/index.html">research-assistant</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/testing-agents/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/testing-agents/index.html">testing-agents</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/visualization/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/visualization/index.html">visualization</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/web-search-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/web-search-integration/index.html">web-search-integration</a></li></ul></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/framework-comparison/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/framework-comparison/index.html">framework-comparison</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memory/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memory/index.html">Memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/scaffoldmemoryguide/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/scaffoldmemoryguide/index.html">ScaffoldMemoryGuide</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/setup/index.html"><input type="checkbox" id="R-section-0124aed9abb5064d53391168f3c95c22" aria-controls="R-subsections-0124aed9abb5064d53391168f3c95c22" checked><label for="R-section-0124aed9abb5064d53391168f3c95c22"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu setup</span></label><a class="padding" href="/AgenticGoKitDocs/guides/setup/index.html">setup</a><ul id="R-subsections-0124aed9abb5064d53391168f3c95c22" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/readme/index.html">setup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/llm-providers/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/llm-providers/index.html">llm-providers</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/mcp-tools/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/mcp-tools/index.html">mcp-tools</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/orchestration-configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/orchestration-configuration/index.html">orchestration-configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/vector-databases/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/vector-databases/index.html">vector-databases</a></li></ul></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/troubleshooting/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/troubleshooting/index.html">troubleshooting</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/contributors/index.html"><input type="checkbox" id="R-section-190d9b328fbda7e13ab386f7a5417de5" aria-controls="R-subsections-190d9b328fbda7e13ab386f7a5417de5" checked><label for="R-section-190d9b328fbda7e13ab386f7a5417de5"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu contributors</span></label><a class="padding" href="/AgenticGoKitDocs/contributors/index.html">contributors</a><ul id="R-subsections-190d9b328fbda7e13ab386f7a5417de5" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/readme/index.html">contributors</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/contributorguide/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/contributorguide/index.html">ContributorGuide</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/codestyle/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/codestyle/index.html">CodeStyle</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/corevsinternal/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/corevsinternal/index.html">CoreVsInternal</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/addingfeatures/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/addingfeatures/index.html">AddingFeatures</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/testing/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/testing/index.html">Testing</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/docsstandards/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/docsstandards/index.html">DocsStandards</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/reference/index.html"><input type="checkbox" id="R-section-66002f201bef818664bb81aa67490c58" aria-controls="R-subsections-66002f201bef818664bb81aa67490c58" checked><label for="R-section-66002f201bef818664bb81aa67490c58"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu reference</span></label><a class="padding" href="/AgenticGoKitDocs/reference/index.html">reference</a><ul id="R-subsections-66002f201bef818664bb81aa67490c58" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/readme/index.html">reference</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/configuration/index.html">configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/cli/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/cli/index.html">cli</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/mcp/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/mcp/index.html">mcp</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/agent/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/agent/index.html">agent</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/memory/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/memory/index.html">memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/orchestration/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/orchestration/index.html">orchestration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/state-event/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/state-event/index.html">state-event</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/index.html"><input type="checkbox" id="R-section-e1e8c1e70c5500b49e8dda2dc550651a" aria-controls="R-subsections-e1e8c1e70c5500b49e8dda2dc550651a" checked><label for="R-section-e1e8c1e70c5500b49e8dda2dc550651a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu tutorials</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/index.html">tutorials</a><ul id="R-subsections-e1e8c1e70c5500b49e8dda2dc550651a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/readme/index.html">tutorials</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/advanced/index.html"><input type="checkbox" id="R-section-d3def5cd76adc8096d0ff9fda6b8e479" aria-controls="R-subsections-d3def5cd76adc8096d0ff9fda6b8e479" checked><label for="R-section-d3def5cd76adc8096d0ff9fda6b8e479"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu advanced</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/index.html">advanced</a><ul id="R-subsections-d3def5cd76adc8096d0ff9fda6b8e479" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/readme/index.html">advanced</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/circuit-breaker-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/circuit-breaker-patterns/index.html">circuit-breaker-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/load-balancing-scaling/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/load-balancing-scaling/index.html">load-balancing-scaling</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/retry-policies/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/retry-policies/index.html">retry-policies</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/testing-strategies/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/testing-strategies/index.html">testing-strategies</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/index.html"><input type="checkbox" id="R-section-212c6ccffb40ecdd78eb2136f98c4cac" aria-controls="R-subsections-212c6ccffb40ecdd78eb2136f98c4cac" checked><label for="R-section-212c6ccffb40ecdd78eb2136f98c4cac"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu core-concepts</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/index.html">core-concepts</a><ul id="R-subsections-212c6ccffb40ecdd78eb2136f98c4cac" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/readme/index.html">core-concepts</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/agent-lifecycle/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/agent-lifecycle/index.html">agent-lifecycle</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/error-handling/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/error-handling/index.html">error-handling</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/message-passing/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/message-passing/index.html">message-passing</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/orchestration-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/orchestration-patterns/index.html">orchestration-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/state-management/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/state-management/index.html">state-management</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/debugging/index.html"><input type="checkbox" id="R-section-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" aria-controls="R-subsections-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" checked><label for="R-section-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu debugging</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/index.html">debugging</a><ul id="R-subsections-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/readme/index.html">debugging</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/debugging-multi-agent-systems/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/debugging-multi-agent-systems/index.html">debugging-multi-agent-systems</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/logging-and-tracing/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/logging-and-tracing/index.html">logging-and-tracing</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/index.html"><input type="checkbox" id="R-section-e7f904c8b9d0f9bf1f07ca7d482d2247" aria-controls="R-subsections-e7f904c8b9d0f9bf1f07ca7d482d2247" checked><label for="R-section-e7f904c8b9d0f9bf1f07ca7d482d2247"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu getting-started</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/index.html">getting-started</a><ul id="R-subsections-e7f904c8b9d0f9bf1f07ca7d482d2247" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/readme/index.html">getting-started</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/memory-and-rag/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/memory-and-rag/index.html">memory-and-rag</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/multi-agent-collaboration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/multi-agent-collaboration/index.html">multi-agent-collaboration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/production-deployment/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/production-deployment/index.html">production-deployment</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/quickstart/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/quickstart/index.html">quickstart</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/tool-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/tool-integration/index.html">tool-integration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/your-first-agent/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/your-first-agent/index.html">your-first-agent</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/mcp/index.html"><input type="checkbox" id="R-section-153aac44598009a99dd5a60317a3eecc" aria-controls="R-subsections-153aac44598009a99dd5a60317a3eecc" checked><label for="R-section-153aac44598009a99dd5a60317a3eecc"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu mcp</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/index.html">mcp</a><ul id="R-subsections-153aac44598009a99dd5a60317a3eecc" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/readme/index.html">mcp</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/advanced-tool-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/advanced-tool-patterns/index.html">advanced-tool-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/tool-development/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/tool-development/index.html">tool-development</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/tool-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/tool-integration/index.html">tool-integration</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/index.html"><input type="checkbox" id="R-section-9c1a65f2d7b3888241dcafa51a0710e7" aria-controls="R-subsections-9c1a65f2d7b3888241dcafa51a0710e7" checked><label for="R-section-9c1a65f2d7b3888241dcafa51a0710e7"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu memory-systems</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/index.html">memory-systems</a><ul id="R-subsections-9c1a65f2d7b3888241dcafa51a0710e7" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/readme/index.html">memory-systems</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/basic-memory/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/basic-memory/index.html">basic-memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/document-ingestion/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/document-ingestion/index.html">document-ingestion</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/knowledge-bases/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/knowledge-bases/index.html">knowledge-bases</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/memory-optimization/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/memory-optimization/index.html">memory-optimization</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/rag-implementation/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/rag-implementation/index.html">rag-implementation</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/vector-databases/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/vector-databases/index.html">vector-databases</a></li></ul></li></ul></li>
+          </ul>
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-shortcuts">
+          <ul class="space collapsible-menu">
+          </ul>
+        </div>
+        <div id="R-footer-margin"></div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-footercontrols">
+          <ul class="">
+          </ul>
+        </div>
+<div id="R-footer"><p>Built with <a href="https://github.com/McShelby/hugo-theme-relearn" title="love"><i class="fas fa-heart"></i></a> by <a href="https://gohugo.io/">Hugo</a></p></div>
+      </div>
+    </aside>
+    <script src="/AgenticGoKitDocs/js/clipboard/clipboard.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/perfect-scrollbar/perfect-scrollbar.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/theme.js?1753430931" defer></script>
+  </body>
+</html>

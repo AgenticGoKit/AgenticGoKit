@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>setup :: AgenticGoKit Docs</title>
+    <link>http://localhost:1313/AgenticGoKitDocs/guides/setup/index.html</link>
+    <description>Setup &amp; Configuration Guides Guides for setting up and configuring AgenticGoKit components.&#xA;Available Guides LLM Providers Configure different Large Language Model providers including OpenAI, Anthropic, and local models.&#xA;When to use: Setting up your first agent or switching LLM providers.&#xA;Vector Databases Set up vector storage systems for Retrieval-Augmented Generation (RAG) including pgvector and Weaviate.&#xA;When to use: Building agents that need to search through documents or knowledge bases.&#xA;MCP Tools Integrate Model Context Protocol tools to extend agent capabilities with external services.</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <lastBuildDate>Fri, 25 Jul 2025 00:00:00 +0000</lastBuildDate>
+    <atom:link href="http://localhost:1313/AgenticGoKitDocs/guides/setup/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>setup</title>
+      <link>http://localhost:1313/AgenticGoKitDocs/guides/setup/readme/index.html</link>
+      <pubDate>Fri, 25 Jul 2025 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/AgenticGoKitDocs/guides/setup/readme/index.html</guid>
+      <description>Setup &amp; Configuration Guides Guides for setting up and configuring AgenticGoKit components.&#xA;Available Guides LLM Providers Configure different Large Language Model providers including OpenAI, Anthropic, and local models.&#xA;When to use: Setting up your first agent or switching LLM providers.&#xA;Vector Databases Set up vector storage systems for Retrieval-Augmented Generation (RAG) including pgvector and Weaviate.&#xA;When to use: Building agents that need to search through documents or knowledge bases.&#xA;MCP Tools Integrate Model Context Protocol tools to extend agent capabilities with external services.</description>
+    </item>
+    <item>
+      <title>llm-providers</title>
+      <link>http://localhost:1313/AgenticGoKitDocs/guides/setup/llm-providers/index.html</link>
+      <pubDate>Fri, 25 Jul 2025 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/AgenticGoKitDocs/guides/setup/llm-providers/index.html</guid>
+      <description>LLM Providers Multi-Provider LLM Integration in AgenticGoKit&#xA;AgenticGoKit provides a unified interface for working with different LLM providers. This guide covers configuration, usage patterns, and provider-specific features.&#xA;Provider Overview AgenticGoKit supports multiple LLM providers through a unified ModelProvider interface:&#xA;Azure OpenAI (Default) - Enterprise-ready with robust scaling OpenAI - Direct API access to GPT models Ollama - Local models for privacy and cost control Mock - Testing and development ModelProvider Interface All providers implement the same interface:</description>
+    </item>
+    <item>
+      <title>mcp-tools</title>
+      <link>http://localhost:1313/AgenticGoKitDocs/guides/setup/mcp-tools/index.html</link>
+      <pubDate>Fri, 25 Jul 2025 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/AgenticGoKitDocs/guides/setup/mcp-tools/index.html</guid>
+      <description>MCP Tools Dynamic Tool Discovery and Execution with Model Context Protocol&#xA;AgenticGoKit uses the Model Context Protocol (MCP) to provide agents with dynamic tool discovery and execution capabilities. This guide covers everything from basic tool usage to building custom MCP servers.&#xA;Overview The MCP integration in AgenticGoKit provides:&#xA;Dynamic Discovery: Tools are discovered at runtime, not hard-coded Schema-Based: Tools provide their own descriptions and parameters LLM-Driven: The LLM decides which tools to use based on context Extensible: Add new tools by connecting MCP servers Quick Start (5 minutes) 1. Basic MCP Configuration agentflow.toml:</description>
+    </item>
+    <item>
+      <title>orchestration-configuration</title>
+      <link>http://localhost:1313/AgenticGoKitDocs/guides/setup/orchestration-configuration/index.html</link>
+      <pubDate>Fri, 25 Jul 2025 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/AgenticGoKitDocs/guides/setup/orchestration-configuration/index.html</guid>
+      <description>Orchestration Configuration Guide Complete guide to configuring multi-agent orchestration in AgentFlow&#xA;AgentFlow supports configuration-driven orchestration through agentflow.toml files, allowing you to change orchestration patterns without modifying code. This guide covers all orchestration modes, configuration options, and best practices.&#xA;Quick Start 1. Generate Project with Orchestration # Sequential pipeline agentcli create data-pipeline \ --orchestration-mode sequential \ --sequential-agents &#34;collector,processor,formatter&#34; \ --orchestration-timeout 45 # Collaborative workflow agentcli create research-system \ --orchestration-mode collaborative \ --agents 3 \ --orchestration-timeout 60 # Loop-based processing agentcli create quality-checker \ --orchestration-mode loop \ --loop-agent &#34;validator&#34; \ --max-iterations 5&#xD;2. Configuration-Based Runner Generated projects automatically use configuration-based orchestration:</description>
+    </item>
+    <item>
+      <title>vector-databases</title>
+      <link>http://localhost:1313/AgenticGoKitDocs/guides/setup/vector-databases/index.html</link>
+      <pubDate>Fri, 25 Jul 2025 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/AgenticGoKitDocs/guides/setup/vector-databases/index.html</guid>
+      <description>Vector Databases Configure persistent vector storage for RAG and memory systems&#xA;This guide walks you through setting up vector databases with AgenticGoKit for persistent memory and RAG (Retrieval-Augmented Generation) capabilities. You’ll learn to configure PostgreSQL with pgvector and Weaviate for different use cases.&#xA;Prerequisites Docker installed on your system Basic understanding of AgenticGoKit memory systems Command line familiarity What You’ll Build A vector database setup that supports:&#xA;Document storage and retrieval Semantic search capabilities Persistent agent memory RAG-powered question answering Database Options Comparison Feature PostgreSQL + pgvector Weaviate In-Memory Persistence ✅ Full ✅ Full ❌ Temporary Scalability ⭐⭐⭐⭐ ⭐⭐⭐⭐⭐ ⭐⭐ Setup Complexity ⭐⭐⭐ ⭐⭐ ⭐⭐⭐⭐⭐ Query Performance ⭐⭐⭐⭐ ⭐⭐⭐⭐⭐ ⭐⭐⭐⭐⭐ Resource Usage ⭐⭐⭐ ⭐⭐ ⭐⭐⭐⭐⭐ Best For Production apps Large scale Development Quick Start 1. Create Memory-Enabled Project # Create project with pgvector memory agentcli create vector-db-demo --memory-enabled --memory-provider pgvector \\ --rag-enabled --embedding-provider ollama cd vector-db-demo&#xD;2. Start Database Services The project includes a docker-compose.yml file:</description>
+    </item>
+  </channel>
+</rss>

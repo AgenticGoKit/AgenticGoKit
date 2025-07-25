@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="en-us" dir="ltr" itemscope itemtype="http://schema.org/Article" data-r-output-format="html">
+  <head><script src="/AgenticGoKitDocs/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=AgenticGoKitDocs/livereload" data-no-instant defer></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="height=device-height, width=device-width, initial-scale=1.0, minimum-scale=1.0">
+    <meta name="generator" content="Hugo 0.148.1">
+    <meta name="generator" content="Relearn 8.0.0+9803d5122ebb3276acea823f476e9eb44f607862">
+    <meta name="description" content="PostgreSQL &#43; pgvector Setup Guide Complete guide for setting up PostgreSQL with pgvector for AgentFlow memory
+This guide provides detailed instructions for setting up PostgreSQL with the pgvector extension for production AgentFlow deployments.
+🎯 Overview PostgreSQL with pgvector provides:
+Persistent storage for agent memories and knowledge base Vector similarity search with excellent performance (~45ms queries) ACID transactions for data consistency Production-ready scalability and reliability Advanced indexing for optimal query performance 📋 Prerequisites Docker (recommended) OR PostgreSQL 12&#43; 2GB&#43; RAM available Network access to PostgreSQL port (5432) Basic command line knowledge 🚀 Quick Start (Docker) Step 1: Run PostgreSQL with pgvector # Create and start PostgreSQL container with pgvector docker run -d \ --name agentflow-postgres \ -e POSTGRES_DB=agentflow \ -e POSTGRES_USER=agentflow \ -e POSTGRES_PASSWORD=password \ -p 5432:5432 \ -v postgres_data:/var/lib/postgresql/data \ pgvector/pgvector:pg16 # Wait for container to start echo &#34;Waiting for PostgreSQL to start...&#34; sleep 10 # Verify container is running docker ps | grep agentflow-postgresStep 2: Initialize Database # Connect to database and enable pgvector docker exec -it agentflow-postgres psql -U agentflow -d agentflow -c &#34; CREATE EXTENSION IF NOT EXISTS vector; SELECT extname, extversion FROM pg_extension WHERE extname = &#39;vector&#39;; &#34; # Expected output: vector | 0.5.1 (or similar)Step 3: Test Connection # Test connection string docker exec -it agentflow-postgres psql -U agentflow -d agentflow -c &#34; SELECT version(); SELECT * FROM pg_extension WHERE extname = &#39;vector&#39;; &#34;Step 4: Configure AgentFlow Create agentflow.toml:">
+    <meta name="author" content="">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="PgVectorSetup :: AgenticGoKit Docs">
+    <meta name="twitter:description" content="PostgreSQL &#43; pgvector Setup Guide Complete guide for setting up PostgreSQL with pgvector for AgentFlow memory
+This guide provides detailed instructions for setting up PostgreSQL with the pgvector extension for production AgentFlow deployments.
+🎯 Overview PostgreSQL with pgvector provides:
+Persistent storage for agent memories and knowledge base Vector similarity search with excellent performance (~45ms queries) ACID transactions for data consistency Production-ready scalability and reliability Advanced indexing for optimal query performance 📋 Prerequisites Docker (recommended) OR PostgreSQL 12&#43; 2GB&#43; RAM available Network access to PostgreSQL port (5432) Basic command line knowledge 🚀 Quick Start (Docker) Step 1: Run PostgreSQL with pgvector # Create and start PostgreSQL container with pgvector docker run -d \ --name agentflow-postgres \ -e POSTGRES_DB=agentflow \ -e POSTGRES_USER=agentflow \ -e POSTGRES_PASSWORD=password \ -p 5432:5432 \ -v postgres_data:/var/lib/postgresql/data \ pgvector/pgvector:pg16 # Wait for container to start echo &#34;Waiting for PostgreSQL to start...&#34; sleep 10 # Verify container is running docker ps | grep agentflow-postgresStep 2: Initialize Database # Connect to database and enable pgvector docker exec -it agentflow-postgres psql -U agentflow -d agentflow -c &#34; CREATE EXTENSION IF NOT EXISTS vector; SELECT extname, extversion FROM pg_extension WHERE extname = &#39;vector&#39;; &#34; # Expected output: vector | 0.5.1 (or similar)Step 3: Test Connection # Test connection string docker exec -it agentflow-postgres psql -U agentflow -d agentflow -c &#34; SELECT version(); SELECT * FROM pg_extension WHERE extname = &#39;vector&#39;; &#34;Step 4: Configure AgentFlow Create agentflow.toml:">
+    <meta property="og:url" content="http://localhost:1313/AgenticGoKitDocs/guides/pgvectorsetup/index.html">
+    <meta property="og:site_name" content="AgenticGoKit Docs">
+    <meta property="og:title" content="PgVectorSetup :: AgenticGoKit Docs">
+    <meta property="og:description" content="PostgreSQL &#43; pgvector Setup Guide Complete guide for setting up PostgreSQL with pgvector for AgentFlow memory
+This guide provides detailed instructions for setting up PostgreSQL with the pgvector extension for production AgentFlow deployments.
+🎯 Overview PostgreSQL with pgvector provides:
+Persistent storage for agent memories and knowledge base Vector similarity search with excellent performance (~45ms queries) ACID transactions for data consistency Production-ready scalability and reliability Advanced indexing for optimal query performance 📋 Prerequisites Docker (recommended) OR PostgreSQL 12&#43; 2GB&#43; RAM available Network access to PostgreSQL port (5432) Basic command line knowledge 🚀 Quick Start (Docker) Step 1: Run PostgreSQL with pgvector # Create and start PostgreSQL container with pgvector docker run -d \ --name agentflow-postgres \ -e POSTGRES_DB=agentflow \ -e POSTGRES_USER=agentflow \ -e POSTGRES_PASSWORD=password \ -p 5432:5432 \ -v postgres_data:/var/lib/postgresql/data \ pgvector/pgvector:pg16 # Wait for container to start echo &#34;Waiting for PostgreSQL to start...&#34; sleep 10 # Verify container is running docker ps | grep agentflow-postgresStep 2: Initialize Database # Connect to database and enable pgvector docker exec -it agentflow-postgres psql -U agentflow -d agentflow -c &#34; CREATE EXTENSION IF NOT EXISTS vector; SELECT extname, extversion FROM pg_extension WHERE extname = &#39;vector&#39;; &#34; # Expected output: vector | 0.5.1 (or similar)Step 3: Test Connection # Test connection string docker exec -it agentflow-postgres psql -U agentflow -d agentflow -c &#34; SELECT version(); SELECT * FROM pg_extension WHERE extname = &#39;vector&#39;; &#34;Step 4: Configure AgentFlow Create agentflow.toml:">
+    <meta property="og:locale" content="en_us">
+    <meta property="og:type" content="article">
+    <meta property="article:section" content="guides">
+    <meta property="article:published_time" content="2025-07-25T00:00:00+00:00">
+    <meta property="article:modified_time" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="name" content="PgVectorSetup :: AgenticGoKit Docs">
+    <meta itemprop="description" content="PostgreSQL &#43; pgvector Setup Guide Complete guide for setting up PostgreSQL with pgvector for AgentFlow memory
+This guide provides detailed instructions for setting up PostgreSQL with the pgvector extension for production AgentFlow deployments.
+🎯 Overview PostgreSQL with pgvector provides:
+Persistent storage for agent memories and knowledge base Vector similarity search with excellent performance (~45ms queries) ACID transactions for data consistency Production-ready scalability and reliability Advanced indexing for optimal query performance 📋 Prerequisites Docker (recommended) OR PostgreSQL 12&#43; 2GB&#43; RAM available Network access to PostgreSQL port (5432) Basic command line knowledge 🚀 Quick Start (Docker) Step 1: Run PostgreSQL with pgvector # Create and start PostgreSQL container with pgvector docker run -d \ --name agentflow-postgres \ -e POSTGRES_DB=agentflow \ -e POSTGRES_USER=agentflow \ -e POSTGRES_PASSWORD=password \ -p 5432:5432 \ -v postgres_data:/var/lib/postgresql/data \ pgvector/pgvector:pg16 # Wait for container to start echo &#34;Waiting for PostgreSQL to start...&#34; sleep 10 # Verify container is running docker ps | grep agentflow-postgresStep 2: Initialize Database # Connect to database and enable pgvector docker exec -it agentflow-postgres psql -U agentflow -d agentflow -c &#34; CREATE EXTENSION IF NOT EXISTS vector; SELECT extname, extversion FROM pg_extension WHERE extname = &#39;vector&#39;; &#34; # Expected output: vector | 0.5.1 (or similar)Step 3: Test Connection # Test connection string docker exec -it agentflow-postgres psql -U agentflow -d agentflow -c &#34; SELECT version(); SELECT * FROM pg_extension WHERE extname = &#39;vector&#39;; &#34;Step 4: Configure AgentFlow Create agentflow.toml:">
+    <meta itemprop="datePublished" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="dateModified" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="wordCount" content="2389">
+    <title>PgVectorSetup :: AgenticGoKit Docs</title>
+    <link href="/AgenticGoKitDocs/css/auto-complete/auto-complete.min.css?1753430931" rel="stylesheet">
+    <script src="/AgenticGoKitDocs/js/auto-complete/auto-complete.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/search-lunr.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/search.js?1753430931" defer></script>
+    <script>
+      window.relearn = window.relearn || {};
+      window.relearn.index_js_url="/AgenticGoKitDocs/searchindex.en.js?1753430931";
+    </script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.stemmer.support.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.multi.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.en.min.js?1753430931" defer></script>
+    <script>
+      window.relearn = window.relearn || {};
+      window.relearn.contentLangs=['en'];
+    </script>
+    <link href="/AgenticGoKitDocs/fonts/fontawesome/css/fontawesome-all.min.css?1753430931" rel="stylesheet" media="print" onload="this.media='all';this.onload=null;"><noscript><link href="/AgenticGoKitDocs/fonts/fontawesome/css/fontawesome-all.min.css?1753430931" rel="stylesheet"></noscript>
+    <link href="/AgenticGoKitDocs/css/perfect-scrollbar/perfect-scrollbar.min.css?1753430931" rel="stylesheet">
+    <link href="/AgenticGoKitDocs/css/theme.css?1753430931" rel="stylesheet">
+    <link href="/AgenticGoKitDocs/css/format-html.css?1753430931" rel="stylesheet" id="R-format-style">
+    <script>
+      window.relearn = window.relearn || {};
+      // configuration
+      window.relearn.min = ``;
+      window.relearn.path='\/guides\/pgvectorsetup\/index.html';
+      window.relearn.relBasePath='..\/..';
+      window.relearn.relBaseUri='..\/..\/..';
+      window.relearn.absBaseUri='http:\/\/localhost:1313\/AgenticGoKitDocs';
+      window.relearn.disableAnchorCopy=false;
+      window.relearn.disableAnchorScrolling=false;
+      window.relearn.disableInlineCopyToClipboard=false;
+      window.relearn.enableBlockCodeWrap=true;
+      // legal
+      window.relearn.getItem = (s,n) => {return s.getItem(n)};
+      window.relearn.setItem = (s,n,v) => {return s.setItem(n,v)};
+      window.relearn.removeItem = (s,n) => {return s.removeItem(n)};
+      // translations
+      window.T_Copy_to_clipboard = `Copy to clipboard`;
+      window.T_Copied_to_clipboard = `Copied to clipboard!`;
+      window.T_Copy_link_to_clipboard = `Copy link to clipboard`;
+      window.T_Link_copied_to_clipboard = `Copied link to clipboard!`;
+      window.T_Reset_view = `Reset view`;
+      window.T_View_reset = `View reset!`;
+      window.T_No_results_found = `No results found for "{0}"`;
+      window.T_N_results_found = `{1} results found for "{0}"`;
+      // variant stuff
+      window.relearn.themevariants = [ 'blue' ];
+      window.relearn.customvariantname = "my-custom-variant";
+      window.relearn.changeVariant = function(variant) {
+        var oldVariant = document.documentElement.dataset.rThemeVariant;
+        window.relearn.setItem(window.localStorage, window.relearn.absBaseUri + "/variant", variant);
+        document.documentElement.dataset.rThemeVariant = variant;
+        if (oldVariant != variant) {
+          document.dispatchEvent( new CustomEvent('themeVariantLoaded', { detail: { variant, oldVariant } }) );
+          window.relearn.markVariant();
+        }
+      }
+      window.relearn.markVariant = function() {
+        var variant = window.relearn.getItem(window.localStorage, window.relearn.absBaseUri + "/variant");
+        document.querySelectorAll(".R-variantswitcher select").forEach((select) => {select.value = variant;});
+      }
+      window.relearn.initVariant = function() {
+        var variant = window.relearn.getItem(window.localStorage, window.relearn.absBaseUri + "/variant") ?? "";
+        if( variant == window.relearn.customvariantname ){
+        }else if( !variant || !window.relearn.themevariants.includes(variant) ){
+          variant = window.relearn.themevariants[0];
+          window.relearn.setItem(window.localStorage, window.relearn.absBaseUri + "/variant", variant);
+        }
+        document.documentElement.dataset.rThemeVariant = variant;
+      }
+      window.relearn.initVariant();
+      window.relearn.markVariant();
+    </script>
+  </head>
+  <body class="mobile-support html" data-url="/AgenticGoKitDocs/guides/pgvectorsetup/index.html">
+    <div id="R-body" class="default-animation">
+      <div id="R-body-overlay"></div>
+      <nav id="R-topbar">
+        <div class="topbar-wrapper">
+          <div class="topbar-sidebar-divider"></div>
+          <div class="topbar-area topbar-area-start" data-area="start">
+            <div class="topbar-button topbar-button-sidebar" data-content-empty="disable" data-width-s="show" data-width-m="hide" data-width-l="hide"><button class="topbar-control" onclick="toggleNav()" type="button" title="Menu (CTRL&#43;ALT&#43;n)"><i class="fa-fw fas fa-bars"></i></button>
+            </div>
+            <div class="topbar-button topbar-button-toc" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show"><button class="topbar-control" onclick="toggleTopbarFlyout(this)" type="button" title="Table of Contents (CTRL&#43;ALT&#43;t)"><i class="fa-fw fas fa-list-alt"></i></button>
+              <div class="topbar-content">
+                <div class="topbar-content-wrapper">
+<nav class="TableOfContents">
+  <ul>
+    <li><a href="#-overview">🎯 Overview</a></li>
+    <li><a href="#-prerequisites">📋 Prerequisites</a></li>
+    <li><a href="#-quick-start-docker">🚀 Quick Start (Docker)</a>
+      <ul>
+        <li><a href="#step-1-run-postgresql-with-pgvector">Step 1: Run PostgreSQL with pgvector</a></li>
+        <li><a href="#step-2-initialize-database">Step 2: Initialize Database</a></li>
+        <li><a href="#step-3-test-connection">Step 3: Test Connection</a></li>
+        <li><a href="#step-4-configure-agentflow">Step 4: Configure AgentFlow</a></li>
+      </ul>
+    </li>
+    <li><a href="#-detailed-setup-options">🔧 Detailed Setup Options</a>
+      <ul>
+        <li><a href="#option-1-docker-compose-recommended-for-development">Option 1: Docker Compose (Recommended for Development)</a></li>
+        <li><a href="#option-2-native-installation">Option 2: Native Installation</a></li>
+      </ul>
+    </li>
+    <li><a href="#-configuration">⚙️ Configuration</a>
+      <ul>
+        <li><a href="#connection-string-options">Connection String Options</a></li>
+        <li><a href="#agentflow-configuration">AgentFlow Configuration</a></li>
+        <li><a href="#environment-variables">Environment Variables</a></li>
+      </ul>
+    </li>
+    <li><a href="#-performance-optimization">🚀 Performance Optimization</a>
+      <ul>
+        <li><a href="#postgresql-configuration">PostgreSQL Configuration</a></li>
+        <li><a href="#index-optimization">Index Optimization</a></li>
+        <li><a href="#query-optimization">Query Optimization</a></li>
+        <li><a href="#connection-pooling">Connection Pooling</a></li>
+      </ul>
+    </li>
+    <li><a href="#-monitoring-and-maintenance">📊 Monitoring and Maintenance</a>
+      <ul>
+        <li><a href="#health-checks">Health Checks</a></li>
+        <li><a href="#performance-monitoring">Performance Monitoring</a></li>
+        <li><a href="#backup-and-recovery">Backup and Recovery</a></li>
+        <li><a href="#maintenance-tasks">Maintenance Tasks</a></li>
+      </ul>
+    </li>
+    <li><a href="#-troubleshooting">🔧 Troubleshooting</a>
+      <ul>
+        <li><a href="#common-issues">Common Issues</a></li>
+        <li><a href="#debug-mode">Debug Mode</a></li>
+        <li><a href="#recovery-procedures">Recovery Procedures</a></li>
+      </ul>
+    </li>
+    <li><a href="#-production-deployment">🎯 Production Deployment</a>
+      <ul>
+        <li><a href="#docker-production-setup">Docker Production Setup</a></li>
+        <li><a href="#security-considerations">Security Considerations</a></li>
+        <li><a href="#monitoring-setup">Monitoring Setup</a></li>
+      </ul>
+    </li>
+    <li><a href="#-summary">🎉 Summary</a>
+      <ul>
+        <li><a href="#next-steps">Next Steps</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+                </div>
+              </div>
+            </div>
+          </div>
+          <ol class="topbar-breadcrumbs breadcrumbs highlightable" itemscope itemtype="http://schema.org/BreadcrumbList"><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="/AgenticGoKitDocs/index.html"><span itemprop="name">content</span></a><meta itemprop="position" content="1">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="/AgenticGoKitDocs/guides/index.html"><span itemprop="name">guides</span></a><meta itemprop="position" content="2">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><span itemprop="name">PgVectorSetup</span><meta itemprop="position" content="3"></li>
+          </ol>
+          <div class="topbar-area topbar-area-end" data-area="end">
+            <div class="topbar-button topbar-button-prev" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show"><a class="topbar-control" href="/AgenticGoKitDocs/guides/toolintegration/index.html" title="ToolIntegration (🡐)"><i class="fa-fw fas fa-chevron-left"></i></a>
+            </div>
+            <div class="topbar-button topbar-button-next" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show"><a class="topbar-control" href="/AgenticGoKitDocs/guides/weaviatesetup/index.html" title="WeaviateSetup (🡒)"><i class="fa-fw fas fa-chevron-right"></i></a>
+            </div>
+            <div class="topbar-button topbar-button-more" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show"><button class="topbar-control" onclick="toggleTopbarFlyout(this)" type="button" title="More"><i class="fa-fw fas fa-ellipsis-v"></i></button>
+              <div class="topbar-content">
+                <div class="topbar-content-wrapper">
+                  <div class="topbar-area topbar-area-more" data-area="more">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+      <div id="R-main-overlay"></div>
+      <main id="R-body-inner" class="highlightable guides" tabindex="-1">
+        <div class="flex-block-wrapper">
+<article class="default">
+  <header class="headline">
+  </header>
+
+<h1 id="pgvectorsetup">PgVectorSetup</h1>
+
+<h1 id="postgresql--pgvector-setup-guide">PostgreSQL + pgvector Setup Guide</h1>
+<p><strong>Complete guide for setting up PostgreSQL with pgvector for AgentFlow memory</strong></p>
+<p>This guide provides detailed instructions for setting up PostgreSQL with the pgvector extension for production AgentFlow deployments.</p>
+<h2 id="-overview">🎯 Overview</h2>
+<p>PostgreSQL with pgvector provides:</p>
+<ul>
+<li><strong>Persistent storage</strong> for agent memories and knowledge base</li>
+<li><strong>Vector similarity search</strong> with excellent performance (~45ms queries)</li>
+<li><strong>ACID transactions</strong> for data consistency</li>
+<li><strong>Production-ready</strong> scalability and reliability</li>
+<li><strong>Advanced indexing</strong> for optimal query performance</li>
+</ul>
+<h2 id="-prerequisites">📋 Prerequisites</h2>
+<ul>
+<li>Docker (recommended) OR PostgreSQL 12+</li>
+<li>2GB+ RAM available</li>
+<li>Network access to PostgreSQL port (5432)</li>
+<li>Basic command line knowledge</li>
+</ul>
+<h2 id="-quick-start-docker">🚀 Quick Start (Docker)</h2>
+<h3 id="step-1-run-postgresql-with-pgvector">Step 1: Run PostgreSQL with pgvector</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Create and start PostgreSQL container with pgvector</span>
+</span></span><span style="display:flex;"><span>docker run -d <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --name agentflow-postgres <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -e POSTGRES_DB<span style="color:#f92672">=</span>agentflow <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -e POSTGRES_USER<span style="color:#f92672">=</span>agentflow <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -e POSTGRES_PASSWORD<span style="color:#f92672">=</span>password <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -p 5432:5432 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -v postgres_data:/var/lib/postgresql/data <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  pgvector/pgvector:pg16
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Wait for container to start</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;Waiting for PostgreSQL to start...&#34;</span>
+</span></span><span style="display:flex;"><span>sleep <span style="color:#ae81ff">10</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Verify container is running</span>
+</span></span><span style="display:flex;"><span>docker ps | grep agentflow-postgres</span></span></code></pre></div>
+<h3 id="step-2-initialize-database">Step 2: Initialize Database</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Connect to database and enable pgvector</span>
+</span></span><span style="display:flex;"><span>docker exec -it agentflow-postgres psql -U agentflow -d agentflow -c <span style="color:#e6db74">&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">CREATE EXTENSION IF NOT EXISTS vector;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">SELECT extname, extversion FROM pg_extension WHERE extname = &#39;vector&#39;;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Expected output: vector | 0.5.1 (or similar)</span></span></span></code></pre></div>
+<h3 id="step-3-test-connection">Step 3: Test Connection</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Test connection string</span>
+</span></span><span style="display:flex;"><span>docker exec -it agentflow-postgres psql -U agentflow -d agentflow -c <span style="color:#e6db74">&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">SELECT version();
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">SELECT * FROM pg_extension WHERE extname = &#39;vector&#39;;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;</span></span></span></code></pre></div>
+<h3 id="step-4-configure-agentflow">Step 4: Configure AgentFlow</h3>
+<p>Create <code>agentflow.toml</code>:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enabled</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;pgvector&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_results</span> = <span style="color:#ae81ff">10</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">dimensions</span> = <span style="color:#ae81ff">1536</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">auto_embed</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">pgvector</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">connection</span> = <span style="color:#e6db74">&#34;postgres://agentflow:password@localhost:5432/agentflow?sslmode=disable&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">table_name</span> = <span style="color:#e6db74">&#34;agent_memory&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">embedding</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;openai&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">model</span> = <span style="color:#e6db74">&#34;text-embedding-3-small&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">rag</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enabled</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">chunk_size</span> = <span style="color:#ae81ff">1000</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">overlap</span> = <span style="color:#ae81ff">100</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">top_k</span> = <span style="color:#ae81ff">5</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">score_threshold</span> = <span style="color:#ae81ff">0.7</span></span></span></code></pre></div>
+<p>Set environment variables:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>export DATABASE_URL<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;postgres://agentflow:password@localhost:5432/agentflow?sslmode=disable&#34;</span>
+</span></span><span style="display:flex;"><span>export OPENAI_API_KEY<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;your-openai-api-key&#34;</span></span></span></code></pre></div>
+<p><strong>✅ You&rsquo;re ready to use AgentFlow with pgvector!</strong></p>
+<hr>
+<h2 id="-detailed-setup-options">🔧 Detailed Setup Options</h2>
+<h3 id="option-1-docker-compose-recommended-for-development">Option 1: Docker Compose (Recommended for Development)</h3>
+<p>Create <code>docker-compose.yml</code>:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">version</span>: <span style="color:#e6db74">&#39;3.8&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">services</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">postgres</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">image</span>: <span style="color:#ae81ff">pgvector/pgvector:pg16</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">container_name</span>: <span style="color:#ae81ff">agentflow-postgres</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">environment</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">POSTGRES_DB</span>: <span style="color:#ae81ff">agentflow</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">POSTGRES_USER</span>: <span style="color:#ae81ff">agentflow</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">POSTGRES_PASSWORD</span>: <span style="color:#ae81ff">password</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">ports</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#e6db74">&#34;5432:5432&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">volumes</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">postgres_data:/var/lib/postgresql/data</span>
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">healthcheck</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">test</span>: [<span style="color:#e6db74">&#34;CMD-SHELL&#34;</span>, <span style="color:#e6db74">&#34;pg_isready -U agentflow -d agentflow&#34;</span>]
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">interval</span>: <span style="color:#ae81ff">10s</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">timeout</span>: <span style="color:#ae81ff">5s</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">retries</span>: <span style="color:#ae81ff">5</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">restart</span>: <span style="color:#ae81ff">unless-stopped</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">volumes</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">postgres_data</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">driver</span>: <span style="color:#ae81ff">local</span></span></span></code></pre></div>
+<p>Create <code>init-db.sql</code>:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#75715e">-- AgentFlow Database Initialization Script for pgvector
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">-- This script sets up the database schema for AgentFlow memory system
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- Enable the pgvector extension
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">CREATE</span> EXTENSION <span style="color:#66d9ef">IF</span> <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">EXISTS</span> vector;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- Create the agent_memory table for storing embeddings and content
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> <span style="color:#66d9ef">IF</span> <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">EXISTS</span> agent_memory (
+</span></span><span style="display:flex;"><span>    id SERIAL <span style="color:#66d9ef">PRIMARY</span> <span style="color:#66d9ef">KEY</span>,
+</span></span><span style="display:flex;"><span>    content TEXT <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">NULL</span>,
+</span></span><span style="display:flex;"><span>    embedding vector(<span style="color:#ae81ff">1536</span>),
+</span></span><span style="display:flex;"><span>    tags TEXT[],
+</span></span><span style="display:flex;"><span>    metadata JSONB,
+</span></span><span style="display:flex;"><span>    created_at <span style="color:#66d9ef">TIMESTAMP</span> <span style="color:#66d9ef">WITH</span> TIME <span style="color:#66d9ef">ZONE</span> <span style="color:#66d9ef">DEFAULT</span> NOW(),
+</span></span><span style="display:flex;"><span>    updated_at <span style="color:#66d9ef">TIMESTAMP</span> <span style="color:#66d9ef">WITH</span> TIME <span style="color:#66d9ef">ZONE</span> <span style="color:#66d9ef">DEFAULT</span> NOW()
+</span></span><span style="display:flex;"><span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- Create indexes for better performance
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">INDEX</span> <span style="color:#66d9ef">IF</span> <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">EXISTS</span> idx_agent_memory_embedding <span style="color:#66d9ef">ON</span> agent_memory <span style="color:#66d9ef">USING</span> ivfflat (embedding vector_cosine_ops);
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">INDEX</span> <span style="color:#66d9ef">IF</span> <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">EXISTS</span> idx_agent_memory_tags <span style="color:#66d9ef">ON</span> agent_memory <span style="color:#66d9ef">USING</span> GIN (tags);
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">INDEX</span> <span style="color:#66d9ef">IF</span> <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">EXISTS</span> idx_agent_memory_created_at <span style="color:#66d9ef">ON</span> agent_memory (created_at);
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">INDEX</span> <span style="color:#66d9ef">IF</span> <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">EXISTS</span> idx_agent_memory_metadata <span style="color:#66d9ef">ON</span> agent_memory <span style="color:#66d9ef">USING</span> GIN (metadata);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- Create the chat_history table for storing conversation history
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> <span style="color:#66d9ef">IF</span> <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">EXISTS</span> chat_history (
+</span></span><span style="display:flex;"><span>    id SERIAL <span style="color:#66d9ef">PRIMARY</span> <span style="color:#66d9ef">KEY</span>,
+</span></span><span style="display:flex;"><span>    session_id VARCHAR(<span style="color:#ae81ff">255</span>) <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">NULL</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">role</span> VARCHAR(<span style="color:#ae81ff">50</span>) <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">NULL</span> <span style="color:#66d9ef">CHECK</span> (<span style="color:#66d9ef">role</span> <span style="color:#66d9ef">IN</span> (<span style="color:#e6db74">&#39;user&#39;</span>, <span style="color:#e6db74">&#39;assistant&#39;</span>, <span style="color:#e6db74">&#39;system&#39;</span>)),
+</span></span><span style="display:flex;"><span>    content TEXT <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">NULL</span>,
+</span></span><span style="display:flex;"><span>    metadata JSONB,
+</span></span><span style="display:flex;"><span>    created_at <span style="color:#66d9ef">TIMESTAMP</span> <span style="color:#66d9ef">WITH</span> TIME <span style="color:#66d9ef">ZONE</span> <span style="color:#66d9ef">DEFAULT</span> NOW()
+</span></span><span style="display:flex;"><span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- Create indexes for chat history
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">INDEX</span> <span style="color:#66d9ef">IF</span> <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">EXISTS</span> idx_chat_history_session_id <span style="color:#66d9ef">ON</span> chat_history (session_id);
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">INDEX</span> <span style="color:#66d9ef">IF</span> <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">EXISTS</span> idx_chat_history_created_at <span style="color:#66d9ef">ON</span> chat_history (created_at);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- Create the documents table for RAG document storage
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> <span style="color:#66d9ef">IF</span> <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">EXISTS</span> documents (
+</span></span><span style="display:flex;"><span>    id SERIAL <span style="color:#66d9ef">PRIMARY</span> <span style="color:#66d9ef">KEY</span>,
+</span></span><span style="display:flex;"><span>    title VARCHAR(<span style="color:#ae81ff">500</span>),
+</span></span><span style="display:flex;"><span>    content TEXT <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">NULL</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">source</span> VARCHAR(<span style="color:#ae81ff">1000</span>),
+</span></span><span style="display:flex;"><span>    document_type VARCHAR(<span style="color:#ae81ff">50</span>),
+</span></span><span style="display:flex;"><span>    chunk_index INTEGER <span style="color:#66d9ef">DEFAULT</span> <span style="color:#ae81ff">0</span>,
+</span></span><span style="display:flex;"><span>    chunk_total INTEGER <span style="color:#66d9ef">DEFAULT</span> <span style="color:#ae81ff">1</span>,
+</span></span><span style="display:flex;"><span>    embedding vector(<span style="color:#ae81ff">1536</span>),
+</span></span><span style="display:flex;"><span>    metadata JSONB,
+</span></span><span style="display:flex;"><span>    tags TEXT[],
+</span></span><span style="display:flex;"><span>    created_at <span style="color:#66d9ef">TIMESTAMP</span> <span style="color:#66d9ef">WITH</span> TIME <span style="color:#66d9ef">ZONE</span> <span style="color:#66d9ef">DEFAULT</span> NOW(),
+</span></span><span style="display:flex;"><span>    updated_at <span style="color:#66d9ef">TIMESTAMP</span> <span style="color:#66d9ef">WITH</span> TIME <span style="color:#66d9ef">ZONE</span> <span style="color:#66d9ef">DEFAULT</span> NOW()
+</span></span><span style="display:flex;"><span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- Create indexes for documents
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">INDEX</span> <span style="color:#66d9ef">IF</span> <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">EXISTS</span> idx_documents_embedding <span style="color:#66d9ef">ON</span> documents <span style="color:#66d9ef">USING</span> ivfflat (embedding vector_cosine_ops);
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">INDEX</span> <span style="color:#66d9ef">IF</span> <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">EXISTS</span> idx_documents_source <span style="color:#66d9ef">ON</span> documents (<span style="color:#66d9ef">source</span>);
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">INDEX</span> <span style="color:#66d9ef">IF</span> <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">EXISTS</span> idx_documents_type <span style="color:#66d9ef">ON</span> documents (document_type);
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">INDEX</span> <span style="color:#66d9ef">IF</span> <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">EXISTS</span> idx_documents_tags <span style="color:#66d9ef">ON</span> documents <span style="color:#66d9ef">USING</span> GIN (tags);
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">INDEX</span> <span style="color:#66d9ef">IF</span> <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">EXISTS</span> idx_documents_created_at <span style="color:#66d9ef">ON</span> documents (created_at);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- Grant permissions to the user
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">GRANT</span> <span style="color:#66d9ef">ALL</span> <span style="color:#66d9ef">PRIVILEGES</span> <span style="color:#66d9ef">ON</span> <span style="color:#66d9ef">ALL</span> TABLES <span style="color:#66d9ef">IN</span> <span style="color:#66d9ef">SCHEMA</span> <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">TO</span> agentflow;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">GRANT</span> <span style="color:#66d9ef">ALL</span> <span style="color:#66d9ef">PRIVILEGES</span> <span style="color:#66d9ef">ON</span> <span style="color:#66d9ef">ALL</span> SEQUENCES <span style="color:#66d9ef">IN</span> <span style="color:#66d9ef">SCHEMA</span> <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">TO</span> agentflow;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- Insert a test record to verify the setup
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">INSERT</span> <span style="color:#66d9ef">INTO</span> agent_memory (content, tags, metadata) 
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">VALUES</span> (<span style="color:#e6db74">&#39;AgentFlow memory system initialized successfully&#39;</span>, ARRAY[<span style="color:#e6db74">&#39;system&#39;</span>, <span style="color:#e6db74">&#39;initialization&#39;</span>], <span style="color:#e6db74">&#39;{&#34;source&#34;: &#34;init_script&#34;, &#34;version&#34;: &#34;1.0&#34;}&#39;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">ON</span> CONFLICT <span style="color:#66d9ef">DO</span> <span style="color:#66d9ef">NOTHING</span>;</span></span></code></pre></div>
+<p>Start the services:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Start PostgreSQL</span>
+</span></span><span style="display:flex;"><span>docker-compose up -d
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Check logs</span>
+</span></span><span style="display:flex;"><span>docker-compose logs postgres
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Test connection</span>
+</span></span><span style="display:flex;"><span>docker-compose exec postgres psql -U agentflow -d agentflow -c <span style="color:#e6db74">&#34;SELECT version();&#34;</span></span></span></code></pre></div>
+<h3 id="option-2-native-installation">Option 2: Native Installation</h3>
+<h4 id="ubuntudebian">Ubuntu/Debian</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Update package list</span>
+</span></span><span style="display:flex;"><span>sudo apt update
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Install PostgreSQL</span>
+</span></span><span style="display:flex;"><span>sudo apt install postgresql postgresql-contrib
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Install pgvector</span>
+</span></span><span style="display:flex;"><span>sudo apt install postgresql-15-pgvector
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Start and enable PostgreSQL</span>
+</span></span><span style="display:flex;"><span>sudo systemctl start postgresql
+</span></span><span style="display:flex;"><span>sudo systemctl enable postgresql
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Create database and user</span>
+</span></span><span style="display:flex;"><span>sudo -u postgres createuser agentflow
+</span></span><span style="display:flex;"><span>sudo -u postgres createdb agentflow -O agentflow
+</span></span><span style="display:flex;"><span>sudo -u postgres psql -c <span style="color:#e6db74">&#34;ALTER USER agentflow PASSWORD &#39;password&#39;;&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Enable pgvector extension</span>
+</span></span><span style="display:flex;"><span>sudo -u postgres psql -d agentflow -c <span style="color:#e6db74">&#34;CREATE EXTENSION IF NOT EXISTS vector;&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Test connection</span>
+</span></span><span style="display:flex;"><span>psql <span style="color:#e6db74">&#34;postgres://agentflow:password@localhost:5432/agentflow&#34;</span> -c <span style="color:#e6db74">&#34;SELECT version();&#34;</span></span></span></code></pre></div>
+<h4 id="centosrhelfedora">CentOS/RHEL/Fedora</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Install PostgreSQL</span>
+</span></span><span style="display:flex;"><span>sudo dnf install postgresql postgresql-server postgresql-contrib
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Install pgvector (may need to compile from source)</span>
+</span></span><span style="display:flex;"><span>git clone https://github.com/pgvector/pgvector.git
+</span></span><span style="display:flex;"><span>cd pgvector
+</span></span><span style="display:flex;"><span>make
+</span></span><span style="display:flex;"><span>sudo make install
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Initialize database</span>
+</span></span><span style="display:flex;"><span>sudo postgresql-setup --initdb
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Start and enable PostgreSQL</span>
+</span></span><span style="display:flex;"><span>sudo systemctl start postgresql
+</span></span><span style="display:flex;"><span>sudo systemctl enable postgresql
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Create database and user</span>
+</span></span><span style="display:flex;"><span>sudo -u postgres createuser agentflow
+</span></span><span style="display:flex;"><span>sudo -u postgres createdb agentflow -O agentflow
+</span></span><span style="display:flex;"><span>sudo -u postgres psql -c <span style="color:#e6db74">&#34;ALTER USER agentflow PASSWORD &#39;password&#39;;&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Enable pgvector</span>
+</span></span><span style="display:flex;"><span>sudo -u postgres psql -d agentflow -c <span style="color:#e6db74">&#34;CREATE EXTENSION IF NOT EXISTS vector;&#34;</span></span></span></code></pre></div>
+<h4 id="macos-homebrew">macOS (Homebrew)</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Install PostgreSQL</span>
+</span></span><span style="display:flex;"><span>brew install postgresql
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Install pgvector</span>
+</span></span><span style="display:flex;"><span>brew install pgvector
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Start PostgreSQL service</span>
+</span></span><span style="display:flex;"><span>brew services start postgresql
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Create database</span>
+</span></span><span style="display:flex;"><span>createdb agentflow
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Enable pgvector</span>
+</span></span><span style="display:flex;"><span>psql agentflow -c <span style="color:#e6db74">&#34;CREATE EXTENSION IF NOT EXISTS vector;&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Create user (optional)</span>
+</span></span><span style="display:flex;"><span>psql agentflow -c <span style="color:#e6db74">&#34;CREATE USER agentflow WITH PASSWORD &#39;password&#39;;&#34;</span>
+</span></span><span style="display:flex;"><span>psql agentflow -c <span style="color:#e6db74">&#34;GRANT ALL PRIVILEGES ON DATABASE agentflow TO agentflow;&#34;</span></span></span></code></pre></div>
+<hr>
+<h2 id="-configuration">⚙️ Configuration</h2>
+<h3 id="connection-string-options">Connection String Options</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Basic connection</span>
+</span></span><span style="display:flex;"><span>postgres://username:password@host:port/database
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># With SSL (production)</span>
+</span></span><span style="display:flex;"><span>postgres://username:password@host:port/database?sslmode<span style="color:#f92672">=</span>require
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># With connection pooling</span>
+</span></span><span style="display:flex;"><span>postgres://username:password@host:port/database?pool_max_conns<span style="color:#f92672">=</span>25&amp;pool_min_conns<span style="color:#f92672">=</span><span style="color:#ae81ff">5</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Complete example</span>
+</span></span><span style="display:flex;"><span>postgres://agentflow:password@localhost:5432/agentflow?sslmode<span style="color:#f92672">=</span>disable&amp;pool_max_conns<span style="color:#f92672">=</span>25&amp;pool_min_conns<span style="color:#f92672">=</span>5&amp;pool_max_conn_lifetime<span style="color:#f92672">=</span>1h</span></span></code></pre></div>
+<h3 id="agentflow-configuration">AgentFlow Configuration</h3>
+<h4 id="basic-configuration">Basic Configuration</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enabled</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;pgvector&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_results</span> = <span style="color:#ae81ff">10</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">dimensions</span> = <span style="color:#ae81ff">1536</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">auto_embed</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">pgvector</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">connection</span> = <span style="color:#e6db74">&#34;postgres://agentflow:password@localhost:5432/agentflow?sslmode=disable&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">table_name</span> = <span style="color:#e6db74">&#34;agent_memory&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">embedding</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;openai&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">model</span> = <span style="color:#e6db74">&#34;text-embedding-3-small&#34;</span></span></span></code></pre></div>
+<h4 id="production-configuration">Production Configuration</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enabled</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;pgvector&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_results</span> = <span style="color:#ae81ff">10</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">dimensions</span> = <span style="color:#ae81ff">1536</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">auto_embed</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">pgvector</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">connection</span> = <span style="color:#e6db74">&#34;postgres://agentflow:password@localhost:5432/agentflow?sslmode=require&amp;pool_max_conns=25&amp;pool_min_conns=5&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">table_name</span> = <span style="color:#e6db74">&#34;agent_memory&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">embedding</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;openai&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">model</span> = <span style="color:#e6db74">&#34;text-embedding-3-small&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">cache_embeddings</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_batch_size</span> = <span style="color:#ae81ff">50</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">timeout_seconds</span> = <span style="color:#ae81ff">30</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">rag</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enabled</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">chunk_size</span> = <span style="color:#ae81ff">1000</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">overlap</span> = <span style="color:#ae81ff">100</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">top_k</span> = <span style="color:#ae81ff">5</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">score_threshold</span> = <span style="color:#ae81ff">0.7</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">hybrid_search</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">session_memory</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">memory</span>.<span style="color:#a6e22e">advanced</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">retry_max_attempts</span> = <span style="color:#ae81ff">3</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">retry_base_delay</span> = <span style="color:#e6db74">&#34;100ms&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">retry_max_delay</span> = <span style="color:#e6db74">&#34;5s&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">connection_pool_size</span> = <span style="color:#ae81ff">25</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">health_check_interval</span> = <span style="color:#e6db74">&#34;1m&#34;</span></span></span></code></pre></div>
+<h3 id="environment-variables">Environment Variables</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Database connection</span>
+</span></span><span style="display:flex;"><span>export DATABASE_URL<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;postgres://agentflow:password@localhost:5432/agentflow?sslmode=disable&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># OpenAI API (if using OpenAI embeddings)</span>
+</span></span><span style="display:flex;"><span>export OPENAI_API_KEY<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;your-openai-api-key&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Azure OpenAI (alternative)</span>
+</span></span><span style="display:flex;"><span>export AZURE_OPENAI_API_KEY<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;your-azure-api-key&#34;</span>
+</span></span><span style="display:flex;"><span>export AZURE_OPENAI_ENDPOINT<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;https://your-resource.openai.azure.com/&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Ollama (for local embeddings)</span>
+</span></span><span style="display:flex;"><span>export OLLAMA_BASE_URL<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;http://localhost:11434&#34;</span>
+</span></span><span style="display:flex;"><span>export OLLAMA_MODEL<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;mxbai-embed-large&#34;</span></span></span></code></pre></div>
+<hr>
+<h2 id="-performance-optimization">🚀 Performance Optimization</h2>
+<h3 id="postgresql-configuration">PostgreSQL Configuration</h3>
+<p>Add to <code>postgresql.conf</code>:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-ini" data-lang="ini"><span style="display:flex;"><span><span style="color:#75715e"># Memory settings</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">shared_buffers</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">256MB                    # 25% of RAM</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">effective_cache_size</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">1GB                # 75% of RAM</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">work_mem</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">64MB                          # For sorting and hashing</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">maintenance_work_mem</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">256MB             # For maintenance operations</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Vector-specific settings</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_parallel_workers_per_gather</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">2      # Parallel query execution</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_parallel_workers</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">8                 # Total parallel workers</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Connection settings</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_connections</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">100                    # Adjust based on your needs</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">shared_preload_libraries</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;pg_stat_statements&#39;  # Query statistics</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Logging (for debugging)</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">log_statement</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;all&#39;                    # Log all statements (development only)</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">log_duration</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">on                        # Log query duration</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">log_min_duration_statement</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">1000        # Log slow queries (&gt;1s)</span></span></span></code></pre></div>
+<h3 id="index-optimization">Index Optimization</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#75715e">-- Create optimal indexes for vector operations
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">INDEX</span> CONCURRENTLY idx_agent_memory_embedding_cosine 
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">ON</span> agent_memory <span style="color:#66d9ef">USING</span> ivfflat (embedding vector_cosine_ops) 
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">WITH</span> (lists <span style="color:#f92672">=</span> <span style="color:#ae81ff">100</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">INDEX</span> CONCURRENTLY idx_agent_memory_embedding_l2 
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">ON</span> agent_memory <span style="color:#66d9ef">USING</span> ivfflat (embedding vector_l2_ops) 
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">WITH</span> (lists <span style="color:#f92672">=</span> <span style="color:#ae81ff">100</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- Indexes for filtering
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">INDEX</span> CONCURRENTLY idx_agent_memory_session_tags 
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">ON</span> agent_memory (session_id, tags);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">INDEX</span> CONCURRENTLY idx_agent_memory_created_at_desc 
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">ON</span> agent_memory (created_at <span style="color:#66d9ef">DESC</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- Composite indexes for common queries
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">INDEX</span> CONCURRENTLY idx_agent_memory_session_created 
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">ON</span> agent_memory (session_id, created_at <span style="color:#66d9ef">DESC</span>);</span></span></code></pre></div>
+<h3 id="query-optimization">Query Optimization</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#75715e">-- Analyze query performance
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">EXPLAIN</span> <span style="color:#66d9ef">ANALYZE</span> 
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">SELECT</span> content, embedding <span style="color:#f92672">&lt;-&gt;</span> <span style="color:#e6db74">&#39;[0.1,0.2,...]&#39;</span>::vector <span style="color:#66d9ef">AS</span> distance
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">FROM</span> agent_memory 
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">WHERE</span> session_id <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;user-123&#39;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">ORDER</span> <span style="color:#66d9ef">BY</span> embedding <span style="color:#f92672">&lt;-&gt;</span> <span style="color:#e6db74">&#39;[0.1,0.2,...]&#39;</span>::vector 
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">LIMIT</span> <span style="color:#ae81ff">10</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- Update table statistics
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">ANALYZE</span> agent_memory;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- Vacuum regularly
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">VACUUM</span> <span style="color:#66d9ef">ANALYZE</span> agent_memory;</span></span></code></pre></div>
+<h3 id="connection-pooling">Connection Pooling</h3>
+<p>Use connection pooling for production:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Install pgbouncer</span>
+</span></span><span style="display:flex;"><span>sudo apt install pgbouncer
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Configure pgbouncer</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># /etc/pgbouncer/pgbouncer.ini</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>databases<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>agentflow <span style="color:#f92672">=</span> host<span style="color:#f92672">=</span>localhost port<span style="color:#f92672">=</span><span style="color:#ae81ff">5432</span> dbname<span style="color:#f92672">=</span>agentflow
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">[</span>pgbouncer<span style="color:#f92672">]</span>
+</span></span><span style="display:flex;"><span>listen_port <span style="color:#f92672">=</span> <span style="color:#ae81ff">6432</span>
+</span></span><span style="display:flex;"><span>listen_addr <span style="color:#f92672">=</span> localhost
+</span></span><span style="display:flex;"><span>auth_type <span style="color:#f92672">=</span> md5
+</span></span><span style="display:flex;"><span>auth_file <span style="color:#f92672">=</span> /etc/pgbouncer/userlist.txt
+</span></span><span style="display:flex;"><span>pool_mode <span style="color:#f92672">=</span> transaction
+</span></span><span style="display:flex;"><span>max_client_conn <span style="color:#f92672">=</span> <span style="color:#ae81ff">100</span>
+</span></span><span style="display:flex;"><span>default_pool_size <span style="color:#f92672">=</span> <span style="color:#ae81ff">25</span></span></span></code></pre></div>
+<hr>
+<h2 id="-monitoring-and-maintenance">📊 Monitoring and Maintenance</h2>
+<h3 id="health-checks">Health Checks</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e">#!/bin/bash
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e"># health-check.sh</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>DB_URL<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;postgres://agentflow:password@localhost:5432/agentflow&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;🔍 Checking PostgreSQL health...&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Test connection</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> psql <span style="color:#e6db74">&#34;</span>$DB_URL<span style="color:#e6db74">&#34;</span> -c <span style="color:#e6db74">&#34;SELECT 1;&#34;</span> &gt; /dev/null 2&gt;&amp;1; <span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;✅ Database connection successful&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">else</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;❌ Database connection failed&#34;</span>
+</span></span><span style="display:flex;"><span>    exit <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fi</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Check pgvector extension</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> psql <span style="color:#e6db74">&#34;</span>$DB_URL<span style="color:#e6db74">&#34;</span> -c <span style="color:#e6db74">&#34;SELECT * FROM pg_extension WHERE extname = &#39;vector&#39;;&#34;</span> | grep -q vector; <span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;✅ pgvector extension installed&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">else</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;❌ pgvector extension missing&#34;</span>
+</span></span><span style="display:flex;"><span>    exit <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fi</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Check table existence</span>
+</span></span><span style="display:flex;"><span>TABLES<span style="color:#f92672">=(</span><span style="color:#e6db74">&#34;agent_memory&#34;</span> <span style="color:#e6db74">&#34;chat_history&#34;</span> <span style="color:#e6db74">&#34;documents&#34;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> table in <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>TABLES[@]<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>; <span style="color:#66d9ef">do</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> psql <span style="color:#e6db74">&#34;</span>$DB_URL<span style="color:#e6db74">&#34;</span> -c <span style="color:#e6db74">&#34;\dt </span>$table<span style="color:#e6db74">&#34;</span> | grep -q <span style="color:#e6db74">&#34;</span>$table<span style="color:#e6db74">&#34;</span>; <span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>        echo <span style="color:#e6db74">&#34;✅ Table </span>$table<span style="color:#e6db74"> exists&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">else</span>
+</span></span><span style="display:flex;"><span>        echo <span style="color:#e6db74">&#34;⚠️  Table </span>$table<span style="color:#e6db74"> missing (will be created automatically)&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">fi</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">done</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Check disk space</span>
+</span></span><span style="display:flex;"><span>DISK_USAGE<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>df -h /var/lib/postgresql/data | awk <span style="color:#e6db74">&#39;NR==2 {print $5}&#39;</span> | sed <span style="color:#e6db74">&#39;s/%//&#39;</span><span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#f92672">[</span> <span style="color:#e6db74">&#34;</span>$DISK_USAGE<span style="color:#e6db74">&#34;</span> -gt <span style="color:#ae81ff">80</span> <span style="color:#f92672">]</span>; <span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;⚠️  Disk usage high: </span><span style="color:#e6db74">${</span>DISK_USAGE<span style="color:#e6db74">}</span><span style="color:#e6db74">%&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">else</span>
+</span></span><span style="display:flex;"><span>    echo <span style="color:#e6db74">&#34;✅ Disk usage OK: </span><span style="color:#e6db74">${</span>DISK_USAGE<span style="color:#e6db74">}</span><span style="color:#e6db74">%&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">fi</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;✅ All health checks passed&#34;</span></span></span></code></pre></div>
+<h3 id="performance-monitoring">Performance Monitoring</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#75715e">-- Monitor query performance
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">SELECT</span> 
+</span></span><span style="display:flex;"><span>    query,
+</span></span><span style="display:flex;"><span>    calls,
+</span></span><span style="display:flex;"><span>    total_time,
+</span></span><span style="display:flex;"><span>    mean_time,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">rows</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">FROM</span> pg_stat_statements 
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">WHERE</span> query <span style="color:#66d9ef">LIKE</span> <span style="color:#e6db74">&#39;%agent_memory%&#39;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">ORDER</span> <span style="color:#66d9ef">BY</span> total_time <span style="color:#66d9ef">DESC</span> 
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">LIMIT</span> <span style="color:#ae81ff">10</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- Monitor table statistics
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">SELECT</span> 
+</span></span><span style="display:flex;"><span>    schemaname,
+</span></span><span style="display:flex;"><span>    tablename,
+</span></span><span style="display:flex;"><span>    n_tup_ins <span style="color:#66d9ef">as</span> inserts,
+</span></span><span style="display:flex;"><span>    n_tup_upd <span style="color:#66d9ef">as</span> updates,
+</span></span><span style="display:flex;"><span>    n_tup_del <span style="color:#66d9ef">as</span> deletes,
+</span></span><span style="display:flex;"><span>    n_tup_hot_upd <span style="color:#66d9ef">as</span> hot_updates,
+</span></span><span style="display:flex;"><span>    n_live_tup <span style="color:#66d9ef">as</span> live_tuples,
+</span></span><span style="display:flex;"><span>    n_dead_tup <span style="color:#66d9ef">as</span> dead_tuples
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">FROM</span> pg_stat_user_tables 
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">WHERE</span> tablename <span style="color:#66d9ef">IN</span> (<span style="color:#e6db74">&#39;agent_memory&#39;</span>, <span style="color:#e6db74">&#39;chat_history&#39;</span>, <span style="color:#e6db74">&#39;documents&#39;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- Monitor index usage
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">SELECT</span> 
+</span></span><span style="display:flex;"><span>    indexrelname,
+</span></span><span style="display:flex;"><span>    idx_scan,
+</span></span><span style="display:flex;"><span>    idx_tup_read,
+</span></span><span style="display:flex;"><span>    idx_tup_fetch
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">FROM</span> pg_stat_user_indexes 
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">WHERE</span> indexrelname <span style="color:#66d9ef">LIKE</span> <span style="color:#e6db74">&#39;%memory%&#39;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">ORDER</span> <span style="color:#66d9ef">BY</span> idx_scan <span style="color:#66d9ef">DESC</span>;</span></span></code></pre></div>
+<h3 id="backup-and-recovery">Backup and Recovery</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e">#!/bin/bash
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e"># backup.sh</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>DB_URL<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;postgres://agentflow:password@localhost:5432/agentflow&#34;</span>
+</span></span><span style="display:flex;"><span>BACKUP_DIR<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/backups/agentflow&#34;</span>
+</span></span><span style="display:flex;"><span>DATE<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>date +%Y%m%d_%H%M%S<span style="color:#66d9ef">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Create backup directory</span>
+</span></span><span style="display:flex;"><span>mkdir -p <span style="color:#e6db74">&#34;</span>$BACKUP_DIR<span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Full database backup</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;Creating full backup...&#34;</span>
+</span></span><span style="display:flex;"><span>pg_dump <span style="color:#e6db74">&#34;</span>$DB_URL<span style="color:#e6db74">&#34;</span> &gt; <span style="color:#e6db74">&#34;</span>$BACKUP_DIR<span style="color:#e6db74">/agentflow_full_</span>$DATE<span style="color:#e6db74">.sql&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Compressed backup</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;Creating compressed backup...&#34;</span>
+</span></span><span style="display:flex;"><span>pg_dump <span style="color:#e6db74">&#34;</span>$DB_URL<span style="color:#e6db74">&#34;</span> | gzip &gt; <span style="color:#e6db74">&#34;</span>$BACKUP_DIR<span style="color:#e6db74">/agentflow_compressed_</span>$DATE<span style="color:#e6db74">.sql.gz&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Schema-only backup</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;Creating schema backup...&#34;</span>
+</span></span><span style="display:flex;"><span>pg_dump --schema-only <span style="color:#e6db74">&#34;</span>$DB_URL<span style="color:#e6db74">&#34;</span> &gt; <span style="color:#e6db74">&#34;</span>$BACKUP_DIR<span style="color:#e6db74">/agentflow_schema_</span>$DATE<span style="color:#e6db74">.sql&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Data-only backup</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;Creating data backup...&#34;</span>
+</span></span><span style="display:flex;"><span>pg_dump --data-only <span style="color:#e6db74">&#34;</span>$DB_URL<span style="color:#e6db74">&#34;</span> &gt; <span style="color:#e6db74">&#34;</span>$BACKUP_DIR<span style="color:#e6db74">/agentflow_data_</span>$DATE<span style="color:#e6db74">.sql&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Cleanup old backups (keep last 7 days)</span>
+</span></span><span style="display:flex;"><span>find <span style="color:#e6db74">&#34;</span>$BACKUP_DIR<span style="color:#e6db74">&#34;</span> -name <span style="color:#e6db74">&#34;*.sql*&#34;</span> -mtime +7 -delete
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;✅ Backup completed: </span>$BACKUP_DIR<span style="color:#e6db74">&#34;</span></span></span></code></pre></div>
+<h3 id="maintenance-tasks">Maintenance Tasks</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e">#!/bin/bash
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#75715e"># maintenance.sh</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>DB_URL<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;postgres://agentflow:password@localhost:5432/agentflow&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;🔧 Running maintenance tasks...&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Update statistics</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;Updating table statistics...&#34;</span>
+</span></span><span style="display:flex;"><span>psql <span style="color:#e6db74">&#34;</span>$DB_URL<span style="color:#e6db74">&#34;</span> -c <span style="color:#e6db74">&#34;ANALYZE;&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Vacuum tables</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;Vacuuming tables...&#34;</span>
+</span></span><span style="display:flex;"><span>psql <span style="color:#e6db74">&#34;</span>$DB_URL<span style="color:#e6db74">&#34;</span> -c <span style="color:#e6db74">&#34;VACUUM ANALYZE agent_memory;&#34;</span>
+</span></span><span style="display:flex;"><span>psql <span style="color:#e6db74">&#34;</span>$DB_URL<span style="color:#e6db74">&#34;</span> -c <span style="color:#e6db74">&#34;VACUUM ANALYZE chat_history;&#34;</span>
+</span></span><span style="display:flex;"><span>psql <span style="color:#e6db74">&#34;</span>$DB_URL<span style="color:#e6db74">&#34;</span> -c <span style="color:#e6db74">&#34;VACUUM ANALYZE documents;&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Reindex if needed (run during low traffic)</span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;Checking index bloat...&#34;</span>
+</span></span><span style="display:flex;"><span>psql <span style="color:#e6db74">&#34;</span>$DB_URL<span style="color:#e6db74">&#34;</span> -c <span style="color:#e6db74">&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">SELECT 
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    schemaname, 
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    tablename, 
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    indexname,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    pg_size_pretty(pg_relation_size(indexrelid)) as size
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">FROM pg_stat_user_indexes 
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">WHERE indexrelname LIKE &#39;%memory%&#39;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">ORDER BY pg_relation_size(indexrelid) DESC;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;✅ Maintenance completed&#34;</span></span></span></code></pre></div>
+<hr>
+<h2 id="-troubleshooting">🔧 Troubleshooting</h2>
+<h3 id="common-issues">Common Issues</h3>
+<h4 id="1-connection-refused">1. Connection Refused</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Check if PostgreSQL is running</span>
+</span></span><span style="display:flex;"><span>docker ps | grep postgres
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># or for native installation</span>
+</span></span><span style="display:flex;"><span>sudo systemctl status postgresql
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Check port availability</span>
+</span></span><span style="display:flex;"><span>netstat -tlnp | grep <span style="color:#ae81ff">5432</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Test connection</span>
+</span></span><span style="display:flex;"><span>telnet localhost <span style="color:#ae81ff">5432</span></span></span></code></pre></div>
+<h4 id="2-pgvector-extension-missing">2. pgvector Extension Missing</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#75715e">-- Check if extension is available
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">SELECT</span> <span style="color:#f92672">*</span> <span style="color:#66d9ef">FROM</span> pg_available_extensions <span style="color:#66d9ef">WHERE</span> name <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;vector&#39;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- Install extension
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">CREATE</span> EXTENSION <span style="color:#66d9ef">IF</span> <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">EXISTS</span> vector;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- Verify installation
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">SELECT</span> <span style="color:#f92672">*</span> <span style="color:#66d9ef">FROM</span> pg_extension <span style="color:#66d9ef">WHERE</span> extname <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;vector&#39;</span>;</span></span></code></pre></div>
+<h4 id="3-permission-denied">3. Permission Denied</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#75715e">-- Grant necessary permissions
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">GRANT</span> <span style="color:#66d9ef">ALL</span> <span style="color:#66d9ef">PRIVILEGES</span> <span style="color:#66d9ef">ON</span> <span style="color:#66d9ef">DATABASE</span> agentflow <span style="color:#66d9ef">TO</span> agentflow;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">GRANT</span> <span style="color:#66d9ef">ALL</span> <span style="color:#66d9ef">PRIVILEGES</span> <span style="color:#66d9ef">ON</span> <span style="color:#66d9ef">ALL</span> TABLES <span style="color:#66d9ef">IN</span> <span style="color:#66d9ef">SCHEMA</span> <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">TO</span> agentflow;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">GRANT</span> <span style="color:#66d9ef">ALL</span> <span style="color:#66d9ef">PRIVILEGES</span> <span style="color:#66d9ef">ON</span> <span style="color:#66d9ef">ALL</span> SEQUENCES <span style="color:#66d9ef">IN</span> <span style="color:#66d9ef">SCHEMA</span> <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">TO</span> agentflow;</span></span></code></pre></div>
+<h4 id="4-slow-queries">4. Slow Queries</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#75715e">-- Check for missing indexes
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">SELECT</span> 
+</span></span><span style="display:flex;"><span>    schemaname,
+</span></span><span style="display:flex;"><span>    tablename,
+</span></span><span style="display:flex;"><span>    attname,
+</span></span><span style="display:flex;"><span>    n_distinct,
+</span></span><span style="display:flex;"><span>    correlation
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">FROM</span> pg_stats 
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">WHERE</span> tablename <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;agent_memory&#39;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- Create missing indexes
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">INDEX</span> CONCURRENTLY idx_agent_memory_session 
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">ON</span> agent_memory (session_id);</span></span></code></pre></div>
+<h4 id="5-high-memory-usage">5. High Memory Usage</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Check PostgreSQL memory usage</span>
+</span></span><span style="display:flex;"><span>ps aux | grep postgres
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Monitor with htop</span>
+</span></span><span style="display:flex;"><span>htop
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Adjust PostgreSQL settings</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Edit postgresql.conf:</span>
+</span></span><span style="display:flex;"><span>shared_buffers <span style="color:#f92672">=</span> 128MB  <span style="color:#75715e"># Reduce if needed</span>
+</span></span><span style="display:flex;"><span>work_mem <span style="color:#f92672">=</span> 32MB         <span style="color:#75715e"># Reduce if needed</span></span></span></code></pre></div>
+<h3 id="debug-mode">Debug Mode</h3>
+<p>Enable detailed logging:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#75715e">-- Enable query logging
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">SYSTEM</span> <span style="color:#66d9ef">SET</span> log_statement <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;all&#39;</span>;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">SYSTEM</span> <span style="color:#66d9ef">SET</span> log_duration <span style="color:#f92672">=</span> <span style="color:#66d9ef">on</span>;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">SYSTEM</span> <span style="color:#66d9ef">SET</span> log_min_duration_statement <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- Reload configuration
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">SELECT</span> pg_reload_conf();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- Check logs
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">-- Docker: docker logs agentflow-postgres
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">-- Native: tail -f /var/log/postgresql/postgresql-*.log</span></span></span></code></pre></div>
+<h3 id="recovery-procedures">Recovery Procedures</h3>
+<h4 id="restore-from-backup">Restore from Backup</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Stop applications using the database</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Restore full backup</span>
+</span></span><span style="display:flex;"><span>psql <span style="color:#e6db74">&#34;</span>$DB_URL<span style="color:#e6db74">&#34;</span> &lt; /backups/agentflow/agentflow_full_20240101_120000.sql
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Or restore compressed backup</span>
+</span></span><span style="display:flex;"><span>gunzip -c /backups/agentflow/agentflow_compressed_20240101_120000.sql.gz | psql <span style="color:#e6db74">&#34;</span>$DB_URL<span style="color:#e6db74">&#34;</span></span></span></code></pre></div>
+<h4 id="reset-database">Reset Database</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># ⚠️ WARNING: This will delete all data!</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Drop and recreate database</span>
+</span></span><span style="display:flex;"><span>docker exec -it agentflow-postgres psql -U agentflow -c <span style="color:#e6db74">&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">DROP DATABASE IF EXISTS agentflow;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">CREATE DATABASE agentflow;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Reconnect and setup</span>
+</span></span><span style="display:flex;"><span>docker exec -it agentflow-postgres psql -U agentflow -d agentflow -c <span style="color:#e6db74">&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">CREATE EXTENSION IF NOT EXISTS vector;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Tables will be recreated automatically by AgentFlow</span></span></span></code></pre></div>
+<hr>
+<h2 id="-production-deployment">🎯 Production Deployment</h2>
+<h3 id="docker-production-setup">Docker Production Setup</h3>
+<p>Create <code>docker-compose.prod.yml</code>:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">version</span>: <span style="color:#e6db74">&#39;3.8&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">services</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">postgres</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">image</span>: <span style="color:#ae81ff">pgvector/pgvector:pg16</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">container_name</span>: <span style="color:#ae81ff">agentflow-postgres-prod</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">environment</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">POSTGRES_DB</span>: <span style="color:#ae81ff">agentflow</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">POSTGRES_USER</span>: <span style="color:#ae81ff">agentflow</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">POSTGRES_PASSWORD_FILE</span>: <span style="color:#ae81ff">/run/secrets/postgres_password</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">ports</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#e6db74">&#34;5432:5432&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">volumes</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">postgres_data:/var/lib/postgresql/data</span>
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">./postgresql.conf:/etc/postgresql/postgresql.conf</span>
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">command</span>: <span style="color:#ae81ff">postgres -c config_file=/etc/postgresql/postgresql.conf</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">healthcheck</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">test</span>: [<span style="color:#e6db74">&#34;CMD-SHELL&#34;</span>, <span style="color:#e6db74">&#34;pg_isready -U agentflow -d agentflow&#34;</span>]
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">interval</span>: <span style="color:#ae81ff">30s</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">timeout</span>: <span style="color:#ae81ff">10s</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">retries</span>: <span style="color:#ae81ff">3</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">start_period</span>: <span style="color:#ae81ff">60s</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">restart</span>: <span style="color:#ae81ff">unless-stopped</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">secrets</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">postgres_password</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">deploy</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">resources</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">limits</span>:
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">memory</span>: <span style="color:#ae81ff">2G</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">cpus</span>: <span style="color:#e6db74">&#39;1.0&#39;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">reservations</span>:
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">memory</span>: <span style="color:#ae81ff">1G</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#f92672">cpus</span>: <span style="color:#e6db74">&#39;0.5&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">secrets</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">postgres_password</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">file</span>: <span style="color:#ae81ff">./secrets/postgres_password.txt</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">volumes</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">postgres_data</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">driver</span>: <span style="color:#ae81ff">local</span></span></span></code></pre></div>
+<h3 id="security-considerations">Security Considerations</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Use strong passwords</span>
+</span></span><span style="display:flex;"><span>openssl rand -base64 <span style="color:#ae81ff">32</span> &gt; ./secrets/postgres_password.txt
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Restrict file permissions</span>
+</span></span><span style="display:flex;"><span>chmod <span style="color:#ae81ff">600</span> ./secrets/postgres_password.txt
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Use SSL in production</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Add to postgresql.conf:</span>
+</span></span><span style="display:flex;"><span>ssl <span style="color:#f92672">=</span> on
+</span></span><span style="display:flex;"><span>ssl_cert_file <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;/etc/ssl/certs/server.crt&#39;</span>
+</span></span><span style="display:flex;"><span>ssl_key_file <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;/etc/ssl/private/server.key&#39;</span></span></span></code></pre></div>
+<h3 id="monitoring-setup">Monitoring Setup</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#75715e"># Add to docker-compose.prod.yml</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">postgres-exporter</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">image</span>: <span style="color:#ae81ff">prometheuscommunity/postgres-exporter</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">environment</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">DATA_SOURCE_NAME</span>: <span style="color:#e6db74">&#34;postgresql://agentflow:password@postgres:5432/agentflow?sslmode=disable&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">ports</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#e6db74">&#34;9187:9187&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">depends_on</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#ae81ff">postgres</span></span></span></code></pre></div>
+<hr>
+<h2 id="-summary">🎉 Summary</h2>
+<p>You now have a complete PostgreSQL + pgvector setup for AgentFlow:</p>
+<p>✅ <strong>Database Setup</strong>: PostgreSQL with pgvector extension<br>
+✅ <strong>Performance Optimization</strong>: Indexes, connection pooling, configuration tuning<br>
+✅ <strong>Monitoring</strong>: Health checks, performance monitoring, maintenance tasks<br>
+✅ <strong>Production Ready</strong>: Security, backups, recovery procedures</p>
+<h3 id="next-steps">Next Steps</h3>
+<ol>
+<li><strong>Test your setup</strong> with the provided health check script</li>
+<li><strong>Configure AgentFlow</strong> with your database connection</li>
+<li><strong>Set up monitoring</strong> and backup procedures</li>
+<li><strong>Optimize performance</strong> based on your workload</li>
+</ol>
+<p>For more information:</p>
+<ul>
+<li><strong><a href="/AgenticGoKitDocs/guides/memory/index.html">Memory System Guide</a></strong> - Complete API reference</li>
+<li><strong><a href="/AgenticGoKitDocs/guides/memoryprovidersetup/index.html">Memory Provider Setup</a></strong> - All provider options</li>
+<li><strong><a href="/AgenticGoKitDocs/guides/configuration/index.html">Configuration Guide</a></strong> - Advanced configuration</li>
+</ul>
+
+  <footer class="footline">
+              <i class='fa-fw fas fa-calendar'></i> Jul 25, 2025
+  </footer>
+</article>
+        </div>
+      </main>
+    </div>
+    <aside id="R-sidebar" class="default-animation">
+      <div id="R-header-topbar" class="default-animation"></div>
+      <div id="R-header-wrapper" class="default-animation">
+        <div id="R-header" class="default-animation">
+          <a id="R-logo" class="R-default" href="/AgenticGoKitDocs/index.html">
+            <div class="logo-title">AgenticGoKit Docs</div>
+          </a>
+        </div>
+        <search><form action="/AgenticGoKitDocs/search/index.html" method="get">
+          <div class="searchbox default-animation">
+            <button class="search-detail" type="submit" title="Search (CTRL+ALT+f)"><i class="fas fa-search"></i></button>
+            <label class="a11y-only" for="R-search-by">Search</label>
+            <input data-search-input id="R-search-by" name="search-by" class="search-by" type="search" placeholder="Search...">
+            <button class="search-clear" type="button" data-search-clear="" title="Clear search"><i class="fas fa-times" title="Clear search"></i></button>
+          </div>
+        </form></search>
+      </div>
+      <div id="R-homelinks" class="default-animation homelinks">
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-homelinks">
+          <ul class="space collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/index.html"><a class="padding" href="/AgenticGoKitDocs/index.html"><i class="fa-fw fas fa-home"></i> Home</a></li>
+          </ul>
+        </div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-headercontrols">
+          <ul class="">
+          </ul>
+        </div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+      </div>
+      <div id="R-content-wrapper" class="highlightable">
+        <div class="R-sidebarmenu R-shortcutmenu-main">
+          <ul class="enlarge morespace collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/readme/index.html">content</a></li>
+            <li class="parent alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/index.html"><input type="checkbox" id="R-section-8fc2fd7736125e87cab8840a86c2af5a" aria-controls="R-subsections-8fc2fd7736125e87cab8840a86c2af5a" checked><label for="R-section-8fc2fd7736125e87cab8840a86c2af5a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu guides</span></label><a class="padding" href="/AgenticGoKitDocs/guides/index.html">guides</a><ul id="R-subsections-8fc2fd7736125e87cab8840a86c2af5a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/readme/index.html">guides</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/agentbasics/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/agentbasics/index.html">AgentBasics</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/examples/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/examples/index.html">Examples</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/configuration/index.html">Configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/customtools/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/customtools/index.html">CustomTools</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/providers/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/providers/index.html">Providers</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memoryprovidersetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memoryprovidersetup/index.html">MemoryProviderSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memorytroubleshooting/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memorytroubleshooting/index.html">MemoryTroubleshooting</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/embeddingmodelguide/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/embeddingmodelguide/index.html">EmbeddingModelGuide</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/ragconfiguration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/ragconfiguration/index.html">RAGConfiguration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/toolintegration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/toolintegration/index.html">ToolIntegration</a></li>
+            <li class="active " data-nav-id="/AgenticGoKitDocs/guides/pgvectorsetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/pgvectorsetup/index.html">PgVectorSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/weaviatesetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/weaviatesetup/index.html">WeaviateSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/performance/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/performance/index.html">Performance</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/errorhandling/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/errorhandling/index.html">ErrorHandling</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/deployment/index.html"><input type="checkbox" id="R-section-ecc839349395ef3c015a12132049dff2" aria-controls="R-subsections-ecc839349395ef3c015a12132049dff2" checked><label for="R-section-ecc839349395ef3c015a12132049dff2"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu deployment</span></label><a class="padding" href="/AgenticGoKitDocs/guides/deployment/index.html">deployment</a><ul id="R-subsections-ecc839349395ef3c015a12132049dff2" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/deployment/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/deployment/readme/index.html">deployment</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/development/index.html"><input type="checkbox" id="R-section-fff1f5eca5d0a93209b9c6262762c25a" aria-controls="R-subsections-fff1f5eca5d0a93209b9c6262762c25a" checked><label for="R-section-fff1f5eca5d0a93209b9c6262762c25a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu development</span></label><a class="padding" href="/AgenticGoKitDocs/guides/development/index.html">development</a><ul id="R-subsections-fff1f5eca5d0a93209b9c6262762c25a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/readme/index.html">development</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/best-practices/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/best-practices/index.html">best-practices</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/debugging/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/debugging/index.html">debugging</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/research-assistant/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/research-assistant/index.html">research-assistant</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/testing-agents/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/testing-agents/index.html">testing-agents</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/visualization/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/visualization/index.html">visualization</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/web-search-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/web-search-integration/index.html">web-search-integration</a></li></ul></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/framework-comparison/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/framework-comparison/index.html">framework-comparison</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memory/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memory/index.html">Memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/scaffoldmemoryguide/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/scaffoldmemoryguide/index.html">ScaffoldMemoryGuide</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/setup/index.html"><input type="checkbox" id="R-section-0124aed9abb5064d53391168f3c95c22" aria-controls="R-subsections-0124aed9abb5064d53391168f3c95c22" checked><label for="R-section-0124aed9abb5064d53391168f3c95c22"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu setup</span></label><a class="padding" href="/AgenticGoKitDocs/guides/setup/index.html">setup</a><ul id="R-subsections-0124aed9abb5064d53391168f3c95c22" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/readme/index.html">setup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/llm-providers/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/llm-providers/index.html">llm-providers</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/mcp-tools/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/mcp-tools/index.html">mcp-tools</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/orchestration-configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/orchestration-configuration/index.html">orchestration-configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/vector-databases/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/vector-databases/index.html">vector-databases</a></li></ul></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/troubleshooting/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/troubleshooting/index.html">troubleshooting</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/contributors/index.html"><input type="checkbox" id="R-section-190d9b328fbda7e13ab386f7a5417de5" aria-controls="R-subsections-190d9b328fbda7e13ab386f7a5417de5" checked><label for="R-section-190d9b328fbda7e13ab386f7a5417de5"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu contributors</span></label><a class="padding" href="/AgenticGoKitDocs/contributors/index.html">contributors</a><ul id="R-subsections-190d9b328fbda7e13ab386f7a5417de5" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/readme/index.html">contributors</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/contributorguide/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/contributorguide/index.html">ContributorGuide</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/codestyle/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/codestyle/index.html">CodeStyle</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/corevsinternal/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/corevsinternal/index.html">CoreVsInternal</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/addingfeatures/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/addingfeatures/index.html">AddingFeatures</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/testing/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/testing/index.html">Testing</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/docsstandards/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/docsstandards/index.html">DocsStandards</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/reference/index.html"><input type="checkbox" id="R-section-66002f201bef818664bb81aa67490c58" aria-controls="R-subsections-66002f201bef818664bb81aa67490c58" checked><label for="R-section-66002f201bef818664bb81aa67490c58"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu reference</span></label><a class="padding" href="/AgenticGoKitDocs/reference/index.html">reference</a><ul id="R-subsections-66002f201bef818664bb81aa67490c58" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/readme/index.html">reference</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/configuration/index.html">configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/cli/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/cli/index.html">cli</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/mcp/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/mcp/index.html">mcp</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/agent/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/agent/index.html">agent</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/memory/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/memory/index.html">memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/orchestration/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/orchestration/index.html">orchestration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/state-event/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/state-event/index.html">state-event</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/index.html"><input type="checkbox" id="R-section-e1e8c1e70c5500b49e8dda2dc550651a" aria-controls="R-subsections-e1e8c1e70c5500b49e8dda2dc550651a" checked><label for="R-section-e1e8c1e70c5500b49e8dda2dc550651a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu tutorials</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/index.html">tutorials</a><ul id="R-subsections-e1e8c1e70c5500b49e8dda2dc550651a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/readme/index.html">tutorials</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/advanced/index.html"><input type="checkbox" id="R-section-d3def5cd76adc8096d0ff9fda6b8e479" aria-controls="R-subsections-d3def5cd76adc8096d0ff9fda6b8e479" checked><label for="R-section-d3def5cd76adc8096d0ff9fda6b8e479"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu advanced</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/index.html">advanced</a><ul id="R-subsections-d3def5cd76adc8096d0ff9fda6b8e479" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/readme/index.html">advanced</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/circuit-breaker-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/circuit-breaker-patterns/index.html">circuit-breaker-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/load-balancing-scaling/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/load-balancing-scaling/index.html">load-balancing-scaling</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/retry-policies/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/retry-policies/index.html">retry-policies</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/testing-strategies/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/testing-strategies/index.html">testing-strategies</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/index.html"><input type="checkbox" id="R-section-212c6ccffb40ecdd78eb2136f98c4cac" aria-controls="R-subsections-212c6ccffb40ecdd78eb2136f98c4cac" checked><label for="R-section-212c6ccffb40ecdd78eb2136f98c4cac"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu core-concepts</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/index.html">core-concepts</a><ul id="R-subsections-212c6ccffb40ecdd78eb2136f98c4cac" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/readme/index.html">core-concepts</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/agent-lifecycle/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/agent-lifecycle/index.html">agent-lifecycle</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/error-handling/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/error-handling/index.html">error-handling</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/message-passing/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/message-passing/index.html">message-passing</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/orchestration-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/orchestration-patterns/index.html">orchestration-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/state-management/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/state-management/index.html">state-management</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/debugging/index.html"><input type="checkbox" id="R-section-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" aria-controls="R-subsections-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" checked><label for="R-section-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu debugging</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/index.html">debugging</a><ul id="R-subsections-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/readme/index.html">debugging</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/debugging-multi-agent-systems/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/debugging-multi-agent-systems/index.html">debugging-multi-agent-systems</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/logging-and-tracing/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/logging-and-tracing/index.html">logging-and-tracing</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/index.html"><input type="checkbox" id="R-section-e7f904c8b9d0f9bf1f07ca7d482d2247" aria-controls="R-subsections-e7f904c8b9d0f9bf1f07ca7d482d2247" checked><label for="R-section-e7f904c8b9d0f9bf1f07ca7d482d2247"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu getting-started</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/index.html">getting-started</a><ul id="R-subsections-e7f904c8b9d0f9bf1f07ca7d482d2247" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/readme/index.html">getting-started</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/memory-and-rag/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/memory-and-rag/index.html">memory-and-rag</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/multi-agent-collaboration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/multi-agent-collaboration/index.html">multi-agent-collaboration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/production-deployment/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/production-deployment/index.html">production-deployment</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/quickstart/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/quickstart/index.html">quickstart</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/tool-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/tool-integration/index.html">tool-integration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/your-first-agent/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/your-first-agent/index.html">your-first-agent</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/mcp/index.html"><input type="checkbox" id="R-section-153aac44598009a99dd5a60317a3eecc" aria-controls="R-subsections-153aac44598009a99dd5a60317a3eecc" checked><label for="R-section-153aac44598009a99dd5a60317a3eecc"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu mcp</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/index.html">mcp</a><ul id="R-subsections-153aac44598009a99dd5a60317a3eecc" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/readme/index.html">mcp</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/advanced-tool-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/advanced-tool-patterns/index.html">advanced-tool-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/tool-development/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/tool-development/index.html">tool-development</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/tool-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/tool-integration/index.html">tool-integration</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/index.html"><input type="checkbox" id="R-section-9c1a65f2d7b3888241dcafa51a0710e7" aria-controls="R-subsections-9c1a65f2d7b3888241dcafa51a0710e7" checked><label for="R-section-9c1a65f2d7b3888241dcafa51a0710e7"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu memory-systems</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/index.html">memory-systems</a><ul id="R-subsections-9c1a65f2d7b3888241dcafa51a0710e7" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/readme/index.html">memory-systems</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/basic-memory/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/basic-memory/index.html">basic-memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/document-ingestion/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/document-ingestion/index.html">document-ingestion</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/knowledge-bases/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/knowledge-bases/index.html">knowledge-bases</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/memory-optimization/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/memory-optimization/index.html">memory-optimization</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/rag-implementation/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/rag-implementation/index.html">rag-implementation</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/vector-databases/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/vector-databases/index.html">vector-databases</a></li></ul></li></ul></li>
+          </ul>
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-shortcuts">
+          <ul class="space collapsible-menu">
+          </ul>
+        </div>
+        <div id="R-footer-margin"></div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-footercontrols">
+          <ul class="">
+          </ul>
+        </div>
+<div id="R-footer"><p>Built with <a href="https://github.com/McShelby/hugo-theme-relearn" title="love"><i class="fas fa-heart"></i></a> by <a href="https://gohugo.io/">Hugo</a></p></div>
+      </div>
+    </aside>
+    <script src="/AgenticGoKitDocs/js/clipboard/clipboard.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/perfect-scrollbar/perfect-scrollbar.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/theme.js?1753430931" defer></script>
+  </body>
+</html>

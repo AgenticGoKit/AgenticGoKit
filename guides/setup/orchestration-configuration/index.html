@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="en-us" dir="ltr" itemscope itemtype="http://schema.org/Article" data-r-output-format="html">
+  <head><script src="/AgenticGoKitDocs/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=AgenticGoKitDocs/livereload" data-no-instant defer></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="height=device-height, width=device-width, initial-scale=1.0, minimum-scale=1.0">
+    <meta name="generator" content="Hugo 0.148.1">
+    <meta name="generator" content="Relearn 8.0.0+9803d5122ebb3276acea823f476e9eb44f607862">
+    <meta name="description" content="Orchestration Configuration Guide Complete guide to configuring multi-agent orchestration in AgentFlow
+AgentFlow supports configuration-driven orchestration through agentflow.toml files, allowing you to change orchestration patterns without modifying code. This guide covers all orchestration modes, configuration options, and best practices.
+Quick Start 1. Generate Project with Orchestration # Sequential pipeline agentcli create data-pipeline \ --orchestration-mode sequential \ --sequential-agents &#34;collector,processor,formatter&#34; \ --orchestration-timeout 45 # Collaborative workflow agentcli create research-system \ --orchestration-mode collaborative \ --agents 3 \ --orchestration-timeout 60 # Loop-based processing agentcli create quality-checker \ --orchestration-mode loop \ --loop-agent &#34;validator&#34; \ --max-iterations 52. Configuration-Based Runner Generated projects automatically use configuration-based orchestration:">
+    <meta name="author" content="">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="orchestration-configuration :: AgenticGoKit Docs">
+    <meta name="twitter:description" content="Orchestration Configuration Guide Complete guide to configuring multi-agent orchestration in AgentFlow
+AgentFlow supports configuration-driven orchestration through agentflow.toml files, allowing you to change orchestration patterns without modifying code. This guide covers all orchestration modes, configuration options, and best practices.
+Quick Start 1. Generate Project with Orchestration # Sequential pipeline agentcli create data-pipeline \ --orchestration-mode sequential \ --sequential-agents &#34;collector,processor,formatter&#34; \ --orchestration-timeout 45 # Collaborative workflow agentcli create research-system \ --orchestration-mode collaborative \ --agents 3 \ --orchestration-timeout 60 # Loop-based processing agentcli create quality-checker \ --orchestration-mode loop \ --loop-agent &#34;validator&#34; \ --max-iterations 52. Configuration-Based Runner Generated projects automatically use configuration-based orchestration:">
+    <meta property="og:url" content="http://localhost:1313/AgenticGoKitDocs/guides/setup/orchestration-configuration/index.html">
+    <meta property="og:site_name" content="AgenticGoKit Docs">
+    <meta property="og:title" content="orchestration-configuration :: AgenticGoKit Docs">
+    <meta property="og:description" content="Orchestration Configuration Guide Complete guide to configuring multi-agent orchestration in AgentFlow
+AgentFlow supports configuration-driven orchestration through agentflow.toml files, allowing you to change orchestration patterns without modifying code. This guide covers all orchestration modes, configuration options, and best practices.
+Quick Start 1. Generate Project with Orchestration # Sequential pipeline agentcli create data-pipeline \ --orchestration-mode sequential \ --sequential-agents &#34;collector,processor,formatter&#34; \ --orchestration-timeout 45 # Collaborative workflow agentcli create research-system \ --orchestration-mode collaborative \ --agents 3 \ --orchestration-timeout 60 # Loop-based processing agentcli create quality-checker \ --orchestration-mode loop \ --loop-agent &#34;validator&#34; \ --max-iterations 52. Configuration-Based Runner Generated projects automatically use configuration-based orchestration:">
+    <meta property="og:locale" content="en_us">
+    <meta property="og:type" content="article">
+    <meta property="article:section" content="guides">
+    <meta property="article:published_time" content="2025-07-25T00:00:00+00:00">
+    <meta property="article:modified_time" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="name" content="orchestration-configuration :: AgenticGoKit Docs">
+    <meta itemprop="description" content="Orchestration Configuration Guide Complete guide to configuring multi-agent orchestration in AgentFlow
+AgentFlow supports configuration-driven orchestration through agentflow.toml files, allowing you to change orchestration patterns without modifying code. This guide covers all orchestration modes, configuration options, and best practices.
+Quick Start 1. Generate Project with Orchestration # Sequential pipeline agentcli create data-pipeline \ --orchestration-mode sequential \ --sequential-agents &#34;collector,processor,formatter&#34; \ --orchestration-timeout 45 # Collaborative workflow agentcli create research-system \ --orchestration-mode collaborative \ --agents 3 \ --orchestration-timeout 60 # Loop-based processing agentcli create quality-checker \ --orchestration-mode loop \ --loop-agent &#34;validator&#34; \ --max-iterations 52. Configuration-Based Runner Generated projects automatically use configuration-based orchestration:">
+    <meta itemprop="datePublished" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="dateModified" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="wordCount" content="1856">
+    <title>orchestration-configuration :: AgenticGoKit Docs</title>
+    <link href="/AgenticGoKitDocs/css/auto-complete/auto-complete.min.css?1753430931" rel="stylesheet">
+    <script src="/AgenticGoKitDocs/js/auto-complete/auto-complete.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/search-lunr.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/search.js?1753430931" defer></script>
+    <script>
+      window.relearn = window.relearn || {};
+      window.relearn.index_js_url="/AgenticGoKitDocs/searchindex.en.js?1753430931";
+    </script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.stemmer.support.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.multi.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.en.min.js?1753430931" defer></script>
+    <script>
+      window.relearn = window.relearn || {};
+      window.relearn.contentLangs=['en'];
+    </script>
+    <link href="/AgenticGoKitDocs/fonts/fontawesome/css/fontawesome-all.min.css?1753430931" rel="stylesheet" media="print" onload="this.media='all';this.onload=null;"><noscript><link href="/AgenticGoKitDocs/fonts/fontawesome/css/fontawesome-all.min.css?1753430931" rel="stylesheet"></noscript>
+    <link href="/AgenticGoKitDocs/css/perfect-scrollbar/perfect-scrollbar.min.css?1753430931" rel="stylesheet">
+    <link href="/AgenticGoKitDocs/css/theme.css?1753430931" rel="stylesheet">
+    <link href="/AgenticGoKitDocs/css/format-html.css?1753430931" rel="stylesheet" id="R-format-style">
+    <script>
+      window.relearn = window.relearn || {};
+      // configuration
+      window.relearn.min = ``;
+      window.relearn.path='\/guides\/setup\/orchestration-configuration\/index.html';
+      window.relearn.relBasePath='..\/..\/..';
+      window.relearn.relBaseUri='..\/..\/..\/..';
+      window.relearn.absBaseUri='http:\/\/localhost:1313\/AgenticGoKitDocs';
+      window.relearn.disableAnchorCopy=false;
+      window.relearn.disableAnchorScrolling=false;
+      window.relearn.disableInlineCopyToClipboard=false;
+      window.relearn.enableBlockCodeWrap=true;
+      // legal
+      window.relearn.getItem = (s,n) => {return s.getItem(n)};
+      window.relearn.setItem = (s,n,v) => {return s.setItem(n,v)};
+      window.relearn.removeItem = (s,n) => {return s.removeItem(n)};
+      // translations
+      window.T_Copy_to_clipboard = `Copy to clipboard`;
+      window.T_Copied_to_clipboard = `Copied to clipboard!`;
+      window.T_Copy_link_to_clipboard = `Copy link to clipboard`;
+      window.T_Link_copied_to_clipboard = `Copied link to clipboard!`;
+      window.T_Reset_view = `Reset view`;
+      window.T_View_reset = `View reset!`;
+      window.T_No_results_found = `No results found for "{0}"`;
+      window.T_N_results_found = `{1} results found for "{0}"`;
+      // variant stuff
+      window.relearn.themevariants = [ 'blue' ];
+      window.relearn.customvariantname = "my-custom-variant";
+      window.relearn.changeVariant = function(variant) {
+        var oldVariant = document.documentElement.dataset.rThemeVariant;
+        window.relearn.setItem(window.localStorage, window.relearn.absBaseUri + "/variant", variant);
+        document.documentElement.dataset.rThemeVariant = variant;
+        if (oldVariant != variant) {
+          document.dispatchEvent( new CustomEvent('themeVariantLoaded', { detail: { variant, oldVariant } }) );
+          window.relearn.markVariant();
+        }
+      }
+      window.relearn.markVariant = function() {
+        var variant = window.relearn.getItem(window.localStorage, window.relearn.absBaseUri + "/variant");
+        document.querySelectorAll(".R-variantswitcher select").forEach((select) => {select.value = variant;});
+      }
+      window.relearn.initVariant = function() {
+        var variant = window.relearn.getItem(window.localStorage, window.relearn.absBaseUri + "/variant") ?? "";
+        if( variant == window.relearn.customvariantname ){
+        }else if( !variant || !window.relearn.themevariants.includes(variant) ){
+          variant = window.relearn.themevariants[0];
+          window.relearn.setItem(window.localStorage, window.relearn.absBaseUri + "/variant", variant);
+        }
+        document.documentElement.dataset.rThemeVariant = variant;
+      }
+      window.relearn.initVariant();
+      window.relearn.markVariant();
+    </script>
+  </head>
+  <body class="mobile-support html" data-url="/AgenticGoKitDocs/guides/setup/orchestration-configuration/index.html">
+    <div id="R-body" class="default-animation">
+      <div id="R-body-overlay"></div>
+      <nav id="R-topbar">
+        <div class="topbar-wrapper">
+          <div class="topbar-sidebar-divider"></div>
+          <div class="topbar-area topbar-area-start" data-area="start">
+            <div class="topbar-button topbar-button-sidebar" data-content-empty="disable" data-width-s="show" data-width-m="hide" data-width-l="hide"><button class="topbar-control" onclick="toggleNav()" type="button" title="Menu (CTRL&#43;ALT&#43;n)"><i class="fa-fw fas fa-bars"></i></button>
+            </div>
+            <div class="topbar-button topbar-button-toc" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show"><button class="topbar-control" onclick="toggleTopbarFlyout(this)" type="button" title="Table of Contents (CTRL&#43;ALT&#43;t)"><i class="fa-fw fas fa-list-alt"></i></button>
+              <div class="topbar-content">
+                <div class="topbar-content-wrapper">
+<nav class="TableOfContents">
+  <ul>
+    <li><a href="#quick-start">Quick Start</a>
+      <ul>
+        <li><a href="#1-generate-project-with-orchestration">1. Generate Project with Orchestration</a></li>
+        <li><a href="#2-configuration-based-runner">2. Configuration-Based Runner</a></li>
+      </ul>
+    </li>
+    <li><a href="#orchestration-configuration-reference">Orchestration Configuration Reference</a>
+      <ul>
+        <li><a href="#basic-configuration-structure">Basic Configuration Structure</a></li>
+        <li><a href="#configuration-options">Configuration Options</a></li>
+      </ul>
+    </li>
+    <li><a href="#orchestration-modes">Orchestration Modes</a>
+      <ul>
+        <li><a href="#1-sequential-mode">1. Sequential Mode</a></li>
+        <li><a href="#2-collaborative-mode">2. Collaborative Mode</a></li>
+        <li><a href="#3-loop-mode">3. Loop Mode</a></li>
+        <li><a href="#4-mixed-mode">4. Mixed Mode</a></li>
+        <li><a href="#5-route-mode">5. Route Mode</a></li>
+      </ul>
+    </li>
+    <li><a href="#advanced-configuration">Advanced Configuration</a>
+      <ul>
+        <li><a href="#environment-specific-configurations">Environment-Specific Configurations</a></li>
+        <li><a href="#dynamic-configuration-updates">Dynamic Configuration Updates</a></li>
+      </ul>
+    </li>
+    <li><a href="#configuration-validation">Configuration Validation</a>
+      <ul>
+        <li><a href="#built-in-validation">Built-in Validation</a></li>
+        <li><a href="#common-validation-errors">Common Validation Errors</a></li>
+        <li><a href="#manual-validation">Manual Validation</a></li>
+      </ul>
+    </li>
+    <li><a href="#best-practices">Best Practices</a>
+      <ul>
+        <li><a href="#1-configuration-organization">1. Configuration Organization</a></li>
+        <li><a href="#2-timeout-configuration">2. Timeout Configuration</a></li>
+        <li><a href="#3-agent-naming-conventions">3. Agent Naming Conventions</a></li>
+        <li><a href="#4-mode-selection-guidelines">4. Mode Selection Guidelines</a></li>
+        <li><a href="#5-testing-configurations">5. Testing Configurations</a></li>
+      </ul>
+    </li>
+    <li><a href="#migration-guide">Migration Guide</a>
+      <ul>
+        <li><a href="#from-hardcoded-to-configuration-based">From Hardcoded to Configuration-Based</a></li>
+        <li><a href="#migration-steps">Migration Steps</a></li>
+      </ul>
+    </li>
+    <li><a href="#troubleshooting">Troubleshooting</a>
+      <ul>
+        <li><a href="#common-issues">Common Issues</a></li>
+        <li><a href="#debug-configuration">Debug Configuration</a></li>
+        <li><a href="#performance-monitoring">Performance Monitoring</a></li>
+      </ul>
+    </li>
+    <li><a href="#examples">Examples</a>
+      <ul>
+        <li><a href="#complete-configuration-examples">Complete Configuration Examples</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+                </div>
+              </div>
+            </div>
+          </div>
+          <ol class="topbar-breadcrumbs breadcrumbs highlightable" itemscope itemtype="http://schema.org/BreadcrumbList"><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="/AgenticGoKitDocs/index.html"><span itemprop="name">content</span></a><meta itemprop="position" content="1">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="/AgenticGoKitDocs/guides/index.html"><span itemprop="name">guides</span></a><meta itemprop="position" content="2">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="/AgenticGoKitDocs/guides/setup/index.html"><span itemprop="name">setup</span></a><meta itemprop="position" content="3">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><span itemprop="name">orchestration-configuration</span><meta itemprop="position" content="4"></li>
+          </ol>
+          <div class="topbar-area topbar-area-end" data-area="end">
+            <div class="topbar-button topbar-button-prev" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show"><a class="topbar-control" href="/AgenticGoKitDocs/guides/setup/mcp-tools/index.html" title="mcp-tools (🡐)"><i class="fa-fw fas fa-chevron-left"></i></a>
+            </div>
+            <div class="topbar-button topbar-button-next" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show"><a class="topbar-control" href="/AgenticGoKitDocs/guides/setup/vector-databases/index.html" title="vector-databases (🡒)"><i class="fa-fw fas fa-chevron-right"></i></a>
+            </div>
+            <div class="topbar-button topbar-button-more" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show"><button class="topbar-control" onclick="toggleTopbarFlyout(this)" type="button" title="More"><i class="fa-fw fas fa-ellipsis-v"></i></button>
+              <div class="topbar-content">
+                <div class="topbar-content-wrapper">
+                  <div class="topbar-area topbar-area-more" data-area="more">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+      <div id="R-main-overlay"></div>
+      <main id="R-body-inner" class="highlightable guides" tabindex="-1">
+        <div class="flex-block-wrapper">
+<article class="default">
+  <header class="headline">
+  </header>
+
+<h1 id="orchestration-configuration">orchestration-configuration</h1>
+
+<h1 id="orchestration-configuration-guide">Orchestration Configuration Guide</h1>
+<p><strong>Complete guide to configuring multi-agent orchestration in AgentFlow</strong></p>
+<p>AgentFlow supports configuration-driven orchestration through <code>agentflow.toml</code> files, allowing you to change orchestration patterns without modifying code. This guide covers all orchestration modes, configuration options, and best practices.</p>
+<h2 id="quick-start">Quick Start</h2>
+<h3 id="1-generate-project-with-orchestration">1. Generate Project with Orchestration</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Sequential pipeline</span>
+</span></span><span style="display:flex;"><span>agentcli create data-pipeline <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --orchestration-mode sequential <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --sequential-agents <span style="color:#e6db74">&#34;collector,processor,formatter&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --orchestration-timeout <span style="color:#ae81ff">45</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Collaborative workflow</span>
+</span></span><span style="display:flex;"><span>agentcli create research-system <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --orchestration-mode collaborative <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --agents <span style="color:#ae81ff">3</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --orchestration-timeout <span style="color:#ae81ff">60</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Loop-based processing</span>
+</span></span><span style="display:flex;"><span>agentcli create quality-checker <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --orchestration-mode loop <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --loop-agent <span style="color:#e6db74">&#34;validator&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --max-iterations <span style="color:#ae81ff">5</span></span></span></code></pre></div>
+<h3 id="2-configuration-based-runner">2. Configuration-Based Runner</h3>
+<p>Generated projects automatically use configuration-based orchestration:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Load configuration and create runner automatically</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">runner</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewRunnerFromConfig</span>(<span style="color:#e6db74">&#34;agentflow.toml&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Create provider from configuration</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewProviderFromConfig</span>(<span style="color:#e6db74">&#34;agentflow.toml&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Create agents</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">agents</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">AgentHandler</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;agent1&#34;</span>: <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewLLMAgent</span>(<span style="color:#e6db74">&#34;agent1&#34;</span>, <span style="color:#a6e22e">provider</span>),
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;agent2&#34;</span>: <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewLLMAgent</span>(<span style="color:#e6db74">&#34;agent2&#34;</span>, <span style="color:#a6e22e">provider</span>),
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;agent3&#34;</span>: <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewLLMAgent</span>(<span style="color:#e6db74">&#34;agent3&#34;</span>, <span style="color:#a6e22e">provider</span>),
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Register agents with the runner</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> <span style="color:#a6e22e">name</span>, <span style="color:#a6e22e">handler</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">agents</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">runner</span>.<span style="color:#a6e22e">RegisterAgent</span>(<span style="color:#a6e22e">name</span>, <span style="color:#a6e22e">handler</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatalf</span>(<span style="color:#e6db74">&#34;Failed to register agent %s: %v&#34;</span>, <span style="color:#a6e22e">name</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Start the runner - orchestration mode is handled automatically from config</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>()
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">runner</span>.<span style="color:#a6e22e">Start</span>(<span style="color:#a6e22e">ctx</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">runner</span>.<span style="color:#a6e22e">Stop</span>()</span></span></code></pre></div>
+<h2 id="orchestration-configuration-reference">Orchestration Configuration Reference</h2>
+<h3 id="basic-configuration-structure">Basic Configuration Structure</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">orchestration</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">mode</span> = <span style="color:#e6db74">&#34;sequential&#34;</span>                    <span style="color:#75715e"># Required: orchestration mode</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">timeout_seconds</span> = <span style="color:#ae81ff">30</span>                   <span style="color:#75715e"># Required: timeout for operations</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_iterations</span> = <span style="color:#ae81ff">5</span>                     <span style="color:#75715e"># Optional: for loop mode</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Mode-specific agent configuration</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">sequential_agents</span> = [<span style="color:#e6db74">&#34;agent1&#34;</span>, <span style="color:#e6db74">&#34;agent2&#34;</span>, <span style="color:#e6db74">&#34;agent3&#34;</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">collaborative_agents</span> = [<span style="color:#e6db74">&#34;analyzer&#34;</span>, <span style="color:#e6db74">&#34;validator&#34;</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">loop_agent</span> = <span style="color:#e6db74">&#34;processor&#34;</span></span></span></code></pre></div>
+<h3 id="configuration-options">Configuration Options</h3>
+<table>
+  <thead>
+      <tr>
+          <th>Option</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+          <th>Required</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td><code>mode</code></td>
+          <td>string</td>
+          <td>Orchestration mode</td>
+          <td><code>&quot;route&quot;</code></td>
+          <td>Yes</td>
+      </tr>
+      <tr>
+          <td><code>timeout_seconds</code></td>
+          <td>integer</td>
+          <td>Operation timeout</td>
+          <td><code>30</code></td>
+          <td>Yes</td>
+      </tr>
+      <tr>
+          <td><code>max_iterations</code></td>
+          <td>integer</td>
+          <td>Max loop iterations</td>
+          <td><code>5</code></td>
+          <td>For loop mode</td>
+      </tr>
+      <tr>
+          <td><code>sequential_agents</code></td>
+          <td>array</td>
+          <td>Sequential agent list</td>
+          <td><code>[]</code></td>
+          <td>For sequential/mixed</td>
+      </tr>
+      <tr>
+          <td><code>collaborative_agents</code></td>
+          <td>array</td>
+          <td>Collaborative agent list</td>
+          <td><code>[]</code></td>
+          <td>For collaborative/mixed</td>
+      </tr>
+      <tr>
+          <td><code>loop_agent</code></td>
+          <td>string</td>
+          <td>Loop agent name</td>
+          <td><code>&quot;&quot;</code></td>
+          <td>For loop mode</td>
+      </tr>
+  </tbody>
+</table>
+<h2 id="orchestration-modes">Orchestration Modes</h2>
+<h3 id="1-sequential-mode">1. Sequential Mode</h3>
+<p>Agents process events in a defined order, creating a processing pipeline.</p>
+<h4 id="configuration">Configuration</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">orchestration</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">mode</span> = <span style="color:#e6db74">&#34;sequential&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">timeout_seconds</span> = <span style="color:#ae81ff">30</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">sequential_agents</span> = [<span style="color:#e6db74">&#34;collector&#34;</span>, <span style="color:#e6db74">&#34;processor&#34;</span>, <span style="color:#e6db74">&#34;formatter&#34;</span>]</span></span></code></pre></div>
+<h4 id="cli-generation">CLI Generation</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>agentcli create data-pipeline <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --orchestration-mode sequential <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --sequential-agents <span style="color:#e6db74">&#34;collector,processor,formatter&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --orchestration-timeout <span style="color:#ae81ff">30</span></span></span></code></pre></div>
+<h4 id="use-cases">Use Cases</h4>
+<ul>
+<li>Data processing pipelines</li>
+<li>Document transformation workflows</li>
+<li>Multi-step analysis processes</li>
+<li>Quality assurance chains</li>
+</ul>
+<h4 id="flow-diagram">Flow Diagram</h4>
+<pre class="mermaid align-center ">flowchart TD
+    INPUT[&#34;📨 Input Event&#34;]
+    COLLECTOR[&#34;🤖 Collector&#34;]
+    PROCESSOR[&#34;🤖 Processor&#34;]
+    FORMATTER[&#34;🤖 Formatter&#34;]
+    OUTPUT[&#34;📤 Final Result&#34;]
+    
+    INPUT --&gt; COLLECTOR
+    COLLECTOR --&gt; PROCESSOR
+    PROCESSOR --&gt; FORMATTER
+    FORMATTER --&gt; OUTPUT</pre>
+<h3 id="2-collaborative-mode">2. Collaborative Mode</h3>
+<p>All agents process events in parallel, with results aggregated.</p>
+<h4 id="configuration-1">Configuration</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">orchestration</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">mode</span> = <span style="color:#e6db74">&#34;collaborative&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">timeout_seconds</span> = <span style="color:#ae81ff">60</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Agents are automatically determined from registered agents</span></span></span></code></pre></div>
+<h4 id="cli-generation-1">CLI Generation</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>agentcli create research-system <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --orchestration-mode collaborative <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --agents <span style="color:#ae81ff">3</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --orchestration-timeout <span style="color:#ae81ff">60</span></span></span></code></pre></div>
+<h4 id="use-cases-1">Use Cases</h4>
+<ul>
+<li>Research and analysis systems</li>
+<li>Multi-perspective evaluation</li>
+<li>Parallel data processing</li>
+<li>Consensus-building workflows</li>
+</ul>
+<h4 id="flow-diagram-1">Flow Diagram</h4>
+<pre class="mermaid align-center ">flowchart TD
+    INPUT[&#34;📨 Input Event&#34;]
+    AGENT1[&#34;🤖 Agent1&#34;]
+    AGENT2[&#34;🤖 Agent2&#34;]
+    AGENT3[&#34;🤖 Agent3&#34;]
+    AGGREGATOR[&#34;📊 Result Aggregator&#34;]
+    OUTPUT[&#34;📤 Final Result&#34;]
+    
+    INPUT --&gt; AGENT1
+    INPUT --&gt; AGENT2
+    INPUT --&gt; AGENT3
+    AGENT1 --&gt; AGGREGATOR
+    AGENT2 --&gt; AGGREGATOR
+    AGENT3 --&gt; AGGREGATOR
+    AGGREGATOR --&gt; OUTPUT</pre>
+<h3 id="3-loop-mode">3. Loop Mode</h3>
+<p>Single agent processes events iteratively until conditions are met.</p>
+<h4 id="configuration-2">Configuration</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">orchestration</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">mode</span> = <span style="color:#e6db74">&#34;loop&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">timeout_seconds</span> = <span style="color:#ae81ff">120</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">loop_agent</span> = <span style="color:#e6db74">&#34;quality-checker&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_iterations</span> = <span style="color:#ae81ff">5</span></span></span></code></pre></div>
+<h4 id="cli-generation-2">CLI Generation</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>agentcli create quality-loop <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --orchestration-mode loop <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --loop-agent <span style="color:#e6db74">&#34;quality-checker&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --max-iterations <span style="color:#ae81ff">5</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --orchestration-timeout <span style="color:#ae81ff">120</span></span></span></code></pre></div>
+<h4 id="use-cases-2">Use Cases</h4>
+<ul>
+<li>Quality assurance loops</li>
+<li>Iterative refinement processes</li>
+<li>Retry mechanisms with improvement</li>
+<li>Convergence-based processing</li>
+</ul>
+<h4 id="flow-diagram-2">Flow Diagram</h4>
+<pre class="mermaid align-center ">flowchart TD
+    INPUT[&#34;📨 Input Event&#34;]
+    AGENT[&#34;🤖 Quality Checker&#34;]
+    CONDITION{&#34;✅ Quality Met?&#34;}
+    ITERATE{&#34;🔄 Max Iterations?&#34;}
+    OUTPUT[&#34;📤 Final Result&#34;]
+    
+    INPUT --&gt; AGENT
+    AGENT --&gt; CONDITION
+    CONDITION --&gt;|No| ITERATE
+    ITERATE --&gt;|No| AGENT
+    ITERATE --&gt;|Yes| OUTPUT
+    CONDITION --&gt;|Yes| OUTPUT</pre>
+<h3 id="4-mixed-mode">4. Mixed Mode</h3>
+<p>Combines collaborative and sequential processing patterns.</p>
+<h4 id="configuration-3">Configuration</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">orchestration</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">mode</span> = <span style="color:#e6db74">&#34;mixed&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">timeout_seconds</span> = <span style="color:#ae81ff">90</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">collaborative_agents</span> = [<span style="color:#e6db74">&#34;analyzer&#34;</span>, <span style="color:#e6db74">&#34;validator&#34;</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">sequential_agents</span> = [<span style="color:#e6db74">&#34;processor&#34;</span>, <span style="color:#e6db74">&#34;reporter&#34;</span>]</span></span></code></pre></div>
+<h4 id="cli-generation-3">CLI Generation</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>agentcli create complex-workflow <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --orchestration-mode mixed <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --collaborative-agents <span style="color:#e6db74">&#34;analyzer,validator&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --sequential-agents <span style="color:#e6db74">&#34;processor,reporter&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --orchestration-timeout <span style="color:#ae81ff">90</span></span></span></code></pre></div>
+<h4 id="use-cases-3">Use Cases</h4>
+<ul>
+<li>Complex business processes</li>
+<li>Multi-stage workflows with parallel components</li>
+<li>Hybrid processing patterns</li>
+<li>Enterprise workflow automation</li>
+</ul>
+<h4 id="flow-diagram-3">Flow Diagram</h4>
+<pre class="mermaid align-center ">flowchart TD
+    INPUT[&#34;📨 Input Event&#34;]
+    
+    subgraph PARALLEL[&#34;Collaborative Phase&#34;]
+        ANALYZER[&#34;🤖 Analyzer&#34;]
+        VALIDATOR[&#34;🤖 Validator&#34;]
+    end
+    
+    subgraph SEQUENTIAL[&#34;Sequential Phase&#34;]
+        PROCESSOR[&#34;🤖 Processor&#34;]
+        REPORTER[&#34;🤖 Reporter&#34;]
+    end
+    
+    OUTPUT[&#34;📤 Final Result&#34;]
+    
+    INPUT --&gt; PARALLEL
+    ANALYZER --&gt; PROCESSOR
+    VALIDATOR --&gt; PROCESSOR
+    PROCESSOR --&gt; REPORTER
+    REPORTER --&gt; OUTPUT</pre>
+<h3 id="5-route-mode">5. Route Mode</h3>
+<p>Default event routing based on event metadata (legacy mode).</p>
+<h4 id="configuration-4">Configuration</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">orchestration</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">mode</span> = <span style="color:#e6db74">&#34;route&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">timeout_seconds</span> = <span style="color:#ae81ff">30</span></span></span></code></pre></div>
+<h4 id="cli-generation-4">CLI Generation</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>agentcli create simple-router <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --orchestration-mode route <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --orchestration-timeout <span style="color:#ae81ff">30</span></span></span></code></pre></div>
+<h4 id="use-cases-4">Use Cases</h4>
+<ul>
+<li>Simple event routing</li>
+<li>Legacy system compatibility</li>
+<li>Dynamic agent selection</li>
+<li>Conditional processing</li>
+</ul>
+<h2 id="advanced-configuration">Advanced Configuration</h2>
+<h3 id="environment-specific-configurations">Environment-Specific Configurations</h3>
+<h4 id="development-configuration">Development Configuration</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span><span style="color:#75715e"># agentflow.dev.toml</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">orchestration</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">mode</span> = <span style="color:#e6db74">&#34;sequential&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">timeout_seconds</span> = <span style="color:#ae81ff">60</span>  <span style="color:#75715e"># Longer timeout for debugging</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">sequential_agents</span> = [<span style="color:#e6db74">&#34;agent1&#34;</span>, <span style="color:#e6db74">&#34;agent2&#34;</span>]</span></span></code></pre></div>
+<h4 id="production-configuration">Production Configuration</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span><span style="color:#75715e"># agentflow.prod.toml</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">orchestration</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">mode</span> = <span style="color:#e6db74">&#34;mixed&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">timeout_seconds</span> = <span style="color:#ae81ff">30</span>  <span style="color:#75715e"># Shorter timeout for performance</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">collaborative_agents</span> = [<span style="color:#e6db74">&#34;analyzer&#34;</span>, <span style="color:#e6db74">&#34;validator&#34;</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">sequential_agents</span> = [<span style="color:#e6db74">&#34;processor&#34;</span>, <span style="color:#e6db74">&#34;reporter&#34;</span>]</span></span></code></pre></div>
+<h4 id="loading-environment-specific-configs">Loading Environment-Specific Configs</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#a6e22e">configFile</span> <span style="color:#f92672">:=</span> <span style="color:#e6db74">&#34;agentflow.toml&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">env</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Getenv</span>(<span style="color:#e6db74">&#34;AGENTFLOW_ENV&#34;</span>); <span style="color:#a6e22e">env</span> <span style="color:#f92672">!=</span> <span style="color:#e6db74">&#34;&#34;</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">configFile</span> = <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;agentflow.%s.toml&#34;</span>, <span style="color:#a6e22e">env</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">runner</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewRunnerFromConfig</span>(<span style="color:#a6e22e">configFile</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Create provider from configuration</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewProviderFromConfig</span>(<span style="color:#a6e22e">configFile</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Create agents</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">agents</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">AgentHandler</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;agent1&#34;</span>: <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewLLMAgent</span>(<span style="color:#e6db74">&#34;agent1&#34;</span>, <span style="color:#a6e22e">provider</span>),
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;agent2&#34;</span>: <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewLLMAgent</span>(<span style="color:#e6db74">&#34;agent2&#34;</span>, <span style="color:#a6e22e">provider</span>),
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Register agents with the runner</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> <span style="color:#a6e22e">name</span>, <span style="color:#a6e22e">handler</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">agents</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">runner</span>.<span style="color:#a6e22e">RegisterAgent</span>(<span style="color:#a6e22e">name</span>, <span style="color:#a6e22e">handler</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatalf</span>(<span style="color:#e6db74">&#34;Failed to register agent %s: %v&#34;</span>, <span style="color:#a6e22e">name</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h3 id="dynamic-configuration-updates">Dynamic Configuration Updates</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Load initial configuration</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">runner</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewRunnerFromConfig</span>(<span style="color:#e6db74">&#34;agentflow.toml&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Create provider from configuration</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewProviderFromConfig</span>(<span style="color:#e6db74">&#34;agentflow.toml&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Create agents</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">agents</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">AgentHandler</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;agent1&#34;</span>: <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewLLMAgent</span>(<span style="color:#e6db74">&#34;agent1&#34;</span>, <span style="color:#a6e22e">provider</span>),
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;agent2&#34;</span>: <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewLLMAgent</span>(<span style="color:#e6db74">&#34;agent2&#34;</span>, <span style="color:#a6e22e">provider</span>),
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Register agents with the runner</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> <span style="color:#a6e22e">name</span>, <span style="color:#a6e22e">handler</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">agents</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">runner</span>.<span style="color:#a6e22e">RegisterAgent</span>(<span style="color:#a6e22e">name</span>, <span style="color:#a6e22e">handler</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatalf</span>(<span style="color:#e6db74">&#34;Failed to register agent %s: %v&#34;</span>, <span style="color:#a6e22e">name</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Watch for configuration changes</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">watcher</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">fsnotify</span>.<span style="color:#a6e22e">NewWatcher</span>()
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">go</span> <span style="color:#66d9ef">func</span>() {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">select</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">case</span> <span style="color:#a6e22e">event</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&lt;-</span><span style="color:#a6e22e">watcher</span>.<span style="color:#a6e22e">Events</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">event</span>.<span style="color:#a6e22e">Op</span><span style="color:#f92672">&amp;</span><span style="color:#a6e22e">fsnotify</span>.<span style="color:#a6e22e">Write</span> <span style="color:#f92672">==</span> <span style="color:#a6e22e">fsnotify</span>.<span style="color:#a6e22e">Write</span> {
+</span></span><span style="display:flex;"><span>                <span style="color:#75715e">// Reload configuration and create new runner</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#a6e22e">newRunner</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewRunnerFromConfig</span>(<span style="color:#e6db74">&#34;agentflow.toml&#34;</span>)
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>                    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Failed to reload config: %v&#34;</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>                    <span style="color:#66d9ef">continue</span>
+</span></span><span style="display:flex;"><span>                }
+</span></span><span style="display:flex;"><span>                
+</span></span><span style="display:flex;"><span>                <span style="color:#75715e">// Stop current runner</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#a6e22e">runner</span>.<span style="color:#a6e22e">Stop</span>()
+</span></span><span style="display:flex;"><span>                
+</span></span><span style="display:flex;"><span>                <span style="color:#75715e">// Re-register agents with new runner</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">name</span>, <span style="color:#a6e22e">handler</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">agents</span> {
+</span></span><span style="display:flex;"><span>                    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">newRunner</span>.<span style="color:#a6e22e">RegisterAgent</span>(<span style="color:#a6e22e">name</span>, <span style="color:#a6e22e">handler</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>                        <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Failed to register agent %s: %v&#34;</span>, <span style="color:#a6e22e">name</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>                    }
+</span></span><span style="display:flex;"><span>                }
+</span></span><span style="display:flex;"><span>                
+</span></span><span style="display:flex;"><span>                <span style="color:#75715e">// Start new runner</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#a6e22e">runner</span> = <span style="color:#a6e22e">newRunner</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#a6e22e">runner</span>.<span style="color:#a6e22e">Start</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>())
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">watcher</span>.<span style="color:#a6e22e">Add</span>(<span style="color:#e6db74">&#34;agentflow.toml&#34;</span>)</span></span></code></pre></div>
+<h2 id="configuration-validation">Configuration Validation</h2>
+<h3 id="built-in-validation">Built-in Validation</h3>
+<p>AgenticGoKit automatically validates orchestration configurations:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#a6e22e">config</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">LoadConfigFromWorkingDir</span>()
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Configuration validation errors are returned here</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Configuration error: %v&#34;</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Validate orchestration configuration</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">config</span>.<span style="color:#a6e22e">ValidateOrchestrationConfig</span>(); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Orchestration validation error: %v&#34;</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h3 id="common-validation-errors">Common Validation Errors</h3>
+<table>
+  <thead>
+      <tr>
+          <th>Error</th>
+          <th>Cause</th>
+          <th>Solution</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td><code>missing orchestration mode</code></td>
+          <td>No <code>mode</code> specified</td>
+          <td>Add <code>mode = &quot;sequential&quot;</code></td>
+      </tr>
+      <tr>
+          <td><code>invalid orchestration mode</code></td>
+          <td>Unknown mode value</td>
+          <td>Use valid mode: sequential, collaborative, loop, mixed, route</td>
+      </tr>
+      <tr>
+          <td><code>sequential mode missing agents</code></td>
+          <td>No <code>sequential_agents</code> for sequential mode</td>
+          <td>Add <code>sequential_agents = [&quot;agent1&quot;, &quot;agent2&quot;]</code></td>
+      </tr>
+      <tr>
+          <td><code>loop mode missing agent</code></td>
+          <td>No <code>loop_agent</code> for loop mode</td>
+          <td>Add <code>loop_agent = &quot;agent1&quot;</code></td>
+      </tr>
+      <tr>
+          <td><code>mixed mode missing agents</code></td>
+          <td>No agents specified for mixed mode</td>
+          <td>Add both collaborative and sequential agents</td>
+      </tr>
+      <tr>
+          <td><code>invalid timeout</code></td>
+          <td>Timeout ≤ 0</td>
+          <td>Set <code>timeout_seconds</code> to positive integer</td>
+      </tr>
+      <tr>
+          <td><code>invalid max iterations</code></td>
+          <td>Max iterations ≤ 0 for loop mode</td>
+          <td>Set <code>max_iterations</code> to positive integer</td>
+      </tr>
+  </tbody>
+</table>
+<h3 id="manual-validation">Manual Validation</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Validate configuration file</span>
+</span></span><span style="display:flex;"><span>agentcli config validate agentflow.toml
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Validate with detailed output</span>
+</span></span><span style="display:flex;"><span>agentcli config validate --verbose agentflow.toml</span></span></code></pre></div>
+<h2 id="best-practices">Best Practices</h2>
+<h3 id="1-configuration-organization">1. Configuration Organization</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span><span style="color:#75715e"># Group related configurations together</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">orchestration</span>]
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Core orchestration settings</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">mode</span> = <span style="color:#e6db74">&#34;mixed&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">timeout_seconds</span> = <span style="color:#ae81ff">60</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_iterations</span> = <span style="color:#ae81ff">5</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Agent assignments</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">collaborative_agents</span> = [<span style="color:#e6db74">&#34;analyzer&#34;</span>, <span style="color:#e6db74">&#34;validator&#34;</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">sequential_agents</span> = [<span style="color:#e6db74">&#34;processor&#34;</span>, <span style="color:#e6db74">&#34;reporter&#34;</span>]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Comments for complex configurations</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Analyzer and validator run in parallel for speed</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Processor and reporter run sequentially for data consistency</span></span></span></code></pre></div>
+<h3 id="2-timeout-configuration">2. Timeout Configuration</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">orchestration</span>]
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Set timeouts based on expected processing time</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">timeout_seconds</span> = <span style="color:#ae81ff">30</span>   <span style="color:#75715e"># Fast operations</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># timeout_seconds = 120  # Complex analysis</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># timeout_seconds = 300  # Heavy processing</span></span></span></code></pre></div>
+<h3 id="3-agent-naming-conventions">3. Agent Naming Conventions</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">orchestration</span>]
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Use descriptive, consistent names</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">sequential_agents</span> = [
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;data-collector&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;data-processor&#34;</span>, 
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;data-formatter&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;data-validator&#34;</span>
+</span></span><span style="display:flex;"><span>]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Avoid generic names like &#34;agent1&#34;, &#34;agent2&#34;</span></span></span></code></pre></div>
+<h3 id="4-mode-selection-guidelines">4. Mode Selection Guidelines</h3>
+<table>
+  <thead>
+      <tr>
+          <th>Use Case</th>
+          <th>Recommended Mode</th>
+          <th>Reason</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>Data pipelines</td>
+          <td>Sequential</td>
+          <td>Maintains data flow order</td>
+      </tr>
+      <tr>
+          <td>Research/analysis</td>
+          <td>Collaborative</td>
+          <td>Leverages parallel processing</td>
+      </tr>
+      <tr>
+          <td>Quality assurance</td>
+          <td>Loop</td>
+          <td>Iterative improvement</td>
+      </tr>
+      <tr>
+          <td>Complex workflows</td>
+          <td>Mixed</td>
+          <td>Combines benefits of both</td>
+      </tr>
+      <tr>
+          <td>Simple routing</td>
+          <td>Route</td>
+          <td>Minimal overhead</td>
+      </tr>
+  </tbody>
+</table>
+<h3 id="5-testing-configurations">5. Testing Configurations</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Test different orchestration modes</span>
+</span></span><span style="display:flex;"><span>agentcli create test-sequential --orchestration-mode sequential
+</span></span><span style="display:flex;"><span>agentcli create test-collaborative --orchestration-mode collaborative
+</span></span><span style="display:flex;"><span>agentcli create test-loop --orchestration-mode loop
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># To test different configurations, you can create multiple config files</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># and run your application with each one to compare performance</span></span></span></code></pre></div>
+<h2 id="migration-guide">Migration Guide</h2>
+<h3 id="from-hardcoded-to-configuration-based">From Hardcoded to Configuration-Based</h3>
+<h4 id="before-hardcoded">Before (Hardcoded)</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Old approach - hardcoded orchestration</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">agents</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">AgentHandler</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;agent1&#34;</span>: <span style="color:#a6e22e">myAgent1</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;agent2&#34;</span>: <span style="color:#a6e22e">myAgent2</span>,
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">runner</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewRunnerWithOrchestration</span>(<span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">EnhancedRunnerConfig</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">RunnerConfig</span>: <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">RunnerConfig</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Agents</span>: <span style="color:#a6e22e">agents</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Memory</span>: <span style="color:#a6e22e">memory</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">SessionID</span>: <span style="color:#a6e22e">sessionID</span>,
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">OrchestrationMode</span>: <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">OrchestrationSequential</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">SequentialAgents</span>: []<span style="color:#66d9ef">string</span>{<span style="color:#e6db74">&#34;agent1&#34;</span>, <span style="color:#e6db74">&#34;agent2&#34;</span>},
+</span></span><span style="display:flex;"><span>})</span></span></code></pre></div>
+<h4 id="after-configuration-based">After (Configuration-Based)</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// New approach - configuration-driven</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">runner</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewRunnerFromConfig</span>(<span style="color:#e6db74">&#34;agentflow.toml&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Create provider from configuration</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewProviderFromConfig</span>(<span style="color:#e6db74">&#34;agentflow.toml&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Create agents</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">agents</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">AgentHandler</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;agent1&#34;</span>: <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewLLMAgent</span>(<span style="color:#e6db74">&#34;agent1&#34;</span>, <span style="color:#a6e22e">provider</span>),
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;agent2&#34;</span>: <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewLLMAgent</span>(<span style="color:#e6db74">&#34;agent2&#34;</span>, <span style="color:#a6e22e">provider</span>),
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Register agents with the runner</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> <span style="color:#a6e22e">name</span>, <span style="color:#a6e22e">handler</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">agents</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">runner</span>.<span style="color:#a6e22e">RegisterAgent</span>(<span style="color:#a6e22e">name</span>, <span style="color:#a6e22e">handler</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatalf</span>(<span style="color:#e6db74">&#34;Failed to register agent %s: %v&#34;</span>, <span style="color:#a6e22e">name</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Start the runner</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>()
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">runner</span>.<span style="color:#a6e22e">Start</span>(<span style="color:#a6e22e">ctx</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">runner</span>.<span style="color:#a6e22e">Stop</span>()</span></span></code></pre></div>
+<h4 id="configuration-file">Configuration File</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">orchestration</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">mode</span> = <span style="color:#e6db74">&#34;sequential&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">timeout_seconds</span> = <span style="color:#ae81ff">30</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">sequential_agents</span> = [<span style="color:#e6db74">&#34;agent1&#34;</span>, <span style="color:#e6db74">&#34;agent2&#34;</span>]</span></span></code></pre></div>
+<h3 id="migration-steps">Migration Steps</h3>
+<ol>
+<li>
+<p><strong>Create Configuration File</strong></p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>agentcli config show &gt; agentflow.toml</span></span></code></pre></div>
+</li>
+<li>
+<p><strong>Add Orchestration Section</strong></p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">orchestration</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">mode</span> = <span style="color:#e6db74">&#34;sequential&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">timeout_seconds</span> = <span style="color:#ae81ff">30</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">sequential_agents</span> = [<span style="color:#e6db74">&#34;agent1&#34;</span>, <span style="color:#e6db74">&#34;agent2&#34;</span>]</span></span></code></pre></div>
+</li>
+<li>
+<p><strong>Update Code</strong></p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Replace hardcoded orchestration</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">runner</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewRunnerFromConfig</span>(<span style="color:#e6db74">&#34;agentflow.toml&#34;</span>)</span></span></code></pre></div>
+</li>
+<li>
+<p><strong>Test Configuration</strong></p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>agentcli config validate agentflow.toml</span></span></code></pre></div>
+</li>
+</ol>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<h3 id="common-issues">Common Issues</h3>
+<h4 id="configuration-not-loading">Configuration Not Loading</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Check file exists and is readable</span>
+</span></span><span style="display:flex;"><span>ls -la agentflow.toml
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Validate configuration syntax</span>
+</span></span><span style="display:flex;"><span>agentcli config validate agentflow.toml
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Check for TOML syntax errors</span>
+</span></span><span style="display:flex;"><span>toml-lint agentflow.toml</span></span></code></pre></div>
+<h4 id="agents-not-found">Agents Not Found</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Ensure agents are registered before starting</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> <span style="color:#a6e22e">name</span>, <span style="color:#a6e22e">handler</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">agents</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">runner</span>.<span style="color:#a6e22e">RegisterAgent</span>(<span style="color:#a6e22e">name</span>, <span style="color:#a6e22e">handler</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Failed to register agent %s: %v&#34;</span>, <span style="color:#a6e22e">name</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h4 id="timeout-issues">Timeout Issues</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">orchestration</span>]
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Increase timeout for complex operations</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">timeout_seconds</span> = <span style="color:#ae81ff">120</span>  <span style="color:#75715e"># Instead of 30</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># For loop mode, also check max_iterations</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_iterations</span> = <span style="color:#ae81ff">10</span>    <span style="color:#75715e"># Instead of 5</span></span></span></code></pre></div>
+<h3 id="debug-configuration">Debug Configuration</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Enable debug logging</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">logger</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">zerolog</span>.<span style="color:#a6e22e">New</span>(<span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Stdout</span>).<span style="color:#a6e22e">Level</span>(<span style="color:#a6e22e">zerolog</span>.<span style="color:#a6e22e">DebugLevel</span>)
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">logger</span>.<span style="color:#a6e22e">WithContext</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>())
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Load configuration with debug context</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">runner</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewRunnerFromConfig</span>(<span style="color:#e6db74">&#34;agentflow.toml&#34;</span>)</span></span></code></pre></div>
+<h3 id="performance-monitoring">Performance Monitoring</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Monitor orchestration performance</span>
+</span></span><span style="display:flex;"><span>agentcli status --detailed
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Check agent execution times</span>
+</span></span><span style="display:flex;"><span>agentcli trace list --since 1h
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># To test different configurations, you can create multiple config files</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># and run your application with each one</span></span></span></code></pre></div>
+<h2 id="examples">Examples</h2>
+<h3 id="complete-configuration-examples">Complete Configuration Examples</h3>
+<h4 id="e-commerce-order-processing">E-commerce Order Processing</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">orchestration</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">mode</span> = <span style="color:#e6db74">&#34;sequential&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">timeout_seconds</span> = <span style="color:#ae81ff">45</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">sequential_agents</span> = [
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;order-validator&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;inventory-checker&#34;</span>, 
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;payment-processor&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;fulfillment-handler&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;notification-sender&#34;</span>
+</span></span><span style="display:flex;"><span>]</span></span></code></pre></div>
+<h4 id="content-moderation-system">Content Moderation System</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">orchestration</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">mode</span> = <span style="color:#e6db74">&#34;collaborative&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">timeout_seconds</span> = <span style="color:#ae81ff">30</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># All registered agents participate in parallel moderation</span></span></span></code></pre></div>
+<h4 id="document-analysis-pipeline">Document Analysis Pipeline</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">orchestration</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">mode</span> = <span style="color:#e6db74">&#34;mixed&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">timeout_seconds</span> = <span style="color:#ae81ff">120</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">collaborative_agents</span> = [<span style="color:#e6db74">&#34;text-analyzer&#34;</span>, <span style="color:#e6db74">&#34;image-analyzer&#34;</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">sequential_agents</span> = [<span style="color:#e6db74">&#34;content-merger&#34;</span>, <span style="color:#e6db74">&#34;report-generator&#34;</span>]</span></span></code></pre></div>
+<h4 id="quality-assurance-loop">Quality Assurance Loop</h4>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">orchestration</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">mode</span> = <span style="color:#e6db74">&#34;loop&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">timeout_seconds</span> = <span style="color:#ae81ff">180</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">loop_agent</span> = <span style="color:#e6db74">&#34;quality-checker&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_iterations</span> = <span style="color:#ae81ff">3</span></span></span></code></pre></div>
+<p>This guide provides comprehensive coverage of AgentFlow&rsquo;s orchestration configuration system, enabling you to build flexible, maintainable multi-agent workflows.</p>
+
+  <footer class="footline">
+              <i class='fa-fw fas fa-calendar'></i> Jul 25, 2025
+  </footer>
+</article>
+        </div>
+      </main>
+    </div>
+    <aside id="R-sidebar" class="default-animation">
+      <div id="R-header-topbar" class="default-animation"></div>
+      <div id="R-header-wrapper" class="default-animation">
+        <div id="R-header" class="default-animation">
+          <a id="R-logo" class="R-default" href="/AgenticGoKitDocs/index.html">
+            <div class="logo-title">AgenticGoKit Docs</div>
+          </a>
+        </div>
+        <search><form action="/AgenticGoKitDocs/search/index.html" method="get">
+          <div class="searchbox default-animation">
+            <button class="search-detail" type="submit" title="Search (CTRL+ALT+f)"><i class="fas fa-search"></i></button>
+            <label class="a11y-only" for="R-search-by">Search</label>
+            <input data-search-input id="R-search-by" name="search-by" class="search-by" type="search" placeholder="Search...">
+            <button class="search-clear" type="button" data-search-clear="" title="Clear search"><i class="fas fa-times" title="Clear search"></i></button>
+          </div>
+        </form></search>
+      </div>
+      <div id="R-homelinks" class="default-animation homelinks">
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-homelinks">
+          <ul class="space collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/index.html"><a class="padding" href="/AgenticGoKitDocs/index.html"><i class="fa-fw fas fa-home"></i> Home</a></li>
+          </ul>
+        </div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-headercontrols">
+          <ul class="">
+          </ul>
+        </div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+      </div>
+      <div id="R-content-wrapper" class="highlightable">
+        <div class="R-sidebarmenu R-shortcutmenu-main">
+          <ul class="enlarge morespace collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/readme/index.html">content</a></li>
+            <li class="parent alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/index.html"><input type="checkbox" id="R-section-8fc2fd7736125e87cab8840a86c2af5a" aria-controls="R-subsections-8fc2fd7736125e87cab8840a86c2af5a" checked><label for="R-section-8fc2fd7736125e87cab8840a86c2af5a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu guides</span></label><a class="padding" href="/AgenticGoKitDocs/guides/index.html">guides</a><ul id="R-subsections-8fc2fd7736125e87cab8840a86c2af5a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/readme/index.html">guides</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/agentbasics/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/agentbasics/index.html">AgentBasics</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/examples/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/examples/index.html">Examples</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/configuration/index.html">Configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/customtools/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/customtools/index.html">CustomTools</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/providers/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/providers/index.html">Providers</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memoryprovidersetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memoryprovidersetup/index.html">MemoryProviderSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memorytroubleshooting/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memorytroubleshooting/index.html">MemoryTroubleshooting</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/embeddingmodelguide/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/embeddingmodelguide/index.html">EmbeddingModelGuide</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/ragconfiguration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/ragconfiguration/index.html">RAGConfiguration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/toolintegration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/toolintegration/index.html">ToolIntegration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/pgvectorsetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/pgvectorsetup/index.html">PgVectorSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/weaviatesetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/weaviatesetup/index.html">WeaviateSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/performance/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/performance/index.html">Performance</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/errorhandling/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/errorhandling/index.html">ErrorHandling</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/deployment/index.html"><input type="checkbox" id="R-section-ecc839349395ef3c015a12132049dff2" aria-controls="R-subsections-ecc839349395ef3c015a12132049dff2" checked><label for="R-section-ecc839349395ef3c015a12132049dff2"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu deployment</span></label><a class="padding" href="/AgenticGoKitDocs/guides/deployment/index.html">deployment</a><ul id="R-subsections-ecc839349395ef3c015a12132049dff2" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/deployment/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/deployment/readme/index.html">deployment</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/development/index.html"><input type="checkbox" id="R-section-fff1f5eca5d0a93209b9c6262762c25a" aria-controls="R-subsections-fff1f5eca5d0a93209b9c6262762c25a" checked><label for="R-section-fff1f5eca5d0a93209b9c6262762c25a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu development</span></label><a class="padding" href="/AgenticGoKitDocs/guides/development/index.html">development</a><ul id="R-subsections-fff1f5eca5d0a93209b9c6262762c25a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/readme/index.html">development</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/best-practices/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/best-practices/index.html">best-practices</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/debugging/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/debugging/index.html">debugging</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/research-assistant/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/research-assistant/index.html">research-assistant</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/testing-agents/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/testing-agents/index.html">testing-agents</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/visualization/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/visualization/index.html">visualization</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/web-search-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/web-search-integration/index.html">web-search-integration</a></li></ul></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/framework-comparison/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/framework-comparison/index.html">framework-comparison</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memory/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memory/index.html">Memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/scaffoldmemoryguide/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/scaffoldmemoryguide/index.html">ScaffoldMemoryGuide</a></li>
+            <li class="parent alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/setup/index.html"><input type="checkbox" id="R-section-0124aed9abb5064d53391168f3c95c22" aria-controls="R-subsections-0124aed9abb5064d53391168f3c95c22" checked><label for="R-section-0124aed9abb5064d53391168f3c95c22"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu setup</span></label><a class="padding" href="/AgenticGoKitDocs/guides/setup/index.html">setup</a><ul id="R-subsections-0124aed9abb5064d53391168f3c95c22" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/readme/index.html">setup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/llm-providers/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/llm-providers/index.html">llm-providers</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/mcp-tools/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/mcp-tools/index.html">mcp-tools</a></li>
+            <li class="active " data-nav-id="/AgenticGoKitDocs/guides/setup/orchestration-configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/orchestration-configuration/index.html">orchestration-configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/vector-databases/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/vector-databases/index.html">vector-databases</a></li></ul></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/troubleshooting/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/troubleshooting/index.html">troubleshooting</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/contributors/index.html"><input type="checkbox" id="R-section-190d9b328fbda7e13ab386f7a5417de5" aria-controls="R-subsections-190d9b328fbda7e13ab386f7a5417de5" checked><label for="R-section-190d9b328fbda7e13ab386f7a5417de5"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu contributors</span></label><a class="padding" href="/AgenticGoKitDocs/contributors/index.html">contributors</a><ul id="R-subsections-190d9b328fbda7e13ab386f7a5417de5" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/readme/index.html">contributors</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/contributorguide/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/contributorguide/index.html">ContributorGuide</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/codestyle/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/codestyle/index.html">CodeStyle</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/corevsinternal/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/corevsinternal/index.html">CoreVsInternal</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/addingfeatures/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/addingfeatures/index.html">AddingFeatures</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/testing/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/testing/index.html">Testing</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/docsstandards/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/docsstandards/index.html">DocsStandards</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/reference/index.html"><input type="checkbox" id="R-section-66002f201bef818664bb81aa67490c58" aria-controls="R-subsections-66002f201bef818664bb81aa67490c58" checked><label for="R-section-66002f201bef818664bb81aa67490c58"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu reference</span></label><a class="padding" href="/AgenticGoKitDocs/reference/index.html">reference</a><ul id="R-subsections-66002f201bef818664bb81aa67490c58" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/readme/index.html">reference</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/configuration/index.html">configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/cli/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/cli/index.html">cli</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/mcp/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/mcp/index.html">mcp</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/agent/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/agent/index.html">agent</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/memory/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/memory/index.html">memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/orchestration/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/orchestration/index.html">orchestration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/state-event/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/state-event/index.html">state-event</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/index.html"><input type="checkbox" id="R-section-e1e8c1e70c5500b49e8dda2dc550651a" aria-controls="R-subsections-e1e8c1e70c5500b49e8dda2dc550651a" checked><label for="R-section-e1e8c1e70c5500b49e8dda2dc550651a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu tutorials</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/index.html">tutorials</a><ul id="R-subsections-e1e8c1e70c5500b49e8dda2dc550651a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/readme/index.html">tutorials</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/advanced/index.html"><input type="checkbox" id="R-section-d3def5cd76adc8096d0ff9fda6b8e479" aria-controls="R-subsections-d3def5cd76adc8096d0ff9fda6b8e479" checked><label for="R-section-d3def5cd76adc8096d0ff9fda6b8e479"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu advanced</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/index.html">advanced</a><ul id="R-subsections-d3def5cd76adc8096d0ff9fda6b8e479" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/readme/index.html">advanced</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/circuit-breaker-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/circuit-breaker-patterns/index.html">circuit-breaker-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/load-balancing-scaling/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/load-balancing-scaling/index.html">load-balancing-scaling</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/retry-policies/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/retry-policies/index.html">retry-policies</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/testing-strategies/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/testing-strategies/index.html">testing-strategies</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/index.html"><input type="checkbox" id="R-section-212c6ccffb40ecdd78eb2136f98c4cac" aria-controls="R-subsections-212c6ccffb40ecdd78eb2136f98c4cac" checked><label for="R-section-212c6ccffb40ecdd78eb2136f98c4cac"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu core-concepts</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/index.html">core-concepts</a><ul id="R-subsections-212c6ccffb40ecdd78eb2136f98c4cac" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/readme/index.html">core-concepts</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/agent-lifecycle/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/agent-lifecycle/index.html">agent-lifecycle</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/error-handling/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/error-handling/index.html">error-handling</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/message-passing/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/message-passing/index.html">message-passing</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/orchestration-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/orchestration-patterns/index.html">orchestration-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/state-management/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/state-management/index.html">state-management</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/debugging/index.html"><input type="checkbox" id="R-section-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" aria-controls="R-subsections-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" checked><label for="R-section-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu debugging</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/index.html">debugging</a><ul id="R-subsections-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/readme/index.html">debugging</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/debugging-multi-agent-systems/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/debugging-multi-agent-systems/index.html">debugging-multi-agent-systems</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/logging-and-tracing/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/logging-and-tracing/index.html">logging-and-tracing</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/index.html"><input type="checkbox" id="R-section-e7f904c8b9d0f9bf1f07ca7d482d2247" aria-controls="R-subsections-e7f904c8b9d0f9bf1f07ca7d482d2247" checked><label for="R-section-e7f904c8b9d0f9bf1f07ca7d482d2247"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu getting-started</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/index.html">getting-started</a><ul id="R-subsections-e7f904c8b9d0f9bf1f07ca7d482d2247" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/readme/index.html">getting-started</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/memory-and-rag/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/memory-and-rag/index.html">memory-and-rag</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/multi-agent-collaboration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/multi-agent-collaboration/index.html">multi-agent-collaboration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/production-deployment/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/production-deployment/index.html">production-deployment</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/quickstart/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/quickstart/index.html">quickstart</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/tool-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/tool-integration/index.html">tool-integration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/your-first-agent/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/your-first-agent/index.html">your-first-agent</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/mcp/index.html"><input type="checkbox" id="R-section-153aac44598009a99dd5a60317a3eecc" aria-controls="R-subsections-153aac44598009a99dd5a60317a3eecc" checked><label for="R-section-153aac44598009a99dd5a60317a3eecc"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu mcp</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/index.html">mcp</a><ul id="R-subsections-153aac44598009a99dd5a60317a3eecc" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/readme/index.html">mcp</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/advanced-tool-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/advanced-tool-patterns/index.html">advanced-tool-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/tool-development/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/tool-development/index.html">tool-development</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/tool-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/tool-integration/index.html">tool-integration</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/index.html"><input type="checkbox" id="R-section-9c1a65f2d7b3888241dcafa51a0710e7" aria-controls="R-subsections-9c1a65f2d7b3888241dcafa51a0710e7" checked><label for="R-section-9c1a65f2d7b3888241dcafa51a0710e7"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu memory-systems</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/index.html">memory-systems</a><ul id="R-subsections-9c1a65f2d7b3888241dcafa51a0710e7" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/readme/index.html">memory-systems</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/basic-memory/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/basic-memory/index.html">basic-memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/document-ingestion/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/document-ingestion/index.html">document-ingestion</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/knowledge-bases/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/knowledge-bases/index.html">knowledge-bases</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/memory-optimization/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/memory-optimization/index.html">memory-optimization</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/rag-implementation/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/rag-implementation/index.html">rag-implementation</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/vector-databases/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/vector-databases/index.html">vector-databases</a></li></ul></li></ul></li>
+          </ul>
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-shortcuts">
+          <ul class="space collapsible-menu">
+          </ul>
+        </div>
+        <div id="R-footer-margin"></div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-footercontrols">
+          <ul class="">
+          </ul>
+        </div>
+<div id="R-footer"><p>Built with <a href="https://github.com/McShelby/hugo-theme-relearn" title="love"><i class="fas fa-heart"></i></a> by <a href="https://gohugo.io/">Hugo</a></p></div>
+      </div>
+    </aside>
+    <script src="/AgenticGoKitDocs/js/js-yaml/js-yaml.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/d3/d3-color.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/d3/d3-dispatch.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/d3/d3-drag.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/d3/d3-ease.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/d3/d3-interpolate.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/d3/d3-selection.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/d3/d3-timer.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/d3/d3-transition.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/d3/d3-zoom.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/mermaid/mermaid.min.js?1753430931" defer></script>
+    <script>
+      window.relearn.themeUseMermaid = JSON.parse("{}");
+    </script>
+    <script src="/AgenticGoKitDocs/js/clipboard/clipboard.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/perfect-scrollbar/perfect-scrollbar.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/theme.js?1753430931" defer></script>
+  </body>
+</html>

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>getting-started :: AgenticGoKit Docs</title>
+    <link>http://localhost:1313/AgenticGoKitDocs/tutorials/getting-started/index.html</link>
+    <description>Getting Started Tutorials Beginner-friendly tutorials to get you up and running with AgenticGoKit quickly.&#xA;Tutorial Series Follow these tutorials in order for the best learning experience:&#xA;0. 5-Minute Quickstart Time: 5 minutes&#xA;Get a multi-agent system running immediately with minimal setup.&#xA;You’ll learn:&#xA;Fastest way to create agents Basic orchestration patterns CLI vs code-first approaches 1. Your First Agent Time: 10 minutes&#xA;Create your first AgenticGoKit agent and understand the basic concepts.</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <lastBuildDate>Fri, 25 Jul 2025 00:00:00 +0000</lastBuildDate>
+    <atom:link href="http://localhost:1313/AgenticGoKitDocs/tutorials/getting-started/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>getting-started</title>
+      <link>http://localhost:1313/AgenticGoKitDocs/tutorials/getting-started/readme/index.html</link>
+      <pubDate>Fri, 25 Jul 2025 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/AgenticGoKitDocs/tutorials/getting-started/readme/index.html</guid>
+      <description>Getting Started Tutorials Beginner-friendly tutorials to get you up and running with AgenticGoKit quickly.&#xA;Tutorial Series Follow these tutorials in order for the best learning experience:&#xA;0. 5-Minute Quickstart Time: 5 minutes&#xA;Get a multi-agent system running immediately with minimal setup.&#xA;You’ll learn:&#xA;Fastest way to create agents Basic orchestration patterns CLI vs code-first approaches 1. Your First Agent Time: 10 minutes&#xA;Create your first AgenticGoKit agent and understand the basic concepts.</description>
+    </item>
+    <item>
+      <title>memory-and-rag</title>
+      <link>http://localhost:1313/AgenticGoKitDocs/tutorials/getting-started/memory-and-rag/index.html</link>
+      <pubDate>Fri, 25 Jul 2025 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/AgenticGoKitDocs/tutorials/getting-started/memory-and-rag/index.html</guid>
+      <description>Memory and RAG Tutorial (15 minutes) Overview Learn how to add persistent memory and knowledge systems to your agents using RAG (Retrieval-Augmented Generation). You’ll set up vector databases, implement document ingestion, and create knowledge-aware agents.&#xA;Prerequisites Complete the Multi-Agent Collaboration tutorial Docker installed (for database setup) Basic understanding of vector databases Learning Objectives By the end of this tutorial, you’ll understand:&#xA;How to set up vector databases for agent memory Document ingestion and chunking strategies RAG implementation for knowledge-aware responses Hybrid search combining semantic and keyword matching What You’ll Build A knowledge-aware agent system that can:</description>
+    </item>
+    <item>
+      <title>multi-agent-collaboration</title>
+      <link>http://localhost:1313/AgenticGoKitDocs/tutorials/getting-started/multi-agent-collaboration/index.html</link>
+      <pubDate>Fri, 25 Jul 2025 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/AgenticGoKitDocs/tutorials/getting-started/multi-agent-collaboration/index.html</guid>
+      <description>Multi-Agent Collaboration Tutorial (15 minutes) Overview Learn how to orchestrate multiple agents working together using different patterns. You’ll explore collaborative, sequential, and mixed orchestration modes to build sophisticated multi-agent workflows.&#xA;Prerequisites Complete the 5-Minute Quickstart Basic understanding of AgenticGoKit concepts Learning Objectives By the end of this tutorial, you’ll understand:&#xA;Different orchestration patterns and when to use them How to configure collaborative vs sequential processing How to build mixed orchestration workflows Performance characteristics of each pattern What You’ll Build Three different multi-agent systems:</description>
+    </item>
+    <item>
+      <title>production-deployment</title>
+      <link>http://localhost:1313/AgenticGoKitDocs/tutorials/getting-started/production-deployment/index.html</link>
+      <pubDate>Fri, 25 Jul 2025 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/AgenticGoKitDocs/tutorials/getting-started/production-deployment/index.html</guid>
+      <description>Production Deployment Tutorial (15 minutes) Overview Learn how to deploy and scale your AgenticGoKit agents for production use. You’ll containerize your application, set up monitoring, implement fault tolerance, and configure for high availability.&#xA;Prerequisites Complete the Tool Integration tutorial Docker installed Basic understanding of containerization and deployment Learning Objectives By the end of this tutorial, you’ll understand:&#xA;How to containerize AgenticGoKit applications Production configuration management Monitoring and observability setup Fault tolerance and error handling Scaling strategies for multi-agent systems What You’ll Build A production-ready agent system with:</description>
+    </item>
+    <item>
+      <title>quickstart</title>
+      <link>http://localhost:1313/AgenticGoKitDocs/tutorials/getting-started/quickstart/index.html</link>
+      <pubDate>Fri, 25 Jul 2025 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/AgenticGoKitDocs/tutorials/getting-started/quickstart/index.html</guid>
+      <description>🚀 5-Minute Quickstart Get your first AgenticGoKit multi-agent system running in 5 minutes. No complex setup, no configuration files—just working code.&#xA;What You’ll Build A simple but powerful multi-agent system where:&#xA;🤖 Agent 1 processes your request 🤖 Agent 2 enhances the response 🤖 Agent 3 formats the final output All working together automatically!&#xA;Prerequisites Go 1.21+ (install here) OpenAI API Key (get one here) That’s it! No Docker, no databases, no complex setup.</description>
+    </item>
+    <item>
+      <title>tool-integration</title>
+      <link>http://localhost:1313/AgenticGoKitDocs/tutorials/getting-started/tool-integration/index.html</link>
+      <pubDate>Fri, 25 Jul 2025 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/AgenticGoKitDocs/tutorials/getting-started/tool-integration/index.html</guid>
+      <description>Tool Integration Tutorial (15 minutes) Overview Learn how to connect your agents to external tools and APIs using MCP (Model Context Protocol). You’ll set up built-in tools, create custom tools, and optimize tool performance with caching.&#xA;Prerequisites Complete the Memory and RAG tutorial Basic understanding of APIs and external services Optional: Docker for advanced tool setups Learning Objectives By the end of this tutorial, you’ll understand:&#xA;How to enable MCP tool integration Using built-in tools (web search, file operations) Creating custom tools for your specific needs Tool caching and performance optimization What You’ll Build A tool-enabled agent system that can:</description>
+    </item>
+    <item>
+      <title>your-first-agent</title>
+      <link>http://localhost:1313/AgenticGoKitDocs/tutorials/getting-started/your-first-agent/index.html</link>
+      <pubDate>Fri, 25 Jul 2025 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/AgenticGoKitDocs/tutorials/getting-started/your-first-agent/index.html</guid>
+      <description>Your First Agent Tutorial (15 minutes) Navigation: Documentation Home → Tutorials → Getting Started → Your First Agent&#xA;Overview Learn how to build your first AgenticGoKit agent using the powerful agentcli create command. This tutorial showcases AgenticGoKit’s biggest USP - getting started with production-ready agentic code in seconds.&#xA;Prerequisites Go 1.21 or later installed OpenAI API key (or other LLM provider) Basic understanding of Go programming (helpful but not required) Learning Objectives By the end of this tutorial, you’ll understand:</description>
+    </item>
+  </channel>
+</rss>

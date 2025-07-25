@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en-us" dir="ltr" itemscope itemtype="http://schema.org/Article" data-r-output-format="html">
+  <head><script src="/AgenticGoKitDocs/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=AgenticGoKitDocs/livereload" data-no-instant defer></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="height=device-height, width=device-width, initial-scale=1.0, minimum-scale=1.0">
+    <meta name="generator" content="Hugo 0.148.1">
+    <meta name="generator" content="Relearn 8.0.0+9803d5122ebb3276acea823f476e9eb44f607862">
+    <meta name="description" content="Configuration API System configuration and setup
+This document covers AgenticGoKit’s Configuration API, which provides comprehensive configuration management for agents, orchestration, memory systems, and MCP integration. The configuration system uses TOML files and provides validation and defaults.
+📋 Core Configuration Types Main Configuration Structure The main configuration structure loaded from agentflow.toml:
+type Config struct { AgentFlow struct { Name string `toml:&#34;name&#34;` Version string `toml:&#34;version&#34;` Provider string `toml:&#34;provider&#34;` } `toml:&#34;agent_flow&#34;` Logging struct { Level string `toml:&#34;level&#34;` Format string `toml:&#34;format&#34;` } `toml:&#34;logging&#34;` Runtime struct { MaxConcurrentAgents int `toml:&#34;max_concurrent_agents&#34;` TimeoutSeconds int `toml:&#34;timeout_seconds&#34;` } `toml:&#34;runtime&#34;` // Agent memory configuration AgentMemory AgentMemoryConfig `toml:&#34;agent_memory&#34;` // Error routing configuration ErrorRouting struct { Enabled bool `toml:&#34;enabled&#34;` MaxRetries int `toml:&#34;max_retries&#34;` RetryDelayMs int `toml:&#34;retry_delay_ms&#34;` EnableCircuitBreaker bool `toml:&#34;enable_circuit_breaker&#34;` ErrorHandlerName string `toml:&#34;error_handler_name&#34;` CategoryHandlers map[string]string `toml:&#34;category_handlers&#34;` SeverityHandlers map[string]string `toml:&#34;severity_handlers&#34;` CircuitBreaker CircuitBreakerConfigToml `toml:&#34;circuit_breaker&#34;` Retry RetryConfigToml `toml:&#34;retry&#34;` } `toml:&#34;error_routing&#34;` // Provider-specific configurations Providers map[string]map[string]interface{} `toml:&#34;providers&#34;` // MCP configuration MCP MCPConfigToml `toml:&#34;mcp&#34;` // Orchestration configuration Orchestration OrchestrationConfigToml `toml:&#34;orchestration&#34;` }Memory Configuration Configuration for memory systems and RAG capabilities:">
+    <meta name="author" content="">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="configuration :: AgenticGoKit Docs">
+    <meta name="twitter:description" content="Configuration API System configuration and setup
+This document covers AgenticGoKit’s Configuration API, which provides comprehensive configuration management for agents, orchestration, memory systems, and MCP integration. The configuration system uses TOML files and provides validation and defaults.
+📋 Core Configuration Types Main Configuration Structure The main configuration structure loaded from agentflow.toml:
+type Config struct { AgentFlow struct { Name string `toml:&#34;name&#34;` Version string `toml:&#34;version&#34;` Provider string `toml:&#34;provider&#34;` } `toml:&#34;agent_flow&#34;` Logging struct { Level string `toml:&#34;level&#34;` Format string `toml:&#34;format&#34;` } `toml:&#34;logging&#34;` Runtime struct { MaxConcurrentAgents int `toml:&#34;max_concurrent_agents&#34;` TimeoutSeconds int `toml:&#34;timeout_seconds&#34;` } `toml:&#34;runtime&#34;` // Agent memory configuration AgentMemory AgentMemoryConfig `toml:&#34;agent_memory&#34;` // Error routing configuration ErrorRouting struct { Enabled bool `toml:&#34;enabled&#34;` MaxRetries int `toml:&#34;max_retries&#34;` RetryDelayMs int `toml:&#34;retry_delay_ms&#34;` EnableCircuitBreaker bool `toml:&#34;enable_circuit_breaker&#34;` ErrorHandlerName string `toml:&#34;error_handler_name&#34;` CategoryHandlers map[string]string `toml:&#34;category_handlers&#34;` SeverityHandlers map[string]string `toml:&#34;severity_handlers&#34;` CircuitBreaker CircuitBreakerConfigToml `toml:&#34;circuit_breaker&#34;` Retry RetryConfigToml `toml:&#34;retry&#34;` } `toml:&#34;error_routing&#34;` // Provider-specific configurations Providers map[string]map[string]interface{} `toml:&#34;providers&#34;` // MCP configuration MCP MCPConfigToml `toml:&#34;mcp&#34;` // Orchestration configuration Orchestration OrchestrationConfigToml `toml:&#34;orchestration&#34;` }Memory Configuration Configuration for memory systems and RAG capabilities:">
+    <meta property="og:url" content="http://localhost:1313/AgenticGoKitDocs/reference/api/configuration/index.html">
+    <meta property="og:site_name" content="AgenticGoKit Docs">
+    <meta property="og:title" content="configuration :: AgenticGoKit Docs">
+    <meta property="og:description" content="Configuration API System configuration and setup
+This document covers AgenticGoKit’s Configuration API, which provides comprehensive configuration management for agents, orchestration, memory systems, and MCP integration. The configuration system uses TOML files and provides validation and defaults.
+📋 Core Configuration Types Main Configuration Structure The main configuration structure loaded from agentflow.toml:
+type Config struct { AgentFlow struct { Name string `toml:&#34;name&#34;` Version string `toml:&#34;version&#34;` Provider string `toml:&#34;provider&#34;` } `toml:&#34;agent_flow&#34;` Logging struct { Level string `toml:&#34;level&#34;` Format string `toml:&#34;format&#34;` } `toml:&#34;logging&#34;` Runtime struct { MaxConcurrentAgents int `toml:&#34;max_concurrent_agents&#34;` TimeoutSeconds int `toml:&#34;timeout_seconds&#34;` } `toml:&#34;runtime&#34;` // Agent memory configuration AgentMemory AgentMemoryConfig `toml:&#34;agent_memory&#34;` // Error routing configuration ErrorRouting struct { Enabled bool `toml:&#34;enabled&#34;` MaxRetries int `toml:&#34;max_retries&#34;` RetryDelayMs int `toml:&#34;retry_delay_ms&#34;` EnableCircuitBreaker bool `toml:&#34;enable_circuit_breaker&#34;` ErrorHandlerName string `toml:&#34;error_handler_name&#34;` CategoryHandlers map[string]string `toml:&#34;category_handlers&#34;` SeverityHandlers map[string]string `toml:&#34;severity_handlers&#34;` CircuitBreaker CircuitBreakerConfigToml `toml:&#34;circuit_breaker&#34;` Retry RetryConfigToml `toml:&#34;retry&#34;` } `toml:&#34;error_routing&#34;` // Provider-specific configurations Providers map[string]map[string]interface{} `toml:&#34;providers&#34;` // MCP configuration MCP MCPConfigToml `toml:&#34;mcp&#34;` // Orchestration configuration Orchestration OrchestrationConfigToml `toml:&#34;orchestration&#34;` }Memory Configuration Configuration for memory systems and RAG capabilities:">
+    <meta property="og:locale" content="en_us">
+    <meta property="og:type" content="article">
+    <meta property="article:section" content="reference">
+    <meta property="article:published_time" content="2025-07-25T00:00:00+00:00">
+    <meta property="article:modified_time" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="name" content="configuration :: AgenticGoKit Docs">
+    <meta itemprop="description" content="Configuration API System configuration and setup
+This document covers AgenticGoKit’s Configuration API, which provides comprehensive configuration management for agents, orchestration, memory systems, and MCP integration. The configuration system uses TOML files and provides validation and defaults.
+📋 Core Configuration Types Main Configuration Structure The main configuration structure loaded from agentflow.toml:
+type Config struct { AgentFlow struct { Name string `toml:&#34;name&#34;` Version string `toml:&#34;version&#34;` Provider string `toml:&#34;provider&#34;` } `toml:&#34;agent_flow&#34;` Logging struct { Level string `toml:&#34;level&#34;` Format string `toml:&#34;format&#34;` } `toml:&#34;logging&#34;` Runtime struct { MaxConcurrentAgents int `toml:&#34;max_concurrent_agents&#34;` TimeoutSeconds int `toml:&#34;timeout_seconds&#34;` } `toml:&#34;runtime&#34;` // Agent memory configuration AgentMemory AgentMemoryConfig `toml:&#34;agent_memory&#34;` // Error routing configuration ErrorRouting struct { Enabled bool `toml:&#34;enabled&#34;` MaxRetries int `toml:&#34;max_retries&#34;` RetryDelayMs int `toml:&#34;retry_delay_ms&#34;` EnableCircuitBreaker bool `toml:&#34;enable_circuit_breaker&#34;` ErrorHandlerName string `toml:&#34;error_handler_name&#34;` CategoryHandlers map[string]string `toml:&#34;category_handlers&#34;` SeverityHandlers map[string]string `toml:&#34;severity_handlers&#34;` CircuitBreaker CircuitBreakerConfigToml `toml:&#34;circuit_breaker&#34;` Retry RetryConfigToml `toml:&#34;retry&#34;` } `toml:&#34;error_routing&#34;` // Provider-specific configurations Providers map[string]map[string]interface{} `toml:&#34;providers&#34;` // MCP configuration MCP MCPConfigToml `toml:&#34;mcp&#34;` // Orchestration configuration Orchestration OrchestrationConfigToml `toml:&#34;orchestration&#34;` }Memory Configuration Configuration for memory systems and RAG capabilities:">
+    <meta itemprop="datePublished" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="dateModified" content="2025-07-25T00:00:00+00:00">
+    <meta itemprop="wordCount" content="1538">
+    <title>configuration :: AgenticGoKit Docs</title>
+    <link href="/AgenticGoKitDocs/css/auto-complete/auto-complete.min.css?1753430931" rel="stylesheet">
+    <script src="/AgenticGoKitDocs/js/auto-complete/auto-complete.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/search-lunr.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/search.js?1753430931" defer></script>
+    <script>
+      window.relearn = window.relearn || {};
+      window.relearn.index_js_url="/AgenticGoKitDocs/searchindex.en.js?1753430931";
+    </script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.stemmer.support.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.multi.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/lunr/lunr.en.min.js?1753430931" defer></script>
+    <script>
+      window.relearn = window.relearn || {};
+      window.relearn.contentLangs=['en'];
+    </script>
+    <link href="/AgenticGoKitDocs/fonts/fontawesome/css/fontawesome-all.min.css?1753430931" rel="stylesheet" media="print" onload="this.media='all';this.onload=null;"><noscript><link href="/AgenticGoKitDocs/fonts/fontawesome/css/fontawesome-all.min.css?1753430931" rel="stylesheet"></noscript>
+    <link href="/AgenticGoKitDocs/css/perfect-scrollbar/perfect-scrollbar.min.css?1753430931" rel="stylesheet">
+    <link href="/AgenticGoKitDocs/css/theme.css?1753430931" rel="stylesheet">
+    <link href="/AgenticGoKitDocs/css/format-html.css?1753430931" rel="stylesheet" id="R-format-style">
+    <script>
+      window.relearn = window.relearn || {};
+      // configuration
+      window.relearn.min = ``;
+      window.relearn.path='\/reference\/api\/configuration\/index.html';
+      window.relearn.relBasePath='..\/..\/..';
+      window.relearn.relBaseUri='..\/..\/..\/..';
+      window.relearn.absBaseUri='http:\/\/localhost:1313\/AgenticGoKitDocs';
+      window.relearn.disableAnchorCopy=false;
+      window.relearn.disableAnchorScrolling=false;
+      window.relearn.disableInlineCopyToClipboard=false;
+      window.relearn.enableBlockCodeWrap=true;
+      // legal
+      window.relearn.getItem = (s,n) => {return s.getItem(n)};
+      window.relearn.setItem = (s,n,v) => {return s.setItem(n,v)};
+      window.relearn.removeItem = (s,n) => {return s.removeItem(n)};
+      // translations
+      window.T_Copy_to_clipboard = `Copy to clipboard`;
+      window.T_Copied_to_clipboard = `Copied to clipboard!`;
+      window.T_Copy_link_to_clipboard = `Copy link to clipboard`;
+      window.T_Link_copied_to_clipboard = `Copied link to clipboard!`;
+      window.T_Reset_view = `Reset view`;
+      window.T_View_reset = `View reset!`;
+      window.T_No_results_found = `No results found for "{0}"`;
+      window.T_N_results_found = `{1} results found for "{0}"`;
+      // variant stuff
+      window.relearn.themevariants = [ 'blue' ];
+      window.relearn.customvariantname = "my-custom-variant";
+      window.relearn.changeVariant = function(variant) {
+        var oldVariant = document.documentElement.dataset.rThemeVariant;
+        window.relearn.setItem(window.localStorage, window.relearn.absBaseUri + "/variant", variant);
+        document.documentElement.dataset.rThemeVariant = variant;
+        if (oldVariant != variant) {
+          document.dispatchEvent( new CustomEvent('themeVariantLoaded', { detail: { variant, oldVariant } }) );
+          window.relearn.markVariant();
+        }
+      }
+      window.relearn.markVariant = function() {
+        var variant = window.relearn.getItem(window.localStorage, window.relearn.absBaseUri + "/variant");
+        document.querySelectorAll(".R-variantswitcher select").forEach((select) => {select.value = variant;});
+      }
+      window.relearn.initVariant = function() {
+        var variant = window.relearn.getItem(window.localStorage, window.relearn.absBaseUri + "/variant") ?? "";
+        if( variant == window.relearn.customvariantname ){
+        }else if( !variant || !window.relearn.themevariants.includes(variant) ){
+          variant = window.relearn.themevariants[0];
+          window.relearn.setItem(window.localStorage, window.relearn.absBaseUri + "/variant", variant);
+        }
+        document.documentElement.dataset.rThemeVariant = variant;
+      }
+      window.relearn.initVariant();
+      window.relearn.markVariant();
+    </script>
+  </head>
+  <body class="mobile-support html" data-url="/AgenticGoKitDocs/reference/api/configuration/index.html">
+    <div id="R-body" class="default-animation">
+      <div id="R-body-overlay"></div>
+      <nav id="R-topbar">
+        <div class="topbar-wrapper">
+          <div class="topbar-sidebar-divider"></div>
+          <div class="topbar-area topbar-area-start" data-area="start">
+            <div class="topbar-button topbar-button-sidebar" data-content-empty="disable" data-width-s="show" data-width-m="hide" data-width-l="hide"><button class="topbar-control" onclick="toggleNav()" type="button" title="Menu (CTRL&#43;ALT&#43;n)"><i class="fa-fw fas fa-bars"></i></button>
+            </div>
+            <div class="topbar-button topbar-button-toc" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show"><button class="topbar-control" onclick="toggleTopbarFlyout(this)" type="button" title="Table of Contents (CTRL&#43;ALT&#43;t)"><i class="fa-fw fas fa-list-alt"></i></button>
+              <div class="topbar-content">
+                <div class="topbar-content-wrapper">
+<nav class="TableOfContents">
+  <ul>
+    <li><a href="#-core-configuration-types">📋 Core Configuration Types</a>
+      <ul>
+        <li><a href="#main-configuration-structure">Main Configuration Structure</a></li>
+        <li><a href="#memory-configuration">Memory Configuration</a></li>
+        <li><a href="#mcp-configuration">MCP Configuration</a></li>
+      </ul>
+    </li>
+    <li><a href="#-basic-configuration">🚀 Basic Configuration</a>
+      <ul>
+        <li><a href="#toml-configuration-files">TOML Configuration Files</a></li>
+        <li><a href="#loading-configuration">Loading Configuration</a></li>
+        <li><a href="#environment-variables">Environment Variables</a></li>
+      </ul>
+    </li>
+    <li><a href="#-configuration-examples">🔧 Configuration Examples</a>
+      <ul>
+        <li><a href="#development-vs-production">Development vs Production</a></li>
+        <li><a href="#multiple-configuration-files">Multiple Configuration Files</a></li>
+      </ul>
+    </li>
+    <li><a href="#-configuration-validation">🔧 Configuration Validation</a></li>
+    <li><a href="#-best-practices">📚 Best Practices</a>
+      <ul>
+        <li><a href="#1-keep-it-simple">1. Keep It Simple</a></li>
+        <li><a href="#2-security">2. Security</a></li>
+        <li><a href="#3-environment-management">3. Environment Management</a></li>
+        <li><a href="#4-common-configurations">4. Common Configurations</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+                </div>
+              </div>
+            </div>
+          </div>
+          <ol class="topbar-breadcrumbs breadcrumbs highlightable" itemscope itemtype="http://schema.org/BreadcrumbList"><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="/AgenticGoKitDocs/index.html"><span itemprop="name">content</span></a><meta itemprop="position" content="1">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><a itemprop="item" href="/AgenticGoKitDocs/reference/index.html"><span itemprop="name">reference</span></a><meta itemprop="position" content="2">&nbsp;>&nbsp;</li><li itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement" class=""><span itemprop="name">configuration</span><meta itemprop="position" content="3"></li>
+          </ol>
+          <div class="topbar-area topbar-area-end" data-area="end">
+            <div class="topbar-button topbar-button-prev" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show"><a class="topbar-control" href="/AgenticGoKitDocs/reference/readme/index.html" title="reference (🡐)"><i class="fa-fw fas fa-chevron-left"></i></a>
+            </div>
+            <div class="topbar-button topbar-button-next" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show"><a class="topbar-control" href="/AgenticGoKitDocs/reference/cli/index.html" title="cli (🡒)"><i class="fa-fw fas fa-chevron-right"></i></a>
+            </div>
+            <div class="topbar-button topbar-button-more" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show"><button class="topbar-control" onclick="toggleTopbarFlyout(this)" type="button" title="More"><i class="fa-fw fas fa-ellipsis-v"></i></button>
+              <div class="topbar-content">
+                <div class="topbar-content-wrapper">
+                  <div class="topbar-area topbar-area-more" data-area="more">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+      <div id="R-main-overlay"></div>
+      <main id="R-body-inner" class="highlightable reference" tabindex="-1">
+        <div class="flex-block-wrapper">
+<article class="default">
+  <header class="headline">
+  </header>
+
+<h1 id="configuration">configuration</h1>
+
+<h1 id="configuration-api">Configuration API</h1>
+<p><strong>System configuration and setup</strong></p>
+<p>This document covers AgenticGoKit&rsquo;s Configuration API, which provides comprehensive configuration management for agents, orchestration, memory systems, and MCP integration. The configuration system uses TOML files and provides validation and defaults.</p>
+<h2 id="-core-configuration-types">📋 Core Configuration Types</h2>
+<h3 id="main-configuration-structure">Main Configuration Structure</h3>
+<p>The main configuration structure loaded from <code>agentflow.toml</code>:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Config</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">AgentFlow</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Name</span>     <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`toml:&#34;name&#34;`</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Version</span>  <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`toml:&#34;version&#34;`</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Provider</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`toml:&#34;provider&#34;`</span>
+</span></span><span style="display:flex;"><span>    } <span style="color:#e6db74">`toml:&#34;agent_flow&#34;`</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Logging</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Level</span>  <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`toml:&#34;level&#34;`</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Format</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`toml:&#34;format&#34;`</span>
+</span></span><span style="display:flex;"><span>    } <span style="color:#e6db74">`toml:&#34;logging&#34;`</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Runtime</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">MaxConcurrentAgents</span> <span style="color:#66d9ef">int</span> <span style="color:#e6db74">`toml:&#34;max_concurrent_agents&#34;`</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">TimeoutSeconds</span>      <span style="color:#66d9ef">int</span> <span style="color:#e6db74">`toml:&#34;timeout_seconds&#34;`</span>
+</span></span><span style="display:flex;"><span>    } <span style="color:#e6db74">`toml:&#34;runtime&#34;`</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Agent memory configuration</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">AgentMemory</span> <span style="color:#a6e22e">AgentMemoryConfig</span> <span style="color:#e6db74">`toml:&#34;agent_memory&#34;`</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Error routing configuration</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">ErrorRouting</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Enabled</span>              <span style="color:#66d9ef">bool</span>                     <span style="color:#e6db74">`toml:&#34;enabled&#34;`</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">MaxRetries</span>           <span style="color:#66d9ef">int</span>                      <span style="color:#e6db74">`toml:&#34;max_retries&#34;`</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">RetryDelayMs</span>         <span style="color:#66d9ef">int</span>                      <span style="color:#e6db74">`toml:&#34;retry_delay_ms&#34;`</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">EnableCircuitBreaker</span> <span style="color:#66d9ef">bool</span>                     <span style="color:#e6db74">`toml:&#34;enable_circuit_breaker&#34;`</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">ErrorHandlerName</span>     <span style="color:#66d9ef">string</span>                   <span style="color:#e6db74">`toml:&#34;error_handler_name&#34;`</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">CategoryHandlers</span>     <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">string</span>        <span style="color:#e6db74">`toml:&#34;category_handlers&#34;`</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">SeverityHandlers</span>     <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">string</span>        <span style="color:#e6db74">`toml:&#34;severity_handlers&#34;`</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">CircuitBreaker</span>       <span style="color:#a6e22e">CircuitBreakerConfigToml</span> <span style="color:#e6db74">`toml:&#34;circuit_breaker&#34;`</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Retry</span>                <span style="color:#a6e22e">RetryConfigToml</span>          <span style="color:#e6db74">`toml:&#34;retry&#34;`</span>
+</span></span><span style="display:flex;"><span>    } <span style="color:#e6db74">`toml:&#34;error_routing&#34;`</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Provider-specific configurations</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Providers</span> <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">interface</span>{} <span style="color:#e6db74">`toml:&#34;providers&#34;`</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// MCP configuration</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">MCP</span> <span style="color:#a6e22e">MCPConfigToml</span> <span style="color:#e6db74">`toml:&#34;mcp&#34;`</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Orchestration configuration</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Orchestration</span> <span style="color:#a6e22e">OrchestrationConfigToml</span> <span style="color:#e6db74">`toml:&#34;orchestration&#34;`</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h3 id="memory-configuration">Memory Configuration</h3>
+<p>Configuration for memory systems and RAG capabilities:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">AgentMemoryConfig</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Core memory settings</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Provider</span>   <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`toml:\&#34;provider\&#34;`</span>    <span style="color:#75715e">// pgvector, weaviate, memory</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Connection</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`toml:\&#34;connection\&#34;`</span>  <span style="color:#75715e">// Connection string</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">MaxResults</span> <span style="color:#66d9ef">int</span>    <span style="color:#e6db74">`toml:\&#34;max_results\&#34;`</span> <span style="color:#75715e">// Maximum search results</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Dimensions</span> <span style="color:#66d9ef">int</span>    <span style="color:#e6db74">`toml:\&#34;dimensions\&#34;`</span>  <span style="color:#75715e">// Vector dimensions</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">AutoEmbed</span>  <span style="color:#66d9ef">bool</span>   <span style="color:#e6db74">`toml:\&#34;auto_embed\&#34;`</span>  <span style="color:#75715e">// Auto-generate embeddings</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// RAG settings</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">EnableKnowledgeBase</span>     <span style="color:#66d9ef">bool</span>    <span style="color:#e6db74">`toml:\&#34;enable_knowledge_base\&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">KnowledgeMaxResults</span>     <span style="color:#66d9ef">int</span>     <span style="color:#e6db74">`toml:\&#34;knowledge_max_results\&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">KnowledgeScoreThreshold</span> <span style="color:#66d9ef">float32</span> <span style="color:#e6db74">`toml:\&#34;knowledge_score_threshold\&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">ChunkSize</span>               <span style="color:#66d9ef">int</span>     <span style="color:#e6db74">`toml:\&#34;chunk_size\&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">ChunkOverlap</span>            <span style="color:#66d9ef">int</span>     <span style="color:#e6db74">`toml:\&#34;chunk_overlap\&#34;`</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// RAG context assembly</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">EnableRAG</span>           <span style="color:#66d9ef">bool</span>    <span style="color:#e6db74">`toml:\&#34;enable_rag\&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">RAGMaxContextTokens</span> <span style="color:#66d9ef">int</span>     <span style="color:#e6db74">`toml:\&#34;rag_max_context_tokens\&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">RAGPersonalWeight</span>   <span style="color:#66d9ef">float32</span> <span style="color:#e6db74">`toml:\&#34;rag_personal_weight\&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">RAGKnowledgeWeight</span>  <span style="color:#66d9ef">float32</span> <span style="color:#e6db74">`toml:\&#34;rag_knowledge_weight\&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">RAGIncludeSources</span>   <span style="color:#66d9ef">bool</span>    <span style="color:#e6db74">`toml:\&#34;rag_include_sources\&#34;`</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Document processing</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Documents</span> <span style="color:#a6e22e">DocumentConfig</span> <span style="color:#e6db74">`toml:\&#34;documents\&#34;`</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Embedding service</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Embedding</span> <span style="color:#a6e22e">EmbeddingConfig</span> <span style="color:#e6db74">`toml:\&#34;embedding\&#34;`</span>
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Search configuration</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Search</span> <span style="color:#a6e22e">SearchConfigToml</span> <span style="color:#e6db74">`toml:\&#34;search\&#34;`</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h3 id="mcp-configuration">MCP Configuration</h3>
+<p>Configuration for Model Context Protocol integration:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">MCPConfigToml</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Enabled</span>           <span style="color:#66d9ef">bool</span>                  <span style="color:#e6db74">`toml:&#34;enabled&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">EnableDiscovery</span>   <span style="color:#66d9ef">bool</span>                  <span style="color:#e6db74">`toml:&#34;enable_discovery&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">DiscoveryTimeout</span>  <span style="color:#66d9ef">int</span>                   <span style="color:#e6db74">`toml:&#34;discovery_timeout_ms&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">ScanPorts</span>         []<span style="color:#66d9ef">int</span>                 <span style="color:#e6db74">`toml:&#34;scan_ports&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">ConnectionTimeout</span> <span style="color:#66d9ef">int</span>                   <span style="color:#e6db74">`toml:&#34;connection_timeout_ms&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">MaxRetries</span>        <span style="color:#66d9ef">int</span>                   <span style="color:#e6db74">`toml:&#34;max_retries&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">RetryDelay</span>        <span style="color:#66d9ef">int</span>                   <span style="color:#e6db74">`toml:&#34;retry_delay_ms&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">EnableCaching</span>     <span style="color:#66d9ef">bool</span>                  <span style="color:#e6db74">`toml:&#34;enable_caching&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">CacheTimeout</span>      <span style="color:#66d9ef">int</span>                   <span style="color:#e6db74">`toml:&#34;cache_timeout_ms&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">MaxConnections</span>    <span style="color:#66d9ef">int</span>                   <span style="color:#e6db74">`toml:&#34;max_connections&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Servers</span>           []<span style="color:#a6e22e">MCPServerConfigToml</span> <span style="color:#e6db74">`toml:&#34;servers&#34;`</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">MCPServerConfigToml</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Name</span>    <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`toml:&#34;name&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Type</span>    <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`toml:&#34;type&#34;`</span> <span style="color:#75715e">// tcp, stdio, docker, websocket</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Host</span>    <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`toml:&#34;host,omitempty&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Port</span>    <span style="color:#66d9ef">int</span>    <span style="color:#e6db74">`toml:&#34;port,omitempty&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Command</span> <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`toml:&#34;command,omitempty&#34;`</span> <span style="color:#75715e">// for stdio transport</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Enabled</span> <span style="color:#66d9ef">bool</span>   <span style="color:#e6db74">`toml:&#34;enabled&#34;`</span>
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h2 id="-basic-configuration">🚀 Basic Configuration</h2>
+<h3 id="toml-configuration-files">TOML Configuration Files</h3>
+<p>AgentFlow supports TOML configuration files for easy setup:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span><span style="color:#75715e"># agentflow.toml - Basic Configuration</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">agent_flow</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">name</span> = <span style="color:#e6db74">&#34;my-agent-system&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">version</span> = <span style="color:#e6db74">&#34;1.0.0&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;azure&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">logging</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">level</span> = <span style="color:#e6db74">&#34;info&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">format</span> = <span style="color:#e6db74">&#34;json&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">runtime</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_concurrent_agents</span> = <span style="color:#ae81ff">10</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">timeout_seconds</span> = <span style="color:#ae81ff">30</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">providers</span>.<span style="color:#a6e22e">azure</span>]
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># API key will be read from AZURE_OPENAI_API_KEY environment variable</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Endpoint will be read from AZURE_OPENAI_ENDPOINT environment variable</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Deployment will be read from AZURE_OPENAI_DEPLOYMENT environment variable</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">providers</span>.<span style="color:#a6e22e">openai</span>]
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># API key will be read from OPENAI_API_KEY environment variable</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">providers</span>.<span style="color:#a6e22e">ollama</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">endpoint</span> = <span style="color:#e6db74">&#34;http://localhost:11434&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">model</span> = <span style="color:#e6db74">&#34;llama2&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">providers</span>.<span style="color:#a6e22e">mock</span>]
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Mock provider for testing - no configuration needed</span></span></span></code></pre></div>
+<p><strong>With Memory and RAG Configuration:</strong></p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span><span style="color:#75715e"># agentflow.toml - With Memory and RAG</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">agent_flow</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">name</span> = <span style="color:#e6db74">&#34;my-rag-system&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">version</span> = <span style="color:#e6db74">&#34;1.0.0&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;azure&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">logging</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">level</span> = <span style="color:#e6db74">&#34;info&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">format</span> = <span style="color:#e6db74">&#34;text&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">runtime</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_concurrent_agents</span> = <span style="color:#ae81ff">5</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">timeout_seconds</span> = <span style="color:#ae81ff">30</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># RAG-Enhanced Memory Configuration</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">agent_memory</span>]
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Core memory settings</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;memory&#34;</span>        <span style="color:#75715e"># Options: memory, pgvector, weaviate</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">connection</span> = <span style="color:#e6db74">&#34;memory&#34;</span>      <span style="color:#75715e"># Connection string (for database providers)</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_results</span> = <span style="color:#ae81ff">10</span>          <span style="color:#75715e"># Maximum results per query</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">dimensions</span> = <span style="color:#ae81ff">1536</span>         <span style="color:#75715e"># Embedding dimensions</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">auto_embed</span> = <span style="color:#66d9ef">true</span>         <span style="color:#75715e"># Automatic embedding generation</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># RAG-enhanced settings</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enable_knowledge_base</span> = <span style="color:#66d9ef">true</span>        <span style="color:#75715e"># Enable knowledge base functionality</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">knowledge_max_results</span> = <span style="color:#ae81ff">20</span>          <span style="color:#75715e"># Maximum results from knowledge base</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">knowledge_score_threshold</span> = <span style="color:#ae81ff">0.7</span>     <span style="color:#75715e"># Minimum relevance score for results</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">chunk_size</span> = <span style="color:#ae81ff">1000</span>                  <span style="color:#75715e"># Document chunk size in characters</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">chunk_overlap</span> = <span style="color:#ae81ff">200</span>                <span style="color:#75715e"># Overlap between chunks in characters</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># RAG context assembly</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enable_rag</span> = <span style="color:#66d9ef">true</span>                  <span style="color:#75715e"># Enable RAG context building</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">rag_max_context_tokens</span> = <span style="color:#ae81ff">4000</span>      <span style="color:#75715e"># Maximum tokens in assembled context</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">rag_personal_weight</span> = <span style="color:#ae81ff">0.3</span>          <span style="color:#75715e"># Weight for personal memory (0.0-1.0)</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">rag_knowledge_weight</span> = <span style="color:#ae81ff">0.7</span>         <span style="color:#75715e"># Weight for knowledge base (0.0-1.0)</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">rag_include_sources</span> = <span style="color:#66d9ef">true</span>         <span style="color:#75715e"># Include source attribution in context</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Document processing</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">agent_memory</span>.<span style="color:#a6e22e">documents</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">auto_chunk</span> = <span style="color:#66d9ef">true</span>                           <span style="color:#75715e"># Automatically chunk large documents</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">supported_types</span> = [<span style="color:#e6db74">&#34;pdf&#34;</span>, <span style="color:#e6db74">&#34;txt&#34;</span>, <span style="color:#e6db74">&#34;md&#34;</span>, <span style="color:#e6db74">&#34;web&#34;</span>, <span style="color:#e6db74">&#34;code&#34;</span>, <span style="color:#e6db74">&#34;json&#34;</span>]  <span style="color:#75715e"># Supported file types</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_file_size</span> = <span style="color:#e6db74">&#34;10MB&#34;</span>                     <span style="color:#75715e"># Maximum file size for processing</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enable_metadata_extraction</span> = <span style="color:#66d9ef">true</span>          <span style="color:#75715e"># Extract metadata from documents</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enable_url_scraping</span> = <span style="color:#66d9ef">true</span>                 <span style="color:#75715e"># Enable web scraping for URLs</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Embedding service</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">agent_memory</span>.<span style="color:#a6e22e">embedding</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;azure&#34;</span>                    <span style="color:#75715e"># Options: azure, openai, local</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">model</span> = <span style="color:#e6db74">&#34;text-embedding-ada-002&#34;</span>     <span style="color:#75715e"># Embedding model to use</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">cache_embeddings</span> = <span style="color:#66d9ef">true</span>              <span style="color:#75715e"># Cache embeddings for performance</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_batch_size</span> = <span style="color:#ae81ff">100</span>                 <span style="color:#75715e"># Maximum batch size for embeddings</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">timeout_seconds</span> = <span style="color:#ae81ff">30</span>                 <span style="color:#75715e"># Request timeout in seconds</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Search configuration</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">agent_memory</span>.<span style="color:#a6e22e">search</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">hybrid_search</span> = <span style="color:#66d9ef">true</span>           <span style="color:#75715e"># Enable hybrid search (semantic + keyword)</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">keyword_weight</span> = <span style="color:#ae81ff">0.3</span>          <span style="color:#75715e"># Weight for keyword search (BM25)</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">semantic_weight</span> = <span style="color:#ae81ff">0.7</span>         <span style="color:#75715e"># Weight for semantic search (vector similarity)</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enable_reranking</span> = <span style="color:#66d9ef">false</span>      <span style="color:#75715e"># Enable advanced re-ranking</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enable_query_expansion</span> = <span style="color:#66d9ef">false</span> <span style="color:#75715e"># Enable query expansion for better results</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">providers</span>.<span style="color:#a6e22e">azure</span>]
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># API key will be read from AZURE_OPENAI_API_KEY environment variable</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Endpoint will be read from AZURE_OPENAI_ENDPOINT environment variable</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Deployment will be read from AZURE_OPENAI_DEPLOYMENT environment variable</span></span></span></code></pre></div>
+<p><strong>With MCP Integration:</strong></p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span><span style="color:#75715e"># agentflow.toml - With MCP Integration</span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">agent_flow</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">name</span> = <span style="color:#e6db74">&#34;my-mcp-system&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">version</span> = <span style="color:#e6db74">&#34;1.0.0&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;azure&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">logging</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">level</span> = <span style="color:#e6db74">&#34;info&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">format</span> = <span style="color:#e6db74">&#34;json&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">runtime</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_concurrent_agents</span> = <span style="color:#ae81ff">10</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">timeout_seconds</span> = <span style="color:#ae81ff">30</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">providers</span>.<span style="color:#a6e22e">azure</span>]
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># API key will be read from AZURE_OPENAI_API_KEY environment variable</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Endpoint will be read from AZURE_OPENAI_ENDPOINT environment variable</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Deployment will be read from AZURE_OPENAI_DEPLOYMENT environment variable</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">mcp</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enabled</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enable_discovery</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">connection_timeout</span> = <span style="color:#ae81ff">5000</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_retries</span> = <span style="color:#ae81ff">3</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">retry_delay</span> = <span style="color:#ae81ff">1000</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enable_caching</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">cache_timeout</span> = <span style="color:#ae81ff">300000</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_connections</span> = <span style="color:#ae81ff">10</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Example MCP servers - configure as needed</span>
+</span></span><span style="display:flex;"><span>[[<span style="color:#a6e22e">mcp</span>.<span style="color:#a6e22e">servers</span>]]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">name</span> = <span style="color:#e6db74">&#34;docker&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">type</span> = <span style="color:#e6db74">&#34;tcp&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">host</span> = <span style="color:#e6db74">&#34;localhost&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">port</span> = <span style="color:#ae81ff">8811</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enabled</span> = <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[[<span style="color:#a6e22e">mcp</span>.<span style="color:#a6e22e">servers</span>]]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">name</span> = <span style="color:#e6db74">&#34;filesystem&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">type</span> = <span style="color:#e6db74">&#34;stdio&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">command</span> = <span style="color:#e6db74">&#34;npx @modelcontextprotocol/server-filesystem /path/to/allowed/files&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enabled</span> = <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[[<span style="color:#a6e22e">mcp</span>.<span style="color:#a6e22e">servers</span>]]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">name</span> = <span style="color:#e6db74">&#34;brave-search&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">type</span> = <span style="color:#e6db74">&#34;stdio&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">command</span> = <span style="color:#e6db74">&#34;npx @modelcontextprotocol/server-brave-search&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enabled</span> = <span style="color:#66d9ef">false</span></span></span></code></pre></div>
+<h3 id="loading-configuration">Loading Configuration</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;fmt&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;github.com/kunalkushwaha/agenticgokit/core&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">loadConfigurationExample</span>() {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Load configuration from TOML file</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">config</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">LoadConfig</span>(<span style="color:#e6db74">&#34;agentflow.toml&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        panic(<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;Failed to load configuration: %v&#34;</span>, <span style="color:#a6e22e">err</span>))
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Or load from working directory (looks for agentflow.toml)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">config</span>, <span style="color:#a6e22e">err</span> = <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">LoadConfigFromWorkingDir</span>()
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        panic(<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;Failed to load configuration: %v&#34;</span>, <span style="color:#a6e22e">err</span>))
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Apply logging configuration</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">config</span>.<span style="color:#a6e22e">ApplyLoggingConfig</span>()
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Initialize LLM provider from configuration</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">provider</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">config</span>.<span style="color:#a6e22e">InitializeProvider</span>()
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        panic(<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;Failed to initialize provider: %v&#34;</span>, <span style="color:#a6e22e">err</span>))
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Initialize memory if configured</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">config</span>.<span style="color:#a6e22e">AgentMemory</span>.<span style="color:#a6e22e">Provider</span> <span style="color:#f92672">!=</span> <span style="color:#e6db74">&#34;&#34;</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">memory</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">core</span>.<span style="color:#a6e22e">NewMemory</span>(<span style="color:#a6e22e">config</span>.<span style="color:#a6e22e">AgentMemory</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>            panic(<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;Failed to initialize memory: %v&#34;</span>, <span style="color:#a6e22e">err</span>))
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Memory initialized with provider: %s\n&#34;</span>, <span style="color:#a6e22e">config</span>.<span style="color:#a6e22e">AgentMemory</span>.<span style="color:#a6e22e">Provider</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Initialize MCP if enabled</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">config</span>.<span style="color:#a6e22e">MCP</span>.<span style="color:#a6e22e">Enabled</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">mcpConfig</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">config</span>.<span style="color:#a6e22e">GetMCPConfig</span>()
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// MCP initialization would be handled by the framework</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;MCP configuration loaded&#34;</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;System initialized with configuration&#34;</span>)
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div>
+<h3 id="environment-variables">Environment Variables</h3>
+<p>AgenticGoKit supports environment variables for sensitive configuration like API keys:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># LLM Provider Configuration</span>
+</span></span><span style="display:flex;"><span>export OPENAI_API_KEY<span style="color:#f92672">=</span>your-openai-key
+</span></span><span style="display:flex;"><span>export AZURE_OPENAI_API_KEY<span style="color:#f92672">=</span>your-azure-key
+</span></span><span style="display:flex;"><span>export AZURE_OPENAI_ENDPOINT<span style="color:#f92672">=</span>https://your-resource.openai.azure.com/
+</span></span><span style="display:flex;"><span>export AZURE_OPENAI_DEPLOYMENT<span style="color:#f92672">=</span>your-deployment-name
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Database Configuration (for memory providers)</span>
+</span></span><span style="display:flex;"><span>export DATABASE_URL<span style="color:#f92672">=</span>postgres://user:password@localhost:5432/agentflow
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Optional: Override default settings</span>
+</span></span><span style="display:flex;"><span>export AGENTFLOW_LOG_LEVEL<span style="color:#f92672">=</span>debug
+</span></span><span style="display:flex;"><span>export AGENTFLOW_TIMEOUT<span style="color:#f92672">=</span><span style="color:#ae81ff">60</span></span></span></code></pre></div>
+<p>These environment variables are automatically used when not specified in the TOML file.</p>
+<h2 id="-configuration-examples">🔧 Configuration Examples</h2>
+<h3 id="development-vs-production">Development vs Production</h3>
+<p><strong>Development Configuration (<code>dev.toml</code>):</strong></p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">agent_flow</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">name</span> = <span style="color:#e6db74">&#34;my-dev-agent&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">version</span> = <span style="color:#e6db74">&#34;1.0.0&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;mock&#34;</span>  <span style="color:#75715e"># Use mock provider for development</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">logging</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">level</span> = <span style="color:#e6db74">&#34;debug&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">format</span> = <span style="color:#e6db74">&#34;text&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">runtime</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_concurrent_agents</span> = <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">timeout_seconds</span> = <span style="color:#ae81ff">10</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">providers</span>.<span style="color:#a6e22e">mock</span>]
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Mock provider for testing - no configuration needed</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">agent_memory</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;memory&#34;</span>  <span style="color:#75715e"># In-memory for fast development</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">connection</span> = <span style="color:#e6db74">&#34;memory&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_results</span> = <span style="color:#ae81ff">5</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">dimensions</span> = <span style="color:#ae81ff">384</span>     <span style="color:#75715e"># Smaller for faster testing</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">agent_memory</span>.<span style="color:#a6e22e">embedding</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;dummy&#34;</span>   <span style="color:#75715e"># No API calls in development</span></span></span></code></pre></div>
+<p><strong>Production Configuration (<code>prod.toml</code>):</strong></p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">agent_flow</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">name</span> = <span style="color:#e6db74">&#34;my-prod-agent&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">version</span> = <span style="color:#e6db74">&#34;1.0.0&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;azure&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">logging</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">level</span> = <span style="color:#e6db74">&#34;info&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">format</span> = <span style="color:#e6db74">&#34;json&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">runtime</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_concurrent_agents</span> = <span style="color:#ae81ff">20</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">timeout_seconds</span> = <span style="color:#ae81ff">60</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">providers</span>.<span style="color:#a6e22e">azure</span>]
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># API key will be read from AZURE_OPENAI_API_KEY environment variable</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Endpoint will be read from AZURE_OPENAI_ENDPOINT environment variable</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Deployment will be read from AZURE_OPENAI_DEPLOYMENT environment variable</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">agent_memory</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;pgvector&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">connection</span> = <span style="color:#e6db74">&#34;postgres://user:pass@db:5432/agentflow&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_results</span> = <span style="color:#ae81ff">20</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">dimensions</span> = <span style="color:#ae81ff">1536</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enable_knowledge_base</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enable_rag</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">agent_memory</span>.<span style="color:#a6e22e">embedding</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;azure&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">model</span> = <span style="color:#e6db74">&#34;text-embedding-ada-002&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">cache_embeddings</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">mcp</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enabled</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enable_discovery</span> = <span style="color:#66d9ef">false</span>  <span style="color:#75715e"># Use explicit servers in production</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">max_connections</span> = <span style="color:#ae81ff">20</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[[<span style="color:#a6e22e">mcp</span>.<span style="color:#a6e22e">servers</span>]]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">name</span> = <span style="color:#e6db74">&#34;search-service&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">type</span> = <span style="color:#e6db74">&#34;tcp&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">host</span> = <span style="color:#e6db74">&#34;search-service&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">port</span> = <span style="color:#ae81ff">8080</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enabled</span> = <span style="color:#66d9ef">true</span></span></span></code></pre></div>
+<h3 id="multiple-configuration-files">Multiple Configuration Files</h3>
+<p>You can use different configuration files for different environments:</p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Development</span>
+</span></span><span style="display:flex;"><span>go run . --config dev.toml
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Production  </span>
+</span></span><span style="display:flex;"><span>go run . --config prod.toml
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Or use environment variable</span>
+</span></span><span style="display:flex;"><span>export AGENTFLOW_CONFIG<span style="color:#f92672">=</span>prod.toml
+</span></span><span style="display:flex;"><span>go run .</span></span></code></pre></div>
+<h2 id="-configuration-validation">🔧 Configuration Validation</h2>
+<p>AgenticGoKit automatically validates your configuration when loading. Common validation errors:</p>
+<ul>
+<li><strong>Invalid provider</strong>: Must be one of <code>openai</code>, <code>azure</code>, <code>ollama</code></li>
+<li><strong>Missing API keys</strong>: Set environment variables for your chosen provider</li>
+<li><strong>Invalid memory provider</strong>: Must be one of <code>memory</code>, <code>pgvector</code>, <code>weaviate</code></li>
+<li><strong>Invalid orchestration mode</strong>: Must be one of <code>route</code>, <code>collaborative</code>, <code>sequential</code>, <code>loop</code>, <code>mixed</code></li>
+</ul>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Test your configuration</span>
+</span></span><span style="display:flex;"><span>go run . --validate-config
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Or check configuration loading</span>
+</span></span><span style="display:flex;"><span>go run . --dry-run</span></span></code></pre></div>
+<h2 id="-best-practices">📚 Best Practices</h2>
+<h3 id="1-keep-it-simple">1. Keep It Simple</h3>
+<ul>
+<li>Use <code>agentflow.toml</code> for all configuration</li>
+<li>Store sensitive data in environment variables</li>
+<li>Use different config files for different environments</li>
+</ul>
+<h3 id="2-security">2. Security</h3>
+<ul>
+<li>Never commit API keys to version control</li>
+<li>Use environment variables for secrets:
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>export OPENAI_API_KEY<span style="color:#f92672">=</span>your-key
+</span></span><span style="display:flex;"><span>export DATABASE_URL<span style="color:#f92672">=</span>postgres://...</span></span></code></pre></div>
+</li>
+</ul>
+<h3 id="3-environment-management">3. Environment Management</h3>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># Development</span>
+</span></span><span style="display:flex;"><span>cp agentflow.dev.toml agentflow.toml
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Production</span>
+</span></span><span style="display:flex;"><span>cp agentflow.prod.toml agentflow.toml</span></span></code></pre></div>
+<h3 id="4-common-configurations">4. Common Configurations</h3>
+<p><strong>Minimal Configuration:</strong></p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">agent_flow</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">name</span> = <span style="color:#e6db74">&#34;my-agent&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;openai&#34;</span></span></span></code></pre></div>
+<p><strong>Full-Featured Configuration:</strong></p>
+<div class="highlight wrap-code" dir="auto"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-toml" data-lang="toml"><span style="display:flex;"><span>[<span style="color:#a6e22e">agent_flow</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">name</span> = <span style="color:#e6db74">&#34;my-agent&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;azure&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">agent_memory</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">provider</span> = <span style="color:#e6db74">&#34;pgvector&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enable_rag</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">mcp</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">enabled</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>[<span style="color:#a6e22e">orchestration</span>]
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">mode</span> = <span style="color:#e6db74">&#34;collaborative&#34;</span></span></span></code></pre></div>
+<p>This covers the essential configuration patterns you&rsquo;ll need for AgenticGoKit systems.</p>
+
+  <footer class="footline">
+              <i class='fa-fw fas fa-calendar'></i> Jul 25, 2025
+  </footer>
+</article>
+        </div>
+      </main>
+    </div>
+    <aside id="R-sidebar" class="default-animation">
+      <div id="R-header-topbar" class="default-animation"></div>
+      <div id="R-header-wrapper" class="default-animation">
+        <div id="R-header" class="default-animation">
+          <a id="R-logo" class="R-default" href="/AgenticGoKitDocs/index.html">
+            <div class="logo-title">AgenticGoKit Docs</div>
+          </a>
+        </div>
+        <search><form action="/AgenticGoKitDocs/search/index.html" method="get">
+          <div class="searchbox default-animation">
+            <button class="search-detail" type="submit" title="Search (CTRL+ALT+f)"><i class="fas fa-search"></i></button>
+            <label class="a11y-only" for="R-search-by">Search</label>
+            <input data-search-input id="R-search-by" name="search-by" class="search-by" type="search" placeholder="Search...">
+            <button class="search-clear" type="button" data-search-clear="" title="Clear search"><i class="fas fa-times" title="Clear search"></i></button>
+          </div>
+        </form></search>
+      </div>
+      <div id="R-homelinks" class="default-animation homelinks">
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-homelinks">
+          <ul class="space collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/index.html"><a class="padding" href="/AgenticGoKitDocs/index.html"><i class="fa-fw fas fa-home"></i> Home</a></li>
+          </ul>
+        </div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-headercontrols">
+          <ul class="">
+          </ul>
+        </div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+      </div>
+      <div id="R-content-wrapper" class="highlightable">
+        <div class="R-sidebarmenu R-shortcutmenu-main">
+          <ul class="enlarge morespace collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/readme/index.html">content</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/index.html"><input type="checkbox" id="R-section-8fc2fd7736125e87cab8840a86c2af5a" aria-controls="R-subsections-8fc2fd7736125e87cab8840a86c2af5a" checked><label for="R-section-8fc2fd7736125e87cab8840a86c2af5a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu guides</span></label><a class="padding" href="/AgenticGoKitDocs/guides/index.html">guides</a><ul id="R-subsections-8fc2fd7736125e87cab8840a86c2af5a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/readme/index.html">guides</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/agentbasics/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/agentbasics/index.html">AgentBasics</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/examples/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/examples/index.html">Examples</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/configuration/index.html">Configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/customtools/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/customtools/index.html">CustomTools</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/providers/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/providers/index.html">Providers</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memoryprovidersetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memoryprovidersetup/index.html">MemoryProviderSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memorytroubleshooting/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memorytroubleshooting/index.html">MemoryTroubleshooting</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/embeddingmodelguide/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/embeddingmodelguide/index.html">EmbeddingModelGuide</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/ragconfiguration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/ragconfiguration/index.html">RAGConfiguration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/toolintegration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/toolintegration/index.html">ToolIntegration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/pgvectorsetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/pgvectorsetup/index.html">PgVectorSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/weaviatesetup/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/weaviatesetup/index.html">WeaviateSetup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/performance/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/performance/index.html">Performance</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/errorhandling/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/errorhandling/index.html">ErrorHandling</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/deployment/index.html"><input type="checkbox" id="R-section-ecc839349395ef3c015a12132049dff2" aria-controls="R-subsections-ecc839349395ef3c015a12132049dff2" checked><label for="R-section-ecc839349395ef3c015a12132049dff2"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu deployment</span></label><a class="padding" href="/AgenticGoKitDocs/guides/deployment/index.html">deployment</a><ul id="R-subsections-ecc839349395ef3c015a12132049dff2" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/deployment/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/deployment/readme/index.html">deployment</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/development/index.html"><input type="checkbox" id="R-section-fff1f5eca5d0a93209b9c6262762c25a" aria-controls="R-subsections-fff1f5eca5d0a93209b9c6262762c25a" checked><label for="R-section-fff1f5eca5d0a93209b9c6262762c25a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu development</span></label><a class="padding" href="/AgenticGoKitDocs/guides/development/index.html">development</a><ul id="R-subsections-fff1f5eca5d0a93209b9c6262762c25a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/readme/index.html">development</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/best-practices/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/best-practices/index.html">best-practices</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/debugging/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/debugging/index.html">debugging</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/research-assistant/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/research-assistant/index.html">research-assistant</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/testing-agents/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/testing-agents/index.html">testing-agents</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/visualization/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/visualization/index.html">visualization</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/development/web-search-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/development/web-search-integration/index.html">web-search-integration</a></li></ul></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/framework-comparison/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/framework-comparison/index.html">framework-comparison</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/memory/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/memory/index.html">Memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/scaffoldmemoryguide/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/scaffoldmemoryguide/index.html">ScaffoldMemoryGuide</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/guides/setup/index.html"><input type="checkbox" id="R-section-0124aed9abb5064d53391168f3c95c22" aria-controls="R-subsections-0124aed9abb5064d53391168f3c95c22" checked><label for="R-section-0124aed9abb5064d53391168f3c95c22"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu setup</span></label><a class="padding" href="/AgenticGoKitDocs/guides/setup/index.html">setup</a><ul id="R-subsections-0124aed9abb5064d53391168f3c95c22" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/readme/index.html">setup</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/llm-providers/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/llm-providers/index.html">llm-providers</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/mcp-tools/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/mcp-tools/index.html">mcp-tools</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/orchestration-configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/orchestration-configuration/index.html">orchestration-configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/setup/vector-databases/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/setup/vector-databases/index.html">vector-databases</a></li></ul></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/guides/troubleshooting/index.html"><a class="padding" href="/AgenticGoKitDocs/guides/troubleshooting/index.html">troubleshooting</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/contributors/index.html"><input type="checkbox" id="R-section-190d9b328fbda7e13ab386f7a5417de5" aria-controls="R-subsections-190d9b328fbda7e13ab386f7a5417de5" checked><label for="R-section-190d9b328fbda7e13ab386f7a5417de5"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu contributors</span></label><a class="padding" href="/AgenticGoKitDocs/contributors/index.html">contributors</a><ul id="R-subsections-190d9b328fbda7e13ab386f7a5417de5" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/readme/index.html">contributors</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/contributorguide/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/contributorguide/index.html">ContributorGuide</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/codestyle/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/codestyle/index.html">CodeStyle</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/corevsinternal/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/corevsinternal/index.html">CoreVsInternal</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/addingfeatures/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/addingfeatures/index.html">AddingFeatures</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/testing/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/testing/index.html">Testing</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/contributors/docsstandards/index.html"><a class="padding" href="/AgenticGoKitDocs/contributors/docsstandards/index.html">DocsStandards</a></li></ul></li>
+            <li class="parent alwaysopen " data-nav-id="/AgenticGoKitDocs/reference/index.html"><input type="checkbox" id="R-section-66002f201bef818664bb81aa67490c58" aria-controls="R-subsections-66002f201bef818664bb81aa67490c58" checked><label for="R-section-66002f201bef818664bb81aa67490c58"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu reference</span></label><a class="padding" href="/AgenticGoKitDocs/reference/index.html">reference</a><ul id="R-subsections-66002f201bef818664bb81aa67490c58" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/readme/index.html">reference</a></li>
+            <li class="active " data-nav-id="/AgenticGoKitDocs/reference/api/configuration/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/configuration/index.html">configuration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/cli/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/cli/index.html">cli</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/mcp/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/mcp/index.html">mcp</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/agent/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/agent/index.html">agent</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/memory/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/memory/index.html">memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/orchestration/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/orchestration/index.html">orchestration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/reference/api/state-event/index.html"><a class="padding" href="/AgenticGoKitDocs/reference/api/state-event/index.html">state-event</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/index.html"><input type="checkbox" id="R-section-e1e8c1e70c5500b49e8dda2dc550651a" aria-controls="R-subsections-e1e8c1e70c5500b49e8dda2dc550651a" checked><label for="R-section-e1e8c1e70c5500b49e8dda2dc550651a"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu tutorials</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/index.html">tutorials</a><ul id="R-subsections-e1e8c1e70c5500b49e8dda2dc550651a" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/readme/index.html">tutorials</a></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/advanced/index.html"><input type="checkbox" id="R-section-d3def5cd76adc8096d0ff9fda6b8e479" aria-controls="R-subsections-d3def5cd76adc8096d0ff9fda6b8e479" checked><label for="R-section-d3def5cd76adc8096d0ff9fda6b8e479"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu advanced</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/index.html">advanced</a><ul id="R-subsections-d3def5cd76adc8096d0ff9fda6b8e479" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/readme/index.html">advanced</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/circuit-breaker-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/circuit-breaker-patterns/index.html">circuit-breaker-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/load-balancing-scaling/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/load-balancing-scaling/index.html">load-balancing-scaling</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/retry-policies/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/retry-policies/index.html">retry-policies</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/advanced/testing-strategies/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/advanced/testing-strategies/index.html">testing-strategies</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/index.html"><input type="checkbox" id="R-section-212c6ccffb40ecdd78eb2136f98c4cac" aria-controls="R-subsections-212c6ccffb40ecdd78eb2136f98c4cac" checked><label for="R-section-212c6ccffb40ecdd78eb2136f98c4cac"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu core-concepts</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/index.html">core-concepts</a><ul id="R-subsections-212c6ccffb40ecdd78eb2136f98c4cac" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/readme/index.html">core-concepts</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/agent-lifecycle/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/agent-lifecycle/index.html">agent-lifecycle</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/error-handling/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/error-handling/index.html">error-handling</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/message-passing/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/message-passing/index.html">message-passing</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/orchestration-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/orchestration-patterns/index.html">orchestration-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/core-concepts/state-management/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/core-concepts/state-management/index.html">state-management</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/debugging/index.html"><input type="checkbox" id="R-section-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" aria-controls="R-subsections-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" checked><label for="R-section-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu debugging</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/index.html">debugging</a><ul id="R-subsections-d8dfe6eec6c6d4cb6f6f50bdd07fa3cc" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/readme/index.html">debugging</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/debugging-multi-agent-systems/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/debugging-multi-agent-systems/index.html">debugging-multi-agent-systems</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/debugging/logging-and-tracing/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/debugging/logging-and-tracing/index.html">logging-and-tracing</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/index.html"><input type="checkbox" id="R-section-e7f904c8b9d0f9bf1f07ca7d482d2247" aria-controls="R-subsections-e7f904c8b9d0f9bf1f07ca7d482d2247" checked><label for="R-section-e7f904c8b9d0f9bf1f07ca7d482d2247"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu getting-started</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/index.html">getting-started</a><ul id="R-subsections-e7f904c8b9d0f9bf1f07ca7d482d2247" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/readme/index.html">getting-started</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/memory-and-rag/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/memory-and-rag/index.html">memory-and-rag</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/multi-agent-collaboration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/multi-agent-collaboration/index.html">multi-agent-collaboration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/production-deployment/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/production-deployment/index.html">production-deployment</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/quickstart/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/quickstart/index.html">quickstart</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/tool-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/tool-integration/index.html">tool-integration</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/getting-started/your-first-agent/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/getting-started/your-first-agent/index.html">your-first-agent</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/mcp/index.html"><input type="checkbox" id="R-section-153aac44598009a99dd5a60317a3eecc" aria-controls="R-subsections-153aac44598009a99dd5a60317a3eecc" checked><label for="R-section-153aac44598009a99dd5a60317a3eecc"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu mcp</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/index.html">mcp</a><ul id="R-subsections-153aac44598009a99dd5a60317a3eecc" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/readme/index.html">mcp</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/advanced-tool-patterns/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/advanced-tool-patterns/index.html">advanced-tool-patterns</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/tool-development/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/tool-development/index.html">tool-development</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/mcp/tool-integration/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/mcp/tool-integration/index.html">tool-integration</a></li></ul></li>
+            <li class="alwaysopen " data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/index.html"><input type="checkbox" id="R-section-9c1a65f2d7b3888241dcafa51a0710e7" aria-controls="R-subsections-9c1a65f2d7b3888241dcafa51a0710e7" checked><label for="R-section-9c1a65f2d7b3888241dcafa51a0710e7"><i class="fa-fw fas fa-chevron-right"></i><span class="a11y-only">Submenu memory-systems</span></label><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/index.html">memory-systems</a><ul id="R-subsections-9c1a65f2d7b3888241dcafa51a0710e7" class="collapsible-menu">
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/readme/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/readme/index.html">memory-systems</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/basic-memory/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/basic-memory/index.html">basic-memory</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/document-ingestion/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/document-ingestion/index.html">document-ingestion</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/knowledge-bases/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/knowledge-bases/index.html">knowledge-bases</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/memory-optimization/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/memory-optimization/index.html">memory-optimization</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/rag-implementation/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/rag-implementation/index.html">rag-implementation</a></li>
+            <li class="" data-nav-id="/AgenticGoKitDocs/tutorials/memory-systems/vector-databases/index.html"><a class="padding" href="/AgenticGoKitDocs/tutorials/memory-systems/vector-databases/index.html">vector-databases</a></li></ul></li></ul></li>
+          </ul>
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-shortcuts">
+          <ul class="space collapsible-menu">
+          </ul>
+        </div>
+        <div id="R-footer-margin"></div>
+        <div class="R-menu-divider default-animation">
+          <hr class="padding">
+        </div>
+        <div class="R-sidebarmenu R-shortcutmenu-footercontrols">
+          <ul class="">
+          </ul>
+        </div>
+<div id="R-footer"><p>Built with <a href="https://github.com/McShelby/hugo-theme-relearn" title="love"><i class="fas fa-heart"></i></a> by <a href="https://gohugo.io/">Hugo</a></p></div>
+      </div>
+    </aside>
+    <script src="/AgenticGoKitDocs/js/clipboard/clipboard.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/perfect-scrollbar/perfect-scrollbar.min.js?1753430931" defer></script>
+    <script src="/AgenticGoKitDocs/js/theme.js?1753430931" defer></script>
+  </body>
+</html>
