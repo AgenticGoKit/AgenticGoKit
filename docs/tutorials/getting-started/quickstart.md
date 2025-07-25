@@ -28,8 +28,8 @@ Perfect for getting started quickly with scaffolded projects.
 
 #### Step 1: Install CLI and Create Project
 ```bash
-# Install the AgentFlow CLI
-go install github.com/kunalkushwaha/agentflow/cmd/agentcli@latest
+# Install the AgenticGoKit CLI
+go install github.com/kunalkushwaha/agenticgokit/cmd/agentcli@latest
 
 # Create a collaborative multi-agent project
 agentcli create my-agents --agents 3 --orchestration-mode collaborative
@@ -53,7 +53,7 @@ Perfect for understanding how AgenticGoKit works under the hood.
 ```bash
 mkdir my-agents && cd my-agents
 go mod init my-agents
-go get github.com/kunalkushwaha/agentflow
+go get github.com/kunalkushwaha/agenticgokit
 ```
 
 #### Step 2: Create Configuration
@@ -88,7 +88,7 @@ import (
     "strings"
     "time"
     
-    "github.com/kunalkushwaha/agentflow/core"
+    "github.com/kunalkushwaha/agenticgokit/core"
 )
 
 func main() {

@@ -92,7 +92,7 @@ import (
     "sync"
     "time"
 
-    "github.com/kunalkushwaha/agentflow/core"
+    "github.com/kunalkushwaha/agenticgokit/core"
 )
 
 func main() {
@@ -208,7 +208,7 @@ import (
     "fmt"
     "strings"
 
-    agentflow "github.com/kunalkushwaha/agentflow/core"
+    agentflow "github.com/kunalkushwaha/agenticgokit/core"
 )
 
 // Agent1Handler represents the agent1 agent handler
@@ -368,7 +368,7 @@ Route Mode: Process tasks and route to appropriate next steps in the workflow.`
 
 **`agentflow.toml`** - Configuration file:
 ```toml
-# AgentFlow Configuration
+# AgenticGoKit Configuration
 
 [agent_flow]
 name = "my-first-agent"

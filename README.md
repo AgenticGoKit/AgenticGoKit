@@ -1,323 +1,431 @@
 # AgenticGoKit
-**The Go Framework for Building Multi-Agent Systems**
+**The Go Framework for Building Multi-Agent AI Systems**
 
 [![Go Version](https://img.shields.io/badge/Go-1.21+-blue.svg)](https://golang.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Go Report Card](https://goreportcard.com/badge/github.com/kunalkushwaha/agenticgokit)](https://goreportcard.com/report/github.com/kunalkushwaha/agenticgokit)
-[![Documentation](https://img.shields.io/badge/docs-agenticgokit.dev-blue)](https://agenticgokit.dev)
+[![Documentation](https://img.shields.io/badge/docs-latest-blue)](docs/README.md)
 
-Build intelligent agent workflows with dynamic tool integration, multi-provider LLM support, and enterprise-grade orchestration patterns. **Go-native performance for building agentic systems.**
+Build intelligent agent workflows with dynamic tool integration, multi-provider LLM support, and enterprise-grade orchestration patterns. **Go-native performance meets AI agent systems.**
 
 ---
 
-## 🚀 Why AgenticGoKit?
-
-| Feature | AgenticGoKit | LangChain | AutoGen |
-|---------|-------------|-----------|---------|
-| **Language** | Go (compiled, fast) | Python (interpreted) | Python (interpreted) |
-| **Performance** | Go-native performance | Moderate | Moderate |
-| **Production Ready** | Working toward production | Requires additional setup | Research-focused |
-| **Type Safety** | Full compile-time safety | Runtime errors common | Runtime errors common |
-| **Deployment** | Single binary | Complex Python environment | Complex Python environment |
-| **Concurrency** | Native goroutines | Threading limitations | Threading limitations |
-| **Memory Usage** | Lower memory footprint | High memory usage | High memory usage |
-
-**[📊 Complete Framework Comparison](docs/framework-comparison.md)** - Detailed comparison with LangChain, AutoGen, CrewAI, Semantic Kernel, and migration guides
-
 ## ⚡ 5-Minute Demo
 
-Create a collaborative multi-agent system using the CLI:
+Create a collaborative multi-agent system with one command:
 
 ```bash
-# Create a multi-agent project with collaborative orchestration
-agentcli create research-team --orchestration-mode collaborative \
-  --collaborative-agents "researcher,analyzer,writer" \
-  --provider openai --agents 3
+# Install the CLI
+go install github.com/kunalkushwaha/agenticgokit/cmd/agentcli@latest
+
+# Create a multi-agent research team
+agentcli create research-team --orchestration-mode collaborative --agents 3 --visualize
 
 cd research-team
 
 # Set your API key
-export OPENAI_API_KEY=your-key-here
+export AZURE_OPENAI_API_KEY=your-key-here
+export AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
+export AZURE_OPENAI_DEPLOYMENT=your-deployment-name
 
 # Run the collaborative system
-go run main.go "Research the latest developments in AI agent frameworks"
+go run . -m "Research the latest developments in AI agent frameworks"
 ```
 
 **What you get:**
 - ✅ Complete Go project with `main.go`, `agentflow.toml`, and `go.mod`
 - ✅ Three specialized agents working in parallel
 - ✅ Automatic result synthesis and error handling
+- ✅ Mermaid workflow diagrams generated
 - ✅ Production-ready project structure
-- ✅ Docker Compose files for databases (if using memory features)
 
 **That's it!** Multi-agent collaboration with one CLI command.
 
-## 🏗️ What You Can Build
+---
 
-### 🔍 **Research Assistants**
-Multi-agent research teams with web search, analysis, and synthesis
-```bash
-agentcli create research-team --orchestration-mode collaborative \
-  --collaborative-agents "searcher,analyzer,writer" --mcp-enabled
-```
-
-### 📊 **Data Processing Pipelines** 
-Sequential workflows with memory, error handling, and monitoring
-```bash
-agentcli create data-pipeline --orchestration-mode sequential \
-  --sequential-agents "collector,processor,validator"
-```
-
-### 💬 **Conversational Systems**
-Chat agents with persistent memory, context, and multi-turn conversations
-```bash
-agentcli create chat-system --memory-enabled --memory-provider pgvector \
-  --rag-enabled --provider openai --agents 2
-```
-
-### 📚 **Knowledge Bases**
-RAG-powered Q&A with document ingestion, vector search, and source attribution
-```bash
-agentcli create knowledge-base --memory-enabled --memory-provider weaviate \
-  --rag-enabled --hybrid-search --orchestration-mode collaborative
-```
-
-## 🎯 Quick Start Options
+## 🚀 Why AgenticGoKit?
 
 <table>
 <tr>
 <td width="50%">
 
-### 🏃‍♂️ **5-Minute Quickstart**
-Get your first agent running immediately
-```bash
-go get github.com/kunalkushwaha/agenticgokit
-```
-[→ Start Building](docs/quickstart.md)
+### **🏃‍♂️ For Developers**
+- **Go-Native Performance**: Compiled binaries, efficient memory usage
+- **Type Safety**: Compile-time error checking prevents runtime issues
+- **Simple Deployment**: Single binary, no complex Python environments
+- **Native Concurrency**: Goroutines for true parallel agent execution
 
 </td>
 <td width="50%">
 
-### 🎓 **15-Minute Tutorials**
-Learn core concepts with hands-on examples
-- Multi-Agent Collaboration
-- Memory & RAG Systems  
-- Tool Integration
-- Production Deployment
+### **🤖 For AI Systems**
+- **Multi-Agent Focus**: Built specifically for agent orchestration
+- **Memory & RAG**: Built-in vector databases and knowledge management
+- **Tool Integration**: MCP protocol for dynamic tool discovery
+- **Production Ready**: Error handling, monitoring, scaling patterns
 
-[→ Learn Step-by-Step](docs/tutorials/)
+</td>
+</tr>
+</table>
+
+**[📊 Complete Framework Comparison](docs/guides/framework-comparison.md)** - Detailed comparison with LangChain, AutoGen, CrewAI, Semantic Kernel + migration guides
+
+---
+
+## 🏗️ What You Can Build
+
+<table>
+<tr>
+<td width="50%">
+
+### 🔍 **Research Assistants**
+Multi-agent research teams with web search, analysis, and synthesis
+```bash
+agentcli create research-team \
+  --orchestration-mode collaborative \
+  --agents 3 --mcp-enabled --visualize
+```
+
+### 📊 **Data Processing Pipelines** 
+Sequential workflows with error handling and monitoring
+```bash
+agentcli create data-pipeline \
+  --orchestration-mode sequential \
+  --agents 4 --visualize
+```
+
+</td>
+<td width="50%">
+
+### 💬 **Conversational Systems**
+Chat agents with persistent memory and context
+```bash
+agentcli create chat-system \
+  --agents 2 --visualize
+```
+
+### 📚 **Knowledge Bases**
+RAG-powered Q&A with document ingestion and vector search
+```bash
+agentcli create knowledge-base \
+  --orchestration-mode collaborative \
+  --agents 3 --visualize
+```
+
+</td>
+</tr>
+</table>
+
+---
+
+## 🎯 Quick Start Paths
+
+<table>
+<tr>
+<td width="33%">
+
+### 🏃‍♂️ **5-Minute Start**
+Get your first agent running immediately
+
+```bash
+go get github.com/kunalkushwaha/agenticgokit
+```
+
+**[→ Start Building](docs/tutorials/getting-started/quickstart.md)**
+
+</td>
+<td width="33%">
+
+### 🎓 **Learn Step-by-Step**
+Follow guided tutorials to master concepts
+
+- [Your First Agent](docs/tutorials/getting-started/your-first-agent.md)
+- [Multi-Agent Collaboration](docs/tutorials/getting-started/multi-agent-collaboration.md)
+- [Memory & RAG](docs/tutorials/getting-started/memory-and-rag.md)
+- [Tool Integration](docs/tutorials/getting-started/tool-integration.md)
+
+**[→ Start Learning](docs/tutorials/getting-started/README.md)**
+
+</td>
+<td width="33%">
+
+### 🚀 **Explore Examples**
+Run working examples and demos
+
+```bash
+git clone https://github.com/kunalkushwaha/agenticgokit
+cd examples/04-rag-knowledge-base
+docker-compose up -d
+go run main.go
+```
+
+**[→ Browse Examples](examples/README.md)**
+
+</td>
+</tr>
+</table>
+
+---
+
+## 🧠 Core Concepts
+
+### **Multi-Agent Orchestration**
+```go
+// Collaborative agents (parallel execution)
+agents := map[string]core.AgentHandler{
+    "researcher": NewResearchAgent(),
+    "analyzer":   NewAnalysisAgent(),
+    "validator":  NewValidationAgent(),
+}
+
+runner := core.CreateCollaborativeRunner(agents, 30*time.Second)
+result, err := runner.ProcessEvent(ctx, event)
+```
+
+### **Configuration-Based Setup**
+```toml
+# agentflow.toml
+[orchestration]
+mode = "collaborative"
+timeout_seconds = 30
+
+[agent_memory]
+provider = "pgvector"
+enable_rag = true
+chunk_size = 1000
+
+[mcp]
+enabled = true
+```
+
+### **Memory & RAG Integration**
+```go
+// Configure persistent memory with vector search
+memory, err := core.NewMemory(core.AgentMemoryConfig{
+    Provider: "pgvector",
+    EnableRAG: true,
+    EnableKnowledgeBase: true,
+    ChunkSize: 1000,
+})
+```
+
+### **Tool Integration (MCP)**
+```go
+// MCP tools are automatically discovered and integrated
+// Agents can use web search, file operations, and custom tools
+agent := agents.NewToolEnabledAgent("assistant", llmProvider, toolManager)
+```
+
+---
+
+## 🌟 Current Features
+
+- **🤖 Multi-Agent Orchestration**: Collaborative, sequential, loop, and mixed patterns
+- **🧠 Memory & RAG**: PostgreSQL pgvector, Weaviate, and in-memory providers  
+- **🔧 Tool Integration**: MCP protocol support for dynamic tool discovery
+- **⚙️ Configuration Management**: TOML-based configuration with environment overrides
+- **📊 Workflow Visualization**: Automatic Mermaid diagram generation
+- **🎯 CLI Scaffolding**: Generate complete projects with one command
+- **📈 Production Patterns**: Error handling, retry logic, and monitoring hooks
+
+---
+
+## 🚀 Installation & Setup
+
+### **Option 1: CLI Tool (Recommended)**
+```bash
+# Install the CLI
+go install github.com/kunalkushwaha/agenticgokit/cmd/agentcli@latest
+
+# Create your first project
+agentcli create my-agents --orchestration-mode collaborative --agents 3 --visualize
+
+cd my-agents
+```
+
+### **Option 2: Go Module**
+```bash
+go mod init my-agent-project
+go get github.com/kunalkushwaha/agenticgokit
+
+# Create agentflow.toml configuration file
+# See docs/reference/api/configuration.md for details
+```
+
+### **Environment Setup**
+```bash
+# For Azure OpenAI (recommended)
+export AZURE_OPENAI_API_KEY=your-key-here
+export AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
+export AZURE_OPENAI_DEPLOYMENT=your-deployment-name
+
+# For OpenAI
+export OPENAI_API_KEY=your-key-here
+
+# For Ollama (local)
+export OLLAMA_HOST=http://localhost:11434
+```
+
+---
+
+## 📚 Documentation
+
+### **📖 [Complete Documentation](docs/README.md)**
+
+<table>
+<tr>
+<td width="50%">
+
+### **🎓 Learning Path**
+- **[Getting Started](docs/tutorials/getting-started/README.md)** - Step-by-step tutorials
+- **[Core Concepts](docs/tutorials/core-concepts/README.md)** - Fundamental concepts
+- **[Memory Systems](docs/tutorials/memory-systems/README.md)** - RAG and knowledge management
+- **[MCP Tools](docs/tutorials/mcp/README.md)** - Tool integration
+- **[Advanced Patterns](docs/tutorials/advanced/README.md)** - Complex orchestration
+- **[Debugging](docs/tutorials/debugging/README.md)** - Troubleshooting
+
+</td>
+<td width="50%">
+
+### **🛠️ Practical Guides**
+- **[Setup Guides](docs/guides/setup/README.md)** - Configuration and environment
+- **[Development](docs/guides/development/README.md)** - Development patterns
+- **[Deployment](docs/guides/deployment/README.md)** - Production deployment
+- **[Troubleshooting](docs/guides/troubleshooting.md)** - Common issues
+- **[Framework Comparison](docs/guides/framework-comparison.md)** - vs LangChain, AutoGen
 
 </td>
 </tr>
 <tr>
 <td width="50%">
 
-### 🚀 **Live Examples**
-Run impressive demos with one command
-```bash
-git clone https://github.com/kunalkushwaha/agenticgokit
-cd examples/research-assistant
-docker-compose up -d
-go run main.go
-```
-[→ Explore Examples](examples/)
+### **📋 Reference**
+- **[API Reference](docs/reference/README.md)** - Complete API documentation
+- **[CLI Reference](docs/reference/cli.md)** - Command-line interface
+- **[Configuration](docs/reference/api/configuration.md)** - Configuration options
 
 </td>
 <td width="50%">
 
-### 🏗️ **Build Something Cool**
-Ready to build a real application? Try these CLI commands:
-
-```bash
-# Research assistant with web search and analysis
-agentcli create research-assistant --orchestration-mode collaborative \
-  --collaborative-agents "searcher,analyzer,writer" --mcp-enabled
-
-# Data processing pipeline with error handling  
-agentcli create data-pipeline --orchestration-mode sequential \
-  --sequential-agents "collector,processor,validator"
-
-# Chat system with persistent memory
-agentcli create chat-system --memory-enabled --memory-provider pgvector \
-  --rag-enabled --provider openai
-
-# Knowledge base with document ingestion
-agentcli create knowledge-base --memory-enabled --memory-provider weaviate \
-  --rag-enabled --hybrid-search
-```
-
-[→ Explore Examples](examples/)
+### **👥 Contributors**
+- **[Contributor Guide](docs/contributors/ContributorGuide.md)** - Development setup
+- **[Code Style](docs/contributors/CodeStyle.md)** - Coding standards
+- **[Testing](docs/contributors/Testing.md)** - Testing strategies
 
 </td>
 </tr>
 </table>
 
-## 🧠 Core Concepts
+---
 
-### **Agent Builder Pattern**
-```go
-// Build agents with fluent interface
-agent := core.NewAgent("assistant").
-    WithLLM(llmConfig).
-    WithMemory(memoryConfig).
-    WithMCP(mcpConfig).
-    Build()
-```
+## 🌍 Community & Support
 
-### **Multi-Agent Orchestration**
-```go
-// Collaborative agents (parallel execution)
-runner := core.CreateCollaborativeRunner(agents, timeout)
+<table>
+<tr>
+<td width="33%">
 
-// Sequential pipeline (step-by-step processing)
-runner := core.NewRunnerWithOrchestration(core.EnhancedRunnerConfig{
-    OrchestrationMode: core.OrchestrationSequential,
-    SequentialAgents: []string{"agent1", "agent2"},
-})
+### **💬 Get Help**
+- [GitHub Discussions](https://github.com/kunalkushwaha/agenticgokit/discussions) - Q&A and community
+- [GitHub Issues](https://github.com/kunalkushwaha/agenticgokit/issues) - Bug reports and features
+- [Troubleshooting Guide](docs/guides/troubleshooting.md) - Common solutions
 
-// Configuration-based setup
-runner, err := core.NewRunnerFromConfig("agentflow.toml", agents)
-```
+</td>
+<td width="33%">
 
-### **Memory & RAG**
-```go
-// Configure persistent memory with vector search
-memory, err := core.NewMemory(core.AgentMemoryConfig{
-    Provider: "pgvector",
-    Connection: "postgres://localhost/agentdb",
-    EnableRAG: true,
-    Search: core.SearchConfigToml{HybridSearch: true},
-})
-```
+### **🤝 Contribute**
+- [Contributor Guide](docs/contributors/ContributorGuide.md) - How to contribute
+- [Good First Issues](https://github.com/kunalkushwaha/agenticgokit/labels/good%20first%20issue) - Start here
+- [Roadmap](docs/ROADMAP.md) - Future plans
 
-### **Tool Integration (MCP)**
-```go
-// Initialize MCP for tool discovery
-err := core.InitializeMCP(core.DefaultMCPConfig())
+</td>
+<td width="33%">
 
-// Create MCP-aware agents
-agent, err := core.NewMCPAgent("assistant", provider)
-```
+### **📢 Stay Updated**
+- [GitHub Releases](https://github.com/kunalkushwaha/agenticgokit/releases) - Latest updates
+- [Star the Repo](https://github.com/kunalkushwaha/agenticgokit) - Get notifications
+- [Follow Development](https://github.com/kunalkushwaha/agenticgokit/pulse) - Activity
 
-## 📊 Performance & Scale
+</td>
+</tr>
+</table>
 
-- **🚀 Go-Native Performance**: Compiled binary with efficient memory management
-- **⚡ Concurrent Processing**: Native goroutine support for parallel agent execution
-- **💾 Memory Efficient**: Lower memory footprint compared to Python frameworks
-- **🔄 Error Handling**: Built-in retry logic and error routing capabilities
-- **📈 Scalable Architecture**: Designed for horizontal scaling (implementation in progress)
+---
 
-## 🌟 Current Features
+## 🏆 Why Choose AgenticGoKit?
 
-- **🤖 Multi-Agent Orchestration**: Collaborative, sequential, loop, and mixed patterns
-- **🧠 Memory & RAG**: PostgreSQL pgvector, Weaviate, and in-memory providers
-- **🔧 Tool Integration**: MCP protocol support for dynamic tool discovery
-- **⚙️ Configuration Management**: TOML-based configuration with environment overrides
-- **🎯 Agent Builder**: Fluent interface for composing agent capabilities
-- **📊 Basic Monitoring**: Logging and trace capabilities (expanding)
+<table>
+<tr>
+<td width="50%">
 
-## 🚀 Installation
+### **🚀 Performance**
+- **Compiled Go**: Native performance, efficient memory usage
+- **Concurrent Processing**: True parallel agent execution with goroutines
+- **Single Binary**: No complex runtime dependencies
+- **Fast Startup**: Instant initialization, no warm-up time
 
-### Option 1: Go Module (Recommended)
-```bash
-go mod init my-agent-project
-go get github.com/kunalkushwaha/agenticgokit
-```
+</td>
+<td width="50%">
 
-### Option 2: CLI Tool
-```bash
-go install github.com/kunalkushwaha/agenticgokit/cmd/agentcli@latest
-agentcli create my-project --orchestration-mode collaborative --agents 3
-```
+### **🛠️ Developer Experience**
+- **Type Safety**: Compile-time error checking
+- **CLI Scaffolding**: Generate complete projects instantly
+- **Configuration-Driven**: Change behavior without code changes
+- **Workflow Visualization**: Automatic Mermaid diagrams
 
+</td>
+</tr>
+<tr>
+<td width="50%">
 
+### **🤖 AI-First Design**
+- **Multi-Agent Focus**: Built specifically for agent orchestration
+- **Memory Integration**: Built-in vector databases and RAG
+- **Tool Ecosystem**: MCP protocol for dynamic capabilities
+- **Production Patterns**: Error handling, retry logic, monitoring
 
-## 📚 Documentation
+</td>
+<td width="50%">
 
-### **For Developers**
-- **[🚀 5-Minute Quickstart](docs/quickstart.md)** - Get running immediately
-- **[📊 Framework Comparison](docs/framework-comparison.md)** - Compare with LangChain, AutoGen, CrewAI + migration guides
-- **[🎓 Tutorials](docs/tutorials/)** - Step-by-step learning path
-- **[💡 How-To Guides](docs/how-to/)** - Task-oriented solutions
-- **[📖 API Reference](docs/api/)** - Complete API documentation
+### **🏭 Production Ready**
+- **Error Handling**: Comprehensive error routing and recovery
+- **Monitoring**: Built-in logging and tracing capabilities
+- **Scalability**: Designed for horizontal scaling patterns
+- **Configuration**: Environment-based configuration management
 
-### **For Production**
-- **[🏭 Deployment Guide](docs/production/deployment.md)** - Docker deployment (coming soon)
-- **[📊 Monitoring](docs/production/monitoring.md)** - Observability setup (coming soon)
-- **[⚡ Performance](docs/production/performance.md)** - Optimization guide (coming soon)
+</td>
+</tr>
+</table>
 
-### **For Contributors**
-- **[🤝 Contributing Guide](docs/contributing/)** - How to contribute
-- **[🏗️ Architecture](docs/architecture.md)** - System design deep-dive
-- **[🧪 Testing](docs/testing.md)** - Testing strategies
-- **[📋 Roadmap](ROADMAP.md)** - Future plans
-
-## 🌍 Community & Ecosystem
-
-### **Get Help**
-- **[💬 Discord Community](https://discord.gg/dnKWFKgW)** - Real-time chat and support
-- **[💡 GitHub Discussions](https://github.com/kunalkushwaha/agenticgokit/discussions)** - Q&A and ideas
-- **[🐛 Issue Tracker](https://github.com/kunalkushwaha/agenticgokit/issues)** - Bug reports and feature requests
-
-## 🏆 Why Developers Choose AgenticGoKit
-
-- **🚀 Go Performance**: Compiled binaries with efficient memory management
-- **🔧 Simple Deployment**: Single binary, no complex Python environments
-- **🤖 Multi-Agent Focus**: Built specifically for agent orchestration patterns
-- **📊 Type Safety**: Compile-time error checking prevents runtime issues
-- **🧠 Memory Integration**: Built-in support for vector databases and RAG
-- **🔄 Active Development**: Rapidly evolving toward production readiness
+---
 
 ## 🚀 Ready to Build?
 
 <div align="center">
 
-### [🏃‍♂️ **Start with 5-Minute Quickstart**](docs/quickstart.md)
+### [🏃‍♂️ **Start with 5-Minute Quickstart**](docs/tutorials/getting-started/quickstart.md)
 
 *Build your first multi-agent system in 5 minutes*
 
+### [🎓 **Follow the Learning Path**](docs/tutorials/getting-started/README.md)
+
+*Master AgenticGoKit with step-by-step tutorials*
+
+### [🚀 **Explore Live Examples**](examples/README.md)
+
+*See working multi-agent systems in action*
+
 ---
 
-**[⭐ Star us on GitHub](https://github.com/kunalkushwaha/agenticgokit)** • **[📖 Read the Docs](https://agenticgokit.dev)** • **[💬 Join Discord](https://discord.gg/dnKWFKgW)**
+**[⭐ Star us on GitHub](https://github.com/kunalkushwaha/agenticgokit)** • **[📖 Read the Docs](docs/README.md)** • **[💬 Join Discussions](https://github.com/kunalkushwaha/agenticgokit/discussions)**
 
 </div>
 
 ---
 
-## Legacy Documentation
-
-### **Core Concepts (Legacy)**  
-- **[Agent Fundamentals](guides/AgentBasics.md)** - Understanding AgentHandler interface and patterns
-- **[Memory & RAG](guides/Memory.md)** - Persistent memory, vector search, and knowledge bases
-- **[Multi-Agent Orchestration](multi_agent_orchestration.md)** - Orchestration patterns and API reference
-- **[Orchestration Configuration](guides/OrchestrationConfiguration.md)** - Complete guide to configuration-based orchestration
-- **[Examples & Tutorials](guides/Examples.md)** - Practical examples and code samples
-- **[Tool Integration](guides/ToolIntegration.md)** - MCP protocol and dynamic tool discovery
-- **[LLM Providers](guides/Providers.md)** - Azure, OpenAI, Ollama, and custom providers
-- **[Configuration](guides/Configuration.md)** - Managing agentflow.toml and environment setup
-
-### **Advanced Usage (Legacy)**
-- **[⚡ Performance Optimization](docs/guides/Performance.md)** - Speed and efficiency
-- **[🛠️ Custom Tools](docs/guides/CustomTools.md)** - Build your own MCP servers
-
-### **For AgentFlow Contributors**
-- **[👨‍💻 Contributor Guide](docs/contributors/ContributorGuide.md)** - Development setup
-- **[🏗️ Architecture Deep Dive](docs/contributors/CoreVsInternal.md)** - Internal structure
-- **[🧪 Testing Strategy](docs/contributors/Testing.md)** - Testing best practices
-- **[📝 Code Style](docs/contributors/CodeStyle.md)** - Standards and conventions
-
-### **API Reference**
-- **[📖 Core Package](docs/api/core.md)** - Complete public API
-- **[🤖 Agent Interface](docs/api/agents.md)** - Agent types and methods
-- **[🔧 MCP Integration](docs/api/mcp.md)** - Tool discovery APIs
-- **[⌨️ CLI Commands](docs/api/cli.md)** - agentcli reference
-
-### Learn More
-- **[📚 Complete Documentation](docs/README.md)** - User guides, API reference, and contributor docs
-- **[🚀 Getting Started](docs/guides/AgentBasics.md)** - Build your first agent in 5 minutes
-- **[💡 Examples & Tutorials](docs/guides/Examples.md)** - Practical code samples and patterns
-- **[🏗️ Architecture Overview](docs/Architecture.md)** - How AgentFlow works under the hood
-
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.
+
+---
+
+*AgenticGoKit: Where Go performance meets AI agent intelligence.*

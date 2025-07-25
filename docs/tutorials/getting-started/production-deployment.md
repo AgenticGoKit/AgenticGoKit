@@ -98,8 +98,8 @@ services:
   postgres:
     image: pgvector/pgvector:pg15
     environment:
-      POSTGRES_DB: agentflow
-      POSTGRES_USER: agentflow
+      POSTGRES_DB: agenticgokit
+      POSTGRES_USER: agenticgokit
       POSTGRES_PASSWORD: password
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -145,7 +145,7 @@ timeout_seconds = 30
 
 [agent_memory]
 provider = "pgvector"
-connection = "postgres://agentflow:password@localhost:5432/agentflow"
+connection = "postgres://agenticgokit:password@localhost:5432/agenticgokit"
 ```
 
 **`agentflow.prod.toml`** (Production):
@@ -158,7 +158,7 @@ provider = "openai"
 [logging]
 level = "info"
 format = "json"
-file = "/var/log/agentflow.log"
+file = "/var/log/agenticgokit.log"
 
 [runtime]
 max_concurrent_agents = 20
@@ -187,7 +187,7 @@ Create `.env.example`:
 OPENAI_API_KEY=your-openai-api-key-here
 
 # Database
-DATABASE_URL=postgres://agentflow:password@localhost:5432/agentflow
+DATABASE_URL=postgres://agenticgokit:password@localhost:5432/agenticgokit
 
 # External APIs
 WEATHER_API_KEY=your-weather-api-key
