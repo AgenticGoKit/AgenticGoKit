@@ -1,14 +1,14 @@
 # Agent Basics
 
-**Understanding the AgentFlow Agent System**
+**Understanding the AgenticGoKit Agent System**
 
-This guide covers the fundamental concepts of building agents in AgentFlow, from the basic interfaces to advanced multi-agent orchestration patterns.
+This guide covers the fundamental concepts of building agents in AgenticGoKit, from the basic interfaces to advanced multi-agent orchestration patterns.
 
 ## Core Concepts
 
 ### AgentHandler Interface
 
-The `AgentHandler` is the primary interface for implementing agent logic in AgentFlow:
+The `AgentHandler` is the primary interface for implementing agent logic in AgenticGoKit:
 
 ```go
 type AgentHandler interface {
@@ -23,7 +23,7 @@ type AgentHandler interface {
 
 ### Multi-Agent Orchestration
 
-AgentFlow supports multiple orchestration patterns for coordinating agents:
+AgenticGoKit supports multiple orchestration patterns for coordinating agents:
 
 #### Collaborative Orchestration
 All agents process the same event in parallel:
@@ -83,7 +83,7 @@ package main
 import (
     "context"
     "fmt"
-    agentflow "github.com/kunalkushwaha/agentflow/core"
+    agentflow "github.com/kunalkushwaha/agenticgokit/core"
 )
 
 type MyAgentHandler struct {
@@ -393,7 +393,7 @@ package main
 import (
     "context"
     "testing"
-    agentflow "github.com/kunalkushwaha/agentflow/core"
+    agentflow "github.com/kunalkushwaha/agenticgokit/core"
 )
 
 func TestMyAgent(t *testing.T) {

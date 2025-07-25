@@ -1,6 +1,6 @@
-# AgentFlow Examples
+# AgenticGoKit Examples
 
-This guide provides practical examples of building AI agents and workflows with AgentFlow, from simple single-agent applications to complex multi-agent orchestrations.
+This guide provides practical examples of building AI agents and workflows with AgenticGoKit, from simple single-agent applications to complex multi-agent orchestrations.
 
 ## Table of Contents
 
@@ -25,7 +25,7 @@ import (
     "fmt"
     "log"
     
-    "github.com/kunalkushwaha/agentflow/core"
+    "github.com/kunalkushwaha/agenticgokit/core"
 )
 
 func main() {
@@ -976,7 +976,7 @@ func TestResearchAgent(t *testing.T) {
 - **[Error Handling](ErrorHandling.md)** - Advanced error handling strategies
 - **[Performance Guide](Performance.md)** - Optimize your agent performance
 - **[Custom Tools](CustomTools.md)** - Build your own MCP tools
-- **[API Reference](../api/core.md)** - Complete API documentation
+- **[API Reference](../reference/api/agent.md)** - Complete API documentation
 
 ## Example Projects
 

@@ -1,58 +1,73 @@
-# AgentFlow Documentation
+# AgenticGoKit Documentation
 
 **The Complete Guide to Building AI Agent Systems in Go**
 
-AgentFlow is a production-ready Go framework for building intelligent agent workflows with dynamic tool integration, multi-provider LLM support, and enterprise-grade patterns.
+AgenticGoKit is a production-ready Go framework for building intelligent agent workflows with dynamic tool integration, multi-provider LLM support, and enterprise-grade patterns.
 
-## 📚 For AgentFlow Users
+## 📚 Documentation Structure
+
+### **🚀 Learning Paths**
+
+**New to AgenticGoKit?** Follow these guided paths:
+
+#### **Beginner Path** (30 minutes)
+1. [5-Minute Quickstart](tutorials/getting-started/quickstart.md) - Get running immediately
+2. [Your First Agent](tutorials/getting-started/your-first-agent.md) - Build a simple agent
+3. [Multi-Agent Collaboration](tutorials/getting-started/multi-agent-collaboration.md) - Agents working together
+
+#### **Intermediate Path** (1 hour)
+1. [Memory & RAG](tutorials/getting-started/memory-and-rag.md) - Add knowledge capabilities
+2. [Tool Integration](tutorials/getting-started/tool-integration.md) - Connect external tools
+3. [Core Concepts](tutorials/core-concepts/README.md) - Deep dive into fundamentals
+
+#### **Advanced Path** (2+ hours)
+1. [Advanced Patterns](tutorials/advanced/README.md) - Complex orchestration patterns
+2. [Production Deployment](tutorials/getting-started/production-deployment.md) - Deploy to production
+3. [Performance Optimization](tutorials/advanced/load-balancing-scaling.md) - Scale your systems
 
 ### **Getting Started**
-- **[Quick Start Guide](#quick-start)** - Get running in 5 minutes
-- **[Installation & Setup](#installation)** - Go module setup and CLI installation
-- **[Your First Agent](#first-agent)** - Build a simple agent from scratch
-- **[Multi-Agent Orchestration](#multi-agent)** - Collaborative, sequential, and mixed workflows
-- **[Workflow Visualization](visualization_guide.md)** - Generate Mermaid diagrams automatically
+- **[5-Minute Quickstart](tutorials/getting-started/quickstart.md)** - Get running immediately
+- **[Your First Agent](tutorials/getting-started/your-first-agent.md)** - Build a simple agent from scratch
+- **[Multi-Agent Collaboration](tutorials/getting-started/multi-agent-collaboration.md)** - Agents working together
+- **[Memory & RAG](tutorials/getting-started/memory-and-rag.md)** - Add knowledge capabilities
+- **[Tool Integration](tutorials/getting-started/tool-integration.md)** - Connect external tools
+- **[Production Deployment](tutorials/getting-started/production-deployment.md)** - Deploy to production
 
 ### **Core Concepts**  
-- **[Agent Fundamentals](guides/AgentBasics.md)** - Understanding AgentHandler interface and patterns
-- **[Memory & RAG](guides/Memory.md)** - Persistent memory, vector search, and knowledge bases
-- **[Multi-Agent Orchestration](multi_agent_orchestration.md)** - Orchestration patterns and API reference
-- **[Orchestration Configuration](guides/OrchestrationConfiguration.md)** - Complete guide to configuration-based orchestration
+- **[Agent Fundamentals](tutorials/core-concepts/agent-lifecycle.md)** - Understanding AgentHandler interface and patterns
+- **[Memory & RAG](tutorials/memory-systems/README.md)** - Persistent memory, vector search, and knowledge bases
+- **[Multi-Agent Orchestration](tutorials/core-concepts/orchestration-patterns.md)** - Orchestration patterns and API reference
+- **[Orchestration Configuration](guides/setup/orchestration-configuration.md)** - Complete guide to configuration-based orchestration
 - **[Examples & Tutorials](guides/Examples.md)** - Practical examples and code samples
-- **[Tool Integration](guides/ToolIntegration.md)** - MCP protocol and dynamic tool discovery
-- **[LLM Providers](guides/Providers.md)** - Azure, OpenAI, Ollama, and custom providers
-- **[Configuration](guides/Configuration.md)** - Managing agentflow.toml and environment setup
+- **[Tool Integration](tutorials/mcp/README.md)** - MCP protocol and dynamic tool discovery
+- **[LLM Providers](guides/setup/llm-providers.md)** - Azure, OpenAI, Ollama, and custom providers
+- **[Configuration](reference/api/configuration.md)** - Managing agentflow.toml and environment setup
 
 ### **Advanced Usage**
-- **[Multi-Agent Orchestration](multi_agent_orchestration.md)** - Advanced orchestration patterns and configuration
+- **[Advanced Patterns](tutorials/advanced/README.md)** - Advanced orchestration patterns and configuration
 - **[RAG Configuration](guides/RAGConfiguration.md)** - Retrieval-Augmented Generation setup and tuning
-- **[Memory Provider Setup](guides/MemoryProviderSetup.md)** - PostgreSQL, Weaviate, and in-memory setup guides
-- **[Workflow Visualization](visualization_guide.md)** - Generate and customize Mermaid diagrams
-- **[Production Deployment](guides/Production.md)** - Scaling, monitoring, and best practices  
-- **[Error Handling](guides/ErrorHandling.md)** - Resilient agent workflows
+- **[Memory Provider Setup](guides/setup/vector-databases.md)** - PostgreSQL, Weaviate, and in-memory setup guides
+- **[Workflow Visualization](guides/development/visualization.md)** - Generate and customize Mermaid diagrams
+- **[Production Deployment](guides/deployment/README.md)** - Scaling, monitoring, and best practices  
+- **[Error Handling](tutorials/core-concepts/error-handling.md)** - Resilient agent workflows
 - **[Custom Tools](guides/CustomTools.md)** - Building your own MCP servers
 - **[Performance Tuning](guides/Performance.md)** - Optimization and benchmarking
 
 ### **API Reference**
-- **[Core Package API](api/core.md)** - Complete public API reference
-- **[Agent Interface](api/agents.md)** - AgentHandler and related types
-- **[Memory API](api/memory.md)** - Memory system and RAG APIs
-- **[MCP Integration](api/mcp.md)** - Tool discovery and execution APIs
-- **[CLI Commands](api/cli.md)** - agentcli reference
+- **[Core Package API](reference/api/agent.md)** - Complete public API reference
+- **[Agent Interface](reference/api/agent.md)** - AgentHandler and related types
+- **[Memory API](reference/api/agent.md#memory)** - Memory system and RAG APIs
+- **[MCP Integration](reference/api/agent.md#mcp)** - Tool discovery and execution APIs
+- **[CLI Commands](reference/cli.md)** - agentcli reference
 
-## 🔧 For AgentFlow Contributors
+## 🔧 For AgenticGoKit Contributors
 
-### **Development Setup**
-- **[Contributor Guide](contributors/ContributorGuide.md)** - Getting started with development
-- **[Architecture Deep Dive](contributors/Architecture.md)** - Internal structure and design decisions
-- **[Testing Strategy](contributors/Testing.md)** - Unit tests, integration tests, and benchmarks
-- **[Release Process](contributors/ReleaseProcess.md)** - How releases are managed
+**Want to contribute to AgenticGoKit?** See our [Contributor Documentation](contributors/README.md) for:
 
-### **Codebase Structure**
-- **[Core vs Internal](contributors/CoreVsInternal.md)** - Public API vs implementation
-- **[Adding Features](contributors/AddingFeatures.md)** - How to extend AgentFlow
-- **[Code Style](contributors/CodeStyle.md)** - Go standards and project conventions
-- **[Documentation Standards](contributors/DocsStandards.md)** - Writing user-focused docs
+- **Development Setup** - Getting started with the codebase
+- **Architecture Overview** - Understanding the project structure  
+- **Contribution Guidelines** - Code style, testing, and documentation standards
+- **Development Workflow** - How to submit changes and new features
 
 ---
 
@@ -61,16 +76,21 @@ AgentFlow is a production-ready Go framework for building intelligent agent work
 ### Installation
 ```bash
 # Install the CLI
-go install github.com/kunalkushwaha/agentflow/cmd/agentcli@latest
+go install github.com/kunalkushwaha/agenticgokit/cmd/agentcli@latest
 
 # Create a collaborative multi-agent system
 agentcli create research-system \
   --orchestration-mode collaborative \
-  --collaborative-agents "researcher,analyzer,validator" \
+  --agents 3 \
   --visualize \
   --mcp-enabled
 
 cd research-system
+
+# Set your API key
+export AZURE_OPENAI_API_KEY=your-key-here
+export AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
+export AZURE_OPENAI_DEPLOYMENT=your-deployment-name
 
 # Run with any message - agents work together intelligently
 go run . -m "research AI trends and provide comprehensive analysis"
@@ -81,25 +101,24 @@ go run . -m "research AI trends and provide comprehensive analysis"
 # Sequential processing pipeline
 agentcli create data-pipeline \
   --orchestration-mode sequential \
-  --sequential-agents "collector,processor,formatter" \
+  --agents 3 \
   --orchestration-timeout 45 \
   --visualize
 
 # Loop-based workflow with conditions
 agentcli create quality-loop \
   --orchestration-mode loop \
-  --loop-agent "quality-checker" \
+  --agents 1 \
   --max-iterations 5 \
   --orchestration-timeout 120 \
   --visualize
 
 # Mixed collaborative + sequential workflow
 agentcli create complex-workflow \
-  --orchestration-mode mixed \
-  --collaborative-agents "analyzer,validator" \
-  --sequential-agents "processor,reporter" \
+  --orchestration-mode collaborative \
+  --agents 4 \
   --orchestration-timeout 90 \
-  --visualize-output "docs/diagrams"
+  --visualize-output "docs/workflows"
 ```
 
 ### Configuration-Based Orchestration
@@ -113,17 +132,58 @@ sequential_agents = ["agent1", "agent2", "agent3"]
 ```
 
 ```go
-// Generated projects automatically use configuration-based runners
-runner, err := core.NewRunnerFromConfig("agentflow.toml")
-if err != nil {
-    log.Fatal(err)
-}
+package main
 
-// Register agents and run - orchestration mode is handled automatically
-for name, handler := range agents {
-    runner.RegisterAgent(name, handler)
+import (
+    "context"
+    "log"
+    "time"
+    
+    "github.com/kunalkushwaha/agenticgokit/core"
+)
+
+func main() {
+    // Load configuration from agentflow.toml
+    config, err := core.LoadConfigFromWorkingDir()
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // Create provider from configuration
+    provider, err := config.InitializeProvider()
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // Create agents
+    agents := map[string]core.AgentHandler{
+        "agent1": core.NewLLMAgent("agent1", provider),
+        "agent2": core.NewLLMAgent("agent2", provider),
+        "agent3": core.NewLLMAgent("agent3", provider),
+    }
+
+    // Create runner based on configuration
+    var runner core.Runner
+    switch config.Orchestration.Mode {
+    case "sequential":
+        runner = core.NewOrchestrationBuilder(core.OrchestrationSequential).
+            WithAgents(agents).
+            WithTimeout(time.Duration(config.Orchestration.TimeoutSeconds)*time.Second).
+            Build()
+    case "collaborative":
+        runner = core.CreateCollaborativeRunner(agents, 
+            time.Duration(config.Orchestration.TimeoutSeconds)*time.Second)
+    default:
+        runner = core.CreateRouteRunner(agents)
+    }
+
+    // Start the runner
+    ctx := context.Background()
+    if err := runner.Start(ctx); err != nil {
+        log.Fatal(err)
+    }
+    defer runner.Stop()
 }
-runner.Start(ctx)
 ```
 
 ### First Agent
@@ -140,7 +200,7 @@ package main
 import (
     "context"
     "fmt"
-    agentflow "github.com/kunalkushwaha/agentflow/core"
+    agentflow "github.com/kunalkushwaha/agenticgokit/core"
 )
 
 type Agent1Handler struct {
@@ -207,7 +267,7 @@ import (
     "log"
     "time"
     
-    "github.com/kunalkushwaha/agentflow/core"
+    "github.com/kunalkushwaha/agenticgokit/core"
 )
 
 func main() {
@@ -241,7 +301,7 @@ func main() {
 }
 ```
 
-## Why AgentFlow?
+## Why AgenticGoKit?
 
 ### **For Users:**
 - **⚡ Fast Setup**: Working agents in 5 minutes with CLI scaffolding
@@ -257,27 +317,53 @@ func main() {
 
 ---
 
+## 📖 Documentation Sections
+
+### **[📚 Tutorials](tutorials/README.md)**
+Learning-oriented guides to help you understand AgenticGoKit:
+- **[Getting Started](tutorials/getting-started/README.md)** - Step-by-step beginner tutorials
+- **[Core Concepts](tutorials/core-concepts/README.md)** - Fundamental concepts and patterns
+- **[Memory Systems](tutorials/memory-systems/README.md)** - RAG and knowledge management
+- **[MCP Tools](tutorials/mcp/README.md)** - Tool integration and development
+- **[Advanced Patterns](tutorials/advanced/README.md)** - Complex orchestration patterns
+- **[Debugging](tutorials/debugging/README.md)** - Debugging and troubleshooting
+
+### **[🛠️ How-To Guides](guides/README.md)**
+Task-oriented guides for specific scenarios:
+- **[Setup](guides/setup/README.md)** - Configuration and environment setup
+- **[Development](guides/development/README.md)** - Development patterns and best practices
+- **[Deployment](guides/deployment/README.md)** - Production deployment and scaling
+
+### **[📋 Reference](reference/README.md)**
+Information-oriented documentation:
+- **[API Reference](tutorials\getting-started\README.md)** - Complete API documentation
+- **[CLI Reference](reference/cli.md)** - Command-line interface documentation
+- **[Configuration Reference](reference/api/configuration.md)** - Configuration options
+
+### **[👥 Contributors](contributors/README.md)**
+For developers contributing to AgenticGoKit:
+- **[Contributor Guide](contributors/ContributorGuide.md)** - Development setup and workflow
+- **[Code Style](contributors/CodeStyle.md)** - Coding standards and conventions
+- **[Testing](contributors/Testing.md)** - Testing strategies and guidelines
+
 ## Contributing
 
 We welcome contributions! See our [Contributor Guide](contributors/ContributorGuide.md) for details.
 
 ```bash
 # Quick start for contributors
-git clone https://github.com/kunalkushwaha/agentflow.git
-cd agentflow
+git clone https://github.com/kunalkushwaha/agenticgokit.git
+cd agenticgokit
 go mod tidy
 go test ./...
-
-# Generate docs
-go run tools/docgen/main.go
 ```
 
 ## Community
 
-- **[GitHub Discussions](https://github.com/kunalkushwaha/agentflow/discussions)** - Q&A and community
-- **[Issues](https://github.com/kunalkushwaha/agentflow/issues)** - Bug reports and feature requests
-- **[Contributing](CONTRIBUTING.md)** - How to contribute code and documentation
+- **[GitHub Discussions](https://github.com/kunalkushwaha/agenticgokit/discussions)** - Q&A and community
+- **[Issues](https://github.com/kunalkushwaha/agenticgokit/issues)** - Bug reports and feature requests
+- **[Contributing](contributors/ContributorGuide.md)** - How to contribute code and documentation
 
 ---
 
-**[⭐ Star us on GitHub](https://github.com/kunalkushwaha/agentflow)** | **[📖 Full Documentation](https://agentflow.dev)** | **[🚀 Examples](examples/)**
+**[⭐ Star us on GitHub](https://github.com/kunalkushwaha/agenticgokit)** | **[📖 Full Documentation](https://agenticgokit.dev)** | **[🚀 Examples](examples/)**

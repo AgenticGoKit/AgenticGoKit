@@ -1,13 +1,13 @@
 # Core vs Internal Architecture
 
-**Understanding AgentFlow's Package Structure**
+**Understanding AgenticGoKit's Package Structure**
 
-AgentFlow uses a clear separation between public API (`core/`) and private implementation (`internal/`) to provide a stable, developer-friendly interface while maintaining implementation flexibility.
+AgenticGoKit uses a clear separation between public API (`core/`) and private implementation (`internal/`) to provide a stable, developer-friendly interface while maintaining implementation flexibility.
 
 ## Overview
 
 ```
-agentflow/
+agenticgokit/
 ├── core/           # Public API - what users import
 │   ├── agent.go    # Agent interfaces and types
 │   ├── mcp.go      # MCP integration public API  
@@ -290,7 +290,7 @@ func (p *azureProvider) Generate(ctx context.Context, prompt string) (string, er
 
 Users import only from `core/`:
 ```go
-import agentflow "github.com/kunalkushwaha/agentflow/core"
+import agentflow "github.com/kunalkushwaha/agenticgokit/core"
 
 // All user code works with interfaces
 var agent agentflow.AgentHandler = agentflow.NewMCPAgent("my-agent", llm, mcp)
@@ -480,5 +480,5 @@ Go interfaces have minimal overhead:
 ## Next Steps
 
 - **[Contributor Guide](ContributorGuide.md)** - Get started with development
-- **[Adding Features](AddingFeatures.md)** - Learn how to extend AgentFlow
+- **[Adding Features](AddingFeatures.md)** - Learn how to extend AgenticGoKit
 - **[Testing Strategy](Testing.md)** - Understand our testing approach

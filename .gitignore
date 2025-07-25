@@ -118,3 +118,4 @@ $RECYCLE.BIN/
 node_modules/
 .nyc_output/
 archive/
+/docs/internal/

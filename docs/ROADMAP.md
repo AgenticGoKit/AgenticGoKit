@@ -1,6 +1,6 @@
 ## Summary
 
-AgentFlow has evolved significantly with many core features already implemented, including multi-agent orchestration, workflow visualization, and comprehensive CLI tooling. Below is the current implementation status and future roadmap.
+AgenticGoKit has evolved significantly with many core features already implemented, including multi-agent orchestration, workflow visualization, and comprehensive CLI tooling. Below is the current implementation status and future roadmap.
 
 ---
 

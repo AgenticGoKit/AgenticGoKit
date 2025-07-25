@@ -1,6 +1,6 @@
 # Code Style Guide
 
-This document defines the coding standards and conventions for AgentFlow to ensure consistency, readability, and maintainability across the codebase.
+This document defines the coding standards and conventions for AgenticGoKit to ensure consistency, readability, and maintainability across the codebase.
 
 ## 🎯 Core Principles
 
@@ -14,7 +14,7 @@ This document defines the coding standards and conventions for AgentFlow to ensu
 
 ### Follow Standard Go Conventions
 
-AgentFlow adheres to all standard Go conventions:
+AgenticGoKit adheres to all standard Go conventions:
 
 - [Effective Go](https://golang.org/doc/effective_go.html)
 - [Go Code Review Comments](https://github.com/golang/go/wiki/CodeReviewComments)
@@ -55,7 +55,7 @@ linters-settings:
     min-occurrences: 3
   
   goimports:
-    local-prefixes: github.com/zynkworks/agentflow
+    local-prefixes: github.com/kunalkushwaha/agenticgokit
   
   govet:
     check-shadowing: true
@@ -95,7 +95,7 @@ issues:
 ### Directory Structure
 
 ```
-agentflow/
+agenticgokit/
 ├── cmd/                    # Main applications
 │   └── agentcli/          # CLI application
 ├── core/                   # Public API
@@ -150,8 +150,8 @@ import (
     "go.opentelemetry.io/otel/trace"
     
     // Local imports
-    "github.com/zynkworks/agentflow/internal/mcp"
-    "github.com/zynkworks/agentflow/pkg/utils"
+    "github.com/kunalkushwaha/agenticgokit/internal/mcp"
+    "github.com/kunalkushwaha/agenticgokit/pkg/utils"
 )
 ```
 
@@ -230,7 +230,7 @@ type ExecutorImpl interface {}
 Every package should have a package comment:
 
 ```go
-// Package core provides the public API for AgentFlow.
+// Package core provides the public API for AgenticGoKit.
 // It defines the primary interfaces and types used to build
 // AI agent systems with dynamic tool integration.
 //
@@ -686,4 +686,4 @@ func processRequest(ctx context.Context, request Request) error {
 - [ ] No obvious performance issues
 - [ ] Follows established patterns
 
-This code style guide ensures consistency and quality across the AgentFlow codebase, making it easier for contributors to understand, maintain, and extend the system.
+This code style guide ensures consistency and quality across the AgenticGoKit codebase, making it easier for contributors to understand, maintain, and extend the system.
