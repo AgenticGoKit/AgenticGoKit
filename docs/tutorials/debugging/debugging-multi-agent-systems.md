@@ -9,7 +9,7 @@ AgenticGoKit provides comprehensive tracing through the `agentcli` tool and stru
 ## Prerequisites
 
 - Understanding of [Agent Lifecycle](../core-concepts/agent-lifecycle.md)
-- Familiarity with [Orchestration Patterns](../orchestration/orchestration-patterns.md)
+- Familiarity with [Orchestration Patterns](../core-concepts/orchestration-patterns.md)
 - Basic knowledge of Go debugging tools
 - AgenticGoKit project with `agentflow.toml` configuration
 

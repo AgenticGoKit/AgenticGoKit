@@ -727,7 +727,7 @@ Enhance your research assistant with:
 ## Related Guides
 
 - [Web Search Integration](web-search-integration.md) - Detailed search setup
-- [Multi-Agent Orchestration](../tutorials/core-concepts/orchestration-patterns.md) - Orchestration patterns
+- [Multi-Agent Orchestration](../../tutorials/core-concepts/orchestration-patterns.md) - Orchestration patterns
 - [MCP Tools](../setup/mcp-tools.md) - Tool integration
 - [Best Practices](best-practices.md) - Development guidelines
 

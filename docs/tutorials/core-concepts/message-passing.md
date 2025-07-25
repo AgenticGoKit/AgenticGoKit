@@ -565,7 +565,7 @@ Key takeaways:
 
 ## Next Steps
 
-- [Orchestration Patterns](../orchestration/README.md) - Learn how different orchestration modes build on message passing
+- [Orchestration Patterns](../../guides/deployment/README.md) - Learn how different orchestration modes build on message passing
 - [State Management](state-management.md) - Understand how data flows between agents
 - [Error Handling](error-handling.md) - Master robust error management patterns
 - [Debugging Guide](../debugging/README.md) - Learn to trace and debug event flows

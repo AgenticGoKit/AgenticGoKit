@@ -86,11 +86,11 @@ Example:
 ```markdown
 ## Configuration
 
-Before configuring agents, make sure you've completed the [basic setup](AgentBasics.md#setup).
+Before configuring agents, make sure you've completed the [basic setup](../guides/AgentBasics.md#setup).
 
 For production deployments, see the [Production Guide](Production.md) for advanced configuration options.
 
-Related: [LLM Providers](Providers.md) | [Error Handling](ErrorHandling.md)
+Related: [LLM Providers](../guides/Providers.md) | [Error Handling](../guides/ErrorHandling.md)
 ```
 
 ## Writing Guidelines
@@ -425,8 +425,8 @@ AgentBasics.md ←→ ToolIntegration.md ←→ Configuration.md
 - Use consistent parallel structure
 
 **Links:**
-- Use descriptive link text: "[Agent Basics guide](AgentBasics.md)"
-- Not: "Click [here](AgentBasics.md) for agent basics"
+- Use descriptive link text: "[Agent Basics guide](../guides/AgentBasics.md)"
+- Not: "Click [here](../guides/AgentBasics.md) for agent basics"
 
 ### Common Terminology
 

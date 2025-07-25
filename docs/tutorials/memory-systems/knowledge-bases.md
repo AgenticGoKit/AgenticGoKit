@@ -627,8 +627,8 @@ Well-designed knowledge bases enable agents to access and utilize vast amounts o
 ## Next Steps
 
 - [Memory Optimization](memory-optimization.md) - Advanced performance tuning
-- [Production Deployment](../deployment/README.md) - Deploy knowledge bases at scale
-- [Monitoring and Observability](../debugging-monitoring/README.md) - Monitor knowledge base performance
+- [Production Deployment](../README.md) - Deploy knowledge bases at scale
+- [Monitoring and Observability](../README.md) - Monitor knowledge base performance
 
 ## Further Reading
 

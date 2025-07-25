@@ -336,7 +336,7 @@ Task-oriented guides for specific scenarios:
 
 ### **[📋 Reference](reference/README.md)**
 Information-oriented documentation:
-- **[API Reference](reference/api/README.md)** - Complete API documentation
+- **[API Reference](tutorials\getting-started\README.md)** - Complete API documentation
 - **[CLI Reference](reference/cli.md)** - Command-line interface documentation
 - **[Configuration Reference](reference/api/configuration.md)** - Configuration options
 

@@ -387,9 +387,9 @@ Proper optimization ensures your agents can handle production workloads efficien
 
 ## Next Steps
 
-- [Production Deployment](../deployment/README.md) - Deploy optimized systems
-- [Monitoring and Observability](../debugging-monitoring/README.md) - Advanced monitoring
-- [Advanced Patterns](../advanced-patterns/README.md) - Learn scaling techniques
+- [Production Deployment](../../guides/README.md) - Deploy optimized systems
+- [Monitoring and Observability](../core-concepts/README.md) - Advanced monitoring
+- [Advanced Patterns](../README.md) - Learn scaling techniques
 
 ## Further Reading
 

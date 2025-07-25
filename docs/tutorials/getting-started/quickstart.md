@@ -352,7 +352,7 @@ Connect to external tools:
 - API integrations
 - Custom tools
 
-[→ Tools Tutorial](../mcp/)
+[→ Tools Tutorial](../../reference/api/mcp.md)
 
 </td>
 <td width="50%">

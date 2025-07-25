@@ -998,4 +998,4 @@ Load balancing and scaling are essential for building production-ready agent sys
 - **[Testing Strategies](testing-strategies.md)** - Test your scaled agent systems
 - **[Circuit Breaker Patterns](circuit-breaker-patterns.md)** - Add fault tolerance to scaled systems
 - **[Production Monitoring](../debugging/performance-monitoring.md)** - Monitor your scaled deployments
-- **[Production Deployment](../15-minute-series/production-deployment.md)** - Deploy your scaled systems
+- **[Production Deployment](../getting-started/production-deployment.md)** - Deploy your scaled systems

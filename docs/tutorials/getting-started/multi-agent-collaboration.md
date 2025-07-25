@@ -289,6 +289,6 @@ Now that you understand orchestration patterns, you can:
 
 ## Further Reading
 
-- [Orchestration Patterns](../orchestration/orchestration-patterns.md) - Deep dive into patterns
+- [Orchestration Patterns](../core-concepts/orchestration-patterns.md) - Deep dive into patterns
 - [Performance Optimization](../advanced/README.md) - Advanced performance tuning
 - [State Management](../core-concepts/state-management.md) - How data flows between agents

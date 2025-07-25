@@ -306,7 +306,7 @@ Now that you understand the core concepts, dive deeper into specific areas:
 4. **[Error Handling](error-handling.md)** - Build robust error management
 
 Or jump to specific orchestration patterns:
-- **[Orchestration Overview](../orchestration/README.md)** - Learn about different orchestration modes
+- **[Orchestration Overview](../README.md)** - Learn about different orchestration modes
 
 ## Key Takeaways
 

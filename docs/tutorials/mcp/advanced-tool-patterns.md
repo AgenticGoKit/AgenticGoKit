@@ -9,7 +9,7 @@ This tutorial explores advanced patterns for tool usage in AgenticGoKit, includi
 - Understanding of [MCP Overview](README.md)
 - Completion of [Tool Development](tool-development.md)
 - Familiarity with [Tool Integration](tool-integration.md)
-- Knowledge of [Orchestration Patterns](../orchestration/orchestration-patterns.md)
+- Knowledge of [Orchestration Patterns](../core-concepts/orchestration-patterns.md)
 
 ## Tool Composition Patterns
 
@@ -816,11 +816,11 @@ Key takeaways:
 
 - [Tool Development](tool-development.md) - Learn the basics of tool creation
 - [Tool Integration](tool-integration.md) - Understand tool integration patterns
-- [Orchestration Patterns](../orchestration/orchestration-patterns.md) - Explore agent orchestration
-- [Production Deployment](../deployment/README.md) - Deploy your systems
+- [Orchestration Patterns](../core-concepts/orchestration-patterns.md) - Explore agent orchestration
+- [Production Deployment](../memory-systems/README.md) - Deploy your systems
 
 ## Further Reading
 
 - [API Reference: MCP](../../api/core.md#mcp)
 - [Examples: Advanced Patterns](../../examples/)
-- [Monitoring and Observability](../debugging-monitoring/README.md)
+- [Monitoring and Observability](../../contributors/README.md)

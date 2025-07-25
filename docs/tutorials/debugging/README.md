@@ -19,7 +19,7 @@ Before diving into debugging and monitoring, you should be familiar with:
 
 - [Agent Lifecycle](../core-concepts/agent-lifecycle.md)
 - [Message Passing and Event Flow](../core-concepts/message-passing.md)
-- [Orchestration Patterns](../orchestration/orchestration-patterns.md)
+- [Orchestration Patterns](../core-concepts/orchestration-patterns.md)
 - [State Management](../core-concepts/state-management.md)
 
 ## Why Debugging Multi-Agent Systems is Different
