@@ -2,7 +2,7 @@
 **The Go Framework for Building Multi-Agent AI Systems**
 
 [![Go Version](https://img.shields.io/badge/Go-1.21+-blue.svg)](https://golang.org)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Go Report Card](https://goreportcard.com/badge/github.com/kunalkushwaha/agenticgokit)](https://goreportcard.com/report/github.com/kunalkushwaha/agenticgokit)
 [![Documentation](https://img.shields.io/badge/docs-latest-blue)](docs/README.md)
 
@@ -424,7 +424,7 @@ export OLLAMA_HOST=http://localhost:11434
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+Apache 2.0 - see [LICENSE](LICENSE) for details.
 
 ---
 
