@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kunalkushwaha/agentflow/core"
+	"github.com/kunalkushwaha/AgenticGoKit/core"
 )
 
 {{if .Config.MemoryEnabled}}

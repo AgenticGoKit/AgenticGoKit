@@ -56,9 +56,9 @@ export AZURE_OPENAI_DEPLOYMENT="gpt-4"
 
 **Programmatic configuration:**
 ```go
-import agentflow "github.com/kunalkushwaha/agentflow/core"
+import agenticgokit "github.com/kunalkushwaha/AgenticGoKit/core"
 
-config := agentflow.AzureConfig{
+config := agenticgokit.AzureConfig{
     APIKey:     "your-api-key",
     Endpoint:   "https://your-resource.openai.azure.com",
     Deployment: "gpt-4",

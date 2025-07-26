@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	agentflow "github.com/kunalkushwaha/agentflow/internal/core"
+	agenticgokit "github.com/kunalkushwaha/AgenticGoKit/internal/core"
 )
 
 // --- Common Test Helper Agents ---
@@ -30,7 +30,7 @@ func (s *SpyAgent) Name() string {
 	return s.name // FIX: Return lowercase 'name' field
 }
 
-func (s *SpyAgent) Run(ctx context.Context, inputState agentflow.State) (agentflow.State, error) {
+func (s *SpyAgent) Run(ctx context.Context, inputState agenticgokit.State) (agenticgokit.State, error) {
 	s.InputData = make(map[string]interface{})
 	for _, key := range inputState.Keys() {
 		if val, ok := inputState.Get(key); ok {
@@ -75,8 +75,8 @@ func (a *DelayAgent) Name() string {
 	return a.name // FIX: Return lowercase 'name' field
 }
 
-// Run implements the agentflow.Agent interface for DelayAgent.
-func (a *DelayAgent) Run(ctx context.Context, input agentflow.State) (agentflow.State, error) {
+// Run implements the agenticgokit.Agent interface for DelayAgent.
+func (a *DelayAgent) Run(ctx context.Context, input agenticgokit.State) (agenticgokit.State, error) {
 	a.RunCount.Add(1)
 	select {
 	case <-time.After(a.Delay):
@@ -107,7 +107,7 @@ func (c *CounterAgent) Name() string {
 	return "CounterAgent" // Or make it configurable if needed
 }
 
-func (c *CounterAgent) Run(ctx context.Context, inputState agentflow.State) (agentflow.State, error) {
+func (c *CounterAgent) Run(ctx context.Context, inputState agenticgokit.State) (agenticgokit.State, error) {
 	outputState := inputState.Clone()
 	countVal, _ := outputState.Get("count")
 	count, _ := countVal.(int) // Assume int, default 0 if not present or wrong type
@@ -135,8 +135,8 @@ func (a *NoOpAgent) Name() string {
 	return "NoOpAgent"
 }
 
-// Run implements the agentflow.Agent interface for NoOpAgent.
-func (a *NoOpAgent) Run(ctx context.Context, input agentflow.State) (agentflow.State, error) {
+// Run implements the agenticgokit.Agent interface for NoOpAgent.
+func (a *NoOpAgent) Run(ctx context.Context, input agenticgokit.State) (agenticgokit.State, error) {
 	return input, nil // Return input state immediately
 }
 
@@ -151,7 +151,7 @@ func (a *SimpleUpdateAgent) Name() string {
 	return fmt.Sprintf("SimpleUpdateAgent(%s)", a.Key) // More descriptive name
 }
 
-func (a *SimpleUpdateAgent) Run(ctx context.Context, inputState agentflow.State) (agentflow.State, error) {
+func (a *SimpleUpdateAgent) Run(ctx context.Context, inputState agenticgokit.State) (agenticgokit.State, error) {
 	outputState := inputState.Clone()
 	countVal, _ := outputState.Get(a.Key)
 	count, _ := countVal.(int)
@@ -163,7 +163,7 @@ func (a *SimpleUpdateAgent) Run(ctx context.Context, inputState agentflow.State)
 // MockAgent for testing purposes
 type MockAgent struct {
 	NameVal      string
-	RunFunc      func(ctx context.Context, inputState agentflow.State) (agentflow.State, error) // Adjusted signature
+	RunFunc      func(ctx context.Context, inputState agenticgokit.State) (agenticgokit.State, error) // Adjusted signature
 	RunCallCount int
 	mu           sync.Mutex
 }
@@ -176,7 +176,7 @@ func (m *MockAgent) Name() string {
 	return m.NameVal
 }
 
-func (m *MockAgent) Run(ctx context.Context, inputState agentflow.State) (agentflow.State, error) {
+func (m *MockAgent) Run(ctx context.Context, inputState agenticgokit.State) (agenticgokit.State, error) {
 	m.mu.Lock()
 	m.RunCallCount++
 	m.mu.Unlock()
@@ -200,9 +200,9 @@ func (m *MockAgent) GetRunCallCount() int {
 }
 
 // Helper to create a simple state for testing
-// Use agentflow.State and agentflow.NewState
-func createState(data map[string]any, meta map[string]string) agentflow.State {
-	s := agentflow.NewState()
+// Use agenticgokit.State and agenticgokit.NewState
+func createState(data map[string]any, meta map[string]string) agenticgokit.State {
+	s := agenticgokit.NewState()
 	if data != nil {
 		for k, v := range data {
 			s.Set(k, v)

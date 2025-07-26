@@ -56,9 +56,27 @@ func (o *OpenAIAdapter) Call(ctx context.Context, prompt Prompt) (Response, erro
 		temperature = *prompt.Parameters.Temperature
 	}
 
+	// Build messages array for Chat Completions API
+	messages := []map[string]interface{}{
+		{
+			"role":    "user",
+			"content": userPrompt,
+		},
+	}
+	
+	// Add system message if provided
+	if prompt.System != "" {
+		messages = append([]map[string]interface{}{
+			{
+				"role":    "system", 
+				"content": prompt.System,
+			},
+		}, messages...)
+	}
+
 	requestBody, err := json.Marshal(map[string]interface{}{
 		"model":       o.model,
-		"prompt":      userPrompt,
+		"messages":    messages,
 		"max_tokens":  maxTokens,
 		"temperature": temperature,
 	})
@@ -66,7 +84,7 @@ func (o *OpenAIAdapter) Call(ctx context.Context, prompt Prompt) (Response, erro
 		return Response{}, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/completions", bytes.NewBuffer(requestBody))
+	req, err := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/chat/completions", bytes.NewBuffer(requestBody))
 	if err != nil {
 		return Response{}, err
 	}
@@ -87,7 +105,9 @@ func (o *OpenAIAdapter) Call(ctx context.Context, prompt Prompt) (Response, erro
 
 	var response struct {
 		Choices []struct {
-			Text         string `json:"text"`
+			Message struct {
+				Content string `json:"content"`
+			} `json:"message"`
 			FinishReason string `json:"finish_reason"`
 		} `json:"choices"`
 		Usage struct {
@@ -105,7 +125,7 @@ func (o *OpenAIAdapter) Call(ctx context.Context, prompt Prompt) (Response, erro
 	}
 
 	return Response{
-		Content: response.Choices[0].Text,
+		Content: response.Choices[0].Message.Content,
 		Usage: UsageStats{
 			PromptTokens:     response.Usage.PromptTokens,
 			CompletionTokens: response.Usage.CompletionTokens,
@@ -120,7 +140,7 @@ func (o *OpenAIAdapter) Stream(ctx context.Context, prompt Prompt) (<-chan Token
 	ch := make(chan Token)
 	go func() {
 		defer close(ch)
-		// For now, just call Call and send the whole response as one token (OpenAI API v1/completions does not support streaming for completions endpoint)
+		// For now, just call Call and send the whole response as one token (streaming can be implemented later with SSE)
 		resp, err := o.Call(ctx, prompt)
 		if err != nil {
 			ch <- Token{Error: err}
@@ -137,8 +157,11 @@ func (o *OpenAIAdapter) Embeddings(ctx context.Context, texts []string) ([][]flo
 		return [][]float64{}, nil
 	}
 
+	// Use appropriate embedding model instead of chat model
+	embeddingModel := "text-embedding-3-small"
+	
 	requestBody, err := json.Marshal(map[string]interface{}{
-		"model": o.model,
+		"model": embeddingModel,
 		"input": texts,
 	})
 	if err != nil {

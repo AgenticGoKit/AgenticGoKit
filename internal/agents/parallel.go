@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	agentflow "github.com/kunalkushwaha/agentflow/internal/core"
+	agenticgokit "github.com/kunalkushwaha/AgenticGoKit/internal/core"
 )
 
 // ParallelAgentConfig holds configuration for ParallelAgent.
@@ -19,20 +19,20 @@ type ParallelAgentConfig struct {
 // If any agent errors, it collects the errors but allows others to complete (unless cancelled).
 type ParallelAgent struct {
 	name   string
-	agents []agentflow.Agent
+	agents []agenticgokit.Agent
 	config ParallelAgentConfig
 }
 
 // NewParallelAgent creates a new ParallelAgent.
 // It filters out any nil agents provided in the variadic agents argument.
-func NewParallelAgent(name string, config ParallelAgentConfig, agents ...agentflow.Agent) *ParallelAgent {
-	validAgents := make([]agentflow.Agent, 0, len(agents))
+func NewParallelAgent(name string, config ParallelAgentConfig, agents ...agenticgokit.Agent) *ParallelAgent {
+	validAgents := make([]agenticgokit.Agent, 0, len(agents))
 	for i, agent := range agents {
 		if agent != nil {
 			validAgents = append(validAgents, agent)
 		} else {
 			// Log a warning if a nil agent is skipped
-			agentflow.Logger().Warn().
+			agenticgokit.Logger().Warn().
 				Str("parallel_agent", name).
 				Int("index", i).
 				Msg("ParallelAgent: received a nil agent, skipping.")
@@ -51,16 +51,16 @@ func (a *ParallelAgent) Name() string {
 }
 
 // Run executes all sub-agents in parallel.
-func (a *ParallelAgent) Run(ctx context.Context, initialState agentflow.State) (agentflow.State, error) {
+func (a *ParallelAgent) Run(ctx context.Context, initialState agenticgokit.State) (agenticgokit.State, error) {
 	if len(a.agents) == 0 {
-		agentflow.Logger().Warn().
+		agenticgokit.Logger().Warn().
 			Str("parallel_agent", a.name).
 			Msg("ParallelAgent: No sub-agents to run.")
 		return initialState.Clone(), nil
 	}
 
 	var wg sync.WaitGroup
-	resultsChan := make(chan agentflow.State, len(a.agents))
+	resultsChan := make(chan agenticgokit.State, len(a.agents))
 	errChan := make(chan error, len(a.agents))
 	mergedState := initialState.Clone() // Start with a clone to merge into
 	var mergeMutex sync.Mutex           // Mutex to protect mergedState during concurrent merges
@@ -75,7 +75,7 @@ func (a *ParallelAgent) Run(ctx context.Context, initialState agentflow.State) (
 	wg.Add(len(a.agents))
 
 	for i, agent := range a.agents {
-		go func(idx int, ag agentflow.Agent) {
+		go func(idx int, ag agenticgokit.Agent) {
 			defer wg.Done()
 
 			agentInputState := initialState.Clone()
@@ -86,7 +86,7 @@ func (a *ParallelAgent) Run(ctx context.Context, initialState agentflow.State) (
 				if err == nil {
 					err = fmt.Errorf("agent '%s' cancelled: %w", ag.Name(), runCtx.Err())
 				}
-				agentflow.Logger().Warn().
+				agenticgokit.Logger().Warn().
 					Str("parallel_agent", a.name).
 					Int("agent_index", idx).
 					Str("agent_name", ag.Name()).
@@ -99,7 +99,7 @@ func (a *ParallelAgent) Run(ctx context.Context, initialState agentflow.State) (
 
 			if err != nil {
 				err = fmt.Errorf("agent '%s' error: %w", ag.Name(), err)
-				agentflow.Logger().Error().
+				agenticgokit.Logger().Error().
 					Str("parallel_agent", a.name).
 					Int("agent_index", idx).
 					Str("agent_name", ag.Name()).
@@ -145,8 +145,8 @@ func (a *ParallelAgent) Run(ctx context.Context, initialState agentflow.State) (
 	}
 
 	if len(collectedErrors) > 0 {
-		multiErr := agentflow.NewMultiError(collectedErrors)
-		agentflow.Logger().Error().
+		multiErr := agenticgokit.NewMultiError(collectedErrors)
+		agenticgokit.Logger().Error().
 			Str("parallel_agent", a.name).
 			Err(multiErr).
 			Msg("ParallelAgent: Finished with errors")

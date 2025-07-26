@@ -1,10 +1,10 @@
-module github.com/kunalkushwaha/agentflow/examples/04-rag-knowledge-base
+module github.com/kunalkushwaha/AgenticGoKit/examples/04-rag-knowledge-base
 
 go 1.21
 
 require (
-	github.com/kunalkushwaha/agentflow v0.1.0
+	github.com/kunalkushwaha/AgenticGoKit v0.3.0-preview
 	github.com/lib/pq v1.10.9
 )
 
-replace github.com/kunalkushwaha/agentflow => ../../
+replace github.com/kunalkushwaha/AgenticGoKit => ../../

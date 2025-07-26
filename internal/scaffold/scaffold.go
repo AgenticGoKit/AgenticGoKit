@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"text/template"
 
-	"github.com/kunalkushwaha/agentflow/internal/scaffold/templates"
-	"github.com/kunalkushwaha/agentflow/internal/scaffold/utils"
+	"github.com/kunalkushwaha/AgenticGoKit/internal/scaffold/templates"
+	"github.com/kunalkushwaha/AgenticGoKit/internal/scaffold/utils"
 )
 
 // CreateAgentProject creates a new AgentFlow project (alias for CreateAgentProjectModular)
@@ -80,7 +80,7 @@ func CreateAgentProjectModular(config ProjectConfig) error {
 
 // createGoMod creates the go.mod file
 func createGoMod(config ProjectConfig) error {
-	goModContent := fmt.Sprintf("module %s\n\ngo 1.21\n\nrequire github.com/kunalkushwaha/agentflow %s\n", config.Name, AgentFlowVersion)
+	goModContent := fmt.Sprintf("module %s\n\ngo 1.21\n\nrequire github.com/kunalkushwaha/AgenticGoKit %s\n", config.Name, AgenticGoKitVersion)
 	goModPath := filepath.Join(config.Name, "go.mod")
 	if err := os.WriteFile(goModPath, []byte(goModContent), 0644); err != nil {
 		return fmt.Errorf("failed to create go.mod: %w", err)
@@ -254,30 +254,30 @@ func createReadme(config ProjectConfig) error {
 
 	// Documentation and Resources section
 	content += "## 📚 Documentation & Resources\n\n"
-	content += "### AgentFlow Documentation\n"
-	content += "- **[AgentFlow Documentation](https://github.com/kunalkushwaha/agentflow/tree/main/docs)** - Complete framework documentation\n"
-	content += "- **[Agent Basics Guide](https://github.com/kunalkushwaha/agentflow/blob/main/docs/guides/AgentBasics.md)** - Understanding AgentHandler interface and patterns\n"
-	content += "- **[Configuration Guide](https://github.com/kunalkushwaha/agentflow/blob/main/docs/guides/Configuration.md)** - Managing agentflow.toml and environment setup\n"
-	content += "- **[Examples & Tutorials](https://github.com/kunalkushwaha/agentflow/blob/main/docs/guides/Examples.md)** - Practical examples and code samples\n\n"
+	content += "### AgenticGoKit Documentation\n"
+	content += "- **[AgenticGoKit Documentation](https://github.com/kunalkushwaha/AgenticGoKit/tree/main/docs)** - Complete framework documentation\n"
+	content += "- **[Agent Basics Guide](https://github.com/kunalkushwaha/AgenticGoKit/blob/main/docs/guides/AgentBasics.md)** - Understanding AgentHandler interface and patterns\n"
+	content += "- **[Configuration Guide](https://github.com/kunalkushwaha/AgenticGoKit/blob/main/docs/guides/Configuration.md)** - Managing agentflow.toml and environment setup\n"
+	content += "- **[Examples & Tutorials](https://github.com/kunalkushwaha/AgenticGoKit/blob/main/docs/guides/Examples.md)** - Practical examples and code samples\n\n"
 
 	if config.MemoryEnabled {
 		content += "### Memory & RAG Documentation\n"
-		content += "- **[Memory System Guide](https://github.com/kunalkushwaha/agentflow/blob/main/docs/guides/Memory.md)** - Complete memory implementation guide\n"
-		content += "- **[RAG Configuration Guide](https://github.com/kunalkushwaha/agentflow/blob/main/docs/guides/RAGConfiguration.md)** - RAG configuration and best practices\n"
-		content += "- **[Memory Quick Reference](https://github.com/kunalkushwaha/agentflow/blob/main/docs/memory_quick_reference.md)** - Essential memory API reference\n\n"
+		content += "- **[Memory System Guide](https://github.com/kunalkushwaha/AgenticGoKit/blob/main/docs/guides/Memory.md)** - Complete memory implementation guide\n"
+		content += "- **[RAG Configuration Guide](https://github.com/kunalkushwaha/AgenticGoKit/blob/main/docs/guides/RAGConfiguration.md)** - RAG configuration and best practices\n"
+		content += "- **[Memory Quick Reference](https://github.com/kunalkushwaha/AgenticGoKit/blob/main/docs/memory_quick_reference.md)** - Essential memory API reference\n\n"
 	}
 
 	if config.MCPEnabled {
 		content += "### MCP Integration Documentation\n"
-		content += "- **[Tool Integration Guide](https://github.com/kunalkushwaha/agentflow/blob/main/docs/guides/ToolIntegration.md)** - MCP protocol and dynamic tool discovery\n"
-		content += "- **[Custom Tools Guide](https://github.com/kunalkushwaha/agentflow/blob/main/docs/guides/CustomTools.md)** - Building your own MCP servers\n\n"
+		content += "- **[Tool Integration Guide](https://github.com/kunalkushwaha/AgenticGoKit/blob/main/docs/guides/ToolIntegration.md)** - MCP protocol and dynamic tool discovery\n"
+		content += "- **[Custom Tools Guide](https://github.com/kunalkushwaha/AgenticGoKit/blob/main/docs/guides/CustomTools.md)** - Building your own MCP servers\n\n"
 	}
 
 	content += "### Advanced Topics\n"
-	content += "- **[Multi-Agent Orchestration](https://github.com/kunalkushwaha/agentflow/blob/main/docs/multi_agent_orchestration.md)** - Advanced orchestration patterns and configuration\n"
-	content += "- **[Production Deployment](https://github.com/kunalkushwaha/agentflow/blob/main/docs/guides/Production.md)** - Scaling, monitoring, and best practices\n"
-	content += "- **[Performance Tuning](https://github.com/kunalkushwaha/agentflow/blob/main/docs/guides/Performance.md)** - Optimization and benchmarking\n"
-	content += "- **[Error Handling](https://github.com/kunalkushwaha/agentflow/blob/main/docs/guides/ErrorHandling.md)** - Resilient agent workflows\n\n"
+	content += "- **[Multi-Agent Orchestration](https://github.com/kunalkushwaha/AgenticGoKit/blob/main/docs/multi_agent_orchestration.md)** - Advanced orchestration patterns and configuration\n"
+	content += "- **[Production Deployment](https://github.com/kunalkushwaha/AgenticGoKit/blob/main/docs/guides/Production.md)** - Scaling, monitoring, and best practices\n"
+	content += "- **[Performance Tuning](https://github.com/kunalkushwaha/AgenticGoKit/blob/main/docs/guides/Performance.md)** - Optimization and benchmarking\n"
+	content += "- **[Error Handling](https://github.com/kunalkushwaha/AgenticGoKit/blob/main/docs/guides/ErrorHandling.md)** - Resilient agent workflows\n\n"
 
 	// Troubleshooting section
 	content += "## 🔧 Troubleshooting\n\n"
@@ -315,9 +315,9 @@ func createReadme(config ProjectConfig) error {
 	}
 
 	content += "### Getting Help\n\n"
-	content += "- **[GitHub Issues](https://github.com/kunalkushwaha/agentflow/issues)** - Report bugs and request features\n"
-	content += "- **[Discussions](https://github.com/kunalkushwaha/agentflow/discussions)** - Community support and questions\n"
-	content += "- **[Documentation](https://github.com/kunalkushwaha/agentflow/tree/main/docs)** - Comprehensive guides and API reference\n\n"
+	content += "- **[GitHub Issues](https://github.com/kunalkushwaha/AgenticGoKit/issues)** - Report bugs and request features\n"
+	content += "- **[Discussions](https://github.com/kunalkushwaha/AgenticGoKit/discussions)** - Community support and questions\n"
+	content += "- **[Documentation](https://github.com/kunalkushwaha/AgenticGoKit/tree/main/docs)** - Comprehensive guides and API reference\n\n"
 
 	// Project Structure section
 	content += "## 📁 Project Structure\n\n"
@@ -356,10 +356,10 @@ func createReadme(config ProjectConfig) error {
 		content += "3. **Add Tools**: Configure additional MCP tools for enhanced capabilities\n"
 	}
 	content += fmt.Sprintf("%d. **Scale Up**: Add more agents or modify orchestration patterns as needed\n", 3 + (func() int { count := 0; if config.MemoryEnabled { count++; if config.RAGEnabled { count++ } }; if config.MCPEnabled { count++ }; return count })())
-	content += fmt.Sprintf("%d. **Deploy**: Follow the [Production Guide](https://github.com/kunalkushwaha/agentflow/blob/main/docs/guides/Production.md) for deployment\n\n", 4 + (func() int { count := 0; if config.MemoryEnabled { count++; if config.RAGEnabled { count++ } }; if config.MCPEnabled { count++ }; return count })())
+	content += fmt.Sprintf("%d. **Deploy**: Follow the [Production Guide](https://github.com/kunalkushwaha/AgenticGoKit/blob/main/docs/guides/Production.md) for deployment\n\n", 4 + (func() int { count := 0; if config.MemoryEnabled { count++; if config.RAGEnabled { count++ } }; if config.MCPEnabled { count++ }; return count })())
 
 	content += "---\n\n"
-	content += "*Generated with ❤️ by [AgentFlow](https://github.com/kunalkushwaha/agentflow)*\n"
+	content += "*Generated with ❤️ by [AgenticGoKit](https://github.com/kunalkushwaha/AgenticGoKit)*\n"
 
 	readmePath := filepath.Join(config.Name, "README.md")
 	if err := os.WriteFile(readmePath, []byte(content), 0644); err != nil {

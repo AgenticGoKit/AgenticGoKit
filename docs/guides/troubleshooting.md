@@ -947,8 +947,8 @@ func main() {
 
 ### Community Resources
 
-- **[GitHub Issues](https://github.com/kunalkushwaha/agentflow/issues)** - Bug reports and feature requests
-- **[GitHub Discussions](https://github.com/kunalkushwaha/agentflow/discussions)** - Questions and community help
+- **[GitHub Issues](https://github.com/kunalkushwaha/AgenticGoKit/issues)** - Bug reports and feature requests
+- **[GitHub Discussions](https://github.com/kunalkushwaha/AgenticGoKit/discussions)** - Questions and community help
 - **[Discord Community](https://discord.gg/agenticgokit)** - Real-time chat and support
 
 ### Issue Template

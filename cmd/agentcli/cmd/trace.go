@@ -16,7 +16,7 @@ import (
 	"text/tabwriter"
 	"time"
 
-	agentflow "github.com/kunalkushwaha/agentflow/core" // Import core types
+	agenticgokit "github.com/kunalkushwaha/AgenticGoKit/core" // Import core types
 
 	"github.com/spf13/cobra"
 )
@@ -134,21 +134,21 @@ func displayTrace(sessionID, filter string) {
 		os.Exit(1)
 	}
 
-	// Convert to agentflow.TraceEntry
-	var traceEntries []agentflow.TraceEntry
+	// Convert to agenticgokit.TraceEntry
+	var traceEntries []agenticgokit.TraceEntry
 	for _, je := range jsonEntries {
-		entry := agentflow.TraceEntry{
+		entry := agenticgokit.TraceEntry{
 			Timestamp: je.Timestamp,
 			EventID:   je.EventID,
 			SessionID: je.SessionID,
 			AgentID:   je.AgentID,
-			Hook:      agentflow.HookPoint(je.Hook),
+			Hook:      agenticgokit.HookPoint(je.Hook),
 			Error:     je.Error,
 		}
 
 		// Extract data from direct state (rare in this trace format but handle it)
 		if je.State != nil && je.State.Data != nil {
-			state := agentflow.NewState()
+			state := agenticgokit.NewState()
 			for k, v := range je.State.Data {
 				if v != nil {
 					state.Set(k, v)
@@ -170,7 +170,7 @@ func displayTrace(sessionID, filter string) {
 			// Create new state if needed, or use existing
 			state := entry.State
 			if state == nil {
-				state = agentflow.NewState()
+				state = agenticgokit.NewState()
 			}
 
 			// Add data from output_state
@@ -196,12 +196,12 @@ func displayTrace(sessionID, filter string) {
 
 		// Convert AgentResult if present
 		if je.AgentResult != nil {
-			agentResult := &agentflow.AgentResult{
+			agentResult := &agenticgokit.AgentResult{
 				Error: je.AgentResult.Error,
 			}
 
 			if je.AgentResult.OutputState != nil {
-				outputState := agentflow.NewState()
+				outputState := agenticgokit.NewState()
 				for k, v := range je.AgentResult.OutputState.Data {
 					outputState.Set(k, v)
 				}
@@ -218,7 +218,7 @@ func displayTrace(sessionID, filter string) {
 	}
 
 	// Apply filters
-	var filteredEntries []agentflow.TraceEntry
+	var filteredEntries []agenticgokit.TraceEntry
 	filterAgentName := ""
 	if strings.HasPrefix(filter, "agent=") {
 		filterAgentName = strings.TrimPrefix(filter, "agent=")
@@ -288,7 +288,7 @@ func displayTrace(sessionID, filter string) {
 // Add these new helper functions for table display
 
 // printFormattedTable prints a visually appealing boxed table with proper truncation
-func printFormattedTable(entries []agentflow.TraceEntry) {
+func printFormattedTable(entries []agenticgokit.TraceEntry) {
 	// Define column widths for balanced display
 	const (
 		timeWidth  = 19 // Fixed width for timestamp (15:04:05.000)
@@ -366,7 +366,7 @@ func truncateString(s string, width int) string {
 }
 
 // printVerboseTable displays full details with potential line wrapping
-func printVerboseTable(entries []agentflow.TraceEntry) {
+func printVerboseTable(entries []agenticgokit.TraceEntry) {
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 	fmt.Fprintln(w, "TIMESTAMP\tHOOK\tAGENT\tSTATE\tERROR")
 	fmt.Fprintln(w, "---------\t----\t-----\t-----\t-----")
@@ -394,7 +394,7 @@ func printVerboseTable(entries []agentflow.TraceEntry) {
 }
 
 // verboseStateSummary provides a complete state dump for verbose mode
-func verboseStateSummary(s agentflow.State) string {
+func verboseStateSummary(s agenticgokit.State) string {
 	if s == nil {
 		return "-"
 	}
@@ -432,7 +432,7 @@ func safeErrorMsgCLI(errMsg *string) string {
 }
 
 // stateSummary provides a brief summary of state for table view
-func stateSummary(s agentflow.State) string {
+func stateSummary(s agenticgokit.State) string {
 	if s == nil {
 		return "-" // Return dash for nil state
 	}

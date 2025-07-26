@@ -1,7 +1,7 @@
 package scaffold
 
-// AgentFlowVersion represents the version of AgentFlow to use in generated projects
-const AgentFlowVersion = "v0.3.0-preview"
+// AgenticGoKitVersion represents the version of AgenticGoKit to use in generated projects
+const AgenticGoKitVersion = "v0.3.2"
 
 // AgentInfo represents information about an agent including its name and purpose
 type AgentInfo struct {
@@ -12,7 +12,7 @@ type AgentInfo struct {
 	Role        string // Agent role like "collaborative", "sequential", "loop"
 }
 
-// ProjectConfig represents the configuration for creating a new AgentFlow project
+// ProjectConfig represents the configuration for creating a new AgenticGoKit project
 type ProjectConfig struct {
 	Name          string
 	NumAgents     int

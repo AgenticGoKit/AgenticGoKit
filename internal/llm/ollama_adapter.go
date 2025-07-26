@@ -13,10 +13,11 @@ import (
 
 // OllamaAdapter implements the LLMAdapter interface for Ollama's API.
 type OllamaAdapter struct {
-	baseURL     string
-	model       string
-	maxTokens   int
-	temperature float32
+	baseURL        string
+	model          string
+	embeddingModel string
+	maxTokens      int
+	temperature    float32
 }
 
 // NewOllamaAdapter creates a new OllamaAdapter instance.
@@ -26,7 +27,7 @@ func NewOllamaAdapter(baseURL, model string, maxTokens int, temperature float32)
 		baseURL = "http://localhost:11434"
 	}
 	if model == "" {
-		model = "gemma3:latest" // Replace with Ollama's default model
+		model = "llama3.2:latest" // Use llama3.2 as default - good general purpose model
 	}
 	if maxTokens == 0 {
 		maxTokens = 150 // Default max tokens
@@ -36,11 +37,19 @@ func NewOllamaAdapter(baseURL, model string, maxTokens int, temperature float32)
 	}
 
 	return &OllamaAdapter{
-		baseURL:     baseURL,
-		model:       model,
-		maxTokens:   maxTokens,
-		temperature: temperature,
+		baseURL:        baseURL,
+		model:          model,
+		embeddingModel: "nomic-embed-text:latest", // Default embedding model
+		maxTokens:      maxTokens,
+		temperature:    temperature,
 	}, nil
+}
+
+// SetEmbeddingModel allows setting a custom embedding model for the adapter
+func (o *OllamaAdapter) SetEmbeddingModel(model string) {
+	if model != "" {
+		o.embeddingModel = model
+	}
 }
 
 // Call implements the ModelProvider interface for a single request/response.
@@ -64,10 +73,19 @@ if prompt.Parameters.Temperature != nil && *prompt.Parameters.Temperature > 0 {
 	finalTemperature = o.temperature
 }
 
+	// Build messages array
+	messages := []map[string]string{}
+	if prompt.System != "" {
+		messages = append(messages, map[string]string{"role": "system", "content": prompt.System})
+	}
+	if prompt.User != "" {
+		messages = append(messages, map[string]string{"role": "user", "content": prompt.User})
+	}
+
 	// Prepare the request payload
 	requestBody := map[string]interface{}{
 		"model":       o.model,
-		"messages":    []map[string]string{{"role": "system", "content": prompt.System}, {"role": "user", "content": prompt.User}},
+		"messages":    messages,
 		"max_tokens":  finalMaxTokens,
 		"temperature": finalTemperature,
 		"stream":      false,
@@ -119,5 +137,62 @@ func (o *OllamaAdapter) Stream(ctx context.Context, prompt Prompt) (<-chan Token
 
 // Embeddings implements the ModelProvider interface for generating embeddings.
 func (o *OllamaAdapter) Embeddings(ctx context.Context, texts []string) ([][]float64, error) {
-	return nil, errors.New("embeddings not supported by OllamaAdapter")
+	if len(texts) == 0 {
+		return [][]float64{}, nil
+	}
+
+	// Use the configured embedding model
+	// Common embedding models in Ollama: nomic-embed-text, all-minilm, mxbai-embed-large
+	embeddingModel := o.embeddingModel
+	
+	embeddings := make([][]float64, len(texts))
+	
+	// Process each text individually as Ollama embeddings API typically handles one at a time
+	for i, text := range texts {
+		requestBody := map[string]interface{}{
+			"model":  embeddingModel,
+			"prompt": text,
+		}
+
+		payload, err := json.Marshal(requestBody)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal request body for text %d: %w", i, err)
+		}
+
+		// Make the HTTP request with timeout
+		client := &http.Client{
+			Timeout: 30 * time.Second,
+		}
+		req, err := http.NewRequestWithContext(ctx, "POST", fmt.Sprintf("%s/api/embeddings", o.baseURL), bytes.NewBuffer(payload))
+		if err != nil {
+			return nil, fmt.Errorf("failed to create HTTP request for text %d: %w", i, err)
+		}
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := client.Do(req)
+		if err != nil {
+			return nil, fmt.Errorf("HTTP request failed for text %d: %w", i, err)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			body, _ := ioutil.ReadAll(resp.Body)
+			return nil, fmt.Errorf("Ollama embeddings API error for text %d: %s", i, string(body))
+		}
+
+		var apiResp struct {
+			Embedding []float64 `json:"embedding"`
+		}
+		if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
+			return nil, fmt.Errorf("failed to decode embeddings response for text %d: %w", i, err)
+		}
+
+		if len(apiResp.Embedding) == 0 {
+			return nil, fmt.Errorf("empty embedding returned for text %d", i)
+		}
+
+		embeddings[i] = apiResp.Embedding
+	}
+
+	return embeddings, nil
 }
