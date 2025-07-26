@@ -1,4 +1,4 @@
-module github.com/kunalkushwaha/AgenticGoKit
+module github.com/kunalkushwaha/agenticgokit
 
 go 1.24.1
 
