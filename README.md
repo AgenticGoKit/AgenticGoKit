@@ -1,5 +1,4 @@
  ## ⚠️ This project was renamed from `agentflow` to `agenticgokit`. Please update your references. 
- - Name references within project will be updated soon 
 
 
 
