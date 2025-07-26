@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/kunalkushwaha/agentflow/core"
+	"github.com/kunalkushwaha/AgenticGoKit/core"
 )
 
 func TestMemoryDebugger_ShowOverview(t *testing.T) {

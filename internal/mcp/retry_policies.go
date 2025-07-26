@@ -8,7 +8,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/kunalkushwaha/agentflow/core"
+	"github.com/kunalkushwaha/AgenticGoKit/core"
 	"github.com/rs/zerolog"
 )
 

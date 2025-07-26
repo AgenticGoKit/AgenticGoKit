@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"log"
 
-	agentflow "github.com/kunalkushwaha/agentflow/internal/core" // Import core types
+	agenticgokit "github.com/kunalkushwaha/AgenticGoKit/internal/core" // Import core types
 )
 
 // FallbackVectorMemory implements the agentflow.VectorMemory interface by attempting

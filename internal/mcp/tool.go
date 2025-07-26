@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kunalkushwaha/agentflow/core"
+	"github.com/kunalkushwaha/AgenticGoKit/core"
 	"github.com/kunalkushwaha/mcp-navigator-go/pkg/client"
 	"github.com/kunalkushwaha/mcp-navigator-go/pkg/mcp"
 )

@@ -5,8 +5,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/kunalkushwaha/agentflow/core"
-	"github.com/kunalkushwaha/agentflow/internal/tools"
+	"github.com/kunalkushwaha/AgenticGoKit/core"
+	"github.com/kunalkushwaha/AgenticGoKit/internal/tools"
 )
 
 // NewMCPManager creates a new MCP manager with the given configuration.

@@ -65,7 +65,7 @@ package main
 import (
     "context"
     "fmt"
-    agentflow "github.com/kunalkushwaha/agentflow/core"
+    agenticgokit "github.com/kunalkushwaha/AgenticGoKit/core"
 )
 
 type ToolEnabledAgent struct {

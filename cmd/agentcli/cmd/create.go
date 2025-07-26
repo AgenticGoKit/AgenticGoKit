@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/kunalkushwaha/agentflow/internal/scaffold"
+	"github.com/kunalkushwaha/AgenticGoKit/internal/scaffold"
 	"github.com/spf13/cobra"
 )
 

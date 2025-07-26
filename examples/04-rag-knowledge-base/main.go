@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kunalkushwaha/agentflow/core"
-	"github.com/kunalkushwaha/agentflow/examples/04-rag-knowledge-base/agents"
-	"github.com/kunalkushwaha/agentflow/examples/04-rag-knowledge-base/services"
+	"github.com/kunalkushwaha/AgenticGoKit/core"
+	"github.com/kunalkushwaha/AgenticGoKit/examples/04-rag-knowledge-base/agents"
+	"github.com/kunalkushwaha/AgenticGoKit/examples/04-rag-knowledge-base/services"
 )
 
 func main() {

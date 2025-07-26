@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	agentflow "github.com/kunalkushwaha/agentflow/internal/core"
+	agenticgokit "github.com/kunalkushwaha/AgenticGoKit/internal/core"
 )
 
 // --- Test Helper Agents ---

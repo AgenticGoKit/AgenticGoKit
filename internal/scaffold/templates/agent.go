@@ -7,28 +7,28 @@ import (
 	"fmt"
 	"strings"
 
-	agentflow "github.com/kunalkushwaha/agentflow/core"
+	agenticgokit "github.com/kunalkushwaha/AgenticGoKit/core"
 )
 
 // {{.Agent.DisplayName}}Handler represents the {{.Agent.Name}} agent handler
 // Purpose: {{.Agent.Purpose}}
 type {{.Agent.DisplayName}}Handler struct {
-	llm    agentflow.ModelProvider
-	{{if .Config.MemoryEnabled}}memory agentflow.Memory{{end}}
+	llm    agenticgokit.ModelProvider
+	{{if .Config.MemoryEnabled}}memory agenticgokit.Memory{{end}}
 }
 
 // New{{.Agent.DisplayName}} creates a new {{.Agent.DisplayName}} instance
-func New{{.Agent.DisplayName}}(llmProvider agentflow.ModelProvider{{if .Config.MemoryEnabled}}, memory agentflow.Memory{{end}}) *{{.Agent.DisplayName}}Handler {
+func New{{.Agent.DisplayName}}(llmProvider agenticgokit.ModelProvider{{if .Config.MemoryEnabled}}, memory agenticgokit.Memory{{end}}) *{{.Agent.DisplayName}}Handler {
 	return &{{.Agent.DisplayName}}Handler{
 		llm: llmProvider,
 		{{if .Config.MemoryEnabled}}memory: memory,{{end}}
 	}
 }
 
-// Run implements the agentflow.AgentHandler interface
-func (a *{{.Agent.DisplayName}}Handler) Run(ctx context.Context, event agentflow.Event, state agentflow.State) (agentflow.AgentResult, error) {
+// Run implements the agenticgokit.AgentHandler interface
+func (a *{{.Agent.DisplayName}}Handler) Run(ctx context.Context, event agenticgokit.Event, state agenticgokit.State) (agenticgokit.AgentResult, error) {
 	// Get logger for debug output
-	logger := agentflow.Logger()
+	logger := agenticgokit.Logger()
 	logger.Debug().Str("agent", "{{.Agent.Name}}").Str("event_id", event.GetID()).Msg("Agent processing started")
 	
 	var inputToProcess interface{}
@@ -82,11 +82,11 @@ func (a *{{.Agent.DisplayName}}Handler) Run(ctx context.Context, event agentflow
 	
 	// Get available MCP tools to include in prompt
 	var toolsPrompt string
-	mcpManager := agentflow.GetMCPManager()
+	mcpManager := agenticgokit.GetMCPManager()
 	if mcpManager != nil {
 		availableTools := mcpManager.GetAvailableTools()
 		logger.Debug().Str("agent", "{{.Agent.Name}}").Int("tool_count", len(availableTools)).Msg("MCP Tools discovered")
-		toolsPrompt = agentflow.FormatToolsPromptForLLM(availableTools)
+		toolsPrompt = agenticgokit.FormatToolsPromptForLLM(availableTools)
 	} else {
 		logger.Warn().Str("agent", "{{.Agent.Name}}").Msg("MCP Manager is not available")
 	}
@@ -111,8 +111,8 @@ func (a *{{.Agent.DisplayName}}Handler) Run(ctx context.Context, event agentflow
 		{{if .Config.RAGEnabled}}
 		// Build RAG context from knowledge base with error handling
 		ragContext, err := a.memory.BuildContext(ctx, fmt.Sprintf("%v", inputToProcess),
-			agentflow.WithMaxTokens({{.Config.RAGChunkSize}}),
-			agentflow.WithIncludeSources(true))
+			agenticgokit.WithMaxTokens({{.Config.RAGChunkSize}}),
+			agenticgokit.WithIncludeSources(true))
 		if err != nil {
 			logger.Warn().Str("agent", "{{.Agent.Name}}").Err(err).Msg("Failed to build RAG context - continuing without knowledge base context")
 		} else if ragContext != nil && ragContext.ContextText != "" {
@@ -164,7 +164,7 @@ func (a *{{.Agent.DisplayName}}Handler) Run(ctx context.Context, event agentflow
 	userPrompt += memoryContext
 	{{end}}
 	
-	prompt := agentflow.Prompt{
+	prompt := agenticgokit.Prompt{
 		System: systemPrompt,
 		User:   userPrompt,
 	}
@@ -175,13 +175,13 @@ func (a *{{.Agent.DisplayName}}Handler) Run(ctx context.Context, event agentflow
 	// Call LLM to get initial response and potential tool calls
 	response, err := a.llm.Call(ctx, prompt)
 	if err != nil {
-		return agentflow.AgentResult{}, fmt.Errorf("{{.Agent.DisplayName}} LLM call failed: %w", err)
+		return agenticgokit.AgentResult{}, fmt.Errorf("{{.Agent.DisplayName}} LLM call failed: %w", err)
 	}
 	
 	logger.Debug().Str("agent", "{{.Agent.Name}}").Str("response", response.Content).Msg("Initial LLM response received")
 	
 	// Parse LLM response for tool calls using core function
-	toolCalls := agentflow.ParseLLMToolCalls(response.Content)
+	toolCalls := agenticgokit.ParseLLMToolCalls(response.Content)
 	var mcpResults []string
 	
 	// Debug: Log the LLM response to see tool call format
@@ -208,7 +208,7 @@ func (a *{{.Agent.DisplayName}}Handler) Run(ctx context.Context, event agentflow
 				logger.Info().Str("agent", "{{.Agent.Name}}").Str("tool_name", toolName).Interface("args", args).Msg("Executing tool as requested by LLM")
 				
 				// Execute tool using the global ExecuteMCPTool function
-				result, err := agentflow.ExecuteMCPTool(ctx, toolName, args)
+				result, err := agenticgokit.ExecuteMCPTool(ctx, toolName, args)
 				if err != nil {
 					logger.Error().Str("agent", "{{.Agent.Name}}").Str("tool_name", toolName).Err(err).Msg("Tool execution failed")
 					mcpResults = append(mcpResults, fmt.Sprintf("Tool '%s' failed: %v", toolName, err))
@@ -240,7 +240,7 @@ func (a *{{.Agent.DisplayName}}Handler) Run(ctx context.Context, event agentflow
 	var finalResponse string
 	if len(mcpResults) > 0 {
 		// Create enhanced prompt with tool results
-		enhancedPrompt := agentflow.Prompt{
+		enhancedPrompt := agenticgokit.Prompt{
 			System: systemPrompt,
 			User:   fmt.Sprintf("Original query: %v\n\nTool results:\n%s\n\nPlease provide a comprehensive response incorporating these tool results:", inputToProcess, strings.Join(mcpResults, "\n")),
 		}
@@ -248,7 +248,7 @@ func (a *{{.Agent.DisplayName}}Handler) Run(ctx context.Context, event agentflow
 		// Get final response from LLM
 		finalLLMResponse, err := a.llm.Call(ctx, enhancedPrompt)
 		if err != nil {
-			return agentflow.AgentResult{}, fmt.Errorf("{{.Agent.DisplayName}} final LLM call failed: %w", err)
+			return agenticgokit.AgentResult{}, fmt.Errorf("{{.Agent.DisplayName}} final LLM call failed: %w", err)
 		}
 		finalResponse = finalLLMResponse.Content
 		logger.Info().Str("agent", "{{.Agent.Name}}").Str("final_response", finalResponse).Msg("Final response generated with tool results")
@@ -258,7 +258,7 @@ func (a *{{.Agent.DisplayName}}Handler) Run(ctx context.Context, event agentflow
 	}
 	
 	// Store agent response in state for potential use by subsequent agents
-	outputState := agentflow.NewState()
+	outputState := agenticgokit.NewState()
 	outputState.Set("{{.Agent.Name}}_response", finalResponse)
 	outputState.Set("message", finalResponse)
 	
@@ -289,14 +289,14 @@ func (a *{{.Agent.DisplayName}}Handler) Run(ctx context.Context, event agentflow
 	
 	{{if .NextAgent}}
 	// {{.RoutingComment}}
-	outputState.SetMeta(agentflow.RouteMetadataKey, "{{.NextAgent}}")
+	outputState.SetMeta(agenticgokit.RouteMetadataKey, "{{.NextAgent}}")
 	{{else}}
 	// Workflow completion
 	{{end}}
 	
 	logger.Info().Str("agent", "{{.Agent.Name}}").Msg("Agent processing completed successfully")
 	
-	return agentflow.AgentResult{
+	return agenticgokit.AgentResult{
 		OutputState: outputState,
 	}, nil
 }

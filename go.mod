@@ -1,4 +1,4 @@
-module github.com/kunalkushwaha/agentflow
+module github.com/kunalkushwaha/AgenticGoKit
 
 go 1.24.1
 
@@ -8,7 +8,6 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.7.5
 	github.com/kunalkushwaha/mcp-navigator-go v0.0.1
-	github.com/lib/pq v1.10.9
 	github.com/pgvector/pgvector-go v0.3.0
 	github.com/prometheus/client_golang v1.22.0
 	github.com/rs/zerolog v1.34.0

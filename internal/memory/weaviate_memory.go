@@ -7,7 +7,7 @@ import (
 	"log"
 	"strings"
 
-	agentflow "github.com/kunalkushwaha/agentflow/internal/core" // Import core types
+	agenticgokit "github.com/kunalkushwaha/AgenticGoKit/internal/core" // Import core types
 
 	"github.com/weaviate/weaviate-go-client/v4/weaviate"
 	"github.com/weaviate/weaviate-go-client/v4/weaviate/auth"

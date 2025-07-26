@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	agentflow "github.com/kunalkushwaha/agentflow/core"
+	agenticgokit "github.com/kunalkushwaha/AgenticGoKit/core"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

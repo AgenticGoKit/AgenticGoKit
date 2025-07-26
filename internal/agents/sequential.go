@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	agentflow "github.com/kunalkushwaha/agentflow/internal/core"
+	agenticgokit "github.com/kunalkushwaha/AgenticGoKit/internal/core"
 )
 
 // SequentialAgent runs a series of sub-agents one after another.
 type SequentialAgent struct {
 	name   string
-	agents []agentflow.Agent
+	agents []agenticgokit.Agent
 }
 
 // Name returns the name of the sequential agent.
@@ -20,11 +20,11 @@ func (a *SequentialAgent) Name() string {
 
 // NewSequentialAgent creates a new SequentialAgent.
 // It filters out any nil agents provided in the list.
-func NewSequentialAgent(name string, agents ...agentflow.Agent) *SequentialAgent {
-	validAgents := make([]agentflow.Agent, 0, len(agents))
+func NewSequentialAgent(name string, agents ...agenticgokit.Agent) *SequentialAgent {
+	validAgents := make([]agenticgokit.Agent, 0, len(agents))
 	for i, agent := range agents {
 		if agent == nil {
-			agentflow.Logger().Warn().
+			agenticgokit.Logger().Warn().
 				Str("sequential_agent", name).
 				Int("index", i).
 				Msg("SequentialAgent: received a nil agent, skipping.")
@@ -41,9 +41,9 @@ func NewSequentialAgent(name string, agents ...agentflow.Agent) *SequentialAgent
 // Run executes the sequence of sub-agents.
 // It iterates through the configured agents, passing state sequentially.
 // Execution halts immediately if a sub-agent returns an error or if the context is cancelled.
-func (s *SequentialAgent) Run(ctx context.Context, initialState agentflow.State) (agentflow.State, error) {
+func (s *SequentialAgent) Run(ctx context.Context, initialState agenticgokit.State) (agenticgokit.State, error) {
 	if len(s.agents) == 0 {
-		agentflow.Logger().Warn().
+		agenticgokit.Logger().Warn().
 			Str("sequential_agent", s.name).
 			Msg("SequentialAgent: No sub-agents to run.")
 		return initialState, nil // Return input state if no agents
@@ -56,7 +56,7 @@ func (s *SequentialAgent) Run(ctx context.Context, initialState agentflow.State)
 		// Check for context cancellation before running each sub-agent
 		select {
 		case <-ctx.Done():
-			agentflow.Logger().Warn().
+			agenticgokit.Logger().Warn().
 				Str("sequential_agent", s.name).
 				Int("agent_index", i).
 				Msg("SequentialAgent: Context cancelled before running agent.")
@@ -74,7 +74,7 @@ func (s *SequentialAgent) Run(ctx context.Context, initialState agentflow.State)
 		outputState, agentErr := agent.Run(ctx, inputState)
 		if agentErr != nil {
 			err = fmt.Errorf("SequentialAgent '%s': error in sub-agent %d: %w", s.name, i, agentErr)
-			agentflow.Logger().Error().
+			agenticgokit.Logger().Error().
 				Str("sequential_agent", s.name).
 				Int("agent_index", i).
 				Err(agentErr).
