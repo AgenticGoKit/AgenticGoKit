@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	agenticgokit "github.com/kunalkushwaha/AgenticGoKit/internal/core"
+	agenticgokit "github.com/kunalkushwaha/agenticgokit/internal/core"
 )
 
 // MockOrchestrator for testing handler interactions

@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"text/template"
 
-	"github.com/kunalkushwaha/AgenticGoKit/internal/scaffold/templates"
-	"github.com/kunalkushwaha/AgenticGoKit/internal/scaffold/utils"
+	"github.com/kunalkushwaha/agenticgokit/internal/scaffold/templates"
+	"github.com/kunalkushwaha/agenticgokit/internal/scaffold/utils"
 )
 
 // Use types from the utils package for consistency

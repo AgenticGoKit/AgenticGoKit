@@ -6,10 +6,10 @@ import (
 	"log"
 	"os"
 
-	"github.com/kunalkushwaha/AgenticGoKit/core"
-	"github.com/kunalkushwaha/AgenticGoKit/internal/llm"
-	"github.com/kunalkushwaha/AgenticGoKit/internal/mcp" // Import the MCP package
-	"github.com/kunalkushwaha/AgenticGoKit/internal/tools"
+	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/kunalkushwaha/agenticgokit/internal/llm"
+	"github.com/kunalkushwaha/agenticgokit/internal/mcp" // Import the MCP package
+	"github.com/kunalkushwaha/agenticgokit/internal/tools"
 )
 
 // RunnerConfig allows customization but provides sensible defaults.

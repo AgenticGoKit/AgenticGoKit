@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"sync"
 
-	agenticgokit "github.com/kunalkushwaha/AgenticGoKit/internal/core"
+	agenticgokit "github.com/kunalkushwaha/agenticgokit/internal/core"
 )
 
 // RouteMetadataKey is the key used in event metadata to specify a target handler name.

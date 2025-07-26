@@ -8,7 +8,7 @@ import (
 	"sync"
 	"testing"
 
-	agenticgokit "github.com/kunalkushwaha/AgenticGoKit/internal/core"
+	agenticgokit "github.com/kunalkushwaha/agenticgokit/internal/core"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

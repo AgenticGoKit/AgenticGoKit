@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	agenticgokit "github.com/kunalkushwaha/AgenticGoKit/internal/core"
+	agenticgokit "github.com/kunalkushwaha/agenticgokit/internal/core"
 )
 
 // defaultMaxIterations is the default limit if LoopAgentConfig.MaxIterations is not set.

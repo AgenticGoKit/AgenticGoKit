@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kunalkushwaha/AgenticGoKit/core"
+	"github.com/kunalkushwaha/agenticgokit/core"
 )
 
 // CacheManager implements MCPCacheManager and manages cache instances for MCP tools.

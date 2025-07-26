@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/kunalkushwaha/AgenticGoKit/core"
+	"github.com/kunalkushwaha/agenticgokit/core"
 )
 
 func TestMemoryDebugger_ShowOverview(t *testing.T) {

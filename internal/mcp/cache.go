@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kunalkushwaha/AgenticGoKit/core"
+	"github.com/kunalkushwaha/agenticgokit/core"
 )
 
 // MemoryCache implements MCPCache using in-memory storage with LRU eviction.
