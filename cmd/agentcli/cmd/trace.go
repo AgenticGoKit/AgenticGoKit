@@ -16,7 +16,7 @@ import (
 	"text/tabwriter"
 	"time"
 
-	agenticgokit "github.com/kunalkushwaha/AgenticGoKit/core" // Import core types
+	agenticgokit "github.com/kunalkushwaha/agenticgokit/core" // Import core types
 
 	"github.com/spf13/cobra"
 )

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	agenticgokit "github.com/kunalkushwaha/AgenticGoKit/internal/core"
+	agenticgokit "github.com/kunalkushwaha/agenticgokit/internal/core"
 )
 
 // SequentialAgent runs a series of sub-agents one after another.

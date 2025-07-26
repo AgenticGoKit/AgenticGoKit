@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kunalkushwaha/AgenticGoKit/internal/llm"
+	"github.com/kunalkushwaha/agenticgokit/internal/llm"
 )
 
 // AzureOpenAIAdapterOptions holds configuration for Azure OpenAI adapter

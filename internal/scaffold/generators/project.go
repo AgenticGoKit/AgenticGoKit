@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"text/template"
 
-	"github.com/kunalkushwaha/AgenticGoKit/internal/scaffold"
-	"github.com/kunalkushwaha/AgenticGoKit/internal/scaffold/templates"
-	"github.com/kunalkushwaha/AgenticGoKit/internal/scaffold/utils"
+	"github.com/kunalkushwaha/agenticgokit/internal/scaffold"
+	"github.com/kunalkushwaha/agenticgokit/internal/scaffold/templates"
+	"github.com/kunalkushwaha/agenticgokit/internal/scaffold/utils"
 )
 
 // ProjectGenerator handles the generation of project structure and main files
@@ -61,7 +61,7 @@ func (g *ProjectGenerator) GenerateProjectStructure(config scaffold.ProjectConfi
 
 // generateGoMod creates the go.mod file
 func (g *ProjectGenerator) generateGoMod(config scaffold.ProjectConfig) error {
-	goModContent := fmt.Sprintf("module %s\n\ngo 1.21\n\nrequire github.com/kunalkushwaha/AgenticGoKit %s\n", config.Name, scaffold.AgenticGoKitVersion)
+	goModContent := fmt.Sprintf("module %s\n\ngo 1.21\n\nrequire github.com/kunalkushwaha/agenticgokit %s\n", config.Name, scaffold.AgenticGoKitVersion)
 	goModPath := filepath.Join(config.Name, "go.mod")
 	if err := os.WriteFile(goModPath, []byte(goModContent), 0644); err != nil {
 		return fmt.Errorf("failed to create go.mod: %w", err)

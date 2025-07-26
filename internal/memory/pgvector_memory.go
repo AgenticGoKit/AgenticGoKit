@@ -8,7 +8,7 @@ import (
 	"log"
 	"strings"
 
-	agenticgokit "github.com/kunalkushwaha/AgenticGoKit/internal/core" // Import core types
+	agenticgokit "github.com/kunalkushwaha/agenticgokit/internal/core" // Import core types
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pgvector/pgvector-go"

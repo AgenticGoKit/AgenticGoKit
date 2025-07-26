@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"sync"
 
-	agenticgokit "github.com/kunalkushwaha/AgenticGoKit/internal/core"
+	agenticgokit "github.com/kunalkushwaha/agenticgokit/internal/core"
 )
 
 // CollaborativeOrchestrator dispatches events to all registered handlers concurrently.

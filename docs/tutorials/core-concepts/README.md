@@ -130,7 +130,7 @@ import (
     "fmt"
     "log"
     
-    "github.com/kunalkushwaha/AgenticGoKit/core"
+    "github.com/kunalkushwaha/Agenticgokit/core"
 )
 
 // Simple agent implementation

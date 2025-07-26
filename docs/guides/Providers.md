@@ -56,7 +56,7 @@ export AZURE_OPENAI_DEPLOYMENT="gpt-4"
 
 **Programmatic configuration:**
 ```go
-import agenticgokit "github.com/kunalkushwaha/AgenticGoKit/core"
+import agenticgokit "github.com/kunalkushwaha/Agenticgokit/core"
 
 config := agenticgokit.AzureConfig{
     APIKey:     "your-api-key",

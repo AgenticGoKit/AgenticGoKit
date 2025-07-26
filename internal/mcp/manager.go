@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kunalkushwaha/AgenticGoKit/core"
-	"github.com/kunalkushwaha/AgenticGoKit/internal/tools"
+	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/kunalkushwaha/agenticgokit/internal/tools"
 	"github.com/kunalkushwaha/mcp-navigator-go/pkg/client"
 	"github.com/kunalkushwaha/mcp-navigator-go/pkg/discovery"
 	"github.com/kunalkushwaha/mcp-navigator-go/pkg/mcp"

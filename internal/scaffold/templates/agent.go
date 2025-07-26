@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	agenticgokit "github.com/kunalkushwaha/AgenticGoKit/core"
+	agenticgokit "github.com/kunalkushwaha/agenticgokit/core"
 )
 
 // {{.Agent.DisplayName}}Handler represents the {{.Agent.Name}} agent handler
