@@ -28,6 +28,11 @@ func CreateAgentProjectModular(config ProjectConfig) error {
 	}
 	fmt.Printf("Created directory: %s\n", config.Name)
 
+	// Create project subdirectories
+	if err := createProjectDirectories(config); err != nil {
+		return err
+	}
+
 	// Create go.mod file
 	if err := createGoMod(config); err != nil {
 		return err
@@ -437,7 +442,7 @@ func createAgentFilesWithTemplates(config ProjectConfig) error {
 			RoutingComment: routingComment,
 		}
 
-		filePath := filepath.Join(config.Name, agent.FileName)
+		filePath := filepath.Join(config.Name, "agents", agent.FileName)
 		file, err := os.Create(filePath)
 		if err != nil {
 			return fmt.Errorf("failed to create file %s: %w", filePath, err)
@@ -1085,4 +1090,67 @@ func generateCacheInitFunction(config ProjectConfig) string {
 	// Cache initialization placeholder
 	return nil
 }`
+}
+// createProjectDirectories creates the main project subdirectories
+func createProjectDirectories(config ProjectConfig) error {
+	// Create agents directory
+	if err := createAgentsDirectory(config); err != nil {
+		return err
+	}
+
+	// Create internal directory (optional, for future use)
+	if err := createInternalDirectory(config); err != nil {
+		return err
+	}
+
+	// Create docs directory
+	if err := createDocsDirectory(config); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// createAgentsDirectory creates the agents subdirectory for agent implementations
+func createAgentsDirectory(config ProjectConfig) error {
+	agentsDir := filepath.Join(config.Name, "agents")
+	if err := os.MkdirAll(agentsDir, 0755); err != nil {
+		return fmt.Errorf("failed to create agents directory %s: %w", agentsDir, err)
+	}
+	fmt.Printf("Created directory: %s\n", agentsDir)
+	return nil
+}
+
+// createInternalDirectory creates the internal subdirectory for internal packages
+func createInternalDirectory(config ProjectConfig) error {
+	internalDir := filepath.Join(config.Name, "internal")
+	if err := os.MkdirAll(internalDir, 0755); err != nil {
+		return fmt.Errorf("failed to create internal directory %s: %w", internalDir, err)
+	}
+	fmt.Printf("Created directory: %s\n", internalDir)
+	
+	// Create subdirectories within internal
+	configDir := filepath.Join(internalDir, "config")
+	if err := os.MkdirAll(configDir, 0755); err != nil {
+		return fmt.Errorf("failed to create internal/config directory %s: %w", configDir, err)
+	}
+	fmt.Printf("Created directory: %s\n", configDir)
+
+	handlersDir := filepath.Join(internalDir, "handlers")
+	if err := os.MkdirAll(handlersDir, 0755); err != nil {
+		return fmt.Errorf("failed to create internal/handlers directory %s: %w", handlersDir, err)
+	}
+	fmt.Printf("Created directory: %s\n", handlersDir)
+
+	return nil
+}
+
+// createDocsDirectory creates the docs subdirectory for additional documentation
+func createDocsDirectory(config ProjectConfig) error {
+	docsDir := filepath.Join(config.Name, "docs")
+	if err := os.MkdirAll(docsDir, 0755); err != nil {
+		return fmt.Errorf("failed to create docs directory %s: %w", docsDir, err)
+	}
+	fmt.Printf("Created directory: %s\n", docsDir)
+	return nil
 }

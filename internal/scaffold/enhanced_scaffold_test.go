@@ -341,3 +341,244 @@ func TestEnhancedScaffoldDifferentProviders(t *testing.T) {
 		})
 	}
 }
+// TestCreateProjectDirectories tests the directory structure creation
+func TestCreateProjectDirectories(t *testing.T) {
+	// Create a temporary directory for testing
+	tempDir, err := ioutil.TempDir("", "project_directories_test")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	// Change to temp directory for the test
+	originalDir, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("Failed to get working directory: %v", err)
+	}
+	defer os.Chdir(originalDir)
+
+	if err := os.Chdir(tempDir); err != nil {
+		t.Fatalf("Failed to change to temp directory: %v", err)
+	}
+
+	// Test configuration
+	projectName := "test_project_structure"
+	config := ProjectConfig{
+		Name:      projectName,
+		NumAgents: 2,
+		Provider:  "openai",
+	}
+
+	// Create the main project directory first
+	if err := os.Mkdir(config.Name, 0755); err != nil {
+		t.Fatalf("Failed to create project directory: %v", err)
+	}
+
+	// Test directory creation
+	err = createProjectDirectories(config)
+	if err != nil {
+		t.Fatalf("Failed to create project directories: %v", err)
+	}
+
+	projectDir := filepath.Join(tempDir, projectName)
+
+	// Verify agents directory was created
+	agentsDir := filepath.Join(projectDir, "agents")
+	if _, err := os.Stat(agentsDir); os.IsNotExist(err) {
+		t.Errorf("Agents directory was not created: %s", agentsDir)
+	}
+
+	// Verify internal directory was created
+	internalDir := filepath.Join(projectDir, "internal")
+	if _, err := os.Stat(internalDir); os.IsNotExist(err) {
+		t.Errorf("Internal directory was not created: %s", internalDir)
+	}
+
+	// Verify internal/config directory was created
+	configDir := filepath.Join(internalDir, "config")
+	if _, err := os.Stat(configDir); os.IsNotExist(err) {
+		t.Errorf("Internal/config directory was not created: %s", configDir)
+	}
+
+	// Verify internal/handlers directory was created
+	handlersDir := filepath.Join(internalDir, "handlers")
+	if _, err := os.Stat(handlersDir); os.IsNotExist(err) {
+		t.Errorf("Internal/handlers directory was not created: %s", handlersDir)
+	}
+
+	// Verify docs directory was created
+	docsDir := filepath.Join(projectDir, "docs")
+	if _, err := os.Stat(docsDir); os.IsNotExist(err) {
+		t.Errorf("Docs directory was not created: %s", docsDir)
+	}
+}
+
+// TestCreateAgentsDirectory tests the agents directory creation specifically
+func TestCreateAgentsDirectory(t *testing.T) {
+	// Create a temporary directory for testing
+	tempDir, err := ioutil.TempDir("", "agents_directory_test")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	// Change to temp directory for the test
+	originalDir, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("Failed to get working directory: %v", err)
+	}
+	defer os.Chdir(originalDir)
+
+	if err := os.Chdir(tempDir); err != nil {
+		t.Fatalf("Failed to change to temp directory: %v", err)
+	}
+
+	// Test configuration
+	projectName := "test_agents_dir"
+	config := ProjectConfig{
+		Name:      projectName,
+		NumAgents: 1,
+		Provider:  "openai",
+	}
+
+	// Create the main project directory first
+	if err := os.Mkdir(config.Name, 0755); err != nil {
+		t.Fatalf("Failed to create project directory: %v", err)
+	}
+
+	// Test agents directory creation
+	err = createAgentsDirectory(config)
+	if err != nil {
+		t.Fatalf("Failed to create agents directory: %v", err)
+	}
+
+	// Verify agents directory was created
+	agentsDir := filepath.Join(tempDir, projectName, "agents")
+	if _, err := os.Stat(agentsDir); os.IsNotExist(err) {
+		t.Errorf("Agents directory was not created: %s", agentsDir)
+	}
+
+	// Verify directory has correct permissions
+	info, err := os.Stat(agentsDir)
+	if err != nil {
+		t.Fatalf("Failed to get directory info: %v", err)
+	}
+	if !info.IsDir() {
+		t.Errorf("Agents path is not a directory: %s", agentsDir)
+	}
+}
+
+// TestCreateInternalDirectory tests the internal directory creation specifically
+func TestCreateInternalDirectory(t *testing.T) {
+	// Create a temporary directory for testing
+	tempDir, err := ioutil.TempDir("", "internal_directory_test")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	// Change to temp directory for the test
+	originalDir, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("Failed to get working directory: %v", err)
+	}
+	defer os.Chdir(originalDir)
+
+	if err := os.Chdir(tempDir); err != nil {
+		t.Fatalf("Failed to change to temp directory: %v", err)
+	}
+
+	// Test configuration
+	projectName := "test_internal_dir"
+	config := ProjectConfig{
+		Name:      projectName,
+		NumAgents: 1,
+		Provider:  "openai",
+	}
+
+	// Create the main project directory first
+	if err := os.Mkdir(config.Name, 0755); err != nil {
+		t.Fatalf("Failed to create project directory: %v", err)
+	}
+
+	// Test internal directory creation
+	err = createInternalDirectory(config)
+	if err != nil {
+		t.Fatalf("Failed to create internal directory: %v", err)
+	}
+
+	projectDir := filepath.Join(tempDir, projectName)
+
+	// Verify internal directory was created
+	internalDir := filepath.Join(projectDir, "internal")
+	if _, err := os.Stat(internalDir); os.IsNotExist(err) {
+		t.Errorf("Internal directory was not created: %s", internalDir)
+	}
+
+	// Verify internal/config subdirectory was created
+	configDir := filepath.Join(internalDir, "config")
+	if _, err := os.Stat(configDir); os.IsNotExist(err) {
+		t.Errorf("Internal/config directory was not created: %s", configDir)
+	}
+
+	// Verify internal/handlers subdirectory was created
+	handlersDir := filepath.Join(internalDir, "handlers")
+	if _, err := os.Stat(handlersDir); os.IsNotExist(err) {
+		t.Errorf("Internal/handlers directory was not created: %s", handlersDir)
+	}
+}
+
+// TestCreateDocsDirectory tests the docs directory creation specifically
+func TestCreateDocsDirectory(t *testing.T) {
+	// Create a temporary directory for testing
+	tempDir, err := ioutil.TempDir("", "docs_directory_test")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	// Change to temp directory for the test
+	originalDir, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("Failed to get working directory: %v", err)
+	}
+	defer os.Chdir(originalDir)
+
+	if err := os.Chdir(tempDir); err != nil {
+		t.Fatalf("Failed to change to temp directory: %v", err)
+	}
+
+	// Test configuration
+	projectName := "test_docs_dir"
+	config := ProjectConfig{
+		Name:      projectName,
+		NumAgents: 1,
+		Provider:  "openai",
+	}
+
+	// Create the main project directory first
+	if err := os.Mkdir(config.Name, 0755); err != nil {
+		t.Fatalf("Failed to create project directory: %v", err)
+	}
+
+	// Test docs directory creation
+	err = createDocsDirectory(config)
+	if err != nil {
+		t.Fatalf("Failed to create docs directory: %v", err)
+	}
+
+	// Verify docs directory was created
+	docsDir := filepath.Join(tempDir, projectName, "docs")
+	if _, err := os.Stat(docsDir); os.IsNotExist(err) {
+		t.Errorf("Docs directory was not created: %s", docsDir)
+	}
+
+	// Verify directory has correct permissions
+	info, err := os.Stat(docsDir)
+	if err != nil {
+		t.Fatalf("Failed to get directory info: %v", err)
+	}
+	if !info.IsDir() {
+		t.Errorf("Docs path is not a directory: %s", docsDir)
+	}
+}

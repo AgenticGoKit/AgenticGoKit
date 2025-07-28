@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/kunalkushwaha/agenticgokit/core"
+	"{{.Config.Name}}/agents"
 )
 
 {{if .Config.MemoryEnabled}}
@@ -202,9 +203,9 @@ func main() {
 	{{range .Agents}}
 	// Create {{.DisplayName}} handler with result collection
 	{{if $.Config.MemoryEnabled}}
-	{{.Name}} := New{{.DisplayName}}(llmProvider, memory)
+	{{.Name}} := agents.New{{.DisplayName}}(llmProvider, memory)
 	{{else}}
-	{{.Name}} := New{{.DisplayName}}(llmProvider)
+	{{.Name}} := agents.New{{.DisplayName}}(llmProvider)
 	{{end}}
 	wrapped{{.DisplayName}} := &ResultCollectorHandler{
 		originalHandler: {{.Name}},

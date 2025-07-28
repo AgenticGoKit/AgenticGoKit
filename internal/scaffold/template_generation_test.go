@@ -105,9 +105,9 @@ func TestCreateAgentProjectModular(t *testing.T) {
 			}
 
 			for i := 1; i <= expectedAgents; i++ {
-				agentFile := filepath.Join(projectPath, fmt.Sprintf("agent%d.go", i))
+				agentFile := filepath.Join(projectPath, "agents", fmt.Sprintf("agent%d.go", i))
 				if _, err := os.Stat(agentFile); os.IsNotExist(err) {
-					t.Errorf("Agent file not created: agent%d.go", i)
+					t.Errorf("Agent file not created: agents/agent%d.go", i)
 				}
 			}
 
