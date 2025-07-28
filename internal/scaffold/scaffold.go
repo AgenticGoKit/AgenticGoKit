@@ -48,6 +48,16 @@ func CreateAgentProjectModular(config ProjectConfig) error {
 		return err
 	}
 
+	// Create agents README documentation
+	if err := createAgentsReadme(config); err != nil {
+		return err
+	}
+
+	// Create customization guide documentation
+	if err := createCustomizationGuide(config); err != nil {
+		return err
+	}
+
 	// Create main.go file
 	if err := createMainGoWithTemplate(config); err != nil {
 		return err
@@ -94,282 +104,60 @@ func createGoMod(config ProjectConfig) error {
 	return nil
 }
 
-// createReadme creates the README.md file
+// createReadme creates the README.md file using the enhanced template
 func createReadme(config ProjectConfig) error {
-	content := fmt.Sprintf("# %s\n\n", config.Name)
-	content += "**An AgentFlow project with intelligent multi-agent workflows**\n\n"
-	content += "This project was generated using the AgentFlow CLI and includes production-ready features for building AI agent systems.\n\n"
+	utilsConfig := convertToUtilsConfig(config)
+	agents := utils.ResolveAgentNames(utilsConfig)
 
-	// Quick Start section
-	content += "## 🚀 Quick Start\n\n"
-	content += "```bash\n"
-	content += "# Install dependencies\n"
-	content += "go mod tidy\n\n"
-	content += "# Run your agents with a message\n"
-	content += "go run . -m \"Your message here\"\n\n"
-	if config.MemoryEnabled && (config.MemoryProvider == "pgvector" || config.MemoryProvider == "weaviate") {
-		content += "# Start the database (if using external memory provider)\n"
-		if config.MemoryProvider == "pgvector" || config.MemoryProvider == "weaviate" {
-			content += "docker compose up -d\n"
-			content += "./setup.sh  # or setup.bat on Windows\n\n"
-		}
-	}
-	content += "```\n\n"
-
-	// Project Configuration section
-	content += "## ⚙️ Project Configuration\n\n"
-	content += "| Feature | Configuration |\n"
-	content += "|---------|---------------|\n"
-	content += fmt.Sprintf("| **Orchestration Mode** | %s |\n", config.OrchestrationMode)
-	content += fmt.Sprintf("| **LLM Provider** | %s |\n", config.Provider)
-	content += fmt.Sprintf("| **Number of Agents** | %d |\n", config.NumAgents)
-
-	if config.MCPEnabled {
-		content += "| **MCP Integration** | ✅ Enabled |\n"
-		if config.MCPProduction {
-			content += "| **MCP Features** | Production (caching, metrics, load balancing) |\n"
-		}
+	if len(agents) == 0 {
+		agents = append(agents, utils.CreateAgentInfo("agent1", config.OrchestrationMode))
 	}
 
-	if config.MemoryEnabled {
-		content += "| **Memory System** | ✅ Enabled |\n"
-		content += fmt.Sprintf("| **Memory Provider** | %s |\n", config.MemoryProvider)
-		content += fmt.Sprintf("| **Embedding Provider** | %s |\n", config.EmbeddingProvider)
-		if config.RAGEnabled {
-			content += "| **RAG (Retrieval-Augmented Generation)** | ✅ Enabled |\n"
-			content += fmt.Sprintf("| **RAG Configuration** | Chunk: %d tokens, Overlap: %d, Top-K: %d |\n", config.RAGChunkSize, config.RAGOverlap, config.RAGTopK)
-		}
-		if config.HybridSearch {
-			content += "| **Hybrid Search** | ✅ Enabled (semantic + keyword) |\n"
-		}
-		if config.SessionMemory {
-			content += "| **Session Memory** | ✅ Enabled |\n"
-		}
+	// Use the comprehensive template from templates package
+	tmpl, err := template.New("readme").Funcs(template.FuncMap{
+		"add": func(a, b int) int { return a + b },
+	}).Parse(templates.ProjectReadmeTemplate)
+	if err != nil {
+		return fmt.Errorf("failed to parse project README template: %w", err)
 	}
 
-	if config.Visualize {
-		content += "| **Workflow Visualization** | ✅ Enabled |\n"
+	// Create template data structure with enhanced agent info
+	type EnhancedAgentInfo struct {
+		utils.AgentInfo
+		IsFirstAgent bool
+		IsLastAgent  bool
+		Index        int
 	}
 
-	content += "\n"
-
-	// Agents section
-	content += "## 🤖 Agents\n\n"
-	agents := utils.ResolveAgentNames(convertToUtilsConfig(config))
+	var enhancedAgents []EnhancedAgentInfo
 	for i, agent := range agents {
-		content += fmt.Sprintf("%d. **%s** (`%s`)\n", i+1, agent.DisplayName, agent.Name)
-		content += fmt.Sprintf("   - **Purpose**: %s\n", agent.Purpose)
-		content += fmt.Sprintf("   - **Role**: %s orchestration\n", config.OrchestrationMode)
-		content += "\n"
+		enhancedAgents = append(enhancedAgents, EnhancedAgentInfo{
+			AgentInfo:    agent,
+			IsFirstAgent: i == 0,
+			IsLastAgent:  i == len(agents)-1,
+			Index:        i,
+		})
 	}
 
-	// Usage Examples section
-	content += "## 💡 Usage Examples\n\n"
-	content += "### Basic Usage\n"
-	content += "```bash\n"
-	content += "# Ask a simple question\n"
-	content += "go run . -m \"What is artificial intelligence?\"\n\n"
-	content += "# Complex analysis request\n"
-	content += "go run . -m \"Analyze the current trends in machine learning and provide recommendations\"\n"
-	content += "```\n\n"
-
-	if config.MemoryEnabled {
-		content += "### Memory & RAG Usage\n"
-		content += "```bash\n"
-		content += "# The agents will automatically:\n"
-		content += "# - Store conversation history\n"
-		content += "# - Query relevant memories\n"
-		if config.RAGEnabled {
-			content += "# - Use RAG to enhance responses with knowledge base\n"
-		}
-		content += "# - Build context from previous interactions\n"
-		content += "```\n\n"
+	templateData := struct {
+		Config ProjectConfig
+		Agents []EnhancedAgentInfo
+	}{
+		Config: config,
+		Agents: enhancedAgents,
 	}
-
-	if config.MemoryEnabled {
-		content += "\n## Memory System\n\n"
-		content += fmt.Sprintf("This project uses **%s** as the memory provider", config.MemoryProvider)
-		if config.EmbeddingProvider == "openai" {
-			content += " with **OpenAI embeddings**"
-		}
-		content += ".\n\n"
-
-		if config.MemoryProvider == "pgvector" {
-			content += "### PostgreSQL with pgvector Setup\n\n"
-			content += "To use the pgvector memory provider, you need PostgreSQL with the pgvector extension:\n\n"
-			content += "```bash\n"
-			content += "# Using Docker\n"
-			content += "docker run --name pgvector-db -e POSTGRES_PASSWORD=password -e POSTGRES_DB=agentflow -p 5432:5432 -d pgvector/pgvector:pg16\n"
-			content += "\n"
-			content += "# Update connection string in agentflow.toml:\n"
-			content += "# Connection: \"postgres://user:password@localhost:15432/agentflow?sslmode=disable\"\n"
-			content += "```\n\n"
-		} else if config.MemoryProvider == "weaviate" {
-			content += "### Weaviate Setup\n\n"
-			content += "To use the Weaviate memory provider, you need Weaviate running:\n\n"
-			content += "```bash\n"
-			content += "# Using Docker\n"
-			content += "docker run -d --name weaviate -p 8080:8080 -e QUERY_DEFAULTS_LIMIT=25 -e AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED=true -e PERSISTENCE_DATA_PATH=/var/lib/weaviate -e DEFAULT_VECTORIZER_MODULE=none -e ENABLE_MODULES=text2vec-openai,text2vec-cohere,text2vec-huggingface,ref2vec-centroid,generative-openai,qna-openai semitechnologies/weaviate:latest\n"
-			content += "```\n\n"
-		}
-
-		if config.EmbeddingProvider == "openai" {
-			content += "### OpenAI API Key\n\n"
-			content += "Set your OpenAI API key as an environment variable:\n\n"
-			content += "```bash\n"
-			content += "export OPENAI_API_KEY=\"your-api-key-here\"\n"
-			content += "```\n\n"
-		} else if config.EmbeddingProvider == "ollama" {
-			content += "### Ollama Setup\n\n"
-			content += "Make sure Ollama is running and the embedding model is installed:\n\n"
-			content += "```bash\n"
-			content += "# Start Ollama (if not already running)\n"
-			content += "ollama serve\n"
-			content += "\n"
-			content += "# Install the embedding model\n"
-			content += fmt.Sprintf("ollama pull %s\n", config.EmbeddingModel)
-			content += "```\n\n"
-		}
-
-		if config.RAGEnabled {
-			content += "### RAG Features\n\n"
-			content += "This project includes RAG (Retrieval-Augmented Generation) capabilities:\n\n"
-			content += fmt.Sprintf("- **Chunk Size**: %d tokens\n", config.RAGChunkSize)
-			content += fmt.Sprintf("- **Overlap**: %d tokens\n", config.RAGOverlap)
-			content += fmt.Sprintf("- **Top-K Results**: %d\n", config.RAGTopK)
-			content += fmt.Sprintf("- **Score Threshold**: %.1f\n", config.RAGScoreThreshold)
-			if config.HybridSearch {
-				content += "- **Hybrid Search**: Enabled (semantic + keyword)\n"
-			}
-			if config.SessionMemory {
-				content += "- **Session Memory**: Enabled\n"
-			}
-			content += "\n"
-		}
-	}
-
-	if config.Visualize {
-		content += "\n## 📊 Workflow Diagrams\n\n"
-		content += fmt.Sprintf("Visual workflow diagrams have been generated in the `%s` directory. These diagrams show the orchestration pattern and agent interactions for this project.\n\n", config.VisualizeOutputDir)
-		content += "The diagrams include:\n"
-		content += "- **Workflow Overview**: High-level agent interaction patterns\n"
-		content += "- **Agent Details**: Individual agent roles and responsibilities\n"
-		content += "- **Configuration Summary**: Key settings and parameters\n\n"
-	}
-
-	// Documentation and Resources section
-	content += "## 📚 Documentation & Resources\n\n"
-	content += "### AgenticGoKit Documentation\n"
-	content += "- **[AgenticGoKit Documentation](https://github.com/kunalkushwaha/agenticgokit/tree/main/docs)** - Complete framework documentation\n"
-	content += "- **[Agent Basics Guide](https://github.com/kunalkushwaha/agenticgokit/blob/main/docs/guides/AgentBasics.md)** - Understanding AgentHandler interface and patterns\n"
-	content += "- **[Configuration Guide](https://github.com/kunalkushwaha/agenticgokit/blob/main/docs/guides/Configuration.md)** - Managing agentflow.toml and environment setup\n"
-	content += "- **[Examples & Tutorials](https://github.com/kunalkushwaha/agenticgokit/blob/main/docs/guides/Examples.md)** - Practical examples and code samples\n\n"
-
-	if config.MemoryEnabled {
-		content += "### Memory & RAG Documentation\n"
-		content += "- **[Memory System Guide](https://github.com/kunalkushwaha/agenticgokit/blob/main/docs/guides/Memory.md)** - Complete memory implementation guide\n"
-		content += "- **[RAG Configuration Guide](https://github.com/kunalkushwaha/agenticgokit/blob/main/docs/guides/RAGConfiguration.md)** - RAG configuration and best practices\n"
-		content += "- **[Memory Quick Reference](https://github.com/kunalkushwaha/agenticgokit/blob/main/docs/memory_quick_reference.md)** - Essential memory API reference\n\n"
-	}
-
-	if config.MCPEnabled {
-		content += "### MCP Integration Documentation\n"
-		content += "- **[Tool Integration Guide](https://github.com/kunalkushwaha/agenticgokit/blob/main/docs/guides/ToolIntegration.md)** - MCP protocol and dynamic tool discovery\n"
-		content += "- **[Custom Tools Guide](https://github.com/kunalkushwaha/agenticgokit/blob/main/docs/guides/CustomTools.md)** - Building your own MCP servers\n\n"
-	}
-
-	content += "### Advanced Topics\n"
-	content += "- **[Multi-Agent Orchestration](https://github.com/kunalkushwaha/agenticgokit/blob/main/docs/multi_agent_orchestration.md)** - Advanced orchestration patterns and configuration\n"
-	content += "- **[Production Deployment](https://github.com/kunalkushwaha/agenticgokit/blob/main/docs/guides/Production.md)** - Scaling, monitoring, and best practices\n"
-	content += "- **[Performance Tuning](https://github.com/kunalkushwaha/agenticgokit/blob/main/docs/guides/Performance.md)** - Optimization and benchmarking\n"
-	content += "- **[Error Handling](https://github.com/kunalkushwaha/agenticgokit/blob/main/docs/guides/ErrorHandling.md)** - Resilient agent workflows\n\n"
-
-	// Troubleshooting section
-	content += "## 🔧 Troubleshooting\n\n"
-	content += "### Common Issues\n\n"
-	
-	if config.MemoryEnabled {
-		content += "**Memory System Issues:**\n"
-		if config.MemoryProvider == "pgvector" {
-			content += "- **Database Connection Failed**: Ensure PostgreSQL with pgvector is running (`docker compose up -d`)\n"
-			content += "- **Permission Denied**: Check database user permissions and connection string\n"
-			content += "- **Vector Extension Missing**: Verify pgvector extension is installed in the database\n\n"
-		} else if config.MemoryProvider == "weaviate" {
-			content += "- **Weaviate Connection Failed**: Ensure Weaviate is running (`docker compose up -d`)\n"
-			content += "- **Schema Issues**: Check Weaviate class configuration and vector dimensions\n\n"
-		}
-		
-		if config.EmbeddingProvider == "openai" {
-			content += "- **OpenAI API Errors**: Verify `OPENAI_API_KEY` environment variable is set\n"
-			content += "- **Rate Limiting**: Implement retry logic or upgrade your OpenAI plan\n\n"
-		} else if config.EmbeddingProvider == "ollama" {
-			content += "- **Ollama Connection Failed**: Ensure Ollama is running (`ollama serve`)\n"
-			content += fmt.Sprintf("- **Model Not Found**: Install the embedding model (`ollama pull %s`)\n\n", config.EmbeddingModel)
-		}
-	}
-
-	content += "**General Issues:**\n"
-	content += "- **LLM Provider Errors**: Check API keys and endpoint configurations in `agentflow.toml`\n"
-	content += "- **Agent Not Responding**: Verify LLM provider credentials and network connectivity\n"
-	content += "- **Build Errors**: Run `go mod tidy` to ensure all dependencies are installed\n\n"
-
-	if config.MCPEnabled {
-		content += "**MCP Integration Issues:**\n"
-		content += "- **Tools Not Available**: Check MCP server configuration and connectivity\n"
-		content += "- **Tool Execution Failed**: Verify tool permissions and required dependencies\n\n"
-	}
-
-	content += "### Getting Help\n\n"
-	content += "- **[GitHub Issues](https://github.com/kunalkushwaha/agenticgokit/issues)** - Report bugs and request features\n"
-	content += "- **[Discussions](https://github.com/kunalkushwaha/agenticgokit/discussions)** - Community support and questions\n"
-	content += "- **[Documentation](https://github.com/kunalkushwaha/agenticgokit/tree/main/docs)** - Comprehensive guides and API reference\n\n"
-
-	// Project Structure section
-	content += "## 📁 Project Structure\n\n"
-	content += "```\n"
-	content += fmt.Sprintf("%s/\n", config.Name)
-	content += "├── main.go                 # Application entry point\n"
-	content += "├── agentflow.toml         # Configuration file\n"
-	agents = utils.ResolveAgentNames(convertToUtilsConfig(config))
-	for _, agent := range agents {
-		content += fmt.Sprintf("├── %s              # %s agent implementation\n", agent.FileName, agent.DisplayName)
-	}
-	if config.MemoryEnabled && (config.MemoryProvider == "pgvector" || config.MemoryProvider == "weaviate") {
-		content += "├── docker-compose.yml     # Database services\n"
-		content += "├── init-db.sql           # Database initialization\n"
-		content += "├── setup.sh/.bat         # Setup scripts\n"
-		content += "├── .env.example          # Environment template\n"
-	}
-	if config.Visualize {
-		content += fmt.Sprintf("├── %s/           # Workflow diagrams\n", config.VisualizeOutputDir)
-	}
-	content += "├── go.mod                 # Go module definition\n"
-	content += "└── README.md              # This file\n"
-	content += "```\n\n"
-
-	// Next Steps section
-	content += "## 🚀 Next Steps\n\n"
-	content += "1. **Customize Agents**: Modify agent logic in the generated `.go` files\n"
-	content += "2. **Configure Providers**: Update `agentflow.toml` with your API keys and settings\n"
-	if config.MemoryEnabled {
-		content += "3. **Add Knowledge**: Use the memory system to store and retrieve information\n"
-		if config.RAGEnabled {
-			content += "4. **Ingest Documents**: Add documents to your knowledge base for RAG\n"
-		}
-	}
-	if config.MCPEnabled {
-		content += "3. **Add Tools**: Configure additional MCP tools for enhanced capabilities\n"
-	}
-	content += fmt.Sprintf("%d. **Scale Up**: Add more agents or modify orchestration patterns as needed\n", 3 + (func() int { count := 0; if config.MemoryEnabled { count++; if config.RAGEnabled { count++ } }; if config.MCPEnabled { count++ }; return count })())
-	content += fmt.Sprintf("%d. **Deploy**: Follow the [Production Guide](https://github.com/kunalkushwaha/agenticgokit/blob/main/docs/guides/Production.md) for deployment\n\n", 4 + (func() int { count := 0; if config.MemoryEnabled { count++; if config.RAGEnabled { count++ } }; if config.MCPEnabled { count++ }; return count })())
-
-	content += "---\n\n"
-	content += "*Generated with ❤️ by [AgenticGoKit](https://github.com/kunalkushwaha/agenticgokit)*\n"
 
 	readmePath := filepath.Join(config.Name, "README.md")
-	if err := os.WriteFile(readmePath, []byte(content), 0644); err != nil {
-		return fmt.Errorf("failed to create README.md: %w", err)
+	file, err := os.Create(readmePath)
+	if err != nil {
+		return fmt.Errorf("failed to create README.md file: %w", err)
 	}
+	defer file.Close()
+
+	if err := tmpl.Execute(file, templateData); err != nil {
+		return fmt.Errorf("failed to execute README template: %w", err)
+	}
+
 	fmt.Printf("Created file: %s\n", readmePath)
 	return nil
 }
@@ -1152,5 +940,117 @@ func createDocsDirectory(config ProjectConfig) error {
 		return fmt.Errorf("failed to create docs directory %s: %w", docsDir, err)
 	}
 	fmt.Printf("Created directory: %s\n", docsDir)
+	return nil
+}
+
+// createAgentsReadme creates the agents/README.md file
+func createAgentsReadme(config ProjectConfig) error {
+	utilsConfig := convertToUtilsConfig(config)
+	agents := utils.ResolveAgentNames(utilsConfig)
+
+	if len(agents) == 0 {
+		agents = append(agents, utils.CreateAgentInfo("agent1", config.OrchestrationMode))
+	}
+
+	// Use the agents README template
+	tmpl, err := template.New("agents_readme").Parse(templates.AgentsReadmeTemplate)
+	if err != nil {
+		return fmt.Errorf("failed to parse agents README template: %w", err)
+	}
+
+	// Create template data structure with enhanced agent info
+	type EnhancedAgentInfo struct {
+		utils.AgentInfo
+		IsFirstAgent bool
+		IsLastAgent  bool
+		Index        int
+	}
+
+	var enhancedAgents []EnhancedAgentInfo
+	for i, agent := range agents {
+		enhancedAgents = append(enhancedAgents, EnhancedAgentInfo{
+			AgentInfo:    agent,
+			IsFirstAgent: i == 0,
+			IsLastAgent:  i == len(agents)-1,
+			Index:        i,
+		})
+	}
+
+	templateData := struct {
+		Config ProjectConfig
+		Agents []EnhancedAgentInfo
+	}{
+		Config: config,
+		Agents: enhancedAgents,
+	}
+
+	readmePath := filepath.Join(config.Name, "agents", "README.md")
+	file, err := os.Create(readmePath)
+	if err != nil {
+		return fmt.Errorf("failed to create agents/README.md file: %w", err)
+	}
+	defer file.Close()
+
+	if err := tmpl.Execute(file, templateData); err != nil {
+		return fmt.Errorf("failed to execute agents README template: %w", err)
+	}
+
+	fmt.Printf("Created file: %s\n", readmePath)
+	return nil
+}
+
+// createCustomizationGuide creates the docs/CUSTOMIZATION.md file
+func createCustomizationGuide(config ProjectConfig) error {
+	utilsConfig := convertToUtilsConfig(config)
+	agents := utils.ResolveAgentNames(utilsConfig)
+
+	if len(agents) == 0 {
+		agents = append(agents, utils.CreateAgentInfo("agent1", config.OrchestrationMode))
+	}
+
+	// Use the customization guide template
+	tmpl, err := template.New("customization_guide").Parse(templates.CustomizationGuideTemplate)
+	if err != nil {
+		return fmt.Errorf("failed to parse customization guide template: %w", err)
+	}
+
+	// Create template data structure with enhanced agent info
+	type EnhancedAgentInfo struct {
+		utils.AgentInfo
+		IsFirstAgent bool
+		IsLastAgent  bool
+		Index        int
+	}
+
+	var enhancedAgents []EnhancedAgentInfo
+	for i, agent := range agents {
+		enhancedAgents = append(enhancedAgents, EnhancedAgentInfo{
+			AgentInfo:    agent,
+			IsFirstAgent: i == 0,
+			IsLastAgent:  i == len(agents)-1,
+			Index:        i,
+		})
+	}
+
+	templateData := struct {
+		Config ProjectConfig
+		Agents []EnhancedAgentInfo
+	}{
+		Config: config,
+		Agents: enhancedAgents,
+	}
+
+	guidePath := filepath.Join(config.Name, "docs", "CUSTOMIZATION.md")
+	file, err := os.Create(guidePath)
+	if err != nil {
+		return fmt.Errorf("failed to create docs/CUSTOMIZATION.md file: %w", err)
+	}
+	defer file.Close()
+
+	if err := tmpl.Execute(file, templateData); err != nil {
+		return fmt.Errorf("failed to execute customization guide template: %w", err)
+	}
+
+	fmt.Printf("Created file: %s\n", guidePath)
 	return nil
 }
