@@ -22,6 +22,11 @@ func CreateAgentProjectFromConfig(config ProjectConfig) error {
 
 // CreateAgentProjectModular creates a new AgentFlow project using the modular template system
 func CreateAgentProjectModular(config ProjectConfig) error {
+	// Validate import paths before creating the project
+	if err := ValidateImportPaths(config); err != nil {
+		return fmt.Errorf("import path validation failed: %w", err)
+	}
+
 	// Create the main project directory
 	if err := os.Mkdir(config.Name, 0755); err != nil {
 		return fmt.Errorf("failed to create project directory %s: %w", config.Name, err)
@@ -140,11 +145,21 @@ func createReadme(config ProjectConfig) error {
 	}
 
 	templateData := struct {
-		Config ProjectConfig
-		Agents []EnhancedAgentInfo
+		Config              ProjectConfig
+		Agents              []EnhancedAgentInfo
+		ProjectStructure    ProjectStructureInfo
+		CustomizationPoints []CustomizationPoint
+		ImportPaths         ImportPathInfo
+		Features            []string
+		FrameworkVersion    string
 	}{
-		Config: config,
-		Agents: enhancedAgents,
+		Config:              config,
+		Agents:              enhancedAgents,
+		ProjectStructure:    CreateProjectStructureInfo(config),
+		CustomizationPoints: CreateCustomizationPoints(config),
+		ImportPaths:         CreateImportPathInfo(config),
+		Features:            GetEnabledFeatures(config),
+		FrameworkVersion:    AgenticGoKitVersion,
 	}
 
 	readmePath := filepath.Join(config.Name, "README.md")
@@ -204,30 +219,46 @@ func createAgentFilesWithTemplates(config ProjectConfig) error {
 		// Create system prompt for this agent
 		systemPrompt := utils.CreateSystemPrompt(agent, i, len(agents), config.OrchestrationMode)
 
-		// Create template data structure that matches the comprehensive template
+		// Create enhanced template data structure
+		var prevAgent string
+		if i > 0 {
+			prevAgent = agents[i-1].Name
+		}
+
 		templateData := struct {
-			Config         ProjectConfig
-			Agent          utils.AgentInfo
-			Agents         []utils.AgentInfo
-			AgentIndex     int
-			TotalAgents    int
-			NextAgent      string
-			PrevAgent      string
-			IsFirstAgent   bool
-			IsLastAgent    bool
-			SystemPrompt   string
-			RoutingComment string
+			Config              ProjectConfig
+			Agent               utils.AgentInfo
+			Agents              []utils.AgentInfo
+			AgentIndex          int
+			TotalAgents         int
+			NextAgent           string
+			PrevAgent           string
+			IsFirstAgent        bool
+			IsLastAgent         bool
+			SystemPrompt        string
+			RoutingComment      string
+			ProjectStructure    ProjectStructureInfo
+			CustomizationPoints []CustomizationPoint
+			ImportPaths         ImportPathInfo
+			Features            []string
+			FrameworkVersion    string
 		}{
-			Config:         config,
-			Agent:          agent,
-			Agents:         agents,
-			AgentIndex:     i,
-			TotalAgents:    len(agents),
-			NextAgent:      nextAgent,
-			IsFirstAgent:   i == 0,
-			IsLastAgent:    i == len(agents)-1,
-			SystemPrompt:   systemPrompt,
-			RoutingComment: routingComment,
+			Config:              config,
+			Agent:               agent,
+			Agents:              agents,
+			AgentIndex:          i,
+			TotalAgents:         len(agents),
+			NextAgent:           nextAgent,
+			PrevAgent:           prevAgent,
+			IsFirstAgent:        i == 0,
+			IsLastAgent:         i == len(agents)-1,
+			SystemPrompt:        systemPrompt,
+			RoutingComment:      routingComment,
+			ProjectStructure:    CreateProjectStructureInfo(config),
+			CustomizationPoints: CreateCustomizationPoints(config),
+			ImportPaths:         CreateImportPathInfo(config),
+			Features:            GetEnabledFeatures(config),
+			FrameworkVersion:    AgenticGoKitVersion,
 		}
 
 		filePath := filepath.Join(config.Name, "agents", agent.FileName)
@@ -259,19 +290,29 @@ func createMainGoWithTemplate(config ProjectConfig) error {
 		return fmt.Errorf("failed to parse main template: %w", err)
 	}
 
-	// Create template data structure that matches the comprehensive template
+	// Create enhanced template data structure
 	templateData := struct {
 		Config               ProjectConfig
 		Agents               []utils.AgentInfo
 		ProviderInitFunction string
 		MCPInitFunction      string
 		CacheInitFunction    string
+		ProjectStructure     ProjectStructureInfo
+		CustomizationPoints  []CustomizationPoint
+		ImportPaths          ImportPathInfo
+		Features             []string
+		FrameworkVersion     string
 	}{
 		Config:               config,
 		Agents:               agents,
 		ProviderInitFunction: generateProviderInitFunction(config),
 		MCPInitFunction:      generateMCPInitFunction(config),
 		CacheInitFunction:    generateCacheInitFunction(config),
+		ProjectStructure:     CreateProjectStructureInfo(config),
+		CustomizationPoints:  CreateCustomizationPoints(config),
+		ImportPaths:          CreateImportPathInfo(config),
+		Features:             GetEnabledFeatures(config),
+		FrameworkVersion:     AgenticGoKitVersion,
 	}
 
 	mainGoPath := filepath.Join(config.Name, "main.go")
@@ -977,11 +1018,21 @@ func createAgentsReadme(config ProjectConfig) error {
 	}
 
 	templateData := struct {
-		Config ProjectConfig
-		Agents []EnhancedAgentInfo
+		Config              ProjectConfig
+		Agents              []EnhancedAgentInfo
+		ProjectStructure    ProjectStructureInfo
+		CustomizationPoints []CustomizationPoint
+		ImportPaths         ImportPathInfo
+		Features            []string
+		FrameworkVersion    string
 	}{
-		Config: config,
-		Agents: enhancedAgents,
+		Config:              config,
+		Agents:              enhancedAgents,
+		ProjectStructure:    CreateProjectStructureInfo(config),
+		CustomizationPoints: CreateCustomizationPoints(config),
+		ImportPaths:         CreateImportPathInfo(config),
+		Features:            GetEnabledFeatures(config),
+		FrameworkVersion:    AgenticGoKitVersion,
 	}
 
 	readmePath := filepath.Join(config.Name, "agents", "README.md")
@@ -1033,11 +1084,21 @@ func createCustomizationGuide(config ProjectConfig) error {
 	}
 
 	templateData := struct {
-		Config ProjectConfig
-		Agents []EnhancedAgentInfo
+		Config              ProjectConfig
+		Agents              []EnhancedAgentInfo
+		ProjectStructure    ProjectStructureInfo
+		CustomizationPoints []CustomizationPoint
+		ImportPaths         ImportPathInfo
+		Features            []string
+		FrameworkVersion    string
 	}{
-		Config: config,
-		Agents: enhancedAgents,
+		Config:              config,
+		Agents:              enhancedAgents,
+		ProjectStructure:    CreateProjectStructureInfo(config),
+		CustomizationPoints: CreateCustomizationPoints(config),
+		ImportPaths:         CreateImportPathInfo(config),
+		Features:            GetEnabledFeatures(config),
+		FrameworkVersion:    AgenticGoKitVersion,
 	}
 
 	guidePath := filepath.Join(config.Name, "docs", "CUSTOMIZATION.md")
