@@ -269,7 +269,7 @@ func main() {
 	// - Agent-specific configuration or dependencies
 	// - Custom middleware or decorators for agents
 	// - Agent health checks or validation
-	agents := make(map[string]core.AgentHandler)
+	agentHandlers := make(map[string]core.AgentHandler)
 	results := make([]AgentOutput, 0)
 	var resultsMutex sync.Mutex
 
@@ -292,7 +292,7 @@ func main() {
 		outputs:         &results,
 		mutex:           &resultsMutex,
 	}
-	agents["{{.Name}}"] = wrapped{{.DisplayName}}
+	agentHandlers["{{.Name}}"] = wrapped{{.DisplayName}}
 	{{end}}
 
 	// TODO: Add custom agent registration logic here
@@ -301,16 +301,16 @@ func main() {
 	// Create basic error handlers to prevent routing errors
 	// These use the first agent as a fallback handler for simplicity
 	{{if .Agents}}
-	firstAgent := agents["{{(index .Agents 0).Name}}"]
+	firstAgent := agentHandlers["{{(index .Agents 0).Name}}"]
 	if firstAgent != nil {
-		agents["error-handler"] = firstAgent
-		agents["validation-error-handler"] = firstAgent
-		agents["timeout-error-handler"] = firstAgent
-		agents["critical-error-handler"] = firstAgent
-		agents["high-priority-error-handler"] = firstAgent
-		agents["network-error-handler"] = firstAgent
-		agents["llm-error-handler"] = firstAgent
-		agents["auth-error-handler"] = firstAgent
+		agentHandlers["error-handler"] = firstAgent
+		agentHandlers["validation-error-handler"] = firstAgent
+		agentHandlers["timeout-error-handler"] = firstAgent
+		agentHandlers["critical-error-handler"] = firstAgent
+		agentHandlers["high-priority-error-handler"] = firstAgent
+		agentHandlers["network-error-handler"] = firstAgent
+		agentHandlers["llm-error-handler"] = firstAgent
+		agentHandlers["auth-error-handler"] = firstAgent
 	}
 	{{end}}
 
@@ -331,7 +331,7 @@ func main() {
 	// This makes the agents available for routing and execution
 	// TODO: Add custom agent registration logic if needed
 	// Examples: conditional registration, agent prioritization, or custom routing
-	for name, handler := range agents {
+	for name, handler := range agentHandlers {
 		if err := runner.RegisterAgent(name, handler); err != nil {
 			logger.Error().Err(err).Str("agent", name).Msg("Failed to register agent")
 			fmt.Printf("❌ Error registering agent %s: %v\n", name, err)
@@ -340,7 +340,7 @@ func main() {
 		logger.Debug().Str("agent", name).Msg("Agent registered successfully")
 	}
 	
-	logger.Info().Int("agent_count", len(agents)).Msg("All agents registered with orchestrator")
+	logger.Info().Int("agent_count", len(agentHandlers)).Msg("All agents registered with orchestrator")
 
 
 
@@ -546,7 +546,7 @@ type AgentOutput struct {
 	
 	// TODO: Add custom fields here
 	// Examples:
-	// Duration     time.Duration
+	Duration     time.Duration
 	// Confidence   float64
 	// ErrorDetails string
 	// Metadata     map[string]interface{}
@@ -615,7 +615,7 @@ func (r *ResultCollectorHandler) Run(ctx context.Context, event core.Event, stat
 		Timestamp: time.Now(),
 		// TODO: Add custom fields here
 		// Examples:
-		// Duration:   processingTime,
+		Duration:   processingTime,
 		// Confidence: extractConfidence(result),
 		// Metadata:   extractMetadata(result),
 	})

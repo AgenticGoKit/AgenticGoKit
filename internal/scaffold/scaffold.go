@@ -100,7 +100,14 @@ func CreateAgentProjectModular(config ProjectConfig) error {
 
 // createGoMod creates the go.mod file
 func createGoMod(config ProjectConfig) error {
-	goModContent := fmt.Sprintf("module %s\n\ngo 1.21\n\nrequire github.com/kunalkushwaha/agenticgokit %s\n", config.Name, AgenticGoKitVersion)
+	// Create go.mod content with proper module declaration
+	goModContent := fmt.Sprintf(`module %s
+
+go 1.21
+
+require github.com/kunalkushwaha/agenticgokit %s
+`, config.Name, AgenticGoKitVersion)
+
 	goModPath := filepath.Join(config.Name, "go.mod")
 	if err := os.WriteFile(goModPath, []byte(goModContent), 0644); err != nil {
 		return fmt.Errorf("failed to create go.mod: %w", err)

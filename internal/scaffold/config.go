@@ -7,7 +7,8 @@ import (
 )
 
 // AgenticGoKitVersion represents the version of AgenticGoKit to use in generated projects
-const AgenticGoKitVersion = "v0.3.2"
+// Note: v0.3.2 has the old capitalized module name, so we use a newer approach
+const AgenticGoKitVersion = "v0.3.3"
 
 // AgentInfo represents information about an agent including its name and purpose
 type AgentInfo struct {
