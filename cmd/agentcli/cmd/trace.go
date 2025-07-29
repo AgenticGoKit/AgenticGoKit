@@ -6,7 +6,6 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil" // Use io/ioutil for simplicity, replace with io and os if preferred
 	"maps"
 	"os"
 	"path/filepath"
@@ -120,7 +119,7 @@ func displayTrace(sessionID, filter string) {
 	}
 
 	// Read the trace file
-	data, err := ioutil.ReadFile(filePath)
+	data, err := os.ReadFile(filePath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error reading trace file: %v\n", err)
 		os.Exit(1)
@@ -523,7 +522,7 @@ func displayAgentFlow(sessionID, filter string) {
 	var flowEntries []AgentFlowEntry
 
 	// Read and parse the trace file
-	data, err := ioutil.ReadFile(filePath)
+	data, err := os.ReadFile(filePath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error reading trace file: %v\n", err)
 		os.Exit(1)

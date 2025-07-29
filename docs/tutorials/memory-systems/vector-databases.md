@@ -658,7 +658,7 @@ func performFullBackup(memory core.Memory) error {
     }
     
     // Write to file
-    err = ioutil.WriteFile(backupFile, data, 0644)
+    err = os.WriteFile(backupFile, data, 0644)
     if err != nil {
         return fmt.Errorf("write backup failed: %w", err)
     }

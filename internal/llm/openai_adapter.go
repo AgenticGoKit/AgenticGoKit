@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 )
 
@@ -99,7 +99,7 @@ func (o *OpenAIAdapter) Call(ctx context.Context, prompt Prompt) (Response, erro
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := ioutil.ReadAll(resp.Body)
+		body, _ := io.ReadAll(resp.Body)
 		return Response{}, errors.New("OpenAI API error: " + string(body))
 	}
 
@@ -183,7 +183,7 @@ func (o *OpenAIAdapter) Embeddings(ctx context.Context, texts []string) ([][]flo
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := ioutil.ReadAll(resp.Body)
+		body, _ := io.ReadAll(resp.Body)
 		return nil, errors.New("OpenAI API error: " + string(body))
 	}
 

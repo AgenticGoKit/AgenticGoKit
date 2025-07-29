@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 )
@@ -112,7 +112,7 @@ if prompt.Parameters.Temperature != nil && *prompt.Parameters.Temperature > 0 {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := ioutil.ReadAll(resp.Body)
+		body, _ := io.ReadAll(resp.Body)
 		return Response{}, fmt.Errorf("Ollama API error: %s", string(body))
 	}
 
@@ -176,7 +176,7 @@ func (o *OllamaAdapter) Embeddings(ctx context.Context, texts []string) ([][]flo
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
-			body, _ := ioutil.ReadAll(resp.Body)
+			body, _ := io.ReadAll(resp.Body)
 			return nil, fmt.Errorf("Ollama embeddings API error for text %d: %s", i, string(body))
 		}
 

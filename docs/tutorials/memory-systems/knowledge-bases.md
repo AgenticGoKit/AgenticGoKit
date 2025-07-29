@@ -49,8 +49,8 @@ package main
 import (
     "context"
     "fmt"
-    "io/ioutil"
     "log"
+    "os"
     "path/filepath"
     "strings"
     "time"
@@ -195,7 +195,7 @@ func (dp *DocumentProcessor) storeBatch(ctx context.Context, chunks []*DocumentC
 type TextParser struct{}
 
 func (tp *TextParser) Parse(filePath string) (*Document, error) {
-    content, err := ioutil.ReadFile(filePath)
+    content, err := os.ReadFile(filePath)
     if err != nil {
         return nil, err
     }
@@ -222,7 +222,7 @@ func (tp *TextParser) SupportedExtensions() []string {
 type MarkdownParser struct{}
 
 func (mp *MarkdownParser) Parse(filePath string) (*Document, error) {
-    content, err := ioutil.ReadFile(filePath)
+    content, err := os.ReadFile(filePath)
     if err != nil {
         return nil, err
     }
