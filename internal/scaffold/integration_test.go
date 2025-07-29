@@ -1,7 +1,6 @@
 package scaffold
 
 import (
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -74,7 +73,7 @@ func TestGeneratedProjectCompilation(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create temporary directory
-			tempDir, err := ioutil.TempDir("", "integration_test")
+			tempDir, err := os.MkdirTemp("", "integration_test")
 			if err != nil {
 				t.Fatalf("Failed to create temp dir: %v", err)
 			}
@@ -180,7 +179,7 @@ func TestGeneratedProjectExecution(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create temporary directory
-			tempDir, err := ioutil.TempDir("", "execution_test")
+			tempDir, err := os.MkdirTemp("", "execution_test")
 			if err != nil {
 				t.Fatalf("Failed to create temp dir: %v", err)
 			}
@@ -305,7 +304,7 @@ func TestImportPathResolvability(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create temporary directory
-			tempDir, err := ioutil.TempDir("", "import_path_test")
+			tempDir, err := os.MkdirTemp("", "import_path_test")
 			if err != nil {
 				t.Fatalf("Failed to create temp dir: %v", err)
 			}
@@ -329,7 +328,7 @@ func TestImportPathResolvability(t *testing.T) {
 			}
 
 			// Get the actual project directory name (might be sanitized)
-			entries, err := ioutil.ReadDir(tempDir)
+			entries, err := os.ReadDir(tempDir)
 			if err != nil {
 				t.Fatalf("Failed to read temp directory: %v", err)
 			}
@@ -371,7 +370,7 @@ func TestImportPathResolvability(t *testing.T) {
 					return nil
 				}
 
-				content, err := ioutil.ReadFile(path)
+				content, err := os.ReadFile(path)
 				if err != nil {
 					return err
 				}
@@ -567,7 +566,7 @@ func TestVariousConfigurationCombinations(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create temporary directory
-			tempDir, err := ioutil.TempDir("", "config_combo_test")
+			tempDir, err := os.MkdirTemp("", "config_combo_test")
 			if err != nil {
 				t.Fatalf("Failed to create temp dir: %v", err)
 			}
@@ -591,7 +590,7 @@ func TestVariousConfigurationCombinations(t *testing.T) {
 			}
 
 			// Verify basic project structure
-			entries, err := ioutil.ReadDir(tempDir)
+			entries, err := os.ReadDir(tempDir)
 			if err != nil {
 				t.Fatalf("Failed to read temp directory: %v", err)
 			}

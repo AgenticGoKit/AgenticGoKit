@@ -5,7 +5,6 @@ package cmd
 
 import (
 	"fmt"
-	"io/ioutil" // Use io/ioutil for simplicity
 	"os"
 	"strings"
 	"text/tabwriter"
@@ -30,7 +29,7 @@ func init() {
 }
 
 func listSessions() {
-	files, err := ioutil.ReadDir(".") // Read current directory
+	files, err := os.ReadDir(".") // Read current directory
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error reading directory: %v\n", err)
 		os.Exit(1)

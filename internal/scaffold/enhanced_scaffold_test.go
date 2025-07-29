@@ -1,7 +1,6 @@
 package scaffold
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -10,7 +9,7 @@ import (
 
 func TestEnhancedScaffoldGeneration(t *testing.T) {
 	// Create a temporary directory for testing
-	tempDir, err := ioutil.TempDir("", "enhanced_scaffold_test")
+	tempDir, err := os.MkdirTemp("", "enhanced_scaffold_test")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
@@ -45,7 +44,7 @@ func TestEnhancedScaffoldGeneration(t *testing.T) {
 
 	// Verify enhanced configuration file includes error routing
 	configPath := filepath.Join(projectDir, "agentflow.toml")
-	configContent, err := ioutil.ReadFile(configPath)
+	configContent, err := os.ReadFile(configPath)
 	if err != nil {
 		t.Fatalf("Failed to read config file: %v", err)
 	}
@@ -103,7 +102,7 @@ func TestEnhancedScaffoldGeneration(t *testing.T) {
 
 	// Verify validation error handler has circuit breaker integration
 	validationPath := filepath.Join(projectDir, "validation_error_handler.go")
-	validationContent, err := ioutil.ReadFile(validationPath)
+	validationContent, err := os.ReadFile(validationPath)
 	if err != nil {
 		t.Fatalf("Failed to read validation error handler: %v", err)
 	}
@@ -129,7 +128,7 @@ func TestEnhancedScaffoldGeneration(t *testing.T) {
 
 	// Verify timeout error handler has circuit breaker integration
 	timeoutPath := filepath.Join(projectDir, "timeout_error_handler.go")
-	timeoutContent, err := ioutil.ReadFile(timeoutPath)
+	timeoutContent, err := os.ReadFile(timeoutPath)
 	if err != nil {
 		t.Fatalf("Failed to read timeout error handler: %v", err)
 	}
@@ -154,7 +153,7 @@ func TestEnhancedScaffoldGeneration(t *testing.T) {
 
 	// Verify critical error handler has circuit breaker integration
 	criticalPath := filepath.Join(projectDir, "critical_error_handler.go")
-	criticalContent, err := ioutil.ReadFile(criticalPath)
+	criticalContent, err := os.ReadFile(criticalPath)
 	if err != nil {
 		t.Fatalf("Failed to read critical error handler: %v", err)
 	}
@@ -179,7 +178,7 @@ func TestEnhancedScaffoldGeneration(t *testing.T) {
 
 	// Verify main.go includes all specialized error handler registrations
 	mainPath := filepath.Join(projectDir, "main.go")
-	mainContent, err := ioutil.ReadFile(mainPath)
+	mainContent, err := os.ReadFile(mainPath)
 	if err != nil {
 		t.Fatalf("Failed to read main.go: %v", err)
 	}
@@ -206,7 +205,7 @@ func TestEnhancedScaffoldGeneration(t *testing.T) {
 
 func TestScaffoldWithoutErrorHandling(t *testing.T) {
 	// Create a temporary directory for testing
-	tempDir, err := ioutil.TempDir("", "scaffold_no_error_test")
+	tempDir, err := os.MkdirTemp("", "scaffold_no_error_test")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
@@ -241,7 +240,7 @@ func TestScaffoldWithoutErrorHandling(t *testing.T) {
 
 	// Verify configuration file does NOT include error routing
 	configPath := filepath.Join(projectDir, "agentflow.toml")
-	configContent, err := ioutil.ReadFile(configPath)
+	configContent, err := os.ReadFile(configPath)
 	if err != nil {
 		t.Fatalf("Failed to read config file: %v", err)
 	}
@@ -284,7 +283,7 @@ func TestEnhancedScaffoldDifferentProviders(t *testing.T) {
 	for _, provider := range providers {
 		t.Run("provider_"+provider, func(t *testing.T) {
 			// Create a temporary directory for testing
-			tempDir, err := ioutil.TempDir("", "enhanced_scaffold_"+provider+"_test")
+			tempDir, err := os.MkdirTemp("", "enhanced_scaffold_"+provider+"_test")
 			if err != nil {
 				t.Fatalf("Failed to create temp dir: %v", err)
 			}
@@ -319,7 +318,7 @@ func TestEnhancedScaffoldDifferentProviders(t *testing.T) {
 
 			// Verify configuration file includes both provider config and error routing
 			configPath := filepath.Join(projectDir, "agentflow.toml")
-			configContent, err := ioutil.ReadFile(configPath)
+			configContent, err := os.ReadFile(configPath)
 			if err != nil {
 				t.Fatalf("Failed to read config file: %v", err)
 			}
@@ -344,7 +343,7 @@ func TestEnhancedScaffoldDifferentProviders(t *testing.T) {
 // TestCreateProjectDirectories tests the directory structure creation
 func TestCreateProjectDirectories(t *testing.T) {
 	// Create a temporary directory for testing
-	tempDir, err := ioutil.TempDir("", "project_directories_test")
+	tempDir, err := os.MkdirTemp("", "project_directories_test")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
@@ -416,7 +415,7 @@ func TestCreateProjectDirectories(t *testing.T) {
 // TestCreateAgentsDirectory tests the agents directory creation specifically
 func TestCreateAgentsDirectory(t *testing.T) {
 	// Create a temporary directory for testing
-	tempDir, err := ioutil.TempDir("", "agents_directory_test")
+	tempDir, err := os.MkdirTemp("", "agents_directory_test")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
@@ -471,7 +470,7 @@ func TestCreateAgentsDirectory(t *testing.T) {
 // TestCreateInternalDirectory tests the internal directory creation specifically
 func TestCreateInternalDirectory(t *testing.T) {
 	// Create a temporary directory for testing
-	tempDir, err := ioutil.TempDir("", "internal_directory_test")
+	tempDir, err := os.MkdirTemp("", "internal_directory_test")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
@@ -531,7 +530,7 @@ func TestCreateInternalDirectory(t *testing.T) {
 // TestCreateDocsDirectory tests the docs directory creation specifically
 func TestCreateDocsDirectory(t *testing.T) {
 	// Create a temporary directory for testing
-	tempDir, err := ioutil.TempDir("", "docs_directory_test")
+	tempDir, err := os.MkdirTemp("", "docs_directory_test")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
