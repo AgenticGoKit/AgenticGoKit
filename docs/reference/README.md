@@ -252,17 +252,27 @@ agent, _ := core.NewMCPAgent("assistant", llmProvider)
 ## Command Line Interface
 
 ### [CLI Reference](cli.md)
-Complete reference for the `agentcli` command-line tool.
+Complete reference for the `agentcli` command-line tool with the new consolidated command structure.
+
+### [CLI Quick Reference](cli-quick-reference.md)
+Quick reference card for the most commonly used CLI commands and patterns.
+
+**Key CLI Features:**
+- **Simplified Create Command** - Consolidated flags and template system
+- **Project Templates** - Built-in and custom templates for common use cases
+- **External Template Support** - JSON/YAML template definitions
+- **Interactive Mode** - Guided project setup
+- **Template Management** - Create, validate, and manage custom templates
 
 **Available commands:**
-- `create` - Create new projects with multi-agent orchestration
+- `create` - Create new projects with templates and consolidated flags
+- `template` - Manage project templates (list, create, validate)
 - `trace` - View execution traces and debugging information
 - `mcp` - Manage MCP servers and tools
 - `cache` - Cache management and optimization
-- `run` - Run agents interactively for testing
-- `test` - Run automated agent tests
-- `benchmark` - Performance benchmarking
-- `config` - Configuration management
+- `memory` - Memory system debugging and inspection
+- `list` - List available sessions and resources
+- `version` - Show version information
 
 ## API Design Principles
 

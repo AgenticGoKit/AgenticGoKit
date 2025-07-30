@@ -20,7 +20,7 @@ Create a collaborative multi-agent system with one command:
 go install github.com/kunalkushwaha/agenticgokit/cmd/agentcli@latest
 
 # Create a multi-agent research team
-agentcli create research-team --orchestration-mode collaborative --agents 3 --visualize
+agentcli create research-team --template research-assistant --visualize
 
 cd research-team
 
@@ -122,9 +122,7 @@ go run main.go
 ### 🔍 **Research Assistants**
 Multi-agent research teams with web search, analysis, and synthesis
 ```bash
-agentcli create research-team \
-  --orchestration-mode collaborative \
-  --agents 3 --mcp-enabled --visualize
+agentcli create research-team --template research-assistant
 ```
 
 </div>
@@ -133,9 +131,7 @@ agentcli create research-team \
 ### 📊 **Data Processing Pipelines** 
 Sequential workflows with error handling and monitoring
 ```bash
-agentcli create data-pipeline \
-  --orchestration-mode sequential \
-  --agents 4 --visualize
+agentcli create data-pipeline --template data-pipeline --visualize
 ```
 
 </div>
@@ -144,8 +140,7 @@ agentcli create data-pipeline \
 ### 💬 **Conversational Systems**
 Chat agents with persistent memory and context
 ```bash
-agentcli create chat-system \
-  --agents 2 --visualize
+agentcli create chat-system --template chat-system
 ```
 
 </div>
@@ -154,9 +149,7 @@ agentcli create chat-system \
 ### 📚 **Knowledge Bases**
 RAG-powered Q&A with document ingestion and vector search
 ```bash
-agentcli create knowledge-base \
-  --orchestration-mode collaborative \
-  --agents 3 --visualize
+agentcli create knowledge-base --template rag-system
 ```
 
 </div>
@@ -305,7 +298,7 @@ agent := agents.NewToolEnabledAgent("assistant", llmProvider, toolManager)
 go install github.com/kunalkushwaha/agenticgokit/cmd/agentcli@latest
 
 # Create your first project
-agentcli create my-agents --orchestration-mode collaborative --agents 3 --visualize
+agentcli create my-agents --template research-assistant --visualize
 
 cd my-agents
 ```

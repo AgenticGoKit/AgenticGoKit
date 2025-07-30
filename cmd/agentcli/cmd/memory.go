@@ -99,18 +99,18 @@ func runMemoryCommand(cmd *cobra.Command, args []string) error {
 
 	// Check if config file exists
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		return fmt.Errorf("❌ No agentflow.toml found in current directory\n💡 Run this command from your AgentFlow project root, or specify config:\n   agentcli memory --config-path /path/to/agentflow.toml")
+		return fmt.Errorf("[ERROR] No agentflow.toml found in current directory\n[SUGGESTION] Run this command from your AgentFlow project root, or specify config:\n   agentcli memory --config-path /path/to/agentflow.toml")
 	}
 
 	// Load configuration
 	config, err := core.LoadConfig(configPath)
 	if err != nil {
-		return fmt.Errorf("❌ Failed to load configuration: %v\n💡 Check your agentflow.toml file for syntax errors", err)
+		return fmt.Errorf("[ERROR] Failed to load configuration: %v\n[SUGGESTION] Check your agentflow.toml file for syntax errors", err)
 	}
 
 	// Check if memory is configured
 	if config.AgentMemory.Provider == "" {
-		return fmt.Errorf("❌ Memory system not configured in agentflow.toml\n💡 Add [agent_memory] section to enable memory features")
+		return fmt.Errorf("[ERROR] Memory system not configured in agentflow.toml\n[SUGGESTION] Add [agent_memory] section to enable memory features")
 	}
 
 	// Create memory debugger
@@ -121,7 +121,7 @@ func runMemoryCommand(cmd *cobra.Command, args []string) error {
 
 	// Initialize memory connection
 	if err := debugger.Connect(); err != nil {
-		return fmt.Errorf("❌ Failed to connect to memory system: %v\n%s", err, debugger.getTroubleshootingHelp())
+		return fmt.Errorf("[ERROR] Failed to connect to memory system: %v\n%s", err, debugger.getTroubleshootingHelp())
 	}
 	defer debugger.Close()
 
@@ -185,9 +185,9 @@ func (m *MemoryDebugger) ShowOverview() error {
 	fmt.Printf("================================\n\n")
 
 	// Basic configuration info
-	fmt.Printf("📁 Config File: %s\n", m.configPath)
-	fmt.Printf("🔧 Provider: %s\n", m.config.AgentMemory.Provider)
-	fmt.Printf("🤖 Embedding: %s/%s (%d dimensions)\n", 
+	fmt.Printf("Config File: %s\n", m.configPath)
+	fmt.Printf("Provider: %s\n", m.config.AgentMemory.Provider)
+	fmt.Printf("Embedding: %s/%s (%d dimensions)\n", 
 		m.config.AgentMemory.Embedding.Provider,
 		m.config.AgentMemory.Embedding.Model,
 		m.config.AgentMemory.Dimensions)
@@ -197,7 +197,7 @@ func (m *MemoryDebugger) ShowOverview() error {
 	ctx := context.Background()
 	testContent := fmt.Sprintf("Debug test at %s", time.Now().Format("15:04:05"))
 	if err := m.memory.Store(ctx, testContent, "debug-test"); err != nil {
-		fmt.Printf("❌ Failed (%v)\n", err)
+		fmt.Printf("[ERROR] Failed (%v)\n", err)
 		return nil
 	}
 	fmt.Printf("✅ Connected\n\n")
@@ -216,21 +216,21 @@ func (m *MemoryDebugger) ShowOverview() error {
 func (m *MemoryDebugger) getTroubleshootingHelp() string {
 	switch m.config.AgentMemory.Provider {
 	case "pgvector":
-		return `💡 PostgreSQL/PgVector Troubleshooting:
+		return `[TROUBLESHOOTING] PostgreSQL/PgVector:
    1. Start database: docker compose up -d
    2. Check connection: psql -h localhost -U user -d agentflow
    3. Verify connection string in agentflow.toml
    4. Run setup script: ./setup.sh (or setup.bat on Windows)`
 	case "weaviate":
-		return `💡 Weaviate Troubleshooting:
+		return `[TROUBLESHOOTING] Weaviate:
    1. Start Weaviate: docker compose up -d
    2. Check status: curl http://localhost:8080/v1/meta
    3. Verify connection string in agentflow.toml`
 	case "memory":
-		return `💡 In-Memory Provider Issue:
+		return `[TROUBLESHOOTING] In-Memory Provider Issue:
    This shouldn't fail - check your configuration syntax`
 	default:
-		return `💡 Check your memory provider configuration in agentflow.toml`
+		return `[TROUBLESHOOTING] Check your memory provider configuration in agentflow.toml`
 	}
 }
 
@@ -242,7 +242,7 @@ func (m *MemoryDebugger) ShowStats() error {
 	ctx := context.Background()
 
 	// Basic configuration stats
-	fmt.Printf("🔧 Configuration:\n")
+	fmt.Printf("Configuration:\n")
 	fmt.Printf("   Provider: %s\n", m.config.AgentMemory.Provider)
 	fmt.Printf("   Connection: %s\n", m.config.AgentMemory.Connection)
 	fmt.Printf("   Dimensions: %d\n", m.config.AgentMemory.Dimensions)
@@ -256,35 +256,35 @@ func (m *MemoryDebugger) ShowStats() error {
 	fmt.Printf("\n")
 
 	// Try to get memory statistics
-	fmt.Printf("📈 Memory Usage:\n")
+	fmt.Printf("Memory Usage:\n")
 	
 	// Test basic memory operations
 	testQuery := "test query for statistics"
 	results, err := m.memory.Query(ctx, testQuery, 5)
 	if err != nil {
-		fmt.Printf("   ❌ Query test failed: %v\n", err)
+		fmt.Printf("   Query test failed: %v\n", err)
 	} else {
-		fmt.Printf("   ✅ Query successful (%d results)\n", len(results))
+		fmt.Printf("   Query successful (%d results)\n", len(results))
 	}
 
 	// Test memory storage
 	testContent := fmt.Sprintf("Statistics test at %s", time.Now().Format("2006-01-02 15:04:05"))
 	if err := m.memory.Store(ctx, testContent, "stats-test"); err != nil {
-		fmt.Printf("   ❌ Storage test failed: %v\n", err)
+		fmt.Printf("   Storage test failed: %v\n", err)
 	} else {
-		fmt.Printf("   ✅ Storage test successful\n")
+		fmt.Printf("   Storage test successful\n")
 	}
 
 	// Test history retrieval
 	history, err := m.memory.GetHistory(ctx, 3)
 	if err != nil {
-		fmt.Printf("   ❌ History retrieval failed: %v\n", err)
+		fmt.Printf("   History retrieval failed: %v\n", err)
 	} else {
-		fmt.Printf("   ✅ History available (%d messages)\n", len(history))
+		fmt.Printf("   History available (%d messages)\n", len(history))
 	}
 
 	fmt.Printf("\n")
-	fmt.Printf("💡 Note: Detailed statistics depend on memory provider capabilities\n")
+	fmt.Printf("Note: Detailed statistics depend on memory provider capabilities\n")
 	fmt.Printf("   Use --list to see actual memory content\n")
 
 	return nil

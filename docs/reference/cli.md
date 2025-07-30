@@ -73,12 +73,77 @@ agentcli cache clear --server web-service
 ```
 
 ### `create`
-Create new AgenticGoKit projects
+Create new AgenticGoKit projects with multi-agent workflows
 
 ```bash
-# Create a new project
+# Create a basic project
 agentcli create my-project
+
+# Create from template
+agentcli create my-project --template research-assistant
+
+# Custom configuration with consolidated flags
+agentcli create my-project --memory pgvector --embedding openai --rag 1500 --mcp production
+
+# Interactive mode for guided setup
+agentcli create --interactive
+
+# Show available templates
+agentcli create help-templates
 ```
+
+**Key Features:**
+- **Template System**: Pre-configured project templates for common use cases
+- **Consolidated Flags**: Simplified flag structure (12 flags instead of 32)
+- **Intelligent Defaults**: Automatic dependency resolution and sensible defaults
+- **External Templates**: Support for custom templates via JSON/YAML files
+- **Interactive Mode**: Guided project setup
+
+**Available Templates:**
+- `basic` - Simple 2-agent sequential system
+- `research-assistant` - Multi-agent research with web search and analysis
+- `rag-system` - Document Q&A with vector search and RAG
+- `data-pipeline` - Sequential data processing workflow
+- `chat-system` - Conversational agents with memory
+
+**Consolidated Flags:**
+- `--template, -t` - Project template name
+- `--agents, -a` - Number of agents to create
+- `--provider, -p` - LLM provider (openai, azure, ollama, mock)
+- `--memory` - Memory system provider (memory, pgvector, weaviate)
+- `--embedding` - Embedding provider and model (openai, ollama:model, dummy)
+- `--mcp` - MCP integration level (basic, production, full)
+- `--rag` - Enable RAG with optional chunk size
+- `--orchestration` - Orchestration mode (sequential, collaborative, loop, route)
+- `--visualize` - Generate Mermaid workflow diagrams
+- `--interactive, -i` - Interactive mode for guided setup
+
+### `template`
+Manage project templates
+
+```bash
+# List all available templates (built-in + custom)
+agentcli template list
+
+# Create a new custom template
+agentcli template create my-template
+
+# Validate a template file
+agentcli template validate my-template.yaml
+
+# Show template search paths
+agentcli template paths
+```
+
+**Template Locations:**
+Templates are searched in the following locations (in priority order):
+1. Current directory: `.agenticgokit/templates/`
+2. User home: `~/.agenticgokit/templates/`
+3. System-wide: `/etc/agenticgokit/templates/` (Unix) or `%PROGRAMDATA%/AgenticGoKit/templates/` (Windows)
+
+**Template Formats:**
+- JSON format: `my-template.json`
+- YAML format: `my-template.yaml` or `my-template.yml`
 
 ### `list`
 List various resources
@@ -97,6 +162,40 @@ agentcli memory
 ```
 
 ## 📚 Usage Examples
+
+### Project Creation
+
+```bash
+# Quick project creation with templates
+agentcli create research-bot --template research-assistant
+agentcli create knowledge-base --template rag-system
+agentcli create data-flow --template data-pipeline
+
+# Custom configuration with consolidated flags
+agentcli create custom-bot --memory pgvector --embedding openai --rag 1500 --mcp production
+
+# Interactive mode for guided setup
+agentcli create --interactive
+
+# Override template defaults
+agentcli create my-research --template research-assistant --agents 5 --mcp production
+```
+
+### Template Management
+
+```bash
+# List all available templates
+agentcli template list
+
+# Create a custom template
+agentcli template create my-company-standard
+
+# Validate template syntax
+agentcli template validate my-template.yaml
+
+# Show template search paths
+agentcli template paths
+```
 
 ### Tracing and Debugging
 
