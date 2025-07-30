@@ -18,6 +18,8 @@ This document summarizes the documentation changes made to integrate the new CLI
 ### 2. `docs/reference/cli-quick-reference.md`
 **Quick reference card for CLI commands**
 - Most commonly used commands and patterns
+- Shell completion installation instructions
+- Comprehensive completion setup for all major shells
 - Consolidated flags reference table
 - Built-in templates overview
 - Common usage patterns
@@ -64,6 +66,14 @@ This document summarizes the documentation changes made to integrate the new CLI
 - `create-command-restructuring-summary.md` - Merged into guides
 - `create-flags-analysis.md` - No longer needed
 - `docs/custom-templates.md` - Integrated into project-templates.md
+
+## New CLI Features Documented
+
+### Shell Completion Support
+- **Full shell support**: bash, zsh, fish, and PowerShell completion scripts
+- **Intelligent completion**: Template names, provider names, memory providers, and file paths
+- **Easy installation**: One-command setup for each shell
+- **Cross-platform**: Works on Linux, macOS, and Windows
 
 ## Key Documentation Improvements
 

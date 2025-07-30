@@ -17,17 +17,12 @@ multi-agent AI systems built with the AgenticGoKit framework.
 
 PROJECT MANAGEMENT
   create      Create new AgenticGoKit projects with scaffolding
+  template    Manage project templates
   validate    Validate project structure and configuration  
-  info        Show current project information and status
-  update      Update project templates and dependencies
 
 DEVELOPMENT & DEBUG  
   trace       View execution traces and agent interactions
-  logs        View and filter application logs
   memory      Debug memory system and RAG functionality
-  config      Inspect and manage configuration
-  health      Check system health and connectivity
-  status      Show current system status
 
 MCP & TOOLS
   mcp         Manage Model Context Protocol servers and tools
@@ -42,17 +37,14 @@ GETTING STARTED:
   # Create your first project
   agentcli create my-project
 
+  # Create with template
+  agentcli create my-project --template research-assistant
+
   # Create with memory and RAG
-  agentcli create my-rag-system --memory-enabled --rag-enabled
+  agentcli create my-rag-system --memory pgvector --rag
 
-  # Create with MCP tools
-  agentcli create my-tools --mcp-enabled
-
-  # Check project health
-  agentcli health
-
-  # View project information  
-  agentcli info
+  # Interactive setup
+  agentcli create --interactive
 
 For detailed help on any command, use: agentcli <command> --help`,
 }
@@ -96,9 +88,9 @@ var commandCategories = map[string]CommandCategory{
 // getCommandCategory returns the category for a command
 func getCommandCategory(cmdName string) string {
 	switch cmdName {
-	case "create", "validate", "info", "update":
+	case "create", "template", "validate":
 		return "project"
-	case "trace", "logs", "memory", "config", "health", "status":
+	case "trace", "memory":
 		return "debug"
 	case "mcp", "cache":
 		return "mcp"

@@ -165,4 +165,52 @@ func init() {
 		"Template format (yaml, json)")
 	templateCreateCmd.Flags().StringVarP(&templateOutput, "output", "o", "", 
 		"Output file path (default: .agenticgokit/templates/[name].[format])")
+	
+	// Add completion functions
+	templateCreateCmd.RegisterFlagCompletionFunc("format", completeTemplateFormats)
+	templateValidateCmd.ValidArgsFunction = completeTemplateFiles
+}
+
+// completeTemplateFormats provides completion for template formats
+func completeTemplateFormats(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	formats := []string{"yaml", "json"}
+	return formats, cobra.ShellCompDirectiveNoFileComp
+}
+
+// completeTemplateFiles provides completion for template files
+func completeTemplateFiles(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	// Look for template files in current directory and template paths
+	var files []string
+	
+	// Add files from current directory
+	if matches, err := filepath.Glob("*.yaml"); err == nil {
+		files = append(files, matches...)
+	}
+	if matches, err := filepath.Glob("*.yml"); err == nil {
+		files = append(files, matches...)
+	}
+	if matches, err := filepath.Glob("*.json"); err == nil {
+		files = append(files, matches...)
+	}
+	
+	// Add files from template paths
+	for _, path := range templateLoader.ListTemplatePaths() {
+		if matches, err := filepath.Glob(filepath.Join(path, "*.yaml")); err == nil {
+			for _, match := range matches {
+				files = append(files, filepath.Base(match))
+			}
+		}
+		if matches, err := filepath.Glob(filepath.Join(path, "*.yml")); err == nil {
+			for _, match := range matches {
+				files = append(files, filepath.Base(match))
+			}
+		}
+		if matches, err := filepath.Glob(filepath.Join(path, "*.json")); err == nil {
+			for _, match := range matches {
+				files = append(files, filepath.Base(match))
+			}
+		}
+	}
+	
+	return files, cobra.ShellCompDirectiveDefault
 }

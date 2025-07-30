@@ -181,7 +181,7 @@ func (m *MemoryDebugger) Close() {
 
 // ShowOverview displays basic memory system information
 func (m *MemoryDebugger) ShowOverview() error {
-	fmt.Printf("🧠 AgentFlow Memory System Debug\n")
+	fmt.Printf("AgentFlow Memory System Debug\n")
 	fmt.Printf("================================\n\n")
 
 	// Basic configuration info
@@ -193,17 +193,17 @@ func (m *MemoryDebugger) ShowOverview() error {
 		m.config.AgentMemory.Dimensions)
 
 	// Connection status
-	fmt.Printf("🔗 Connection: ")
+	fmt.Printf("Connection: ")
 	ctx := context.Background()
 	testContent := fmt.Sprintf("Debug test at %s", time.Now().Format("15:04:05"))
 	if err := m.memory.Store(ctx, testContent, "debug-test"); err != nil {
 		fmt.Printf("[ERROR] Failed (%v)\n", err)
 		return nil
 	}
-	fmt.Printf("✅ Connected\n\n")
+	fmt.Printf("Connected\n\n")
 
 	// Quick stats
-	fmt.Printf("📊 Quick Stats:\n")
+	fmt.Printf("Available Commands:\n")
 	fmt.Printf("   Use --stats for detailed statistics\n")
 	fmt.Printf("   Use --list to see recent memories\n")
 	fmt.Printf("   Use --validate to check configuration\n")
@@ -236,7 +236,7 @@ func (m *MemoryDebugger) getTroubleshootingHelp() string {
 
 // ShowStats displays detailed memory statistics
 func (m *MemoryDebugger) ShowStats() error {
-	fmt.Printf("📊 Memory Statistics\n")
+	fmt.Printf("Memory Statistics\n")
 	fmt.Printf("===================\n\n")
 
 	ctx := context.Background()
@@ -292,7 +292,7 @@ func (m *MemoryDebugger) ShowStats() error {
 
 // ListMemories lists recent memories with content previews
 func (m *MemoryDebugger) ListMemories() error {
-	fmt.Printf("📝 Recent Memories\n")
+	fmt.Printf("Recent Memories\n")
 	fmt.Printf("==================\n\n")
 
 	ctx := context.Background()
@@ -300,13 +300,13 @@ func (m *MemoryDebugger) ListMemories() error {
 	// Get chat history instead of using empty query which causes embedding issues
 	messages, err := m.memory.GetHistory(ctx, 10)
 	if err != nil {
-		fmt.Printf("❌ Failed to retrieve memories: %v\n", err)
+		fmt.Printf("Failed to retrieve memories: %v\n", err)
 		return nil
 	}
 
 	if len(messages) == 0 {
-		fmt.Printf("📭 No memories found\n")
-		fmt.Printf("💡 Memories are created when agents store information or when you interact with the system\n")
+		fmt.Printf("No memories found\n")
+		fmt.Printf("Memories are created when agents store information or when you interact with the system\n")
 		return nil
 	}
 
@@ -325,13 +325,13 @@ func (m *MemoryDebugger) ListMemories() error {
 		fmt.Printf("\n")
 	}
 
-	fmt.Printf("💡 Use --search \"query\" to test semantic search functionality\n")
+	fmt.Printf("Use --search \"query\" to test semantic search functionality\n")
 	return nil
 }
 
 // ShowSessions shows active sessions and their data
 func (m *MemoryDebugger) ShowSessions() error {
-	fmt.Printf("👥 Active Sessions\n")
+	fmt.Printf("Active Sessions\n")
 	fmt.Printf("==================\n\n")
 
 	ctx := context.Background()
@@ -339,13 +339,13 @@ func (m *MemoryDebugger) ShowSessions() error {
 	// Try to create a test session to demonstrate functionality
 	sessionID := m.memory.NewSession()
 	if sessionID == "" {
-		fmt.Printf("❌ Session management not supported by this memory provider\n")
-		fmt.Printf("💡 Session support depends on the memory provider implementation\n")
+		fmt.Printf("Session management not supported by this memory provider\n")
+		fmt.Printf("Session support depends on the memory provider implementation\n")
 		return nil
 	}
 
-	fmt.Printf("✅ Session management is supported\n")
-	fmt.Printf("🆔 Test session created: %s\n\n", sessionID)
+	fmt.Printf("Session management is supported\n")
+	fmt.Printf("Test session created: %s\n\n", sessionID)
 
 	// Set session context and test
 	sessionCtx := m.memory.SetSession(ctx, sessionID)
@@ -353,23 +353,23 @@ func (m *MemoryDebugger) ShowSessions() error {
 	// Store some test data in the session
 	testContent := fmt.Sprintf("Session test data at %s", time.Now().Format("15:04:05"))
 	if err := m.memory.Store(sessionCtx, testContent, "session-test"); err != nil {
-		fmt.Printf("❌ Failed to store session data: %v\n", err)
+		fmt.Printf("Failed to store session data: %v\n", err)
 	} else {
-		fmt.Printf("✅ Session data storage successful\n")
+		fmt.Printf("Session data storage successful\n")
 	}
 
 	// Try to retrieve session-specific data
 	results, err := m.memory.Query(sessionCtx, "session test", 5)
 	if err != nil {
-		fmt.Printf("❌ Failed to query session data: %v\n", err)
+		fmt.Printf("Failed to query session data: %v\n", err)
 	} else {
-		fmt.Printf("✅ Session query successful (%d results)\n", len(results))
+		fmt.Printf("Session query successful (%d results)\n", len(results))
 		if len(results) > 0 {
 			fmt.Printf("   Latest session content: %s\n", results[0].Content)
 		}
 	}
 
-	fmt.Printf("\n💡 Session Features:\n")
+	fmt.Printf("\nSession Features:\n")
 	fmt.Printf("   - Sessions isolate memory data between different conversations\n")
 	fmt.Printf("   - Each session maintains its own context and history\n")
 	fmt.Printf("   - Useful for multi-user or multi-conversation scenarios\n")
@@ -379,22 +379,22 @@ func (m *MemoryDebugger) ShowSessions() error {
 
 // ListDocuments lists knowledge base documents
 func (m *MemoryDebugger) ListDocuments() error {
-	fmt.Printf("📚 Knowledge Base Documents\n")
+	fmt.Printf("Knowledge Base Documents\n")
 	fmt.Printf("===========================\n\n")
 
 	ctx := context.Background()
 
 	// Check if RAG/knowledge base is enabled
 	if !m.config.AgentMemory.EnableKnowledgeBase {
-		fmt.Printf("❌ Knowledge base not enabled in configuration\n")
-		fmt.Printf("💡 Enable knowledge base in agentflow.toml:\n")
+		fmt.Printf("Knowledge base not enabled in configuration\n")
+		fmt.Printf("Enable knowledge base in agentflow.toml:\n")
 		fmt.Printf("   [agent_memory]\n")
 		fmt.Printf("   enable_knowledge_base = true\n")
 		return nil
 	}
 
-	fmt.Printf("✅ Knowledge base is enabled\n")
-	fmt.Printf("🔧 Configuration:\n")
+	fmt.Printf("Knowledge base is enabled\n")
+	fmt.Printf("Configuration:\n")
 	fmt.Printf("   Max Results: %d\n", m.config.AgentMemory.KnowledgeMaxResults)
 	fmt.Printf("   Score Threshold: %.2f\n", m.config.AgentMemory.KnowledgeScoreThreshold)
 	if m.config.AgentMemory.EnableRAG {
@@ -406,7 +406,7 @@ func (m *MemoryDebugger) ListDocuments() error {
 
 	// Try to query for document-like content
 	// This is a basic implementation - actual document listing would depend on the memory provider
-	fmt.Printf("📄 Searching for document-like content...\n")
+	fmt.Printf("Searching for document-like content...\n")
 	
 	// Search for various document indicators
 	documentQueries := []string{"document", "file", "pdf", "text", "content", "knowledge"}
@@ -428,7 +428,7 @@ func (m *MemoryDebugger) ListDocuments() error {
 					content = content[:147] + "..."
 				}
 				
-				fmt.Printf("📄 Document %d (Score: %.3f):\n", totalDocuments, result.Score)
+				fmt.Printf("Document %d (Score: %.3f):\n", totalDocuments, result.Score)
 				fmt.Printf("   Content: %s\n", content)
 				fmt.Printf("\n")
 			}
@@ -440,14 +440,14 @@ func (m *MemoryDebugger) ListDocuments() error {
 	}
 
 	if totalDocuments == 0 {
-		fmt.Printf("📭 No documents found in knowledge base\n")
-		fmt.Printf("💡 Documents are typically added through:\n")
+		fmt.Printf("No documents found in knowledge base\n")
+		fmt.Printf("Documents are typically added through:\n")
 		fmt.Printf("   - Document ingestion APIs\n")
 		fmt.Printf("   - Agent interactions that store knowledge\n")
 		fmt.Printf("   - Manual content addition\n")
 	} else {
-		fmt.Printf("📊 Found %d document-like entries\n", totalDocuments)
-		fmt.Printf("💡 Use --search \"query\" to find specific documents\n")
+		fmt.Printf("Found %d document-like entries\n", totalDocuments)
+		fmt.Printf("Use --search \"query\" to find specific documents\n")
 	}
 
 	return nil
@@ -455,7 +455,7 @@ func (m *MemoryDebugger) ListDocuments() error {
 
 // TestSearch tests search functionality with similarity scores
 func (m *MemoryDebugger) TestSearch(query string) error {
-	fmt.Printf("🔍 Search Test: \"%s\"\n", query)
+	fmt.Printf("Search Test: \"%s\"\n", query)
 	fmt.Printf("========================\n\n")
 
 	ctx := context.Background()
@@ -464,17 +464,17 @@ func (m *MemoryDebugger) TestSearch(query string) error {
 	// Perform the search
 	results, err := m.memory.Query(ctx, query, m.config.AgentMemory.MaxResults)
 	if err != nil {
-		fmt.Printf("❌ Search failed: %v\n", err)
+		fmt.Printf("Search failed: %v\n", err)
 		return nil
 	}
 
 	searchDuration := time.Since(startTime)
-	fmt.Printf("⏱️  Search completed in %v\n", searchDuration)
-	fmt.Printf("📊 Found %d results\n\n", len(results))
+	fmt.Printf("Search completed in %v\n", searchDuration)
+	fmt.Printf("Found %d results\n\n", len(results))
 
 	if len(results) == 0 {
-		fmt.Printf("📭 No results found for query: \"%s\"\n", query)
-		fmt.Printf("💡 Try:\n")
+		fmt.Printf("No results found for query: \"%s\"\n", query)
+		fmt.Printf("Try:\n")
 		fmt.Printf("   - Using different keywords\n")
 		fmt.Printf("   - Checking if data exists with --list\n")
 		fmt.Printf("   - Lowering the score threshold in configuration\n")
@@ -482,7 +482,7 @@ func (m *MemoryDebugger) TestSearch(query string) error {
 	}
 
 	// Display results with similarity scores
-	fmt.Printf("🎯 Search Results (sorted by relevance):\n")
+	fmt.Printf("Search Results (sorted by relevance):\n")
 	fmt.Printf("========================================\n\n")
 
 	for i, result := range results {
@@ -511,16 +511,16 @@ func (m *MemoryDebugger) TestSearch(query string) error {
 		
 		// Show relevance assessment
 		if result.Score >= m.config.AgentMemory.KnowledgeScoreThreshold {
-			fmt.Printf("   ✅ Above threshold (%.2f) - would be used in RAG\n", m.config.AgentMemory.KnowledgeScoreThreshold)
+			fmt.Printf("   Above threshold (%.2f) - would be used in RAG\n", m.config.AgentMemory.KnowledgeScoreThreshold)
 		} else {
-			fmt.Printf("   ❌ Below threshold (%.2f) - would be filtered out\n", m.config.AgentMemory.KnowledgeScoreThreshold)
+			fmt.Printf("   Below threshold (%.2f) - would be filtered out\n", m.config.AgentMemory.KnowledgeScoreThreshold)
 		}
 		
 		fmt.Printf("\n")
 	}
 
 	// Search analysis
-	fmt.Printf("📈 Search Analysis:\n")
+	fmt.Printf("Search Analysis:\n")
 	fmt.Printf("==================\n")
 	
 	highRelevance := 0
@@ -542,13 +542,13 @@ func (m *MemoryDebugger) TestSearch(query string) error {
 		}
 	}
 	
-	fmt.Printf("🟢 High relevance (≥0.8): %d\n", highRelevance)
-	fmt.Printf("🟡 Medium relevance (≥0.6): %d\n", mediumRelevance)
-	fmt.Printf("🟠 Low relevance (<0.6): %d\n", lowRelevance)
-	fmt.Printf("✅ Above threshold (≥%.2f): %d\n", m.config.AgentMemory.KnowledgeScoreThreshold, aboveThreshold)
+	fmt.Printf("High relevance (≥0.8): %d\n", highRelevance)
+	fmt.Printf("Medium relevance (≥0.6): %d\n", mediumRelevance)
+	fmt.Printf("Low relevance (<0.6): %d\n", lowRelevance)
+	fmt.Printf("Above threshold (≥%.2f): %d\n", m.config.AgentMemory.KnowledgeScoreThreshold, aboveThreshold)
 	
 	if aboveThreshold == 0 {
-		fmt.Printf("\n⚠️  No results above threshold - consider:\n")
+		fmt.Printf("\nNo results above threshold - consider:\n")
 		fmt.Printf("   - Lowering knowledge_score_threshold in agentflow.toml\n")
 		fmt.Printf("   - Adding more relevant content to memory\n")
 		fmt.Printf("   - Using different search terms\n")
@@ -559,7 +559,7 @@ func (m *MemoryDebugger) TestSearch(query string) error {
 
 // ValidateConfig validates memory configuration with specific error reporting
 func (m *MemoryDebugger) ValidateConfig() error {
-	fmt.Printf("✅ Configuration Validation\n")
+	fmt.Printf("Configuration Validation\n")
 	fmt.Printf("===========================\n\n")
 
 	ctx := context.Background()
@@ -567,54 +567,54 @@ func (m *MemoryDebugger) ValidateConfig() error {
 	validationWarnings := []string{}
 
 	// Basic configuration validation
-	fmt.Printf("🔧 Basic Configuration:\n")
+	fmt.Printf("Basic Configuration:\n")
 	
 	if m.config.AgentMemory.Provider == "" {
 		validationErrors = append(validationErrors, "Memory provider not specified")
 	} else {
-		fmt.Printf("   ✅ Provider: %s\n", m.config.AgentMemory.Provider)
+		fmt.Printf("   Provider: %s\n", m.config.AgentMemory.Provider)
 	}
 
 	if m.config.AgentMemory.Dimensions <= 0 {
 		validationErrors = append(validationErrors, "Invalid dimensions configuration")
 	} else {
-		fmt.Printf("   ✅ Dimensions: %d\n", m.config.AgentMemory.Dimensions)
+		fmt.Printf("   Dimensions: %d\n", m.config.AgentMemory.Dimensions)
 	}
 
 	if m.config.AgentMemory.Embedding.Provider == "" {
 		validationErrors = append(validationErrors, "Embedding provider not specified")
 	} else {
-		fmt.Printf("   ✅ Embedding Provider: %s\n", m.config.AgentMemory.Embedding.Provider)
+		fmt.Printf("   Embedding Provider: %s\n", m.config.AgentMemory.Embedding.Provider)
 	}
 
 	if m.config.AgentMemory.Embedding.Model == "" {
 		validationErrors = append(validationErrors, "Embedding model not specified")
 	} else {
-		fmt.Printf("   ✅ Embedding Model: %s\n", m.config.AgentMemory.Embedding.Model)
+		fmt.Printf("   Embedding Model: %s\n", m.config.AgentMemory.Embedding.Model)
 	}
 
 	// Connection validation
-	fmt.Printf("\n🔗 Connection Validation:\n")
+	fmt.Printf("\nConnection Validation:\n")
 	
 	// Test basic connection
 	testContent := fmt.Sprintf("Validation test at %s", time.Now().Format("15:04:05"))
 	if err := m.memory.Store(ctx, testContent, "validation-test"); err != nil {
 		validationErrors = append(validationErrors, fmt.Sprintf("Connection test failed: %v", err))
-		fmt.Printf("   ❌ Connection: Failed (%v)\n", err)
+		fmt.Printf("   Connection: Failed (%v)\n", err)
 	} else {
-		fmt.Printf("   ✅ Connection: Successful\n")
+		fmt.Printf("   Connection: Successful\n")
 	}
 
 	// Test query functionality
 	if results, err := m.memory.Query(ctx, "validation test", 1); err != nil {
 		validationErrors = append(validationErrors, fmt.Sprintf("Query test failed: %v", err))
-		fmt.Printf("   ❌ Query: Failed (%v)\n", err)
+		fmt.Printf("   Query: Failed (%v)\n", err)
 	} else {
-		fmt.Printf("   ✅ Query: Successful (%d results)\n", len(results))
+		fmt.Printf("   Query: Successful (%d results)\n", len(results))
 	}
 
 	// Provider-specific validation
-	fmt.Printf("\n🏗️  Provider-Specific Validation:\n")
+	fmt.Printf("\nProvider-Specific Validation:\n")
 	
 	switch m.config.AgentMemory.Provider {
 	case "pgvector":
@@ -623,7 +623,7 @@ func (m *MemoryDebugger) ValidateConfig() error {
 		} else if !strings.Contains(m.config.AgentMemory.Connection, "postgres://") {
 			validationWarnings = append(validationWarnings, "PgVector connection string should start with 'postgres://'")
 		} else {
-			fmt.Printf("   ✅ PgVector connection string format valid\n")
+			fmt.Printf("   PgVector connection string format valid\n")
 		}
 		
 		if m.config.AgentMemory.Dimensions > 2000 {
@@ -636,11 +636,11 @@ func (m *MemoryDebugger) ValidateConfig() error {
 		} else if !strings.Contains(m.config.AgentMemory.Connection, "http") {
 			validationWarnings = append(validationWarnings, "Weaviate connection should be HTTP URL")
 		} else {
-			fmt.Printf("   ✅ Weaviate connection URL format valid\n")
+			fmt.Printf("   Weaviate connection URL format valid\n")
 		}
 
 	case "memory":
-		fmt.Printf("   ✅ In-memory provider requires no additional configuration\n")
+		fmt.Printf("   In-memory provider requires no additional configuration\n")
 		if m.config.AgentMemory.EnableRAG {
 			validationWarnings = append(validationWarnings, "RAG with in-memory provider - data won't persist")
 		}
@@ -650,28 +650,28 @@ func (m *MemoryDebugger) ValidateConfig() error {
 	}
 
 	// Summary
-	fmt.Printf("\n📋 Validation Summary:\n")
+	fmt.Printf("\nValidation Summary:\n")
 	fmt.Printf("======================\n")
 
 	if len(validationErrors) == 0 && len(validationWarnings) == 0 {
-		fmt.Printf("🎉 All validations passed! Your memory configuration looks good.\n")
+		fmt.Printf("All validations passed! Your memory configuration looks good.\n")
 	} else {
 		if len(validationErrors) > 0 {
-			fmt.Printf("❌ Errors found (%d):\n", len(validationErrors))
+			fmt.Printf("Errors found (%d):\n", len(validationErrors))
 			for i, err := range validationErrors {
 				fmt.Printf("   %d. %s\n", i+1, err)
 			}
 		}
 
 		if len(validationWarnings) > 0 {
-			fmt.Printf("\n⚠️  Warnings (%d):\n", len(validationWarnings))
+			fmt.Printf("\nWarnings (%d):\n", len(validationWarnings))
 			for i, warning := range validationWarnings {
 				fmt.Printf("   %d. %s\n", i+1, warning)
 			}
 		}
 
 		if len(validationErrors) > 0 {
-			fmt.Printf("\n💡 Fix the errors above to ensure proper memory system operation.\n")
+			fmt.Printf("\nFix the errors above to ensure proper memory system operation.\n")
 		}
 	}
 
@@ -680,37 +680,37 @@ func (m *MemoryDebugger) ValidateConfig() error {
 
 // ClearData clears memory data with confirmation prompts and selective clearing
 func (m *MemoryDebugger) ClearData() error {
-	fmt.Printf("🗑️  Clear Memory Data\n")
+	fmt.Printf("Clear Memory Data\n")
 	fmt.Printf("====================\n\n")
 
 	ctx := context.Background()
 
 	// Show current data overview
-	fmt.Printf("📊 Current Memory Overview:\n")
+	fmt.Printf("Current Memory Overview:\n")
 	
 	// Get current memory count
 	results, err := m.memory.Query(ctx, "test", 100) // Get up to 100 items for counting
 	if err != nil {
-		fmt.Printf("❌ Failed to query current data: %v\n", err)
+		fmt.Printf("Failed to query current data: %v\n", err)
 		return nil
 	}
 
-	fmt.Printf("   📝 Total memories found: %d\n", len(results))
+	fmt.Printf("   Total memories found: %d\n", len(results))
 
 	// Get history count
 	history, err := m.memory.GetHistory(ctx, 100)
 	if err == nil {
-		fmt.Printf("   💬 Chat history messages: %d\n", len(history))
+		fmt.Printf("   Chat history messages: %d\n", len(history))
 	}
 
 	// Check for sessions
 	sessionID := m.memory.NewSession()
 	if sessionID != "" {
-		fmt.Printf("   👥 Session support: Available\n")
+		fmt.Printf("   Session support: Available\n")
 	}
 
-	fmt.Printf("\n⚠️  WARNING: This operation will permanently delete data!\n")
-	fmt.Printf("🔒 Available clearing options:\n")
+	fmt.Printf("\nWARNING: This operation will permanently delete data!\n")
+	fmt.Printf("Available clearing options:\n")
 	fmt.Printf("   1. Clear all memories (stored content)\n")
 	fmt.Printf("   2. Clear chat history\n")
 	fmt.Printf("   3. Clear everything (memories + history)\n")
@@ -728,45 +728,45 @@ func (m *MemoryDebugger) ClearData() error {
 	case "3":
 		return m.clearEverything(ctx)
 	case "4":
-		fmt.Printf("✅ Operation cancelled\n")
+		fmt.Printf("Operation cancelled\n")
 		return nil
 	default:
-		fmt.Printf("❌ Invalid choice. Operation cancelled.\n")
+		fmt.Printf("Invalid choice. Operation cancelled.\n")
 		return nil
 	}
 }
 
 // clearMemories clears stored memories
 func (m *MemoryDebugger) clearMemories(ctx context.Context) error {
-	fmt.Printf("\n🗑️  Clearing Memories\n")
+	fmt.Printf("\nClearing Memories\n")
 	fmt.Printf("====================\n")
 
-	fmt.Printf("⚠️  This will delete all stored memories (content, embeddings, metadata)\n")
-	fmt.Printf("💬 Chat history will be preserved\n")
+	fmt.Printf("This will delete all stored memories (content, embeddings, metadata)\n")
+	fmt.Printf("Chat history will be preserved\n")
 	fmt.Printf("\nType 'DELETE' to confirm: ")
 	
 	var confirmation string
 	fmt.Scanln(&confirmation)
 	
 	if confirmation != "DELETE" {
-		fmt.Printf("❌ Confirmation failed. Operation cancelled.\n")
+		fmt.Printf("Confirmation failed. Operation cancelled.\n")
 		return nil
 	}
 
 	// Note: The core Memory interface doesn't have a Clear method
 	// This is a limitation we need to work around
-	fmt.Printf("⚠️  Direct memory clearing not supported by current Memory interface\n")
-	fmt.Printf("💡 To clear memories, you can:\n")
+	fmt.Printf("Direct memory clearing not supported by current Memory interface\n")
+	fmt.Printf("To clear memories, you can:\n")
 	fmt.Printf("   1. Restart with a fresh database (for pgvector/weaviate)\n")
 	fmt.Printf("   2. Restart the application (for in-memory provider)\n")
 	fmt.Printf("   3. Manually clear the database tables\n")
 	
 	if m.config.AgentMemory.Provider == "pgvector" {
-		fmt.Printf("\n🐘 PostgreSQL/PgVector clearing commands:\n")
+		fmt.Printf("\nPostgreSQL/PgVector clearing commands:\n")
 		fmt.Printf("   psql -h localhost -U user -d agentflow -c \"TRUNCATE TABLE agent_memory;\"\n")
 		fmt.Printf("   psql -h localhost -U user -d agentflow -c \"TRUNCATE TABLE documents;\"\n")
 	} else if m.config.AgentMemory.Provider == "weaviate" {
-		fmt.Printf("\n🔍 Weaviate clearing:\n")
+		fmt.Printf("\nWeaviate clearing:\n")
 		fmt.Printf("   Use Weaviate API or restart the Weaviate container\n")
 	}
 
@@ -775,24 +775,24 @@ func (m *MemoryDebugger) clearMemories(ctx context.Context) error {
 
 // clearHistory clears chat history
 func (m *MemoryDebugger) clearHistory(ctx context.Context) error {
-	fmt.Printf("\n💬 Clearing Chat History\n")
+	fmt.Printf("\nClearing Chat History\n")
 	fmt.Printf("========================\n")
 
-	fmt.Printf("⚠️  This will delete all chat history\n")
-	fmt.Printf("📝 Stored memories will be preserved\n")
+	fmt.Printf("This will delete all chat history\n")
+	fmt.Printf("Stored memories will be preserved\n")
 	fmt.Printf("\nType 'DELETE' to confirm: ")
 	
 	var confirmation string
 	fmt.Scanln(&confirmation)
 	
 	if confirmation != "DELETE" {
-		fmt.Printf("❌ Confirmation failed. Operation cancelled.\n")
+		fmt.Printf("Confirmation failed. Operation cancelled.\n")
 		return nil
 	}
 
 	// Note: Similar limitation - no ClearHistory method in Memory interface
-	fmt.Printf("⚠️  Direct history clearing not supported by current Memory interface\n")
-	fmt.Printf("💡 Chat history is typically stored in the same tables as memories\n")
+	fmt.Printf("Direct history clearing not supported by current Memory interface\n")
+	fmt.Printf("Chat history is typically stored in the same tables as memories\n")
 	fmt.Printf("   Consider using the database-specific clearing commands above\n")
 
 	return nil
@@ -800,10 +800,10 @@ func (m *MemoryDebugger) clearHistory(ctx context.Context) error {
 
 // clearEverything clears all data
 func (m *MemoryDebugger) clearEverything(ctx context.Context) error {
-	fmt.Printf("\n🗑️  Clearing Everything\n")
+	fmt.Printf("\nClearing Everything\n")
 	fmt.Printf("======================\n")
 
-	fmt.Printf("⚠️  This will delete ALL memory data:\n")
+	fmt.Printf("This will delete ALL memory data:\n")
 	fmt.Printf("   - All stored memories\n")
 	fmt.Printf("   - All chat history\n")
 	fmt.Printf("   - All embeddings\n")
@@ -814,21 +814,21 @@ func (m *MemoryDebugger) clearEverything(ctx context.Context) error {
 	fmt.Scanln(&confirmation)
 	
 	if confirmation != "DELETE EVERYTHING" {
-		fmt.Printf("❌ Confirmation failed. Operation cancelled.\n")
+		fmt.Printf("Confirmation failed. Operation cancelled.\n")
 		return nil
 	}
 
-	fmt.Printf("⚠️  Complete data clearing not supported by current Memory interface\n")
-	fmt.Printf("💡 To clear all data:\n")
+	fmt.Printf("Complete data clearing not supported by current Memory interface\n")
+	fmt.Printf("To clear all data:\n")
 	
 	if m.config.AgentMemory.Provider == "pgvector" {
-		fmt.Printf("\n🐘 PostgreSQL/PgVector - Complete reset:\n")
+		fmt.Printf("\nPostgreSQL/PgVector - Complete reset:\n")
 		fmt.Printf("   docker compose down\n")
 		fmt.Printf("   docker volume rm $(docker volume ls -q | grep postgres)\n")
 		fmt.Printf("   docker compose up -d\n")
 		fmt.Printf("   ./setup.sh\n")
 	} else if m.config.AgentMemory.Provider == "weaviate" {
-		fmt.Printf("\n🔍 Weaviate - Complete reset:\n")
+		fmt.Printf("\nWeaviate - Complete reset:\n")
 		fmt.Printf("   docker compose down\n")
 		fmt.Printf("   docker volume rm $(docker volume ls -q | grep weaviate)\n")
 		fmt.Printf("   docker compose up -d\n")
@@ -872,7 +872,7 @@ func (m *MemoryDebugger) ShowConfig() error {
 	fmt.Printf("\n")
 
 	// Knowledge base configuration
-	fmt.Printf("📚 Knowledge Base Configuration:\n")
+	fmt.Printf("Knowledge Base Configuration:\n")
 	fmt.Printf("   Enabled: %t\n", m.config.AgentMemory.EnableKnowledgeBase)
 	if m.config.AgentMemory.EnableKnowledgeBase {
 		fmt.Printf("   Max Results: %d\n", m.config.AgentMemory.KnowledgeMaxResults)
@@ -881,7 +881,7 @@ func (m *MemoryDebugger) ShowConfig() error {
 	fmt.Printf("\n")
 
 	// RAG configuration
-	fmt.Printf("🔍 RAG Configuration:\n")
+	fmt.Printf("RAG Configuration:\n")
 	fmt.Printf("   Enabled: %t\n", m.config.AgentMemory.EnableRAG)
 	if m.config.AgentMemory.EnableRAG {
 		fmt.Printf("   Chunk Size: %d\n", m.config.AgentMemory.ChunkSize)
@@ -894,7 +894,7 @@ func (m *MemoryDebugger) ShowConfig() error {
 	fmt.Printf("\n")
 
 	// Document processing configuration
-	fmt.Printf("📄 Document Processing:\n")
+	fmt.Printf("Document Processing:\n")
 	fmt.Printf("   Auto Chunk: %t\n", m.config.AgentMemory.Documents.AutoChunk)
 	fmt.Printf("   Supported Types: %v\n", m.config.AgentMemory.Documents.SupportedTypes)
 	fmt.Printf("   Max File Size: %s\n", m.config.AgentMemory.Documents.MaxFileSize)

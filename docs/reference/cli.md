@@ -16,6 +16,66 @@ go install github.com/kunalkushwaha/agenticgokit/cmd/agentcli@latest
 curl -L https://github.com/kunalkushwaha/agenticgokit/releases/latest/download/agentcli-${OS}-${ARCH}.tar.gz | tar xz
 ```
 
+### Shell Completion
+
+AgenticGoKit CLI supports intelligent tab completion for all major shells. This provides faster command usage and reduces typing errors.
+
+#### Bash
+
+```bash
+# Load completion for current session
+source <(agentcli completion bash)
+
+# Install permanently on Linux
+sudo agentcli completion bash > /etc/bash_completion.d/agentcli
+
+# Install permanently on macOS (with Homebrew)
+agentcli completion bash > $(brew --prefix)/etc/bash_completion.d/agentcli
+```
+
+#### Zsh
+
+```bash
+# Enable completion support (if not already enabled)
+echo "autoload -U compinit; compinit" >> ~/.zshrc
+
+# Install completion
+agentcli completion zsh > "${fpath[1]}/_agentcli"
+
+# Restart your shell or reload configuration
+source ~/.zshrc
+```
+
+#### Fish
+
+```bash
+# Load completion for current session
+agentcli completion fish | source
+
+# Install permanently
+agentcli completion fish > ~/.config/fish/completions/agentcli.fish
+```
+
+#### PowerShell
+
+```powershell
+# Load completion for current session
+agentcli completion powershell | Out-String | Invoke-Expression
+
+# Install permanently
+agentcli completion powershell > agentcli.ps1
+# Add the following line to your PowerShell profile:
+# . /path/to/agentcli.ps1
+```
+
+**Completion Features:**
+- **Command completion**: Tab completion for all available commands
+- **Flag completion**: Tab completion for all command flags and options
+- **Template completion**: Intelligent completion for `--template` flag with all available templates
+- **Provider completion**: Tab completion for `--provider` flag (openai, azure, ollama, mock)
+- **Memory provider completion**: Tab completion for `--memory` flag (memory, pgvector, weaviate)
+- **File completion**: Smart file completion for template validation and other file operations
+
 ## 📋 Command Structure
 
 ```
@@ -159,6 +219,45 @@ Memory operations and management
 ```bash
 # Memory operations
 agentcli memory
+```
+
+### `completion`
+Generate shell completion scripts
+
+```bash
+# Generate completion for different shells
+agentcli completion bash
+agentcli completion zsh
+agentcli completion fish
+agentcli completion powershell
+
+# Install completion (examples)
+agentcli completion bash > /etc/bash_completion.d/agentcli
+agentcli completion zsh > "${fpath[1]}/_agentcli"
+agentcli completion fish > ~/.config/fish/completions/agentcli.fish
+```
+
+**Supported Shells:**
+- Bash (Linux, macOS, Windows with Git Bash)
+- Zsh (macOS default, Linux)
+- Fish (cross-platform)
+- PowerShell (Windows, cross-platform PowerShell Core)
+
+### `version`
+Show version information
+
+```bash
+# Show basic version
+agentcli version
+
+# Show detailed version information
+agentcli version --output detailed
+
+# Show version in JSON format
+agentcli version --output json
+
+# Show short version only
+agentcli version --short
 ```
 
 ## 📚 Usage Examples

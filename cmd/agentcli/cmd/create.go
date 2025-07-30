@@ -133,6 +133,13 @@ func init() {
 
 	// Add flag groups for better help organization
 	createCmd.Flags().SortFlags = false
+	
+	// Add completion functions
+	createCmd.RegisterFlagCompletionFunc("template", completeTemplateNames)
+	createCmd.RegisterFlagCompletionFunc("provider", completeProviderNames)
+	createCmd.RegisterFlagCompletionFunc("memory", completeMemoryProviders)
+	createCmd.RegisterFlagCompletionFunc("orchestration", completeOrchestrationModes)
+	createCmd.RegisterFlagCompletionFunc("mcp", completeMCPLevels)
 }
 
 func runCreateCommand(cmd *cobra.Command, args []string) error {
@@ -319,4 +326,36 @@ func ShowFlagComparison() {
 	fmt.Println("TEMPLATE APPROACH:")
 	fmt.Println("  --template rag-system  (automatically configures memory, embedding, and RAG)")
 	fmt.Println()
+}
+
+// Completion functions for intelligent shell completion
+
+// completeTemplateNames provides completion for template names
+func completeTemplateNames(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	templates := getTemplateNames()
+	return templates, cobra.ShellCompDirectiveNoFileComp
+}
+
+// completeProviderNames provides completion for LLM provider names
+func completeProviderNames(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	providers := []string{"openai", "azure", "ollama", "mock"}
+	return providers, cobra.ShellCompDirectiveNoFileComp
+}
+
+// completeMemoryProviders provides completion for memory provider names
+func completeMemoryProviders(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	providers := []string{"memory", "pgvector", "weaviate"}
+	return providers, cobra.ShellCompDirectiveNoFileComp
+}
+
+// completeOrchestrationModes provides completion for orchestration modes
+func completeOrchestrationModes(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	modes := []string{"sequential", "collaborative", "loop", "route"}
+	return modes, cobra.ShellCompDirectiveNoFileComp
+}
+
+// completeMCPLevels provides completion for MCP integration levels
+func completeMCPLevels(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	levels := []string{"basic", "production", "full"}
+	return levels, cobra.ShellCompDirectiveNoFileComp
 }

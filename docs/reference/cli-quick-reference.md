@@ -103,6 +103,11 @@ agentcli mcp servers
 
 # Cache management
 agentcli cache stats
+
+# Shell completion
+agentcli completion bash > /etc/bash_completion.d/agentcli
+agentcli completion zsh > "${fpath[1]}/_agentcli"
+agentcli completion powershell > agentcli.ps1
 ```
 
 ## Common Patterns
@@ -144,6 +149,50 @@ agentcli template --help
 # Template details
 agentcli create help-templates
 agentcli template list
+```
+
+## Shell Completion
+
+Enable intelligent tab completion for faster CLI usage:
+
+### Bash
+```bash
+# Load for current session
+source <(agentcli completion bash)
+
+# Install permanently (Linux)
+agentcli completion bash > /etc/bash_completion.d/agentcli
+
+# Install permanently (macOS with Homebrew)
+agentcli completion bash > $(brew --prefix)/etc/bash_completion.d/agentcli
+```
+
+### Zsh
+```bash
+# Enable completion support
+echo "autoload -U compinit; compinit" >> ~/.zshrc
+
+# Install completion
+agentcli completion zsh > "${fpath[1]}/_agentcli"
+```
+
+### PowerShell
+```powershell
+# Load for current session
+agentcli completion powershell | Out-String | Invoke-Expression
+
+# Install permanently
+agentcli completion powershell > agentcli.ps1
+# Add to your PowerShell profile
+```
+
+### Fish
+```bash
+# Load for current session
+agentcli completion fish | source
+
+# Install permanently
+agentcli completion fish > ~/.config/fish/completions/agentcli.fish
 ```
 
 For complete documentation, see the [Full CLI Reference](cli.md).

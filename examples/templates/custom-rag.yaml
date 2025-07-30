@@ -1,0 +1,46 @@
+name: "Custom RAG System"
+description: "A customized RAG system with specific configuration"
+features:
+  - "custom-rag"
+  - "advanced-memory"
+  - "multi-modal"
+
+config:
+  numAgents: 4
+  provider: "openai"
+  orchestrationMode: "collaborative"
+  collaborativeAgents:
+    - "document-ingester"
+    - "query-processor"
+    - "retrieval-agent"
+    - "response-generator"
+  
+  # Memory configuration
+  memoryEnabled: true
+  memoryProvider: "weaviate"
+  embeddingProvider: "openai"
+  embeddingModel: "text-embedding-3-large"
+  
+  # RAG configuration
+  ragEnabled: true
+  ragChunkSize: 2000
+  ragOverlap: 200
+  ragTopK: 10
+  ragScoreThreshold: 0.8
+  hybridSearch: true
+  sessionMemory: true
+  
+  # MCP configuration
+  mcpEnabled: true
+  mcpProduction: true
+  mcpTools:
+    - "web_search"
+    - "document_parser"
+    - "summarize"
+  withCache: true
+  withMetrics: true
+  
+  # Other options
+  responsibleAI: true
+  errorHandler: true
+  visualize: true
