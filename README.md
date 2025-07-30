@@ -23,7 +23,7 @@ Create a collaborative multi-agent system with one command:
 go install github.com/kunalkushwaha/agenticgokit/cmd/agentcli@latest
 
 # Create a multi-agent research team
-agentcli create research-team --orchestration-mode collaborative --agents 3 --visualize
+agentcli create research-team --template research-assistant --visualize
 
 cd research-team
 
@@ -242,7 +242,7 @@ agent := agents.NewToolEnabledAgent("assistant", llmProvider, toolManager)
 go install github.com/kunalkushwaha/agenticgokit/cmd/agentcli@latest
 
 # Create your first project
-agentcli create my-agents --orchestration-mode collaborative --agents 3 --visualize
+agentcli create my-agents --template research-assistant --visualize
 
 cd my-agents
 ```
