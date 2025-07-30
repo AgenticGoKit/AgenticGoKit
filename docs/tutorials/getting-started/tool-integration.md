@@ -36,8 +36,7 @@ Start with built-in tools to understand MCP concepts.
 
 ```bash
 # Create project with MCP tools
-agentcli create tool-agent --mcp-enabled --agents 2 \
-  --mcp-tools "web_search,summarize"
+agentcli create tool-agent --template research-assistant
 cd tool-agent
 ```
 
@@ -117,8 +116,7 @@ Set up production-ready tools with caching, metrics, and load balancing.
 
 ```bash
 # Create production MCP setup
-agentcli create production-tools --mcp-production --with-cache --with-metrics \
-  --agents 3 --mcp-tools "web_search,summarize,translate"
+agentcli create production-tools --mcp production --agents 3
 cd production-tools
 ```
 
@@ -197,7 +195,7 @@ Create custom tools for your specific use cases.
 
 ```bash
 # Create project with custom tool setup
-agentcli create custom-tools --mcp-enabled --agents 2
+agentcli create custom-tools --mcp basic --agents 2
 cd custom-tools
 ```
 
