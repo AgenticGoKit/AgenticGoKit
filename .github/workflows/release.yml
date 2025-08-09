@@ -63,10 +63,10 @@ jobs:
         #### One-Line Installation (Recommended)
         ```bash
         # Windows (PowerShell)
-        iwr -useb https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/main/install.ps1 | iex
+        iwr -useb https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/master/install.ps1 | iex
         
         # Linux/macOS (Bash)
-        curl -fsSL https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/main/install.sh | bash
+        curl -fsSL https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/master/install.sh | bash
         ```
         
         #### Manual Installation
@@ -149,5 +149,5 @@ jobs:
         echo "🔗 Installation scripts will automatically use this version"
         echo ""
         echo "Users can now install with:"
-        echo "curl -fsSL https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/main/install.sh | bash"
-        echo "iwr -useb https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/main/install.ps1 | iex"
+        echo "curl -fsSL https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/master/install.sh | bash"
+        echo "iwr -useb https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/master/install.ps1 | iex"
