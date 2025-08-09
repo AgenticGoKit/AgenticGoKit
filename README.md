@@ -53,12 +53,12 @@ go run . -m "Research the latest developments in AI agent frameworks"
 
 #### Windows (PowerShell)
 ```powershell
-iwr -useb https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/main/install.ps1 | iex
+iwr -useb https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/master/install.ps1 | iex
 ```
 
 #### Linux/macOS (Bash)
 ```bash
-curl -fsSL https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/master/install.sh | bash
 ```
 
 ### **⚡ Alternative Methods**
@@ -75,10 +75,10 @@ go install github.com/kunalkushwaha/agenticgokit/cmd/agentcli@latest
 #### **Specific Version**
 ```bash
 # Linux/macOS
-curl -fsSL https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/main/install.sh | bash -s -- --version v0.3.0
+curl -fsSL https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/master/install.sh | bash -s -- --version v0.3.0
 
 # Windows
-iwr -useb 'https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/main/install.ps1' | iex -Version v0.3.0
+iwr -useb 'https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/master/install.ps1' | iex -Version v0.3.0
 ```
 
 </td>

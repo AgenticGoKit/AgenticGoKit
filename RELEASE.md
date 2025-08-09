@@ -49,10 +49,10 @@ The installation scripts automatically detect and use the latest release:
 Users can install immediately after release:
 ```bash
 # Latest version (automatic)
-curl -fsSL https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/master/install.sh | bash
 
 # Specific version
-curl -fsSL https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/main/install.sh | bash -s -- --version v0.4.0
+curl -fsSL https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/master/install.sh | bash -s -- --version v0.4.0
 ```
 
 ## 📋 Release Checklist
@@ -207,7 +207,7 @@ git push origin v0.4.0
 open https://github.com/kunalkushwaha/agenticgokit/actions
 
 # Test installation after release
-curl -fsSL https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/main/install.sh | bash -s -- --version v0.4.0
+curl -fsSL https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/master/install.sh | bash -s -- --version v0.4.0
 ```
 
 **That's it!** The automated system handles everything else. 🚀
