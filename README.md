@@ -47,6 +47,78 @@ go run . -m "Research the latest developments in AI agent frameworks"
 
 ---
 
+## 📦 Installation
+
+### **🚀 One-Line Installation (Recommended)**
+
+#### Windows (PowerShell)
+```powershell
+iwr -useb https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/main/install.ps1 | iex
+```
+
+#### Linux/macOS (Bash)
+```bash
+curl -fsSL https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/main/install.sh | bash
+```
+
+### **⚡ Alternative Methods**
+
+<table>
+<tr>
+<td width="50%">
+
+#### **Go Install**
+```bash
+go install github.com/kunalkushwaha/agenticgokit/cmd/agentcli@latest
+```
+
+#### **Specific Version**
+```bash
+# Linux/macOS
+curl -fsSL https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/main/install.sh | bash -s -- --version v0.3.0
+
+# Windows
+iwr -useb 'https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/main/install.ps1' | iex -Version v0.3.0
+```
+
+</td>
+<td width="50%">
+
+#### **Manual Download**
+1. Go to [Releases](https://github.com/kunalkushwaha/agenticgokit/releases)
+2. Download binary for your platform
+3. Add to PATH
+
+#### **Build from Source**
+```bash
+git clone https://github.com/kunalkushwaha/agenticgokit.git
+cd agenticgokit
+make build
+```
+
+</td>
+</tr>
+</table>
+
+### **🔧 Post-Installation**
+
+```bash
+# Verify installation
+agentcli version
+
+# Enable shell completion (optional)
+# Bash: source <(agentcli completion bash)
+# Zsh: agentcli completion zsh > "${fpath[1]}/_agentcli"
+# PowerShell: agentcli completion powershell | Out-String | Invoke-Expression
+
+# Create your first project
+agentcli create my-project --template basic
+```
+
+**📖 [Complete Installation Guide](INSTALL.md)** - Detailed instructions, troubleshooting, and advanced options
+
+---
+
 ## 🚀 Why AgenticGoKit?
 
 <table>
@@ -234,34 +306,9 @@ agent := agents.NewToolEnabledAgent("assistant", llmProvider, toolManager)
 
 ---
 
-## 🚀 Installation & Setup
+## ⚙️ Environment Setup
 
-### **Option 1: CLI Tool (Recommended)**
-```bash
-# Install the CLI
-go install github.com/kunalkushwaha/agenticgokit/cmd/agentcli@latest
-
-# Optional: Enable shell completion for faster CLI usage
-# Bash: source <(agentcli completion bash)
-# Zsh: agentcli completion zsh > "${fpath[1]}/_agentcli"
-# PowerShell: agentcli completion powershell | Out-String | Invoke-Expression
-
-# Create your first project
-agentcli create my-agents --template research-assistant --visualize
-
-cd my-agents
-```
-
-### **Option 2: Go Module**
-```bash
-go mod init my-agent-project
-go get github.com/kunalkushwaha/agenticgokit
-
-# Create agentflow.toml configuration file
-# See docs/reference/api/configuration.md for details
-```
-
-### **Environment Setup**
+### **LLM Provider Configuration**
 ```bash
 # For Azure OpenAI (recommended)
 export AZURE_OPENAI_API_KEY=your-key-here

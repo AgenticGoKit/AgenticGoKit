@@ -1,0 +1,153 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # Triggers on version tags like v1.0.0, v0.3.4, etc.
+
+permissions:
+  contents: write  # Required for creating releases and uploading assets
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch full history for proper version info
+    
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+    
+    - name: Get version from tag
+      id: version
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/}
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Version: $VERSION"
+    
+    - name: Build all platforms
+      run: |
+        # Set version for build
+        export VERSION=${{ steps.version.outputs.version }}
+        export GIT_COMMIT=${{ github.sha }}
+        export GIT_BRANCH=${GITHUB_REF#refs/heads/}
+        export BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+        export GO_VERSION=$(go version | awk '{print $3}')
+        
+        # Build for all platforms using Makefile
+        make build-all
+        
+        # List built binaries
+        ls -la agentcli-*
+    
+    - name: Create checksums
+      run: |
+        # Create SHA256 checksums for all binaries
+        sha256sum agentcli-* > checksums.txt
+        cat checksums.txt
+    
+    - name: Generate release notes
+      id: release_notes
+      run: |
+        # Create release notes
+        cat > release_notes.md << 'EOF'
+        ## 🚀 AgenticGoKit CLI ${{ steps.version.outputs.version }}
+        
+        ### 📦 Installation
+        
+        #### One-Line Installation (Recommended)
+        ```bash
+        # Windows (PowerShell)
+        iwr -useb https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/main/install.ps1 | iex
+        
+        # Linux/macOS (Bash)
+        curl -fsSL https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/main/install.sh | bash
+        ```
+        
+        #### Manual Installation
+        1. Download the appropriate binary for your platform below
+        2. Rename to `agentcli` (or `agentcli.exe` on Windows)
+        3. Make executable: `chmod +x agentcli` (Linux/macOS)
+        4. Move to a directory in your PATH
+        
+        #### Go Install
+        ```bash
+        go install github.com/kunalkushwaha/agenticgokit/cmd/agentcli@${{ steps.version.outputs.version }}
+        ```
+        
+        ### 🎯 Quick Start
+        ```bash
+        # Verify installation
+        agentcli version
+        
+        # Create your first project
+        agentcli create my-project --template basic
+        
+        # Enable shell completion
+        agentcli completion bash > /etc/bash_completion.d/agentcli  # Linux
+        agentcli completion zsh > "${fpath[1]}/_agentcli"          # Zsh
+        ```
+        
+        ### 📋 Platform Support
+        - ✅ **Linux AMD64** - Most Linux distributions
+        - ✅ **Linux ARM64** - ARM-based Linux systems, Raspberry Pi
+        - ✅ **macOS Intel** - Intel-based Macs
+        - ✅ **macOS Apple Silicon** - M1/M2/M3 Macs
+        - ✅ **Windows AMD64** - 64-bit Windows
+        - ✅ **Windows ARM64** - ARM-based Windows devices
+        
+        ### 🔍 Verification
+        All binaries are signed with SHA256 checksums. Verify your download:
+        ```bash
+        # Download checksum file
+        curl -fsSL https://github.com/kunalkushwaha/agenticgokit/releases/download/${{ steps.version.outputs.version }}/checksums.txt
+        
+        # Verify binary (replace with your platform)
+        sha256sum -c checksums.txt --ignore-missing
+        ```
+        
+        ### 📚 Documentation
+        - [Installation Guide](https://github.com/kunalkushwaha/agenticgokit/blob/main/INSTALL.md)
+        - [CLI Reference](https://github.com/kunalkushwaha/agenticgokit/blob/main/docs/reference/cli.md)
+        - [Getting Started](https://github.com/kunalkushwaha/agenticgokit/blob/main/docs/tutorials/getting-started/quickstart.md)
+        
+        ---
+        
+        **Full Changelog**: https://github.com/kunalkushwaha/agenticgokit/compare/v0.3.3...${{ steps.version.outputs.version }}
+        EOF
+        
+        echo "Release notes created"
+        cat release_notes.md
+    
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.version.outputs.version }}
+        name: AgenticGoKit CLI ${{ steps.version.outputs.version }}
+        body_path: release_notes.md
+        draft: false
+        prerelease: false
+        files: |
+          agentcli-linux-amd64
+          agentcli-linux-arm64
+          agentcli-darwin-amd64
+          agentcli-darwin-arm64
+          agentcli-windows-amd64.exe
+          agentcli-windows-arm64.exe
+          checksums.txt
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Update installation scripts
+      run: |
+        echo "✅ Release ${{ steps.version.outputs.version }} created successfully!"
+        echo "📦 Binaries uploaded for all platforms"
+        echo "🔗 Installation scripts will automatically use this version"
+        echo ""
+        echo "Users can now install with:"
+        echo "curl -fsSL https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/main/install.sh | bash"
+        echo "iwr -useb https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/main/install.ps1 | iex"
