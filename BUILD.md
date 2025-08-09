@@ -209,12 +209,12 @@ For end users who don't want to build from source, we provide one-line installat
 
 ### PowerShell (Windows)
 ```powershell
-iwr -useb https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/main/install.ps1 | iex
+iwr -useb https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/master/install.ps1 | iex
 ```
 
 ### Bash (Linux/macOS)
 ```bash
-curl -fsSL https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/master/install.sh | bash
 ```
 
 ### Script Features
@@ -228,13 +228,13 @@ curl -fsSL https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/main/ins
 ### Advanced Usage
 ```bash
 # Install specific version
-curl -fsSL https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/main/install.sh | bash -s -- --version v0.3.0
+curl -fsSL https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/master/install.sh | bash -s -- --version v0.3.0
 
 # Install to custom directory
-curl -fsSL https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/main/install.sh | bash -s -- --dir /usr/local/bin
+curl -fsSL https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/master/install.sh | bash -s -- --dir /usr/local/bin
 
 # Force overwrite existing
-curl -fsSL https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/main/install.sh | bash -s -- --force
+curl -fsSL https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/master/install.sh | bash -s -- --force
 ```
 
 See [INSTALL.md](INSTALL.md) for complete installation documentation.
