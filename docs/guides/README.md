@@ -7,6 +7,7 @@ Task-oriented guides for specific development scenarios and common tasks.
 ## Quick Navigation
 
 ### Setup & Configuration
+- [Project Templates](project-templates.md) - Use and create project templates
 - [LLM Providers](setup/llm-providers.md) - Configure different LLM providers
 - [Vector Databases](setup/vector-databases.md) - Set up vector storage for RAG
 - [MCP Tools](setup/mcp-tools.md) - Integrate Model Context Protocol tools

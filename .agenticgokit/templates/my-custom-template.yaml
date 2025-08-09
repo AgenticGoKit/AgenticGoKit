@@ -1,0 +1,19 @@
+name: Custom Template
+description: A custom project template example
+features:
+    - custom-feature
+    - example
+config:
+    numAgents: 2
+    provider: openai
+    orchestrationMode: sequential
+    memoryEnabled: true
+    memoryProvider: pgvector
+    embeddingProvider: openai
+    ragEnabled: true
+    ragChunkSize: 1000
+    mcpEnabled: true
+    mcpTools:
+        - web_search
+    responsibleAI: true
+    errorHandler: true

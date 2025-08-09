@@ -2100,7 +2100,7 @@ func InitializeRealMCPServers() error {
 func init() {
 	// This will be called when the core package is initialized
 	// If the factory package is available, it will register itself
-	Logger().Debug().Msg("Core MCP package initialized")
+	//Logger().Debug().Msg("Core MCP package initialized")
 }
 
 // ==========================================
@@ -2303,5 +2303,5 @@ func ParseToolCallJSON(jsonStr string) map[string]interface{} {
 func init() {
 	// This will be called when the core package is initialized
 	// If the factory package is available, it will register itself
-	Logger().Debug().Msg("Core MCP package initialized")
+	//Logger().Debug().Msg("Core MCP package initialized")
 }

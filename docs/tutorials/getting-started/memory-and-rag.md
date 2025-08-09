@@ -36,7 +36,7 @@ Start with in-memory storage to understand the concepts.
 
 ```bash
 # Create project with basic memory
-agentcli create knowledge-agent --memory-enabled --agents 2
+agentcli create knowledge-agent --memory memory --agents 2
 cd knowledge-agent
 ```
 
@@ -79,8 +79,7 @@ Set up persistent memory using PostgreSQL with pgvector extension.
 
 ```bash
 # Create project with PostgreSQL memory
-agentcli create persistent-agent --memory-enabled --memory-provider pgvector \
-  --rag-enabled --agents 2
+agentcli create persistent-agent --memory pgvector --rag default --agents 2
 cd persistent-agent
 ```
 
@@ -136,8 +135,7 @@ Implement full RAG (Retrieval-Augmented Generation) with document ingestion.
 
 ```bash
 # Create comprehensive RAG system
-agentcli create rag-system --memory-enabled --memory-provider pgvector \
-  --rag-enabled --hybrid-search --session-memory --agents 3
+agentcli create rag-system --template rag-system
 cd rag-system
 ```
 
@@ -235,28 +233,24 @@ The agents can now answer questions using the ingested knowledge:
 
 ```bash
 # Customize document processing
-agentcli create doc-system --memory-enabled --memory-provider pgvector \
-  --rag-enabled --rag-chunk-size 512 --rag-overlap 50 --rag-top-k 3
+agentcli create doc-system --memory pgvector --rag 512
 ```
 
 ### Search Configuration
 
 ```bash
 # Fine-tune search behavior
-agentcli create search-system --memory-enabled --memory-provider pgvector \
-  --rag-enabled --hybrid-search --rag-score-threshold 0.8
+agentcli create search-system --memory pgvector --rag default
 ```
 
 ### Embedding Models
 
 ```bash
 # Use OpenAI embeddings (requires API key)
-agentcli create openai-system --memory-enabled --memory-provider pgvector \
-  --embedding-provider openai --embedding-model text-embedding-ada-002
+agentcli create openai-system --memory pgvector --embedding openai
 
 # Use local Ollama embeddings (recommended)
-agentcli create local-system --memory-enabled --memory-provider pgvector \
-  --embedding-provider ollama --embedding-model nomic-embed-text:latest
+agentcli create local-system --memory pgvector --embedding ollama:nomic-embed-text
 ```
 
 ## Advanced Memory Features
@@ -265,7 +259,7 @@ agentcli create local-system --memory-enabled --memory-provider pgvector \
 
 ```bash
 # Enable session-based memory isolation
-agentcli create session-system --memory-enabled --session-memory
+agentcli create session-system --template chat-system
 ```
 
 Session memory keeps conversations separate for different users or contexts.
@@ -274,7 +268,7 @@ Session memory keeps conversations separate for different users or contexts.
 
 ```bash
 # Configure hybrid search weights
-agentcli create hybrid-system --memory-enabled --hybrid-search
+agentcli create hybrid-system --memory pgvector --rag default
 ```
 
 Hybrid search combines:

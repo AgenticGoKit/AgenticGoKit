@@ -38,8 +38,7 @@ Package your agents for consistent deployment across environments.
 
 ```bash
 # Create production-ready project with all features
-agentcli create production-system --memory-enabled --memory-provider pgvector \
-  --mcp-production --with-cache --with-metrics --rag-enabled --agents 3
+agentcli create production-system --template rag-system --mcp production
 cd production-system
 ```
 

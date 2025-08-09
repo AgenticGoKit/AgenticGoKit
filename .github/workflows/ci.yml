@@ -1,0 +1,118 @@
+name: CI
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+    
+    - name: Cache Go modules
+      uses: actions/cache@v3
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+    
+    - name: Run tests
+      run: go test -v ./...
+    
+    - name: Run go vet
+      run: go vet ./...
+    
+    - name: Run go fmt check
+      run: |
+        if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
+          echo "The following files are not formatted:"
+          gofmt -s -l .
+          exit 1
+        fi
+
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+    
+    - name: Build for current platform
+      run: make build
+    
+    - name: Test CLI binary
+      run: |
+        ./agentcli version
+        ./agentcli --help
+    
+    - name: Build all platforms (PR only)
+      if: github.event_name == 'pull_request'
+      run: make build-all
+    
+    - name: Upload build artifacts (PR only)
+      if: github.event_name == 'pull_request'
+      uses: actions/upload-artifact@v3
+      with:
+        name: agentcli-binaries-pr-${{ github.event.number }}
+        path: agentcli-*
+        retention-days: 7
+
+  build-matrix:
+    runs-on: ${{ matrix.os }}
+    needs: test
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+    
+    - name: Build for native platform
+      run: |
+        # Use appropriate build script for each OS
+        if [ "$RUNNER_OS" == "Windows" ]; then
+          ./build.ps1 build
+        else
+          ./build.sh build
+        fi
+      shell: bash
+    
+    - name: Test binary
+      run: |
+        if [ "$RUNNER_OS" == "Windows" ]; then
+          ./agentcli.exe version
+          ./agentcli.exe --help
+        else
+          ./agentcli version
+          ./agentcli --help
+        fi
+      shell: bash
