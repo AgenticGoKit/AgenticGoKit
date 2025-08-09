@@ -192,8 +192,8 @@ func runCreateCommand(cmd *cobra.Command, args []string) error {
 		fmt.Printf("[INFO] Workflow visualization enabled\n")
 	}
 
-	// Create the project
-	return scaffold.CreateAgentProjectModular(config)
+	// Create the project with validation and version info
+	return scaffold.CreateProjectWithValidation(config)
 }
 
 func runInteractiveCreateMode() error {
@@ -305,7 +305,7 @@ func runInteractiveCreateMode() error {
 	}
 
 	fmt.Printf("\nCreating project '%s' with selected configuration...\n", projectName)
-	return scaffold.CreateAgentProjectModular(config)
+	return scaffold.CreateProjectWithValidation(config)
 }
 
 // ShowFlagComparison shows the difference between old and new flag structures

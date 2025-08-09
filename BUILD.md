@@ -168,6 +168,16 @@ The build date is consistently formatted in **RFC3339** format across all build 
 
 This ensures consistent parsing in the version display logic.
 
+### Dynamic Version Resolution for Scaffolding
+
+The CLI automatically determines the correct AgenticGoKit library version to use in generated projects:
+
+1. **CLI Version** (preferred): Uses the CLI's own version if it's a proper semantic version
+2. **GitHub API** (fallback): Fetches the latest release from GitHub API
+3. **Stable Fallback** (last resort): Uses a known stable version (v0.3.4)
+
+This ensures generated projects always use compatible library versions and stay up-to-date with releases.
+
 View version information:
 ```bash
 # Using built binary

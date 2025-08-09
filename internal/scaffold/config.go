@@ -1,14 +1,147 @@
 package scaffold
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"strings"
 	"time"
+	
+	"github.com/kunalkushwaha/agenticgokit/cmd/agentcli/version"
 )
 
 // AgenticGoKitVersion represents the version of AgenticGoKit to use in generated projects
-// v0.3.4 has the correct lowercase module name throughout
-const AgenticGoKitVersion = "v0.3.4"
+// This is dynamically determined from the CLI version or latest GitHub release
+var AgenticGoKitVersion = getAgenticGoKitVersion()
+
+// GitHubRelease represents a GitHub release response
+type GitHubRelease struct {
+	TagName string `json:"tag_name"`
+}
+
+// getAgenticGoKitVersion dynamically determines the AgenticGoKit version to use
+func getAgenticGoKitVersion() string {
+	// Strategy 1: Use the CLI's own version if it's a proper release version
+	cliVersion := version.Version
+	if cliVersion != "" && cliVersion != "dev" && isValidSemanticVersion(cliVersion) {
+		// Ensure version has 'v' prefix
+		if !strings.HasPrefix(cliVersion, "v") {
+			cliVersion = "v" + cliVersion
+		}
+		return cliVersion
+	}
+	
+	// Strategy 2: Try to fetch the latest version from GitHub API
+	if latestVersion := fetchLatestVersionFromGitHub(); latestVersion != "" {
+		return latestVersion
+	}
+	
+	// Strategy 3: Fallback to a known stable version
+	// This should be updated periodically, but serves as a last resort
+	return "v0.3.4"
+}
+
+// fetchLatestVersionFromGitHub fetches the latest release version from GitHub API
+func fetchLatestVersionFromGitHub() string {
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+	
+	req, err := http.NewRequest("GET", "https://api.github.com/repos/kunalkushwaha/agenticgokit/releases/latest", nil)
+	if err != nil {
+		return ""
+	}
+	
+	// Set User-Agent to avoid rate limiting
+	req.Header.Set("User-Agent", "AgenticGoKit-CLI")
+	
+	resp, err := client.Do(req)
+	if err != nil {
+		return ""
+	}
+	defer resp.Body.Close()
+	
+	if resp.StatusCode != http.StatusOK {
+		return ""
+	}
+	
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return ""
+	}
+	
+	var release GitHubRelease
+	if err := json.Unmarshal(body, &release); err != nil {
+		return ""
+	}
+	
+	if release.TagName != "" && isValidSemanticVersion(release.TagName) {
+		return release.TagName
+	}
+	
+	return ""
+}
+
+// isValidSemanticVersion checks if a version string follows semantic versioning
+func isValidSemanticVersion(version string) bool {
+	// Remove 'v' prefix if present
+	v := strings.TrimPrefix(version, "v")
+	
+	// Handle pre-release and build metadata
+	// Split on '+' first to handle build metadata
+	mainVersion := v
+	if idx := strings.Index(v, "+"); idx != -1 {
+		mainVersion = v[:idx]
+	}
+	
+	// Split on '-' to handle pre-release
+	if idx := strings.Index(mainVersion, "-"); idx != -1 {
+		mainVersion = mainVersion[:idx]
+	}
+	
+	// Basic semantic version pattern: X.Y.Z (exactly 3 parts)
+	parts := strings.Split(mainVersion, ".")
+	if len(parts) != 3 {
+		return false
+	}
+	
+	// Check that all three parts are valid numbers
+	for _, part := range parts {
+		// Check if it's a valid number
+		if len(part) == 0 {
+			return false
+		}
+		for _, char := range part {
+			if char < '0' || char > '9' {
+				return false
+			}
+		}
+	}
+	
+	return true
+}
+
+// GetAgenticGoKitVersionWithFallback returns the AgenticGoKit version with explicit fallback handling
+func GetAgenticGoKitVersionWithFallback() (string, string) {
+	cliVersion := version.Version
+	
+	// If CLI version is valid, use it
+	if cliVersion != "" && cliVersion != "dev" && isValidSemanticVersion(cliVersion) {
+		if !strings.HasPrefix(cliVersion, "v") {
+			cliVersion = "v" + cliVersion
+		}
+		return cliVersion, "cli-version"
+	}
+	
+	// Try GitHub API
+	if latestVersion := fetchLatestVersionFromGitHub(); latestVersion != "" {
+		return latestVersion, "github-api"
+	}
+	
+	// Fallback
+	return "v0.3.4", "fallback"
+}
 
 // AgentInfo represents information about an agent including its name and purpose
 type AgentInfo struct {
@@ -731,8 +864,29 @@ func ValidateAndSanitizeProjectConfig(config *ProjectConfig) error {
 	return nil
 }
 
+// ShowVersionInfo displays information about the AgenticGoKit version being used
+func ShowVersionInfo() {
+	version, source := GetAgenticGoKitVersionWithFallback()
+	
+	fmt.Printf("📦 Using AgenticGoKit version: %s", version)
+	
+	switch source {
+	case "cli-version":
+		fmt.Printf(" (from CLI version)\n")
+	case "github-api":
+		fmt.Printf(" (latest from GitHub)\n")
+	case "fallback":
+		fmt.Printf(" (fallback - consider updating CLI)\n")
+		fmt.Printf("   💡 Run the installer to get the latest version:\n")
+		fmt.Printf("      curl -fsSL https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/main/install.sh | bash\n")
+	}
+}
+
 // CreateProjectWithValidation creates a project with full validation and sanitization
 func CreateProjectWithValidation(config ProjectConfig) error {
+	// Show version information
+	ShowVersionInfo()
+	
 	// Validate and sanitize configuration
 	if err := ValidateAndSanitizeProjectConfig(&config); err != nil {
 		return fmt.Errorf("configuration validation failed: %w", err)
