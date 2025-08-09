@@ -5,6 +5,8 @@ on:
   schedule:
     - cron: '0 6 * * 1'  # Weekly on Monday at 6 AM UTC
 
+permissions:
+  contents: write
 jobs:
   update-scripts:
     runs-on: ubuntu-latest
