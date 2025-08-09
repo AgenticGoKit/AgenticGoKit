@@ -6,6 +6,21 @@ import (
 	"time"
 )
 
+// Date format constants for consistent parsing
+const (
+	// RFC3339Format is the standard format used by all build systems
+	// Example: "2006-01-02T15:04:05Z"
+	RFC3339Format = time.RFC3339
+	
+	// LegacyFormat is a fallback for builds without timezone info
+	// Example: "2006-01-02T15:04:05"
+	LegacyFormat = "2006-01-02T15:04:05"
+	
+	// DisplayFormat is the human-readable format for version output
+	// Example: "2006-01-02 15:04:05 UTC"
+	DisplayFormat = "2006-01-02 15:04:05 UTC"
+)
+
 // VersionInfo contains all version-related information
 type VersionInfo struct {
 	Version   string `json:"version"`
@@ -18,11 +33,12 @@ type VersionInfo struct {
 }
 
 // Build-time variables set via ldflags
+// BuildDate should be in RFC3339 format (e.g., "2006-01-02T15:04:05Z")
 var (
 	Version   = "dev"
 	GitCommit = "unknown"
 	GitBranch = "unknown"
-	BuildDate = "unknown"
+	BuildDate = "1970-01-01T00:00:00Z" // RFC3339 format default instead of "unknown"
 )
 
 // GetVersionInfo returns comprehensive version information
@@ -53,18 +69,26 @@ func GetVersionString() string {
 }
 
 // GetDetailedVersionString returns a detailed multi-line version string
+// BuildDate is expected to be in RFC3339 format (e.g., "2006-01-02T15:04:05Z")
 func GetDetailedVersionString() string {
 	info := GetVersionInfo()
 	
 	var buildTime string
-	if info.BuildDate != "unknown" {
-		if t, err := time.Parse(time.RFC3339, info.BuildDate); err == nil {
-			buildTime = t.Format("2006-01-02 15:04:05 UTC")
-		} else {
-			buildTime = info.BuildDate
-		}
+	// Try to parse RFC3339 format first (standard format from build systems)
+	if t, err := time.Parse(RFC3339Format, info.BuildDate); err == nil {
+		buildTime = t.Format(DisplayFormat)
 	} else {
-		buildTime = "unknown"
+		// Fallback: try parsing without timezone (for legacy builds)
+		if t, err := time.Parse(LegacyFormat, info.BuildDate); err == nil {
+			buildTime = t.Format(DisplayFormat)
+		} else {
+			// If all parsing fails, use the raw value
+			if info.BuildDate == "1970-01-01T00:00:00Z" {
+				buildTime = "unknown"
+			} else {
+				buildTime = info.BuildDate
+			}
+		}
 	}
 	
 	return fmt.Sprintf(`agentcli version %s

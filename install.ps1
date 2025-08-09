@@ -53,14 +53,103 @@ function Get-Architecture {
 function Get-LatestVersion {
     try {
         Write-ColorOutput "Fetching latest release information..." $Cyan
-        $response = Invoke-RestMethod -Uri "https://api.github.com/repos/kunalkushwaha/agenticgokit/releases/latest" -Headers @{"User-Agent" = "AgenticGoKit-Installer"}
-        return $response.tag_name
+        $response = Invoke-RestMethod -Uri "https://api.github.com/repos/kunalkushwaha/agenticgokit/releases/latest" -Headers @{"User-Agent" = "AgenticGoKit-Installer"} -TimeoutSec 30
+        
+        # Validate response structure
+        if (-not $response) {
+            Write-ColorOutput "Error: Received empty response from GitHub API" $Red
+            Show-ApiErrorGuidance "empty_response"
+            return $null
+        }
+        
+        if (-not $response.tag_name) {
+            Write-ColorOutput "Error: Invalid JSON response - missing tag_name field" $Red
+            if ($response.message) {
+                Write-ColorOutput "  → GitHub API message: $($response.message)" $Yellow
+            }
+            Show-ApiErrorGuidance "invalid_json"
+            return $null
+        }
+        
+        $version = $response.tag_name
+        
+        # Validate version format
+        if ([string]::IsNullOrWhiteSpace($version) -or $version -eq "null") {
+            Write-ColorOutput "Error: Invalid version value: '$version'" $Red
+            Show-ApiErrorGuidance "invalid_version"
+            return $null
+        }
+        
+        # Basic version format validation (should be semantic version)
+        if (-not ($version -match '^v?\d+\.\d+\.\d+')) {
+            Write-ColorOutput "Warning: Unusual version format: '$version'" $Yellow
+            Write-ColorOutput "  → Proceeding anyway, but this may cause issues" $Yellow
+        }
+        
+        return $version
     }
     catch {
-        Write-ColorOutput "Error fetching latest version: $($_.Exception.Message)" $Red
-        Write-ColorOutput "Falling back to manual installation..." $Yellow
+        $errorMessage = $_.Exception.Message
+        $statusCode = $null
+        
+        # Try to extract HTTP status code for better error handling
+        if ($_.Exception -is [System.Net.WebException]) {
+            $statusCode = [int]$_.Exception.Response.StatusCode
+        } elseif ($_.Exception.Response) {
+            $statusCode = [int]$_.Exception.Response.StatusCode
+        }
+        
+        Write-ColorOutput "Error fetching latest version from GitHub API:" $Red
+        
+        # Provide specific guidance based on error type
+        switch ($statusCode) {
+            403 {
+                Write-ColorOutput "  → Rate limit exceeded or access forbidden (HTTP 403)" $Yellow
+                Write-ColorOutput "  → GitHub API has rate limits for unauthenticated requests" $Yellow
+                Write-ColorOutput "  → Try again in a few minutes or specify a version manually" $Yellow
+                Write-ColorOutput "  → Example: -Version v0.3.0" $White
+            }
+            404 {
+                Write-ColorOutput "  → Repository not found or releases not available (HTTP 404)" $Yellow
+                Write-ColorOutput "  → The repository may have been moved or made private" $Yellow
+                Write-ColorOutput "  → Check if the repository exists: https://github.com/kunalkushwaha/agenticgokit" $White
+            }
+            { $_ -ge 500 } {
+                Write-ColorOutput "  → GitHub server error (HTTP $statusCode)" $Yellow
+                Write-ColorOutput "  → This is a temporary issue with GitHub's servers" $Yellow
+                Write-ColorOutput "  → Try again in a few minutes" $Yellow
+            }
+            default {
+                if ($errorMessage -match "timeout|timed out") {
+                    Write-ColorOutput "  → Network timeout - check your internet connection" $Yellow
+                    Write-ColorOutput "  → GitHub API requests may take time, try again" $Yellow
+                } elseif ($errorMessage -match "resolve|dns|name") {
+                    Write-ColorOutput "  → DNS resolution failed - check your internet connection" $Yellow
+                    Write-ColorOutput "  → Verify you can access github.com in your browser" $Yellow
+                } elseif ($errorMessage -match "ssl|tls|certificate") {
+                    Write-ColorOutput "  → SSL/TLS certificate error" $Yellow
+                    Write-ColorOutput "  → Update your system certificates or try manual installation" $Yellow
+                } else {
+                    Write-ColorOutput "  → $errorMessage" $Yellow
+                    Write-ColorOutput "  → This may be a temporary network or server issue" $Yellow
+                }
+            }
+        }
+        
+        Show-ApiErrorGuidance "network_error"
         return $null
     }
+}
+
+function Show-ApiErrorGuidance {
+    param([string]$ErrorType)
+    
+    Write-ColorOutput "" $White
+    Write-ColorOutput "Alternative installation methods:" $Cyan
+    Write-ColorOutput "  1. Specify version manually: -Version v0.3.0" $White
+    Write-ColorOutput "  2. Manual download: https://github.com/kunalkushwaha/agenticgokit/releases" $White
+    Write-ColorOutput "  3. Use Go install: go install github.com/kunalkushwaha/agenticgokit/cmd/agentcli@latest" $White
+    Write-ColorOutput "  4. Check GitHub status: https://www.githubstatus.com/" $White
 }
 
 function Get-InstallDirectory {
@@ -181,12 +270,62 @@ function Install-AgenticGoKit {
     Write-ColorOutput "Downloading $binaryName..." $Cyan
     try {
         $progressPreference = 'SilentlyContinue'
-        Invoke-WebRequest -Uri $downloadUrl -OutFile $binaryPath -Headers @{"User-Agent" = "AgenticGoKit-Installer"}
+        Invoke-WebRequest -Uri $downloadUrl -OutFile $binaryPath -Headers @{"User-Agent" = "AgenticGoKit-Installer"} -TimeoutSec 300
         $progressPreference = 'Continue'
     }
     catch {
-        Write-ColorOutput "Error downloading binary: $($_.Exception.Message)" $Red
-        Write-ColorOutput "Please check the version and try again." $Yellow
+        $progressPreference = 'Continue'
+        $errorMessage = $_.Exception.Message
+        $statusCode = $null
+        
+        # Try to extract HTTP status code
+        if ($_.Exception -is [System.Net.WebException]) {
+            $statusCode = [int]$_.Exception.Response.StatusCode
+        } elseif ($_.Exception.Response) {
+            $statusCode = [int]$_.Exception.Response.StatusCode
+        }
+        
+        Write-ColorOutput "Error downloading binary from $downloadUrl" $Red
+        
+        # Provide specific guidance based on error type
+        switch ($statusCode) {
+            404 {
+                Write-ColorOutput "  → Binary not found (HTTP 404)" $Yellow
+                Write-ColorOutput "  → The version '$targetVersion' may not exist or binaries aren't available" $Yellow
+                Write-ColorOutput "  → Check available versions: https://github.com/kunalkushwaha/agenticgokit/releases" $White
+                Write-ColorOutput "  → Try a different version: -Version v0.3.0" $White
+            }
+            403 {
+                Write-ColorOutput "  → Access forbidden (HTTP 403)" $Yellow
+                Write-ColorOutput "  → GitHub may be rate limiting downloads" $Yellow
+                Write-ColorOutput "  → Try again in a few minutes" $Yellow
+            }
+            { $_ -ge 500 } {
+                Write-ColorOutput "  → GitHub server error (HTTP $statusCode)" $Yellow
+                Write-ColorOutput "  → Try again in a few minutes" $Yellow
+            }
+            default {
+                if ($errorMessage -match "timeout|timed out") {
+                    Write-ColorOutput "  → Download timeout - the binary may be large" $Yellow
+                    Write-ColorOutput "  → Check your internet connection and try again" $Yellow
+                } elseif ($errorMessage -match "resolve|dns|name") {
+                    Write-ColorOutput "  → DNS resolution failed" $Yellow
+                    Write-ColorOutput "  → Check your internet connection" $Yellow
+                } elseif ($errorMessage -match "ssl|tls|certificate") {
+                    Write-ColorOutput "  → SSL/TLS certificate error" $Yellow
+                    Write-ColorOutput "  → Update your system certificates" $Yellow
+                } else {
+                    Write-ColorOutput "  → $errorMessage" $Yellow
+                }
+            }
+        }
+        
+        Write-ColorOutput "" $White
+        Write-ColorOutput "Alternative solutions:" $Cyan
+        Write-ColorOutput "  1. Manual download: https://github.com/kunalkushwaha/agenticgokit/releases" $White
+        Write-ColorOutput "  2. Try a different version: -Version v0.3.0" $White
+        Write-ColorOutput "  3. Use Go install: go install github.com/kunalkushwaha/agenticgokit/cmd/agentcli@latest" $White
+        
         return 1
     }
     

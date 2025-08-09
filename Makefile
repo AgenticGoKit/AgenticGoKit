@@ -22,7 +22,7 @@ endif
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 GIT_COMMIT ?= $(shell git rev-parse HEAD 2>/dev/null || echo "unknown")
 GIT_BRANCH ?= $(shell git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
-BUILD_DATE ?= $(shell $(DATE_CMD) 2>/dev/null || echo "unknown")
+BUILD_DATE ?= $(shell $(DATE_CMD) 2>/dev/null || echo "1970-01-01T00:00:00Z")
 
 # Build flags
 LDFLAGS = -X github.com/kunalkushwaha/agenticgokit/cmd/agentcli/version.Version=$(VERSION) \

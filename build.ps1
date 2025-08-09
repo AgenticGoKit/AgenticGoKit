@@ -10,6 +10,7 @@ param(
 $VERSION = try { git describe --tags --always --dirty 2>$null } catch { "dev" }
 $GIT_COMMIT = try { git rev-parse HEAD 2>$null } catch { "unknown" }
 $GIT_BRANCH = try { git rev-parse --abbrev-ref HEAD 2>$null } catch { "unknown" }
+# RFC3339 format for consistent parsing in version.go
 $BUILD_DATE = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
 
 # Build flags

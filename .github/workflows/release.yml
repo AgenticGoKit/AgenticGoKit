@@ -36,7 +36,7 @@ jobs:
         export VERSION=${{ steps.version.outputs.version }}
         export GIT_COMMIT=${{ github.sha }}
         export GIT_BRANCH=${GITHUB_REF#refs/heads/}
-        export BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+        export BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")  # RFC3339 format
         export GO_VERSION=$(go version | awk '{print $3}')
         
         # Build for all platforms using Makefile

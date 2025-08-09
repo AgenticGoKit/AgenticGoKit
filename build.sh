@@ -16,6 +16,7 @@ NC='\033[0m' # No Color
 VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "dev")
 GIT_COMMIT=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
 GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+# RFC3339 format for consistent parsing in version.go
 BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # Build flags

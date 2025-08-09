@@ -79,18 +79,188 @@ get_arch() {
 
 get_latest_version() {
     log_info "Fetching latest release information..."
+    
+    local api_url="https://api.github.com/repos/kunalkushwaha/agenticgokit/releases/latest"
+    local response=""
+    local http_code=""
+    local version=""
+    local curl_exit_code=0
+    local wget_exit_code=0
+    
     if command -v curl >/dev/null 2>&1; then
-        curl -fsSL "https://api.github.com/repos/kunalkushwaha/agenticgokit/releases/latest" | \
-            grep '"tag_name":' | \
-            sed -E 's/.*"tag_name":\s*"([^"]+)".*/\1/'
+        # Use curl with detailed error handling
+        response=$(curl -fsSL --max-time 30 --write-out "HTTPSTATUS:%{http_code}" "$api_url" 2>/dev/null)
+        curl_exit_code=$?
+        
+        # Check if curl command itself failed
+        if [ $curl_exit_code -ne 0 ]; then
+            handle_api_error "000" "curl" "$curl_exit_code"
+            return 1
+        fi
+        
+        # Extract HTTP status code
+        http_code=$(echo "$response" | grep -o "HTTPSTATUS:[0-9]*" | cut -d: -f2)
+        response=$(echo "$response" | sed -E 's/HTTPSTATUS:[0-9]*$//')
+        
+        # Validate HTTP status code extraction
+        if [ -z "$http_code" ]; then
+            log_error "Failed to extract HTTP status code from response"
+            handle_api_error "unknown" "curl" "$curl_exit_code"
+            return 1
+        fi
+        
+        # Check for successful HTTP response
+        if [ "$http_code" = "200" ]; then
+            # Validate response is not empty
+            if [ -z "$response" ]; then
+                log_error "Received empty response from GitHub API"
+                handle_api_error "$http_code" "curl" "$curl_exit_code"
+                return 1
+            fi
+            
+            # Validate response contains expected JSON structure
+            if ! echo "$response" | grep -q '"tag_name"'; then
+                log_error "Invalid JSON response - missing tag_name field"
+                log_warning "Response preview: $(echo "$response" | head -c 100)..."
+                handle_api_error "$http_code" "curl" "$curl_exit_code"
+                return 1
+            fi
+            
+            # Extract version with validation
+            version=$(echo "$response" | grep '"tag_name":' | sed -E 's/.*"tag_name":\s*"([^"]+)".*/\1/' | head -1)
+            
+            # Validate extracted version
+            if [ -n "$version" ] && [ "$version" != "null" ]; then
+                # Basic version format validation (should start with 'v' or be semantic version)
+                if echo "$version" | grep -qE '^v?[0-9]+\.[0-9]+\.[0-9]+'; then
+                    echo "$version"
+                    return 0
+                else
+                    log_error "Invalid version format extracted: '$version'"
+                fi
+            else
+                log_error "Failed to extract version from JSON response"
+            fi
+        fi
+        
+        # Handle non-200 HTTP status codes
+        handle_api_error "$http_code" "curl" "$curl_exit_code"
+        
     elif command -v wget >/dev/null 2>&1; then
-        wget -qO- "https://api.github.com/repos/kunalkushwaha/agenticgokit/releases/latest" | \
-            grep '"tag_name":' | \
-            sed -E 's/.*"tag_name":\s*"([^"]+)".*/\1/'
+        # Use wget with error handling
+        response=$(wget --timeout=30 --tries=1 -qO- "$api_url" 2>/dev/null)
+        wget_exit_code=$?
+        
+        # Check if wget command itself failed
+        if [ $wget_exit_code -ne 0 ]; then
+            handle_api_error "unknown" "wget" "$wget_exit_code"
+            return 1
+        fi
+        
+        # Validate response is not empty
+        if [ -z "$response" ]; then
+            log_error "Received empty response from GitHub API"
+            handle_api_error "unknown" "wget" "$wget_exit_code"
+            return 1
+        fi
+        
+        # Validate response contains expected JSON structure
+        if ! echo "$response" | grep -q '"tag_name"'; then
+            log_error "Invalid JSON response - missing tag_name field"
+            log_warning "Response preview: $(echo "$response" | head -c 100)..."
+            handle_api_error "unknown" "wget" "$wget_exit_code"
+            return 1
+        fi
+        
+        # Extract version with validation
+        version=$(echo "$response" | grep '"tag_name":' | sed -E 's/.*"tag_name":\s*"([^"]+)".*/\1/' | head -1)
+        
+        # Validate extracted version
+        if [ -n "$version" ] && [ "$version" != "null" ]; then
+            # Basic version format validation
+            if echo "$version" | grep -qE '^v?[0-9]+\.[0-9]+\.[0-9]+'; then
+                echo "$version"
+                return 0
+            else
+                log_error "Invalid version format extracted: '$version'"
+            fi
+        else
+            log_error "Failed to extract version from JSON response"
+        fi
+        
+        # If we get here, something went wrong with parsing
+        handle_api_error "unknown" "wget" "$wget_exit_code"
+        
     else
         log_error "Neither curl nor wget is available. Please install one of them."
         exit 1
     fi
+    
+    return 1
+}
+
+handle_api_error() {
+    local http_code="$1"
+    local tool="$2"
+    local exit_code="${3:-0}"
+    
+    log_error "Failed to fetch latest version from GitHub API"
+    
+    case "$http_code" in
+        "403")
+            log_warning "  → Rate limit exceeded or access forbidden (HTTP 403)"
+            log_warning "  → GitHub API has rate limits for unauthenticated requests"
+            log_warning "  → Try again in a few minutes or specify a version manually"
+            log_info "  → Example: --version v0.3.0"
+            ;;
+        "404")
+            log_warning "  → Repository not found or releases not available (HTTP 404)"
+            log_warning "  → The repository may have been moved or made private"
+            log_info "  → Check if the repository exists: https://github.com/kunalkushwaha/agenticgokit"
+            ;;
+        "5"*)
+            log_warning "  → GitHub server error (HTTP $http_code)"
+            log_warning "  → This is a temporary issue with GitHub's servers"
+            log_warning "  → Try again in a few minutes"
+            ;;
+        "000"|""|"unknown")
+            # Handle tool-specific network errors
+            if [ "$tool" = "curl" ] && [ "$exit_code" -ne 0 ]; then
+                case "$exit_code" in
+                    6) log_warning "  → Could not resolve hostname (curl error 6)" ;;
+                    7) log_warning "  → Failed to connect to server (curl error 7)" ;;
+                    28) log_warning "  → Operation timeout (curl error 28)" ;;
+                    35) log_warning "  → SSL handshake error (curl error 35)" ;;
+                    60) log_warning "  → SSL certificate verification failed (curl error 60)" ;;
+                    *) log_warning "  → Network error (curl exit code: $exit_code)" ;;
+                esac
+            elif [ "$tool" = "wget" ] && [ "$exit_code" -ne 0 ]; then
+                case "$exit_code" in
+                    1) log_warning "  → Generic wget error - check network connection" ;;
+                    4) log_warning "  → Network failure (wget error 4)" ;;
+                    5) log_warning "  → SSL verification failure (wget error 5)" ;;
+                    8) log_warning "  → Server issued an error response (wget error 8)" ;;
+                    *) log_warning "  → Network error (wget exit code: $exit_code)" ;;
+                esac
+            else
+                log_warning "  → Network connection failed"
+            fi
+            log_warning "  → Check your internet connection and try again"
+            log_info "  → Verify you can access github.com in your browser"
+            ;;
+        *)
+            log_warning "  → HTTP error code: $http_code"
+            log_warning "  → This may be a temporary issue with GitHub"
+            log_warning "  → Check your internet connection"
+            ;;
+    esac
+    
+    echo ""
+    log_info "Alternative installation methods:"
+    log_info "  1. Specify version manually: --version v0.3.0"
+    log_info "  2. Manual download: https://github.com/kunalkushwaha/agenticgokit/releases"
+    log_info "  3. Use Go install: go install github.com/kunalkushwaha/agenticgokit/cmd/agentcli@latest"
+    log_info "  4. Check GitHub status: https://www.githubstatus.com/"
 }
 
 get_install_dir() {
@@ -150,15 +320,94 @@ test_installation() {
 download_file() {
     local url="$1"
     local output="$2"
+    local http_code=""
     
     if command -v curl >/dev/null 2>&1; then
-        curl -fsSL "$url" -o "$output"
+        # Use curl with detailed error handling
+        http_code=$(curl -fsSL --max-time 300 --write-out "%{http_code}" "$url" -o "$output" 2>/dev/null)
+        local curl_exit=$?
+        
+        if [ $curl_exit -eq 0 ] && [ "$http_code" = "200" ]; then
+            return 0
+        fi
+        
+        # Handle curl-specific errors
+        handle_download_error "$http_code" "$curl_exit" "curl" "$url"
+        return 1
+        
     elif command -v wget >/dev/null 2>&1; then
-        wget -q "$url" -O "$output"
+        # Use wget with error handling
+        if wget --timeout=300 --tries=1 -q "$url" -O "$output" 2>/dev/null; then
+            return 0
+        fi
+        
+        local wget_exit=$?
+        handle_download_error "unknown" "$wget_exit" "wget" "$url"
+        return 1
+        
     else
         log_error "Neither curl nor wget is available. Please install one of them."
         return 1
     fi
+}
+
+handle_download_error() {
+    local http_code="$1"
+    local exit_code="$2"
+    local tool="$3"
+    local url="$4"
+    
+    log_error "Failed to download binary"
+    
+    case "$http_code" in
+        "404")
+            log_warning "  → Binary not found (HTTP 404)"
+            log_warning "  → The specified version may not exist or binaries aren't available"
+            log_info "  → Check available versions: https://github.com/kunalkushwaha/agenticgokit/releases"
+            log_info "  → Try a different version: --version v0.3.0"
+            ;;
+        "403")
+            log_warning "  → Access forbidden (HTTP 403)"
+            log_warning "  → GitHub may be rate limiting downloads"
+            log_warning "  → Try again in a few minutes"
+            ;;
+        "5"*)
+            log_warning "  → GitHub server error (HTTP $http_code)"
+            log_warning "  → Try again in a few minutes"
+            ;;
+        *)
+            # Handle tool-specific exit codes
+            if [ "$tool" = "curl" ]; then
+                case "$exit_code" in
+                    6) log_warning "  → Could not resolve hostname - check your internet connection" ;;
+                    7) log_warning "  → Failed to connect to server - check your internet connection" ;;
+                    28) log_warning "  → Download timeout - check your internet connection" ;;
+                    35) log_warning "  → SSL/TLS handshake error - update your certificates" ;;
+                    60) log_warning "  → SSL certificate verification failed - update your certificates" ;;
+                    *) log_warning "  → Network error (curl exit code: $exit_code)" ;;
+                esac
+            elif [ "$tool" = "wget" ]; then
+                case "$exit_code" in
+                    1) log_warning "  → Generic wget error - check your internet connection" ;;
+                    2) log_warning "  → Parse error - invalid URL or response" ;;
+                    3) log_warning "  → File I/O error - check disk space and permissions" ;;
+                    4) log_warning "  → Network failure - check your internet connection" ;;
+                    5) log_warning "  → SSL verification failure - update your certificates" ;;
+                    6) log_warning "  → Username/password authentication failure" ;;
+                    7) log_warning "  → Protocol error" ;;
+                    8) log_warning "  → Server issued an error response" ;;
+                    *) log_warning "  → Network error (wget exit code: $exit_code)" ;;
+                esac
+            fi
+            ;;
+    esac
+    
+    echo ""
+    log_info "Alternative solutions:"
+    log_info "  1. Manual download: https://github.com/kunalkushwaha/agenticgokit/releases"
+    log_info "  2. Try a different version: --version v0.3.0"
+    log_info "  3. Use Go install: go install github.com/kunalkushwaha/agenticgokit/cmd/agentcli@latest"
+    log_info "  4. Check your internet connection and try again"
 }
 
 install_agenticgokit() {
@@ -222,8 +471,6 @@ install_agenticgokit() {
     log_info "Downloading $BINARY_NAME..."
     TEMP_FILE=$(mktemp)
     if ! download_file "$DOWNLOAD_URL" "$TEMP_FILE"; then
-        log_error "Error downloading binary from $DOWNLOAD_URL"
-        log_warning "Please check the version and try again."
         rm -f "$TEMP_FILE"
         exit 1
     fi

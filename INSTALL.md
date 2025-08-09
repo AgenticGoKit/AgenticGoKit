@@ -158,6 +158,22 @@ agentcli create knowledge-base --template rag-system --memory pgvector
 
 ## 🔍 Troubleshooting
 
+The installation scripts provide detailed error messages and specific guidance for different failure scenarios:
+
+- **GitHub API Issues**: Rate limiting, server errors, network problems, invalid JSON responses
+- **Download Failures**: Missing versions, network timeouts, SSL/TLS errors, HTTP status codes
+- **Permission Issues**: File system access, PATH modification
+- **Platform Detection**: Unsupported OS/architecture combinations
+- **Data Validation**: Version format validation, response structure validation
+
+### Enhanced Error Handling Features
+
+- **HTTP Status Code Detection**: Identifies specific GitHub API errors (403, 404, 5xx)
+- **Network Error Classification**: Distinguishes between DNS, timeout, and SSL issues
+- **Response Validation**: Ensures API responses contain valid JSON and expected fields
+- **Version Format Validation**: Verifies extracted versions follow semantic versioning
+- **Graceful Degradation**: Provides multiple fallback installation methods
+
 ### Common Issues
 
 **"agentcli: command not found"**
@@ -181,6 +197,21 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 **"Version not found" error**
 - Check the [releases page](https://github.com/kunalkushwaha/agenticgokit/releases) for available versions
 - Use `latest` or omit version parameter for the latest release
+
+**GitHub API rate limiting (HTTP 403)**
+- Wait a few minutes and try again
+- Specify a version manually: `--version v0.3.0`
+- Use manual download method
+
+**Network timeout errors**
+- Check your internet connection
+- Try again (downloads may be large)
+- Use manual download method
+
+**DNS resolution errors**
+- Check your internet connection
+- Verify you can access github.com
+- Check your DNS settings
 
 ### Getting Help
 

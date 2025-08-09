@@ -155,9 +155,18 @@ All build methods inject the following version information:
 - **Version**: Git tag or "dev" for development builds
 - **Git Commit**: Full commit hash
 - **Git Branch**: Current branch name
-- **Build Date**: UTC timestamp of build
+- **Build Date**: UTC timestamp in RFC3339 format (e.g., "2006-01-02T15:04:05Z")
 - **Go Version**: Go compiler version used
 - **Platform**: Target OS and architecture
+
+### Build Date Format
+
+The build date is consistently formatted in **RFC3339** format across all build systems:
+- **Format**: `YYYY-MM-DDTHH:MM:SSZ`
+- **Example**: `2024-01-15T10:30:45Z`
+- **Default**: `1970-01-01T00:00:00Z` (when build date cannot be determined)
+
+This ensures consistent parsing in the version display logic.
 
 View version information:
 ```bash

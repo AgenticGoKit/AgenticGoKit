@@ -23,10 +23,11 @@ git push origin v0.4.0
 Once you push a tag, GitHub Actions automatically:
 
 1. ✅ **Builds all platforms**: Linux, macOS, Windows (AMD64 + ARM64)
-2. ✅ **Creates checksums**: SHA256 for all binaries
-3. ✅ **Generates release notes**: Professional release notes with installation instructions
-4. ✅ **Creates GitHub release**: With all binaries attached
-5. ✅ **Updates installation scripts**: Scripts automatically use the new version
+2. ✅ **Injects version info**: Version, commit, branch, build date (RFC3339 format)
+3. ✅ **Creates checksums**: SHA256 for all binaries
+4. ✅ **Generates release notes**: Professional release notes with installation instructions
+5. ✅ **Creates GitHub release**: With all binaries attached
+6. ✅ **Updates installation scripts**: Scripts automatically use the new version
 
 ### 3. What Gets Built
 
