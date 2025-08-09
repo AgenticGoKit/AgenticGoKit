@@ -1,5 +1,5 @@
 # AgenticGoKit CLI Installation Script for Windows
-# Usage: iwr -useb https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/main/install.ps1 | iex
+# Usage: iwr -useb https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/master/install.ps1 | iex
 
 param(
     [string]$Version = "latest",
@@ -25,7 +25,7 @@ function Show-Help {
     Write-ColorOutput "========================================" $Cyan
     Write-Host ""
     Write-ColorOutput "USAGE:" $Yellow
-    Write-ColorOutput "  iwr -useb https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/main/install.ps1 | iex" $White
+    Write-ColorOutput "  iwr -useb https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/master/install.ps1 | iex" $White
     Write-Host ""
     Write-ColorOutput "OPTIONS:" $Yellow
     Write-ColorOutput "  -Version <version>    Install specific version (default: latest)" $White
@@ -35,10 +35,10 @@ function Show-Help {
     Write-Host ""
     Write-ColorOutput "EXAMPLES:" $Yellow
     Write-ColorOutput "  # Install latest version" $White
-    Write-ColorOutput "  iwr -useb https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/main/install.ps1 | iex" $White
+    Write-ColorOutput "  iwr -useb https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/master/install.ps1 | iex" $White
     Write-Host ""
     Write-ColorOutput "  # Install specific version" $White
-    Write-ColorOutput "  iwr -useb 'https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/main/install.ps1' | iex -Version v0.3.0" $White
+    Write-ColorOutput "  iwr -useb 'https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/master/install.ps1' | iex -Version v0.3.0" $White
 }
 
 function Get-Architecture {

@@ -1,6 +1,6 @@
 #!/bin/bash
 # AgenticGoKit CLI Installation Script for Linux/macOS
-# Usage: curl -fsSL https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/main/install.sh | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/master/install.sh | bash
 
 set -e
 
@@ -39,7 +39,7 @@ show_help() {
     echo -e "${CYAN}===========================================${NC}"
     echo ""
     echo -e "${YELLOW}USAGE:${NC}"
-    echo -e "  ${WHITE}curl -fsSL https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/main/install.sh | bash${NC}"
+    echo -e "  ${WHITE}curl -fsSL https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/master/install.sh | bash${NC}"
     echo ""
     echo -e "${YELLOW}OPTIONS:${NC}"
     echo -e "  ${WHITE}-v, --version <version>    Install specific version (default: latest)${NC}"
@@ -49,10 +49,10 @@ show_help() {
     echo ""
     echo -e "${YELLOW}EXAMPLES:${NC}"
     echo -e "  ${WHITE}# Install latest version${NC}"
-    echo -e "  ${WHITE}curl -fsSL https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/main/install.sh | bash${NC}"
+    echo -e "  ${WHITE}curl -fsSL https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/master/install.sh | bash${NC}"
     echo ""
     echo -e "  ${WHITE}# Install specific version${NC}"
-    echo -e "  ${WHITE}curl -fsSL https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/main/install.sh | bash -s -- --version v0.3.0${NC}"
+    echo -e "  ${WHITE}curl -fsSL https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/master/install.sh | bash -s -- --version v0.3.0${NC}"
 }
 
 get_os() {

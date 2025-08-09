@@ -878,7 +878,7 @@ func ShowVersionInfo() {
 	case "fallback":
 		fmt.Printf(" (fallback - consider updating CLI)\n")
 		fmt.Printf("   💡 Run the installer to get the latest version:\n")
-		fmt.Printf("      curl -fsSL https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/main/install.sh | bash\n")
+		fmt.Printf("      curl -fsSL https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/master/install.sh | bash\n")
 	}
 }
 
