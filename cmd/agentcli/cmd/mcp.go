@@ -213,7 +213,7 @@ tool capabilities. This updates the available tool list and capabilities.`,
 		}
 
 		// Refresh tools
-		fmt.Println("🔄 Refreshing tools from MCP servers...")
+		fmt.Println("Refreshing tools from MCP servers...")
 		err = mcpManager.RefreshTools(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to refresh tools: %w", err)
@@ -221,7 +221,7 @@ tool capabilities. This updates the available tool list and capabilities.`,
 
 		// Show updated tool count
 		tools := mcpManager.GetAvailableTools()
-		fmt.Printf("✅ Successfully refreshed %d tools from connected servers\n", len(tools))
+		fmt.Printf("Successfully refreshed %d tools from connected servers\n", len(tools))
 
 		return nil
 	},
@@ -272,7 +272,7 @@ func displayServersDefault(mcpManager core.MCPManager, servers []string) error {
 		return nil
 	}
 
-	fmt.Println("🌐 Connected MCP Servers")
+	fmt.Println("Connected MCP Servers")
 	fmt.Println("========================")
 
 	for i, server := range servers {
@@ -338,7 +338,7 @@ func displayToolsDefault(tools []core.MCPToolInfo) error {
 		return nil
 	}
 
-	fmt.Println("🔧 Available MCP Tools")
+	fmt.Println("Available MCP Tools")
 	fmt.Println("======================")
 
 	// Group tools by server
@@ -459,13 +459,13 @@ func showServerInfo(ctx context.Context, mcpManager core.MCPManager, serverName 
 	// Get server tools
 	tools := mcpManager.GetToolsFromServer(serverName)
 
-	fmt.Printf("📊 Basic Information:\n")
+	fmt.Printf("Basic Information:\n")
 	fmt.Printf("   • Status: Connected\n")
 	fmt.Printf("   • Available Tools: %d\n", len(tools))
 
 	// Show tools
 	if len(tools) > 0 {
-		fmt.Printf("\n🔧 Available Tools:\n")
+		fmt.Printf("\nAvailable Tools:\n")
 		for i, tool := range tools {
 			fmt.Printf("   %d. %s\n", i+1, tool.Name)
 			fmt.Printf("      Description: %s\n", tool.Description)
@@ -521,3 +521,4 @@ func init() {
 	// Info command flags
 	mcpInfoCmd.Flags().StringVar(&mcpServer, "server", "", "Server name to show info for (required)")
 }
+

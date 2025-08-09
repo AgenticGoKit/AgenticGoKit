@@ -189,7 +189,7 @@ func main() {
 ### First Agent
 ```bash
 # Generate a single agent project
-agentcli create simple-agent --visualize
+agentcli create simple-agent --template basic --visualize
 
 # The generated agent1.go will look like this:
 ```

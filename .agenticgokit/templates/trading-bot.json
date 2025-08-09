@@ -1,0 +1,39 @@
+{
+  "name": "Trading Bot System",
+  "description": "Multi-agent trading system with market analysis and risk management",
+  "features": [
+    "market-analysis",
+    "risk-management",
+    "automated-trading",
+    "real-time-data"
+  ],
+  "config": {
+    "numAgents": 5,
+    "provider": "openai",
+    "orchestrationMode": "collaborative",
+    "collaborativeAgents": [
+      "market-analyzer",
+      "sentiment-analyzer",
+      "risk-manager",
+      "strategy-executor",
+      "portfolio-manager"
+    ],
+    "memoryEnabled": true,
+    "memoryProvider": "pgvector",
+    "embeddingProvider": "openai",
+    "ragEnabled": true,
+    "ragChunkSize": 1500,
+    "mcpEnabled": true,
+    "mcpProduction": true,
+    "mcpTools": [
+      "market_data",
+      "news_feed",
+      "trading_api"
+    ],
+    "withCache": true,
+    "withMetrics": true,
+    "responsibleAI": true,
+    "errorHandler": true,
+    "visualize": true
+  }
+}

@@ -34,8 +34,7 @@ Collaborative orchestration runs all agents in parallel, combining their outputs
 
 ```bash
 # Create a collaborative analysis project
-agentcli create analysis-system --agents 3 --orchestration-mode collaborative \
-  --collaborative-agents "researcher,analyst,validator"
+agentcli create analysis-system --template research-assistant
 cd analysis-system
 ```
 
@@ -94,8 +93,7 @@ Sequential orchestration processes agents one after another, passing data throug
 
 ```bash
 # Create a sequential pipeline project
-agentcli create data-pipeline --agents 4 --orchestration-mode sequential \
-  --sequential-agents "extractor,transformer,enricher,formatter"
+agentcli create data-pipeline --template data-pipeline
 cd data-pipeline
 ```
 
@@ -143,9 +141,7 @@ Mixed orchestration combines parallel and sequential processing for complex work
 
 ```bash
 # Create a mixed orchestration project
-agentcli create content-system --agents 5 --orchestration-mode mixed \
-  --collaborative-agents "researcher,fact-checker" \
-  --sequential-agents "writer,editor,publisher"
+agentcli create content-system --orchestration collaborative --agents 5
 cd content-system
 ```
 
@@ -222,17 +218,14 @@ Phase 2 - Sequential:
 
 ```bash
 # Create with custom settings
-agentcli create advanced-system --orchestration-mode collaborative \
-  --orchestration-timeout 60 --max-concurrency 5 --failure-threshold 0.8
+agentcli create advanced-system --orchestration collaborative --agents 3
 ```
 
 ### Error Handling Configuration
 
 ```bash
 # Create with fault tolerance
-agentcli create resilient-system --orchestration-mode mixed \
-  --collaborative-agents "agent1,agent2" --sequential-agents "agent3,agent4" \
-  --failure-threshold 0.7 --max-concurrency 3
+agentcli create resilient-system --orchestration collaborative --agents 4
 ```
 
 ## Troubleshooting

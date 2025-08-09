@@ -197,7 +197,7 @@ Examples:
 			return fmt.Errorf("failed to invalidate cache entries: %w", err)
 		}
 
-		fmt.Printf("✅ Successfully invalidated cache entries matching pattern: %s\n", pattern)
+		fmt.Printf("Successfully invalidated cache entries matching pattern: %s\n", pattern)
 		return nil
 	},
 }
@@ -278,16 +278,16 @@ func displayStatsTable(stats core.MCPCacheStats) error {
 }
 
 func displayStatsDefault(stats core.MCPCacheStats) error {
-	fmt.Println("🗂️  MCP Cache Statistics")
+	fmt.Println("MCP Cache Statistics")
 	fmt.Println("========================")
-	fmt.Printf("📊 Cache Performance:\n")
+	fmt.Printf("Cache Performance:\n")
 	fmt.Printf("   • Total Keys: %d\n", stats.TotalKeys)
 	fmt.Printf("   • Hit Rate: %.2f%% (%d hits, %d misses)\n", stats.HitRate, stats.HitCount, stats.MissCount)
 	fmt.Printf("   • Average Latency: %v\n", stats.AverageLatency)
-	fmt.Printf("\n💾 Memory Usage:\n")
+	fmt.Printf("\nMemory Usage:\n")
 	fmt.Printf("   • Total Size: %s\n", formatBytes(stats.TotalSize))
 	fmt.Printf("   • Evictions: %d\n", stats.EvictionCount)
-	fmt.Printf("\n🧹 Maintenance:\n")
+	fmt.Printf("\nMaintenance:\n")
 	fmt.Printf("   • Last Cleanup: %v\n", stats.LastCleanup.Format(time.RFC3339))
 
 	return nil
@@ -387,9 +387,9 @@ func displayCacheEntries(entries []CacheEntry) error {
 // Clear operations
 func confirmClearOperation() bool {
 	if cacheAll {
-		fmt.Print("⚠️  This will clear ALL cache entries. Are you sure? (y/N): ")
+		fmt.Print("This will clear ALL cache entries. Are you sure? (y/N): ")
 	} else {
-		fmt.Print("⚠️  This will clear cache entries. Are you sure? (y/N): ")
+		fmt.Print("This will clear cache entries. Are you sure? (y/N): ")
 	}
 
 	var response string
@@ -409,7 +409,7 @@ func clearServerCaches(ctx context.Context, cacheManager core.MCPCacheManager, s
 		return err
 	}
 
-	fmt.Printf("✅ Cleared all cache entries for server: %s\n", server)
+	fmt.Printf("Cleared all cache entries for server: %s\n", server)
 	return nil
 }
 
@@ -421,7 +421,7 @@ func clearToolCaches(ctx context.Context, cacheManager core.MCPCacheManager, too
 		return err
 	}
 
-	fmt.Printf("✅ Cleared all cache entries for tool: %s\n", tool)
+	fmt.Printf("Cleared all cache entries for tool: %s\n", tool)
 	return nil
 }
 
@@ -528,3 +528,4 @@ func init() {
 	cacheInfoCmd.Flags().StringVar(&cacheServer, "server", "", "Show info for specific server")
 	cacheInfoCmd.Flags().StringVar(&cacheTool, "tool", "", "Show info for specific tool")
 }
+

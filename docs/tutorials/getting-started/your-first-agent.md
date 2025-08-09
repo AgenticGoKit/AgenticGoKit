@@ -59,7 +59,7 @@ This is where AgenticGoKit shines! Instead of writing boilerplate code, let's ge
 agentcli create my-first-agent
 
 # Or create with specific options
-agentcli create my-first-agent --provider openai --agents 1 --template basic
+agentcli create my-first-agent --template basic --provider openai
 
 cd my-first-agent
 ```
@@ -517,7 +517,7 @@ Create a system with multiple agents working together:
 
 ```bash
 # Create a multi-agent system
-agentcli create research-team --agents 3
+agentcli create research-team --template research-assistant
 
 cd research-team
 go run main.go
@@ -529,7 +529,7 @@ Specify how your agents should collaborate:
 
 ```bash
 # Create a system with sequential orchestration
-agentcli create workflow-agent --orchestration-mode sequential
+agentcli create workflow-agent --template data-pipeline
 
 cd workflow-agent
 go run main.go
@@ -541,7 +541,7 @@ Create an agent with persistent memory capabilities:
 
 ```bash
 # Create agent with memory
-agentcli create memory-agent --memory-enabled
+agentcli create memory-agent --memory pgvector
 
 cd memory-agent
 go run main.go
@@ -553,7 +553,7 @@ Create an agent that can use external tools:
 
 ```bash
 # Create agent with tool integration
-agentcli create tool-agent --mcp-enabled
+agentcli create tool-agent --mcp basic
 
 cd tool-agent
 go run main.go
@@ -711,13 +711,13 @@ go run main.go  # It just works!
 agentcli create my-agent
 
 # Multi-agent system
-agentcli create team --agents 3
+agentcli create team --template research-assistant
 
 # With memory
-agentcli create smart-agent --memory-enabled
+agentcli create smart-agent --memory pgvector
 
 # With tools
-agentcli create tool-agent --mcp-enabled
+agentcli create tool-agent --mcp basic
 
 # Get help
 agentcli create --help

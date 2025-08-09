@@ -31,8 +31,13 @@ Perfect for getting started quickly with scaffolded projects.
 # Install the AgenticGoKit CLI
 go install github.com/kunalkushwaha/agenticgokit/cmd/agentcli@latest
 
+# Optional: Enable shell completion for faster CLI usage
+# Bash: source <(agentcli completion bash)
+# Zsh: agentcli completion zsh > "${fpath[1]}/_agentcli"
+# PowerShell: agentcli completion powershell | Out-String | Invoke-Expression
+
 # Create a collaborative multi-agent project
-agentcli create my-agents --agents 3 --orchestration-mode collaborative
+agentcli create my-agents --template research-assistant
 cd my-agents
 ```
 
@@ -382,16 +387,16 @@ Ready to build a real application? Try these examples:
 
 ```bash
 # Research assistant with web search and analysis
-agentcli create research-assistant --mcp-enabled --mcp-tools "web_search,summarize"
+agentcli create research-assistant --template research-assistant
 
 # Data processing pipeline with error handling  
-agentcli create data-pipeline --orchestration-mode sequential --agents 4
+agentcli create data-pipeline --template data-pipeline
 
 # Chat system with persistent memory
-agentcli create chat-system --memory-enabled --memory-provider pgvector
+agentcli create chat-system --template chat-system
 
 # Knowledge base with document ingestion and RAG
-agentcli create knowledge-base --memory-enabled --memory-provider pgvector --rag-enabled
+agentcli create knowledge-base --template rag-system
 ```
 
 ---
