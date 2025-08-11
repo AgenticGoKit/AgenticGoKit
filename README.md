@@ -10,6 +10,8 @@
 
 AgenticGoKit enables developers to build sophisticated agent workflows with dynamic tool integration, multi-provider LLM support, and enterprise-grade orchestration patterns. Designed for Go developers who need the performance and reliability of compiled binaries with the flexibility of modern AI agent systems.
 
+> **⚠️ Alpha Release**: AgenticGoKit is currently in alpha development. APIs may change, and some features are still being developed. Suitable for experimentation and early adoption, but not recommended for production use yet.
+
 ---
 
 ## 5-Minute Demo
