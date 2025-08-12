@@ -18,7 +18,8 @@ multi-agent AI systems built with the AgenticGoKit framework.
 PROJECT MANAGEMENT
   create      Create new AgenticGoKit projects with scaffolding
   template    Manage project templates
-  validate    Validate project structure and configuration  
+  validate    Validate project structure and configuration
+  config      Manage configuration files and settings  
 
 DEVELOPMENT & DEBUG  
   trace       View execution traces and agent interactions
@@ -88,7 +89,7 @@ var commandCategories = map[string]CommandCategory{
 // getCommandCategory returns the category for a command
 func getCommandCategory(cmdName string) string {
 	switch cmdName {
-	case "create", "template", "validate":
+	case "create", "template", "validate", "config":
 		return "project"
 	case "trace", "memory":
 		return "debug"

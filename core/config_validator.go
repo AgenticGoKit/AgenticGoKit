@@ -34,6 +34,8 @@ type ConfigValidator interface {
 type DefaultConfigValidator struct {
 	knownCapabilities map[string]bool
 	validProviders    map[string]bool
+	providerModels    map[string][]string
+	capabilityGroups  map[string][]string
 }
 
 // NewDefaultConfigValidator creates a new default configuration validator
@@ -55,12 +57,62 @@ func NewDefaultConfigValidator() *DefaultConfigValidator {
 			"debugging":             true,
 			"testing":               true,
 			"documentation":         true,
+			"content_creation":      true,
+			"editing":               true,
+			"data_analysis":         true,
+			"research":              true,
+			"writing":               true,
+			"analysis":              true,
 		},
 		validProviders: map[string]bool{
-			"openai":  true,
-			"azure":   true,
-			"ollama":  true,
+			"openai":    true,
+			"azure":     true,
+			"ollama":    true,
 			"anthropic": true,
+			"google":    true,
+			"cohere":    true,
+		},
+		providerModels: map[string][]string{
+			"openai": {
+				"gpt-4", "gpt-4-turbo", "gpt-4o", "gpt-4o-mini",
+				"gpt-3.5-turbo", "gpt-3.5-turbo-16k",
+			},
+			"azure": {
+				"gpt-4", "gpt-4-turbo", "gpt-35-turbo", "gpt-35-turbo-16k",
+			},
+			"anthropic": {
+				"claude-3-opus", "claude-3-sonnet", "claude-3-haiku",
+				"claude-2.1", "claude-2.0", "claude-instant-1.2",
+			},
+			"google": {
+				"gemini-pro", "gemini-pro-vision", "gemini-1.5-pro",
+				"gemini-1.5-flash", "text-bison", "chat-bison",
+			},
+			"cohere": {
+				"command", "command-light", "command-nightly",
+			},
+			"ollama": {
+				"llama2", "llama2:13b", "llama2:70b", "codellama",
+				"mistral", "mixtral", "phi", "gemma",
+			},
+		},
+		capabilityGroups: map[string][]string{
+			"research": {
+				"information_gathering", "fact_checking", "source_identification",
+				"data_processing", "text_analysis",
+			},
+			"analysis": {
+				"pattern_recognition", "trend_analysis", "insight_generation",
+				"data_analysis", "text_analysis",
+			},
+			"content": {
+				"content_creation", "editing", "summarization", "translation",
+				"documentation", "writing",
+			},
+			"development": {
+				"code_generation", "code_review", "debugging", "testing",
+				"documentation",
+			},
 		},
 	}
 }
@@ -69,28 +121,51 @@ func NewDefaultConfigValidator() *DefaultConfigValidator {
 func (v *DefaultConfigValidator) ValidateConfig(config *Config) []ValidationError {
 	var errors []ValidationError
 
-	// Validate global LLM configuration
+	// 1. Validate configuration completeness
+	completenessErrors := v.ValidateConfigCompleteness(config)
+	errors = append(errors, completenessErrors...)
+
+	// 2. Validate global LLM configuration
 	llmErrors := v.ValidateLLMConfig(&config.LLM)
 	for _, err := range llmErrors {
 		err.Field = "llm." + err.Field
 		errors = append(errors, err)
 	}
 
-	// Validate each agent configuration
+	// 3. Validate each agent configuration
 	for name, agent := range config.Agents {
+		// Basic agent validation
 		agentErrors := v.ValidateAgentConfig(name, &agent)
 		for _, err := range agentErrors {
 			err.Field = fmt.Sprintf("agents.%s.%s", name, err.Field)
 			errors = append(errors, err)
 		}
+
+		// Agent naming validation
+		namingErrors := v.ValidateAgentNaming(name, &agent)
+		for _, err := range namingErrors {
+			err.Field = fmt.Sprintf("agents.%s.%s", name, err.Field)
+			errors = append(errors, err)
+		}
+
+		// Capability group validation
+		capGroupErrors := v.ValidateCapabilityGroups(agent.Capabilities)
+		for _, err := range capGroupErrors {
+			err.Field = fmt.Sprintf("agents.%s.%s", name, err.Field)
+			errors = append(errors, err)
+		}
 	}
 
-	// Validate orchestration configuration against agents
+	// 4. Validate orchestration configuration against agents
 	orchErrors := v.ValidateOrchestrationAgents(&config.Orchestration, config.Agents)
 	for _, err := range orchErrors {
 		err.Field = "orchestration." + err.Field
 		errors = append(errors, err)
 	}
+
+	// 5. Cross-validation checks
+	crossValidationErrors := v.validateCrossReferences(config)
+	errors = append(errors, crossValidationErrors...)
 
 	return errors
 }
@@ -218,6 +293,27 @@ func (v *DefaultConfigValidator) ValidateLLMConfig(config *AgentLLMConfig) []Val
 		})
 	}
 
+	// Validate model for specific providers
+	if config.Provider != "" && config.Model != "" {
+		if models, exists := v.providerModels[config.Provider]; exists {
+			validModel := false
+			for _, model := range models {
+				if config.Model == model {
+					validModel = true
+					break
+				}
+			}
+			if !validModel {
+				errors = append(errors, ValidationError{
+					Field:      "model",
+					Value:      config.Model,
+					Message:    fmt.Sprintf("unsupported model for provider '%s'", config.Provider),
+					Suggestion: fmt.Sprintf("use one of: %s", strings.Join(models, ", ")),
+				})
+			}
+		}
+	}
+
 	// Validate temperature
 	if config.Temperature < 0 || config.Temperature > 2 {
 		errors = append(errors, ValidationError{
@@ -291,6 +387,10 @@ func (v *DefaultConfigValidator) ValidateLLMConfig(config *AgentLLMConfig) []Val
 			Suggestion: "use positive values to encourage new topics, negative to stay on topic",
 		})
 	}
+
+	// Provider-specific validation
+	providerErrors := v.validateProviderSpecificParams(config)
+	errors = append(errors, providerErrors...)
 
 	return errors
 }
@@ -498,4 +598,545 @@ func (v *DefaultConfigValidator) AddKnownCapability(capability string) {
 // AddValidProvider adds a provider to the valid providers list
 func (v *DefaultConfigValidator) AddValidProvider(provider string) {
 	v.validProviders[provider] = true
+}
+
+// validateProviderSpecificParams validates parameters specific to each provider
+func (v *DefaultConfigValidator) validateProviderSpecificParams(config *AgentLLMConfig) []ValidationError {
+	var errors []ValidationError
+
+	switch config.Provider {
+	case "openai":
+		errors = append(errors, v.validateOpenAIParams(config)...)
+	case "anthropic":
+		errors = append(errors, v.validateAnthropicParams(config)...)
+	case "azure":
+		errors = append(errors, v.validateAzureParams(config)...)
+	case "ollama":
+		errors = append(errors, v.validateOllamaParams(config)...)
+	case "google":
+		errors = append(errors, v.validateGoogleParams(config)...)
+	case "cohere":
+		errors = append(errors, v.validateCohereParams(config)...)
+	}
+
+	return errors
+}
+
+// validateOpenAIParams validates OpenAI-specific parameters
+func (v *DefaultConfigValidator) validateOpenAIParams(config *AgentLLMConfig) []ValidationError {
+	var errors []ValidationError
+
+	// OpenAI supports all standard parameters
+	// Validate max tokens based on model
+	if strings.HasPrefix(config.Model, "gpt-4") {
+		if config.MaxTokens > 8192 && !strings.Contains(config.Model, "turbo") {
+			errors = append(errors, ValidationError{
+				Field:      "max_tokens",
+				Value:      config.MaxTokens,
+				Message:    "max_tokens exceeds model limit for GPT-4",
+				Suggestion: "use max_tokens <= 8192 for GPT-4 or use gpt-4-turbo for higher limits",
+			})
+		}
+	} else if strings.HasPrefix(config.Model, "gpt-3.5") {
+		if config.MaxTokens > 4096 && !strings.Contains(config.Model, "16k") {
+			errors = append(errors, ValidationError{
+				Field:      "max_tokens",
+				Value:      config.MaxTokens,
+				Message:    "max_tokens exceeds model limit for GPT-3.5",
+				Suggestion: "use max_tokens <= 4096 for GPT-3.5 or use gpt-3.5-turbo-16k",
+			})
+		}
+	}
+
+	return errors
+}
+
+// validateAnthropicParams validates Anthropic-specific parameters
+func (v *DefaultConfigValidator) validateAnthropicParams(config *AgentLLMConfig) []ValidationError {
+	var errors []ValidationError
+
+	// Anthropic doesn't support frequency_penalty and presence_penalty
+	if config.FrequencyPenalty != 0 {
+		errors = append(errors, ValidationError{
+			Field:      "frequency_penalty",
+			Value:      config.FrequencyPenalty,
+			Message:    "frequency_penalty is not supported by Anthropic",
+			Suggestion: "remove frequency_penalty or use a different provider",
+		})
+	}
+
+	if config.PresencePenalty != 0 {
+		errors = append(errors, ValidationError{
+			Field:      "presence_penalty",
+			Value:      config.PresencePenalty,
+			Message:    "presence_penalty is not supported by Anthropic",
+			Suggestion: "remove presence_penalty or use a different provider",
+		})
+	}
+
+	// Validate max tokens for Claude models
+	if strings.HasPrefix(config.Model, "claude-3") {
+		if config.MaxTokens > 4096 {
+			errors = append(errors, ValidationError{
+				Field:      "max_tokens",
+				Value:      config.MaxTokens,
+				Message:    "max_tokens exceeds recommended limit for Claude-3",
+				Suggestion: "use max_tokens <= 4096 for optimal performance",
+			})
+		}
+	}
+
+	return errors
+}
+
+// validateAzureParams validates Azure OpenAI-specific parameters
+func (v *DefaultConfigValidator) validateAzureParams(config *AgentLLMConfig) []ValidationError {
+	var errors []ValidationError
+
+	// Azure OpenAI has similar limits to OpenAI but with different model names
+	if strings.HasPrefix(config.Model, "gpt-35") {
+		if config.MaxTokens > 4096 && !strings.Contains(config.Model, "16k") {
+			errors = append(errors, ValidationError{
+				Field:      "max_tokens",
+				Value:      config.MaxTokens,
+				Message:    "max_tokens exceeds model limit for GPT-3.5 on Azure",
+				Suggestion: "use max_tokens <= 4096 or use gpt-35-turbo-16k",
+			})
+		}
+	}
+
+	return errors
+}
+
+// validateOllamaParams validates Ollama-specific parameters
+func (v *DefaultConfigValidator) validateOllamaParams(config *AgentLLMConfig) []ValidationError {
+	var errors []ValidationError
+
+	// Ollama doesn't support some OpenAI parameters
+	if config.FrequencyPenalty != 0 {
+		errors = append(errors, ValidationError{
+			Field:      "frequency_penalty",
+			Value:      config.FrequencyPenalty,
+			Message:    "frequency_penalty may not be supported by all Ollama models",
+			Suggestion: "test with your specific model or remove this parameter",
+		})
+	}
+
+	if config.PresencePenalty != 0 {
+		errors = append(errors, ValidationError{
+			Field:      "presence_penalty",
+			Value:      config.PresencePenalty,
+			Message:    "presence_penalty may not be supported by all Ollama models",
+			Suggestion: "test with your specific model or remove this parameter",
+		})
+	}
+
+	// Ollama models typically have lower context limits
+	if config.MaxTokens > 2048 {
+		errors = append(errors, ValidationError{
+			Field:      "max_tokens",
+			Value:      config.MaxTokens,
+			Message:    "max_tokens is high for Ollama models",
+			Suggestion: "consider reducing max_tokens for better performance with local models",
+		})
+	}
+
+	return errors
+}
+
+// validateGoogleParams validates Google AI-specific parameters
+func (v *DefaultConfigValidator) validateGoogleParams(config *AgentLLMConfig) []ValidationError {
+	var errors []ValidationError
+
+	// Google AI has different parameter names and limits
+	if config.FrequencyPenalty != 0 {
+		errors = append(errors, ValidationError{
+			Field:      "frequency_penalty",
+			Value:      config.FrequencyPenalty,
+			Message:    "frequency_penalty is not directly supported by Google AI",
+			Suggestion: "remove frequency_penalty or use equivalent Google AI parameters",
+		})
+	}
+
+	if config.PresencePenalty != 0 {
+		errors = append(errors, ValidationError{
+			Field:      "presence_penalty",
+			Value:      config.PresencePenalty,
+			Message:    "presence_penalty is not directly supported by Google AI",
+			Suggestion: "remove presence_penalty or use equivalent Google AI parameters",
+		})
+	}
+
+	return errors
+}
+
+// validateCohereParams validates Cohere-specific parameters
+func (v *DefaultConfigValidator) validateCohereParams(config *AgentLLMConfig) []ValidationError {
+	var errors []ValidationError
+
+	// Cohere has different parameter support
+	if config.TopP != 0 && config.TopP > 0.99 {
+		errors = append(errors, ValidationError{
+			Field:      "top_p",
+			Value:      config.TopP,
+			Message:    "top_p should be less than 0.99 for Cohere",
+			Suggestion: "use top_p values between 0.1 and 0.99",
+		})
+	}
+
+	return errors
+}
+
+// ValidateConfigCompleteness validates configuration completeness and applies defaults
+func (v *DefaultConfigValidator) ValidateConfigCompleteness(config *Config) []ValidationError {
+	var errors []ValidationError
+
+	// Check if global LLM configuration is provided
+	if config.LLM.Provider == "" {
+		errors = append(errors, ValidationError{
+			Field:      "llm.provider",
+			Value:      config.LLM.Provider,
+			Message:    "global LLM provider not specified",
+			Suggestion: "set a default LLM provider (e.g., 'openai', 'anthropic')",
+		})
+	}
+
+	if config.LLM.Model == "" {
+		errors = append(errors, ValidationError{
+			Field:      "llm.model",
+			Value:      config.LLM.Model,
+			Message:    "global LLM model not specified",
+			Suggestion: "set a default LLM model (e.g., 'gpt-4', 'claude-3-sonnet')",
+		})
+	}
+
+	// Check agent configuration completeness
+	for name, agent := range config.Agents {
+		if agent.Role == "" {
+			errors = append(errors, ValidationError{
+				Field:      fmt.Sprintf("agents.%s.role", name),
+				Value:      agent.Role,
+				Message:    "agent role not specified",
+				Suggestion: fmt.Sprintf("set role to '%s_agent' or a descriptive role", name),
+			})
+		}
+
+		if agent.SystemPrompt == "" {
+			errors = append(errors, ValidationError{
+				Field:      fmt.Sprintf("agents.%s.system_prompt", name),
+				Value:      agent.SystemPrompt,
+				Message:    "agent system prompt not specified",
+				Suggestion: "provide a clear system prompt defining the agent's behavior",
+			})
+		}
+
+		if len(agent.Capabilities) == 0 {
+			errors = append(errors, ValidationError{
+				Field:      fmt.Sprintf("agents.%s.capabilities", name),
+				Value:      agent.Capabilities,
+				Message:    "agent capabilities not specified",
+				Suggestion: "add relevant capabilities based on the agent's role",
+			})
+		}
+	}
+
+	// Check orchestration configuration
+	if len(config.Orchestration.SequentialAgents) == 0 && 
+	   len(config.Orchestration.CollaborativeAgents) == 0 && 
+	   config.Orchestration.LoopAgent == "" {
+		errors = append(errors, ValidationError{
+			Field:      "orchestration",
+			Value:      nil,
+			Message:    "no orchestration configuration specified",
+			Suggestion: "configure sequential_agents, collaborative_agents, or loop_agent",
+		})
+	}
+
+	return errors
+}
+
+// ValidateCapabilityGroups validates that agent capabilities make sense together
+func (v *DefaultConfigValidator) ValidateCapabilityGroups(capabilities []string) []ValidationError {
+	var errors []ValidationError
+
+	if len(capabilities) == 0 {
+		return errors
+	}
+
+	// Check for conflicting capability groups
+	groupCounts := make(map[string]int)
+	for _, cap := range capabilities {
+		for group, groupCaps := range v.capabilityGroups {
+			for _, groupCap := range groupCaps {
+				if cap == groupCap {
+					groupCounts[group]++
+					break
+				}
+			}
+		}
+	}
+
+	// Suggest capability groups if agent has mixed capabilities
+	if len(groupCounts) > 2 {
+		var groups []string
+		for group := range groupCounts {
+			groups = append(groups, group)
+		}
+		errors = append(errors, ValidationError{
+			Field:      "capabilities",
+			Value:      capabilities,
+			Message:    "agent has capabilities from many different groups",
+			Suggestion: fmt.Sprintf("consider focusing on specific capability groups: %s", strings.Join(groups, ", ")),
+		})
+	}
+
+	// Suggest additional capabilities based on existing ones
+	for group, count := range groupCounts {
+		if count == 1 && len(v.capabilityGroups[group]) > 1 {
+			errors = append(errors, ValidationError{
+				Field:      "capabilities",
+				Value:      capabilities,
+				Message:    fmt.Sprintf("agent has only one capability from %s group", group),
+				Suggestion: fmt.Sprintf("consider adding related %s capabilities: %s", group, strings.Join(v.capabilityGroups[group], ", ")),
+			})
+		}
+	}
+
+	return errors
+}
+
+// ValidateAgentNaming validates agent naming conventions
+func (v *DefaultConfigValidator) ValidateAgentNaming(name string, config *AgentConfig) []ValidationError {
+	var errors []ValidationError
+
+	// Validate agent name format
+	namePattern := regexp.MustCompile(`^[a-z][a-z0-9_]*$`)
+	if !namePattern.MatchString(name) {
+		errors = append(errors, ValidationError{
+			Field:      "name",
+			Value:      name,
+			Message:    "agent name must be lowercase with underscores only",
+			Suggestion: "use format like 'research_agent' or 'data_processor'",
+		})
+	}
+
+	// Check if agent name matches its role
+	if config.Role != "" && !strings.Contains(config.Role, strings.Replace(name, "_", "", -1)) {
+		errors = append(errors, ValidationError{
+			Field:      "role",
+			Value:      config.Role,
+			Message:    "agent role doesn't match agent name",
+			Suggestion: fmt.Sprintf("consider using role '%s' or renaming the agent", name+"_agent"),
+		})
+	}
+
+	return errors
+}
+
+// GetCapabilitySuggestions returns capability suggestions based on agent role
+func (v *DefaultConfigValidator) GetCapabilitySuggestions(role string) []string {
+	roleKeywords := strings.ToLower(role)
+	
+	var suggestions []string
+	
+	// Suggest capabilities based on role keywords
+	if strings.Contains(roleKeywords, "research") {
+		suggestions = append(suggestions, v.capabilityGroups["research"]...)
+	}
+	if strings.Contains(roleKeywords, "analy") {
+		suggestions = append(suggestions, v.capabilityGroups["analysis"]...)
+	}
+	if strings.Contains(roleKeywords, "content") || strings.Contains(roleKeywords, "writ") {
+		suggestions = append(suggestions, v.capabilityGroups["content"]...)
+	}
+	if strings.Contains(roleKeywords, "code") || strings.Contains(roleKeywords, "dev") {
+		suggestions = append(suggestions, v.capabilityGroups["development"]...)
+	}
+	
+	// Remove duplicates
+	seen := make(map[string]bool)
+	var unique []string
+	for _, cap := range suggestions {
+		if !seen[cap] {
+			unique = append(unique, cap)
+			seen[cap] = true
+		}
+	}
+	
+	return unique
+}
+
+// validateCrossReferences validates cross-references between different parts of the configuration
+func (v *DefaultConfigValidator) validateCrossReferences(config *Config) []ValidationError {
+	var errors []ValidationError
+
+	// Check for circular dependencies in agent references
+	// (This would be more complex in a real system with agent dependencies)
+
+	// Validate that all enabled agents have compatible LLM configurations
+	for name, agent := range config.Agents {
+		if !agent.Enabled {
+			continue
+		}
+
+		// Check if agent has LLM config but no global LLM config
+		if agent.LLM != nil && config.LLM.Provider == "" {
+			errors = append(errors, ValidationError{
+				Field:      fmt.Sprintf("agents.%s.llm", name),
+				Value:      agent.LLM,
+				Message:    "agent has LLM config but no global LLM provider is set",
+				Suggestion: "set a global LLM provider or ensure agent LLM config is complete",
+			})
+		}
+
+		// Check for conflicting LLM providers in orchestration
+		if agent.LLM != nil && config.LLM.Provider != "" && 
+		   agent.LLM.Provider != "" && agent.LLM.Provider != config.LLM.Provider {
+			// This is actually valid (agent-specific override), but we can warn about potential issues
+			errors = append(errors, ValidationError{
+				Field:      fmt.Sprintf("agents.%s.llm.provider", name),
+				Value:      agent.LLM.Provider,
+				Message:    "agent uses different LLM provider than global configuration",
+				Suggestion: "ensure this is intentional for agent-specific optimization",
+			})
+		}
+	}
+
+	// Validate orchestration makes sense with available agents
+	totalAgents := len(config.Agents)
+	enabledAgents := 0
+	for _, agent := range config.Agents {
+		if agent.Enabled {
+			enabledAgents++
+		}
+	}
+
+	if enabledAgents == 0 && totalAgents > 0 {
+		errors = append(errors, ValidationError{
+			Field:      "agents",
+			Value:      nil,
+			Message:    "all agents are disabled",
+			Suggestion: "enable at least one agent for the system to function",
+		})
+	}
+
+	// Check if orchestration mode matches agent configuration
+	sequentialCount := len(config.Orchestration.SequentialAgents)
+	collaborativeCount := len(config.Orchestration.CollaborativeAgents)
+	hasLoopAgent := config.Orchestration.LoopAgent != ""
+
+	if sequentialCount > 0 && collaborativeCount > 0 && hasLoopAgent {
+		errors = append(errors, ValidationError{
+			Field:      "orchestration",
+			Value:      nil,
+			Message:    "multiple orchestration modes configured",
+			Suggestion: "choose one primary orchestration mode for clarity",
+		})
+	}
+
+	if sequentialCount == 1 {
+		errors = append(errors, ValidationError{
+			Field:      "orchestration.sequential_agents",
+			Value:      config.Orchestration.SequentialAgents,
+			Message:    "only one agent in sequential mode",
+			Suggestion: "add more agents for sequential processing or use single agent mode",
+		})
+	}
+
+	if collaborativeCount == 1 {
+		errors = append(errors, ValidationError{
+			Field:      "orchestration.collaborative_agents",
+			Value:      config.Orchestration.CollaborativeAgents,
+			Message:    "only one agent in collaborative mode",
+			Suggestion: "add more agents for collaboration or use single agent mode",
+		})
+	}
+
+	return errors
+}
+
+// ValidateEnvironmentCompatibility validates that the configuration is compatible with the environment
+func (v *DefaultConfigValidator) ValidateEnvironmentCompatibility(config *Config) []ValidationError {
+	var errors []ValidationError
+
+	// Check for environment-specific issues
+	for name, agent := range config.Agents {
+		if agent.LLM != nil {
+			// Check for local vs cloud provider compatibility
+			if agent.LLM.Provider == "ollama" {
+				if agent.LLM.MaxTokens > 4096 {
+					errors = append(errors, ValidationError{
+						Field:      fmt.Sprintf("agents.%s.llm.max_tokens", name),
+						Value:      agent.LLM.MaxTokens,
+						Message:    "high max_tokens with local Ollama provider may cause performance issues",
+						Suggestion: "consider reducing max_tokens for local models",
+					})
+				}
+			}
+
+			// Check for API key requirements
+			if agent.LLM.Provider == "openai" || agent.LLM.Provider == "anthropic" {
+				errors = append(errors, ValidationError{
+					Field:      fmt.Sprintf("agents.%s.llm.provider", name),
+					Value:      agent.LLM.Provider,
+					Message:    "cloud provider requires API key configuration",
+					Suggestion: "ensure API keys are set via environment variables",
+				})
+			}
+		}
+	}
+
+	return errors
+}
+
+// SuggestOptimizations suggests configuration optimizations
+func (v *DefaultConfigValidator) SuggestOptimizations(config *Config) []ValidationError {
+	var suggestions []ValidationError
+
+	// Suggest capability-based optimizations
+	for name, agent := range config.Agents {
+		if len(agent.Capabilities) > 5 {
+			suggestions = append(suggestions, ValidationError{
+				Field:      fmt.Sprintf("agents.%s.capabilities", name),
+				Value:      agent.Capabilities,
+				Message:    "agent has many capabilities",
+				Suggestion: "consider splitting into specialized agents for better performance",
+			})
+		}
+
+		// Suggest LLM optimizations based on capabilities
+		if agent.LLM != nil {
+			hasCreativeCapabilities := false
+			hasAnalyticalCapabilities := false
+			
+			for _, cap := range agent.Capabilities {
+				if cap == "content_creation" || cap == "writing" || cap == "translation" {
+					hasCreativeCapabilities = true
+				}
+				if cap == "data_analysis" || cap == "fact_checking" || cap == "pattern_recognition" {
+					hasAnalyticalCapabilities = true
+				}
+			}
+
+			if hasCreativeCapabilities && agent.LLM.Temperature < 0.5 {
+				suggestions = append(suggestions, ValidationError{
+					Field:      fmt.Sprintf("agents.%s.llm.temperature", name),
+					Value:      agent.LLM.Temperature,
+					Message:    "low temperature for creative tasks",
+					Suggestion: "consider increasing temperature to 0.7-1.0 for creative capabilities",
+				})
+			}
+
+			if hasAnalyticalCapabilities && agent.LLM.Temperature > 0.5 {
+				suggestions = append(suggestions, ValidationError{
+					Field:      fmt.Sprintf("agents.%s.llm.temperature", name),
+					Value:      agent.LLM.Temperature,
+					Message:    "high temperature for analytical tasks",
+					Suggestion: "consider reducing temperature to 0.1-0.3 for analytical capabilities",
+				})
+			}
+		}
+	}
+
+	return suggestions
 }

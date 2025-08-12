@@ -261,48 +261,90 @@ func main() {
 	}
 	{{end}}
 
-	// Create agent handlers from the agents package
-	// Each agent is responsible for a specific part of your workflow
-	// TODO: Customize agent creation and configuration here
-	// You might want to add:
-	// - Custom initialization parameters for each agent
-	// - Agent-specific configuration or dependencies
-	// - Custom middleware or decorators for agents
-	// - Agent health checks or validation
+	// Create configuration-driven agent factory
+	// This factory creates agents based on the configuration in agentflow.toml
+	// instead of hardcoded agent constructors, providing much more flexibility
+	// TODO: Customize agent factory initialization if needed
+	// You might want to add custom agent types or initialization logic
+	logger.Info().Msg("🤖 Initializing configuration-driven agent factory...")
+	
+	factory := core.NewConfigurableAgentFactory(config)
+	if factory == nil {
+		logger.Error().Msg("Failed to create agent factory")
+		fmt.Printf("❌ Error creating agent factory\n")
+		os.Exit(1)
+	}
+
+	// Create agent manager for centralized agent lifecycle management
+	// The agent manager handles agent creation, initialization, and state management
+	// TODO: Customize agent manager configuration if needed
+	agentManager := core.NewAgentManager(config)
+	if err := agentManager.InitializeAgents(); err != nil {
+		logger.Error().Err(err).Msg("Failed to initialize agents from configuration")
+		fmt.Printf("❌ Error initializing agents: %v\n", err)
+		fmt.Printf("💡 Check your agentflow.toml [agents] configuration\n")
+		os.Exit(1)
+	}
+
+	// Get all active agents from the manager
+	// This automatically excludes disabled agents and handles configuration-based filtering
+	activeAgents := agentManager.GetActiveAgents()
+	logger.Info().Int("active_agents", len(activeAgents)).Msg("Active agents loaded from configuration")
+
+	// Create agent handlers map for the workflow orchestrator
+	// We wrap each agent with result collection for output tracking
 	agentHandlers := make(map[string]core.AgentHandler)
 	results := make([]AgentOutput, 0)
 	var resultsMutex sync.Mutex
 
-	{{range .Agents}}
-	// Create {{.DisplayName}} handler with result collection
-	// TODO: Customize {{.DisplayName}} initialization if needed
-	// You can pass additional dependencies or configuration to the agent constructor
-	{{if $.Config.MemoryEnabled}}
-	{{.Name}} := agents.New{{.DisplayName}}(llmProvider, memory)
-	{{else}}
-	{{.Name}} := agents.New{{.DisplayName}}(llmProvider)
-	{{end}}
-	
-	// Wrap the agent with result collection for output tracking
-	// TODO: Add custom agent middleware here if needed
-	// Examples: logging, metrics, rate limiting, caching
-	wrapped{{.DisplayName}} := &ResultCollectorHandler{
-		originalHandler: {{.Name}},
-		agentName:       "{{.Name}}",
-		outputs:         &results,
-		mutex:           &resultsMutex,
+	// Register all active agents with result collection wrappers
+	for _, agent := range activeAgents {
+		agentName := agent.GetRole()
+		
+		// Wrap the agent with result collection for output tracking
+		// TODO: Add custom agent middleware here if needed
+		// Examples: logging, metrics, rate limiting, caching, authentication
+		wrappedAgent := &ResultCollectorHandler{
+			originalHandler: agent,
+			agentName:       agentName,
+			outputs:         &results,
+			mutex:           &resultsMutex,
+		}
+		
+		agentHandlers[agentName] = wrappedAgent
+		logger.Debug().Str("agent", agentName).Msg("Agent registered with result collection")
 	}
-	agentHandlers["{{.Name}}"] = wrapped{{.DisplayName}}
-	{{end}}
+
+	// Validate that we have at least one active agent
+	if len(agentHandlers) == 0 {
+		logger.Error().Msg("No active agents found in configuration")
+		fmt.Printf("❌ No active agents configured\n")
+		fmt.Printf("💡 Check your agentflow.toml [agents] section and ensure at least one agent is enabled\n")
+		fmt.Printf("💡 Example agent configuration:\n")
+		fmt.Printf("   [agents.my_agent]\n")
+		fmt.Printf("   role = \"processor\"\n")
+		fmt.Printf("   description = \"My processing agent\"\n")
+		fmt.Printf("   system_prompt = \"You are a helpful assistant.\"\n")
+		fmt.Printf("   capabilities = [\"processing\"]\n")
+		fmt.Printf("   enabled = true\n")
+		os.Exit(1)
+	}
 
 	// TODO: Add custom agent registration logic here
 	// Example: Register agents conditionally based on configuration or environment
 
 	// Create basic error handlers to prevent routing errors
-	// These use the first agent as a fallback handler for simplicity
-	{{if .Agents}}
-	firstAgent := agentHandlers["{{(index .Agents 0).Name}}"]
+	// These use the first active agent as a fallback handler for simplicity
+	// TODO: Customize error handling agents for different error types
+	var firstAgent core.AgentHandler
+	for _, handler := range agentHandlers {
+		firstAgent = handler
+		break // Get the first agent
+	}
+	
 	if firstAgent != nil {
+		// Register error handlers using the first active agent as fallback
+		// TODO: Create dedicated error handling agents for better error management
 		agentHandlers["error-handler"] = firstAgent
 		agentHandlers["validation-error-handler"] = firstAgent
 		agentHandlers["timeout-error-handler"] = firstAgent
@@ -311,8 +353,9 @@ func main() {
 		agentHandlers["network-error-handler"] = firstAgent
 		agentHandlers["llm-error-handler"] = firstAgent
 		agentHandlers["auth-error-handler"] = firstAgent
+		
+		logger.Debug().Msg("Error handlers registered using first active agent as fallback")
 	}
-	{{end}}
 
 	// Create the workflow orchestrator (runner) using configuration-based setup
 	// The runner manages the execution flow between agents based on your orchestration mode
@@ -394,8 +437,29 @@ func main() {
 	// - Custom event types for different workflows
 	// - Event validation or preprocessing
 	// - Multiple initial events for parallel processing
-	{{if .Agents}}
-	event := core.NewEvent("{{(index .Agents 0).Name}}", core.EventData{
+	
+	// Determine the first agent to route to based on orchestration configuration
+	var firstAgentName string
+	if config.Orchestration.Mode == "sequential" && len(config.Orchestration.SequentialAgents) > 0 {
+		firstAgentName = config.Orchestration.SequentialAgents[0]
+	} else if config.Orchestration.Mode == "collaborative" && len(config.Orchestration.CollaborativeAgents) > 0 {
+		firstAgentName = config.Orchestration.CollaborativeAgents[0]
+	} else {
+		// Use the first active agent as fallback
+		for agentName := range agentHandlers {
+			if agentName != "error-handler" && !strings.Contains(agentName, "-error-handler") {
+				firstAgentName = agentName
+				break
+			}
+		}
+	}
+	
+	// Fallback if no agent found
+	if firstAgentName == "" {
+		firstAgentName = "user_request"
+	}
+	
+	event := core.NewEvent(firstAgentName, core.EventData{
 		"message": message,
 		// TODO: Add custom event data here
 		// Examples:
@@ -404,19 +468,14 @@ func main() {
 		// "session_id": sessionID,
 		// "priority": "normal",
 	}, map[string]string{
-		"route": "{{(index .Agents 0).Name}}",
+		"route": firstAgentName,
 		// TODO: Add custom routing metadata here
 		// Examples:
 		// "workflow_type": "standard",
 		// "execution_mode": "async",
 	})
-	{{else}}
-	event := core.NewEvent("user_request", core.EventData{
-		"message": message,
-	}, map[string]string{
-		"route": "user_request",
-	})
-	{{end}}
+	
+	logger.Debug().Str("first_agent", firstAgentName).Msg("Initial event created for workflow start")
 
 	// Emit the event to start workflow execution
 	// TODO: Add custom event emission logic if needed

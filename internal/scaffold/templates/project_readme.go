@@ -65,6 +65,9 @@ const ProjectReadmeTemplate = `# {{.Config.Name}}
 ### Running the System
 
 ` + "```bash" + `
+# Validate configuration first
+agentcli validate agentflow.toml
+
 # Interactive mode
 go run . 
 
@@ -73,6 +76,66 @@ go run . -m "Your message here"
 
 # With debug logging
 LOG_LEVEL=debug go run . -m "Your message"
+` + "```" + `
+
+## ⚙️ Configuration-Driven Architecture
+
+This project uses **AgentFlow's configuration-driven architecture**:
+
+- **📋 No hardcoded agents**: All agents defined in ` + "`agentflow.toml`" + `
+- **🔧 Flexible configuration**: Change behavior without code changes  
+- **🔄 Hot reload support**: Update config without restarting
+- **🌍 Environment-specific**: Different settings per environment
+- **✅ Built-in validation**: Comprehensive validation with helpful errors
+
+### Key Configuration Files
+
+- **` + "`agentflow.toml`" + `**: Main configuration (agents, LLM, orchestration)
+- **` + "`agents/`" + `**: Reference implementations (optional)
+- **Environment variables**: Sensitive data (API keys)
+
+### Configuration Management
+
+` + "```bash" + `
+# Validate configuration
+agentcli validate agentflow.toml
+
+# Generate new configuration from template
+agentcli config generate research-assistant my-project
+
+# Get detailed validation report
+agentcli validate --detailed agentflow.toml
+
+# Export configuration schema
+agentcli config schema --generate
+` + "```" + `
+
+### Configuration Example
+
+` + "```toml" + `
+# Global LLM settings
+[llm]
+provider = "{{.Config.Provider}}"
+model = "gpt-4"
+temperature = 0.7
+
+# Agent definitions
+{{range $i, $agent := .Agents}}[agents.{{$agent.Name}}]
+role = "{{$agent.Name}}"
+description = "{{$agent.Purpose}}"
+system_prompt = "You are {{$agent.DisplayName}}, {{$agent.Purpose}}"
+capabilities = ["general_assistance", "processing"]
+enabled = true
+
+# Agent-specific LLM settings
+[agents.{{$agent.Name}}.llm]
+temperature = 0.7
+max_tokens = 2000
+
+{{end}}# Orchestration
+[orchestration]
+mode = "{{.Config.OrchestrationMode}}"
+{{if eq .Config.OrchestrationMode "sequential"}}agents = [{{range $i, $agent := .Agents}}{{if $i}}, {{end}}"{{$agent.Name}}"{{end}}]{{end}}
 ` + "```" + `
 
 ## 🏗️ Architecture
@@ -98,6 +161,9 @@ LOG_LEVEL=debug go run . -m "Your message"
 ├── 📁 docs/                  # Documentation
 │   └── CUSTOMIZATION.md      # Customization guide
 ├── 📄 main.go                # Application entry point
+├── 📄 agentflow.toml         # Main configuration file
+{{if .Config.MemoryEnabled}}├── 📄 docker-compose.yml     # Database services
+{{if eq .Config.MemoryProvider "pgvector"}}├── 📄 setup.sh               # Database setup script{{end}}{{end}}
 ├── 📄 agentflow.toml         # System configuration
 ├── 📄 go.mod                 # Go module definition
 {{if .Config.MemoryEnabled}}{{if or (eq .Config.MemoryProvider "pgvector") (eq .Config.MemoryProvider "weaviate")}}├── 📄 docker-compose.yml     # Database services

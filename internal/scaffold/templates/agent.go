@@ -2,12 +2,15 @@ package templates
 
 const AgentTemplate = `// Package agents contains the agent implementations for this project.
 // 
-// This package is where you'll implement your custom agent logic. Each agent
-// in this directory represents a specific processing step in your workflow.
+// This package provides configuration-aware agent implementations that are
+// automatically created and managed by the AgentFlow configuration system.
+// 
+// IMPORTANT: This package is now primarily for reference and custom agent types.
+// The main application uses the ConfigurableAgentFactory to create agents
+// directly from the agentflow.toml configuration file.
 //
-// TODO: Customize the agents in this package to match your specific use case.
-// Each agent can be modified to handle different types of input processing,
-// data transformation, or business logic as needed for your application.
+// TODO: Use this package to implement custom agent types that extend the
+// standard configuration-driven agents with specialized business logic.
 package agents
 
 import (
@@ -18,20 +21,22 @@ import (
 	agenticgokit "github.com/kunalkushwaha/agenticgokit/core"
 )
 
-// {{.Agent.DisplayName}}Handler represents the {{.Agent.Name}} agent handler.
+// {{.Agent.DisplayName}}Handler represents a custom {{.Agent.Name}} agent handler.
 // 
 // Purpose: {{.Agent.Purpose}}
 //
-// TODO: Modify this agent to implement your specific business logic.
-// You can customize the processing logic, add additional fields to the struct,
-// or integrate with external services as needed.
+// NOTE: This is a reference implementation. The main application now uses
+// configuration-driven agents created by ConfigurableAgentFactory.
+// 
+// This custom implementation is provided for:
+// - Reference and learning purposes
+// - Custom agent types that need specialized logic
+// - Migration from hardcoded to configuration-driven agents
 //
-// Example customizations:
-// - Add database connections or API clients as struct fields
-// - Implement domain-specific validation logic
-// - Add custom error handling for your use case
-// - Integrate with external services or APIs
+// TODO: If you need custom logic beyond what the configuration system provides,
+// you can modify this agent and register it as a custom agent type.
 type {{.Agent.DisplayName}}Handler struct {
+	config agenticgokit.ResolvedAgentConfig
 	llm    agenticgokit.ModelProvider
 	{{if .Config.MemoryEnabled}}memory agenticgokit.Memory{{end}}
 	
@@ -39,65 +44,110 @@ type {{.Agent.DisplayName}}Handler struct {
 	// Examples:
 	// database    *sql.DB
 	// apiClient   *http.Client
-	// config      *YourConfig
+	// customConfig *YourConfig
 }
 
 // New{{.Agent.DisplayName}} creates a new {{.Agent.DisplayName}} instance.
 //
-// This constructor initializes the agent with the required dependencies.
-// 
-// TODO: Customize this constructor to accept additional dependencies
-// your agent needs, such as database connections, API clients, or
-// configuration objects.
+// NOTE: This constructor is for reference. The main application uses
+// ConfigurableAgentFactory.CreateAgent() to create agents from configuration.
 //
-// Example:
-// func New{{.Agent.DisplayName}}(llmProvider agenticgokit.ModelProvider, db *sql.DB, config *YourConfig) *{{.Agent.DisplayName}}Handler
-func New{{.Agent.DisplayName}}(llmProvider agenticgokit.ModelProvider{{if .Config.MemoryEnabled}}, memory agenticgokit.Memory{{end}}) *{{.Agent.DisplayName}}Handler {
+// This constructor shows how to create configuration-aware agents manually
+// if you need custom initialization logic.
+func New{{.Agent.DisplayName}}FromConfig(config agenticgokit.ResolvedAgentConfig) (*{{.Agent.DisplayName}}Handler, error) {
+	// Initialize LLM provider from resolved configuration
+	llm, err := agenticgokit.NewLLMProvider(config.LLM)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize LLM provider: %w", err)
+	}
+
+	{{if .Config.MemoryEnabled}}
+	// Get memory instance from global context
+	memory := agenticgokit.GetGlobalMemory()
+	if memory == nil {
+		return nil, fmt.Errorf("memory system not initialized")
+	}
+	{{end}}
+
 	return &{{.Agent.DisplayName}}Handler{
-		llm: llmProvider,
+		config: config,
+		llm:    llm,
 		{{if .Config.MemoryEnabled}}memory: memory,{{end}}
 		
 		// TODO: Initialize your custom fields here
 		// Examples:
-		// database:  db,
+		// database:  initDatabase(),
 		// apiClient: &http.Client{Timeout: 30 * time.Second},
-		// config:    config,
-	}
+		// customConfig: loadCustomConfig(),
+	}, nil
+}
+
+// GetRole returns the agent's role from configuration
+func (a *{{.Agent.DisplayName}}Handler) GetRole() string {
+	return a.config.Role
+}
+
+// GetCapabilities returns the agent's capabilities from configuration
+func (a *{{.Agent.DisplayName}}Handler) GetCapabilities() []string {
+	return a.config.Capabilities
+}
+
+// IsEnabled returns whether the agent is enabled from configuration
+func (a *{{.Agent.DisplayName}}Handler) IsEnabled() bool {
+	return a.config.Enabled
 }
 
 // Run implements the agenticgokit.AgentHandler interface.
 //
-// This is the main processing method for the {{.Agent.DisplayName}} agent.
-// It receives events and state from the workflow orchestrator and returns
-// the processing results.
+// This method demonstrates how to implement a configuration-aware agent.
+// It uses the resolved configuration for system prompts, LLM settings, and capabilities.
 //
-// TODO: Customize this method to implement your specific agent logic.
-// The basic structure handles input processing, LLM interaction, and
-// result formatting, but you can modify any part of this flow.
+// NOTE: This is a reference implementation. The main application uses
+// configuration-driven agents that are automatically created and don't need
+// this custom implementation unless you have specialized business logic.
 //
-// Key customization points:
-// 1. Input processing: Modify how the agent extracts and validates input
-// 2. Business logic: Add your domain-specific processing before/after LLM calls
-// 3. LLM prompts: Customize the system and user prompts for your use case
-// 4. Output formatting: Change how results are structured and returned
-// 5. Error handling: Add custom error handling for your specific scenarios
+// TODO: Customize this method only if you need logic beyond what the
+// configuration system provides.
 func (a *{{.Agent.DisplayName}}Handler) Run(ctx context.Context, event agenticgokit.Event, state agenticgokit.State) (agenticgokit.AgentResult, error) {
 	// Get logger for debug output
 	logger := agenticgokit.Logger()
-	logger.Debug().Str("agent", "{{.Agent.Name}}").Str("event_id", event.GetID()).Msg("Agent processing started")
+	logger.Debug().
+		Str("agent", a.config.Role).
+		Str("event_id", event.GetID()).
+		Bool("enabled", a.config.Enabled).
+		Msg("Configuration-aware agent processing started")
+	
+	// Check if agent is enabled in configuration
+	if !a.config.Enabled {
+		logger.Debug().Str("agent", a.config.Role).Msg("Agent is disabled in configuration, skipping")
+		return agenticgokit.AgentResult{
+			OutputState: agenticgokit.NewState(map[string]interface{}{
+				"response": fmt.Sprintf("Agent %s is disabled in configuration", a.config.Role),
+				"skipped":  true,
+			}),
+		}, nil
+	}
+	
+	// TODO: Add custom capability checks here
+	// Example: Validate that the agent has required capabilities for this task
+	// requiredCapability := "processing"
+	// if !contains(a.config.Capabilities, requiredCapability) {
+	//     return agenticgokit.AgentResult{}, fmt.Errorf("agent lacks required capability: %s", requiredCapability)
+	// }
+	
+	// Use system prompt from configuration instead of hardcoded prompt
+	systemPrompt := a.config.SystemPrompt
+	if systemPrompt == "" {
+		// Fallback system prompt if not configured
+		systemPrompt = fmt.Sprintf("You are %s, a helpful AI assistant.", a.config.Role)
+	}
 	
 	// TODO: Customize input processing logic
 	// This section determines what input the agent will process.
-	// You can modify this to:
-	// - Validate input format and structure
-	// - Transform input data before processing
-	// - Add input sanitization or filtering
-	// - Extract specific fields from complex input objects
 	var inputToProcess interface{}
-	var systemPrompt string
 	
 	{{if .IsFirstAgent}}
-	// {{.Agent.DisplayName}} always processes the original input message
+	// {{.Agent.DisplayName}} processes the original input message
 	// TODO: Customize how the first agent extracts input from events
 	// You might want to validate the input format or extract specific fields
 	eventData := event.GetData()

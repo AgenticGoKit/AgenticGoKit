@@ -1,0 +1,96 @@
+name: "Simple Workflow"
+description: "Basic three-agent workflow for general-purpose processing"
+features:
+  - "simple-setup"
+  - "basic-workflow"
+  - "easy-configuration"
+
+config:
+  numAgents: 3
+  provider: "openai"
+  orchestrationMode: "sequential"
+  sequentialAgents:
+    - "processor"
+    - "analyzer"
+    - "formatter"
+  
+  # Basic memory configuration
+  memoryEnabled: false
+  
+  # Basic MCP configuration
+  mcpEnabled: false
+  
+  # Basic features
+  responsibleAI: false
+  errorHandler: true
+  withCache: false
+  withMetrics: false
+  visualize: false
+
+# Simple agent configurations
+agents:
+  processor:
+    role: "data_processor"
+    description: "Processes incoming data and prepares it for analysis"
+    capabilities:
+      - "data_processing"
+      - "input_validation"
+    systemPrompt: |
+      You are a data processor. Your job is to:
+      - Clean and validate incoming data
+      - Format data consistently
+      - Extract key information
+      - Prepare data for the next step
+      Keep your processing simple and reliable.
+    enabled: true
+    timeout: 30
+    llm:
+      temperature: 0.3
+      maxTokens: 1500
+    metadata:
+      stage: "input"
+
+  analyzer:
+    role: "data_analyzer"
+    description: "Analyzes processed data and generates insights"
+    capabilities:
+      - "data_analysis"
+      - "pattern_recognition"
+    systemPrompt: |
+      You are a data analyzer. Your job is to:
+      - Analyze the processed data
+      - Identify key patterns and trends
+      - Generate meaningful insights
+      - Summarize your findings clearly
+      Focus on accuracy and clarity in your analysis.
+    enabled: true
+    timeout: 45
+    llm:
+      temperature: 0.4
+      maxTokens: 2000
+    metadata:
+      stage: "analysis"
+
+  formatter:
+    role: "output_formatter"
+    description: "Formats analysis results for final output"
+    capabilities:
+      - "content_formatting"
+      - "summarization"
+    systemPrompt: |
+      You are an output formatter. Your job is to:
+      - Format the analysis results clearly
+      - Create well-structured output
+      - Ensure readability and clarity
+      - Provide a concise summary
+      Make the output professional and easy to understand.
+    enabled: true
+    timeout: 25
+    llm:
+      temperature: 0.5
+      maxTokens: 1800
+    metadata:
+      stage: "output"
+
+# No MCP servers for simple workflow
+mcpServers: []

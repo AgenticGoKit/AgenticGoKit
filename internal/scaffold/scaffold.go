@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"text/template"
 
 	"github.com/kunalkushwaha/agenticgokit/internal/scaffold/templates"
@@ -13,6 +14,18 @@ import (
 // CreateAgentProject creates a new AgentFlow project (alias for CreateAgentProjectModular)
 func CreateAgentProject(config ProjectConfig) error {
 	return CreateAgentProjectModular(config)
+}
+
+// CreateAgentProjectFromTemplate creates a new AgentFlow project from a template
+func CreateAgentProjectFromTemplate(templateName, projectName string) error {
+	templatePath := filepath.Join("examples/templates", templateName+".yaml")
+	
+	generator, err := NewTemplateGenerator(templatePath)
+	if err != nil {
+		return fmt.Errorf("failed to create template generator: %w", err)
+	}
+	
+	return generator.GenerateProject(projectName)
 }
 
 // CreateAgentProjectFromConfig creates a new AgentFlow project using ProjectConfig (alias)
@@ -344,7 +357,15 @@ func createConfig(config ProjectConfig) error {
 [agent_flow]
 name = "%s"
 version = "1.0.0"
+description = "Configuration-driven multi-agent system"
+
+# Global LLM configuration - can be overridden per agent
+[llm]
 provider = "%s"
+model = "%s"
+temperature = 0.7
+max_tokens = 2000
+timeout_seconds = 30
 
 [logging]
 level = "info"
@@ -368,7 +389,7 @@ model = "llama2"
 
 [providers.mock]
 # Mock provider for testing - no configuration needed
-`, config.Name, config.Provider)
+`, config.Name, config.Provider, getDefaultModelForProvider(config.Provider))
 
 	// Add MCP configuration if enabled
 	if config.MCPEnabled {
@@ -472,6 +493,10 @@ enable_query_expansion = false
 
 		configContent += memoryConfig
 	}
+
+	// Add agent definitions based on project configuration
+	agentConfig := generateAgentConfig(config)
+	configContent += agentConfig
 
 	// Add orchestration configuration
 	orchestrationConfig := generateOrchestrationConfig(config)
@@ -613,6 +638,190 @@ func getConnectionString(memoryProvider string) string {
 	}
 }
 
+// generateAgentConfig generates agent definitions for the configuration file
+func generateAgentConfig(config ProjectConfig) string {
+	utilsConfig := convertToUtilsConfig(config)
+	agents := utils.ResolveAgentNames(utilsConfig)
+
+	if len(agents) == 0 {
+		agents = append(agents, utils.CreateAgentInfo("agent1", config.OrchestrationMode))
+	}
+
+	agentConfig := "\n# Agent Definitions\n# Each agent has its own configuration including role, capabilities, and LLM settings\n"
+
+	for i, agent := range agents {
+		agentConfig += fmt.Sprintf(`
+[agents.%s]
+role = "%s"
+description = "%s"
+system_prompt = "%s"
+capabilities = %s
+enabled = true
+`, agent.Name, agent.Name, agent.Purpose, 
+			generateSystemPromptForConfig(agent, i, len(agents), config.OrchestrationMode),
+			formatCapabilitiesArray(generateCapabilitiesForAgent(agent.Name)))
+
+		// Add agent-specific LLM configuration with variations
+		agentConfig += fmt.Sprintf(`
+# Agent-specific LLM settings (overrides global settings)
+[agents.%s.llm]`, agent.Name)
+
+		// Vary temperature based on agent role for better results
+		temperature := getTemperatureForAgent(agent.Name, i)
+		agentConfig += fmt.Sprintf(`
+temperature = %.1f`, temperature)
+
+		// Vary max_tokens based on agent purpose
+		maxTokens := getMaxTokensForAgent(agent.Name, i)
+		agentConfig += fmt.Sprintf(`
+max_tokens = %d`, maxTokens)
+
+		// Add retry policy for production agents
+		if config.Provider != "mock" {
+			agentConfig += fmt.Sprintf(`
+
+# Retry policy for %s
+[agents.%s.retry_policy]
+max_retries = 3
+base_delay_ms = 1000
+max_delay_ms = 10000
+backoff_factor = 2.0`, agent.DisplayName, agent.Name)
+		}
+
+		agentConfig += "\n"
+	}
+
+	return agentConfig
+}
+
+// generateSystemPromptForConfig creates a system prompt suitable for configuration files
+func generateSystemPromptForConfig(agent utils.AgentInfo, index, total int, orchestrationMode string) string {
+	basePrompt := fmt.Sprintf("You are %s, %s", agent.DisplayName, agent.Purpose)
+	
+	// Add orchestration context
+	switch orchestrationMode {
+	case "sequential":
+		if index == 0 {
+			basePrompt += " You are the first agent in a sequential workflow."
+		} else if index == total-1 {
+			basePrompt += " You are the final agent in a sequential workflow."
+		} else {
+			basePrompt += fmt.Sprintf(" You are agent %d of %d in a sequential workflow.", index+1, total)
+		}
+	case "collaborative":
+		basePrompt += " You work collaboratively with other agents to achieve the best results."
+	case "loop":
+		basePrompt += " You process requests iteratively, improving results with each iteration."
+	}
+	
+	// Add capability context
+	capabilities := generateCapabilitiesForAgent(agent.Name)
+	if len(capabilities) > 0 {
+		basePrompt += fmt.Sprintf(" Your capabilities include: %s.", strings.Join(capabilities, ", "))
+	}
+	
+	basePrompt += " Always provide helpful, accurate, and relevant responses."
+	
+	return basePrompt
+}
+
+// generateCapabilitiesForAgent creates appropriate capabilities based on agent name
+func generateCapabilitiesForAgent(agentName string) []string {
+	// Generate capabilities based on agent name patterns using known capabilities
+	switch {
+	case strings.Contains(agentName, "research"):
+		return []string{"research", "information_gathering", "fact_checking", "source_identification"}
+	case strings.Contains(agentName, "writer") || strings.Contains(agentName, "content"):
+		return []string{"content_creation", "writing", "editing", "documentation"}
+	case strings.Contains(agentName, "review") || strings.Contains(agentName, "validator"):
+		return []string{"fact_checking", "editing", "analysis", "testing"}
+	case strings.Contains(agentName, "analyst") || strings.Contains(agentName, "analyzer"):
+		return []string{"data_analysis", "pattern_recognition", "insight_generation", "trend_analysis"}
+	case strings.Contains(agentName, "processor"):
+		return []string{"data_processing", "text_analysis", "pattern_recognition", "analysis"}
+	case strings.Contains(agentName, "summary") || strings.Contains(agentName, "summarizer"):
+		return []string{"summarization", "text_analysis", "content_creation", "editing"}
+	case strings.Contains(agentName, "creative"):
+		return []string{"content_creation", "writing", "editing", "analysis"}
+	case strings.Contains(agentName, "coordinator") || strings.Contains(agentName, "manager"):
+		return []string{"analysis", "data_processing", "documentation", "research"}
+	case strings.Contains(agentName, "collector"):
+		return []string{"information_gathering", "data_processing", "source_identification", "research"}
+	case strings.Contains(agentName, "synthesizer"):
+		return []string{"analysis", "summarization", "insight_generation", "content_creation"}
+	default:
+		// Default capabilities for generic agents using known capabilities
+		return []string{"analysis", "text_analysis", "data_processing"}
+	}
+}
+
+// formatCapabilitiesArray formats capabilities as a TOML array
+func formatCapabilitiesArray(capabilities []string) string {
+	if len(capabilities) == 0 {
+		return `["general_assistance"]`
+	}
+	
+	quotedCapabilities := make([]string, len(capabilities))
+	for i, cap := range capabilities {
+		quotedCapabilities[i] = fmt.Sprintf(`"%s"`, cap)
+	}
+	
+	return fmt.Sprintf("[%s]", strings.Join(quotedCapabilities, ", "))
+}
+
+// getTemperatureForAgent returns appropriate temperature based on agent role
+func getTemperatureForAgent(agentName string, index int) float64 {
+	// Vary temperature based on agent name/role for better results
+	switch {
+	case strings.Contains(agentName, "research") || strings.Contains(agentName, "fact"):
+		return 0.3 // Lower temperature for factual tasks
+	case strings.Contains(agentName, "creative") || strings.Contains(agentName, "writer"):
+		return 0.8 // Higher temperature for creative tasks
+	case strings.Contains(agentName, "review") || strings.Contains(agentName, "validator"):
+		return 0.2 // Very low temperature for review tasks
+	case strings.Contains(agentName, "analyst") || strings.Contains(agentName, "processor"):
+		return 0.5 // Medium temperature for analytical tasks
+	default:
+		// Vary by position: first agent more creative, last agent more precise
+		if index == 0 {
+			return 0.7
+		}
+		return 0.6 - float64(index)*0.1 // Gradually decrease temperature
+	}
+}
+
+// getMaxTokensForAgent returns appropriate max_tokens based on agent role
+func getMaxTokensForAgent(agentName string, index int) int {
+	switch {
+	case strings.Contains(agentName, "writer") || strings.Contains(agentName, "content"):
+		return 3000 // More tokens for content creation
+	case strings.Contains(agentName, "research") || strings.Contains(agentName, "analyst"):
+		return 2500 // More tokens for detailed analysis
+	case strings.Contains(agentName, "review") || strings.Contains(agentName, "validator"):
+		return 1500 // Fewer tokens for review tasks
+	case strings.Contains(agentName, "summary") || strings.Contains(agentName, "brief"):
+		return 1000 // Fewer tokens for summaries
+	default:
+		return 2000 // Default from global config
+	}
+}
+
+// getDefaultModelForProvider returns the default model for each provider
+func getDefaultModelForProvider(provider string) string {
+	switch provider {
+	case "openai":
+		return "gpt-4"
+	case "azure":
+		return "gpt-4"
+	case "ollama":
+		return "llama2"
+	case "mock":
+		return "mock-model"
+	default:
+		return "gpt-4"
+	}
+}
+
 // generateOrchestrationConfig generates the orchestration configuration section for TOML
 func generateOrchestrationConfig(config ProjectConfig) string {
 	orchestrationConfig := fmt.Sprintf(`
@@ -622,6 +831,28 @@ timeout_seconds = %d`, config.OrchestrationMode, config.OrchestrationTimeout)
 
 	// Add mode-specific configuration
 	switch config.OrchestrationMode {
+	case "collaborative":
+		if len(config.CollaborativeAgents) > 0 {
+			orchestrationConfig += "\ncollaborative_agents = ["
+			for i, agent := range config.CollaborativeAgents {
+				if i > 0 {
+					orchestrationConfig += ", "
+				}
+				orchestrationConfig += fmt.Sprintf("\"%s\"", agent)
+			}
+			orchestrationConfig += "]"
+		} else {
+			// Generate default collaborative agents based on NumAgents
+			orchestrationConfig += "\ncollaborative_agents = ["
+			for i := 0; i < config.NumAgents; i++ {
+				if i > 0 {
+					orchestrationConfig += ", "
+				}
+				orchestrationConfig += fmt.Sprintf("\"agent%d\"", i+1)
+			}
+			orchestrationConfig += "]"
+		}
+
 	case "sequential":
 		if len(config.SequentialAgents) > 0 {
 			orchestrationConfig += "\nsequential_agents = ["
@@ -861,8 +1092,25 @@ func convertToUtilsConfig(config ProjectConfig) utils.ProjectConfig {
 // generateProviderInitFunction generates the provider initialization function code
 func generateProviderInitFunction(config ProjectConfig) string {
 	return `func initializeProvider(providerType string) (core.ModelProvider, error) {
-	// Use the config-based provider initialization
-	return core.NewProviderFromWorkingDir()
+	// Load configuration to get provider settings
+	config, err := core.LoadConfig("agentflow.toml")
+	if err != nil {
+		return nil, fmt.Errorf("failed to load configuration: %w", err)
+	}
+
+	// Use the global LLM configuration from agentflow.toml
+	llmConfig := config.LLM
+	if llmConfig.Provider == "" {
+		llmConfig.Provider = providerType // Use parameter as fallback
+	}
+
+	// Create provider from configuration
+	provider, err := core.NewLLMProvider(llmConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create LLM provider '%s': %w", llmConfig.Provider, err)
+	}
+
+	return provider, nil
 }`
 }
 
