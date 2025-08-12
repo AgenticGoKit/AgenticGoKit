@@ -16,7 +16,7 @@ import (
 
 func TestSequentialAgent_Run_AllSuccess(t *testing.T) {
 	ctx := context.Background()
-	initialState := agentflow.NewState()
+	initialState := agenticgokit.NewState()
 	initialState.Set("initial", "value")
 
 	agent1 := NewSpyAgent("agent1")
@@ -68,7 +68,7 @@ func TestSequentialAgent_Run_AllSuccess(t *testing.T) {
 
 func TestSequentialAgent_Run_PartialFailure(t *testing.T) {
 	ctx := context.Background()
-	initialState := agentflow.NewState()
+	initialState := agenticgokit.NewState()
 	initialState.Set("initial", "value")
 
 	simulatedError := errors.New("agent2 failed deliberately")
@@ -121,7 +121,7 @@ func TestSequentialAgent_Run_PartialFailure(t *testing.T) {
 
 func TestSequentialAgent_Run_ZeroAgents(t *testing.T) {
 	ctx := context.Background()
-	initialState := agentflow.NewState()
+	initialState := agenticgokit.NewState()
 	initialState.Set("initial", "value")
 
 	seqAgent := NewSequentialAgent("test-zero") // No agents
@@ -158,7 +158,7 @@ func TestSequentialAgent_Run_ZeroAgents(t *testing.T) {
 
 func TestSequentialAgent_Run_NilAgentsFiltered(t *testing.T) {
 	ctx := context.Background()
-	initialState := agentflow.NewState()
+	initialState := agenticgokit.NewState()
 	initialState.Set("initial", "value")
 
 	agent1 := NewSpyAgent("agent1")
@@ -213,9 +213,9 @@ func TestSequentialAgent_Run_NilAgentsFiltered(t *testing.T) {
 
 func BenchmarkSequentialAgent_Run(b *testing.B) {
 	ctx := context.Background()
-	initialState := agentflow.NewState()
+	initialState := agenticgokit.NewState()
 	numAgents := 5
-	agents := make([]agentflow.Agent, numAgents)
+	agents := make([]agenticgokit.Agent, numAgents)
 	for i := 0; i < numAgents; i++ {
 		agents[i] = &NoOpAgent{}
 	}

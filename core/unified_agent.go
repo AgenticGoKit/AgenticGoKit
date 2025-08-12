@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -14,6 +15,7 @@ type UnifiedAgent struct {
 	name         string
 	capabilities map[CapabilityType]AgentCapability
 	handler      AgentHandler
+	config       *ResolvedAgentConfig // Add configuration support
 }
 
 // NewUnifiedAgent creates a new unified agent with the given name and capabilities
@@ -26,6 +28,21 @@ func NewUnifiedAgent(name string, capabilities map[CapabilityType]AgentCapabilit
 		name:         name,
 		capabilities: capabilities,
 		handler:      handler,
+		config:       nil, // Configuration can be set later
+	}
+}
+
+// NewUnifiedAgentWithConfig creates a new unified agent with configuration
+func NewUnifiedAgentWithConfig(name string, config *ResolvedAgentConfig, capabilities map[CapabilityType]AgentCapability, handler AgentHandler) *UnifiedAgent {
+	if capabilities == nil {
+		capabilities = make(map[CapabilityType]AgentCapability)
+	}
+
+	return &UnifiedAgent{
+		name:         name,
+		capabilities: capabilities,
+		handler:      handler,
+		config:       config,
 	}
 }
 
@@ -327,4 +344,96 @@ func (u *UnifiedAgent) SetMetricsConfig(config MetricsConfig) {
 func (u *UnifiedAgent) GetLogger() *zerolog.Logger {
 	logger := log.With().Str("agent", u.name).Logger()
 	return &logger
+}
+
+// =============================================================================
+// CONFIGURATION-AWARE METHODS
+// =============================================================================
+
+// SetConfiguration sets the agent's configuration
+func (u *UnifiedAgent) SetConfiguration(config *ResolvedAgentConfig) {
+	u.config = config
+	
+	// Update LLM capability with configuration if present
+	if config != nil && config.LLMConfig != nil {
+		if llmCap, exists := u.capabilities[CapabilityTypeLLM]; exists {
+			if llm, ok := llmCap.(*LLMCapability); ok {
+				llmConfig := LLMConfig{
+					Temperature:    config.LLMConfig.Temperature,
+					MaxTokens:      config.LLMConfig.MaxTokens,
+					SystemPrompt:   config.SystemPrompt,
+					TimeoutSeconds: int(config.LLMConfig.Timeout.Seconds()),
+				}
+				llm.Config = llmConfig
+				
+				Logger().Debug().
+					Str("agent", u.name).
+					Str("provider", config.LLMConfig.Provider).
+					Float64("temperature", config.LLMConfig.Temperature).
+					Int("max_tokens", config.LLMConfig.MaxTokens).
+					Msg("Updated LLM configuration from agent config")
+			}
+		}
+	}
+}
+
+// GetConfiguration returns the agent's configuration
+func (u *UnifiedAgent) GetConfiguration() *ResolvedAgentConfig {
+	return u.config
+}
+
+// GetRole returns the agent's configured role
+func (u *UnifiedAgent) GetRole() string {
+	if u.config != nil {
+		return u.config.Role
+	}
+	return u.name + "_agent" // Default role
+}
+
+// GetDescription returns the agent's configured description
+func (u *UnifiedAgent) GetDescription() string {
+	if u.config != nil {
+		return u.config.Description
+	}
+	return "Agent " + u.name // Default description
+}
+
+// GetSystemPrompt returns the agent's configured system prompt
+func (u *UnifiedAgent) GetSystemPrompt() string {
+	if u.config != nil {
+		return u.config.SystemPrompt
+	}
+	return "" // No default system prompt
+}
+
+// GetConfiguredCapabilities returns the agent's configured capabilities
+func (u *UnifiedAgent) GetConfiguredCapabilities() []string {
+	if u.config != nil {
+		return u.config.Capabilities
+	}
+	return []string{} // No configured capabilities
+}
+
+// IsConfigurationEnabled returns whether the agent is enabled in configuration
+func (u *UnifiedAgent) IsConfigurationEnabled() bool {
+	if u.config != nil {
+		return u.config.Enabled
+	}
+	return true // Default to enabled
+}
+
+// GetConfiguredTimeout returns the agent's configured timeout
+func (u *UnifiedAgent) GetConfiguredTimeout() time.Duration {
+	if u.config != nil {
+		return u.config.Timeout
+	}
+	return 0 // No timeout
+}
+
+// GetConfiguredLLMConfig returns the agent's configured LLM settings
+func (u *UnifiedAgent) GetConfiguredLLMConfig() *ResolvedLLMConfig {
+	if u.config != nil {
+		return u.config.LLMConfig
+	}
+	return nil
 }

@@ -16,11 +16,11 @@ import (
 
 func TestLoopAgent_Run_ConditionMet(t *testing.T) {
 	ctx := context.Background()
-	initialState := agentflow.NewState()
+	initialState := agenticgokit.NewState()
 	initialState.Set("count", 0)
 
 	subAgent := &CounterAgent{}
-	stopCondition := func(s agentflow.State) bool {
+	stopCondition := func(s agenticgokit.State) bool {
 		countVal, _ := s.Get("count")
 		count, _ := countVal.(int)
 		return count >= 3 // Stop when count reaches 3 or more
@@ -51,12 +51,12 @@ func TestLoopAgent_Run_ConditionMet(t *testing.T) {
 
 func TestLoopAgent_Run_MaxIterationsReached(t *testing.T) {
 	ctx := context.Background()
-	initialState := agentflow.NewState()
+	initialState := agenticgokit.NewState()
 	initialState.Set("count", 0)
 
 	subAgent := &CounterAgent{}
 	// Condition that is never met
-	stopCondition := func(s agentflow.State) bool {
+	stopCondition := func(s agenticgokit.State) bool {
 		return false
 	}
 
@@ -76,8 +76,8 @@ func TestLoopAgent_Run_MaxIterationsReached(t *testing.T) {
 	}
 
 	// Check if the specific error is returned
-	if !errors.Is(err, agentflow.ErrMaxIterationsReached) {
-		t.Errorf("Expected error '%v', but got: %v", agentflow.ErrMaxIterationsReached, err)
+	if !errors.Is(err, agenticgokit.ErrMaxIterationsReached) {
+		t.Errorf("Expected error '%v', but got: %v", agenticgokit.ErrMaxIterationsReached, err)
 	}
 	t.Logf("Received expected error: %v", err)
 
@@ -91,7 +91,7 @@ func TestLoopAgent_Run_MaxIterationsReached(t *testing.T) {
 
 func TestLoopAgent_Run_SubAgentErrors(t *testing.T) {
 	ctx := context.Background()
-	initialState := agentflow.NewState()
+	initialState := agenticgokit.NewState()
 	initialState.Set("count", 0)
 
 	simulatedError := errors.New("sub-agent failed")
@@ -100,7 +100,7 @@ func TestLoopAgent_Run_SubAgentErrors(t *testing.T) {
 		ReturnError: simulatedError,
 	}
 	// Condition that would eventually be met, but error happens first
-	stopCondition := func(s agentflow.State) bool {
+	stopCondition := func(s agenticgokit.State) bool {
 		countVal, _ := s.Get("count")
 		count, _ := countVal.(int)
 		return count >= 5
@@ -140,7 +140,7 @@ func TestLoopAgent_Run_SubAgentErrors(t *testing.T) {
 
 func TestLoopAgent_Run_DefaultMaxIterations(t *testing.T) {
 	ctx := context.Background()
-	initialState := agentflow.NewState()
+	initialState := agenticgokit.NewState()
 	initialState.Set("count", 0)
 
 	subAgent := &CounterAgent{}
@@ -159,7 +159,7 @@ func TestLoopAgent_Run_DefaultMaxIterations(t *testing.T) {
 	finalState, err := loopAgent.Run(ctx, initialState)
 
 	// Expect ErrMaxIterationsReached
-	if !errors.Is(err, agentflow.ErrMaxIterationsReached) {
+	if !errors.Is(err, agenticgokit.ErrMaxIterationsReached) {
 		t.Fatalf("Expected ErrMaxIterationsReached, got: %v", err)
 	}
 	if finalState == nil {
@@ -177,13 +177,13 @@ func TestLoopAgent_Run_DefaultMaxIterations(t *testing.T) {
 
 func TestLoopAgent_Run_ContextCancellation(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
-	initialState := agentflow.NewState()
+	initialState := agenticgokit.NewState()
 	initialState.Set("run_count", 0)
 
 	// Use DelayAgent with a delay longer than the cancellation timer
 	subAgent := NewDelayAgent("delaySubAgent", 20*time.Millisecond, nil)
 
-	stopCondition := func(s agentflow.State) bool {
+	stopCondition := func(s agenticgokit.State) bool {
 		runCountVal, _ := s.Get("run_count")
 		runCount, _ := runCountVal.(int)
 		return runCount >= 5
@@ -252,14 +252,14 @@ func TestNewLoopAgent_NilSubAgent(t *testing.T) {
 
 func TestLoopAgent_Run_Timeout(t *testing.T) {
 	ctx := context.Background()
-	initialState := agentflow.NewState()
+	initialState := agenticgokit.NewState()
 	initialState.Set("count", 0)
 
 	slowAgent := NewDelayAgent("slow", 100*time.Millisecond, nil)
 
 	config := LoopAgentConfig{
 		Timeout: 50 * time.Millisecond,
-		Condition: func(s agentflow.State) bool {
+		Condition: func(s agenticgokit.State) bool {
 			countVal, _ := s.Get("count")
 			count, _ := countVal.(int)
 			return count < 5
@@ -312,7 +312,7 @@ func TestLoopAgent_Run_Timeout(t *testing.T) {
 
 func BenchmarkLoopAgent_Run(b *testing.B) {
 	ctx := context.Background()
-	initialState := agentflow.NewState()
+	initialState := agenticgokit.NewState()
 	initialState.Set("count", 0)
 
 	// Sub-agent that does minimal work (just increments count)
@@ -320,7 +320,7 @@ func BenchmarkLoopAgent_Run(b *testing.B) {
 
 	// Condition to stop after exactly 10 iterations
 	targetIterations := 10
-	stopCondition := func(s agentflow.State) bool {
+	stopCondition := func(s agenticgokit.State) bool {
 		countVal, _ := s.Get("count")
 		count, _ := countVal.(int)
 		return count >= targetIterations

@@ -10,6 +10,74 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
+// AgentLLMConfig represents LLM provider configuration for agents
+type AgentLLMConfig struct {
+	Provider         string  `toml:"provider"`
+	Model            string  `toml:"model"`
+	Temperature      float64 `toml:"temperature"`
+	MaxTokens        int     `toml:"max_tokens"`
+	TimeoutSeconds   int     `toml:"timeout_seconds"`
+	TopP             float64 `toml:"top_p,omitempty"`
+	FrequencyPenalty float64 `toml:"frequency_penalty,omitempty"`
+	PresencePenalty  float64 `toml:"presence_penalty,omitempty"`
+}
+
+// AgentConfig represents agent-specific configuration
+type AgentConfig struct {
+	Role         string            `toml:"role"`
+	Description  string            `toml:"description"`
+	SystemPrompt string            `toml:"system_prompt"`
+	Capabilities []string          `toml:"capabilities"`
+	Enabled      bool              `toml:"enabled"` // Default to false, will be set to true in LoadConfig
+	LLM          *AgentLLMConfig   `toml:"llm,omitempty"`
+	Metadata     map[string]string `toml:"metadata,omitempty"`
+	
+	// Advanced configuration
+	RetryPolicy  *AgentRetryPolicyConfig  `toml:"retry_policy,omitempty"`
+	RateLimit    *RateLimitConfig         `toml:"rate_limit,omitempty"`
+	Timeout      int                      `toml:"timeout_seconds,omitempty"`
+}
+
+// AgentRetryPolicyConfig represents retry policy configuration for agents
+type AgentRetryPolicyConfig struct {
+	MaxRetries    int     `toml:"max_retries"`
+	BaseDelayMs   int     `toml:"base_delay_ms"`
+	MaxDelayMs    int     `toml:"max_delay_ms"`
+	BackoffFactor float64 `toml:"backoff_factor"`
+}
+
+// RateLimitConfig represents rate limiting configuration for agents
+type RateLimitConfig struct {
+	RequestsPerSecond int `toml:"requests_per_second"`
+	BurstSize         int `toml:"burst_size"`
+}
+
+// ResolvedLLMConfig represents resolved LLM configuration for runtime use
+type ResolvedLLMConfig struct {
+	Provider         string
+	Model            string
+	Temperature      float64
+	MaxTokens        int
+	Timeout          time.Duration
+	TopP             float64
+	FrequencyPenalty float64
+	PresencePenalty  float64
+}
+
+// ResolvedAgentConfig represents resolved agent configuration for runtime use
+type ResolvedAgentConfig struct {
+	Name         string
+	Role         string
+	Description  string
+	SystemPrompt string
+	Capabilities []string
+	Enabled      bool
+	LLMConfig    *ResolvedLLMConfig
+	RetryPolicy  *AgentRetryPolicyConfig
+	RateLimit    *RateLimitConfig
+	Timeout      time.Duration
+}
+
 // Config represents the AgentFlow configuration structure
 type Config struct {
 	AgentFlow struct {
@@ -27,6 +95,12 @@ type Config struct {
 		MaxConcurrentAgents int `toml:"max_concurrent_agents"`
 		TimeoutSeconds      int `toml:"timeout_seconds"`
 	} `toml:"runtime"`
+
+	// Global LLM configuration
+	LLM AgentLLMConfig `toml:"llm"`
+
+	// Agent-specific configuration
+	Agents map[string]AgentConfig `toml:"agents"`
 
 	// Breaking change: Agent memory configuration added
 	AgentMemory AgentMemoryConfig `toml:"agent_memory"`
@@ -271,6 +345,77 @@ func LoadConfig(path string) (*Config, error) {
 	}
 	if config.Orchestration.MaxIterations == 0 {
 		config.Orchestration.MaxIterations = 5
+	}
+
+	// Set global LLM defaults if not specified
+	if config.LLM.Provider == "" {
+		config.LLM.Provider = config.AgentFlow.Provider // Use the main provider as default
+	}
+	if config.LLM.Temperature == 0 {
+		config.LLM.Temperature = 0.7
+	}
+	if config.LLM.MaxTokens == 0 {
+		config.LLM.MaxTokens = 800
+	}
+	if config.LLM.TimeoutSeconds == 0 {
+		config.LLM.TimeoutSeconds = 30
+	}
+
+	// Set agent defaults if not specified
+	for name, agent := range config.Agents {
+		// Note: In TOML, boolean fields default to false if not specified
+		// We want agents to be enabled by default, but we need to respect explicit false values
+		// Since we can't distinguish between "not set" and "explicitly false" with a regular bool,
+		// we'll use a simple heuristic: if enabled is false but the agent has meaningful configuration,
+		// we'll assume it should be enabled unless it's clearly meant to be disabled
+		// This is not perfect, but it's a reasonable compromise for backward compatibility
+		
+		// For now, we'll keep the current behavior and let users explicitly set enabled=true/false
+		// The default will be false (Go's zero value), but users should explicitly set enabled=true
+		
+		// Set default role if not specified
+		if agent.Role == "" {
+			agent.Role = name + "_agent"
+		}
+		
+		// Set default description if not specified
+		if agent.Description == "" {
+			agent.Description = "Agent for " + name
+		}
+		
+		// Set default timeout if not specified
+		if agent.Timeout == 0 {
+			agent.Timeout = 30
+		}
+		
+		// Update the agent in the map
+		config.Agents[name] = agent
+	}
+
+	// Apply environment variable overrides
+	resolver := NewConfigResolver(&config)
+	if err := resolver.ApplyEnvironmentOverrides(); err != nil {
+		Logger().Warn().
+			Err(err).
+			Msg("Failed to apply environment overrides, continuing with file configuration")
+	}
+
+	// Validate the configuration after environment overrides
+	validator := NewDefaultConfigValidator()
+	if validationErrors := validator.ValidateConfig(&config); len(validationErrors) > 0 {
+		// Log validation errors but don't fail - allow graceful degradation
+		Logger().Warn().
+			Int("error_count", len(validationErrors)).
+			Msg("Configuration validation warnings found")
+		
+		for _, err := range validationErrors {
+			Logger().Warn().
+				Str("field", err.Field).
+				Interface("value", err.Value).
+				Str("message", err.Message).
+				Str("suggestion", err.Suggestion).
+				Msg("Configuration validation warning")
+		}
 	}
 
 	return &config, nil
@@ -603,6 +748,85 @@ func (c *MCPConfigToml) ToMCPConfig() MCPConfig {
 // GetMCPConfig returns the MCP configuration from the main config
 func (c *Config) GetMCPConfig() MCPConfig {
 	return c.MCP.ToMCPConfig()
+}
+
+// ResolveAgentConfig resolves agent configuration with global defaults and environment overrides
+func (c *Config) ResolveAgentConfig(agentName string) (*ResolvedAgentConfig, error) {
+	// Use the resolver for environment variable support
+	resolver := NewConfigResolver(c)
+	return resolver.ResolveAgentConfigWithEnv(agentName)
+}
+
+// resolveLLMConfig resolves LLM configuration with inheritance from global config
+func (c *Config) resolveLLMConfig(agent *AgentConfig) *ResolvedLLMConfig {
+	// Start with global LLM config
+	resolved := &ResolvedLLMConfig{
+		Provider:         c.LLM.Provider,
+		Model:            c.LLM.Model,
+		Temperature:      c.LLM.Temperature,
+		MaxTokens:        c.LLM.MaxTokens,
+		Timeout:          time.Duration(c.LLM.TimeoutSeconds) * time.Second,
+		TopP:             c.LLM.TopP,
+		FrequencyPenalty: c.LLM.FrequencyPenalty,
+		PresencePenalty:  c.LLM.PresencePenalty,
+	}
+
+	// Override with agent-specific LLM config if provided
+	if agent.LLM != nil {
+		if agent.LLM.Provider != "" {
+			resolved.Provider = agent.LLM.Provider
+		}
+		if agent.LLM.Model != "" {
+			resolved.Model = agent.LLM.Model
+		}
+		if agent.LLM.Temperature != 0 {
+			resolved.Temperature = agent.LLM.Temperature
+		}
+		if agent.LLM.MaxTokens != 0 {
+			resolved.MaxTokens = agent.LLM.MaxTokens
+		}
+		if agent.LLM.TimeoutSeconds != 0 {
+			resolved.Timeout = time.Duration(agent.LLM.TimeoutSeconds) * time.Second
+		}
+		if agent.LLM.TopP != 0 {
+			resolved.TopP = agent.LLM.TopP
+		}
+		if agent.LLM.FrequencyPenalty != 0 {
+			resolved.FrequencyPenalty = agent.LLM.FrequencyPenalty
+		}
+		if agent.LLM.PresencePenalty != 0 {
+			resolved.PresencePenalty = agent.LLM.PresencePenalty
+		}
+	}
+
+	return resolved
+}
+
+// GetEnabledAgents returns a list of enabled agent names
+func (c *Config) GetEnabledAgents() []string {
+	var enabled []string
+	for name, agent := range c.Agents {
+		if agent.Enabled {
+			enabled = append(enabled, name)
+		}
+	}
+	return enabled
+}
+
+// GetAgentCapabilities returns the capabilities for a specific agent
+func (c *Config) GetAgentCapabilities(agentName string) []string {
+	if agent, exists := c.Agents[agentName]; exists {
+		return agent.Capabilities
+	}
+	return nil
+}
+
+// IsAgentEnabled checks if an agent is enabled
+func (c *Config) IsAgentEnabled(agentName string) bool {
+	if agent, exists := c.Agents[agentName]; exists {
+		return agent.Enabled
+	}
+	return false
 }
 
 // ValidateOrchestrationConfig validates the orchestration configuration
