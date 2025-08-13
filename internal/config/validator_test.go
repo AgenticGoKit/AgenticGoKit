@@ -1,8 +1,10 @@
-package core
+package config
 
 import (
 	"strings"
 	"testing"
+
+	"github.com/kunalkushwaha/agenticgokit/core"
 )
 
 func TestValidateAgentConfig(t *testing.T) {
@@ -11,14 +13,14 @@ func TestValidateAgentConfig(t *testing.T) {
 	tests := []struct {
 		name          string
 		agentName     string
-		config        AgentConfig
+		config        core.AgentConfig
 		expectedErrors int
-		checkError     func([]ValidationError) bool
+		checkError     func([]core.ValidationError) bool
 	}{
 		{
 			name:      "valid_config",
 			agentName: "test_agent",
-			config: AgentConfig{
+			config: core.AgentConfig{
 				Role:         "research_agent",
 				Description:  "A research agent for testing",
 				SystemPrompt: "You are a helpful research assistant",
@@ -31,21 +33,21 @@ func TestValidateAgentConfig(t *testing.T) {
 		{
 			name:      "missing_role",
 			agentName: "test_agent",
-			config: AgentConfig{
+			config: core.AgentConfig{
 				Description:  "A test agent",
 				SystemPrompt: "You are a helpful assistant",
 				Capabilities: []string{"information_gathering"},
 				Enabled:      true,
 			},
 			expectedErrors: 1,
-			checkError: func(errors []ValidationError) bool {
+			checkError: func(errors []core.ValidationError) bool {
 				return len(errors) > 0 && errors[0].Field == "role"
 			},
 		},
 		{
 			name:      "invalid_role_format",
 			agentName: "test_agent",
-			config: AgentConfig{
+			config: core.AgentConfig{
 				Role:         "Research-Agent",
 				Description:  "A test agent",
 				SystemPrompt: "You are a helpful assistant",
@@ -53,28 +55,28 @@ func TestValidateAgentConfig(t *testing.T) {
 				Enabled:      true,
 			},
 			expectedErrors: 1,
-			checkError: func(errors []ValidationError) bool {
+			checkError: func(errors []core.ValidationError) bool {
 				return len(errors) > 0 && errors[0].Field == "role"
 			},
 		},
 		{
 			name:      "missing_system_prompt",
 			agentName: "test_agent",
-			config: AgentConfig{
+			config: core.AgentConfig{
 				Role:         "test_agent",
 				Description:  "A test agent",
 				Capabilities: []string{"information_gathering"},
 				Enabled:      true,
 			},
 			expectedErrors: 1,
-			checkError: func(errors []ValidationError) bool {
+			checkError: func(errors []core.ValidationError) bool {
 				return len(errors) > 0 && errors[0].Field == "system_prompt"
 			},
 		},
 		{
 			name:      "short_system_prompt",
 			agentName: "test_agent",
-			config: AgentConfig{
+			config: core.AgentConfig{
 				Role:         "test_agent",
 				Description:  "A test agent",
 				SystemPrompt: "Hi",
@@ -82,14 +84,14 @@ func TestValidateAgentConfig(t *testing.T) {
 				Enabled:      true,
 			},
 			expectedErrors: 1,
-			checkError: func(errors []ValidationError) bool {
+			checkError: func(errors []core.ValidationError) bool {
 				return len(errors) > 0 && errors[0].Field == "system_prompt"
 			},
 		},
 		{
 			name:      "no_capabilities",
 			agentName: "test_agent",
-			config: AgentConfig{
+			config: core.AgentConfig{
 				Role:         "test_agent",
 				Description:  "A test agent",
 				SystemPrompt: "You are a helpful assistant",
@@ -97,14 +99,14 @@ func TestValidateAgentConfig(t *testing.T) {
 				Enabled:      true,
 			},
 			expectedErrors: 1,
-			checkError: func(errors []ValidationError) bool {
+			checkError: func(errors []core.ValidationError) bool {
 				return len(errors) > 0 && errors[0].Field == "capabilities"
 			},
 		},
 		{
 			name:      "unknown_capabilities",
 			agentName: "test_agent",
-			config: AgentConfig{
+			config: core.AgentConfig{
 				Role:         "test_agent",
 				Description:  "A test agent",
 				SystemPrompt: "You are a helpful assistant",
@@ -112,14 +114,14 @@ func TestValidateAgentConfig(t *testing.T) {
 				Enabled:      true,
 			},
 			expectedErrors: 1,
-			checkError: func(errors []ValidationError) bool {
+			checkError: func(errors []core.ValidationError) bool {
 				return len(errors) > 0 && errors[0].Field == "capabilities"
 			},
 		},
 		{
 			name:      "duplicate_capabilities",
 			agentName: "test_agent",
-			config: AgentConfig{
+			config: core.AgentConfig{
 				Role:         "test_agent",
 				Description:  "A test agent",
 				SystemPrompt: "You are a helpful assistant",
@@ -127,14 +129,14 @@ func TestValidateAgentConfig(t *testing.T) {
 				Enabled:      true,
 			},
 			expectedErrors: 1,
-			checkError: func(errors []ValidationError) bool {
+			checkError: func(errors []core.ValidationError) bool {
 				return len(errors) > 0 && errors[0].Field == "capabilities"
 			},
 		},
 		{
 			name:      "negative_timeout",
 			agentName: "test_agent",
-			config: AgentConfig{
+			config: core.AgentConfig{
 				Role:         "test_agent",
 				Description:  "A test agent",
 				SystemPrompt: "You are a helpful assistant",
@@ -143,14 +145,14 @@ func TestValidateAgentConfig(t *testing.T) {
 				Timeout:      -10,
 			},
 			expectedErrors: 1,
-			checkError: func(errors []ValidationError) bool {
+			checkError: func(errors []core.ValidationError) bool {
 				return len(errors) > 0 && errors[0].Field == "timeout_seconds"
 			},
 		},
 		{
 			name:      "very_high_timeout",
 			agentName: "test_agent",
-			config: AgentConfig{
+			config: core.AgentConfig{
 				Role:         "test_agent",
 				Description:  "A test agent",
 				SystemPrompt: "You are a helpful assistant",
@@ -159,7 +161,7 @@ func TestValidateAgentConfig(t *testing.T) {
 				Timeout:      400,
 			},
 			expectedErrors: 1,
-			checkError: func(errors []ValidationError) bool {
+			checkError: func(errors []core.ValidationError) bool {
 				return len(errors) > 0 && errors[0].Field == "timeout_seconds"
 			},
 		},
@@ -185,13 +187,13 @@ func TestValidateLLMConfig(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		config        AgentLLMConfig
+		config        core.AgentLLMConfig
 		expectedErrors int
-		checkError     func([]ValidationError) bool
+		checkError     func([]core.ValidationError) bool
 	}{
 		{
 			name: "valid_config",
-			config: AgentLLMConfig{
+			config: core.AgentLLMConfig{
 				Provider:    "openai",
 				Model:       "gpt-4",
 				Temperature: 0.7,
@@ -202,100 +204,100 @@ func TestValidateLLMConfig(t *testing.T) {
 		},
 		{
 			name: "invalid_provider",
-			config: AgentLLMConfig{
+			config: core.AgentLLMConfig{
 				Provider:    "unknown_provider",
 				Temperature: 0.7,
 				MaxTokens:   800,
 			},
 			expectedErrors: 1,
-			checkError: func(errors []ValidationError) bool {
+			checkError: func(errors []core.ValidationError) bool {
 				return len(errors) > 0 && errors[0].Field == "provider"
 			},
 		},
 		{
 			name: "invalid_temperature_low",
-			config: AgentLLMConfig{
+			config: core.AgentLLMConfig{
 				Provider:    "openai",
 				Temperature: -0.5,
 				MaxTokens:   800,
 			},
 			expectedErrors: 1,
-			checkError: func(errors []ValidationError) bool {
+			checkError: func(errors []core.ValidationError) bool {
 				return len(errors) > 0 && errors[0].Field == "temperature"
 			},
 		},
 		{
 			name: "invalid_temperature_high",
-			config: AgentLLMConfig{
+			config: core.AgentLLMConfig{
 				Provider:    "openai",
 				Temperature: 2.5,
 				MaxTokens:   800,
 			},
 			expectedErrors: 1,
-			checkError: func(errors []ValidationError) bool {
+			checkError: func(errors []core.ValidationError) bool {
 				return len(errors) > 0 && errors[0].Field == "temperature"
 			},
 		},
 		{
 			name: "invalid_max_tokens_zero",
-			config: AgentLLMConfig{
+			config: core.AgentLLMConfig{
 				Provider:    "openai",
 				Temperature: 0.7,
 				MaxTokens:   0,
 			},
 			expectedErrors: 1,
-			checkError: func(errors []ValidationError) bool {
+			checkError: func(errors []core.ValidationError) bool {
 				return len(errors) > 0 && errors[0].Field == "max_tokens"
 			},
 		},
 		{
 			name: "invalid_max_tokens_high",
-			config: AgentLLMConfig{
+			config: core.AgentLLMConfig{
 				Provider:    "openai",
 				Temperature: 0.7,
 				MaxTokens:   50000,
 			},
 			expectedErrors: 1,
-			checkError: func(errors []ValidationError) bool {
+			checkError: func(errors []core.ValidationError) bool {
 				return len(errors) > 0 && errors[0].Field == "max_tokens"
 			},
 		},
 		{
 			name: "invalid_top_p",
-			config: AgentLLMConfig{
+			config: core.AgentLLMConfig{
 				Provider:    "openai",
 				Temperature: 0.7,
 				MaxTokens:   800,
 				TopP:        1.5,
 			},
 			expectedErrors: 1,
-			checkError: func(errors []ValidationError) bool {
+			checkError: func(errors []core.ValidationError) bool {
 				return len(errors) > 0 && errors[0].Field == "top_p"
 			},
 		},
 		{
 			name: "invalid_frequency_penalty",
-			config: AgentLLMConfig{
+			config: core.AgentLLMConfig{
 				Provider:         "openai",
 				Temperature:     0.7,
 				MaxTokens:       800,
 				FrequencyPenalty: 3.0,
 			},
 			expectedErrors: 1,
-			checkError: func(errors []ValidationError) bool {
+			checkError: func(errors []core.ValidationError) bool {
 				return len(errors) > 0 && errors[0].Field == "frequency_penalty"
 			},
 		},
 		{
 			name: "invalid_presence_penalty",
-			config: AgentLLMConfig{
+			config: core.AgentLLMConfig{
 				Provider:        "openai",
 				Temperature:    0.7,
 				MaxTokens:      800,
 				PresencePenalty: -3.0,
 			},
 			expectedErrors: 1,
-			checkError: func(errors []ValidationError) bool {
+			checkError: func(errors []core.ValidationError) bool {
 				return len(errors) > 0 && errors[0].Field == "presence_penalty"
 			},
 		},
@@ -319,7 +321,7 @@ func TestValidateLLMConfig(t *testing.T) {
 func TestValidateOrchestrationAgents(t *testing.T) {
 	validator := NewDefaultConfigValidator()
 
-	agents := map[string]AgentConfig{
+	agents := map[string]core.AgentConfig{
 		"agent1": {Enabled: true},
 		"agent2": {Enabled: true},
 		"disabled_agent": {Enabled: false},
@@ -327,78 +329,78 @@ func TestValidateOrchestrationAgents(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		orchestration OrchestrationConfigToml
+		orchestration core.OrchestrationConfigToml
 		expectedErrors int
-		checkError     func([]ValidationError) bool
+		checkError     func([]core.ValidationError) bool
 	}{
 		{
 			name: "valid_sequential_agents",
-			orchestration: OrchestrationConfigToml{
+			orchestration: core.OrchestrationConfigToml{
 				SequentialAgents: []string{"agent1", "agent2"},
 			},
 			expectedErrors: 0,
 		},
 		{
 			name: "nonexistent_sequential_agent",
-			orchestration: OrchestrationConfigToml{
+			orchestration: core.OrchestrationConfigToml{
 				SequentialAgents: []string{"agent1", "nonexistent"},
 			},
 			expectedErrors: 1,
-			checkError: func(errors []ValidationError) bool {
+			checkError: func(errors []core.ValidationError) bool {
 				return len(errors) > 0 && errors[0].Field == "sequential_agents"
 			},
 		},
 		{
 			name: "disabled_sequential_agent",
-			orchestration: OrchestrationConfigToml{
+			orchestration: core.OrchestrationConfigToml{
 				SequentialAgents: []string{"agent1", "disabled_agent"},
 			},
 			expectedErrors: 1,
-			checkError: func(errors []ValidationError) bool {
+			checkError: func(errors []core.ValidationError) bool {
 				return len(errors) > 0 && errors[0].Field == "sequential_agents"
 			},
 		},
 		{
 			name: "valid_collaborative_agents",
-			orchestration: OrchestrationConfigToml{
+			orchestration: core.OrchestrationConfigToml{
 				CollaborativeAgents: []string{"agent1", "agent2"},
 			},
 			expectedErrors: 0,
 		},
 		{
 			name: "nonexistent_collaborative_agent",
-			orchestration: OrchestrationConfigToml{
+			orchestration: core.OrchestrationConfigToml{
 				CollaborativeAgents: []string{"agent1", "nonexistent"},
 			},
 			expectedErrors: 1,
-			checkError: func(errors []ValidationError) bool {
+			checkError: func(errors []core.ValidationError) bool {
 				return len(errors) > 0 && errors[0].Field == "collaborative_agents"
 			},
 		},
 		{
 			name: "valid_loop_agent",
-			orchestration: OrchestrationConfigToml{
+			orchestration: core.OrchestrationConfigToml{
 				LoopAgent: "agent1",
 			},
 			expectedErrors: 0,
 		},
 		{
 			name: "nonexistent_loop_agent",
-			orchestration: OrchestrationConfigToml{
+			orchestration: core.OrchestrationConfigToml{
 				LoopAgent: "nonexistent",
 			},
 			expectedErrors: 1,
-			checkError: func(errors []ValidationError) bool {
+			checkError: func(errors []core.ValidationError) bool {
 				return len(errors) > 0 && errors[0].Field == "loop_agent"
 			},
 		},
 		{
 			name: "disabled_loop_agent",
-			orchestration: OrchestrationConfigToml{
+			orchestration: core.OrchestrationConfigToml{
 				LoopAgent: "disabled_agent",
 			},
 			expectedErrors: 1,
-			checkError: func(errors []ValidationError) bool {
+			checkError: func(errors []core.ValidationError) bool {
 				return len(errors) > 0 && errors[0].Field == "loop_agent"
 			},
 		},
@@ -422,13 +424,13 @@ func TestValidateOrchestrationAgents(t *testing.T) {
 func TestValidateConfig(t *testing.T) {
 	validator := NewDefaultConfigValidator()
 
-	config := &Config{
-		LLM: AgentLLMConfig{
+	config := &core.Config{
+		LLM: core.AgentLLMConfig{
 			Provider:    "openai",
 			Temperature: 0.7,
 			MaxTokens:   800,
 		},
-		Agents: map[string]AgentConfig{
+		Agents: map[string]core.AgentConfig{
 			"valid_agent": {
 				Role:         "test_agent",
 				Description:  "A test agent",
@@ -443,7 +445,7 @@ func TestValidateConfig(t *testing.T) {
 				Enabled:      true,
 			},
 		},
-		Orchestration: OrchestrationConfigToml{
+		Orchestration: core.OrchestrationConfigToml{
 			SequentialAgents: []string{"valid_agent", "nonexistent_agent"},
 		},
 	}
@@ -478,38 +480,13 @@ func TestValidateConfig(t *testing.T) {
 	}
 }
 
-func TestValidationErrorString(t *testing.T) {
-	// Test error without suggestion
-	err1 := ValidationError{
-		Field:   "test_field",
-		Value:   "test_value",
-		Message: "test message",
-	}
-	expected1 := "test_field: test message"
-	if err1.Error() != expected1 {
-		t.Errorf("Expected '%s', got '%s'", expected1, err1.Error())
-	}
-
-	// Test error with suggestion
-	err2 := ValidationError{
-		Field:      "test_field",
-		Value:      "test_value",
-		Message:    "test message",
-		Suggestion: "test suggestion",
-	}
-	expected2 := "test_field: test message. Suggestion: test suggestion"
-	if err2.Error() != expected2 {
-		t.Errorf("Expected '%s', got '%s'", expected2, err2.Error())
-	}
-}
-
 func TestAddKnownCapabilityAndProvider(t *testing.T) {
 	validator := NewDefaultConfigValidator()
 
 	// Test adding custom capability
 	validator.AddKnownCapability("custom_capability")
 	
-	config := AgentConfig{
+	config := core.AgentConfig{
 		Role:         "test_agent",
 		Description:  "A test agent",
 		SystemPrompt: "You are a helpful assistant",
@@ -528,7 +505,7 @@ func TestAddKnownCapabilityAndProvider(t *testing.T) {
 	// Test adding custom provider
 	validator.AddValidProvider("custom_provider")
 	
-	llmConfig := AgentLLMConfig{
+	llmConfig := core.AgentLLMConfig{
 		Provider:    "custom_provider",
 		Temperature: 0.7,
 		MaxTokens:   800,

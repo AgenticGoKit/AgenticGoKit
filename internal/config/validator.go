@@ -1,36 +1,15 @@
-package core
+// Package config provides internal configuration validation functionality.
+package config
 
 import (
 	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/kunalkushwaha/agenticgokit/core"
 )
 
-// ValidationError represents a configuration validation error
-type ValidationError struct {
-	Field      string      `json:"field"`
-	Value      interface{} `json:"value"`
-	Message    string      `json:"message"`
-	Suggestion string      `json:"suggestion"`
-}
-
-func (e ValidationError) Error() string {
-	if e.Suggestion != "" {
-		return fmt.Sprintf("%s: %s. Suggestion: %s", e.Field, e.Message, e.Suggestion)
-	}
-	return fmt.Sprintf("%s: %s", e.Field, e.Message)
-}
-
-// ConfigValidator interface for agent configuration validation
-type ConfigValidator interface {
-	ValidateAgentConfig(name string, config *AgentConfig) []ValidationError
-	ValidateLLMConfig(config *AgentLLMConfig) []ValidationError
-	ValidateOrchestrationAgents(orchestration *OrchestrationConfigToml, agents map[string]AgentConfig) []ValidationError
-	ValidateCapabilities(capabilities []string) []ValidationError
-	ValidateConfig(config *Config) []ValidationError
-}
-
-// DefaultConfigValidator implements ConfigValidator
+// DefaultConfigValidator implements core.ConfigValidator
 type DefaultConfigValidator struct {
 	knownCapabilities map[string]bool
 	validProviders    map[string]bool
@@ -118,8 +97,8 @@ func NewDefaultConfigValidator() *DefaultConfigValidator {
 }
 
 // ValidateConfig validates the entire configuration
-func (v *DefaultConfigValidator) ValidateConfig(config *Config) []ValidationError {
-	var errors []ValidationError
+func (v *DefaultConfigValidator) ValidateConfig(config *core.Config) []core.ValidationError {
+	var errors []core.ValidationError
 
 	// 1. Validate configuration completeness
 	completenessErrors := v.ValidateConfigCompleteness(config)
@@ -171,12 +150,12 @@ func (v *DefaultConfigValidator) ValidateConfig(config *Config) []ValidationErro
 }
 
 // ValidateAgentConfig validates agent-specific configuration
-func (v *DefaultConfigValidator) ValidateAgentConfig(name string, config *AgentConfig) []ValidationError {
-	var errors []ValidationError
+func (v *DefaultConfigValidator) ValidateAgentConfig(name string, config *core.AgentConfig) []core.ValidationError {
+	var errors []core.ValidationError
 
 	// Validate required fields
 	if config.Role == "" {
-		errors = append(errors, ValidationError{
+		errors = append(errors, core.ValidationError{
 			Field:      "role",
 			Value:      config.Role,
 			Message:    "role is required",
@@ -188,7 +167,7 @@ func (v *DefaultConfigValidator) ValidateAgentConfig(name string, config *AgentC
 	if config.Role != "" {
 		rolePattern := regexp.MustCompile(`^[a-z][a-z0-9_]*$`)
 		if !rolePattern.MatchString(config.Role) {
-			errors = append(errors, ValidationError{
+			errors = append(errors, core.ValidationError{
 				Field:      "role",
 				Value:      config.Role,
 				Message:    "role must be lowercase with underscores only",
@@ -199,7 +178,7 @@ func (v *DefaultConfigValidator) ValidateAgentConfig(name string, config *AgentC
 
 	// Validate description
 	if config.Description == "" {
-		errors = append(errors, ValidationError{
+		errors = append(errors, core.ValidationError{
 			Field:      "description",
 			Value:      config.Description,
 			Message:    "description is recommended for documentation",
@@ -209,14 +188,14 @@ func (v *DefaultConfigValidator) ValidateAgentConfig(name string, config *AgentC
 
 	// Validate system prompt
 	if config.SystemPrompt == "" {
-		errors = append(errors, ValidationError{
+		errors = append(errors, core.ValidationError{
 			Field:      "system_prompt",
 			Value:      config.SystemPrompt,
 			Message:    "system_prompt is required for agent behavior",
 			Suggestion: "provide a clear system prompt defining the agent's role and behavior",
 		})
 	} else if len(config.SystemPrompt) < 10 {
-		errors = append(errors, ValidationError{
+		errors = append(errors, core.ValidationError{
 			Field:      "system_prompt",
 			Value:      config.SystemPrompt,
 			Message:    "system_prompt is too short",
@@ -230,14 +209,14 @@ func (v *DefaultConfigValidator) ValidateAgentConfig(name string, config *AgentC
 
 	// Validate timeout
 	if config.Timeout < 0 {
-		errors = append(errors, ValidationError{
+		errors = append(errors, core.ValidationError{
 			Field:      "timeout_seconds",
 			Value:      config.Timeout,
 			Message:    "timeout cannot be negative",
 			Suggestion: "set timeout to a positive value (e.g., 30 seconds)",
 		})
 	} else if config.Timeout > 300 {
-		errors = append(errors, ValidationError{
+		errors = append(errors, core.ValidationError{
 			Field:      "timeout_seconds",
 			Value:      config.Timeout,
 			Message:    "timeout is very high (>5 minutes)",
@@ -276,8 +255,8 @@ func (v *DefaultConfigValidator) ValidateAgentConfig(name string, config *AgentC
 }
 
 // ValidateLLMConfig validates LLM configuration
-func (v *DefaultConfigValidator) ValidateLLMConfig(config *AgentLLMConfig) []ValidationError {
-	var errors []ValidationError
+func (v *DefaultConfigValidator) ValidateLLMConfig(config *core.AgentLLMConfig) []core.ValidationError {
+	var errors []core.ValidationError
 
 	// Validate provider
 	if config.Provider != "" && !v.validProviders[config.Provider] {
@@ -285,7 +264,7 @@ func (v *DefaultConfigValidator) ValidateLLMConfig(config *AgentLLMConfig) []Val
 		for provider := range v.validProviders {
 			validProviders = append(validProviders, provider)
 		}
-		errors = append(errors, ValidationError{
+		errors = append(errors, core.ValidationError{
 			Field:      "provider",
 			Value:      config.Provider,
 			Message:    "unsupported LLM provider",
@@ -304,7 +283,7 @@ func (v *DefaultConfigValidator) ValidateLLMConfig(config *AgentLLMConfig) []Val
 				}
 			}
 			if !validModel {
-				errors = append(errors, ValidationError{
+				errors = append(errors, core.ValidationError{
 					Field:      "model",
 					Value:      config.Model,
 					Message:    fmt.Sprintf("unsupported model for provider '%s'", config.Provider),
@@ -316,7 +295,7 @@ func (v *DefaultConfigValidator) ValidateLLMConfig(config *AgentLLMConfig) []Val
 
 	// Validate temperature
 	if config.Temperature < 0 || config.Temperature > 2 {
-		errors = append(errors, ValidationError{
+		errors = append(errors, core.ValidationError{
 			Field:      "temperature",
 			Value:      config.Temperature,
 			Message:    "temperature must be between 0 and 2",
@@ -326,14 +305,14 @@ func (v *DefaultConfigValidator) ValidateLLMConfig(config *AgentLLMConfig) []Val
 
 	// Validate max tokens
 	if config.MaxTokens < 1 {
-		errors = append(errors, ValidationError{
+		errors = append(errors, core.ValidationError{
 			Field:      "max_tokens",
 			Value:      config.MaxTokens,
 			Message:    "max_tokens must be positive",
 			Suggestion: "set max_tokens to a reasonable value (e.g., 800-2000)",
 		})
 	} else if config.MaxTokens > 32000 {
-		errors = append(errors, ValidationError{
+		errors = append(errors, core.ValidationError{
 			Field:      "max_tokens",
 			Value:      config.MaxTokens,
 			Message:    "max_tokens is very high",
@@ -343,14 +322,14 @@ func (v *DefaultConfigValidator) ValidateLLMConfig(config *AgentLLMConfig) []Val
 
 	// Validate timeout
 	if config.TimeoutSeconds < 0 {
-		errors = append(errors, ValidationError{
+		errors = append(errors, core.ValidationError{
 			Field:      "timeout_seconds",
 			Value:      config.TimeoutSeconds,
 			Message:    "timeout_seconds cannot be negative",
 			Suggestion: "set timeout_seconds to a positive value (e.g., 30)",
 		})
 	} else if config.TimeoutSeconds > 300 {
-		errors = append(errors, ValidationError{
+		errors = append(errors, core.ValidationError{
 			Field:      "timeout_seconds",
 			Value:      config.TimeoutSeconds,
 			Message:    "timeout_seconds is very high (>5 minutes)",
@@ -360,7 +339,7 @@ func (v *DefaultConfigValidator) ValidateLLMConfig(config *AgentLLMConfig) []Val
 
 	// Validate TopP
 	if config.TopP != 0 && (config.TopP < 0 || config.TopP > 1) {
-		errors = append(errors, ValidationError{
+		errors = append(errors, core.ValidationError{
 			Field:      "top_p",
 			Value:      config.TopP,
 			Message:    "top_p must be between 0 and 1",
@@ -370,7 +349,7 @@ func (v *DefaultConfigValidator) ValidateLLMConfig(config *AgentLLMConfig) []Val
 
 	// Validate frequency penalty
 	if config.FrequencyPenalty < -2 || config.FrequencyPenalty > 2 {
-		errors = append(errors, ValidationError{
+		errors = append(errors, core.ValidationError{
 			Field:      "frequency_penalty",
 			Value:      config.FrequencyPenalty,
 			Message:    "frequency_penalty must be between -2 and 2",
@@ -380,7 +359,7 @@ func (v *DefaultConfigValidator) ValidateLLMConfig(config *AgentLLMConfig) []Val
 
 	// Validate presence penalty
 	if config.PresencePenalty < -2 || config.PresencePenalty > 2 {
-		errors = append(errors, ValidationError{
+		errors = append(errors, core.ValidationError{
 			Field:      "presence_penalty",
 			Value:      config.PresencePenalty,
 			Message:    "presence_penalty must be between -2 and 2",
@@ -396,11 +375,11 @@ func (v *DefaultConfigValidator) ValidateLLMConfig(config *AgentLLMConfig) []Val
 }
 
 // ValidateCapabilities validates agent capabilities
-func (v *DefaultConfigValidator) ValidateCapabilities(capabilities []string) []ValidationError {
-	var errors []ValidationError
+func (v *DefaultConfigValidator) ValidateCapabilities(capabilities []string) []core.ValidationError {
+	var errors []core.ValidationError
 
 	if len(capabilities) == 0 {
-		errors = append(errors, ValidationError{
+		errors = append(errors, core.ValidationError{
 			Field:      "capabilities",
 			Value:      capabilities,
 			Message:    "at least one capability should be specified",
@@ -421,7 +400,7 @@ func (v *DefaultConfigValidator) ValidateCapabilities(capabilities []string) []V
 		for cap := range v.knownCapabilities {
 			knownCaps = append(knownCaps, cap)
 		}
-		errors = append(errors, ValidationError{
+		errors = append(errors, core.ValidationError{
 			Field:      "capabilities",
 			Value:      unknownCaps,
 			Message:    fmt.Sprintf("unknown capabilities: %s", strings.Join(unknownCaps, ", ")),
@@ -440,7 +419,7 @@ func (v *DefaultConfigValidator) ValidateCapabilities(capabilities []string) []V
 	}
 
 	if len(duplicates) > 0 {
-		errors = append(errors, ValidationError{
+		errors = append(errors, core.ValidationError{
 			Field:      "capabilities",
 			Value:      duplicates,
 			Message:    fmt.Sprintf("duplicate capabilities: %s", strings.Join(duplicates, ", ")),
@@ -452,20 +431,20 @@ func (v *DefaultConfigValidator) ValidateCapabilities(capabilities []string) []V
 }
 
 // ValidateOrchestrationAgents validates orchestration configuration against available agents
-func (v *DefaultConfigValidator) ValidateOrchestrationAgents(orchestration *OrchestrationConfigToml, agents map[string]AgentConfig) []ValidationError {
-	var errors []ValidationError
+func (v *DefaultConfigValidator) ValidateOrchestrationAgents(orchestration *core.OrchestrationConfigToml, agents map[string]core.AgentConfig) []core.ValidationError {
+	var errors []core.ValidationError
 
 	// Validate sequential agents exist
 	for _, agentName := range orchestration.SequentialAgents {
 		if _, exists := agents[agentName]; !exists {
-			errors = append(errors, ValidationError{
+			errors = append(errors, core.ValidationError{
 				Field:      "sequential_agents",
 				Value:      agentName,
 				Message:    fmt.Sprintf("agent '%s' not found in configuration", agentName),
 				Suggestion: "ensure all referenced agents are defined in the agents section",
 			})
 		} else if !agents[agentName].Enabled {
-			errors = append(errors, ValidationError{
+			errors = append(errors, core.ValidationError{
 				Field:      "sequential_agents",
 				Value:      agentName,
 				Message:    fmt.Sprintf("agent '%s' is disabled", agentName),
@@ -477,14 +456,14 @@ func (v *DefaultConfigValidator) ValidateOrchestrationAgents(orchestration *Orch
 	// Validate collaborative agents exist
 	for _, agentName := range orchestration.CollaborativeAgents {
 		if _, exists := agents[agentName]; !exists {
-			errors = append(errors, ValidationError{
+			errors = append(errors, core.ValidationError{
 				Field:      "collaborative_agents",
 				Value:      agentName,
 				Message:    fmt.Sprintf("agent '%s' not found in configuration", agentName),
 				Suggestion: "ensure all referenced agents are defined in the agents section",
 			})
 		} else if !agents[agentName].Enabled {
-			errors = append(errors, ValidationError{
+			errors = append(errors, core.ValidationError{
 				Field:      "collaborative_agents",
 				Value:      agentName,
 				Message:    fmt.Sprintf("agent '%s' is disabled", agentName),
@@ -496,14 +475,14 @@ func (v *DefaultConfigValidator) ValidateOrchestrationAgents(orchestration *Orch
 	// Validate loop agent exists
 	if orchestration.LoopAgent != "" {
 		if _, exists := agents[orchestration.LoopAgent]; !exists {
-			errors = append(errors, ValidationError{
+			errors = append(errors, core.ValidationError{
 				Field:      "loop_agent",
 				Value:      orchestration.LoopAgent,
 				Message:    fmt.Sprintf("agent '%s' not found in configuration", orchestration.LoopAgent),
 				Suggestion: "ensure the loop agent is defined in the agents section",
 			})
 		} else if !agents[orchestration.LoopAgent].Enabled {
-			errors = append(errors, ValidationError{
+			errors = append(errors, core.ValidationError{
 				Field:      "loop_agent",
 				Value:      orchestration.LoopAgent,
 				Message:    fmt.Sprintf("agent '%s' is disabled", orchestration.LoopAgent),
@@ -516,18 +495,18 @@ func (v *DefaultConfigValidator) ValidateOrchestrationAgents(orchestration *Orch
 }
 
 // validateRetryPolicy validates retry policy configuration
-func (v *DefaultConfigValidator) validateRetryPolicy(policy *AgentRetryPolicyConfig) []ValidationError {
-	var errors []ValidationError
+func (v *DefaultConfigValidator) validateRetryPolicy(policy *core.AgentRetryPolicyConfig) []core.ValidationError {
+	var errors []core.ValidationError
 
 	if policy.MaxRetries < 0 {
-		errors = append(errors, ValidationError{
+		errors = append(errors, core.ValidationError{
 			Field:      "max_retries",
 			Value:      policy.MaxRetries,
 			Message:    "max_retries cannot be negative",
 			Suggestion: "set max_retries to 0 to disable retries or a positive value",
 		})
 	} else if policy.MaxRetries > 10 {
-		errors = append(errors, ValidationError{
+		errors = append(errors, core.ValidationError{
 			Field:      "max_retries",
 			Value:      policy.MaxRetries,
 			Message:    "max_retries is very high",
@@ -536,7 +515,7 @@ func (v *DefaultConfigValidator) validateRetryPolicy(policy *AgentRetryPolicyCon
 	}
 
 	if policy.BaseDelayMs < 0 {
-		errors = append(errors, ValidationError{
+		errors = append(errors, core.ValidationError{
 			Field:      "base_delay_ms",
 			Value:      policy.BaseDelayMs,
 			Message:    "base_delay_ms cannot be negative",
@@ -545,7 +524,7 @@ func (v *DefaultConfigValidator) validateRetryPolicy(policy *AgentRetryPolicyCon
 	}
 
 	if policy.MaxDelayMs < policy.BaseDelayMs {
-		errors = append(errors, ValidationError{
+		errors = append(errors, core.ValidationError{
 			Field:      "max_delay_ms",
 			Value:      policy.MaxDelayMs,
 			Message:    "max_delay_ms must be greater than or equal to base_delay_ms",
@@ -554,7 +533,7 @@ func (v *DefaultConfigValidator) validateRetryPolicy(policy *AgentRetryPolicyCon
 	}
 
 	if policy.BackoffFactor <= 0 {
-		errors = append(errors, ValidationError{
+		errors = append(errors, core.ValidationError{
 			Field:      "backoff_factor",
 			Value:      policy.BackoffFactor,
 			Message:    "backoff_factor must be positive",
@@ -566,11 +545,11 @@ func (v *DefaultConfigValidator) validateRetryPolicy(policy *AgentRetryPolicyCon
 }
 
 // validateRateLimit validates rate limit configuration
-func (v *DefaultConfigValidator) validateRateLimit(rateLimit *RateLimitConfig) []ValidationError {
-	var errors []ValidationError
+func (v *DefaultConfigValidator) validateRateLimit(rateLimit *core.RateLimitConfig) []core.ValidationError {
+	var errors []core.ValidationError
 
 	if rateLimit.RequestsPerSecond <= 0 {
-		errors = append(errors, ValidationError{
+		errors = append(errors, core.ValidationError{
 			Field:      "requests_per_second",
 			Value:      rateLimit.RequestsPerSecond,
 			Message:    "requests_per_second must be positive",
@@ -579,7 +558,7 @@ func (v *DefaultConfigValidator) validateRateLimit(rateLimit *RateLimitConfig) [
 	}
 
 	if rateLimit.BurstSize < 0 {
-		errors = append(errors, ValidationError{
+		errors = append(errors, core.ValidationError{
 			Field:      "burst_size",
 			Value:      rateLimit.BurstSize,
 			Message:    "burst_size cannot be negative",
@@ -601,8 +580,8 @@ func (v *DefaultConfigValidator) AddValidProvider(provider string) {
 }
 
 // validateProviderSpecificParams validates parameters specific to each provider
-func (v *DefaultConfigValidator) validateProviderSpecificParams(config *AgentLLMConfig) []ValidationError {
-	var errors []ValidationError
+func (v *DefaultConfigValidator) validateProviderSpecificParams(config *core.AgentLLMConfig) []core.ValidationError {
+	var errors []core.ValidationError
 
 	switch config.Provider {
 	case "openai":
@@ -623,14 +602,14 @@ func (v *DefaultConfigValidator) validateProviderSpecificParams(config *AgentLLM
 }
 
 // validateOpenAIParams validates OpenAI-specific parameters
-func (v *DefaultConfigValidator) validateOpenAIParams(config *AgentLLMConfig) []ValidationError {
-	var errors []ValidationError
+func (v *DefaultConfigValidator) validateOpenAIParams(config *core.AgentLLMConfig) []core.ValidationError {
+	var errors []core.ValidationError
 
 	// OpenAI supports all standard parameters
 	// Validate max tokens based on model
 	if strings.HasPrefix(config.Model, "gpt-4") {
 		if config.MaxTokens > 8192 && !strings.Contains(config.Model, "turbo") {
-			errors = append(errors, ValidationError{
+			errors = append(errors, core.ValidationError{
 				Field:      "max_tokens",
 				Value:      config.MaxTokens,
 				Message:    "max_tokens exceeds model limit for GPT-4",
@@ -639,7 +618,7 @@ func (v *DefaultConfigValidator) validateOpenAIParams(config *AgentLLMConfig) []
 		}
 	} else if strings.HasPrefix(config.Model, "gpt-3.5") {
 		if config.MaxTokens > 4096 && !strings.Contains(config.Model, "16k") {
-			errors = append(errors, ValidationError{
+			errors = append(errors, core.ValidationError{
 				Field:      "max_tokens",
 				Value:      config.MaxTokens,
 				Message:    "max_tokens exceeds model limit for GPT-3.5",
@@ -652,12 +631,12 @@ func (v *DefaultConfigValidator) validateOpenAIParams(config *AgentLLMConfig) []
 }
 
 // validateAnthropicParams validates Anthropic-specific parameters
-func (v *DefaultConfigValidator) validateAnthropicParams(config *AgentLLMConfig) []ValidationError {
-	var errors []ValidationError
+func (v *DefaultConfigValidator) validateAnthropicParams(config *core.AgentLLMConfig) []core.ValidationError {
+	var errors []core.ValidationError
 
 	// Anthropic doesn't support frequency_penalty and presence_penalty
 	if config.FrequencyPenalty != 0 {
-		errors = append(errors, ValidationError{
+		errors = append(errors, core.ValidationError{
 			Field:      "frequency_penalty",
 			Value:      config.FrequencyPenalty,
 			Message:    "frequency_penalty is not supported by Anthropic",
@@ -666,7 +645,7 @@ func (v *DefaultConfigValidator) validateAnthropicParams(config *AgentLLMConfig)
 	}
 
 	if config.PresencePenalty != 0 {
-		errors = append(errors, ValidationError{
+		errors = append(errors, core.ValidationError{
 			Field:      "presence_penalty",
 			Value:      config.PresencePenalty,
 			Message:    "presence_penalty is not supported by Anthropic",
@@ -677,7 +656,7 @@ func (v *DefaultConfigValidator) validateAnthropicParams(config *AgentLLMConfig)
 	// Validate max tokens for Claude models
 	if strings.HasPrefix(config.Model, "claude-3") {
 		if config.MaxTokens > 4096 {
-			errors = append(errors, ValidationError{
+			errors = append(errors, core.ValidationError{
 				Field:      "max_tokens",
 				Value:      config.MaxTokens,
 				Message:    "max_tokens exceeds recommended limit for Claude-3",
@@ -690,13 +669,13 @@ func (v *DefaultConfigValidator) validateAnthropicParams(config *AgentLLMConfig)
 }
 
 // validateAzureParams validates Azure OpenAI-specific parameters
-func (v *DefaultConfigValidator) validateAzureParams(config *AgentLLMConfig) []ValidationError {
-	var errors []ValidationError
+func (v *DefaultConfigValidator) validateAzureParams(config *core.AgentLLMConfig) []core.ValidationError {
+	var errors []core.ValidationError
 
 	// Azure OpenAI has similar limits to OpenAI but with different model names
 	if strings.HasPrefix(config.Model, "gpt-35") {
 		if config.MaxTokens > 4096 && !strings.Contains(config.Model, "16k") {
-			errors = append(errors, ValidationError{
+			errors = append(errors, core.ValidationError{
 				Field:      "max_tokens",
 				Value:      config.MaxTokens,
 				Message:    "max_tokens exceeds model limit for GPT-3.5 on Azure",
@@ -709,12 +688,12 @@ func (v *DefaultConfigValidator) validateAzureParams(config *AgentLLMConfig) []V
 }
 
 // validateOllamaParams validates Ollama-specific parameters
-func (v *DefaultConfigValidator) validateOllamaParams(config *AgentLLMConfig) []ValidationError {
-	var errors []ValidationError
+func (v *DefaultConfigValidator) validateOllamaParams(config *core.AgentLLMConfig) []core.ValidationError {
+	var errors []core.ValidationError
 
 	// Ollama doesn't support some OpenAI parameters
 	if config.FrequencyPenalty != 0 {
-		errors = append(errors, ValidationError{
+		errors = append(errors, core.ValidationError{
 			Field:      "frequency_penalty",
 			Value:      config.FrequencyPenalty,
 			Message:    "frequency_penalty may not be supported by all Ollama models",
@@ -723,7 +702,7 @@ func (v *DefaultConfigValidator) validateOllamaParams(config *AgentLLMConfig) []
 	}
 
 	if config.PresencePenalty != 0 {
-		errors = append(errors, ValidationError{
+		errors = append(errors, core.ValidationError{
 			Field:      "presence_penalty",
 			Value:      config.PresencePenalty,
 			Message:    "presence_penalty may not be supported by all Ollama models",
@@ -733,7 +712,7 @@ func (v *DefaultConfigValidator) validateOllamaParams(config *AgentLLMConfig) []
 
 	// Ollama models typically have lower context limits
 	if config.MaxTokens > 2048 {
-		errors = append(errors, ValidationError{
+		errors = append(errors, core.ValidationError{
 			Field:      "max_tokens",
 			Value:      config.MaxTokens,
 			Message:    "max_tokens is high for Ollama models",
@@ -745,12 +724,12 @@ func (v *DefaultConfigValidator) validateOllamaParams(config *AgentLLMConfig) []
 }
 
 // validateGoogleParams validates Google AI-specific parameters
-func (v *DefaultConfigValidator) validateGoogleParams(config *AgentLLMConfig) []ValidationError {
-	var errors []ValidationError
+func (v *DefaultConfigValidator) validateGoogleParams(config *core.AgentLLMConfig) []core.ValidationError {
+	var errors []core.ValidationError
 
 	// Google AI has different parameter names and limits
 	if config.FrequencyPenalty != 0 {
-		errors = append(errors, ValidationError{
+		errors = append(errors, core.ValidationError{
 			Field:      "frequency_penalty",
 			Value:      config.FrequencyPenalty,
 			Message:    "frequency_penalty is not directly supported by Google AI",
@@ -759,7 +738,7 @@ func (v *DefaultConfigValidator) validateGoogleParams(config *AgentLLMConfig) []
 	}
 
 	if config.PresencePenalty != 0 {
-		errors = append(errors, ValidationError{
+		errors = append(errors, core.ValidationError{
 			Field:      "presence_penalty",
 			Value:      config.PresencePenalty,
 			Message:    "presence_penalty is not directly supported by Google AI",
@@ -771,12 +750,12 @@ func (v *DefaultConfigValidator) validateGoogleParams(config *AgentLLMConfig) []
 }
 
 // validateCohereParams validates Cohere-specific parameters
-func (v *DefaultConfigValidator) validateCohereParams(config *AgentLLMConfig) []ValidationError {
-	var errors []ValidationError
+func (v *DefaultConfigValidator) validateCohereParams(config *core.AgentLLMConfig) []core.ValidationError {
+	var errors []core.ValidationError
 
 	// Cohere has different parameter support
 	if config.TopP != 0 && config.TopP > 0.99 {
-		errors = append(errors, ValidationError{
+		errors = append(errors, core.ValidationError{
 			Field:      "top_p",
 			Value:      config.TopP,
 			Message:    "top_p should be less than 0.99 for Cohere",
@@ -788,12 +767,12 @@ func (v *DefaultConfigValidator) validateCohereParams(config *AgentLLMConfig) []
 }
 
 // ValidateConfigCompleteness validates configuration completeness and applies defaults
-func (v *DefaultConfigValidator) ValidateConfigCompleteness(config *Config) []ValidationError {
-	var errors []ValidationError
+func (v *DefaultConfigValidator) ValidateConfigCompleteness(config *core.Config) []core.ValidationError {
+	var errors []core.ValidationError
 
 	// Check if global LLM configuration is provided
 	if config.LLM.Provider == "" {
-		errors = append(errors, ValidationError{
+		errors = append(errors, core.ValidationError{
 			Field:      "llm.provider",
 			Value:      config.LLM.Provider,
 			Message:    "global LLM provider not specified",
@@ -802,7 +781,7 @@ func (v *DefaultConfigValidator) ValidateConfigCompleteness(config *Config) []Va
 	}
 
 	if config.LLM.Model == "" {
-		errors = append(errors, ValidationError{
+		errors = append(errors, core.ValidationError{
 			Field:      "llm.model",
 			Value:      config.LLM.Model,
 			Message:    "global LLM model not specified",
@@ -813,7 +792,7 @@ func (v *DefaultConfigValidator) ValidateConfigCompleteness(config *Config) []Va
 	// Check agent configuration completeness
 	for name, agent := range config.Agents {
 		if agent.Role == "" {
-			errors = append(errors, ValidationError{
+			errors = append(errors, core.ValidationError{
 				Field:      fmt.Sprintf("agents.%s.role", name),
 				Value:      agent.Role,
 				Message:    "agent role not specified",
@@ -822,7 +801,7 @@ func (v *DefaultConfigValidator) ValidateConfigCompleteness(config *Config) []Va
 		}
 
 		if agent.SystemPrompt == "" {
-			errors = append(errors, ValidationError{
+			errors = append(errors, core.ValidationError{
 				Field:      fmt.Sprintf("agents.%s.system_prompt", name),
 				Value:      agent.SystemPrompt,
 				Message:    "agent system prompt not specified",
@@ -831,7 +810,7 @@ func (v *DefaultConfigValidator) ValidateConfigCompleteness(config *Config) []Va
 		}
 
 		if len(agent.Capabilities) == 0 {
-			errors = append(errors, ValidationError{
+			errors = append(errors, core.ValidationError{
 				Field:      fmt.Sprintf("agents.%s.capabilities", name),
 				Value:      agent.Capabilities,
 				Message:    "agent capabilities not specified",
@@ -844,7 +823,7 @@ func (v *DefaultConfigValidator) ValidateConfigCompleteness(config *Config) []Va
 	if len(config.Orchestration.SequentialAgents) == 0 && 
 	   len(config.Orchestration.CollaborativeAgents) == 0 && 
 	   config.Orchestration.LoopAgent == "" {
-		errors = append(errors, ValidationError{
+		errors = append(errors, core.ValidationError{
 			Field:      "orchestration",
 			Value:      nil,
 			Message:    "no orchestration configuration specified",
@@ -856,8 +835,8 @@ func (v *DefaultConfigValidator) ValidateConfigCompleteness(config *Config) []Va
 }
 
 // ValidateCapabilityGroups validates that agent capabilities make sense together
-func (v *DefaultConfigValidator) ValidateCapabilityGroups(capabilities []string) []ValidationError {
-	var errors []ValidationError
+func (v *DefaultConfigValidator) ValidateCapabilityGroups(capabilities []string) []core.ValidationError {
+	var errors []core.ValidationError
 
 	if len(capabilities) == 0 {
 		return errors
@@ -882,7 +861,7 @@ func (v *DefaultConfigValidator) ValidateCapabilityGroups(capabilities []string)
 		for group := range groupCounts {
 			groups = append(groups, group)
 		}
-		errors = append(errors, ValidationError{
+		errors = append(errors, core.ValidationError{
 			Field:      "capabilities",
 			Value:      capabilities,
 			Message:    "agent has capabilities from many different groups",
@@ -893,11 +872,11 @@ func (v *DefaultConfigValidator) ValidateCapabilityGroups(capabilities []string)
 	// Suggest additional capabilities based on existing ones
 	for group, count := range groupCounts {
 		if count == 1 && len(v.capabilityGroups[group]) > 1 {
-			errors = append(errors, ValidationError{
+			errors = append(errors, core.ValidationError{
 				Field:      "capabilities",
 				Value:      capabilities,
 				Message:    fmt.Sprintf("agent has only one capability from %s group", group),
-				Suggestion: fmt.Sprintf("consider adding related %s capabilities: %s", group, strings.Join(v.capabilityGroups[group], ", ")),
+				Suggestion: fmt.Sprintf("consider adding more %s capabilities: %s", group, strings.Join(v.capabilityGroups[group], ", ")),
 			})
 		}
 	}
@@ -906,13 +885,13 @@ func (v *DefaultConfigValidator) ValidateCapabilityGroups(capabilities []string)
 }
 
 // ValidateAgentNaming validates agent naming conventions
-func (v *DefaultConfigValidator) ValidateAgentNaming(name string, config *AgentConfig) []ValidationError {
-	var errors []ValidationError
+func (v *DefaultConfigValidator) ValidateAgentNaming(name string, config *core.AgentConfig) []core.ValidationError {
+	var errors []core.ValidationError
 
 	// Validate agent name format
 	namePattern := regexp.MustCompile(`^[a-z][a-z0-9_]*$`)
 	if !namePattern.MatchString(name) {
-		errors = append(errors, ValidationError{
+		errors = append(errors, core.ValidationError{
 			Field:      "name",
 			Value:      name,
 			Message:    "agent name must be lowercase with underscores only",
@@ -920,80 +899,28 @@ func (v *DefaultConfigValidator) ValidateAgentNaming(name string, config *AgentC
 		})
 	}
 
-	// Check if agent name matches its role
-	if config.Role != "" && !strings.Contains(config.Role, strings.Replace(name, "_", "", -1)) {
-		errors = append(errors, ValidationError{
+	// Check if role matches name convention
+	if config.Role != "" && !strings.Contains(config.Role, name) && !strings.Contains(name, strings.Replace(config.Role, "_agent", "", 1)) {
+		errors = append(errors, core.ValidationError{
 			Field:      "role",
 			Value:      config.Role,
-			Message:    "agent role doesn't match agent name",
-			Suggestion: fmt.Sprintf("consider using role '%s' or renaming the agent", name+"_agent"),
+			Message:    "role doesn't match agent name convention",
+			Suggestion: fmt.Sprintf("consider using role '%s_agent' to match name '%s'", name, name),
 		})
 	}
 
 	return errors
 }
 
-// GetCapabilitySuggestions returns capability suggestions based on agent role
-func (v *DefaultConfigValidator) GetCapabilitySuggestions(role string) []string {
-	roleKeywords := strings.ToLower(role)
-	
-	var suggestions []string
-	
-	// Suggest capabilities based on role keywords
-	if strings.Contains(roleKeywords, "research") {
-		suggestions = append(suggestions, v.capabilityGroups["research"]...)
-	}
-	if strings.Contains(roleKeywords, "analy") {
-		suggestions = append(suggestions, v.capabilityGroups["analysis"]...)
-	}
-	if strings.Contains(roleKeywords, "content") || strings.Contains(roleKeywords, "writ") {
-		suggestions = append(suggestions, v.capabilityGroups["content"]...)
-	}
-	if strings.Contains(roleKeywords, "code") || strings.Contains(roleKeywords, "dev") {
-		suggestions = append(suggestions, v.capabilityGroups["development"]...)
-	}
-	
-	// Remove duplicates
-	seen := make(map[string]bool)
-	var unique []string
-	for _, cap := range suggestions {
-		if !seen[cap] {
-			unique = append(unique, cap)
-			seen[cap] = true
-		}
-	}
-	
-	return unique
-}
-
 // validateCrossReferences validates cross-references between different parts of the configuration
-func (v *DefaultConfigValidator) validateCrossReferences(config *Config) []ValidationError {
-	var errors []ValidationError
+func (v *DefaultConfigValidator) validateCrossReferences(config *core.Config) []core.ValidationError {
+	var errors []core.ValidationError
 
-	// Check for circular dependencies in agent references
-	// (This would be more complex in a real system with agent dependencies)
-
-	// Validate that all enabled agents have compatible LLM configurations
+	// Check for agents with different LLM providers than global
+	globalProvider := config.LLM.Provider
 	for name, agent := range config.Agents {
-		if !agent.Enabled {
-			continue
-		}
-
-		// Check if agent has LLM config but no global LLM config
-		if agent.LLM != nil && config.LLM.Provider == "" {
-			errors = append(errors, ValidationError{
-				Field:      fmt.Sprintf("agents.%s.llm", name),
-				Value:      agent.LLM,
-				Message:    "agent has LLM config but no global LLM provider is set",
-				Suggestion: "set a global LLM provider or ensure agent LLM config is complete",
-			})
-		}
-
-		// Check for conflicting LLM providers in orchestration
-		if agent.LLM != nil && config.LLM.Provider != "" && 
-		   agent.LLM.Provider != "" && agent.LLM.Provider != config.LLM.Provider {
-			// This is actually valid (agent-specific override), but we can warn about potential issues
-			errors = append(errors, ValidationError{
+		if agent.LLM != nil && agent.LLM.Provider != "" && agent.LLM.Provider != globalProvider {
+			errors = append(errors, core.ValidationError{
 				Field:      fmt.Sprintf("agents.%s.llm.provider", name),
 				Value:      agent.LLM.Provider,
 				Message:    "agent uses different LLM provider than global configuration",
@@ -1012,7 +939,7 @@ func (v *DefaultConfigValidator) validateCrossReferences(config *Config) []Valid
 	}
 
 	if enabledAgents == 0 && totalAgents > 0 {
-		errors = append(errors, ValidationError{
+		errors = append(errors, core.ValidationError{
 			Field:      "agents",
 			Value:      nil,
 			Message:    "all agents are disabled",
@@ -1026,7 +953,7 @@ func (v *DefaultConfigValidator) validateCrossReferences(config *Config) []Valid
 	hasLoopAgent := config.Orchestration.LoopAgent != ""
 
 	if sequentialCount > 0 && collaborativeCount > 0 && hasLoopAgent {
-		errors = append(errors, ValidationError{
+		errors = append(errors, core.ValidationError{
 			Field:      "orchestration",
 			Value:      nil,
 			Message:    "multiple orchestration modes configured",
@@ -1035,7 +962,7 @@ func (v *DefaultConfigValidator) validateCrossReferences(config *Config) []Valid
 	}
 
 	if sequentialCount == 1 {
-		errors = append(errors, ValidationError{
+		errors = append(errors, core.ValidationError{
 			Field:      "orchestration.sequential_agents",
 			Value:      config.Orchestration.SequentialAgents,
 			Message:    "only one agent in sequential mode",
@@ -1044,7 +971,7 @@ func (v *DefaultConfigValidator) validateCrossReferences(config *Config) []Valid
 	}
 
 	if collaborativeCount == 1 {
-		errors = append(errors, ValidationError{
+		errors = append(errors, core.ValidationError{
 			Field:      "orchestration.collaborative_agents",
 			Value:      config.Orchestration.CollaborativeAgents,
 			Message:    "only one agent in collaborative mode",
@@ -1053,90 +980,4 @@ func (v *DefaultConfigValidator) validateCrossReferences(config *Config) []Valid
 	}
 
 	return errors
-}
-
-// ValidateEnvironmentCompatibility validates that the configuration is compatible with the environment
-func (v *DefaultConfigValidator) ValidateEnvironmentCompatibility(config *Config) []ValidationError {
-	var errors []ValidationError
-
-	// Check for environment-specific issues
-	for name, agent := range config.Agents {
-		if agent.LLM != nil {
-			// Check for local vs cloud provider compatibility
-			if agent.LLM.Provider == "ollama" {
-				if agent.LLM.MaxTokens > 4096 {
-					errors = append(errors, ValidationError{
-						Field:      fmt.Sprintf("agents.%s.llm.max_tokens", name),
-						Value:      agent.LLM.MaxTokens,
-						Message:    "high max_tokens with local Ollama provider may cause performance issues",
-						Suggestion: "consider reducing max_tokens for local models",
-					})
-				}
-			}
-
-			// Check for API key requirements
-			if agent.LLM.Provider == "openai" || agent.LLM.Provider == "anthropic" {
-				errors = append(errors, ValidationError{
-					Field:      fmt.Sprintf("agents.%s.llm.provider", name),
-					Value:      agent.LLM.Provider,
-					Message:    "cloud provider requires API key configuration",
-					Suggestion: "ensure API keys are set via environment variables",
-				})
-			}
-		}
-	}
-
-	return errors
-}
-
-// SuggestOptimizations suggests configuration optimizations
-func (v *DefaultConfigValidator) SuggestOptimizations(config *Config) []ValidationError {
-	var suggestions []ValidationError
-
-	// Suggest capability-based optimizations
-	for name, agent := range config.Agents {
-		if len(agent.Capabilities) > 5 {
-			suggestions = append(suggestions, ValidationError{
-				Field:      fmt.Sprintf("agents.%s.capabilities", name),
-				Value:      agent.Capabilities,
-				Message:    "agent has many capabilities",
-				Suggestion: "consider splitting into specialized agents for better performance",
-			})
-		}
-
-		// Suggest LLM optimizations based on capabilities
-		if agent.LLM != nil {
-			hasCreativeCapabilities := false
-			hasAnalyticalCapabilities := false
-			
-			for _, cap := range agent.Capabilities {
-				if cap == "content_creation" || cap == "writing" || cap == "translation" {
-					hasCreativeCapabilities = true
-				}
-				if cap == "data_analysis" || cap == "fact_checking" || cap == "pattern_recognition" {
-					hasAnalyticalCapabilities = true
-				}
-			}
-
-			if hasCreativeCapabilities && agent.LLM.Temperature < 0.5 {
-				suggestions = append(suggestions, ValidationError{
-					Field:      fmt.Sprintf("agents.%s.llm.temperature", name),
-					Value:      agent.LLM.Temperature,
-					Message:    "low temperature for creative tasks",
-					Suggestion: "consider increasing temperature to 0.7-1.0 for creative capabilities",
-				})
-			}
-
-			if hasAnalyticalCapabilities && agent.LLM.Temperature > 0.5 {
-				suggestions = append(suggestions, ValidationError{
-					Field:      fmt.Sprintf("agents.%s.llm.temperature", name),
-					Value:      agent.LLM.Temperature,
-					Message:    "high temperature for analytical tasks",
-					Suggestion: "consider reducing temperature to 0.1-0.3 for analytical capabilities",
-				})
-			}
-		}
-	}
-
-	return suggestions
 }

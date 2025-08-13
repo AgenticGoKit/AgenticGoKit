@@ -10,6 +10,59 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
+// ValidationError represents a configuration validation error
+type ValidationError struct {
+	Field      string      `json:"field"`
+	Value      interface{} `json:"value"`
+	Message    string      `json:"message"`
+	Suggestion string      `json:"suggestion"`
+}
+
+func (e ValidationError) Error() string {
+	if e.Suggestion != "" {
+		return fmt.Sprintf("%s: %s. Suggestion: %s", e.Field, e.Message, e.Suggestion)
+	}
+	return fmt.Sprintf("%s: %s", e.Field, e.Message)
+}
+
+// ConfigValidator interface for agent configuration validation
+type ConfigValidator interface {
+	ValidateAgentConfig(name string, config *AgentConfig) []ValidationError
+	ValidateLLMConfig(config *AgentLLMConfig) []ValidationError
+	ValidateOrchestrationAgents(orchestration *OrchestrationConfigToml, agents map[string]AgentConfig) []ValidationError
+	ValidateCapabilities(capabilities []string) []ValidationError
+	ValidateConfig(config *Config) []ValidationError
+}
+
+// NewDefaultConfigValidator creates a new default configuration validator
+func NewDefaultConfigValidator() ConfigValidator {
+	// TODO: This will be replaced with internal validator after refactoring is complete
+	return &noOpValidator{}
+}
+
+// noOpValidator is a temporary no-op validator during refactoring
+type noOpValidator struct{}
+
+func (v *noOpValidator) ValidateAgentConfig(name string, config *AgentConfig) []ValidationError {
+	return []ValidationError{}
+}
+
+func (v *noOpValidator) ValidateLLMConfig(config *AgentLLMConfig) []ValidationError {
+	return []ValidationError{}
+}
+
+func (v *noOpValidator) ValidateOrchestrationAgents(orchestration *OrchestrationConfigToml, agents map[string]AgentConfig) []ValidationError {
+	return []ValidationError{}
+}
+
+func (v *noOpValidator) ValidateCapabilities(capabilities []string) []ValidationError {
+	return []ValidationError{}
+}
+
+func (v *noOpValidator) ValidateConfig(config *Config) []ValidationError {
+	return []ValidationError{}
+}
+
 // AgentLLMConfig represents LLM provider configuration for agents
 type AgentLLMConfig struct {
 	Provider         string  `toml:"provider"`
