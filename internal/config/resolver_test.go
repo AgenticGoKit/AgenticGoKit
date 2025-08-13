@@ -1,23 +1,23 @@
-package core
+package config
 
 import (
 	"os"
 	"testing"
 	"time"
+
+	"github.com/kunalkushwaha/agenticgokit/core"
 )
 
-
-
 func TestConfigResolverBasicResolution(t *testing.T) {
-	config := &Config{
-		LLM: AgentLLMConfig{
-			Provider:    "openai",
-			Model:       "gpt-4",
-			Temperature: 0.7,
-			MaxTokens:   800,
+	config := &core.Config{
+		LLM: core.AgentLLMConfig{
+			Provider:       "openai",
+			Model:          "gpt-4",
+			Temperature:    0.7,
+			MaxTokens:      800,
 			TimeoutSeconds: 30,
 		},
-		Agents: map[string]AgentConfig{
+		Agents: map[string]core.AgentConfig{
 			"test_agent": {
 				Role:         "test_role",
 				Description:  "Test agent",
@@ -53,11 +53,11 @@ func TestConfigResolverBasicResolution(t *testing.T) {
 func TestConfigResolverEnvironmentOverrides(t *testing.T) {
 	// Set up test environment variables
 	testEnvVars := map[string]string{
-		"AGENTFLOW_AGENT_TEST_AGENT_ROLE":         "overridden_role",
-		"AGENTFLOW_AGENT_TEST_AGENT_DESCRIPTION":  "Overridden description",
-		"AGENTFLOW_AGENT_TEST_AGENT_SYSTEM_PROMPT": "You are an overridden agent",
-		"AGENTFLOW_AGENT_TEST_AGENT_CAPABILITIES": "cap1,cap2,cap3",
-		"AGENTFLOW_AGENT_TEST_AGENT_ENABLED":      "false",
+		"AGENTFLOW_AGENT_TEST_AGENT_ROLE":            "overridden_role",
+		"AGENTFLOW_AGENT_TEST_AGENT_DESCRIPTION":     "Overridden description",
+		"AGENTFLOW_AGENT_TEST_AGENT_SYSTEM_PROMPT":   "You are an overridden agent",
+		"AGENTFLOW_AGENT_TEST_AGENT_CAPABILITIES":    "cap1,cap2,cap3",
+		"AGENTFLOW_AGENT_TEST_AGENT_ENABLED":         "false",
 		"AGENTFLOW_AGENT_TEST_AGENT_TIMEOUT_SECONDS": "60",
 	}
 
@@ -72,14 +72,14 @@ func TestConfigResolverEnvironmentOverrides(t *testing.T) {
 		}
 	}()
 
-	config := &Config{
-		LLM: AgentLLMConfig{
+	config := &core.Config{
+		LLM: core.AgentLLMConfig{
 			Provider:    "openai",
 			Model:       "gpt-4",
 			Temperature: 0.7,
 			MaxTokens:   800,
 		},
-		Agents: map[string]AgentConfig{
+		Agents: map[string]core.AgentConfig{
 			"test_agent": {
 				Role:         "original_role",
 				Description:  "Original description",
@@ -121,14 +121,14 @@ func TestConfigResolverEnvironmentOverrides(t *testing.T) {
 func TestConfigResolverLLMEnvironmentOverrides(t *testing.T) {
 	// Set up LLM environment variables
 	testEnvVars := map[string]string{
-		"AGENTFLOW_LLM_PROVIDER":     "azure",
-		"AGENTFLOW_LLM_MODEL":        "gpt-3.5-turbo",
-		"AGENTFLOW_LLM_TEMPERATURE":  "0.5",
-		"AGENTFLOW_LLM_MAX_TOKENS":   "1000",
-		"AGENTFLOW_AGENT_TEST_AGENT_LLM_PROVIDER":    "ollama",
-		"AGENTFLOW_AGENT_TEST_AGENT_LLM_MODEL":       "llama2",
-		"AGENTFLOW_AGENT_TEST_AGENT_LLM_TEMPERATURE": "0.3",
-		"AGENTFLOW_AGENT_TEST_AGENT_LLM_MAX_TOKENS":  "1200",
+		"AGENTFLOW_LLM_PROVIDER":                         "azure",
+		"AGENTFLOW_LLM_MODEL":                            "gpt-3.5-turbo",
+		"AGENTFLOW_LLM_TEMPERATURE":                      "0.5",
+		"AGENTFLOW_LLM_MAX_TOKENS":                       "1000",
+		"AGENTFLOW_AGENT_TEST_AGENT_LLM_PROVIDER":        "ollama",
+		"AGENTFLOW_AGENT_TEST_AGENT_LLM_MODEL":           "llama2",
+		"AGENTFLOW_AGENT_TEST_AGENT_LLM_TEMPERATURE":     "0.3",
+		"AGENTFLOW_AGENT_TEST_AGENT_LLM_MAX_TOKENS":      "1200",
 	}
 
 	// Set environment variables
@@ -142,14 +142,14 @@ func TestConfigResolverLLMEnvironmentOverrides(t *testing.T) {
 		}
 	}()
 
-	config := &Config{
-		LLM: AgentLLMConfig{
+	config := &core.Config{
+		LLM: core.AgentLLMConfig{
 			Provider:    "openai",
 			Model:       "gpt-4",
 			Temperature: 0.7,
 			MaxTokens:   800,
 		},
-		Agents: map[string]AgentConfig{
+		Agents: map[string]core.AgentConfig{
 			"test_agent": {
 				Role:         "test_role",
 				SystemPrompt: "You are a test agent",
@@ -211,9 +211,9 @@ func TestConfigResolverLLMEnvironmentOverrides(t *testing.T) {
 func TestConfigResolverApplyEnvironmentOverrides(t *testing.T) {
 	// Set up environment variables
 	testEnvVars := map[string]string{
-		"AGENTFLOW_LLM_PROVIDER":     "azure",
-		"AGENTFLOW_LLM_TEMPERATURE":  "0.5",
-		"AGENTFLOW_AGENT_TEST_AGENT_ROLE": "env_role",
+		"AGENTFLOW_LLM_PROVIDER":              "azure",
+		"AGENTFLOW_LLM_TEMPERATURE":           "0.5",
+		"AGENTFLOW_AGENT_TEST_AGENT_ROLE":     "env_role",
 	}
 
 	// Set environment variables
@@ -227,12 +227,12 @@ func TestConfigResolverApplyEnvironmentOverrides(t *testing.T) {
 		}
 	}()
 
-	config := &Config{
-		LLM: AgentLLMConfig{
+	config := &core.Config{
+		LLM: core.AgentLLMConfig{
 			Provider:    "openai",
 			Temperature: 0.7,
 		},
-		Agents: map[string]AgentConfig{
+		Agents: map[string]core.AgentConfig{
 			"test_agent": {
 				Role:         "original_role",
 				SystemPrompt: "You are a test agent",
@@ -263,12 +263,12 @@ func TestConfigResolverApplyEnvironmentOverrides(t *testing.T) {
 }
 
 func TestConfigResolverResolveAllAgents(t *testing.T) {
-	config := &Config{
-		LLM: AgentLLMConfig{
+	config := &core.Config{
+		LLM: core.AgentLLMConfig{
 			Provider:    "openai",
 			Temperature: 0.7,
 		},
-		Agents: map[string]AgentConfig{
+		Agents: map[string]core.AgentConfig{
 			"agent1": {
 				Role:         "role1",
 				SystemPrompt: "You are agent 1",
@@ -312,10 +312,10 @@ func TestConfigResolverResolveAllAgents(t *testing.T) {
 func TestConfigResolverInvalidEnvironmentValues(t *testing.T) {
 	// Set up invalid environment variables
 	testEnvVars := map[string]string{
-		"AGENTFLOW_AGENT_TEST_AGENT_ENABLED":        "invalid_bool",
+		"AGENTFLOW_AGENT_TEST_AGENT_ENABLED":         "invalid_bool",
 		"AGENTFLOW_AGENT_TEST_AGENT_TIMEOUT_SECONDS": "invalid_int",
-		"AGENTFLOW_LLM_TEMPERATURE":                 "invalid_float",
-		"AGENTFLOW_LLM_MAX_TOKENS":                  "invalid_int",
+		"AGENTFLOW_LLM_TEMPERATURE":                  "invalid_float",
+		"AGENTFLOW_LLM_MAX_TOKENS":                   "invalid_int",
 	}
 
 	// Set environment variables
@@ -329,13 +329,13 @@ func TestConfigResolverInvalidEnvironmentValues(t *testing.T) {
 		}
 	}()
 
-	config := &Config{
-		LLM: AgentLLMConfig{
+	config := &core.Config{
+		LLM: core.AgentLLMConfig{
 			Provider:    "openai",
 			Temperature: 0.7,
 			MaxTokens:   800,
 		},
-		Agents: map[string]AgentConfig{
+		Agents: map[string]core.AgentConfig{
 			"test_agent": {
 				Role:         "test_role",
 				SystemPrompt: "You are a test agent",
@@ -370,8 +370,8 @@ func TestConfigResolverInvalidEnvironmentValues(t *testing.T) {
 }
 
 func TestConfigResolverNonExistentAgent(t *testing.T) {
-	config := &Config{
-		Agents: map[string]AgentConfig{
+	config := &core.Config{
+		Agents: map[string]core.AgentConfig{
 			"existing_agent": {
 				Role:         "test_role",
 				SystemPrompt: "You are a test agent",
@@ -389,12 +389,12 @@ func TestConfigResolverNonExistentAgent(t *testing.T) {
 }
 
 func TestConfigResolverValidateResolvedConfig(t *testing.T) {
-	config := &Config{
-		LLM: AgentLLMConfig{
+	config := &core.Config{
+		LLM: core.AgentLLMConfig{
 			Provider:    "openai",
 			Temperature: 0.7,
 		},
-		Agents: map[string]AgentConfig{
+		Agents: map[string]core.AgentConfig{
 			"valid_agent": {
 				Role:         "test_role",
 				SystemPrompt: "You are a test agent",

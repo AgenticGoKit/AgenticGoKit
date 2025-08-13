@@ -1,9 +1,11 @@
-package core
+package config
 
 import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/kunalkushwaha/agenticgokit/core"
 )
 
 func TestConfigResolverIntegrationWithLoadConfig(t *testing.T) {
@@ -47,12 +49,12 @@ api_key = "test-key"
 
 	// Set up environment variables to override configuration
 	testEnvVars := map[string]string{
-		"AGENTFLOW_LLM_PROVIDER":                    "azure",
-		"AGENTFLOW_LLM_TEMPERATURE":                 "0.5",
-		"AGENTFLOW_AGENT_TEST_AGENT_ROLE":           "overridden_role",
-		"AGENTFLOW_AGENT_TEST_AGENT_SYSTEM_PROMPT":  "You are an overridden test agent",
-		"AGENTFLOW_AGENT_TEST_AGENT_LLM_MODEL":      "gpt-3.5-turbo",
-		"AGENTFLOW_AGENT_TEST_AGENT_LLM_MAX_TOKENS": "1200",
+		"AGENTFLOW_LLM_PROVIDER":                       "azure",
+		"AGENTFLOW_LLM_TEMPERATURE":                    "0.5",
+		"AGENTFLOW_AGENT_TEST_AGENT_ROLE":              "overridden_role",
+		"AGENTFLOW_AGENT_TEST_AGENT_SYSTEM_PROMPT":     "You are an overridden test agent",
+		"AGENTFLOW_AGENT_TEST_AGENT_LLM_MODEL":         "gpt-3.5-turbo",
+		"AGENTFLOW_AGENT_TEST_AGENT_LLM_MAX_TOKENS":    "1200",
 	}
 
 	// Set environment variables
@@ -67,7 +69,7 @@ api_key = "test-key"
 	}()
 
 	// Load configuration (should apply environment overrides automatically)
-	config, err := LoadConfig(configPath)
+	config, err := core.LoadConfig(configPath)
 	if err != nil {
 		t.Fatalf("Failed to load config: %v", err)
 	}
@@ -185,7 +187,7 @@ api_key = "test-key"
 	}()
 
 	// Load configuration
-	config, err := LoadConfig(configPath)
+	config, err := core.LoadConfig(configPath)
 	if err != nil {
 		t.Fatalf("Failed to load config: %v", err)
 	}
@@ -249,7 +251,7 @@ api_key = "test-key"
 	}
 
 	// Load configuration without any environment variables
-	config, err := LoadConfig(configPath)
+	config, err := core.LoadConfig(configPath)
 	if err != nil {
 		t.Fatalf("Failed to load config: %v", err)
 	}

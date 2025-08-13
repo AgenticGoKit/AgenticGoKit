@@ -34,10 +34,49 @@ type ConfigValidator interface {
 	ValidateConfig(config *Config) []ValidationError
 }
 
+// ConfigResolver interface for configuration resolution with environment overrides
+type ConfigResolver interface {
+	ResolveAgentConfigWithEnv(agentName string) (*ResolvedAgentConfig, error)
+	ApplyEnvironmentOverrides() error
+	GetResolvedConfig() *Config
+	ResolveAllAgents() (map[string]*ResolvedAgentConfig, error)
+	ValidateResolvedConfig() []ValidationError
+}
+
+// ConfigReloader interface defines the contract for configuration hot-reloading
+type ConfigReloader interface {
+	StartWatching(configPath string) error
+	StopWatching() error
+	ReloadConfig() error
+	OnConfigChanged(callback func(*Config, error))
+	GetLastReloadTime() time.Time
+	IsWatching() bool
+}
+
+// AgentManager interface for managing agent configurations during reload
+type AgentManager interface {
+	UpdateAgentConfigurations(config *Config) error
+	GetCurrentAgents() map[string]Agent
+	CreateAgent(name string, config *ResolvedAgentConfig) (Agent, error)
+	DisableAgent(name string) error
+}
+
 // NewDefaultConfigValidator creates a new default configuration validator
 func NewDefaultConfigValidator() ConfigValidator {
 	// TODO: This will be replaced with internal validator after refactoring is complete
 	return &noOpValidator{}
+}
+
+// NewConfigResolver creates a new configuration resolver
+func NewConfigResolver(config *Config) ConfigResolver {
+	// TODO: This will be replaced with internal resolver after refactoring is complete
+	return &noOpResolver{config: config}
+}
+
+// NewConfigReloader creates a new configuration reloader
+func NewConfigReloader(validator ConfigValidator, agentManager AgentManager) ConfigReloader {
+	// TODO: This will be replaced with internal reloader after refactoring is complete
+	return &noOpReloader{validator: validator, agentManager: agentManager}
 }
 
 // noOpValidator is a temporary no-op validator during refactoring
@@ -61,6 +100,102 @@ func (v *noOpValidator) ValidateCapabilities(capabilities []string) []Validation
 
 func (v *noOpValidator) ValidateConfig(config *Config) []ValidationError {
 	return []ValidationError{}
+}
+
+// noOpResolver is a temporary no-op resolver during refactoring
+type noOpResolver struct {
+	config *Config
+}
+
+func (r *noOpResolver) ResolveAgentConfigWithEnv(agentName string) (*ResolvedAgentConfig, error) {
+	agent, exists := r.config.Agents[agentName]
+	if !exists {
+		return nil, fmt.Errorf("agent '%s' not found in configuration", agentName)
+	}
+	
+	// Simple resolution without environment overrides for now
+	return &ResolvedAgentConfig{
+		Name:         agentName,
+		Role:         agent.Role,
+		Description:  agent.Description,
+		SystemPrompt: agent.SystemPrompt,
+		Capabilities: agent.Capabilities,
+		Enabled:      agent.Enabled,
+		LLMConfig:    r.resolveLLMConfig(&agent),
+		RetryPolicy:  agent.RetryPolicy,
+		RateLimit:    agent.RateLimit,
+		Timeout:      time.Duration(agent.Timeout) * time.Second,
+	}, nil
+}
+
+func (r *noOpResolver) ApplyEnvironmentOverrides() error {
+	// No-op for now
+	return nil
+}
+
+func (r *noOpResolver) GetResolvedConfig() *Config {
+	return r.config
+}
+
+func (r *noOpResolver) ResolveAllAgents() (map[string]*ResolvedAgentConfig, error) {
+	resolved := make(map[string]*ResolvedAgentConfig)
+	for agentName := range r.config.Agents {
+		agentConfig, err := r.ResolveAgentConfigWithEnv(agentName)
+		if err != nil {
+			return nil, err
+		}
+		resolved[agentName] = agentConfig
+	}
+	return resolved, nil
+}
+
+func (r *noOpResolver) ValidateResolvedConfig() []ValidationError {
+	return []ValidationError{}
+}
+
+// resolveLLMConfig resolves LLM configuration with inheritance from global config
+func (r *noOpResolver) resolveLLMConfig(agent *AgentConfig) *ResolvedLLMConfig {
+	// Start with global LLM config
+	resolved := &ResolvedLLMConfig{
+		Provider:         r.config.LLM.Provider,
+		Model:            r.config.LLM.Model,
+		Temperature:      r.config.LLM.Temperature,
+		MaxTokens:        r.config.LLM.MaxTokens,
+		Timeout:          time.Duration(r.config.LLM.TimeoutSeconds) * time.Second,
+		TopP:             r.config.LLM.TopP,
+		FrequencyPenalty: r.config.LLM.FrequencyPenalty,
+		PresencePenalty:  r.config.LLM.PresencePenalty,
+	}
+
+	// Override with agent-specific LLM config if provided
+	if agent.LLM != nil {
+		if agent.LLM.Provider != "" {
+			resolved.Provider = agent.LLM.Provider
+		}
+		if agent.LLM.Model != "" {
+			resolved.Model = agent.LLM.Model
+		}
+		if agent.LLM.Temperature != 0 {
+			resolved.Temperature = agent.LLM.Temperature
+		}
+		if agent.LLM.MaxTokens != 0 {
+			resolved.MaxTokens = agent.LLM.MaxTokens
+		}
+		if agent.LLM.TimeoutSeconds != 0 {
+			resolved.Timeout = time.Duration(agent.LLM.TimeoutSeconds) * time.Second
+		}
+		if agent.LLM.TopP != 0 {
+			resolved.TopP = agent.LLM.TopP
+		}
+		if agent.LLM.FrequencyPenalty != 0 {
+			resolved.FrequencyPenalty = agent.LLM.FrequencyPenalty
+		}
+		if agent.LLM.PresencePenalty != 0 {
+			resolved.PresencePenalty = agent.LLM.PresencePenalty
+		}
+	}
+
+	return resolved
 }
 
 // AgentLLMConfig represents LLM provider configuration for agents
@@ -930,4 +1065,39 @@ func (c *Config) ValidateOrchestrationConfig() error {
 	}
 
 	return nil
+}
+// noOpReloader is a temporary no-op reloader during refactoring
+type noOpReloader struct {
+	validator    ConfigValidator
+	agentManager AgentManager
+	isWatching   bool
+	lastReload   time.Time
+}
+
+func (r *noOpReloader) StartWatching(configPath string) error {
+	r.isWatching = true
+	r.lastReload = time.Now()
+	return nil
+}
+
+func (r *noOpReloader) StopWatching() error {
+	r.isWatching = false
+	return nil
+}
+
+func (r *noOpReloader) ReloadConfig() error {
+	r.lastReload = time.Now()
+	return nil
+}
+
+func (r *noOpReloader) OnConfigChanged(callback func(*Config, error)) {
+	// No-op for now
+}
+
+func (r *noOpReloader) GetLastReloadTime() time.Time {
+	return r.lastReload
+}
+
+func (r *noOpReloader) IsWatching() bool {
+	return r.isWatching
 }
