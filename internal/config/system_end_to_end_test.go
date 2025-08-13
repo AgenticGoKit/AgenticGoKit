@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -543,6 +544,3 @@ func containsSubstring(s, substr string) bool {
 	}
 	return false
 }
-
-// Import fmt for string formatting
-import "fmt"

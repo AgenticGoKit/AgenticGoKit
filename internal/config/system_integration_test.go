@@ -709,6 +709,6 @@ name = "invalid"  # Invalid TOML syntax
 }
 
 // Helper function to check if string contains substring (case-insensitive)
-func strings.Contains(s, substr string) bool {
+func containsIgnoreCase(s, substr string) bool {
 	return strings.Contains(strings.ToLower(s), strings.ToLower(substr))
 }
