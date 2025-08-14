@@ -1,5 +1,5 @@
-// Package core provides integration tests for circuit breaker and retry logic functionality.
-package core
+// Package error_handling provides integration tests for circuit breaker and retry logic functionality.
+package error_handling
 
 import (
 	"context"

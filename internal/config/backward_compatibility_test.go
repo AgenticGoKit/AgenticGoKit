@@ -1,4 +1,4 @@
-package core
+package config
 
 import (
 	"os"
@@ -18,7 +18,7 @@ func TestBackwardCompatibilityLegacyProjects(t *testing.T) {
 		defer os.RemoveAll(tempDir)
 
 		configPath := filepath.Join(tempDir, "agentflow.toml")
-		
+
 		// Minimal legacy configuration (pre-agent configuration system)
 		legacyConfig := `[agent_flow]
 name = "legacy-project"
@@ -36,7 +36,7 @@ version = "1.0.0"`
 		// Should validate with defaults
 		validator := NewDefaultConfigValidator()
 		errors := validator.ValidateConfig(config)
-		
+
 		// May have warnings but should not fail completely
 		for _, err := range errors {
 			// Errors should be warnings or suggestions, not critical failures
@@ -56,7 +56,7 @@ version = "1.0.0"`
 		defer os.RemoveAll(tempDir)
 
 		configPath := filepath.Join(tempDir, "agentflow.toml")
-		
+
 		// Legacy configuration with basic LLM settings
 		legacyConfig := `[agent_flow]
 name = "legacy-llm-project"
@@ -81,7 +81,7 @@ temperature = 0.7`
 		// Should validate successfully
 		validator := NewDefaultConfigValidator()
 		errors := validator.ValidateConfig(config)
-		
+
 		// Should have minimal or no errors for basic valid configuration
 		criticalErrors := 0
 		for _, err := range errors {
@@ -99,7 +99,7 @@ temperature = 0.7`
 		defer os.RemoveAll(tempDir)
 
 		configPath := filepath.Join(tempDir, "agentflow.toml")
-		
+
 		// Legacy configuration that might reference hardcoded agents
 		legacyConfig := `[agent_flow]
 name = "legacy-hardcoded-project"
@@ -128,7 +128,7 @@ agents = ["researcher", "writer", "reviewer"]`
 		// Validation should warn about missing agent definitions but not fail
 		validator := NewDefaultConfigValidator()
 		errors := validator.ValidateConfig(config)
-		
+
 		// Should have warnings about missing agent definitions
 		hasAgentWarnings := false
 		for _, err := range errors {
@@ -138,7 +138,7 @@ agents = ["researcher", "writer", "reviewer"]`
 				assert.Contains(t, err.Suggestion, "define")
 			}
 		}
-		
+
 		// In a legacy system, we might expect warnings about missing agent definitions
 		// but the system should still be functional
 	})
@@ -150,7 +150,7 @@ agents = ["researcher", "writer", "reviewer"]`
 		defer os.RemoveAll(tempDir)
 
 		configPath := filepath.Join(tempDir, "agentflow.toml")
-		
+
 		// Start with legacy configuration
 		legacyConfig := `[agent_flow]
 name = "migration-project"
@@ -270,7 +270,7 @@ func TestBackwardCompatibilityAgentFactory(t *testing.T) {
 		}
 
 		factory := NewConfigurableAgentFactory(config)
-		
+
 		// Should be able to create configured agent
 		agent, err := factory.CreateAgent("legacy_agent")
 		require.NoError(t, err)
@@ -302,7 +302,7 @@ func TestBackwardCompatibilityAgentFactory(t *testing.T) {
 		}
 
 		factory := NewConfigurableAgentFactory(config)
-		
+
 		// Should create configured agent
 		configuredAgent, err := factory.CreateAgent("configured_agent")
 		require.NoError(t, err)
@@ -356,15 +356,15 @@ func TestBackwardCompatibilityConfigResolver(t *testing.T) {
 		}
 
 		resolver := NewConfigResolver(config)
-		
+
 		resolvedConfig, err := resolver.ResolveAgentConfig("partial_agent")
 		require.NoError(t, err)
-		
+
 		// Should fill in defaults
 		assert.Equal(t, "partial", resolvedConfig.Role)
 		assert.Equal(t, "openai", resolvedConfig.LLM.Provider)
 		assert.Equal(t, "gpt-4", resolvedConfig.LLM.Model)
-		
+
 		// Should have default values for missing fields
 		assert.NotZero(t, resolvedConfig.LLM.Temperature) // Should have default
 		assert.NotZero(t, resolvedConfig.LLM.MaxTokens)   // Should have default
@@ -427,11 +427,11 @@ func TestBackwardCompatibilityValidation(t *testing.T) {
 		}
 
 		errors := validator.ValidateConfig(config)
-		
+
 		// Should have warnings but not critical errors
 		criticalErrors := 0
 		warnings := 0
-		
+
 		for _, err := range errors {
 			if containsAny(err.Message, []string{"required", "missing"}) {
 				if containsAny(err.Message, []string{"critical", "fatal"}) {
@@ -471,7 +471,7 @@ func TestBackwardCompatibilityValidation(t *testing.T) {
 		withLLMErrorCount := len(withLLMErrors)
 
 		// Should have fewer errors after adding LLM config
-		assert.LessOrEqual(t, withLLMErrorCount, initialErrorCount, 
+		assert.LessOrEqual(t, withLLMErrorCount, initialErrorCount,
 			"Should have same or fewer errors after adding LLM config")
 
 		// Add agent configuration
@@ -507,7 +507,7 @@ func TestBackwardCompatibilityValidation(t *testing.T) {
 		}
 
 		errors := validator.ValidateConfig(config)
-		
+
 		// Should provide helpful suggestions for improvement
 		hasSuggestions := false
 		for _, err := range errors {

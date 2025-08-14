@@ -1,5 +1,5 @@
-// Package core provides error routing validation and chain builder functionality for AgentFlow.
-package core
+// Package error_handling provides error routing validation and chain builder functionality for AgentFlow.
+package error_handling
 
 import (
 	"fmt"

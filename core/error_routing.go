@@ -2,9 +2,12 @@
 package core
 
 import (
-	"fmt"
 	"time"
 )
+
+// =============================================================================
+// ERROR EVENT DATA AND TYPES
+// =============================================================================
 
 // ErrorEventData represents structured error information for enhanced error routing
 type ErrorEventData struct {
@@ -19,6 +22,10 @@ type ErrorEventData struct {
 	ErrorCategory  string    `json:"error_category"`  // "validation", "timeout", "llm", "network", "unknown"
 	RecoveryAction string    `json:"recovery_action"` // "retry", "fallback", "escalate", "terminate"
 }
+
+// =============================================================================
+// ERROR CODE CONSTANTS
+// =============================================================================
 
 // ErrorCode constants for consistent error categorization
 const (
@@ -46,6 +53,10 @@ const (
 	RecoveryEscalate  = "escalate"
 	RecoveryTerminate = "terminate"
 )
+
+// =============================================================================
+// ERROR ROUTER CONFIGURATION
+// =============================================================================
 
 // ErrorRouterConfig configures the enhanced error routing behavior
 type ErrorRouterConfig struct {
@@ -78,186 +89,104 @@ func DefaultErrorRouterConfig() *ErrorRouterConfig {
 	}
 }
 
+// =============================================================================
+// ERROR ROUTING INTERFACE AND FACTORY
+// =============================================================================
+
+// ErrorRouter defines the interface for error routing functionality
+type ErrorRouter interface {
+	CreateEnhancedErrorEvent(originalEvent Event, agentID string, err error) Event
+	IsRetryableError(errorData ErrorEventData) bool
+	IncrementRetryCount(event Event) Event
+}
+
+// ErrorRouterFactory is the function signature for creating error routers
+type ErrorRouterFactory func(config *ErrorRouterConfig) ErrorRouter
+
+// errorRouterFactory holds the registered factory function
+var errorRouterFactory ErrorRouterFactory
+
+// RegisterErrorRouterFactory registers the error router factory function
+func RegisterErrorRouterFactory(factory ErrorRouterFactory) {
+	errorRouterFactory = factory
+}
+
+// NewErrorRouter creates an error router from configuration
+// This function requires the internal error handling factory to be registered
+func NewErrorRouter(config *ErrorRouterConfig) ErrorRouter {
+	if errorRouterFactory == nil {
+		// Return a basic error router implementation if no factory is registered
+		return &basicErrorRouter{config: config}
+	}
+	return errorRouterFactory(config)
+}
+
+// =============================================================================
+// PUBLIC CONVENIENCE FUNCTIONS
+// =============================================================================
+
 // CreateEnhancedErrorEvent creates a structured error event with enhanced metadata
 func CreateEnhancedErrorEvent(originalEvent Event, agentID string, err error, config *ErrorRouterConfig) Event {
-	if config == nil {
-		config = DefaultErrorRouterConfig()
-	}
-
-	sessionID, _ := originalEvent.GetMetadataValue(SessionIDKey)
-
-	// Categorize the error
-	errorCode, severity, category := categorizeError(err)
-
-	// Determine recovery action based on error type and retry count
-	retryCount := getRetryCount(originalEvent)
-	recoveryAction := determineRecoveryAction(errorCode, retryCount, config.MaxRetries)
-
-	errorData := ErrorEventData{
-		OriginalEvent:  originalEvent,
-		FailedAgent:    agentID,
-		ErrorMessage:   err.Error(),
-		ErrorCode:      errorCode,
-		RetryCount:     retryCount,
-		Timestamp:      time.Now(),
-		SessionID:      sessionID,
-		Severity:       severity,
-		ErrorCategory:  category,
-		RecoveryAction: recoveryAction,
-	}
-
-	// Create event payload
-	payload := EventData{
-		"error_data":        errorData,
-		"original_event_id": originalEvent.GetID(),
-		"error":             err.Error(),
-		"failed_agent":      agentID,
-		"retry_count":       retryCount,
-		"error_code":        errorCode,
-		"severity":          severity,
-		"recovery_action":   recoveryAction,
-	}
-
-	// Determine target handler based on configuration
-	targetHandler := determineErrorHandler(errorData, config)
-
-	// Create metadata
-	metadata := map[string]string{
-		SessionIDKey:      sessionID,
-		RouteMetadataKey:  targetHandler,
-		"status":          "error",
-		"error_code":      errorCode,
-		"severity":        severity,
-		"recovery_action": recoveryAction,
-	}
-
-	if agentID != "" && agentID != "unknown" {
-		metadata["failed_agent_id"] = agentID
-	}
-
-	errorEvent := NewEvent(targetHandler, payload, metadata)
-	errorEvent.SetSourceAgentID(agentID)
-
-	return errorEvent
-}
-
-// categorizeError analyzes an error and returns error code, severity, and category
-func categorizeError(err error) (errorCode, severity, category string) {
-	errorMsg := err.Error()
-
-	// Basic error categorization based on error message patterns
-	// In a real implementation, this could be more sophisticated
-	switch {
-	case containsAny(errorMsg, []string{"validation", "invalid", "required", "missing"}):
-		return ErrorCodeValidation, SeverityMedium, "validation"
-	case containsAny(errorMsg, []string{"timeout", "deadline", "context canceled"}):
-		return ErrorCodeTimeout, SeverityHigh, "timeout"
-	case containsAny(errorMsg, []string{"llm", "openai", "azure", "model", "completion"}):
-		return ErrorCodeLLM, SeverityMedium, "llm"
-	case containsAny(errorMsg, []string{"network", "connection", "dial", "http"}):
-		return ErrorCodeNetwork, SeverityHigh, "network"
-	case containsAny(errorMsg, []string{"auth", "unauthorized", "forbidden", "token"}):
-		return ErrorCodeAuth, SeverityCritical, "auth"
-	case containsAny(errorMsg, []string{"memory", "resource", "limit", "quota"}):
-		return ErrorCodeResource, SeverityCritical, "resource"
-	default:
-		return ErrorCodeUnknown, SeverityMedium, "unknown"
-	}
-}
-
-// containsAny checks if a string contains any of the provided substrings
-func containsAny(str string, substrings []string) bool {
-	for _, substr := range substrings {
-		if len(str) >= len(substr) {
-			for i := 0; i <= len(str)-len(substr); i++ {
-				if str[i:i+len(substr)] == substr {
-					return true
-				}
-			}
-		}
-	}
-	return false
-}
-
-// getRetryCount extracts retry count from event metadata or returns 0
-func getRetryCount(event Event) int {
-	if retryStr, ok := event.GetMetadataValue("retry_count"); ok {
-		// Simple conversion - in real implementation might use strconv
-		switch retryStr {
-		case "1":
-			return 1
-		case "2":
-			return 2
-		case "3":
-			return 3
-		default:
-			return 0
-		}
-	}
-	return 0
-}
-
-// determineRecoveryAction decides what recovery action to take based on error and retry count
-func determineRecoveryAction(errorCode string, retryCount, maxRetries int) string {
-	switch errorCode {
-	case ErrorCodeAuth, ErrorCodeResource:
-		return RecoveryEscalate // Don't retry auth or resource errors
-	case ErrorCodeValidation:
-		return RecoveryTerminate // Don't retry validation errors
-	case ErrorCodeTimeout, ErrorCodeNetwork, ErrorCodeLLM:
-		if retryCount >= maxRetries {
-			return RecoveryFallback
-		}
-		return RecoveryRetry
-	default:
-		if retryCount >= maxRetries {
-			return RecoveryEscalate
-		}
-		return RecoveryRetry
-	}
-}
-
-// determineErrorHandler selects the appropriate error handler based on configuration
-func determineErrorHandler(errorData ErrorEventData, config *ErrorRouterConfig) string {
-	// First check for severity-specific handlers
-	if handler, exists := config.SeverityHandlers[errorData.Severity]; exists {
-		return handler
-	}
-
-	// Then check for category-specific handlers
-	if handler, exists := config.CategoryHandlers[errorData.ErrorCode]; exists {
-		return handler
-	}
-
-	// Fall back to default error handler
-	return config.ErrorHandlerName
+	router := NewErrorRouter(config)
+	return router.CreateEnhancedErrorEvent(originalEvent, agentID, err)
 }
 
 // IsRetryableError determines if an error should be retried based on its characteristics
 func IsRetryableError(errorData ErrorEventData) bool {
-	switch errorData.RecoveryAction {
-	case RecoveryRetry:
-		return true
-	case RecoveryFallback, RecoveryEscalate, RecoveryTerminate:
-		return false
+	router := NewErrorRouter(nil)
+	return router.IsRetryableError(errorData)
+}
+
+// IncrementRetryCount creates a new event with incremented retry count
+func IncrementRetryCount(event Event) Event {
+	router := NewErrorRouter(nil)
+	return router.IncrementRetryCount(event)
+}
+
+// =============================================================================
+// BASIC ERROR ROUTER IMPLEMENTATION (FALLBACK)
+// =============================================================================
+
+// basicErrorRouter provides a minimal implementation when no factory is registered
+type basicErrorRouter struct {
+	config *ErrorRouterConfig
+}
+
+func (ber *basicErrorRouter) CreateEnhancedErrorEvent(originalEvent Event, agentID string, err error) Event {
+	// Minimal implementation - just create a basic error event
+	payload := EventData{
+		"error":        err.Error(),
+		"failed_agent": agentID,
+	}
+
+	metadata := map[string]string{
+		RouteMetadataKey: "error-handler",
+		"status":         "error",
+	}
+
+	errorEvent := NewEvent("error-handler", payload, metadata)
+	errorEvent.SetSourceAgentID(agentID)
+	return errorEvent
+}
+
+func (ber *basicErrorRouter) IsRetryableError(errorData ErrorEventData) bool {
+	// Basic implementation - retry on certain error codes
+	switch errorData.ErrorCode {
+	case ErrorCodeTimeout, ErrorCodeNetwork, ErrorCodeLLM:
+		return errorData.RetryCount < 3
 	default:
 		return false
 	}
 }
 
-// IncrementRetryCount creates a new event with incremented retry count
-func IncrementRetryCount(event Event) Event {
-	retryCount := getRetryCount(event) + 1
-
-	// Clone the event with updated retry count
+func (ber *basicErrorRouter) IncrementRetryCount(event Event) Event {
+	// Basic implementation - just clone the event
 	newMetadata := make(map[string]string)
 	for k, v := range event.GetMetadata() {
 		newMetadata[k] = v
 	}
-	newMetadata["retry_count"] = fmt.Sprintf("%d", retryCount)
 
 	newEvent := NewEvent(event.GetTargetAgentID(), event.GetData(), newMetadata)
 	newEvent.SetSourceAgentID(event.GetSourceAgentID())
-
 	return newEvent
 }

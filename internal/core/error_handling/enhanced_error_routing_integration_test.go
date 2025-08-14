@@ -1,4 +1,4 @@
-package core
+package error_handling
 
 import (
 	"context"
