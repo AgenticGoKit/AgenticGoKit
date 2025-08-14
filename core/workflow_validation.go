@@ -66,3 +66,90 @@ type WorkflowValidator interface {
 	ValidateOrchestration(agents map[string]AgentHandler, mode OrchestrationMode) WorkflowValidationResult
 	ValidateWorkflowGraph(graph WorkflowGraph) WorkflowValidationResult
 }
+
+// WorkflowValidatorFactory is the function signature for creating WorkflowValidator instances
+type WorkflowValidatorFactory func() WorkflowValidator
+
+// workflowValidatorFactory holds the registered factory function
+var workflowValidatorFactory WorkflowValidatorFactory
+
+// RegisterWorkflowValidatorFactory registers the WorkflowValidator factory function
+func RegisterWorkflowValidatorFactory(factory WorkflowValidatorFactory) {
+	workflowValidatorFactory = factory
+}
+
+// NewWorkflowValidator creates a new WorkflowValidator instance
+func NewWorkflowValidator() WorkflowValidator {
+	if workflowValidatorFactory != nil {
+		return workflowValidatorFactory()
+	}
+
+	// Fallback to simple implementation if internal package not imported
+	return &simpleWorkflowValidator{}
+}
+
+// Simple implementation for core package
+type simpleWorkflowValidator struct{}
+
+func (wv *simpleWorkflowValidator) ValidateComposition(agents []Agent, mode string) WorkflowValidationResult {
+	result := WorkflowValidationResult{
+		IsValid:  true,
+		Errors:   []WorkflowValidationError{},
+		Warnings: []WorkflowValidationWarning{},
+	}
+
+	// Basic validation
+	if len(agents) == 0 {
+		result.IsValid = false
+		result.Errors = append(result.Errors, WorkflowValidationError{
+			Type:      string(ValidationErrorNoEntryPoint),
+			Message:   "No agents defined",
+			Severity:  "error",
+			Component: "composition",
+		})
+	}
+
+	return result
+}
+
+func (wv *simpleWorkflowValidator) ValidateOrchestration(agents map[string]AgentHandler, mode OrchestrationMode) WorkflowValidationResult {
+	result := WorkflowValidationResult{
+		IsValid:  true,
+		Errors:   []WorkflowValidationError{},
+		Warnings: []WorkflowValidationWarning{},
+	}
+
+	// Basic validation
+	if len(agents) == 0 {
+		result.IsValid = false
+		result.Errors = append(result.Errors, WorkflowValidationError{
+			Type:      string(ValidationErrorNoEntryPoint),
+			Message:   "No agents registered",
+			Severity:  "error",
+			Component: "orchestration",
+		})
+	}
+
+	return result
+}
+
+func (wv *simpleWorkflowValidator) ValidateWorkflowGraph(graph WorkflowGraph) WorkflowValidationResult {
+	result := WorkflowValidationResult{
+		IsValid:  true,
+		Errors:   []WorkflowValidationError{},
+		Warnings: []WorkflowValidationWarning{},
+	}
+
+	// Basic validation
+	if len(graph.Nodes) == 0 {
+		result.IsValid = false
+		result.Errors = append(result.Errors, WorkflowValidationError{
+			Type:      string(ValidationErrorNoEntryPoint),
+			Message:   "No nodes in graph",
+			Severity:  "error",
+			Component: "graph",
+		})
+	}
+
+	return result
+}

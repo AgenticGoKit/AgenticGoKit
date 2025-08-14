@@ -45,8 +45,24 @@ type MermaidGenerator interface {
 	SaveDiagramWithMetadata(filename, title, description, diagram string, metadata map[string]interface{}) error
 }
 
+// MermaidGeneratorFactory is the function signature for creating MermaidGenerator instances
+type MermaidGeneratorFactory func() MermaidGenerator
+
+// mermaidGeneratorFactory holds the registered factory function
+var mermaidGeneratorFactory MermaidGeneratorFactory
+
+// RegisterMermaidGeneratorFactory registers the MermaidGenerator factory function
+func RegisterMermaidGeneratorFactory(factory MermaidGeneratorFactory) {
+	mermaidGeneratorFactory = factory
+}
+
 // NewMermaidGenerator creates a new MermaidGenerator instance
 func NewMermaidGenerator() MermaidGenerator {
+	if mermaidGeneratorFactory != nil {
+		return mermaidGeneratorFactory()
+	}
+
+	// Fallback to simple implementation if internal package not imported
 	return &simpleMermaidGenerator{}
 }
 

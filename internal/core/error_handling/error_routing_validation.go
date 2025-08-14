@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/kunalkushwaha/agenticgokit/core"
 )
 
 // ErrorRoutingValidator validates error routing configurations
@@ -14,7 +16,7 @@ type ErrorRoutingValidator struct {
 }
 
 // NewErrorRoutingValidator creates a new error routing validator
-func NewErrorRoutingValidator(availableAgents map[string]AgentHandler) *ErrorRoutingValidator {
+func NewErrorRoutingValidator(availableAgents map[string]core.AgentHandler) *ErrorRoutingValidator {
 	agentMap := make(map[string]bool)
 	for agentName := range availableAgents {
 		agentMap[agentName] = true
@@ -42,7 +44,7 @@ type ValidationResult struct {
 }
 
 // ValidateConfiguration validates an error router configuration
-func (v *ErrorRoutingValidator) ValidateConfiguration(config *ErrorRouterConfig) *ValidationResult {
+func (v *ErrorRoutingValidator) ValidateConfiguration(config *core.ErrorRouterConfig) *ValidationResult {
 	result := &ValidationResult{
 		IsValid:       true,
 		Errors:        make([]string, 0),
@@ -85,7 +87,7 @@ func (v *ErrorRoutingValidator) ValidateConfiguration(config *ErrorRouterConfig)
 }
 
 // validateBasicConfig validates basic configuration parameters
-func (v *ErrorRoutingValidator) validateBasicConfig(config *ErrorRouterConfig, result *ValidationResult) {
+func (v *ErrorRoutingValidator) validateBasicConfig(config *core.ErrorRouterConfig, result *ValidationResult) {
 	if config.MaxRetries < 0 {
 		result.IsValid = false
 		result.Errors = append(result.Errors, "max_retries cannot be negative")
@@ -106,15 +108,15 @@ func (v *ErrorRoutingValidator) validateBasicConfig(config *ErrorRouterConfig, r
 }
 
 // validateCategoryHandlers validates category-specific error handlers
-func (v *ErrorRoutingValidator) validateCategoryHandlers(config *ErrorRouterConfig, result *ValidationResult) {
+func (v *ErrorRoutingValidator) validateCategoryHandlers(config *core.ErrorRouterConfig, result *ValidationResult) {
 	validCategories := map[string]bool{
-		ErrorCodeValidation: true,
-		ErrorCodeTimeout:    true,
-		ErrorCodeLLM:        true,
-		ErrorCodeNetwork:    true,
-		ErrorCodeAuth:       true,
-		ErrorCodeResource:   true,
-		ErrorCodeUnknown:    true,
+		core.ErrorCodeValidation: true,
+		core.ErrorCodeTimeout:    true,
+		core.ErrorCodeLLM:        true,
+		core.ErrorCodeNetwork:    true,
+		core.ErrorCodeAuth:       true,
+		core.ErrorCodeResource:   true,
+		core.ErrorCodeUnknown:    true,
 	}
 
 	for category, handler := range config.CategoryHandlers {
@@ -132,7 +134,7 @@ func (v *ErrorRoutingValidator) validateCategoryHandlers(config *ErrorRouterConf
 	}
 
 	// Check for missing critical category handlers
-	criticalCategories := []string{ErrorCodeValidation, ErrorCodeTimeout}
+	criticalCategories := []string{core.ErrorCodeValidation, core.ErrorCodeTimeout}
 	for _, category := range criticalCategories {
 		if _, exists := config.CategoryHandlers[category]; !exists {
 			result.Warnings = append(result.Warnings, fmt.Sprintf("missing handler for critical category: %s", category))
@@ -141,12 +143,12 @@ func (v *ErrorRoutingValidator) validateCategoryHandlers(config *ErrorRouterConf
 }
 
 // validateSeverityHandlers validates severity-specific error handlers
-func (v *ErrorRoutingValidator) validateSeverityHandlers(config *ErrorRouterConfig, result *ValidationResult) {
+func (v *ErrorRoutingValidator) validateSeverityHandlers(config *core.ErrorRouterConfig, result *ValidationResult) {
 	validSeverities := map[string]bool{
-		SeverityLow:      true,
-		SeverityMedium:   true,
-		SeverityHigh:     true,
-		SeverityCritical: true,
+		core.SeverityLow:      true,
+		core.SeverityMedium:   true,
+		core.SeverityHigh:     true,
+		core.SeverityCritical: true,
 	}
 
 	for severity, handler := range config.SeverityHandlers {
@@ -164,13 +166,13 @@ func (v *ErrorRoutingValidator) validateSeverityHandlers(config *ErrorRouterConf
 	}
 
 	// Check for critical severity handler
-	if _, exists := config.SeverityHandlers[SeverityCritical]; !exists {
+	if _, exists := config.SeverityHandlers[core.SeverityCritical]; !exists {
 		result.Warnings = append(result.Warnings, "missing handler for critical severity errors")
 	}
 }
 
 // validateDefaultErrorHandler validates the default error handler
-func (v *ErrorRoutingValidator) validateDefaultErrorHandler(config *ErrorRouterConfig, result *ValidationResult) {
+func (v *ErrorRoutingValidator) validateDefaultErrorHandler(config *core.ErrorRouterConfig, result *ValidationResult) {
 	if config.ErrorHandlerName == "" {
 		result.Warnings = append(result.Warnings, "no default error handler configured")
 		return
@@ -184,7 +186,7 @@ func (v *ErrorRoutingValidator) validateDefaultErrorHandler(config *ErrorRouterC
 }
 
 // validateCriticalAgents checks for presence of critical error handling agents
-func (v *ErrorRoutingValidator) validateCriticalAgents(config *ErrorRouterConfig, result *ValidationResult) {
+func (v *ErrorRoutingValidator) validateCriticalAgents(config *core.ErrorRouterConfig, result *ValidationResult) {
 	for _, requiredAgent := range v.requiredAgents {
 		if !v.availableAgents[requiredAgent] {
 			result.Warnings = append(result.Warnings, fmt.Sprintf("recommended agent '%s' is not available", requiredAgent))
@@ -193,7 +195,7 @@ func (v *ErrorRoutingValidator) validateCriticalAgents(config *ErrorRouterConfig
 }
 
 // validateUnusedAgents identifies error handling agents that are not configured
-func (v *ErrorRoutingValidator) validateUnusedAgents(config *ErrorRouterConfig, result *ValidationResult) {
+func (v *ErrorRoutingValidator) validateUnusedAgents(config *core.ErrorRouterConfig, result *ValidationResult) {
 	usedAgents := make(map[string]bool)
 
 	// Mark category handlers as used
@@ -222,13 +224,13 @@ func (v *ErrorRoutingValidator) validateUnusedAgents(config *ErrorRouterConfig, 
 // ErrorHandlingChain represents a chain of error handlers
 type ErrorHandlingChain struct {
 	handlers []ErrorHandlerLink
-	config   *ErrorRouterConfig
+	config   *core.ErrorRouterConfig
 }
 
 // ErrorHandlerLink represents a single link in the error handling chain
 type ErrorHandlerLink struct {
 	Name        string             `json:"name"`
-	Handler     AgentHandler       `json:"-"`
+	Handler     core.AgentHandler       `json:"-"`
 	Condition   ErrorConditionFunc `json:"-"`
 	OnSuccess   ChainActionFunc    `json:"-"`
 	OnFailure   ChainActionFunc    `json:"-"`
@@ -237,10 +239,10 @@ type ErrorHandlerLink struct {
 }
 
 // ErrorConditionFunc determines if this handler should process the error
-type ErrorConditionFunc func(errorData *ErrorEventData) bool
+type ErrorConditionFunc func(errorData *core.ErrorEventData) bool
 
 // ChainActionFunc defines actions to take after handler execution
-type ChainActionFunc func(result AgentResult, errorData *ErrorEventData) ChainAction
+type ChainActionFunc func(result core.AgentResult, errorData *core.ErrorEventData) ChainAction
 
 // ChainAction represents what to do next in the chain
 type ChainAction int
@@ -259,11 +261,11 @@ const (
 // ErrorChainBuilder helps build error handling chains
 type ErrorChainBuilder struct {
 	chain    *ErrorHandlingChain
-	registry map[string]AgentHandler
+	registry map[string]core.AgentHandler
 }
 
 // NewErrorChainBuilder creates a new error chain builder
-func NewErrorChainBuilder(registry map[string]AgentHandler) *ErrorChainBuilder {
+func NewErrorChainBuilder(registry map[string]core.AgentHandler) *ErrorChainBuilder {
 	return &ErrorChainBuilder{
 		chain: &ErrorHandlingChain{
 			handlers: make([]ErrorHandlerLink, 0),
@@ -276,7 +278,7 @@ func NewErrorChainBuilder(registry map[string]AgentHandler) *ErrorChainBuilder {
 func (b *ErrorChainBuilder) AddHandler(name string) *ErrorHandlerBuilder {
 	handler, exists := b.registry[name]
 	if !exists {
-		Logger().Warn().Str("handler_name", name).Msg("Handler not found in registry")
+		core.Logger().Warn().Str("handler_name", name).Msg("Handler not found in registry")
 		handler = nil
 	}
 
@@ -299,7 +301,7 @@ func (b *ErrorChainBuilder) Build() *ErrorHandlingChain {
 }
 
 // SetConfiguration sets the error router configuration for the chain
-func (b *ErrorChainBuilder) SetConfiguration(config *ErrorRouterConfig) *ErrorChainBuilder {
+func (b *ErrorChainBuilder) SetConfiguration(config *core.ErrorRouterConfig) *ErrorChainBuilder {
 	b.chain.config = config
 	return b
 }
@@ -349,23 +351,23 @@ func (hb *ErrorHandlerBuilder) Add() *ErrorChainBuilder {
 // Common condition functions
 
 // ValidationErrorCondition checks if error is a validation error
-func ValidationErrorCondition(errorData *ErrorEventData) bool {
-	return errorData.ErrorCategory == "validation" || errorData.ErrorCode == ErrorCodeValidation
+func ValidationErrorCondition(errorData *core.ErrorEventData) bool {
+	return errorData.ErrorCategory == "validation" || errorData.ErrorCode == core.ErrorCodeValidation
 }
 
 // TimeoutErrorCondition checks if error is a timeout error
-func TimeoutErrorCondition(errorData *ErrorEventData) bool {
-	return errorData.ErrorCategory == "timeout" || errorData.ErrorCode == ErrorCodeTimeout
+func TimeoutErrorCondition(errorData *core.ErrorEventData) bool {
+	return errorData.ErrorCategory == "timeout" || errorData.ErrorCode == core.ErrorCodeTimeout
 }
 
 // CriticalErrorCondition checks if error is critical severity
-func CriticalErrorCondition(errorData *ErrorEventData) bool {
-	return errorData.Severity == SeverityCritical
+func CriticalErrorCondition(errorData *core.ErrorEventData) bool {
+	return errorData.Severity == core.SeverityCritical
 }
 
 // RetryCountCondition creates a condition based on retry count
 func RetryCountCondition(maxRetries int) ErrorConditionFunc {
-	return func(errorData *ErrorEventData) bool {
+	return func(errorData *core.ErrorEventData) bool {
 		return errorData.RetryCount < maxRetries
 	}
 }
@@ -373,27 +375,27 @@ func RetryCountCondition(maxRetries int) ErrorConditionFunc {
 // Common action functions
 
 // StopOnSuccessAction stops the chain when handler succeeds
-func StopOnSuccessAction(result AgentResult, errorData *ErrorEventData) ChainAction {
+func StopOnSuccessAction(result core.AgentResult, errorData *core.ErrorEventData) ChainAction {
 	return ChainActionStop
 }
 
 // ContinueOnSuccessAction continues the chain when handler succeeds
-func ContinueOnSuccessAction(result AgentResult, errorData *ErrorEventData) ChainAction {
+func ContinueOnSuccessAction(result core.AgentResult, errorData *core.ErrorEventData) ChainAction {
 	return ChainActionContinue
 }
 
 // RetryOnFailureAction retries the handler when it fails
-func RetryOnFailureAction(result AgentResult, errorData *ErrorEventData) ChainAction {
+func RetryOnFailureAction(result core.AgentResult, errorData *core.ErrorEventData) ChainAction {
 	return ChainActionRetry
 }
 
 // EscalateOnFailureAction escalates when handler fails
-func EscalateOnFailureAction(result AgentResult, errorData *ErrorEventData) ChainAction {
+func EscalateOnFailureAction(result core.AgentResult, errorData *core.ErrorEventData) ChainAction {
 	return ChainActionEscalate
 }
 
 // DefaultErrorChain creates a default error handling chain
-func DefaultErrorChain(registry map[string]AgentHandler) *ErrorHandlingChain {
+func DefaultErrorChain(registry map[string]core.AgentHandler) *ErrorHandlingChain {
 	builder := NewErrorChainBuilder(registry)
 
 	return builder.
@@ -423,7 +425,7 @@ func DefaultErrorChain(registry map[string]AgentHandler) *ErrorHandlingChain {
 
 		// Last: Default error handler for all other errors
 		AddHandler("error-handler").
-		WithCondition(func(errorData *ErrorEventData) bool { return true }).
+		WithCondition(func(errorData *core.ErrorEventData) bool { return true }).
 		WithMaxAttempts(3).
 		OnSuccess(StopOnSuccessAction).
 		OnFailure(StopOnSuccessAction).

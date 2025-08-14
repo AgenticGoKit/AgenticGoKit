@@ -231,6 +231,7 @@ type LogEvent interface {
 	Bool(key string, val bool) LogEvent
 	Float64(key string, val float64) LogEvent
 	Dur(key string, val time.Duration) LogEvent
+	Time(key string, val time.Time) LogEvent
 	Interface(key string, val interface{}) LogEvent
 	Err(err error) LogEvent
 	Msg(msg string)
@@ -318,6 +319,14 @@ func (l *logEventAdapter) Float64(key string, val float64) LogEvent {
 }
 
 func (l *logEventAdapter) Dur(key string, val time.Duration) LogEvent {
+	if l.fields == nil {
+		l.fields = make(map[string]interface{})
+	}
+	l.fields[key] = val
+	return l
+}
+
+func (l *logEventAdapter) Time(key string, val time.Time) LogEvent {
 	if l.fields == nil {
 		l.fields = make(map[string]interface{})
 	}
