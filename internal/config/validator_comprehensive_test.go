@@ -66,7 +66,7 @@ func TestDefaultConfigValidator_ProviderSpecificValidation(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			errors := validator.ValidateLLMConfig(&tt.config)
-			
+
 			if len(tt.expected) == 0 {
 				assert.Empty(t, errors, "Expected no validation errors")
 			} else {
@@ -74,9 +74,9 @@ func TestDefaultConfigValidator_ProviderSpecificValidation(t *testing.T) {
 				for i, err := range errors {
 					errorFields[i] = err.Field
 				}
-				
+
 				for _, expectedField := range tt.expected {
-					assert.Contains(t, errorFields, expectedField, 
+					assert.Contains(t, errorFields, expectedField,
 						"Expected validation error for field: %s", expectedField)
 				}
 			}
@@ -120,7 +120,7 @@ func TestDefaultConfigValidator_CapabilityGroupValidation(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			errors := validator.ValidateCapabilityGroups(tt.capabilities)
-			
+
 			if tt.expectError {
 				assert.NotEmpty(t, errors, "Expected validation errors")
 				found := false
@@ -137,9 +137,9 @@ func TestDefaultConfigValidator_CapabilityGroupValidation(t *testing.T) {
 				actualErrors := []ValidationError{}
 				for _, err := range errors {
 					if err.Message != "agent has only one capability from research group" &&
-					   err.Message != "agent has only one capability from analysis group" &&
-					   err.Message != "agent has only one capability from content group" &&
-					   err.Message != "agent has only one capability from development group" {
+						err.Message != "agent has only one capability from analysis group" &&
+						err.Message != "agent has only one capability from content group" &&
+						err.Message != "agent has only one capability from development group" {
 						actualErrors = append(actualErrors, err)
 					}
 				}
@@ -230,7 +230,7 @@ func TestDefaultConfigValidator_ConfigCompleteness(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			errors := validator.ValidateConfigCompleteness(&tt.config)
-			
+
 			if len(tt.expected) == 0 {
 				assert.Empty(t, errors, "Expected no validation errors")
 			} else {
@@ -238,9 +238,9 @@ func TestDefaultConfigValidator_ConfigCompleteness(t *testing.T) {
 				for i, err := range errors {
 					errorFields[i] = err.Field
 				}
-				
+
 				for _, expectedField := range tt.expected {
-					assert.Contains(t, errorFields, expectedField, 
+					assert.Contains(t, errorFields, expectedField,
 						"Expected validation error for field: %s", expectedField)
 				}
 			}
@@ -297,7 +297,7 @@ func TestDefaultConfigValidator_AgentNaming(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			errors := validator.ValidateAgentNaming(tt.agentName, &tt.agentConfig)
-			
+
 			if tt.expectError {
 				assert.NotEmpty(t, errors, "Expected validation errors")
 				found := false
@@ -377,7 +377,7 @@ func TestDefaultConfigValidator_CrossValidation(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			errors := validator.validateCrossReferences(&tt.config)
-			
+
 			if len(tt.expected) == 0 {
 				assert.Empty(t, errors, "Expected no validation errors")
 			} else {
@@ -385,7 +385,7 @@ func TestDefaultConfigValidator_CrossValidation(t *testing.T) {
 				for i, err := range errors {
 					errorMessages[i] = err.Message
 				}
-				
+
 				for _, expectedMessage := range tt.expected {
 					found := false
 					for _, message := range errorMessages {
@@ -439,9 +439,9 @@ func TestDefaultConfigValidator_CapabilitySuggestions(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			suggestions := validator.GetCapabilitySuggestions(tt.role)
-			
+
 			for _, expected := range tt.expected {
-				assert.Contains(t, suggestions, expected, 
+				assert.Contains(t, suggestions, expected,
 					"Expected capability suggestion: %s", expected)
 			}
 		})
@@ -503,7 +503,7 @@ func TestDefaultConfigValidator_OptimizationSuggestions(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			suggestions := validator.SuggestOptimizations(&tt.config)
-			
+
 			if len(tt.expected) == 0 {
 				assert.Empty(t, suggestions, "Expected no optimization suggestions")
 			} else {
@@ -511,7 +511,7 @@ func TestDefaultConfigValidator_OptimizationSuggestions(t *testing.T) {
 				for i, suggestion := range suggestions {
 					suggestionMessages[i] = suggestion.Message
 				}
-				
+
 				for _, expectedMessage := range tt.expected {
 					found := false
 					for _, message := range suggestionMessages {

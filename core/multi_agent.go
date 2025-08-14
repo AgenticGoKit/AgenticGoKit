@@ -175,6 +175,13 @@ func (cb *CompositionBuilder) WithMaxConcurrency(max int) *CompositionBuilder {
 	return cb
 }
 
+// GenerateMermaidDiagramWithConfig generates a Mermaid diagram for this composition
+func (cb *CompositionBuilder) GenerateMermaidDiagramWithConfig(config MermaidConfig) string {
+	// Create a MermaidGenerator instance from internal package
+	generator := NewMermaidGenerator()
+	return generator.GenerateCompositionDiagram(cb.mode, cb.name, cb.agents, config)
+}
+
 // Build creates the composed agent based on the configuration
 func (cb *CompositionBuilder) Build() (Agent, error) {
 	if len(cb.agents) == 0 {

@@ -5,6 +5,36 @@ import (
 	"testing"
 )
 
+// MockProvider is a simple mock implementation for testing
+type MockProvider struct{}
+
+func (m *MockProvider) Call(ctx context.Context, prompt Prompt) (Response, error) {
+	return Response{
+		Content: "mock response",
+		Usage: UsageStats{
+			PromptTokens:     10,
+			CompletionTokens: 20,
+			TotalTokens:      30,
+		},
+		FinishReason: "stop",
+	}, nil
+}
+
+func (m *MockProvider) Stream(ctx context.Context, prompt Prompt) (<-chan Token, error) {
+	ch := make(chan Token, 1)
+	ch <- Token{Content: "mock stream response"}
+	close(ch)
+	return ch, nil
+}
+
+func (m *MockProvider) Embeddings(ctx context.Context, texts []string) ([][]float64, error) {
+	result := make([][]float64, len(texts))
+	for i := range texts {
+		result[i] = []float64{0.1, 0.2, 0.3} // Mock embedding vector
+	}
+	return result, nil
+}
+
 func TestUnifiedAgent_BasicFunctionality(t *testing.T) {
 	// Test creating a unified agent directly
 	capabilities := map[CapabilityType]AgentCapability{

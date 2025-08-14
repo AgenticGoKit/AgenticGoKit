@@ -2,9 +2,53 @@ package core
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 )
+
+// TestRouteOrchestrator is a simple orchestrator implementation for testing
+type TestRouteOrchestrator struct {
+	handlers map[string]AgentHandler
+	registry *CallbackRegistry
+}
+
+func NewTestRouteOrchestrator(registry *CallbackRegistry) *TestRouteOrchestrator {
+	return &TestRouteOrchestrator{
+		handlers: make(map[string]AgentHandler),
+		registry: registry,
+	}
+}
+
+func (o *TestRouteOrchestrator) RegisterAgent(name string, handler AgentHandler) error {
+	o.handlers[name] = handler
+	return nil
+}
+
+func (o *TestRouteOrchestrator) Dispatch(ctx context.Context, event Event) (AgentResult, error) {
+	// Simple routing - get route from metadata
+	metadata := event.GetMetadata()
+	route, exists := metadata["route"]
+	if !exists || route == "" {
+		route = "default"
+	}
+
+	handler, exists := o.handlers[route]
+	if !exists {
+		return AgentResult{}, fmt.Errorf("no agent registered for route: %s", route)
+	}
+
+	state := NewState()
+	return handler.Run(ctx, event, state)
+}
+
+func (o *TestRouteOrchestrator) GetCallbackRegistry() *CallbackRegistry {
+	return o.registry
+}
+
+func (o *TestRouteOrchestrator) Stop() {
+	// No cleanup needed
+}
 
 // DummyAgent implements AgentHandler for testing
 type DummyAgent struct {
@@ -28,7 +72,21 @@ func TestRunnerWithDummyAgent(t *testing.T) {
 	agents := map[string]AgentHandler{
 		"dummy": &DummyAgent{id: "dummy", called: &called},
 	}
-	runner := NewRunnerWithConfig(RunnerConfig{Agents: agents})
+
+	// Create a memory instance as required by the RunnerConfig
+	memory := QuickMemory()
+
+	// Create callback registry and orchestrator for the test
+	callbackRegistry := NewCallbackRegistry()
+	orchestrator := NewTestRouteOrchestrator(callbackRegistry)
+
+	runner := NewRunnerWithConfig(RunnerConfig{
+		Agents:       agents,
+		Memory:       memory,
+		SessionID:    "test-session",
+		Orchestrator: orchestrator,
+	})
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	if err := runner.Start(ctx); err != nil {

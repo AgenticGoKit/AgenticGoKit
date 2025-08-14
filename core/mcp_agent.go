@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"strings"
 	"time"
-
-	"github.com/rs/zerolog"
 )
 
 // MCPAwareAgent is an intelligent agent that leverages MCP tools for task execution.
@@ -19,7 +17,7 @@ type MCPAwareAgent struct {
 	mcpManager   MCPManager
 	cacheManager MCPCacheManager
 	config       MCPAgentConfig
-	logger       *zerolog.Logger
+	logger       CoreLogger
 }
 
 // MCPAgentConfig holds configuration for MCP-aware agents.
@@ -95,7 +93,7 @@ func NewMCPAwareAgent(name string, llmProvider ModelProvider, mcpManager MCPMana
 		mcpManager:   mcpManager,
 		cacheManager: cacheManager,
 		config:       config,
-		logger:       &logger,
+		logger:       logger,
 	}
 }
 

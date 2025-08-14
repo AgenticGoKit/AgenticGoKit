@@ -2,29 +2,44 @@
 package tracing
 
 import (
-	"context"
-	"fmt"
 	"sync"
 	"time"
-
-	"github.com/kunalkushwaha/agenticgokit/core"
 )
+
+// TraceEntry represents a single logged event during the execution flow.
+type TraceEntry struct {
+	Timestamp     time.Time `json:"timestamp"`
+	Type          string    `json:"type"`
+	EventID       string    `json:"event_id"`
+	SessionID     string    `json:"session_id"`
+	AgentID       string    `json:"agent_id,omitempty"`
+	Error         string    `json:"error,omitempty"`
+	Hook          string    `json:"hook,omitempty"`
+	TargetAgentID string    `json:"target_agent_id,omitempty"`
+	SourceAgentID string    `json:"source_agent_id,omitempty"`
+}
+
+// TraceLogger defines the interface for storing and retrieving trace entries.
+type TraceLogger interface {
+	Log(entry TraceEntry) error
+	GetTrace(sessionID string) ([]TraceEntry, error)
+}
 
 // InMemoryTraceLogger is a simple in-memory implementation of TraceLogger.
 type InMemoryTraceLogger struct {
 	mu     sync.RWMutex
-	traces map[string][]core.TraceEntry
+	traces map[string][]TraceEntry
 }
 
 // NewInMemoryTraceLogger creates a new in-memory trace logger.
 func NewInMemoryTraceLogger() *InMemoryTraceLogger {
 	return &InMemoryTraceLogger{
-		traces: make(map[string][]core.TraceEntry),
+		traces: make(map[string][]TraceEntry),
 	}
 }
 
 // Log adds a trace entry to the logger.
-func (l *InMemoryTraceLogger) Log(entry core.TraceEntry) error {
+func (l *InMemoryTraceLogger) Log(entry TraceEntry) error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
@@ -38,7 +53,7 @@ func (l *InMemoryTraceLogger) Log(entry core.TraceEntry) error {
 }
 
 // GetTrace retrieves all trace entries for a given session ID.
-func (l *InMemoryTraceLogger) GetTrace(sessionID string) ([]core.TraceEntry, error) {
+func (l *InMemoryTraceLogger) GetTrace(sessionID string) ([]TraceEntry, error) {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
 
@@ -48,61 +63,11 @@ func (l *InMemoryTraceLogger) GetTrace(sessionID string) ([]core.TraceEntry, err
 
 	entries, exists := l.traces[sessionID]
 	if !exists {
-		return []core.TraceEntry{}, nil
+		return []TraceEntry{}, nil
 	}
 
 	// Return a copy to avoid race conditions
-	result := make([]core.TraceEntry, len(entries))
+	result := make([]TraceEntry, len(entries))
 	copy(result, entries)
 	return result, nil
-}
-
-// RegisterTraceHooks registers tracing callbacks with the callback registry.
-func RegisterTraceHooks(registry *core.CallbackRegistry, logger core.TraceLogger) error {
-	if registry == nil {
-		return fmt.Errorf("callback registry cannot be nil")
-	}
-	if logger == nil {
-		return fmt.Errorf("trace logger cannot be nil")
-	}
-
-	// Register trace callbacks for each hook point
-	err := registry.Register(core.HookBeforeEventHandling, "trace_before_event", func(ctx context.Context, args core.CallbackArgs) (core.State, error) {
-		entry := core.TraceEntry{
-			Timestamp:     time.Now(),
-			Type:          "event_start",
-			EventID:       args.Event.GetID(),
-			SessionID:     args.Event.GetSessionID(),
-			Hook:          args.Hook,
-			TargetAgentID: args.Event.GetTargetAgentID(),
-			SourceAgentID: args.Event.GetSourceAgentID(),
-			State:         args.State,
-		}
-		logger.Log(entry)
-		return args.State, nil
-	})
-	if err != nil {
-		return fmt.Errorf("failed to register before event trace hook: %w", err)
-	}
-
-	err = registry.Register(core.HookAfterEventHandling, "trace_after_event", func(ctx context.Context, args core.CallbackArgs) (core.State, error) {
-		entry := core.TraceEntry{
-			Timestamp: time.Now(),
-			Type:      "event_end",
-			EventID:   args.Event.GetID(),
-			SessionID: args.Event.GetSessionID(),
-			Hook:      args.Hook,
-			AgentID:   args.AgentID,
-			State:     args.State,
-		}
-		if args.Error != nil {
-			entry.Error = args.Error.Error()
-		}
-		logger.Log(entry)
-		return args.State, nil
-	})
-	if err != nil {
-		return fmt.Errorf("failed to register after event trace hook: %w", err)
-	}
-	return nil
 }
