@@ -261,8 +261,8 @@ func getMemoryProviderName(memory Memory) string {
 	}
 
 	switch memory.(type) {
-	case *InMemoryProvider:
-		return "memory"
+	case *noOpMemory:
+		return "noop"
 	case *NoOpMemory:
 		return "noop"
 	default:

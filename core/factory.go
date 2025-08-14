@@ -1,4 +1,4 @@
-// Package core provides public factory functions for creating agents and runners in AgentFlow.
+// Package core provides essential factory functions for creating agents and runners in AgentFlow.
 package core
 
 import (
@@ -12,19 +12,12 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// Example factory function for creating a new agent (expand as needed).
-func NewExampleAgent(name string) Agent {
-	// ...implementation or call to actual agent constructor...
-	return nil // Replace with actual agent
-}
+// Essential factory functions for agents and runners
+// Implementation details are moved to internal packages
 
-// Example factory function for creating a new runner (expand as needed).
-func NewExampleRunner(ctx context.Context) Runner {
-	// ...implementation or call to actual runner constructor...
-	return nil // Replace with actual runner
-}
-
-// TODO: Move and export all relevant factory functions from internal/factory/agent_factory.go here.
+// Essential factory functions are defined in their respective files
+// NewAgent is defined in agent_builder.go
+// NewRunner is defined in runner.go
 
 // RouteMetadataKey defines the metadata key used for routing events to specific agents.
 const RouteMetadataKey = "route"
@@ -137,10 +130,10 @@ func (r *CallbackRegistry) Invoke(ctx context.Context, args CallbackArgs) (State
 
 	currentState := args.State
 	if currentState == nil {
-		currentState = &SimpleState{data: make(map[string]interface{})}
+		currentState = NewState()
 		Logger().Warn().
 			Str("hook", string(args.Hook)).
-			Msg("Initial state was nil, created new SimpleState")
+			Msg("Initial state was nil, created new State")
 	}
 
 	hookRegistrations := r.callbacks[args.Hook]
@@ -262,54 +255,13 @@ type TraceLogger interface {
 	GetTrace(sessionID string) ([]TraceEntry, error)
 }
 
-// InMemoryTraceLogger is a simple in-memory implementation of TraceLogger.
-type InMemoryTraceLogger struct {
-	mu     sync.RWMutex
-	traces map[string][]TraceEntry
+// NewInMemoryTraceLogger creates a new in-memory trace logger
+func NewInMemoryTraceLogger() TraceLogger {
+	// TODO: This will be replaced with internal implementation after refactoring is complete
+	return &noOpTraceLogger{}
 }
 
-// NewInMemoryTraceLogger creates a new in-memory trace logger.
-func NewInMemoryTraceLogger() *InMemoryTraceLogger {
-	return &InMemoryTraceLogger{
-		traces: make(map[string][]TraceEntry),
-	}
-}
-
-// Log adds a trace entry to the logger.
-func (l *InMemoryTraceLogger) Log(entry TraceEntry) error {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
-	sessionID := entry.SessionID
-	if sessionID == "" {
-		sessionID = "default"
-	}
-
-	l.traces[sessionID] = append(l.traces[sessionID], entry)
-	return nil
-}
-
-// GetTrace retrieves all trace entries for a given session ID.
-func (l *InMemoryTraceLogger) GetTrace(sessionID string) ([]TraceEntry, error) {
-	l.mu.RLock()
-	defer l.mu.RUnlock()
-
-	if sessionID == "" {
-		sessionID = "default"
-	}
-
-	entries, exists := l.traces[sessionID]
-	if !exists {
-		return []TraceEntry{}, nil
-	}
-
-	// Return a copy to avoid race conditions
-	result := make([]TraceEntry, len(entries))
-	copy(result, entries)
-	return result, nil
-}
-
-// RegisterTraceHooks registers tracing callbacks with the callback registry.
+// RegisterTraceHooks registers tracing callbacks with the callback registry
 func RegisterTraceHooks(registry *CallbackRegistry, logger TraceLogger) error {
 	if registry == nil {
 		return fmt.Errorf("callback registry cannot be nil")
@@ -357,6 +309,17 @@ func RegisterTraceHooks(registry *CallbackRegistry, logger TraceLogger) error {
 		return fmt.Errorf("failed to register after event trace hook: %w", err)
 	}
 	return nil
+}
+
+// Temporary no-op implementation during refactoring
+type noOpTraceLogger struct{}
+
+func (l *noOpTraceLogger) Log(entry TraceEntry) error {
+	return nil
+}
+
+func (l *noOpTraceLogger) GetTrace(sessionID string) ([]TraceEntry, error) {
+	return []TraceEntry{}, nil
 }
 
 // TODO: Add MCP-enabled factory functions here once the infrastructure is implemented

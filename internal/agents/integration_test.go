@@ -1,4 +1,6 @@
-package core
+package agents
+
+import "github.com/kunalkushwaha/agenticgokit/core"
 
 import (
 	"context"

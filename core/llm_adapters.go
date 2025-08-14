@@ -71,6 +71,49 @@ func NewModelProviderAdapter(provider ModelProvider) LLMAdapter {
 	return &llmAdapterWrapper{provider: provider}
 }
 
+// LLMProviderConfig holds configuration for creating LLM providers
+type LLMProviderConfig struct {
+	Type        string        `json:"type" toml:"type"`
+	APIKey      string        `json:"api_key,omitempty" toml:"api_key,omitempty"`
+	Model       string        `json:"model,omitempty" toml:"model,omitempty"`
+	MaxTokens   int           `json:"max_tokens,omitempty" toml:"max_tokens,omitempty"`
+	Temperature float32       `json:"temperature,omitempty" toml:"temperature,omitempty"`
+	
+	// Azure-specific fields
+	Endpoint            string `json:"endpoint,omitempty" toml:"endpoint,omitempty"`
+	ChatDeployment      string `json:"chat_deployment,omitempty" toml:"chat_deployment,omitempty"`
+	EmbeddingDeployment string `json:"embedding_deployment,omitempty" toml:"embedding_deployment,omitempty"`
+	
+	// Ollama-specific fields
+	BaseURL string `json:"base_url,omitempty" toml:"base_url,omitempty"`
+	
+	// HTTP client configuration
+	HTTPTimeout time.Duration `json:"http_timeout,omitempty" toml:"http_timeout,omitempty"`
+}
+
+// NewModelProviderFromConfig creates a ModelProvider from configuration
+func NewModelProviderFromConfig(config LLMProviderConfig) (ModelProvider, error) {
+	internalConfig := llm.ProviderConfig{
+		Type:                llm.ProviderType(config.Type),
+		APIKey:              config.APIKey,
+		Model:               config.Model,
+		MaxTokens:           config.MaxTokens,
+		Temperature:         config.Temperature,
+		Endpoint:            config.Endpoint,
+		ChatDeployment:      config.ChatDeployment,
+		EmbeddingDeployment: config.EmbeddingDeployment,
+		BaseURL:             config.BaseURL,
+		HTTPTimeout:         config.HTTPTimeout,
+	}
+	
+	adapter, err := llm.CreateProviderFromConfig(internalConfig)
+	if err != nil {
+		return nil, err
+	}
+	
+	return &modelProviderWrapper{internal: adapter}, nil
+}
+
 // modelProviderWrapper wraps internal ModelProvider to public interface
 type modelProviderWrapper struct {
 	internal llm.ModelProvider

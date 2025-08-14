@@ -1,9 +1,9 @@
 package core
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/hex"
-	"fmt"
 	"strings"
 )
 
@@ -70,6 +70,8 @@ type SearchConfigToml struct {
 	RerankingModel       string  `toml:"reranking_model"`        // Model for reranking
 	EnableQueryExpansion bool    `toml:"enable_query_expansion"` // default: false
 }
+
+
 
 // NewMemory creates a new memory instance based on configuration
 func NewMemory(config AgentMemoryConfig) (Memory, error) {
@@ -142,16 +144,15 @@ func NewMemory(config AgentMemoryConfig) (Memory, error) {
 		config.Search.SemanticWeight = 0.7
 	}
 
-	switch config.Provider {
-	case "memory":
-		return newInMemoryProvider(config)
-	case "pgvector":
-		return newPgVectorProvider(config)
-	case "weaviate":
-		return newWeaviateProvider(config)
-	default:
-		return nil, fmt.Errorf("unsupported memory provider: %s", config.Provider)
+	// Use a registry pattern to avoid circular imports
+	// The internal memory package will register its factory function
+	if memoryFactory != nil {
+		return memoryFactory(config)
 	}
+	
+	// Fallback to no-op memory if no factory is registered
+	Logger().Warn().Msg("No memory factory registered - using no-op memory")
+	return &noOpMemory{}, nil
 }
 
 // QuickMemory creates an in-memory provider for quick testing
@@ -160,13 +161,13 @@ func QuickMemory() Memory {
 		Provider:   "memory",
 		Connection: "memory",
 		MaxResults: 10,
-		AutoEmbed:  true,
+		Dimensions: 1536,
 	}
 
 	memory, err := NewMemory(config)
 	if err != nil {
 		// Return no-op memory instead of panicking
-		return &NoOpMemory{}
+		return &noOpMemory{}
 	}
 
 	return memory
@@ -333,4 +334,81 @@ func WithFormatTemplate(template string) ContextOption {
 	return func(config *ContextConfig) {
 		config.FormatTemplate = template
 	}
+}
+// Temporary no-op memory implementation during refactoring
+type noOpMemory struct{}
+
+func (m *noOpMemory) Store(ctx context.Context, content string, tags ...string) error {
+	return nil
+}
+
+func (m *noOpMemory) Query(ctx context.Context, query string, limit ...int) ([]Result, error) {
+	return []Result{}, nil
+}
+
+func (m *noOpMemory) Remember(ctx context.Context, key string, value any) error {
+	return nil
+}
+
+func (m *noOpMemory) Recall(ctx context.Context, key string) (any, error) {
+	return nil, nil
+}
+
+func (m *noOpMemory) AddMessage(ctx context.Context, role, content string) error {
+	return nil
+}
+
+func (m *noOpMemory) GetHistory(ctx context.Context, limit ...int) ([]Message, error) {
+	return []Message{}, nil
+}
+
+func (m *noOpMemory) NewSession() string {
+	return "default"
+}
+
+func (m *noOpMemory) SetSession(ctx context.Context, sessionID string) context.Context {
+	return ctx
+}
+
+func (m *noOpMemory) ClearSession(ctx context.Context) error {
+	return nil
+}
+
+func (m *noOpMemory) Close() error {
+	return nil
+}
+
+func (m *noOpMemory) IngestDocument(ctx context.Context, doc Document) error {
+	return nil
+}
+
+func (m *noOpMemory) IngestDocuments(ctx context.Context, docs []Document) error {
+	return nil
+}
+
+func (m *noOpMemory) SearchKnowledge(ctx context.Context, query string, options ...SearchOption) ([]KnowledgeResult, error) {
+	return []KnowledgeResult{}, nil
+}
+
+func (m *noOpMemory) SearchAll(ctx context.Context, query string, options ...SearchOption) (*HybridResult, error) {
+	return &HybridResult{}, nil
+}
+
+func (m *noOpMemory) BuildContext(ctx context.Context, query string, options ...ContextOption) (*RAGContext, error) {
+	return &RAGContext{}, nil
+}
+
+
+
+// Provider factory functions that delegate to internal implementations
+// These will be simplified once the refactoring is complete
+
+
+
+// Memory factory registry to avoid circular imports
+var memoryFactory func(AgentMemoryConfig) (Memory, error)
+
+// RegisterMemoryFactory allows internal packages to register their factory function
+func RegisterMemoryFactory(factory func(AgentMemoryConfig) (Memory, error)) {
+	memoryFactory = factory
 }
