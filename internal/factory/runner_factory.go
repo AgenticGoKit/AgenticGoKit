@@ -1,5 +1,5 @@
 // Package core provides public factory functions for creating runners and tool registries in AgentFlow.
-package core
+package factory
 
 import (
 	"context"

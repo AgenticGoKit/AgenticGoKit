@@ -1,19 +1,21 @@
-package core
+package tests
 
 import (
 	"testing"
+
+	"github.com/kunalkushwaha/agenticgokit/core"
 )
 
 func TestValidateOrchestrationConfig(t *testing.T) {
 	tests := []struct {
 		name        string
-		config      OrchestrationConfigToml
+		config      core.OrchestrationConfigToml
 		expectError bool
 		errorMsg    string
 	}{
 		{
 			name: "valid route mode",
-			config: OrchestrationConfigToml{
+			config: core.OrchestrationConfigToml{
 				Mode:           "route",
 				TimeoutSeconds: 30,
 			},
@@ -21,7 +23,7 @@ func TestValidateOrchestrationConfig(t *testing.T) {
 		},
 		{
 			name: "valid collaborative mode",
-			config: OrchestrationConfigToml{
+			config: core.OrchestrationConfigToml{
 				Mode:           "collaborative",
 				TimeoutSeconds: 30,
 			},
@@ -29,7 +31,7 @@ func TestValidateOrchestrationConfig(t *testing.T) {
 		},
 		{
 			name: "valid sequential mode",
-			config: OrchestrationConfigToml{
+			config: core.OrchestrationConfigToml{
 				Mode:             "sequential",
 				TimeoutSeconds:   30,
 				SequentialAgents: []string{"agent1", "agent2"},
@@ -38,7 +40,7 @@ func TestValidateOrchestrationConfig(t *testing.T) {
 		},
 		{
 			name: "valid loop mode",
-			config: OrchestrationConfigToml{
+			config: core.OrchestrationConfigToml{
 				Mode:           "loop",
 				TimeoutSeconds: 30,
 				MaxIterations:  5,
@@ -48,7 +50,7 @@ func TestValidateOrchestrationConfig(t *testing.T) {
 		},
 		{
 			name: "valid mixed mode with both agent types",
-			config: OrchestrationConfigToml{
+			config: core.OrchestrationConfigToml{
 				Mode:                "mixed",
 				TimeoutSeconds:      30,
 				CollaborativeAgents: []string{"agent1"},
@@ -58,7 +60,7 @@ func TestValidateOrchestrationConfig(t *testing.T) {
 		},
 		{
 			name: "valid mixed mode with only collaborative agents",
-			config: OrchestrationConfigToml{
+			config: core.OrchestrationConfigToml{
 				Mode:                "mixed",
 				TimeoutSeconds:      30,
 				CollaborativeAgents: []string{"agent1", "agent2"},
@@ -67,7 +69,7 @@ func TestValidateOrchestrationConfig(t *testing.T) {
 		},
 		{
 			name: "valid mixed mode with only sequential agents",
-			config: OrchestrationConfigToml{
+			config: core.OrchestrationConfigToml{
 				Mode:             "mixed",
 				TimeoutSeconds:   30,
 				SequentialAgents: []string{"agent1", "agent2"},
@@ -76,7 +78,7 @@ func TestValidateOrchestrationConfig(t *testing.T) {
 		},
 		{
 			name: "missing mode",
-			config: OrchestrationConfigToml{
+			config: core.OrchestrationConfigToml{
 				TimeoutSeconds: 30,
 			},
 			expectError: true,
@@ -84,7 +86,7 @@ func TestValidateOrchestrationConfig(t *testing.T) {
 		},
 		{
 			name: "invalid mode",
-			config: OrchestrationConfigToml{
+			config: core.OrchestrationConfigToml{
 				Mode:           "invalid",
 				TimeoutSeconds: 30,
 			},
@@ -93,7 +95,7 @@ func TestValidateOrchestrationConfig(t *testing.T) {
 		},
 		{
 			name: "sequential mode missing agents",
-			config: OrchestrationConfigToml{
+			config: core.OrchestrationConfigToml{
 				Mode:           "sequential",
 				TimeoutSeconds: 30,
 			},
@@ -102,7 +104,7 @@ func TestValidateOrchestrationConfig(t *testing.T) {
 		},
 		{
 			name: "loop mode missing agent",
-			config: OrchestrationConfigToml{
+			config: core.OrchestrationConfigToml{
 				Mode:           "loop",
 				TimeoutSeconds: 30,
 				MaxIterations:  5,
@@ -112,7 +114,7 @@ func TestValidateOrchestrationConfig(t *testing.T) {
 		},
 		{
 			name: "mixed mode missing both agent types",
-			config: OrchestrationConfigToml{
+			config: core.OrchestrationConfigToml{
 				Mode:           "mixed",
 				TimeoutSeconds: 30,
 			},
@@ -121,7 +123,7 @@ func TestValidateOrchestrationConfig(t *testing.T) {
 		},
 		{
 			name: "invalid timeout",
-			config: OrchestrationConfigToml{
+			config: core.OrchestrationConfigToml{
 				Mode:           "route",
 				TimeoutSeconds: 0,
 			},
@@ -130,7 +132,7 @@ func TestValidateOrchestrationConfig(t *testing.T) {
 		},
 		{
 			name: "invalid max iterations for loop mode",
-			config: OrchestrationConfigToml{
+			config: core.OrchestrationConfigToml{
 				Mode:           "loop",
 				TimeoutSeconds: 30,
 				MaxIterations:  0,
@@ -143,7 +145,7 @@ func TestValidateOrchestrationConfig(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			config := &Config{
+			config := &core.Config{
 				Orchestration: tt.config,
 			}
 

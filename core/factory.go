@@ -499,3 +499,59 @@ func (l *inMemoryTraceLogger) GetTrace(sessionID string) ([]TraceEntry, error) {
 
 // TODO: Add MCP-enabled factory functions here once the infrastructure is implemented
 // These will be moved from internal packages to provide a clean public API
+// =============================================================================
+// VISUALIZATION SUPPORT
+// =============================================================================
+
+// MermaidConfig configures diagram generation options
+type MermaidConfig struct {
+	DiagramType    string
+	Title          string
+	Direction      string // TB (top-bottom), LR (left-right), etc.
+	Theme          string // default, dark, forest, etc.
+	ShowMetadata   bool   // Include metadata like timeouts, error strategies
+	ShowAgentTypes bool   // Show agent type information
+	CompactMode    bool   // Generate more compact diagrams
+}
+
+// DefaultMermaidConfig returns sensible defaults for Mermaid diagram generation
+func DefaultMermaidConfig() MermaidConfig {
+	return MermaidConfig{
+		DiagramType:    "flowchart",
+		Direction:      "TD", // Top-Down
+		Theme:          "default",
+		ShowMetadata:   true,
+		ShowAgentTypes: true,
+		CompactMode:    false,
+	}
+}
+
+// MermaidGenerator interface for generating Mermaid diagrams
+type MermaidGenerator interface {
+	GenerateCompositionDiagram(mode, name string, agents []Agent, config MermaidConfig) string
+}
+
+// NewMermaidGenerator creates a new Mermaid generator
+// Implementation is provided by internal packages
+func NewMermaidGenerator() MermaidGenerator {
+	if mermaidGeneratorFactory != nil {
+		return mermaidGeneratorFactory()
+	}
+	// Return a basic implementation
+	return &basicMermaidGenerator{}
+}
+
+// RegisterMermaidGeneratorFactory registers the Mermaid generator factory function
+func RegisterMermaidGeneratorFactory(factory func() MermaidGenerator) {
+	mermaidGeneratorFactory = factory
+}
+
+var mermaidGeneratorFactory func() MermaidGenerator
+
+// basicMermaidGenerator provides a minimal implementation
+type basicMermaidGenerator struct{}
+
+func (g *basicMermaidGenerator) GenerateCompositionDiagram(mode, name string, agents []Agent, config MermaidConfig) string {
+	// Basic implementation - internal packages can provide more sophisticated implementations
+	return fmt.Sprintf("graph %s\n    %s[%s]\n", config.Direction, name, mode)
+}

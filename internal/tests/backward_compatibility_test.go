@@ -1,15 +1,17 @@
-package core
+package tests
 
 import (
 	"context"
 	"testing"
+
+	"github.com/kunalkushwaha/agenticgokit/core"
 )
 
 // TestBackwardCompatibility verifies that all essential public APIs work correctly
 func TestBackwardCompatibility(t *testing.T) {
 	t.Run("LoadConfig", func(t *testing.T) {
 		// Test loading default config
-		config, err := LoadConfig("")
+		config, err := core.LoadConfig("")
 		if err != nil {
 			t.Fatalf("LoadConfig failed: %v", err)
 		}
@@ -23,19 +25,19 @@ func TestBackwardCompatibility(t *testing.T) {
 
 	t.Run("LLMProviders", func(t *testing.T) {
 		// Test OpenAI adapter creation (without actual API call)
-		_, err := NewOpenAIAdapter("test-key", "gpt-4", 100, 0.7)
+		_, err := core.NewOpenAIAdapter("test-key", "gpt-4", 100, 0.7)
 		if err != nil {
 			t.Errorf("NewOpenAIAdapter failed: %v", err)
 		}
 
 		// Test Ollama adapter creation
-		_, err = NewOllamaAdapter("http://localhost:11434", "llama2", 100, 0.7)
+		_, err = core.NewOllamaAdapter("http://localhost:11434", "llama2", 100, 0.7)
 		if err != nil {
 			t.Errorf("NewOllamaAdapter failed: %v", err)
 		}
 
 		// Test Azure adapter creation
-		_, err = NewAzureOpenAIAdapter(AzureOpenAIAdapterOptions{
+		_, err = core.NewAzureOpenAIAdapter(core.AzureOpenAIAdapterOptions{
 			Endpoint:            "https://test.openai.azure.com/",
 			APIKey:              "test-key",
 			ChatDeployment:      "gpt-4",
@@ -48,7 +50,7 @@ func TestBackwardCompatibility(t *testing.T) {
 
 	t.Run("Memory", func(t *testing.T) {
 		// Test memory creation
-		_, err := NewMemory(AgentMemoryConfig{
+		_, err := core.NewMemory(core.AgentMemoryConfig{
 			Provider:   "inmemory",
 			Connection: "",
 		})
@@ -59,7 +61,7 @@ func TestBackwardCompatibility(t *testing.T) {
 
 	t.Run("ConfigFromConfig", func(t *testing.T) {
 		// Test LLM provider from config
-		_, err := NewModelProviderFromConfig(LLMProviderConfig{
+		_, err := core.NewModelProviderFromConfig(core.LLMProviderConfig{
 			Type:        "openai",
 			APIKey:      "test-key",
 			Model:       "gpt-4",
@@ -73,12 +75,12 @@ func TestBackwardCompatibility(t *testing.T) {
 
 	t.Run("HelperFunctions", func(t *testing.T) {
 		// Test helper functions
-		temp := FloatPtr(0.7)
+		temp := core.FloatPtr(0.7)
 		if *temp != 0.7 {
 			t.Error("FloatPtr helper function failed")
 		}
 
-		tokens := Int32Ptr(100)
+		tokens := core.Int32Ptr(100)
 		if *tokens != 100 {
 			t.Error("Int32Ptr helper function failed")
 		}
@@ -86,12 +88,12 @@ func TestBackwardCompatibility(t *testing.T) {
 
 	t.Run("TypesAndInterfaces", func(t *testing.T) {
 		// Test that we can create core types
-		prompt := Prompt{
+		prompt := core.Prompt{
 			System: "You are helpful",
 			User:   "Hello",
-			Parameters: ModelParameters{
-				Temperature: FloatPtr(0.7),
-				MaxTokens:   Int32Ptr(100),
+			Parameters: core.ModelParameters{
+				Temperature: core.FloatPtr(0.7),
+				MaxTokens:   core.Int32Ptr(100),
 			},
 		}
 
@@ -100,9 +102,9 @@ func TestBackwardCompatibility(t *testing.T) {
 		}
 
 		// Test Response type
-		response := Response{
+		response := core.Response{
 			Content: "Hello back!",
-			Usage: UsageStats{
+			Usage: core.UsageStats{
 				PromptTokens:     10,
 				CompletionTokens: 5,
 				TotalTokens:      15,
@@ -120,29 +122,29 @@ func TestBackwardCompatibility(t *testing.T) {
 func TestInterfaceCompatibility(t *testing.T) {
 	t.Run("AgentInterface", func(t *testing.T) {
 		// Test that we can implement the Agent interface
-		var _ Agent = &testAgent{}
+		var _ core.Agent = &testAgent{}
 	})
 
 	t.Run("AgentHandlerInterface", func(t *testing.T) {
 		// Test that we can implement the AgentHandler interface
-		var _ AgentHandler = &testAgentHandler{}
+		var _ core.AgentHandler = &testAgentHandler{}
 	})
 
 	t.Run("ModelProviderInterface", func(t *testing.T) {
 		// Test that we can implement the ModelProvider interface
-		var _ ModelProvider = &testModelProvider{}
+		var _ core.ModelProvider = &testModelProvider{}
 	})
 
 	t.Run("LLMAdapterInterface", func(t *testing.T) {
 		// Test that we can implement the LLMAdapter interface
-		var _ LLMAdapter = &testLLMAdapter{}
+		var _ core.LLMAdapter = &testLLMAdapter{}
 	})
 }
 
 // Test implementations to verify interfaces
 type testAgent struct{}
 
-func (a *testAgent) Run(ctx context.Context, inputState State) (State, error) {
+func (a *testAgent) Run(ctx context.Context, inputState core.State) (core.State, error) {
 	return inputState, nil
 }
 
@@ -152,18 +154,18 @@ func (a *testAgent) Name() string {
 
 type testAgentHandler struct{}
 
-func (h *testAgentHandler) Run(ctx context.Context, event Event, state State) (AgentResult, error) {
-	return AgentResult{}, nil
+func (h *testAgentHandler) Run(ctx context.Context, event core.Event, state core.State) (core.AgentResult, error) {
+	return core.AgentResult{}, nil
 }
 
 type testModelProvider struct{}
 
-func (p *testModelProvider) Call(ctx context.Context, prompt Prompt) (Response, error) {
-	return Response{Content: "test response"}, nil
+func (p *testModelProvider) Call(ctx context.Context, prompt core.Prompt) (core.Response, error) {
+	return core.Response{Content: "test response"}, nil
 }
 
-func (p *testModelProvider) Stream(ctx context.Context, prompt Prompt) (<-chan Token, error) {
-	ch := make(chan Token)
+func (p *testModelProvider) Stream(ctx context.Context, prompt core.Prompt) (<-chan core.Token, error) {
+	ch := make(chan core.Token)
 	close(ch)
 	return ch, nil
 }

@@ -1,5 +1,5 @@
-// Package core provides the MCP-aware agent implementation.
-package core
+// Package mcp provides the MCP-aware agent implementation.
+package mcp
 
 import (
 	"context"
@@ -7,17 +7,19 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	
+	"github.com/kunalkushwaha/agenticgokit/core"
 )
 
 // MCPAwareAgent is an intelligent agent that leverages MCP tools for task execution.
 // It uses LLM integration to select appropriate tools and execute them in the right sequence.
 type MCPAwareAgent struct {
 	name         string
-	llmProvider  ModelProvider
-	mcpManager   MCPManager
-	cacheManager MCPCacheManager
+	llmProvider  core.ModelProvider
+	mcpManager   core.MCPManager
+	cacheManager core.MCPCacheManager
 	config       MCPAgentConfig
-	logger       CoreLogger
+	logger       core.CoreLogger
 }
 
 // MCPAgentConfig holds configuration for MCP-aware agents.
@@ -38,8 +40,8 @@ type MCPAgentConfig struct {
 	ResultInterpretation bool   `toml:"result_interpretation"`
 
 	// Cache settings
-	EnableCaching bool           `toml:"enable_caching"`
-	CacheConfig   MCPCacheConfig `toml:"cache"`
+	EnableCaching bool                `toml:"enable_caching"`
+	CacheConfig   core.MCPCacheConfig `toml:"cache"`
 }
 
 // DefaultMCPAgentConfig returns a default configuration for MCP agents.

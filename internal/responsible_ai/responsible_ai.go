@@ -1,11 +1,13 @@
-// Package core provides the RAI (Responsible AI) content pipeline for automatic content filtering
-package core
+// Package responsible_ai provides the RAI (Responsible AI) content pipeline for automatic content filtering
+package responsible_ai
 
 import (
 	"context"
 	"fmt"
 	"strings"
 	"time"
+	
+	"github.com/kunalkushwaha/agenticgokit/core"
 )
 
 // RAIAction represents the action to take after content analysis
@@ -69,12 +71,12 @@ func DefaultRAIConfig() RAIConfig {
 // RAIMiddleware provides content filtering capabilities
 type RAIMiddleware struct {
 	config    RAIConfig
-	provider  ModelProvider
-	callbacks *CallbackRegistry
+	provider  core.ModelProvider
+	callbacks *core.CallbackRegistry
 }
 
 // NewRAIMiddleware creates a new RAI middleware instance
-func NewRAIMiddleware(config RAIConfig, provider ModelProvider) *RAIMiddleware {
+func NewRAIMiddleware(config RAIConfig, provider core.ModelProvider) *RAIMiddleware {
 	return &RAIMiddleware{
 		config:   config,
 		provider: provider,
@@ -82,7 +84,7 @@ func NewRAIMiddleware(config RAIConfig, provider ModelProvider) *RAIMiddleware {
 }
 
 // SetCallbackRegistry sets the callback registry for middleware hooks
-func (m *RAIMiddleware) SetCallbackRegistry(registry *CallbackRegistry) {
+func (m *RAIMiddleware) SetCallbackRegistry(registry *core.CallbackRegistry) {
 	m.callbacks = registry
 }
 
@@ -117,7 +119,7 @@ func (m *RAIMiddleware) CheckContent(ctx context.Context, content string, conten
 }
 
 // BeforeModelCall is a callback hook that checks input content
-func (m *RAIMiddleware) BeforeModelCall(ctx context.Context, args CallbackArgs) (State, error) {
+func (m *RAIMiddleware) BeforeModelCall(ctx context.Context, args core.CallbackArgs) (core.State, error) {
 	if !m.config.CheckInput {
 		return args.State, nil
 	}
@@ -159,7 +161,7 @@ func (m *RAIMiddleware) BeforeModelCall(ctx context.Context, args CallbackArgs) 
 }
 
 // AfterModelCall is a callback hook that checks output content
-func (m *RAIMiddleware) AfterModelCall(ctx context.Context, args CallbackArgs) (State, error) {
+func (m *RAIMiddleware) AfterModelCall(ctx context.Context, args core.CallbackArgs) (core.State, error) {
 	if !m.config.CheckOutput {
 		return args.State, nil
 	}
@@ -212,7 +214,7 @@ func (m *RAIMiddleware) AfterModelCall(ctx context.Context, args CallbackArgs) (
 }
 
 // createRAIPrompt creates a prompt for content analysis
-func (m *RAIMiddleware) createRAIPrompt(content, contentType string) Prompt {
+func (m *RAIMiddleware) createRAIPrompt(content, contentType string) core.Prompt {
 	policies := strings.Join(m.policyStrings(), ", ")
 
 	systemPrompt := fmt.Sprintf(`You are a Responsible AI content analyzer. Analyze the given %s content for violations of these policies: %s.
@@ -226,7 +228,7 @@ MODIFIED_CONTENT: [only if ACTION is MODIFY, otherwise omit this line]
 
 Be objective and accurate. Consider context and intent.`, contentType, policies)
 
-	return Prompt{
+	return core.Prompt{
 		System: systemPrompt,
 		User:   fmt.Sprintf("Analyze this %s content: %s", contentType, content),
 	}
@@ -297,7 +299,7 @@ func (m *RAIMiddleware) applyConfigRules(result *RAICheckResult) {
 }
 
 // extractContentForAnalysis extracts content from callback arguments for input analysis
-func (m *RAIMiddleware) extractContentForAnalysis(args CallbackArgs) string {
+func (m *RAIMiddleware) extractContentForAnalysis(args core.CallbackArgs) string {
 	// Try to get content from various sources in the callback args
 	if args.State != nil {
 		if content, exists := args.State.Get("input_content"); exists {
@@ -331,7 +333,7 @@ func (m *RAIMiddleware) extractContentForAnalysis(args CallbackArgs) string {
 }
 
 // extractOutputForAnalysis extracts content from callback arguments for output analysis
-func (m *RAIMiddleware) extractOutputForAnalysis(args CallbackArgs) string {
+func (m *RAIMiddleware) extractOutputForAnalysis(args core.CallbackArgs) string {
 	if args.State != nil {
 		if content, exists := args.State.Get("model_response"); exists {
 			if str, ok := content.(string); ok {

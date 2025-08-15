@@ -582,7 +582,7 @@ func InitializeMCPManager(config MCPConfig) error {
 
 // CreateMCPAgentWithLLMAndTools creates an MCP-aware agent with the specified configuration.
 // This is a comprehensive factory function for creating fully configured agents.
-func CreateMCPAgentWithLLMAndTools(ctx context.Context, name string, llmProvider ModelProvider, mcpConfig MCPConfig, agentConfig MCPAgentConfig) (*MCPAwareAgent, error) {
+func CreateMCPAgentWithLLMAndTools(ctx context.Context, name string, llmProvider ModelProvider, mcpConfig MCPConfig, agentConfig MCPAgentConfig) (MCPAwareAgent, error) {
 	// Initialize MCP if not already done
 	if err := InitializeMCP(mcpConfig); err != nil {
 		return nil, fmt.Errorf("failed to initialize MCP: %w", err)
@@ -615,7 +615,7 @@ func ShutdownMCPManager() error {
 
 // NewMCPAgent creates a basic MCP-aware agent with essential capabilities.
 // This is the simplest way to create an agent that can use MCP tools.
-func NewMCPAgent(name string, llmProvider ModelProvider) (*MCPAwareAgent, error) {
+func NewMCPAgent(name string, llmProvider ModelProvider) (MCPAwareAgent, error) {
 	manager := GetMCPManager()
 	if manager == nil {
 		return nil, fmt.Errorf("MCP manager not initialized - call InitializeMCP() first")
@@ -627,7 +627,7 @@ func NewMCPAgent(name string, llmProvider ModelProvider) (*MCPAwareAgent, error)
 
 // NewMCPAgentWithCache creates an MCP-aware agent with caching capabilities.
 // This provides better performance through intelligent result caching.
-func NewMCPAgentWithCache(name string, llmProvider ModelProvider) (*MCPAwareAgent, error) {
+func NewMCPAgentWithCache(name string, llmProvider ModelProvider) (MCPAwareAgent, error) {
 	manager := GetMCPManager()
 	if manager == nil {
 		return nil, fmt.Errorf("MCP manager not initialized - call InitializeMCPWithCache() first")
@@ -649,7 +649,7 @@ func NewMCPAgentWithCache(name string, llmProvider ModelProvider) (*MCPAwareAgen
 
 // NewProductionMCPAgent creates a production-ready MCP agent with all advanced features.
 // This provides enterprise-grade capabilities: connection pooling, retry logic, metrics, etc.
-func NewProductionMCPAgent(name string, llmProvider ModelProvider, config ProductionConfig) (*MCPAwareAgent, error) {
+func NewProductionMCPAgent(name string, llmProvider ModelProvider, config ProductionConfig) (MCPAwareAgent, error) {
 	manager := GetMCPManager()
 	if manager == nil {
 		return nil, fmt.Errorf("production MCP not initialized - call InitializeProductionMCP() first")
@@ -2304,4 +2304,91 @@ func init() {
 	// This will be called when the core package is initialized
 	// If the factory package is available, it will register itself
 	//Logger().Debug().Msg("Core MCP package initialized")
+}
+// =============================================================================
+// MCP AGENT TYPES (MINIMAL PUBLIC INTERFACE)
+// =============================================================================
+
+// MCPAgentConfig holds configuration for MCP-aware agents.
+type MCPAgentConfig struct {
+	// Tool selection settings
+	MaxToolsPerExecution int           `toml:"max_tools_per_execution"`
+	ToolSelectionTimeout time.Duration `toml:"tool_selection_timeout"`
+
+	// Execution settings
+	ParallelExecution bool          `toml:"parallel_execution"`
+	ExecutionTimeout  time.Duration `toml:"execution_timeout"`
+	RetryFailedTools  bool          `toml:"retry_failed_tools"`
+	MaxRetries        int           `toml:"max_retries"`
+
+	// LLM integration settings
+	UseToolDescriptions  bool   `toml:"use_tool_descriptions"`
+	ToolSelectionPrompt  string `toml:"tool_selection_prompt"`
+	ResultInterpretation bool   `toml:"result_interpretation"`
+
+	// Cache settings
+	EnableCaching bool           `toml:"enable_caching"`
+	CacheConfig   MCPCacheConfig `toml:"cache"`
+}
+
+// MCPAwareAgent interface for MCP-enabled agents
+type MCPAwareAgent interface {
+	Agent
+	GetMCPManager() MCPManager
+	GetConfig() MCPAgentConfig
+}
+
+// DefaultMCPAgentConfig returns a default configuration for MCP agents.
+func DefaultMCPAgentConfig() MCPAgentConfig {
+	return MCPAgentConfig{
+		MaxToolsPerExecution: 5,
+		ToolSelectionTimeout: 30 * time.Second,
+		ParallelExecution:    false,
+		ExecutionTimeout:     60 * time.Second,
+		RetryFailedTools:     true,
+		MaxRetries:           3,
+		UseToolDescriptions:  true,
+		ResultInterpretation: true,
+		EnableCaching:        true,
+		CacheConfig:          DefaultMCPCacheConfig(),
+	}
+}
+
+// NewMCPAwareAgent creates a new MCP-aware agent
+// Implementation is provided by internal packages
+func NewMCPAwareAgent(name string, llmProvider ModelProvider, mcpManager MCPManager, config MCPAgentConfig) MCPAwareAgent {
+	if mcpAwareAgentFactory != nil {
+		return mcpAwareAgentFactory(name, llmProvider, mcpManager, config)
+	}
+	Logger().Warn().Msg("Using basic MCP agent - import internal/mcp for full functionality")
+	return &basicMCPAwareAgent{name: name, config: config}
+}
+
+// RegisterMCPAwareAgentFactory registers the MCP-aware agent factory function
+func RegisterMCPAwareAgentFactory(factory func(string, ModelProvider, MCPManager, MCPAgentConfig) MCPAwareAgent) {
+	mcpAwareAgentFactory = factory
+}
+
+var mcpAwareAgentFactory func(string, ModelProvider, MCPManager, MCPAgentConfig) MCPAwareAgent
+
+// basicMCPAwareAgent provides a minimal implementation
+type basicMCPAwareAgent struct {
+	name   string
+	config MCPAgentConfig
+}
+
+func (a *basicMCPAwareAgent) Run(ctx context.Context, inputState State) (State, error) {
+	return inputState, nil
+}
+
+func (a *basicMCPAwareAgent) Name() string {
+	return a.name
+}
+
+func (a *basicMCPAwareAgent) GetMCPManager() MCPManager {
+	return nil
+}
+
+func (a *basicMCPAwareAgent) GetConfig() MCPAgentConfig {
+	return a.config
 }

@@ -1,5 +1,5 @@
-// Package core provides the unified agent builder for creating composable agents.
-package core
+// Package agents provides the unified agent builder for creating composable agents.
+package agents
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/kunalkushwaha/agenticgokit/core"
 	"github.com/rs/zerolog"
 )
 
@@ -23,7 +24,7 @@ type AgentBuilder struct {
 	config       AgentBuilderConfig
 	// Multi-agent composition fields
 	compositionMode string
-	subAgents       []Agent
+	subAgents       []core.Agent
 	multiConfig     MultiAgentConfig
 	loopConfig      LoopConfig
 }

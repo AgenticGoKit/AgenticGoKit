@@ -1,6 +1,10 @@
-package core
+package visualization
 
-import "fmt"
+import (
+	"fmt"
+	
+	"github.com/kunalkushwaha/agenticgokit/core"
+)
 
 // MermaidDiagramType defines the type of Mermaid diagram to generate
 type MermaidDiagramType string
@@ -37,10 +41,10 @@ func DefaultMermaidConfig() MermaidConfig {
 
 // MermaidGenerator interface for generating Mermaid diagrams
 type MermaidGenerator interface {
-	GenerateCompositionDiagram(mode, name string, agents []Agent, config MermaidConfig) string
-	GenerateOrchestrationDiagram(mode OrchestrationMode, agents map[string]AgentHandler, config MermaidConfig) string
-	GenerateAgentDiagram(agent Agent, config MermaidConfig) string
-	GenerateWorkflowPatternDiagram(patternName string, agents []Agent, config MermaidConfig) string
+	GenerateCompositionDiagram(mode, name string, agents []core.Agent, config MermaidConfig) string
+	GenerateOrchestrationDiagram(mode core.OrchestrationMode, agents map[string]core.AgentHandler, config MermaidConfig) string
+	GenerateAgentDiagram(agent core.Agent, config MermaidConfig) string
+	GenerateWorkflowPatternDiagram(patternName string, agents []core.Agent, config MermaidConfig) string
 	SaveDiagramAsMarkdown(filename, title, diagram string) error
 	SaveDiagramWithMetadata(filename, title, description, diagram string, metadata map[string]interface{}) error
 }
@@ -69,7 +73,7 @@ func NewMermaidGenerator() MermaidGenerator {
 // Simple implementation for core package
 type simpleMermaidGenerator struct{}
 
-func (mg *simpleMermaidGenerator) GenerateCompositionDiagram(mode, name string, agents []Agent, config MermaidConfig) string {
+func (mg *simpleMermaidGenerator) GenerateCompositionDiagram(mode, name string, agents []core.Agent, config MermaidConfig) string {
 	// Simple basic implementation for now
 	return fmt.Sprintf(`---
 title: "%s Composition"
@@ -87,7 +91,7 @@ flowchart TD
     INPUT["Input"] --> OUTPUT["Output"]`
 }
 
-func (mg *simpleMermaidGenerator) GenerateAgentDiagram(agent Agent, config MermaidConfig) string {
+func (mg *simpleMermaidGenerator) GenerateAgentDiagram(agent core.Agent, config MermaidConfig) string {
 	return fmt.Sprintf(`---
 title: "Agent: %s"
 ---
@@ -95,7 +99,7 @@ flowchart TD
     INPUT["Input"] --> AGENT["%s"] --> OUTPUT["Output"]`, agent.Name(), agent.Name())
 }
 
-func (mg *simpleMermaidGenerator) GenerateWorkflowPatternDiagram(patternName string, agents []Agent, config MermaidConfig) string {
+func (mg *simpleMermaidGenerator) GenerateWorkflowPatternDiagram(patternName string, agents []core.Agent, config MermaidConfig) string {
 	return fmt.Sprintf(`---
 title: "%s Pattern"
 ---

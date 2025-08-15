@@ -1,3 +1,4 @@
+// Package core provides essential memory interfaces and types for AgentFlow.
 package core
 
 import (
@@ -5,7 +6,133 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"strings"
+	"time"
 )
+
+// =============================================================================
+// MEMORY INTERFACE
+// =============================================================================
+
+// Memory is the central memory interface for all memory operations including RAG
+type Memory interface {
+	// Personal memory operations
+	Store(ctx context.Context, content string, tags ...string) error
+	Query(ctx context.Context, query string, limit ...int) ([]Result, error)
+	Remember(ctx context.Context, key string, value any) error
+	Recall(ctx context.Context, key string) (any, error)
+
+	// Chat history management
+	AddMessage(ctx context.Context, role, content string) error
+	GetHistory(ctx context.Context, limit ...int) ([]Message, error)
+
+	// Session management
+	NewSession() string
+	SetSession(ctx context.Context, sessionID string) context.Context
+	ClearSession(ctx context.Context) error
+	Close() error
+
+	// RAG-Enhanced Knowledge Base Operations
+	IngestDocument(ctx context.Context, doc Document) error
+	IngestDocuments(ctx context.Context, docs []Document) error
+	SearchKnowledge(ctx context.Context, query string, options ...SearchOption) ([]KnowledgeResult, error)
+
+	// Hybrid Search (Personal Memory + Knowledge Base)
+	SearchAll(ctx context.Context, query string, options ...SearchOption) (*HybridResult, error)
+
+	// RAG Context Assembly for LLM Prompts
+	BuildContext(ctx context.Context, query string, options ...ContextOption) (*RAGContext, error)
+}
+
+// EmbeddingService interface for generating embeddings
+type EmbeddingService interface {
+	GenerateEmbedding(ctx context.Context, text string) ([]float32, error)
+	GenerateEmbeddings(ctx context.Context, texts []string) ([][]float32, error)
+	GetDimensions() int
+}
+
+// =============================================================================
+// MEMORY TYPES
+// =============================================================================
+
+// Result - simplified result structure
+type Result struct {
+	Content   string    `json:"content"`
+	Score     float32   `json:"score"`
+	Tags      []string  `json:"tags,omitempty"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+// Message - conversation message
+type Message struct {
+	Role      string    `json:"role"` // user, assistant, system
+	Content   string    `json:"content"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+// Document structure for knowledge ingestion
+type Document struct {
+	ID         string         `json:"id"`
+	Title      string         `json:"title,omitempty"`
+	Content    string         `json:"content"`
+	Source     string         `json:"source,omitempty"` // URL, file path, etc.
+	Type       DocumentType   `json:"type,omitempty"`   // PDF, TXT, WEB, etc.
+	Metadata   map[string]any `json:"metadata,omitempty"`
+	Tags       []string       `json:"tags,omitempty"`
+	CreatedAt  time.Time      `json:"created_at"`
+	UpdatedAt  time.Time      `json:"updated_at,omitempty"`
+	ChunkIndex int            `json:"chunk_index,omitempty"` // For chunked documents
+	ChunkTotal int            `json:"chunk_total,omitempty"`
+}
+
+// DocumentType represents the type of document being ingested
+type DocumentType string
+
+const (
+	DocumentTypePDF      DocumentType = "pdf"
+	DocumentTypeText     DocumentType = "txt"
+	DocumentTypeMarkdown DocumentType = "md"
+	DocumentTypeWeb      DocumentType = "web"
+	DocumentTypeCode     DocumentType = "code"
+	DocumentTypeJSON     DocumentType = "json"
+)
+
+// KnowledgeResult represents search results from the knowledge base
+type KnowledgeResult struct {
+	Content    string         `json:"content"`
+	Score      float32        `json:"score"`
+	Source     string         `json:"source"`
+	Title      string         `json:"title,omitempty"`
+	DocumentID string         `json:"document_id"`
+	Metadata   map[string]any `json:"metadata,omitempty"`
+	Tags       []string       `json:"tags,omitempty"`
+	CreatedAt  time.Time      `json:"created_at"`
+	ChunkIndex int            `json:"chunk_index,omitempty"`
+}
+
+// HybridResult combines personal memory and knowledge base search results
+type HybridResult struct {
+	PersonalMemory []Result          `json:"personal_memory"`
+	Knowledge      []KnowledgeResult `json:"knowledge"`
+	Query          string            `json:"query"`
+	TotalResults   int               `json:"total_results"`
+	SearchTime     time.Duration     `json:"search_time"`
+}
+
+// RAGContext provides assembled context for LLM prompts
+type RAGContext struct {
+	Query          string            `json:"query"`
+	PersonalMemory []Result          `json:"personal_memory"`
+	Knowledge      []KnowledgeResult `json:"knowledge"`
+	ChatHistory    []Message         `json:"chat_history"`
+	ContextText    string            `json:"context_text"` // Formatted for LLM
+	Sources        []string          `json:"sources"`      // Source attribution
+	TokenCount     int               `json:"token_count"`  // Estimated tokens
+	Timestamp      time.Time         `json:"timestamp"`
+}
+
+// =============================================================================
+// CONFIGURATION TYPES
+// =============================================================================
 
 // AgentMemoryConfig - enhanced configuration for agent memory storage with RAG support
 type AgentMemoryConfig struct {
@@ -71,11 +198,43 @@ type SearchConfigToml struct {
 	EnableQueryExpansion bool    `toml:"enable_query_expansion"` // default: false
 }
 
+// Search and context configuration options
+type SearchOption func(*SearchConfig)
+type ContextOption func(*ContextConfig)
 
+type SearchConfig struct {
+	Limit            int            `json:"limit"`
+	ScoreThreshold   float32        `json:"score_threshold"`
+	Sources          []string       `json:"sources"`           // Filter by source
+	DocumentTypes    []DocumentType `json:"document_types"`    // Filter by type
+	Tags             []string       `json:"tags"`              // Filter by tags
+	DateRange        *DateRange     `json:"date_range"`        // Filter by date
+	HybridWeight     float32        `json:"hybrid_weight"`     // Semantic vs keyword weight
+	IncludePersonal  bool           `json:"include_personal"`  // Include personal memory
+	IncludeKnowledge bool           `json:"include_knowledge"` // Include knowledge base
+}
+
+type ContextConfig struct {
+	MaxTokens       int     `json:"max_tokens"`       // Context size limit
+	PersonalWeight  float32 `json:"personal_weight"`  // Weight for personal memory
+	KnowledgeWeight float32 `json:"knowledge_weight"` // Weight for knowledge base
+	HistoryLimit    int     `json:"history_limit"`    // Chat history messages
+	IncludeSources  bool    `json:"include_sources"`  // Include source attribution
+	FormatTemplate  string  `json:"format_template"`  // Custom context formatting
+}
+
+type DateRange struct {
+	Start time.Time `json:"start"`
+	End   time.Time `json:"end"`
+}
+
+// =============================================================================
+// PUBLIC FACTORY FUNCTIONS
+// =============================================================================
 
 // NewMemory creates a new memory instance based on configuration
 func NewMemory(config AgentMemoryConfig) (Memory, error) {
-	// Set core memory defaults
+	// Set defaults
 	if config.MaxResults == 0 {
 		config.MaxResults = 10
 	}
@@ -91,11 +250,10 @@ func NewMemory(config AgentMemoryConfig) (Memory, error) {
 		config.KnowledgeMaxResults = 20
 	}
 	if config.KnowledgeScoreThreshold == 0 {
-		// Use lower threshold for dummy embeddings, higher for real embeddings
 		if config.Embedding.Provider == "dummy" {
-			config.KnowledgeScoreThreshold = 0.0 // No filtering for dummy embeddings
+			config.KnowledgeScoreThreshold = 0.0
 		} else {
-			config.KnowledgeScoreThreshold = 0.7 // Standard threshold for real embeddings
+			config.KnowledgeScoreThreshold = 0.7
 		}
 	}
 	if config.ChunkSize == 0 {
@@ -104,53 +262,12 @@ func NewMemory(config AgentMemoryConfig) (Memory, error) {
 	if config.ChunkOverlap == 0 {
 		config.ChunkOverlap = 200
 	}
-	if config.RAGMaxContextTokens == 0 {
-		config.RAGMaxContextTokens = 4000
-	}
-	if config.RAGPersonalWeight == 0 {
-		config.RAGPersonalWeight = 0.3
-	}
-	if config.RAGKnowledgeWeight == 0 {
-		config.RAGKnowledgeWeight = 0.7
-	}
 
-	// Set document processing defaults
-	if len(config.Documents.SupportedTypes) == 0 {
-		config.Documents.SupportedTypes = []string{"pdf", "txt", "md", "web", "code"}
-	}
-	if config.Documents.MaxFileSize == "" {
-		config.Documents.MaxFileSize = "10MB"
-	}
-
-	// Set embedding service defaults
-	if config.Embedding.Provider == "" {
-		config.Embedding.Provider = "dummy"
-	}
-	if config.Embedding.Model == "" {
-		config.Embedding.Model = "text-embedding-3-small"
-	}
-	if config.Embedding.MaxBatchSize == 0 {
-		config.Embedding.MaxBatchSize = 100
-	}
-	if config.Embedding.TimeoutSeconds == 0 {
-		config.Embedding.TimeoutSeconds = 30
-	}
-
-	// Set search defaults
-	if config.Search.KeywordWeight == 0 {
-		config.Search.KeywordWeight = 0.3
-	}
-	if config.Search.SemanticWeight == 0 {
-		config.Search.SemanticWeight = 0.7
-	}
-
-	// Use a registry pattern to avoid circular imports
-	// The internal memory package will register its factory function
+	// Use factory pattern to avoid circular imports
 	if memoryFactory != nil {
 		return memoryFactory(config)
 	}
 	
-	// Fallback to no-op memory if no factory is registered
 	Logger().Warn().Msg("No memory factory registered - using no-op memory")
 	return &noOpMemory{}, nil
 }
@@ -166,95 +283,59 @@ func QuickMemory() Memory {
 
 	memory, err := NewMemory(config)
 	if err != nil {
-		// Return no-op memory instead of panicking
 		return &noOpMemory{}
 	}
-
 	return memory
 }
 
-// Utility functions
-func generateID() string {
-	bytes := make([]byte, 8)
-	rand.Read(bytes)
-	return hex.EncodeToString(bytes)
+// RegisterMemoryFactory allows internal packages to register their factory function
+func RegisterMemoryFactory(factory func(AgentMemoryConfig) (Memory, error)) {
+	memoryFactory = factory
 }
 
-func contains(text, query string) bool {
-	if len(text) == 0 || len(query) == 0 {
-		return false
+// Embedding service factory functions
+func NewOpenAIEmbeddingService(apiKey, model string) EmbeddingService {
+	if openAIEmbeddingFactory != nil {
+		return openAIEmbeddingFactory(apiKey, model)
 	}
-
-	// Convert to lowercase for case-insensitive matching
-	text = strings.ToLower(text)
-	query = strings.ToLower(query)
-
-	// Direct substring match
-	return strings.Contains(text, query)
+	Logger().Warn().Msg("No OpenAI embedding factory registered - using no-op service")
+	return &noOpEmbeddingService{dimensions: 1536}
 }
 
-func containsAnyTag(tags []string, query string) bool {
-	for _, tag := range tags {
-		if contains(tag, query) {
-			return true
-		}
+func NewOllamaEmbeddingService(model, baseURL string) EmbeddingService {
+	if ollamaEmbeddingFactory != nil {
+		return ollamaEmbeddingFactory(model, baseURL)
 	}
-	return false
+	Logger().Warn().Msg("No Ollama embedding factory registered - using no-op service")
+	return &noOpEmbeddingService{dimensions: 1024}
 }
 
-func removeDuplicates(slice []string) []string {
-	keys := make(map[string]bool)
-	result := []string{}
-
-	for _, item := range slice {
-		if !keys[item] {
-			keys[item] = true
-			result = append(result, item)
-		}
+func NewDummyEmbeddingService(dimensions int) EmbeddingService {
+	if dummyEmbeddingFactory != nil {
+		return dummyEmbeddingFactory(dimensions)
 	}
-
-	return result
+	if dimensions <= 0 {
+		dimensions = 1536
+	}
+	return &noOpEmbeddingService{dimensions: dimensions}
 }
 
-func estimateTokenCount(text string) int {
-	// Rough estimation: ~4 characters per token
-	return len(text) / 4
+// Register embedding service factories
+func RegisterOpenAIEmbeddingFactory(factory func(string, string) EmbeddingService) {
+	openAIEmbeddingFactory = factory
 }
 
-// Simple scoring function for in-memory provider
-func calculateScore(content, query string) float32 {
-	if len(content) == 0 || len(query) == 0 {
-		return 0
-	}
-
-	content = strings.ToLower(content)
-	query = strings.ToLower(query)
-
-	// Simple substring matching with basic scoring
-	if strings.Contains(content, query) {
-		// Higher score for exact matches
-		if content == query {
-			return 1.0
-		}
-		// Medium score for substring matches
-		return 0.7
-	}
-
-	// Lower score for partial word matches
-	words := strings.Fields(query)
-	matchCount := 0
-	for _, word := range words {
-		if strings.Contains(content, word) {
-			matchCount++
-		}
-	}
-
-	if matchCount > 0 {
-		return float32(matchCount) / float32(len(words)) * 0.5
-	}
-
-	return 0
+func RegisterOllamaEmbeddingFactory(factory func(string, string) EmbeddingService) {
+	ollamaEmbeddingFactory = factory
 }
+
+func RegisterDummyEmbeddingFactory(factory func(int) EmbeddingService) {
+	dummyEmbeddingFactory = factory
+}
+
+// =============================================================================
+// OPTION CONSTRUCTORS
+// =============================================================================
 
 // Search option constructors
 func WithLimit(limit int) SearchOption {
@@ -335,80 +416,122 @@ func WithFormatTemplate(template string) ContextOption {
 		config.FormatTemplate = template
 	}
 }
-// Temporary no-op memory implementation during refactoring
+
+// =============================================================================
+// UTILITY FUNCTIONS
+// =============================================================================
+
+func generateID() string {
+	bytes := make([]byte, 8)
+	rand.Read(bytes)
+	return hex.EncodeToString(bytes)
+}
+
+func contains(text, query string) bool {
+	if len(text) == 0 || len(query) == 0 {
+		return false
+	}
+	text = strings.ToLower(text)
+	query = strings.ToLower(query)
+	return strings.Contains(text, query)
+}
+
+func containsAnyTag(tags []string, query string) bool {
+	for _, tag := range tags {
+		if contains(tag, query) {
+			return true
+		}
+	}
+	return false
+}
+
+func removeDuplicates(slice []string) []string {
+	keys := make(map[string]bool)
+	result := []string{}
+	for _, item := range slice {
+		if !keys[item] {
+			keys[item] = true
+			result = append(result, item)
+		}
+	}
+	return result
+}
+
+func estimateTokenCount(text string) int {
+	return len(text) / 4
+}
+
+func calculateScore(content, query string) float32 {
+	if len(content) == 0 || len(query) == 0 {
+		return 0
+	}
+	content = strings.ToLower(content)
+	query = strings.ToLower(query)
+	if strings.Contains(content, query) {
+		if content == query {
+			return 1.0
+		}
+		return 0.7
+	}
+	words := strings.Fields(query)
+	matchCount := 0
+	for _, word := range words {
+		if strings.Contains(content, word) {
+			matchCount++
+		}
+	}
+	if matchCount > 0 {
+		return float32(matchCount) / float32(len(words)) * 0.5
+	}
+	return 0
+}
+
+// =============================================================================
+// INTERNAL IMPLEMENTATIONS
+// =============================================================================
+
+var (
+	memoryFactory              func(AgentMemoryConfig) (Memory, error)
+	openAIEmbeddingFactory     func(string, string) EmbeddingService
+	ollamaEmbeddingFactory     func(string, string) EmbeddingService
+	dummyEmbeddingFactory      func(int) EmbeddingService
+)
+
+// Temporary no-op implementations during refactoring
 type noOpMemory struct{}
 
-func (m *noOpMemory) Store(ctx context.Context, content string, tags ...string) error {
-	return nil
+func (m *noOpMemory) Store(ctx context.Context, content string, tags ...string) error { return nil }
+func (m *noOpMemory) Query(ctx context.Context, query string, limit ...int) ([]Result, error) { return []Result{}, nil }
+func (m *noOpMemory) Remember(ctx context.Context, key string, value any) error { return nil }
+func (m *noOpMemory) Recall(ctx context.Context, key string) (any, error) { return nil, nil }
+func (m *noOpMemory) AddMessage(ctx context.Context, role, content string) error { return nil }
+func (m *noOpMemory) GetHistory(ctx context.Context, limit ...int) ([]Message, error) { return []Message{}, nil }
+func (m *noOpMemory) NewSession() string { return "default" }
+func (m *noOpMemory) SetSession(ctx context.Context, sessionID string) context.Context { return ctx }
+func (m *noOpMemory) ClearSession(ctx context.Context) error { return nil }
+func (m *noOpMemory) Close() error { return nil }
+func (m *noOpMemory) IngestDocument(ctx context.Context, doc Document) error { return nil }
+func (m *noOpMemory) IngestDocuments(ctx context.Context, docs []Document) error { return nil }
+func (m *noOpMemory) SearchKnowledge(ctx context.Context, query string, options ...SearchOption) ([]KnowledgeResult, error) { return []KnowledgeResult{}, nil }
+func (m *noOpMemory) SearchAll(ctx context.Context, query string, options ...SearchOption) (*HybridResult, error) { return &HybridResult{}, nil }
+func (m *noOpMemory) BuildContext(ctx context.Context, query string, options ...ContextOption) (*RAGContext, error) { return &RAGContext{}, nil }
+
+type noOpEmbeddingService struct {
+	dimensions int
 }
 
-func (m *noOpMemory) Query(ctx context.Context, query string, limit ...int) ([]Result, error) {
-	return []Result{}, nil
+func (s *noOpEmbeddingService) GenerateEmbedding(ctx context.Context, text string) ([]float32, error) {
+	return make([]float32, s.dimensions), nil
 }
 
-func (m *noOpMemory) Remember(ctx context.Context, key string, value any) error {
-	return nil
+func (s *noOpEmbeddingService) GenerateEmbeddings(ctx context.Context, texts []string) ([][]float32, error) {
+	embeddings := make([][]float32, len(texts))
+	for i := range embeddings {
+		embeddings[i] = make([]float32, s.dimensions)
+	}
+	return embeddings, nil
 }
 
-func (m *noOpMemory) Recall(ctx context.Context, key string) (any, error) {
-	return nil, nil
-}
-
-func (m *noOpMemory) AddMessage(ctx context.Context, role, content string) error {
-	return nil
-}
-
-func (m *noOpMemory) GetHistory(ctx context.Context, limit ...int) ([]Message, error) {
-	return []Message{}, nil
-}
-
-func (m *noOpMemory) NewSession() string {
-	return "default"
-}
-
-func (m *noOpMemory) SetSession(ctx context.Context, sessionID string) context.Context {
-	return ctx
-}
-
-func (m *noOpMemory) ClearSession(ctx context.Context) error {
-	return nil
-}
-
-func (m *noOpMemory) Close() error {
-	return nil
-}
-
-func (m *noOpMemory) IngestDocument(ctx context.Context, doc Document) error {
-	return nil
-}
-
-func (m *noOpMemory) IngestDocuments(ctx context.Context, docs []Document) error {
-	return nil
-}
-
-func (m *noOpMemory) SearchKnowledge(ctx context.Context, query string, options ...SearchOption) ([]KnowledgeResult, error) {
-	return []KnowledgeResult{}, nil
-}
-
-func (m *noOpMemory) SearchAll(ctx context.Context, query string, options ...SearchOption) (*HybridResult, error) {
-	return &HybridResult{}, nil
-}
-
-func (m *noOpMemory) BuildContext(ctx context.Context, query string, options ...ContextOption) (*RAGContext, error) {
-	return &RAGContext{}, nil
-}
-
-
-
-// Provider factory functions that delegate to internal implementations
-// These will be simplified once the refactoring is complete
-
-
-
-// Memory factory registry to avoid circular imports
-var memoryFactory func(AgentMemoryConfig) (Memory, error)
-
-// RegisterMemoryFactory allows internal packages to register their factory function
-func RegisterMemoryFactory(factory func(AgentMemoryConfig) (Memory, error)) {
-	memoryFactory = factory
+func (s *noOpEmbeddingService) GetDimensions() int {
+	return s.dimensions
 }

@@ -1,5 +1,5 @@
 // Package core provides MCP capability implementation for the unified agent architecture.
-package core
+package mcp
 
 import (
 	"fmt"

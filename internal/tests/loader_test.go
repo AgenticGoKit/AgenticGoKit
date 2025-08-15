@@ -1,12 +1,14 @@
-package core
+package tests
 
 import (
 	"os"
 	"testing"
+
+	"github.com/kunalkushwaha/agenticgokit/core"
 )
 
 func TestLoadConfig_Defaults(t *testing.T) {
-	cfg, err := LoadConfig("") // Should load defaults if no file
+	cfg, err := core.LoadConfig("") // Should load defaults if no file
 	if err != nil {
 		t.Fatalf("LoadConfig failed: %v", err)
 	}
@@ -37,7 +39,7 @@ format = "text"
 	}
 	defer os.Remove(file)
 
-	cfg, err := LoadConfig(file)
+	cfg, err := core.LoadConfig(file)
 	if err != nil {
 		t.Fatalf("LoadConfig failed: %v", err)
 	}
@@ -50,7 +52,7 @@ format = "text"
 }
 
 func TestInitializeProvider_MissingProvider(t *testing.T) {
-	cfg := &Config{}
+	cfg := &core.Config{}
 	cfg.AgentFlow.Provider = ""
 	_, err := cfg.InitializeProvider()
 	if err == nil {
@@ -59,7 +61,7 @@ func TestInitializeProvider_MissingProvider(t *testing.T) {
 }
 
 func TestInitializeProvider_UnknownProvider(t *testing.T) {
-	cfg := &Config{}
+	cfg := &core.Config{}
 	cfg.AgentFlow.Provider = "unknown"
 	_, err := cfg.InitializeProvider()
 	if err == nil {

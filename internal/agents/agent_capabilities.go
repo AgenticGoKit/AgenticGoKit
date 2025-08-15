@@ -1,9 +1,10 @@
-// Package core provides the capability framework for building composable agents.
-package core
+// Package agents provides the capability framework for building composable agents.
+package agents
 
 import (
 	"fmt"
 
+	"github.com/kunalkushwaha/agenticgokit/core"
 	"github.com/rs/zerolog"
 )
 
@@ -15,13 +16,13 @@ import (
 // This interface allows capabilities to be configured without depending on the concrete UnifiedAgent type.
 type CapabilityConfigurable interface {
 	// SetLLMProvider sets the LLM provider for the agent
-	SetLLMProvider(provider ModelProvider, config LLMConfig)
+	SetLLMProvider(provider core.ModelProvider, config core.LLMConfig)
 
 	// SetCacheManager sets the cache manager for the agent
 	SetCacheManager(manager interface{}, config interface{})
 
 	// SetMetricsConfig sets the metrics configuration for the agent
-	SetMetricsConfig(config MetricsConfig)
+	SetMetricsConfig(config core.MetricsConfig)
 
 	// GetLogger returns the agent's logger for capability configuration
 	GetLogger() *zerolog.Logger

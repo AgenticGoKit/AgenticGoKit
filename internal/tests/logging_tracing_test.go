@@ -1,30 +1,32 @@
-package core
+package tests
 
 import (
 	"testing"
 	"time"
+
+	"github.com/kunalkushwaha/agenticgokit/core"
 )
 
 func TestLoggingAndTracingConsolidation(t *testing.T) {
 	// Test logging functionality
 	t.Run("LogLevel", func(t *testing.T) {
 		// Test setting and getting log level
-		SetLogLevel(DEBUG)
-		level := GetLogLevel()
-		if level != DEBUG {
+		core.SetLogLevel(core.DEBUG)
+		level := core.GetLogLevel()
+		if level != core.DEBUG {
 			t.Errorf("Expected log level DEBUG, got %v", level)
 		}
 
-		SetLogLevel(INFO)
-		level = GetLogLevel()
-		if level != INFO {
+		core.SetLogLevel(core.INFO)
+		level = core.GetLogLevel()
+		if level != core.INFO {
 			t.Errorf("Expected log level INFO, got %v", level)
 		}
 	})
 
 	t.Run("Logger", func(t *testing.T) {
 		// Test logger creation and method chaining
-		logger := Logger()
+		logger := core.Logger()
 		if logger == nil {
 			t.Error("Logger should not be nil")
 		}
@@ -47,13 +49,13 @@ func TestLoggingAndTracingConsolidation(t *testing.T) {
 
 	t.Run("TraceLogger", func(t *testing.T) {
 		// Test trace logger functionality
-		traceLogger := NewInMemoryTraceLogger()
+		traceLogger := core.NewInMemoryTraceLogger()
 		if traceLogger == nil {
 			t.Error("TraceLogger should not be nil")
 		}
 
 		// Test logging trace entries
-		entry := TraceEntry{
+		entry := core.TraceEntry{
 			Timestamp: time.Now(),
 			Type:      "test_event",
 			EventID:   "event_123",
@@ -83,21 +85,21 @@ func TestLoggingAndTracingConsolidation(t *testing.T) {
 
 	t.Run("TraceHooksRegistration", func(t *testing.T) {
 		// Test that trace hooks registration works
-		registry := NewCallbackRegistry()
-		traceLogger := NewInMemoryTraceLogger()
+		registry := core.NewCallbackRegistry()
+		traceLogger := core.NewInMemoryTraceLogger()
 
-		err := RegisterTraceHooks(registry, traceLogger)
+		err := core.RegisterTraceHooks(registry, traceLogger)
 		if err != nil {
 			t.Errorf("Registering trace hooks should not fail: %v", err)
 		}
 
 		// Test error cases
-		err = RegisterTraceHooks(nil, traceLogger)
+		err = core.RegisterTraceHooks(nil, traceLogger)
 		if err == nil {
 			t.Error("Expected error when registry is nil")
 		}
 
-		err = RegisterTraceHooks(registry, nil)
+		err = core.RegisterTraceHooks(registry, nil)
 		if err == nil {
 			t.Error("Expected error when logger is nil")
 		}

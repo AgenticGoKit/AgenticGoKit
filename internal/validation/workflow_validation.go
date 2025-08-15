@@ -1,4 +1,6 @@
-package core
+package validation
+
+import "github.com/kunalkushwaha/agenticgokit/core"
 
 // ValidationErrorType represents different types of validation errors
 type ValidationErrorType string
@@ -62,9 +64,9 @@ type WorkflowGraphEdge struct {
 
 // WorkflowValidator interface for validating workflows
 type WorkflowValidator interface {
-	ValidateComposition(agents []Agent, mode string) WorkflowValidationResult
-	ValidateOrchestration(agents map[string]AgentHandler, mode OrchestrationMode) WorkflowValidationResult
-	ValidateWorkflowGraph(graph WorkflowGraph) WorkflowValidationResult
+	ValidateComposition(agents []core.Agent, mode string) core.WorkflowValidationResult
+	ValidateOrchestration(agents map[string]core.AgentHandler, mode core.OrchestrationMode) core.WorkflowValidationResult
+	ValidateWorkflowGraph(graph core.WorkflowGraph) core.WorkflowValidationResult
 }
 
 // WorkflowValidatorFactory is the function signature for creating WorkflowValidator instances

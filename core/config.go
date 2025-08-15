@@ -53,13 +53,7 @@ type ConfigReloader interface {
 	IsWatching() bool
 }
 
-// AgentManager interface for managing agent configurations during reload
-type AgentManager interface {
-	UpdateAgentConfigurations(config *Config) error
-	GetCurrentAgents() map[string]Agent
-	CreateAgent(name string, config *ResolvedAgentConfig) (Agent, error)
-	DisableAgent(name string) error
-}
+// AgentManager is defined in agent.go
 
 // AgentLLMConfig represents LLM provider configuration for agents
 type AgentLLMConfig struct {
