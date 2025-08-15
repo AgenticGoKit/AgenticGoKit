@@ -1,7 +1,13 @@
 // Package core provides public LLM interfaces and essential types for AgentFlow.
 package core
 
-import "context"
+import (
+	"context"
+	"net/http"
+	"time"
+
+	"github.com/kunalkushwaha/agenticgokit/internal/llm"
+)
 
 // Essential public types for LLM interaction
 
@@ -66,3 +72,206 @@ func FloatPtr(f float32) *float32 {
 func Int32Ptr(i int32) *int32 {
 	return &i
 }
+
+// =============================================================================
+// PUBLIC FACTORY FUNCTIONS
+// =============================================================================
+
+// AzureOpenAIAdapterOptions holds configuration for Azure OpenAI adapter
+type AzureOpenAIAdapterOptions struct {
+	Endpoint            string
+	APIKey              string
+	ChatDeployment      string
+	EmbeddingDeployment string
+	HTTPClient          *http.Client
+}
+
+// NewAzureOpenAIAdapter creates a new Azure OpenAI adapter
+func NewAzureOpenAIAdapter(options AzureOpenAIAdapterOptions) (ModelProvider, error) {
+	internalOptions := llm.PublicAzureOpenAIAdapterOptions{
+		Endpoint:            options.Endpoint,
+		APIKey:              options.APIKey,
+		ChatDeployment:      options.ChatDeployment,
+		EmbeddingDeployment: options.EmbeddingDeployment,
+		HTTPClient:          options.HTTPClient,
+	}
+
+	wrapper, err := llm.NewAzureOpenAIAdapterWrapped(internalOptions)
+	if err != nil {
+		return nil, err
+	}
+
+	return &coreModelProviderAdapter{adapter: llm.NewPublicProviderAdapter(wrapper)}, nil
+}
+
+// NewOpenAIAdapter creates a new OpenAI adapter
+func NewOpenAIAdapter(apiKey, model string, maxTokens int, temperature float32) (ModelProvider, error) {
+	wrapper, err := llm.NewOpenAIAdapterWrapped(apiKey, model, maxTokens, temperature)
+	if err != nil {
+		return nil, err
+	}
+
+	return &coreModelProviderAdapter{adapter: llm.NewPublicProviderAdapter(wrapper)}, nil
+}
+
+// NewOllamaAdapter creates a new Ollama adapter
+func NewOllamaAdapter(baseURL, model string, maxTokens int, temperature float32) (ModelProvider, error) {
+	wrapper, err := llm.NewOllamaAdapterWrapped(baseURL, model, maxTokens, temperature)
+	if err != nil {
+		return nil, err
+	}
+
+	return &coreModelProviderAdapter{adapter: llm.NewPublicProviderAdapter(wrapper)}, nil
+}
+
+// LLMProviderConfig holds configuration for creating LLM providers
+type LLMProviderConfig struct {
+	Type        string        `json:"type" toml:"type"`
+	APIKey      string        `json:"api_key,omitempty" toml:"api_key,omitempty"`
+	Model       string        `json:"model,omitempty" toml:"model,omitempty"`
+	MaxTokens   int           `json:"max_tokens,omitempty" toml:"max_tokens,omitempty"`
+	Temperature float32       `json:"temperature,omitempty" toml:"temperature,omitempty"`
+	
+	// Azure-specific fields
+	Endpoint            string `json:"endpoint,omitempty" toml:"endpoint,omitempty"`
+	ChatDeployment      string `json:"chat_deployment,omitempty" toml:"chat_deployment,omitempty"`
+	EmbeddingDeployment string `json:"embedding_deployment,omitempty" toml:"embedding_deployment,omitempty"`
+	
+	// Ollama-specific fields
+	BaseURL string `json:"base_url,omitempty" toml:"base_url,omitempty"`
+	
+	// HTTP client configuration
+	HTTPTimeout time.Duration `json:"http_timeout,omitempty" toml:"http_timeout,omitempty"`
+}
+
+// NewModelProviderFromConfig creates a ModelProvider from configuration
+func NewModelProviderFromConfig(config LLMProviderConfig) (ModelProvider, error) {
+	internalConfig := llm.PublicLLMProviderConfig{
+		Type:                config.Type,
+		APIKey:              config.APIKey,
+		Model:               config.Model,
+		MaxTokens:           config.MaxTokens,
+		Temperature:         config.Temperature,
+		Endpoint:            config.Endpoint,
+		ChatDeployment:      config.ChatDeployment,
+		EmbeddingDeployment: config.EmbeddingDeployment,
+		BaseURL:             config.BaseURL,
+		HTTPTimeout:         config.HTTPTimeout,
+	}
+	
+	wrapper, err := llm.NewModelProviderFromConfigWrapped(internalConfig)
+	if err != nil {
+		return nil, err
+	}
+	
+	return &coreModelProviderAdapter{adapter: llm.NewPublicProviderAdapter(wrapper)}, nil
+}
+
+// NewModelProviderAdapter creates an LLMAdapter from a ModelProvider
+func NewModelProviderAdapter(provider ModelProvider) LLMAdapter {
+	if adapter, ok := provider.(*coreModelProviderAdapter); ok {
+		return &coreLLMAdapter{adapter: llm.NewPublicLLMAdapterWrapper(llm.NewModelProviderAdapterWrapped(adapter.adapter))}
+	}
+
+	// Fallback for external implementations
+	return &directCoreLLMAdapter{provider: provider}
+}
+
+// =============================================================================
+// MINIMAL CORE ADAPTERS
+// =============================================================================
+
+// coreModelProviderAdapter provides minimal adapter for core interface
+type coreModelProviderAdapter struct {
+	adapter *llm.PublicProviderAdapter
+}
+
+func (a *coreModelProviderAdapter) Call(ctx context.Context, prompt Prompt) (Response, error) {
+	internalPrompt := llm.PublicPrompt{
+		System: prompt.System,
+		User:   prompt.User,
+		Parameters: llm.PublicModelParameters{
+			Temperature: prompt.Parameters.Temperature,
+			MaxTokens:   prompt.Parameters.MaxTokens,
+		},
+	}
+
+	resp, err := a.adapter.Call(ctx, internalPrompt)
+	if err != nil {
+		return Response{}, err
+	}
+
+	return Response{
+		Content: resp.Content,
+		Usage: UsageStats{
+			PromptTokens:     resp.Usage.PromptTokens,
+			CompletionTokens: resp.Usage.CompletionTokens,
+			TotalTokens:      resp.Usage.TotalTokens,
+		},
+		FinishReason: resp.FinishReason,
+	}, nil
+}
+
+func (a *coreModelProviderAdapter) Stream(ctx context.Context, prompt Prompt) (<-chan Token, error) {
+	internalPrompt := llm.PublicPrompt{
+		System: prompt.System,
+		User:   prompt.User,
+		Parameters: llm.PublicModelParameters{
+			Temperature: prompt.Parameters.Temperature,
+			MaxTokens:   prompt.Parameters.MaxTokens,
+		},
+	}
+
+	internalChan, err := a.adapter.Stream(ctx, internalPrompt)
+	if err != nil {
+		return nil, err
+	}
+
+	publicChan := make(chan Token)
+	go func() {
+		defer close(publicChan)
+		for token := range internalChan {
+			publicChan <- Token{
+				Content: token.Content,
+				Error:   token.Error,
+			}
+		}
+	}()
+
+	return publicChan, nil
+}
+
+func (a *coreModelProviderAdapter) Embeddings(ctx context.Context, texts []string) ([][]float64, error) {
+	return a.adapter.Embeddings(ctx, texts)
+}
+
+// coreLLMAdapter provides minimal adapter for core LLM interface
+type coreLLMAdapter struct {
+	adapter *llm.PublicLLMAdapterWrapper
+}
+
+func (a *coreLLMAdapter) Complete(ctx context.Context, systemPrompt string, userPrompt string) (string, error) {
+	return a.adapter.Complete(ctx, systemPrompt, userPrompt)
+}
+
+// directCoreLLMAdapter provides fallback for external ModelProvider implementations
+type directCoreLLMAdapter struct {
+	provider ModelProvider
+}
+
+func (a *directCoreLLMAdapter) Complete(ctx context.Context, systemPrompt string, userPrompt string) (string, error) {
+	resp, err := a.provider.Call(ctx, Prompt{
+		System: systemPrompt,
+		User:   userPrompt,
+		Parameters: ModelParameters{
+			Temperature: FloatPtr(0.7),
+			MaxTokens:   Int32Ptr(2000),
+		},
+	})
+	if err != nil {
+		return "", err
+	}
+	return resp.Content, nil
+}
+
+

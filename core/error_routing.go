@@ -1,4 +1,4 @@
-// Package core provides enhanced error routing capabilities for AgentFlow.
+// Package core provides essential error routing types for AgentFlow.
 package core
 
 import (
@@ -6,7 +6,7 @@ import (
 )
 
 // =============================================================================
-// ERROR EVENT DATA AND TYPES
+// ESSENTIAL ERROR TYPES
 // =============================================================================
 
 // ErrorEventData represents structured error information for enhanced error routing
@@ -23,11 +23,7 @@ type ErrorEventData struct {
 	RecoveryAction string    `json:"recovery_action"` // "retry", "fallback", "escalate", "terminate"
 }
 
-// =============================================================================
-// ERROR CODE CONSTANTS
-// =============================================================================
-
-// ErrorCode constants for consistent error categorization
+// Error code constants for consistent error categorization
 const (
 	ErrorCodeValidation = "VALIDATION_ERROR"
 	ErrorCodeTimeout    = "TIMEOUT_ERROR"
@@ -38,7 +34,7 @@ const (
 	ErrorCodeUnknown    = "UNKNOWN_ERROR"
 )
 
-// ErrorSeverity constants
+// Error severity constants
 const (
 	SeverityLow      = "low"
 	SeverityMedium   = "medium"
@@ -46,17 +42,13 @@ const (
 	SeverityCritical = "critical"
 )
 
-// RecoveryAction constants
+// Recovery action constants
 const (
 	RecoveryRetry     = "retry"
 	RecoveryFallback  = "fallback"
 	RecoveryEscalate  = "escalate"
 	RecoveryTerminate = "terminate"
 )
-
-// =============================================================================
-// ERROR ROUTER CONFIGURATION
-// =============================================================================
 
 // ErrorRouterConfig configures the enhanced error routing behavior
 type ErrorRouterConfig struct {
@@ -67,6 +59,17 @@ type ErrorRouterConfig struct {
 	CategoryHandlers     map[string]string `json:"category_handlers"` // Maps error categories to specific handlers
 	SeverityHandlers     map[string]string `json:"severity_handlers"` // Maps severity levels to specific handlers
 }
+
+// ErrorRouter defines the interface for error routing functionality
+type ErrorRouter interface {
+	CreateEnhancedErrorEvent(originalEvent Event, agentID string, err error) Event
+	IsRetryableError(errorData ErrorEventData) bool
+	IncrementRetryCount(event Event) Event
+}
+
+// =============================================================================
+// PUBLIC FACTORY FUNCTIONS
+// =============================================================================
 
 // DefaultErrorRouterConfig returns a sensible default configuration
 func DefaultErrorRouterConfig() *ErrorRouterConfig {
@@ -89,71 +92,50 @@ func DefaultErrorRouterConfig() *ErrorRouterConfig {
 	}
 }
 
-// =============================================================================
-// ERROR ROUTING INTERFACE AND FACTORY
-// =============================================================================
-
-// ErrorRouter defines the interface for error routing functionality
-type ErrorRouter interface {
-	CreateEnhancedErrorEvent(originalEvent Event, agentID string, err error) Event
-	IsRetryableError(errorData ErrorEventData) bool
-	IncrementRetryCount(event Event) Event
+// NewErrorRouter creates an error router from configuration
+// Implementation is provided by internal packages
+func NewErrorRouter(config *ErrorRouterConfig) ErrorRouter {
+	if errorRouterFactory != nil {
+		return errorRouterFactory(config)
+	}
+	// Return a basic implementation - internal packages can register better implementations
+	return &basicErrorRouter{config: config}
 }
 
-// ErrorRouterFactory is the function signature for creating error routers
-type ErrorRouterFactory func(config *ErrorRouterConfig) ErrorRouter
-
-// errorRouterFactory holds the registered factory function
-var errorRouterFactory ErrorRouterFactory
-
 // RegisterErrorRouterFactory registers the error router factory function
-func RegisterErrorRouterFactory(factory ErrorRouterFactory) {
+func RegisterErrorRouterFactory(factory func(config *ErrorRouterConfig) ErrorRouter) {
 	errorRouterFactory = factory
 }
 
-// NewErrorRouter creates an error router from configuration
-// This function requires the internal error handling factory to be registered
-func NewErrorRouter(config *ErrorRouterConfig) ErrorRouter {
-	if errorRouterFactory == nil {
-		// Return a basic error router implementation if no factory is registered
-		return &basicErrorRouter{config: config}
-	}
-	return errorRouterFactory(config)
-}
-
-// =============================================================================
-// PUBLIC CONVENIENCE FUNCTIONS
-// =============================================================================
-
-// CreateEnhancedErrorEvent creates a structured error event with enhanced metadata
+// Convenience functions for error handling
 func CreateEnhancedErrorEvent(originalEvent Event, agentID string, err error, config *ErrorRouterConfig) Event {
 	router := NewErrorRouter(config)
 	return router.CreateEnhancedErrorEvent(originalEvent, agentID, err)
 }
 
-// IsRetryableError determines if an error should be retried based on its characteristics
 func IsRetryableError(errorData ErrorEventData) bool {
 	router := NewErrorRouter(nil)
 	return router.IsRetryableError(errorData)
 }
 
-// IncrementRetryCount creates a new event with incremented retry count
 func IncrementRetryCount(event Event) Event {
 	router := NewErrorRouter(nil)
 	return router.IncrementRetryCount(event)
 }
 
 // =============================================================================
-// BASIC ERROR ROUTER IMPLEMENTATION (FALLBACK)
+// INTERNAL IMPLEMENTATION
 // =============================================================================
 
-// basicErrorRouter provides a minimal implementation when no factory is registered
+var errorRouterFactory func(config *ErrorRouterConfig) ErrorRouter
+
+// basicErrorRouter provides a minimal implementation
 type basicErrorRouter struct {
 	config *ErrorRouterConfig
 }
 
 func (ber *basicErrorRouter) CreateEnhancedErrorEvent(originalEvent Event, agentID string, err error) Event {
-	// Minimal implementation - just create a basic error event
+	// Minimal implementation - internal packages can provide more sophisticated implementations
 	payload := EventData{
 		"error":        err.Error(),
 		"failed_agent": agentID,
@@ -170,7 +152,7 @@ func (ber *basicErrorRouter) CreateEnhancedErrorEvent(originalEvent Event, agent
 }
 
 func (ber *basicErrorRouter) IsRetryableError(errorData ErrorEventData) bool {
-	// Basic implementation - retry on certain error codes
+	// Basic implementation - internal packages can provide more sophisticated logic
 	switch errorData.ErrorCode {
 	case ErrorCodeTimeout, ErrorCodeNetwork, ErrorCodeLLM:
 		return errorData.RetryCount < 3
@@ -180,7 +162,7 @@ func (ber *basicErrorRouter) IsRetryableError(errorData ErrorEventData) bool {
 }
 
 func (ber *basicErrorRouter) IncrementRetryCount(event Event) Event {
-	// Basic implementation - just clone the event
+	// Basic implementation - internal packages can provide more sophisticated logic
 	newMetadata := make(map[string]string)
 	for k, v := range event.GetMetadata() {
 		newMetadata[k] = v

@@ -1,14 +1,10 @@
-// Package core provides retry logic functionality for AgentFlow error handling.
+// Package core provides essential retry logic types for AgentFlow error handling.
 package core
 
 import (
 	"context"
 	"time"
 )
-
-// =============================================================================
-// RETRY POLICY AND CONFIGURATION
-// =============================================================================
 
 // RetryPolicy defines the retry behavior configuration
 type RetryPolicy struct {
@@ -19,6 +15,17 @@ type RetryPolicy struct {
 	Jitter          bool          `json:"jitter"`           // Add random jitter to delays
 	RetryableErrors []string      `json:"retryable_errors"` // List of error codes that are retryable
 }
+
+// RetryHandler defines the interface for retry functionality
+type RetryHandler interface {
+	ExecuteWithRetry(ctx context.Context, operation func() error) error
+	ShouldRetry(attempt int, err error) bool
+	CalculateDelay(attempt int) time.Duration
+}
+
+// =============================================================================
+// PUBLIC FACTORY FUNCTIONS
+// =============================================================================
 
 // DefaultRetryPolicy returns a sensible default retry policy
 func DefaultRetryPolicy() *RetryPolicy {
@@ -36,136 +43,77 @@ func DefaultRetryPolicy() *RetryPolicy {
 	}
 }
 
-// =============================================================================
-// RETRY TYPES AND INTERFACES
-// =============================================================================
-
-// RetryFunc represents a function that can be retried
-type RetryFunc func() error
-
-// RetryResult contains the result of a retry operation
-type RetryResult struct {
-	Success       bool          `json:"success"`
-	AttemptCount  int           `json:"attempt_count"`
-	TotalDuration time.Duration `json:"total_duration"`
-	LastError     error         `json:"-"`
-	ErrorHistory  []string      `json:"error_history"`
-}
-
-// RetryCallbacks allows monitoring retry attempts
-type RetryCallbacks struct {
-	OnRetry   func(attempt int, err error, delay time.Duration)
-	OnGiveUp  func(attempt int, err error)
-	OnSuccess func(attempt int)
-}
-
-// RetryMetrics contains metrics about retry operations
-type RetryMetrics struct {
-	TotalAttempts   int           `json:"total_attempts"`
-	SuccessfulCalls int           `json:"successful_calls"`
-	FailedCalls     int           `json:"failed_calls"`
-	AverageAttempts float64       `json:"average_attempts"`
-	AverageDuration time.Duration `json:"average_duration"`
-}
-
-// =============================================================================
-// RETRIER INTERFACE AND FACTORY
-// =============================================================================
-
-// Retrier defines the interface for retry functionality
-type Retrier interface {
-	Execute(ctx context.Context, fn RetryFunc) *RetryResult
-	SetCallbacks(callbacks RetryCallbacks)
-}
-
-// RetryManager defines the interface for managing multiple retriers
-type RetryManager interface {
-	AddRetrier(name string, retrier Retrier)
-	GetRetrier(name string) (Retrier, bool)
-	GetMetrics(name string) (*RetryMetrics, bool)
-}
-
-// RetrierFactory is the function signature for creating retriers
-type RetrierFactory func(policy *RetryPolicy) Retrier
-
-// RetryManagerFactory is the function signature for creating retry managers
-type RetryManagerFactory func() RetryManager
-
-// retrierFactory holds the registered factory function
-var retrierFactory RetrierFactory
-
-// retryManagerFactory holds the registered factory function
-var retryManagerFactory RetryManagerFactory
-
-// RegisterRetrierFactory registers the retrier factory function
-func RegisterRetrierFactory(factory RetrierFactory) {
-	retrierFactory = factory
-}
-
-// RegisterRetryManagerFactory registers the retry manager factory function
-func RegisterRetryManagerFactory(factory RetryManagerFactory) {
-	retryManagerFactory = factory
-}
-
-// NewRetrier creates a retrier from policy
-// This function requires the internal error handling factory to be registered
-func NewRetrier(policy *RetryPolicy) Retrier {
-	if retrierFactory == nil {
-		// Return a basic retrier implementation if no factory is registered
-		return &basicRetrier{policy: policy}
+// NewRetryHandler creates a retry handler from policy
+// Implementation is provided by internal packages
+func NewRetryHandler(policy *RetryPolicy) RetryHandler {
+	if retryHandlerFactory != nil {
+		return retryHandlerFactory(policy)
 	}
-	return retrierFactory(policy)
+	// Return a basic implementation - internal packages can register better implementations
+	return &basicRetryHandler{policy: policy}
 }
 
-// NewRetryManager creates a retry manager
-// This function requires the internal error handling factory to be registered
-func NewRetryManager() RetryManager {
-	if retryManagerFactory == nil {
-		// Return a basic retry manager implementation if no factory is registered
-		return &basicRetryManager{retriers: make(map[string]Retrier)}
-	}
-	return retryManagerFactory()
+// RegisterRetryHandlerFactory registers the retry handler factory function
+func RegisterRetryHandlerFactory(factory func(policy *RetryPolicy) RetryHandler) {
+	retryHandlerFactory = factory
 }
 
 // =============================================================================
-// BASIC IMPLEMENTATIONS (FALLBACK)
+// INTERNAL IMPLEMENTATION
 // =============================================================================
 
-// basicRetrier provides a minimal implementation when no factory is registered
-type basicRetrier struct {
-	policy    *RetryPolicy
-	callbacks RetryCallbacks
+var retryHandlerFactory func(policy *RetryPolicy) RetryHandler
+
+// basicRetryHandler provides a minimal implementation
+type basicRetryHandler struct {
+	policy *RetryPolicy
 }
 
-func (br *basicRetrier) Execute(ctx context.Context, fn RetryFunc) *RetryResult {
-	// Basic implementation - just try once
-	err := fn()
-	return &RetryResult{
-		Success:      err == nil,
-		AttemptCount: 1,
-		LastError:    err,
+func (rh *basicRetryHandler) ExecuteWithRetry(ctx context.Context, operation func() error) error {
+	// Basic implementation - internal packages can provide more sophisticated implementations
+	var lastErr error
+	for attempt := 0; attempt <= rh.policy.MaxRetries; attempt++ {
+		if attempt > 0 {
+			delay := rh.CalculateDelay(attempt)
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(delay):
+			}
+		}
+
+		lastErr = operation()
+		if lastErr == nil {
+			return nil
+		}
+
+		if !rh.ShouldRetry(attempt, lastErr) {
+			break
+		}
 	}
+	return lastErr
 }
 
-func (br *basicRetrier) SetCallbacks(callbacks RetryCallbacks) {
-	br.callbacks = callbacks
+func (rh *basicRetryHandler) ShouldRetry(attempt int, err error) bool {
+	// Basic implementation - internal packages can provide more sophisticated logic
+	if attempt >= rh.policy.MaxRetries {
+		return false
+	}
+
+	errorStr := err.Error()
+	for _, retryableError := range rh.policy.RetryableErrors {
+		if errorStr == retryableError {
+			return true
+		}
+	}
+	return false
 }
 
-// basicRetryManager provides a minimal implementation when no factory is registered
-type basicRetryManager struct {
-	retriers map[string]Retrier
-}
-
-func (brm *basicRetryManager) AddRetrier(name string, retrier Retrier) {
-	brm.retriers[name] = retrier
-}
-
-func (brm *basicRetryManager) GetRetrier(name string) (Retrier, bool) {
-	retrier, exists := brm.retriers[name]
-	return retrier, exists
-}
-
-func (brm *basicRetryManager) GetMetrics(name string) (*RetryMetrics, bool) {
-	// Basic implementation - return empty metrics
-	return &RetryMetrics{}, false
+func (rh *basicRetryHandler) CalculateDelay(attempt int) time.Duration {
+	// Basic exponential backoff implementation
+	delay := time.Duration(float64(rh.policy.InitialDelay) * float64(attempt) * rh.policy.BackoffFactor)
+	if delay > rh.policy.MaxDelay {
+		delay = rh.policy.MaxDelay
+	}
+	return delay
 }

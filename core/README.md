@@ -1,85 +1,150 @@
-# AgentFlow Core Package
+# AgenticGoKit Core Package
 
-This package contains the public API for the AgentFlow framework. Use this package to build agent-based applications and workflows.
+This package provides the **clean public API** for AgenticGoKit, containing only essential interfaces, types, and factory functions. All implementation details have been moved to internal packages to provide a minimal, easy-to-use API surface.
 
-## Installation
+## 🎯 **Public API Overview**
 
-```bash
-go get github.com/kunalkushwaha/agentflow@latest
-```
+The core package contains **only the essential components** that third-party developers need:
 
-## Usage
+### Essential Interfaces
+- **`Agent`** - Core agent interface for custom implementations
+- **`AgentHandler`** - Event-driven agent processing interface  
+- **`ModelProvider`** - LLM provider interface for different backends
+- **`Memory`** - Memory storage interface for different providers
+- **`Orchestrator`** - Agent orchestration interface
+- **`LLMAdapter`** - Simplified LLM interaction interface
 
+### Essential Types
+- **`Config`** - Main configuration structure
+- **`Prompt`**, **`Response`**, **`Token`** - LLM interaction types
+- **`Event`**, **`State`**, **`Result`** - Core workflow types
+- **`MemoryEntry`** - Memory storage types
+
+### Factory Functions
+- **`LoadConfig()`** - Load configuration from file
+- **`NewOpenAIAdapter()`**, **`NewAzureOpenAIAdapter()`**, **`NewOllamaAdapter()`** - LLM providers
+- **`NewMemory()`** - Memory provider creation
+- **`NewModelProviderAdapter()`** - LLM adapter creation
+
+## 🚀 **Quick Start Examples**
+
+### Load Configuration
 ```go
-import agentflow "github.com/kunalkushwaha/agentflow/core"
+import "github.com/kunalkushwaha/agenticgokit/core"
+
+// Load from file
+config, err := core.LoadConfig("agentflow.toml")
+
+// Load defaults
+config, err := core.LoadConfig("")
 ```
 
-## Key Types
-
-- **`AgentHandler`**: Interface for implementing custom agents
-- **`Runner`**: Orchestrates agent execution and event processing
-- **`Event`**: Represents data and metadata flowing between agents
-- **`State`**: Manages data state throughout workflow execution
-- **`AgentResult`**: Contains the output of agent execution
-
-## Quick Example
-
+### Create LLM Provider
 ```go
-package main
+// OpenAI
+provider, err := core.NewOpenAIAdapter("api-key", "gpt-4", 2000, 0.7)
 
-import (
-    "context"
-    "log"
-    "time"
-    agentflow "github.com/kunalkushwaha/agentflow/core"
-)
+// Azure OpenAI
+provider, err := core.NewAzureOpenAIAdapter(core.AzureOpenAIAdapterOptions{
+    Endpoint: "https://your-resource.openai.azure.com/",
+    APIKey: "your-api-key",
+    ChatDeployment: "gpt-4",
+})
 
-type MyAgent struct{}
-
-func (a *MyAgent) Run(ctx context.Context, event agentflow.Event, state agentflow.State) (agentflow.AgentResult, error) {
-    outputState := agentflow.NewState()
-    outputState.Set("processed", true)
-    
-    return agentflow.AgentResult{
-        OutputState: outputState,
-        StartTime:   time.Now(),
-        EndTime:     time.Now(),
-        Duration:    time.Millisecond * 10,
-    }, nil
-}
-
-func main() {
-    agents := map[string]agentflow.AgentHandler{
-        "my-agent": &MyAgent{},
-    }
-
-    runner := agentflow.NewRunnerWithConfig(agentflow.RunnerConfig{
-        Agents:    agents,
-        QueueSize: 10,
-    })
-
-    // Start runner and emit events...
-}
+// Ollama
+provider, err := core.NewOllamaAdapter("http://localhost:11434", "llama2", 2000, 0.7)
 ```
 
-## Documentation
-
-- [Developer Guide](../docs/DevGuide.md)
-- [Library Integration Guide](../docs/agentflow_library_integration.md)
-- [Architecture Overview](../docs/Architecture.md)
-- [Examples](../examples/README.md)
-
-## LLM Integration
-
-To integrate with LLMs, use the public core API:
-
+### Create Memory Provider
 ```go
-import "github.com/kunalkushwaha/agentflow/core"
-
-adapter := core.NewOpenAIAdapter("your-api-key")
-model := core.ModelProvider(adapter)
-
-// Use model in your agent...
+memory, err := core.NewMemory(core.MemoryConfig{
+    Provider: "pgvector",
+    Connection: "postgres://user:pass@localhost/db",
+})
 ```
 
-Refer to the [LLM Integration Guide](../docs/LLMIntegration.md) for detailed instructions.
+### Simple LLM Interaction
+```go
+// Direct provider usage
+response, err := provider.Call(ctx, core.Prompt{
+    System: "You are a helpful assistant",
+    User: "Hello, world!",
+    Parameters: core.ModelParameters{
+        Temperature: core.FloatPtr(0.7),
+        MaxTokens: core.Int32Ptr(100),
+    },
+})
+
+// Simplified adapter usage
+adapter := core.NewModelProviderAdapter(provider)
+result, err := adapter.Complete(ctx, "You are helpful", "Hello!")
+```
+
+## 🏗️ **Architecture Principles**
+
+### Clean API Surface
+- **Minimal exports**: Only essential types and functions are public
+- **Implementation hiding**: All complex logic moved to internal packages
+- **Simple factories**: Easy-to-use creation functions
+- **Clear interfaces**: Well-defined contracts for extensibility
+
+### Backward Compatibility
+- **No breaking changes**: Existing code continues to work
+- **Same import paths**: Public APIs remain in the same locations
+- **Consistent signatures**: Function signatures unchanged
+
+### Extensibility
+- **Interface-based**: Implement interfaces for custom behavior
+- **Factory pattern**: Register custom implementations
+- **Configuration-driven**: Extend through configuration
+
+## 📦 **Package Structure**
+
+```
+core/                          # Public API only (essential files)
+├── agent.go                   # Agent interfaces
+├── config.go                  # Configuration types and loading
+├── event.go                   # Event types
+├── factory.go                 # Factory functions
+├── llm.go                     # LLM interfaces and factories
+├── memory.go                  # Memory interfaces and factories
+├── orchestrator.go            # Orchestrator interface
+├── result.go                  # Result types
+├── runner.go                  # Runner interface
+├── state.go                   # State interface
+├── context.go                 # Context types
+└── mcp.go                     # MCP interface
+
+internal/                      # Implementation details (hidden)
+├── config/                    # Configuration implementation
+├── agents/                    # Agent management
+├── memory/                    # Memory providers
+├── llm/                       # LLM adapters
+├── orchestrator/              # Orchestration logic
+└── ...                        # Other internal packages
+```
+
+## 🔧 **Migration Guide**
+
+If you were using internal APIs (not recommended), here's how to migrate:
+
+### Before (Internal APIs - Don't use)
+```go
+// ❌ Don't import internal packages
+import "github.com/kunalkushwaha/agenticgokit/internal/llm"
+```
+
+### After (Public APIs - Recommended)
+```go
+// ✅ Use public core package
+import "github.com/kunalkushwaha/agenticgokit/core"
+
+provider, err := core.NewOpenAIAdapter(apiKey, model, maxTokens, temperature)
+```
+
+## 📚 **Additional Resources**
+
+- **Examples**: See `examples/` directory for complete usage examples
+- **Configuration**: See `docs/guides/configuration-system.md`
+- **Extension Guide**: See `docs/guides/extending-agenticgokit.md`
+- **API Reference**: See `docs/reference/api.md`

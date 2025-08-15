@@ -233,6 +233,13 @@ type OrchestrationConfigToml struct {
 
 // LoadConfig loads configuration from the specified TOML file path
 func LoadConfig(path string) (*Config, error) {
+	// If path is empty, return default configuration
+	if path == "" {
+		config := &Config{}
+		applyConfigDefaults(config)
+		return config, nil
+	}
+
 	// Check if file exists
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return nil, fmt.Errorf("configuration file not found: %s", path)
@@ -476,7 +483,45 @@ func (c *Config) ApplyLoggingConfig() {
 
 // ValidateOrchestrationConfig validates orchestration configuration
 func (c *Config) ValidateOrchestrationConfig() error {
-	// TODO: This will be replaced with internal validator after refactoring is complete
+	// Basic validation to make tests pass during refactoring
+	if c.Orchestration.Mode == "" {
+		return fmt.Errorf("orchestration mode is required")
+	}
+
+	validModes := []string{"route", "collaborative", "sequential", "loop", "mixed"}
+	isValidMode := false
+	for _, mode := range validModes {
+		if c.Orchestration.Mode == mode {
+			isValidMode = true
+			break
+		}
+	}
+	if !isValidMode {
+		return fmt.Errorf("invalid orchestration mode: %s", c.Orchestration.Mode)
+	}
+
+	if c.Orchestration.TimeoutSeconds <= 0 {
+		return fmt.Errorf("orchestration timeout_seconds must be positive")
+	}
+
+	switch c.Orchestration.Mode {
+	case "sequential":
+		if len(c.Orchestration.SequentialAgents) == 0 {
+			return fmt.Errorf("sequential mode requires at least one agent")
+		}
+	case "loop":
+		if c.Orchestration.LoopAgent == "" {
+			return fmt.Errorf("loop mode requires a loop agent")
+		}
+		if c.Orchestration.MaxIterations <= 0 {
+			return fmt.Errorf("orchestration max_iterations must be positive for loop mode")
+		}
+	case "mixed":
+		if len(c.Orchestration.SequentialAgents) == 0 && len(c.Orchestration.CollaborativeAgents) == 0 {
+			return fmt.Errorf("mixed mode requires at least one sequential or collaborative agent")
+		}
+	}
+
 	return nil
 }
 
@@ -504,6 +549,9 @@ func (c *Config) InitializeProvider() (ModelProvider, error) {
 // applyConfigDefaults applies default values to configuration
 func applyConfigDefaults(config *Config) {
 	// Set defaults if not specified
+	if config.AgentFlow.Name == "" {
+		config.AgentFlow.Name = "default-agent"
+	}
 	if config.Logging.Level == "" {
 		config.Logging.Level = "info"
 	}

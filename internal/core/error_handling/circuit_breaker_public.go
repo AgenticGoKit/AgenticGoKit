@@ -1,12 +1,12 @@
-// Package core provides essential circuit breaker types for AgentFlow error handling.
-package core
+// Package error_handling provides circuit breaker functionality for AgentFlow error handling.
+package error_handling
 
 import (
 	"time"
 )
 
 // =============================================================================
-// PUBLIC CIRCUIT BREAKER TYPES
+// CIRCUIT BREAKER TYPES AND CONSTANTS
 // =============================================================================
 
 // CircuitBreakerState represents the state of a circuit breaker
@@ -35,6 +35,10 @@ func (s CircuitBreakerState) String() string {
 	}
 }
 
+// =============================================================================
+// CIRCUIT BREAKER CONFIGURATION
+// =============================================================================
+
 // CircuitBreakerConfig configures circuit breaker behavior
 type CircuitBreakerConfig struct {
 	FailureThreshold   int           `json:"failure_threshold"`    // Number of failures before opening
@@ -42,27 +46,6 @@ type CircuitBreakerConfig struct {
 	Timeout            time.Duration `json:"timeout"`              // How long to wait before transitioning to half-open
 	MaxConcurrentCalls int           `json:"max_concurrent_calls"` // Maximum concurrent calls in half-open state
 }
-
-// CircuitBreakerMetrics contains metrics about circuit breaker performance
-type CircuitBreakerMetrics struct {
-	State           CircuitBreakerState `json:"state"`
-	FailureCount    int                 `json:"failure_count"`
-	SuccessCount    int                 `json:"success_count"`
-	LastFailureTime time.Time           `json:"last_failure_time"`
-	ConcurrentCalls int                 `json:"concurrent_calls"`
-}
-
-// CircuitBreaker defines the interface for circuit breaker functionality
-type CircuitBreaker interface {
-	Call(fn func() error) error
-	SetStateChangeCallback(callback func(from, to CircuitBreakerState))
-	GetState() CircuitBreakerState
-	GetMetrics() CircuitBreakerMetrics
-}
-
-// =============================================================================
-// PUBLIC FACTORY FUNCTIONS
-// =============================================================================
 
 // DefaultCircuitBreakerConfig returns a sensible default configuration
 func DefaultCircuitBreakerConfig() *CircuitBreakerConfig {
@@ -74,25 +57,57 @@ func DefaultCircuitBreakerConfig() *CircuitBreakerConfig {
 	}
 }
 
-// NewCircuitBreaker creates a circuit breaker from configuration
-// Implementation is provided by internal packages
-func NewCircuitBreaker(config *CircuitBreakerConfig) CircuitBreaker {
-	// Return a basic implementation - internal packages can register better implementations
-	return &basicCircuitBreaker{config: config}
+// =============================================================================
+// CIRCUIT BREAKER METRICS
+// =============================================================================
+
+// CircuitBreakerMetrics contains metrics about circuit breaker performance
+type CircuitBreakerMetrics struct {
+	State           CircuitBreakerState `json:"state"`
+	FailureCount    int                 `json:"failure_count"`
+	SuccessCount    int                 `json:"success_count"`
+	LastFailureTime time.Time           `json:"last_failure_time"`
+	ConcurrentCalls int                 `json:"concurrent_calls"`
 }
 
+// =============================================================================
+// CIRCUIT BREAKER INTERFACE AND FACTORY
+// =============================================================================
+
+// CircuitBreaker defines the interface for circuit breaker functionality
+type CircuitBreaker interface {
+	Call(fn func() error) error
+	SetStateChangeCallback(callback func(from, to CircuitBreakerState))
+	GetState() CircuitBreakerState
+	GetMetrics() CircuitBreakerMetrics
+}
+
+// CircuitBreakerFactory is the function signature for creating circuit breakers
+type CircuitBreakerFactory func(config *CircuitBreakerConfig) CircuitBreaker
+
+// circuitBreakerFactory holds the registered factory function
+var circuitBreakerFactory CircuitBreakerFactory
+
 // RegisterCircuitBreakerFactory registers the circuit breaker factory function
-func RegisterCircuitBreakerFactory(factory func(config *CircuitBreakerConfig) CircuitBreaker) {
+func RegisterCircuitBreakerFactory(factory CircuitBreakerFactory) {
 	circuitBreakerFactory = factory
 }
 
+// NewCircuitBreaker creates a circuit breaker from configuration
+// This function requires the internal error handling factory to be registered
+func NewCircuitBreaker(config *CircuitBreakerConfig) CircuitBreaker {
+	if circuitBreakerFactory == nil {
+		// Return a basic circuit breaker implementation if no factory is registered
+		return &basicCircuitBreaker{config: config}
+	}
+	return circuitBreakerFactory(config)
+}
+
 // =============================================================================
-// INTERNAL IMPLEMENTATION
+// BASIC CIRCUIT BREAKER IMPLEMENTATION (FALLBACK)
 // =============================================================================
 
-var circuitBreakerFactory func(config *CircuitBreakerConfig) CircuitBreaker
-
-// basicCircuitBreaker provides a minimal implementation
+// basicCircuitBreaker provides a minimal implementation when no factory is registered
 type basicCircuitBreaker struct {
 	config *CircuitBreakerConfig
 	state  CircuitBreakerState
@@ -100,7 +115,6 @@ type basicCircuitBreaker struct {
 
 func (bcb *basicCircuitBreaker) Call(fn func() error) error {
 	// Basic implementation - just call the function
-	// Internal packages can register more sophisticated implementations
 	return fn()
 }
 
