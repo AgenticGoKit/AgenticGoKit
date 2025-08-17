@@ -133,7 +133,7 @@ func TestPublicAPIComprehensive(t *testing.T) {
 
 		// Test orchestrator interface can be implemented
 		var _ Orchestrator = &mockOrchestrator{}
-		
+
 		// Test orchestration modes are defined
 		if OrchestrationRoute == "" {
 			t.Error("OrchestrationRoute should be defined")
@@ -152,7 +152,7 @@ func TestPublicAPIComprehensive(t *testing.T) {
 
 		// Test runner interface can be implemented
 		var _ Runner = &mockRunner{}
-		
+
 		// Test hook points are defined
 		if HookBeforeAgentRun == "" {
 			t.Error("HookBeforeAgentRun should be defined")
@@ -306,15 +306,30 @@ func TestInterfaceImplementation(t *testing.T) {
 
 // Mock implementations for interface testing
 type mockAgent struct{}
+
 func (a *mockAgent) Run(ctx context.Context, inputState State) (State, error) { return inputState, nil }
-func (a *mockAgent) Name() string { return "mock-agent" }
+func (a *mockAgent) HandleEvent(ctx context.Context, event Event, state State) (AgentResult, error) {
+	return AgentResult{OutputState: state}, nil
+}
+func (a *mockAgent) Name() string                         { return "mock-agent" }
+func (a *mockAgent) GetRole() string                      { return "mock-role" }
+func (a *mockAgent) GetDescription() string               { return "Mock agent for testing" }
+func (a *mockAgent) GetCapabilities() []string            { return []string{"mock"} }
+func (a *mockAgent) GetSystemPrompt() string              { return "You are a mock agent." }
+func (a *mockAgent) GetTimeout() time.Duration            { return 30 * time.Second }
+func (a *mockAgent) IsEnabled() bool                      { return true }
+func (a *mockAgent) GetLLMConfig() *ResolvedLLMConfig     { return nil }
+func (a *mockAgent) Initialize(ctx context.Context) error { return nil }
+func (a *mockAgent) Shutdown(ctx context.Context) error   { return nil }
 
 type mockAgentHandler struct{}
+
 func (h *mockAgentHandler) Run(ctx context.Context, event Event, state State) (AgentResult, error) {
 	return AgentResult{OutputState: state}, nil
 }
 
 type mockModelProvider struct{}
+
 func (p *mockModelProvider) Call(ctx context.Context, prompt Prompt) (Response, error) {
 	return Response{Content: "mock response"}, nil
 }
@@ -328,61 +343,78 @@ func (p *mockModelProvider) Embeddings(ctx context.Context, texts []string) ([][
 }
 
 type mockMemory struct{}
+
 func (m *mockMemory) Store(ctx context.Context, content string, tags ...string) error { return nil }
-func (m *mockMemory) Query(ctx context.Context, query string, limit ...int) ([]Result, error) { return nil, nil }
-func (m *mockMemory) Remember(ctx context.Context, key string, value any) error { return nil }
-func (m *mockMemory) Recall(ctx context.Context, key string) (any, error) { return nil, nil }
+func (m *mockMemory) Query(ctx context.Context, query string, limit ...int) ([]Result, error) {
+	return nil, nil
+}
+func (m *mockMemory) Remember(ctx context.Context, key string, value any) error  { return nil }
+func (m *mockMemory) Recall(ctx context.Context, key string) (any, error)        { return nil, nil }
 func (m *mockMemory) AddMessage(ctx context.Context, role, content string) error { return nil }
-func (m *mockMemory) GetHistory(ctx context.Context, limit ...int) ([]Message, error) { return nil, nil }
-func (m *mockMemory) NewSession() string { return "mock-session" }
+func (m *mockMemory) GetHistory(ctx context.Context, limit ...int) ([]Message, error) {
+	return nil, nil
+}
+func (m *mockMemory) NewSession() string                                               { return "mock-session" }
 func (m *mockMemory) SetSession(ctx context.Context, sessionID string) context.Context { return ctx }
-func (m *mockMemory) ClearSession(ctx context.Context) error { return nil }
-func (m *mockMemory) Close() error { return nil }
-func (m *mockMemory) IngestDocument(ctx context.Context, doc Document) error { return nil }
-func (m *mockMemory) IngestDocuments(ctx context.Context, docs []Document) error { return nil }
-func (m *mockMemory) SearchKnowledge(ctx context.Context, query string, options ...SearchOption) ([]KnowledgeResult, error) { return nil, nil }
-func (m *mockMemory) SearchAll(ctx context.Context, query string, options ...SearchOption) (*HybridResult, error) { return nil, nil }
-func (m *mockMemory) BuildContext(ctx context.Context, query string, options ...ContextOption) (*RAGContext, error) { return nil, nil }
+func (m *mockMemory) ClearSession(ctx context.Context) error                           { return nil }
+func (m *mockMemory) Close() error                                                     { return nil }
+func (m *mockMemory) IngestDocument(ctx context.Context, doc Document) error           { return nil }
+func (m *mockMemory) IngestDocuments(ctx context.Context, docs []Document) error       { return nil }
+func (m *mockMemory) SearchKnowledge(ctx context.Context, query string, options ...SearchOption) ([]KnowledgeResult, error) {
+	return nil, nil
+}
+func (m *mockMemory) SearchAll(ctx context.Context, query string, options ...SearchOption) (*HybridResult, error) {
+	return nil, nil
+}
+func (m *mockMemory) BuildContext(ctx context.Context, query string, options ...ContextOption) (*RAGContext, error) {
+	return nil, nil
+}
 
 type mockOrchestrator struct{}
-func (o *mockOrchestrator) Dispatch(ctx context.Context, event Event) (AgentResult, error) { return AgentResult{}, nil }
+
+func (o *mockOrchestrator) Dispatch(ctx context.Context, event Event) (AgentResult, error) {
+	return AgentResult{}, nil
+}
 func (o *mockOrchestrator) RegisterAgent(name string, handler AgentHandler) error { return nil }
-func (o *mockOrchestrator) GetCallbackRegistry() *CallbackRegistry { return NewCallbackRegistry() }
-func (o *mockOrchestrator) Stop() {}
+func (o *mockOrchestrator) GetCallbackRegistry() *CallbackRegistry                { return NewCallbackRegistry() }
+func (o *mockOrchestrator) Stop()                                                 {}
 
 type mockRunner struct{}
-func (r *mockRunner) Emit(event Event) error { return nil }
-func (r *mockRunner) RegisterAgent(name string, handler AgentHandler) error { return nil }
+
+func (r *mockRunner) Emit(event Event) error                                              { return nil }
+func (r *mockRunner) RegisterAgent(name string, handler AgentHandler) error               { return nil }
 func (r *mockRunner) RegisterCallback(hook HookPoint, name string, cb CallbackFunc) error { return nil }
-func (r *mockRunner) UnregisterCallback(hook HookPoint, name string) {}
-func (r *mockRunner) Start(ctx context.Context) error { return nil }
-func (r *mockRunner) Stop() {}
-func (r *mockRunner) Wait() {}
-func (r *mockRunner) GetTraceLogger() TraceLogger { return nil }
-func (r *mockRunner) DumpTrace(sessionID string) ([]TraceEntry, error) { return []TraceEntry{}, nil }
-func (r *mockRunner) GetCallbackRegistry() *CallbackRegistry { return NewCallbackRegistry() }
+func (r *mockRunner) UnregisterCallback(hook HookPoint, name string)                      {}
+func (r *mockRunner) Start(ctx context.Context) error                                     { return nil }
+func (r *mockRunner) Stop()                                                               {}
+func (r *mockRunner) Wait()                                                               {}
+func (r *mockRunner) GetTraceLogger() TraceLogger                                         { return nil }
+func (r *mockRunner) DumpTrace(sessionID string) ([]TraceEntry, error)                    { return []TraceEntry{}, nil }
+func (r *mockRunner) GetCallbackRegistry() *CallbackRegistry                              { return NewCallbackRegistry() }
 
 type mockEvent struct{}
-func (e *mockEvent) GetID() string { return "mock-id" }
-func (e *mockEvent) GetTimestamp() time.Time { return time.Now() }
-func (e *mockEvent) GetTargetAgentID() string { return "mock-target" }
-func (e *mockEvent) GetSourceAgentID() string { return "mock-source" }
-func (e *mockEvent) GetData() EventData { return EventData{} }
-func (e *mockEvent) GetMetadata() map[string]string { return map[string]string{} }
-func (e *mockEvent) GetSessionID() string { return "mock-session" }
+
+func (e *mockEvent) GetID() string                              { return "mock-id" }
+func (e *mockEvent) GetTimestamp() time.Time                    { return time.Now() }
+func (e *mockEvent) GetTargetAgentID() string                   { return "mock-target" }
+func (e *mockEvent) GetSourceAgentID() string                   { return "mock-source" }
+func (e *mockEvent) GetData() EventData                         { return EventData{} }
+func (e *mockEvent) GetMetadata() map[string]string             { return map[string]string{} }
+func (e *mockEvent) GetSessionID() string                       { return "mock-session" }
 func (e *mockEvent) GetMetadataValue(key string) (string, bool) { return "", false }
-func (e *mockEvent) SetID(id string) {}
-func (e *mockEvent) SetTargetAgentID(id string) {}
-func (e *mockEvent) SetSourceAgentID(id string) {}
-func (e *mockEvent) SetData(key string, value any) {}
-func (e *mockEvent) SetMetadata(key string, value string) {}
+func (e *mockEvent) SetID(id string)                            {}
+func (e *mockEvent) SetTargetAgentID(id string)                 {}
+func (e *mockEvent) SetSourceAgentID(id string)                 {}
+func (e *mockEvent) SetData(key string, value any)              {}
+func (e *mockEvent) SetMetadata(key string, value string)       {}
 
 type mockState struct{}
-func (s *mockState) Get(key string) (any, bool) { return nil, false }
-func (s *mockState) Set(key string, value any) {}
+
+func (s *mockState) Get(key string) (any, bool)        { return nil, false }
+func (s *mockState) Set(key string, value any)         {}
 func (s *mockState) GetMeta(key string) (string, bool) { return "", false }
-func (s *mockState) SetMeta(key string, value string) {}
-func (s *mockState) Keys() []string { return []string{} }
-func (s *mockState) MetaKeys() []string { return []string{} }
-func (s *mockState) Clone() State { return &mockState{} }
-func (s *mockState) Merge(source State) {}
+func (s *mockState) SetMeta(key string, value string)  {}
+func (s *mockState) Keys() []string                    { return []string{} }
+func (s *mockState) MetaKeys() []string                { return []string{} }
+func (s *mockState) Clone() State                      { return &mockState{} }
+func (s *mockState) Merge(source State)                {}

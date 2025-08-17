@@ -281,14 +281,14 @@ func displayStatsDefault(stats core.MCPCacheStats) error {
 	fmt.Println("MCP Cache Statistics")
 	fmt.Println("========================")
 	fmt.Printf("Cache Performance:\n")
-	fmt.Printf("   • Total Keys: %d\n", stats.TotalKeys)
-	fmt.Printf("   • Hit Rate: %.2f%% (%d hits, %d misses)\n", stats.HitRate, stats.HitCount, stats.MissCount)
-	fmt.Printf("   • Average Latency: %v\n", stats.AverageLatency)
+	fmt.Printf("   - Total Keys: %d\n", stats.TotalKeys)
+	fmt.Printf("   - Hit Rate: %.2f%% (%d hits, %d misses)\n", stats.HitRate, stats.HitCount, stats.MissCount)
+	fmt.Printf("   - Average Latency: %v\n", stats.AverageLatency)
 	fmt.Printf("\nMemory Usage:\n")
-	fmt.Printf("   • Total Size: %s\n", formatBytes(stats.TotalSize))
-	fmt.Printf("   • Evictions: %d\n", stats.EvictionCount)
+	fmt.Printf("   - Total Size: %s\n", formatBytes(stats.TotalSize))
+	fmt.Printf("   - Evictions: %d\n", stats.EvictionCount)
 	fmt.Printf("\nMaintenance:\n")
-	fmt.Printf("   • Last Cleanup: %v\n", stats.LastCleanup.Format(time.RFC3339))
+	fmt.Printf("   - Last Cleanup: %v\n", stats.LastCleanup.Format(time.RFC3339))
 
 	return nil
 }
@@ -441,7 +441,7 @@ func showCacheInfo(ctx context.Context, cacheManager core.MCPCacheManager) error
 
 	// Show per-tool/server breakdown if verbose
 	if cacheVerbose {
-		fmt.Println("\n📋 Cache Breakdown:")
+		fmt.Println("\nCache Breakdown:")
 		// This would show per-tool and per-server statistics
 		fmt.Println("   (Detailed breakdown not yet implemented)")
 	}
@@ -454,9 +454,9 @@ func warmUpCaches(ctx context.Context, cacheManager core.MCPCacheManager) error 
 	fmt.Println("🔥 Warming up caches...")
 	fmt.Println("This feature is not yet implemented.")
 	fmt.Println("Future implementation will:")
-	fmt.Println("   • Execute common tool combinations")
-	fmt.Println("   • Pre-populate frequently accessed results")
-	fmt.Println("   • Use machine learning to predict cache needs")
+	fmt.Println("   - Execute common tool combinations")
+	fmt.Println("   - Pre-populate frequently accessed results")
+	fmt.Println("   - Use machine learning to predict cache needs")
 
 	return nil
 }
@@ -528,4 +528,3 @@ func init() {
 	cacheInfoCmd.Flags().StringVar(&cacheServer, "server", "", "Show info for specific server")
 	cacheInfoCmd.Flags().StringVar(&cacheTool, "tool", "", "Show info for specific tool")
 }
-

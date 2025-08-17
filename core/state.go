@@ -39,11 +39,20 @@ type SimpleState struct {
 var _ State = (*SimpleState)(nil)
 
 // NewState creates an empty SimpleState.
-func NewState() *SimpleState {
-	return &SimpleState{
+func NewState(initialData ...map[string]any) *SimpleState {
+	s := &SimpleState{
 		data: make(map[string]any),
 		meta: make(map[string]string),
 	}
+
+	// If initial data is provided, add it to the state
+	if len(initialData) > 0 && initialData[0] != nil {
+		for k, v := range initialData[0] {
+			s.data[k] = v
+		}
+	}
+
+	return s
 }
 
 // stateJSON is a helper struct for JSON marshaling/unmarshaling SimpleState.

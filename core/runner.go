@@ -470,17 +470,18 @@ const (
 	callbackStateKeyAgentResult = "__agentResult"
 	callbackStateKeyAgentError  = "__agentError"
 )
+
 // =============================================================================
 // RUNNER CONFIGURATION
 // =============================================================================
 
 // RunnerConfig holds configuration for creating runners
 type RunnerConfig struct {
-	QueueSize int                       `json:"queue_size"`
-	Agents    map[string]AgentHandler   `json:"agents"`
-	Memory    Memory                    `json:"memory"`
-	Callbacks *CallbackRegistry         `json:"callbacks"`
-	SessionID string                    `json:"session_id"`
+	QueueSize int                     `json:"queue_size"`
+	Agents    map[string]AgentHandler `json:"agents"`
+	Memory    Memory                  `json:"memory"`
+	Callbacks *CallbackRegistry       `json:"callbacks"`
+	SessionID string                  `json:"session_id"`
 }
 
 // DefaultRunnerConfig returns sensible defaults for runner configuration
@@ -566,4 +567,22 @@ func (t *basicTraceLogger) Log(entry TraceEntry) error {
 
 func (t *basicTraceLogger) GetTrace(sessionID string) ([]TraceEntry, error) {
 	return []TraceEntry{}, nil
+}
+
+// NewRunnerFromConfig creates a new runner by loading configuration from a file path
+func NewRunnerFromConfig(configPath string) (Runner, error) {
+	_, err := LoadConfig(configPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load config from %s: %w", configPath, err)
+	}
+
+	runnerConfig := RunnerConfig{
+		QueueSize: 1000,                          // Default queue size
+		Agents:    make(map[string]AgentHandler), // Will be populated when agents are registered
+		Memory:    nil,                           // Can be set later if needed
+		Callbacks: NewCallbackRegistry(),
+		SessionID: "", // Will be set when starting
+	}
+
+	return NewRunnerWithConfig(runnerConfig), nil
 }

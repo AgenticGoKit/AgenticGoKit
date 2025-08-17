@@ -3,7 +3,10 @@ package core
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/kunalkushwaha/agenticgokit/internal/llm"
@@ -62,6 +65,36 @@ type ModelProvider interface {
 type LLMAdapter interface {
 	// Complete sends a prompt to the LLM and returns the completion
 	Complete(ctx context.Context, systemPrompt string, userPrompt string) (string, error)
+}
+
+// =============================================================================
+// REGISTRY FOR MODEL PROVIDERS (Plugins register here)
+// =============================================================================
+
+// ModelProviderFactory is a constructor for a ModelProvider based on config.
+type ModelProviderFactory func(LLMProviderConfig) (ModelProvider, error)
+
+var (
+	modelProviderFactoriesMu sync.RWMutex
+	modelProviderFactories   = map[string]ModelProviderFactory{}
+)
+
+// RegisterModelProviderFactory registers a factory under a provider type key (e.g., "openai").
+// Keys are stored in lowercase.
+func RegisterModelProviderFactory(name string, factory ModelProviderFactory) {
+	if name == "" || factory == nil {
+		return
+	}
+	modelProviderFactoriesMu.Lock()
+	modelProviderFactories[strings.ToLower(name)] = factory
+	modelProviderFactoriesMu.Unlock()
+}
+
+func getModelProviderFactory(name string) (ModelProviderFactory, bool) {
+	modelProviderFactoriesMu.RLock()
+	f, ok := modelProviderFactories[strings.ToLower(name)]
+	modelProviderFactoriesMu.RUnlock()
+	return f, ok
 }
 
 // Helper functions for creating parameter pointers
@@ -126,26 +159,32 @@ func NewOllamaAdapter(baseURL, model string, maxTokens int, temperature float32)
 
 // LLMProviderConfig holds configuration for creating LLM providers
 type LLMProviderConfig struct {
-	Type        string        `json:"type" toml:"type"`
-	APIKey      string        `json:"api_key,omitempty" toml:"api_key,omitempty"`
-	Model       string        `json:"model,omitempty" toml:"model,omitempty"`
-	MaxTokens   int           `json:"max_tokens,omitempty" toml:"max_tokens,omitempty"`
-	Temperature float32       `json:"temperature,omitempty" toml:"temperature,omitempty"`
-	
+	Type        string  `json:"type" toml:"type"`
+	APIKey      string  `json:"api_key,omitempty" toml:"api_key,omitempty"`
+	Model       string  `json:"model,omitempty" toml:"model,omitempty"`
+	MaxTokens   int     `json:"max_tokens,omitempty" toml:"max_tokens,omitempty"`
+	Temperature float64 `json:"temperature,omitempty" toml:"temperature,omitempty"`
+
 	// Azure-specific fields
 	Endpoint            string `json:"endpoint,omitempty" toml:"endpoint,omitempty"`
 	ChatDeployment      string `json:"chat_deployment,omitempty" toml:"chat_deployment,omitempty"`
 	EmbeddingDeployment string `json:"embedding_deployment,omitempty" toml:"embedding_deployment,omitempty"`
-	
+
 	// Ollama-specific fields
 	BaseURL string `json:"base_url,omitempty" toml:"base_url,omitempty"`
-	
+
 	// HTTP client configuration
 	HTTPTimeout time.Duration `json:"http_timeout,omitempty" toml:"http_timeout,omitempty"`
 }
 
 // NewModelProviderFromConfig creates a ModelProvider from configuration
 func NewModelProviderFromConfig(config LLMProviderConfig) (ModelProvider, error) {
+	// 1) Try plugin registry first
+	if f, ok := getModelProviderFactory(config.Type); ok {
+		return f(config)
+	}
+
+	// 2) Fallback to legacy internal implementation to avoid breaking existing users during transition
 	internalConfig := llm.PublicLLMProviderConfig{
 		Type:                config.Type,
 		APIKey:              config.APIKey,
@@ -158,12 +197,16 @@ func NewModelProviderFromConfig(config LLMProviderConfig) (ModelProvider, error)
 		BaseURL:             config.BaseURL,
 		HTTPTimeout:         config.HTTPTimeout,
 	}
-	
+
 	wrapper, err := llm.NewModelProviderFromConfigWrapped(internalConfig)
 	if err != nil {
-		return nil, err
+		// Provide actionable error guiding users to import a plugin
+		if strings.TrimSpace(config.Type) != "" {
+			return nil, fmt.Errorf("llm provider '%s' not registered. Import the plugin: _ 'github.com/kunalkushwaha/agenticgokit/plugins/llm/%s' (original error: %w)", config.Type, strings.ToLower(config.Type), err)
+		}
+		return nil, fmt.Errorf("llm provider type not specified; set LLMProviderConfig.Type and import the matching plugin (original error: %w)", err)
 	}
-	
+
 	return &coreModelProviderAdapter{adapter: llm.NewPublicProviderAdapter(wrapper)}, nil
 }
 
@@ -274,4 +317,22 @@ func (a *directCoreLLMAdapter) Complete(ctx context.Context, systemPrompt string
 	return resp.Content, nil
 }
 
+// NewLLMProvider creates a ModelProvider from AgentLLMConfig
+func NewLLMProvider(config AgentLLMConfig) (ModelProvider, error) {
+	providerConfig := LLMProviderConfig{
+		Type:        config.Provider,
+		Model:       config.Model,
+		Temperature: config.Temperature,
+		MaxTokens:   config.MaxTokens,
+		HTTPTimeout: time.Duration(config.TimeoutSeconds) * time.Second,
+	}
 
+	return NewModelProviderFromConfig(providerConfig)
+}
+
+// =============================================================================
+// TYPE ALIASES FOR BACKWARD COMPATIBILITY
+// =============================================================================
+
+// LLMConfig is an alias for AgentLLMConfig for backward compatibility
+type LLMConfig = AgentLLMConfig

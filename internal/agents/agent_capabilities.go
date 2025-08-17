@@ -171,12 +171,12 @@ func (c *BaseCapability) Validate(others []AgentCapability) error {
 // LLMCapability adds language model integration to agents
 type LLMCapability struct {
 	BaseCapability
-	Provider ModelProvider
-	Config   LLMConfig
+	Provider core.ModelProvider
+	Config   core.LLMConfig
 }
 
 // NewLLMCapability creates a new LLM capability
-func NewLLMCapability(provider ModelProvider, config LLMConfig) *LLMCapability {
+func NewLLMCapability(provider core.ModelProvider, config core.LLMConfig) *LLMCapability {
 	return &LLMCapability{
 		BaseCapability: BaseCapability{
 			name:     string(CapabilityTypeLLM),
@@ -252,11 +252,11 @@ func (c *CacheCapability) Configure(agent CapabilityConfigurable) error {
 // MetricsCapability adds metrics collection to agents
 type MetricsCapability struct {
 	BaseCapability
-	Config MetricsConfig
+	Config core.MetricsConfig
 }
 
 // NewMetricsCapability creates a new metrics capability
-func NewMetricsCapability(config MetricsConfig) *MetricsCapability {
+func NewMetricsCapability(config core.MetricsConfig) *MetricsCapability {
 	return &MetricsCapability{
 		BaseCapability: BaseCapability{
 			name:     string(CapabilityTypeMetrics),
@@ -300,8 +300,8 @@ func DefaultLLMConfig() LLMConfig {
 }
 
 // DefaultMetricsConfig returns sensible defaults for metrics configuration
-func DefaultMetricsConfig() MetricsConfig {
-	return MetricsConfig{
+func DefaultMetricsConfig() core.MetricsConfig {
+	return core.MetricsConfig{
 		Enabled:           true,
 		Port:              8080,
 		Path:              "/metrics",

@@ -61,11 +61,11 @@ Examples:
 }
 
 var (
-	validateVerbose     bool
-	validateLevel       string
-	validateScope       string
-	validateOutput      string
-	validateFix         bool
+	validateVerbose         bool
+	validateLevel           string
+	validateScope           string
+	validateOutput          string
+	validateFix             bool
 	validateShowSuggestions bool
 )
 
@@ -73,23 +73,23 @@ func init() {
 	rootCmd.AddCommand(validateCmd)
 
 	// Validation level flags
-	validateCmd.Flags().StringVar(&validateLevel, "level", "standard", 
+	validateCmd.Flags().StringVar(&validateLevel, "level", "standard",
 		"Validation level (basic, standard, strict, complete)")
-	validateCmd.Flags().BoolVarP(&validateVerbose, "verbose", "v", false, 
+	validateCmd.Flags().BoolVarP(&validateVerbose, "verbose", "v", false,
 		"Show detailed validation output")
-	
+
 	// Validation scope flags
-	validateCmd.Flags().StringVar(&validateScope, "scope", "all", 
+	validateCmd.Flags().StringVar(&validateScope, "scope", "all",
 		"Validation scope (all, config-only, structure-only, agents-only)")
-	validateCmd.Flags().BoolVar(&validateFix, "fix", false, 
+	validateCmd.Flags().BoolVar(&validateFix, "fix", false,
 		"Attempt to fix common configuration issues automatically")
-	validateCmd.Flags().BoolVar(&validateShowSuggestions, "suggestions", true, 
+	validateCmd.Flags().BoolVar(&validateShowSuggestions, "suggestions", true,
 		"Show optimization suggestions and recommendations")
-	
+
 	// Output format flags
-	validateCmd.Flags().StringVarP(&validateOutput, "output", "o", "text", 
+	validateCmd.Flags().StringVarP(&validateOutput, "output", "o", "text",
 		"Output format (text, json, yaml)")
-	
+
 	// Add completion functions
 	validateCmd.RegisterFlagCompletionFunc("level", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"basic", "standard", "strict", "complete"}, cobra.ShellCompDirectiveNoFileComp
@@ -108,42 +108,42 @@ func runValidateCommand(cmd *cobra.Command, args []string) {
 	if len(args) > 0 {
 		configPath = args[0]
 	}
-	
+
 	// Set the working directory to the config file's directory for validation
 	configDir := filepath.Dir(configPath)
 	if configDir != "." && configDir != "" {
 		// Store original working directory
 		originalWd, err := os.Getwd()
 		if err != nil {
-			fmt.Printf("❌ Error getting current directory: %v\n", err)
+			fmt.Printf("Error getting current directory: %v\n", err)
 			os.Exit(1)
 		}
-		
+
 		// Change to config directory for validation
 		if err := os.Chdir(configDir); err != nil {
-			fmt.Printf("❌ Error changing to config directory %s: %v\n", configDir, err)
+			fmt.Printf("Error changing to config directory %s: %v\n", configDir, err)
 			os.Exit(1)
 		}
-		
+
 		// Restore original directory after validation
 		defer func() {
 			os.Chdir(originalWd)
 		}()
-		
+
 		// Update config path to be relative to the new working directory
 		configPath = filepath.Base(configPath)
 	}
-	
+
 	// Initialize validation results
 	results := &ValidationResults{
-		ConfigPath: configPath,
-		Level:      validateLevel,
-		Scope:      validateScope,
-		Errors:     []ValidationIssue{},
-		Warnings:   []ValidationIssue{},
+		ConfigPath:  configPath,
+		Level:       validateLevel,
+		Scope:       validateScope,
+		Errors:      []ValidationIssue{},
+		Warnings:    []ValidationIssue{},
 		Suggestions: []ValidationIssue{},
 	}
-	
+
 	// Print validation header
 	if validateOutput == "text" {
 		fmt.Printf("🔍 AgenticGoKit Configuration Validation\n")
@@ -153,7 +153,7 @@ func runValidateCommand(cmd *cobra.Command, args []string) {
 		fmt.Printf("Scope:  %s\n", validateScope)
 		fmt.Println()
 	}
-	
+
 	// Perform validation based on scope
 	switch validateScope {
 	case "config-only":
@@ -165,15 +165,15 @@ func runValidateCommand(cmd *cobra.Command, args []string) {
 	default:
 		validateComplete(results)
 	}
-	
+
 	// Apply fixes if requested
 	if validateFix && len(results.Errors) > 0 {
 		applyAutomaticFixes(results)
 	}
-	
+
 	// Output results
 	outputValidationResults(results)
-	
+
 	// Exit with appropriate code
 	if len(results.Errors) > 0 {
 		os.Exit(1)
@@ -182,34 +182,34 @@ func runValidateCommand(cmd *cobra.Command, args []string) {
 
 // ValidationIssue represents a validation issue
 type ValidationIssue struct {
-	Type        string `json:"type"`        // "error", "warning", "suggestion"
-	Code        string `json:"code"`        // Error code for programmatic handling
-	Field       string `json:"field"`       // Configuration field
-	Message     string `json:"message"`     // Human-readable message
-	Suggestion  string `json:"suggestion"`  // Suggested fix
-	Severity    string `json:"severity"`    // "critical", "high", "medium", "low"
-	Fixable     bool   `json:"fixable"`     // Whether this can be auto-fixed
+	Type       string `json:"type"`       // "error", "warning", "suggestion"
+	Code       string `json:"code"`       // Error code for programmatic handling
+	Field      string `json:"field"`      // Configuration field
+	Message    string `json:"message"`    // Human-readable message
+	Suggestion string `json:"suggestion"` // Suggested fix
+	Severity   string `json:"severity"`   // "critical", "high", "medium", "low"
+	Fixable    bool   `json:"fixable"`    // Whether this can be auto-fixed
 }
 
 // ValidationResults holds all validation results
 type ValidationResults struct {
-	ConfigPath   string            `json:"config_path"`
-	Level        string            `json:"level"`
-	Scope        string            `json:"scope"`
-	Errors       []ValidationIssue `json:"errors"`
-	Warnings     []ValidationIssue `json:"warnings"`
-	Suggestions  []ValidationIssue `json:"suggestions"`
-	Summary      ValidationSummary `json:"summary"`
+	ConfigPath  string            `json:"config_path"`
+	Level       string            `json:"level"`
+	Scope       string            `json:"scope"`
+	Errors      []ValidationIssue `json:"errors"`
+	Warnings    []ValidationIssue `json:"warnings"`
+	Suggestions []ValidationIssue `json:"suggestions"`
+	Summary     ValidationSummary `json:"summary"`
 }
 
 // ValidationSummary provides a summary of validation results
 type ValidationSummary struct {
-	TotalIssues    int  `json:"total_issues"`
-	ErrorCount     int  `json:"error_count"`
-	WarningCount   int  `json:"warning_count"`
+	TotalIssues     int  `json:"total_issues"`
+	ErrorCount      int  `json:"error_count"`
+	WarningCount    int  `json:"warning_count"`
 	SuggestionCount int  `json:"suggestion_count"`
-	IsValid        bool `json:"is_valid"`
-	CanAutoFix     int  `json:"can_auto_fix"`
+	IsValid         bool `json:"is_valid"`
+	CanAutoFix      int  `json:"can_auto_fix"`
 }
 
 // validateComplete performs comprehensive validation
@@ -217,14 +217,14 @@ func validateComplete(results *ValidationResults) {
 	validateProjectStructure(results)
 	validateConfigurationOnly(results)
 	validateAgentsOnly(results)
-	
+
 	// Additional cross-validation checks
 	validateCrossReferences(results)
-	
+
 	if validateLevel == "strict" || validateLevel == "complete" {
 		validatePerformanceOptimizations(results)
 	}
-	
+
 	if validateLevel == "complete" {
 		validateBestPractices(results)
 	}
@@ -235,7 +235,7 @@ func validateProjectStructure(results *ValidationResults) {
 	if validateVerbose {
 		fmt.Println("📁 Validating project structure...")
 	}
-	
+
 	// Check for required files and directories
 	requiredPaths := map[string]string{
 		"agentflow.toml": "Configuration file",
@@ -243,7 +243,7 @@ func validateProjectStructure(results *ValidationResults) {
 		"main.go":        "Main application file",
 		"agents/":        "Agents directory",
 	}
-	
+
 	for path, description := range requiredPaths {
 		if !pathExists(path) {
 			results.Errors = append(results.Errors, ValidationIssue{
@@ -257,7 +257,7 @@ func validateProjectStructure(results *ValidationResults) {
 			})
 		}
 	}
-	
+
 	// Check go.mod for AgenticGoKit dependency
 	if pathExists("go.mod") {
 		content, err := os.ReadFile("go.mod")
@@ -280,9 +280,9 @@ func validateProjectStructure(results *ValidationResults) {
 // validateConfigurationOnly validates only the configuration file
 func validateConfigurationOnly(results *ValidationResults) {
 	if validateVerbose {
-		fmt.Println("⚙️  Validating configuration...")
+		fmt.Println("Validating configuration...")
 	}
-	
+
 	// Check if configuration file exists
 	if !pathExists(results.ConfigPath) {
 		results.Errors = append(results.Errors, ValidationIssue{
@@ -296,7 +296,7 @@ func validateConfigurationOnly(results *ValidationResults) {
 		})
 		return
 	}
-	
+
 	// Load and validate configuration
 	config, err := core.LoadConfig(results.ConfigPath)
 	if err != nil {
@@ -311,24 +311,24 @@ func validateConfigurationOnly(results *ValidationResults) {
 		})
 		return
 	}
-	
+
 	// Use the comprehensive validation system
 	validator := core.NewDefaultConfigValidator()
 	validationErrors := validator.ValidateConfig(config)
-	
+
 	// Convert core validation errors to CLI validation issues
 	for _, validationError := range validationErrors {
 		severity := "medium"
 		issueType := "warning"
-		
+
 		// Determine severity and type based on error content
 		if strings.Contains(strings.ToLower(validationError.Message), "required") ||
-		   strings.Contains(strings.ToLower(validationError.Message), "missing") ||
-		   strings.Contains(strings.ToLower(validationError.Message), "invalid") {
+			strings.Contains(strings.ToLower(validationError.Message), "missing") ||
+			strings.Contains(strings.ToLower(validationError.Message), "invalid") {
 			severity = "high"
 			issueType = "error"
 		}
-		
+
 		results.Warnings = append(results.Warnings, ValidationIssue{
 			Type:       issueType,
 			Code:       "CONFIG_VALIDATION_ERROR",
@@ -344,20 +344,20 @@ func validateConfigurationOnly(results *ValidationResults) {
 // validateAgentsOnly validates only agent configurations
 func validateAgentsOnly(results *ValidationResults) {
 	if validateVerbose {
-		fmt.Println("🤖 Validating agent configurations...")
+		fmt.Println("Validating agent configurations...")
 	}
-	
+
 	// Load configuration to get agent definitions
 	config, err := core.LoadConfig(results.ConfigPath)
 	if err != nil {
 		return // Already handled in validateConfigurationOnly
 	}
-	
+
 	// Validate each agent configuration
 	validator := core.NewDefaultConfigValidator()
 	for agentName, agentConfig := range config.Agents {
 		agentErrors := validator.ValidateAgentConfig(agentName, &agentConfig)
-		
+
 		for _, validationError := range agentErrors {
 			results.Warnings = append(results.Warnings, ValidationIssue{
 				Type:       "warning",
@@ -370,7 +370,7 @@ func validateAgentsOnly(results *ValidationResults) {
 			})
 		}
 	}
-	
+
 	// Check for corresponding agent files
 	if pathExists("agents/") {
 		agentFiles, err := filepath.Glob("agents/*.go")
@@ -379,7 +379,7 @@ func validateAgentsOnly(results *ValidationResults) {
 			for agentName := range config.Agents {
 				configuredAgents[agentName] = false
 			}
-			
+
 			// Check if agent files exist for configured agents
 			for _, agentFile := range agentFiles {
 				fileName := strings.TrimSuffix(filepath.Base(agentFile), ".go")
@@ -387,7 +387,7 @@ func validateAgentsOnly(results *ValidationResults) {
 					configuredAgents[fileName] = true
 				}
 			}
-			
+
 			// Report missing agent files
 			for agentName, hasFile := range configuredAgents {
 				if !hasFile {
@@ -409,20 +409,20 @@ func validateAgentsOnly(results *ValidationResults) {
 // validateCrossReferences validates cross-references between configuration sections
 func validateCrossReferences(results *ValidationResults) {
 	if validateVerbose {
-		fmt.Println("🔗 Validating cross-references...")
+		fmt.Println("Validating cross-references...")
 	}
-	
+
 	config, err := core.LoadConfig(results.ConfigPath)
 	if err != nil {
 		return
 	}
-	
+
 	validator := core.NewDefaultConfigValidator()
-	
+
 	// Validate orchestration references
 	if config.Orchestration.SequentialAgents != nil || config.Orchestration.CollaborativeAgents != nil {
 		orchErrors := validator.ValidateOrchestrationAgents(&config.Orchestration, config.Agents)
-		
+
 		for _, validationError := range orchErrors {
 			results.Errors = append(results.Errors, ValidationIssue{
 				Type:       "error",
@@ -442,12 +442,12 @@ func validatePerformanceOptimizations(results *ValidationResults) {
 	if validateVerbose {
 		fmt.Println("⚡ Analyzing performance optimizations...")
 	}
-	
+
 	config, err := core.LoadConfig(results.ConfigPath)
 	if err != nil {
 		return
 	}
-	
+
 	// Check for performance anti-patterns
 	for agentName, agentConfig := range config.Agents {
 		// Check for very high timeout values
@@ -462,7 +462,7 @@ func validatePerformanceOptimizations(results *ValidationResults) {
 				Fixable:    true,
 			})
 		}
-		
+
 		// Check LLM parameters for performance
 		if agentConfig.LLM != nil {
 			if agentConfig.LLM.MaxTokens > 4000 {
@@ -485,12 +485,12 @@ func validateBestPractices(results *ValidationResults) {
 	if validateVerbose {
 		fmt.Println("✨ Checking best practices...")
 	}
-	
+
 	config, err := core.LoadConfig(results.ConfigPath)
 	if err != nil {
 		return
 	}
-	
+
 	// Check for agent naming conventions
 	for agentName, agentConfig := range config.Agents {
 		if !strings.Contains(agentName, "_") && !strings.Contains(agentName, "-") {
@@ -504,7 +504,7 @@ func validateBestPractices(results *ValidationResults) {
 				Fixable:    false,
 			})
 		}
-		
+
 		// Check for system prompt presence
 		if agentConfig.SystemPrompt == "" {
 			results.Suggestions = append(results.Suggestions, ValidationIssue{
@@ -523,9 +523,9 @@ func validateBestPractices(results *ValidationResults) {
 // applyAutomaticFixes attempts to fix common issues automatically
 func applyAutomaticFixes(results *ValidationResults) {
 	if validateVerbose {
-		fmt.Println("🔧 Applying automatic fixes...")
+		fmt.Println("Applying automatic fixes...")
 	}
-	
+
 	fixCount := 0
 	for i, issue := range results.Errors {
 		if issue.Fixable {
@@ -538,9 +538,9 @@ func applyAutomaticFixes(results *ValidationResults) {
 			}
 		}
 	}
-	
+
 	if fixCount > 0 {
-		fmt.Printf("🔧 %d issues can be automatically fixed (use --fix to apply)\n", fixCount)
+		fmt.Printf("%d issues can be automatically fixed (use --fix to apply)\n", fixCount)
 	}
 }
 
@@ -554,7 +554,7 @@ func outputValidationResults(results *ValidationResults) {
 		TotalIssues:     len(results.Errors) + len(results.Warnings) + len(results.Suggestions),
 		IsValid:         len(results.Errors) == 0,
 	}
-	
+
 	// Count fixable issues
 	for _, issue := range results.Errors {
 		if issue.Fixable {
@@ -566,7 +566,7 @@ func outputValidationResults(results *ValidationResults) {
 			results.Summary.CanAutoFix++
 		}
 	}
-	
+
 	switch validateOutput {
 	case "json":
 		outputJSON(results)
@@ -581,53 +581,53 @@ func outputValidationResults(results *ValidationResults) {
 func outputText(results *ValidationResults) {
 	// Print errors
 	if len(results.Errors) > 0 {
-		fmt.Printf("❌ ERRORS (%d):\n", len(results.Errors))
+		fmt.Printf("ERRORS (%d):\n", len(results.Errors))
 		for _, issue := range results.Errors {
 			fmt.Printf("  %s: %s\n", issue.Field, issue.Message)
 			if issue.Suggestion != "" {
-				fmt.Printf("    💡 %s\n", issue.Suggestion)
+				fmt.Printf("    Suggestion: %s\n", issue.Suggestion)
 			}
 		}
 		fmt.Println()
 	}
-	
+
 	// Print warnings
 	if len(results.Warnings) > 0 {
-		fmt.Printf("⚠️  WARNINGS (%d):\n", len(results.Warnings))
+		fmt.Printf("WARNINGS (%d):\n", len(results.Warnings))
 		for _, issue := range results.Warnings {
 			fmt.Printf("  %s: %s\n", issue.Field, issue.Message)
 			if issue.Suggestion != "" {
-				fmt.Printf("    💡 %s\n", issue.Suggestion)
+				fmt.Printf("    Suggestion: %s\n", issue.Suggestion)
 			}
 		}
 		fmt.Println()
 	}
-	
+
 	// Print suggestions
 	if validateShowSuggestions && len(results.Suggestions) > 0 {
-		fmt.Printf("💡 SUGGESTIONS (%d):\n", len(results.Suggestions))
+		fmt.Printf("SUGGESTIONS (%d):\n", len(results.Suggestions))
 		for _, issue := range results.Suggestions {
 			fmt.Printf("  %s: %s\n", issue.Field, issue.Message)
 			if issue.Suggestion != "" {
-				fmt.Printf("    💡 %s\n", issue.Suggestion)
+				fmt.Printf("    Suggestion: %s\n", issue.Suggestion)
 			}
 		}
 		fmt.Println()
 	}
-	
+
 	// Print summary
 	fmt.Printf("📊 VALIDATION SUMMARY:\n")
 	fmt.Printf("  Total Issues: %d\n", results.Summary.TotalIssues)
 	fmt.Printf("  Errors: %d\n", results.Summary.ErrorCount)
 	fmt.Printf("  Warnings: %d\n", results.Summary.WarningCount)
 	fmt.Printf("  Suggestions: %d\n", results.Summary.SuggestionCount)
-	
+
 	if results.Summary.IsValid {
-		fmt.Printf("  Status: ✅ VALID\n")
+		fmt.Printf("  Status: VALID\n")
 	} else {
-		fmt.Printf("  Status: ❌ INVALID\n")
+		fmt.Printf("  Status: INVALID\n")
 	}
-	
+
 	if results.Summary.CanAutoFix > 0 {
 		fmt.Printf("  Auto-fixable: %d (use --fix to apply)\n", results.Summary.CanAutoFix)
 	}
@@ -639,7 +639,7 @@ func outputJSON(results *ValidationResults) {
 	fmt.Printf("JSON output not implemented yet\n")
 }
 
-// outputYAML outputs results in YAML format  
+// outputYAML outputs results in YAML format
 func outputYAML(results *ValidationResults) {
 	// This would require importing gopkg.in/yaml.v3
 	fmt.Printf("YAML output not implemented yet\n")
@@ -653,9 +653,9 @@ func pathExists(path string) bool {
 
 // isAgenticGoKitProject checks if current directory is an AgenticGoKit project
 func isAgenticGoKitProject() bool {
-	return pathExists("agentflow.toml") || 
-		   pathExists("agents/") || 
-		   (pathExists("go.mod") && containsAgenticGoKitDependency("go.mod"))
+	return pathExists("agentflow.toml") ||
+		pathExists("agents/") ||
+		(pathExists("go.mod") && containsAgenticGoKitDependency("go.mod"))
 }
 
 // containsAgenticGoKitDependency checks if go.mod contains AgenticGoKit dependency

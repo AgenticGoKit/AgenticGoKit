@@ -3,11 +3,13 @@ package agents
 import (
 	"context"
 	"time"
+
+	"github.com/kunalkushwaha/agenticgokit/core"
 )
 
 // ConfigAwareAgent represents an agent that can be configured from ResolvedAgentConfig
 type ConfigAwareAgent interface {
-	Agent
+	core.Agent
 	// Configuration methods
 	GetRole() string
 	GetDescription() string
@@ -15,10 +17,9 @@ type ConfigAwareAgent interface {
 	GetCapabilities() []string
 	IsEnabled() bool
 	GetTimeout() time.Duration
-	GetLLMConfig() *ResolvedLLMConfig
-	
-	// Configuration update methods
-	UpdateConfiguration(config *ResolvedAgentConfig) error
-	ApplySystemPrompt(ctx context.Context, state State) (State, error)
-}
+	GetLLMConfig() *core.ResolvedLLMConfig
 
+	// Configuration update methods
+	UpdateConfiguration(config *core.ResolvedAgentConfig) error
+	ApplySystemPrompt(ctx context.Context, state core.State) (core.State, error)
+}

@@ -357,18 +357,42 @@ func main() {
 		logger.Debug().Msg("Error handlers registered using first active agent as fallback")
 	}
 
-	// Create the workflow orchestrator (runner) using configuration-based setup
-	// The runner manages the execution flow between agents based on your orchestration mode
-	// (sequential, collaborative, loop, or mixed)
-	// TODO: Customize runner creation for advanced orchestration needs
-	// You might want to add custom routing logic, middleware, or execution policies
-	runner, err := core.NewRunnerFromConfig("agentflow.toml")
-	if err != nil {
-		logger.Error().Err(err).Msg("Failed to create runner from config")
-		fmt.Printf("❌ Error creating runner: %v\n", err)
-		fmt.Printf("💡 Check your agentflow.toml orchestration configuration\n")
-		os.Exit(1)
+	// Create the workflow orchestrator (runner) using the registry-based builder
+	// This honors the orchestration mode from agentflow.toml and uses the plugin-registered orchestrator
+	// Modes: route (default), collaborative, sequential, loop, mixed
+	var mode core.OrchestrationMode = core.OrchestrationRoute
+	switch config.Orchestration.Mode {
+	case "collaborative":
+		mode = core.OrchestrationCollaborate
+	case "sequential":
+		mode = core.OrchestrationSequential
+	case "parallel":
+		mode = core.OrchestrationParallel
+	case "loop":
+		mode = core.OrchestrationLoop
+	case "mixed":
+		mode = core.OrchestrationMixed
 	}
+
+	runner := core.NewOrchestrationBuilder(mode).
+		WithAgents(agentHandlers).
+		Build()
+
+	// --- Hooks & Callbacks (Observability/Policies) ---
+	// You can register before/after hooks and error hooks for traceability, metrics, or policy checks.
+	// Hook points include:
+	// - core.HookBeforeEventHandling / core.HookAfterEventHandling
+	// - core.HookBeforeAgentRun / core.HookAgentError
+	// Example:
+	// cb := func(hookCtx context.Context, args core.CallbackArgs) (core.State, error) {
+	//   // Inspect args.Event, args.State, args.AgentID, args.Error
+	//   // Return a new state to replace args.State, or nil to keep it unchanged
+	//   return nil, nil
+	// }
+	// if reg := runner.GetCallbackRegistry(); reg != nil {
+	//   _ = reg.Register(core.HookBeforeAgentRun, "example-before-agent", cb)
+	//   _ = reg.Register(core.HookAfterEventHandling, "example-after-event", cb)
+	// }
 	
 	// Register all agents with the workflow orchestrator
 	// This makes the agents available for routing and execution

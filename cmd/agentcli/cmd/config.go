@@ -177,15 +177,15 @@ var (
 	migrateBackup    bool
 
 	// Optimize command flags
-	optimizeFocus       string
+	optimizeFocus         string
 	optimizeRecommendOnly bool
-	optimizeOutput      string
+	optimizeOutput        string
 
 	// Template command flags
-	templateList        bool
-	templateMemory      string
-	templateEmbedding   string
-	templateCustomize   bool
+	templateList      bool
+	templateMemory    string
+	templateEmbedding string
+	templateCustomize bool
 )
 
 func init() {
@@ -198,39 +198,39 @@ func init() {
 	configCmd.AddCommand(configTemplateCmd)
 
 	// Generate command flags
-	configGenerateCmd.Flags().StringVar(&generateFormat, "format", "toml", 
+	configGenerateCmd.Flags().StringVar(&generateFormat, "format", "toml",
 		"Output format (toml, yaml, json)")
-	configGenerateCmd.Flags().StringVar(&generateAgentsDir, "agents-dir", "agents", 
+	configGenerateCmd.Flags().StringVar(&generateAgentsDir, "agents-dir", "agents",
 		"Directory containing agent implementations")
-	configGenerateCmd.Flags().StringVar(&generateOutput, "output", "", 
+	configGenerateCmd.Flags().StringVar(&generateOutput, "output", "",
 		"Output file (default: agentflow.toml)")
-	configGenerateCmd.Flags().BoolVar(&generateBackup, "backup", true, 
+	configGenerateCmd.Flags().BoolVar(&generateBackup, "backup", true,
 		"Create backup of existing configuration file")
 
 	// Migrate command flags
-	configMigrateCmd.Flags().StringVar(&migrateToVersion, "to-version", "latest", 
+	configMigrateCmd.Flags().StringVar(&migrateToVersion, "to-version", "latest",
 		"Target configuration version")
-	configMigrateCmd.Flags().BoolVar(&migrateDryRun, "dry-run", false, 
+	configMigrateCmd.Flags().BoolVar(&migrateDryRun, "dry-run", false,
 		"Show changes without applying them")
-	configMigrateCmd.Flags().BoolVar(&migrateBackup, "backup", true, 
+	configMigrateCmd.Flags().BoolVar(&migrateBackup, "backup", true,
 		"Create backup before migration")
 
 	// Optimize command flags
-	configOptimizeCmd.Flags().StringVar(&optimizeFocus, "focus", "all", 
+	configOptimizeCmd.Flags().StringVar(&optimizeFocus, "focus", "all",
 		"Optimization focus (all, performance, memory, cost, reliability)")
-	configOptimizeCmd.Flags().BoolVar(&optimizeRecommendOnly, "recommend-only", false, 
+	configOptimizeCmd.Flags().BoolVar(&optimizeRecommendOnly, "recommend-only", false,
 		"Show recommendations without applying changes")
-	configOptimizeCmd.Flags().StringVar(&optimizeOutput, "output", "", 
+	configOptimizeCmd.Flags().StringVar(&optimizeOutput, "output", "",
 		"Output optimized configuration to file")
 
 	// Template command flags
-	configTemplateCmd.Flags().BoolVar(&templateList, "list", false, 
+	configTemplateCmd.Flags().BoolVar(&templateList, "list", false,
 		"List available templates")
-	configTemplateCmd.Flags().StringVar(&templateMemory, "memory", "", 
+	configTemplateCmd.Flags().StringVar(&templateMemory, "memory", "",
 		"Memory provider for template")
-	configTemplateCmd.Flags().StringVar(&templateEmbedding, "embedding", "", 
+	configTemplateCmd.Flags().StringVar(&templateEmbedding, "embedding", "",
 		"Embedding provider for template")
-	configTemplateCmd.Flags().BoolVar(&templateCustomize, "customize", false, 
+	configTemplateCmd.Flags().BoolVar(&templateCustomize, "customize", false,
 		"Interactive template customization")
 
 	// Add completion functions
@@ -244,7 +244,7 @@ func init() {
 
 // runConfigGenerateCommand generates configuration from existing code
 func runConfigGenerateCommand(cmd *cobra.Command, args []string) {
-	fmt.Println("🔧 Generating configuration from existing agent implementations...")
+	fmt.Println("Generating configuration from existing agent implementations...")
 
 	// Determine output file
 	outputFile := "agentflow.toml"
@@ -257,8 +257,8 @@ func runConfigGenerateCommand(cmd *cobra.Command, args []string) {
 
 	// Check if agents directory exists
 	if !pathExists(generateAgentsDir) {
-		fmt.Printf("❌ Agents directory not found: %s\n", generateAgentsDir)
-		fmt.Println("💡 Make sure you're in an AgenticGoKit project directory")
+		fmt.Printf("Agents directory not found: %s\n", generateAgentsDir)
+		fmt.Println("Hint: make sure you're in an AgenticGoKit project directory")
 		os.Exit(1)
 	}
 
@@ -266,22 +266,22 @@ func runConfigGenerateCommand(cmd *cobra.Command, args []string) {
 	if generateBackup && pathExists(outputFile) {
 		backupFile := outputFile + ".backup"
 		if err := copyFile(outputFile, backupFile); err != nil {
-			fmt.Printf("⚠️  Failed to create backup: %v\n", err)
+			fmt.Printf("Warning: failed to create backup: %v\n", err)
 		} else {
-			fmt.Printf("📋 Created backup: %s\n", backupFile)
+			fmt.Printf("Created backup: %s\n", backupFile)
 		}
 	}
 
 	// Analyze agent files
 	agentConfigs, err := analyzeAgentFiles(generateAgentsDir)
 	if err != nil {
-		fmt.Printf("❌ Failed to analyze agent files: %v\n", err)
+		fmt.Printf("Failed to analyze agent files: %v\n", err)
 		os.Exit(1)
 	}
 
 	if len(agentConfigs) == 0 {
-		fmt.Printf("⚠️  No agent configurations found in %s\n", generateAgentsDir)
-		fmt.Println("💡 Make sure your agent files contain extractable configuration")
+		fmt.Printf("Warning: no agent configurations found in %s\n", generateAgentsDir)
+		fmt.Println("Hint: ensure your agent files contain extractable configuration")
 		os.Exit(1)
 	}
 
@@ -290,14 +290,14 @@ func runConfigGenerateCommand(cmd *cobra.Command, args []string) {
 
 	// Write configuration file
 	if err := writeConfigFile(config, outputFile, generateFormat); err != nil {
-		fmt.Printf("❌ Failed to write configuration: %v\n", err)
+		fmt.Printf("Failed to write configuration: %v\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Printf("✅ Generated configuration file: %s\n", outputFile)
+	fmt.Printf("Generated configuration file: %s\n", outputFile)
 	fmt.Printf("📊 Extracted %d agent configurations\n", len(agentConfigs))
 	fmt.Println()
-	fmt.Println("💡 Next steps:")
+	fmt.Println("Next steps:")
 	fmt.Println("  1. Review the generated configuration")
 	fmt.Println("  2. Update your agent code to use configuration-driven approach")
 	fmt.Println("  3. Test your agents with the new configuration")
@@ -313,14 +313,14 @@ func runConfigMigrateCommand(cmd *cobra.Command, args []string) {
 	fmt.Printf("🔄 Migrating configuration: %s\n", configFile)
 
 	if !pathExists(configFile) {
-		fmt.Printf("❌ Configuration file not found: %s\n", configFile)
+		fmt.Printf("Configuration file not found: %s\n", configFile)
 		os.Exit(1)
 	}
 
 	// Load current configuration
 	config, err := core.LoadConfig(configFile)
 	if err != nil {
-		fmt.Printf("❌ Failed to load configuration: %v\n", err)
+		fmt.Printf("Failed to load configuration: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -328,13 +328,13 @@ func runConfigMigrateCommand(cmd *cobra.Command, args []string) {
 	migrationNeeded, changes := analyzeMigrationNeeds(config)
 
 	if !migrationNeeded {
-		fmt.Println("✅ Configuration is already up to date")
+		fmt.Println("Configuration is already up to date")
 		return
 	}
 
-	fmt.Printf("📋 Migration analysis found %d changes needed:\n", len(changes))
+	fmt.Printf("Migration analysis found %d changes needed:\n", len(changes))
 	for _, change := range changes {
-		fmt.Printf("  • %s\n", change)
+		fmt.Printf("  - %s\n", change)
 	}
 
 	if migrateDryRun {
@@ -346,9 +346,9 @@ func runConfigMigrateCommand(cmd *cobra.Command, args []string) {
 	if migrateBackup {
 		backupFile := configFile + ".pre-migration"
 		if err := copyFile(configFile, backupFile); err != nil {
-			fmt.Printf("⚠️  Failed to create backup: %v\n", err)
+			fmt.Printf("Warning: failed to create backup: %v\n", err)
 		} else {
-			fmt.Printf("📋 Created backup: %s\n", backupFile)
+			fmt.Printf("Created backup: %s\n", backupFile)
 		}
 	}
 
@@ -357,11 +357,11 @@ func runConfigMigrateCommand(cmd *cobra.Command, args []string) {
 
 	// Write migrated configuration
 	if err := writeConfigFile(migratedConfig, configFile, "toml"); err != nil {
-		fmt.Printf("❌ Failed to write migrated configuration: %v\n", err)
+		fmt.Printf("Failed to write migrated configuration: %v\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Printf("✅ Successfully migrated configuration to version %s\n", migrateToVersion)
+	fmt.Printf("Successfully migrated configuration to version %s\n", migrateToVersion)
 }
 
 // runConfigOptimizeCommand optimizes configuration
@@ -372,17 +372,17 @@ func runConfigOptimizeCommand(cmd *cobra.Command, args []string) {
 	}
 
 	fmt.Printf("⚡ Optimizing configuration: %s\n", configFile)
-	fmt.Printf("🎯 Focus area: %s\n", optimizeFocus)
+	fmt.Printf("Focus area: %s\n", optimizeFocus)
 
 	if !pathExists(configFile) {
-		fmt.Printf("❌ Configuration file not found: %s\n", configFile)
+		fmt.Printf("Configuration file not found: %s\n", configFile)
 		os.Exit(1)
 	}
 
 	// Load configuration
 	config, err := core.LoadConfig(configFile)
 	if err != nil {
-		fmt.Printf("❌ Failed to load configuration: %v\n", err)
+		fmt.Printf("Failed to load configuration: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -390,20 +390,20 @@ func runConfigOptimizeCommand(cmd *cobra.Command, args []string) {
 	optimizations := analyzeOptimizations(config, optimizeFocus)
 
 	if len(optimizations) == 0 {
-		fmt.Println("✅ Configuration is already optimized")
+		fmt.Println("Configuration is already optimized")
 		return
 	}
 
 	fmt.Printf("📊 Found %d optimization opportunities:\n", len(optimizations))
 	for _, opt := range optimizations {
-		fmt.Printf("  • %s: %s\n", opt.Area, opt.Description)
+		fmt.Printf("  - %s: %s\n", opt.Area, opt.Description)
 		if opt.Impact != "" {
 			fmt.Printf("    Impact: %s\n", opt.Impact)
 		}
 	}
 
 	if optimizeRecommendOnly {
-		fmt.Println("💡 Use --recommend-only=false to apply optimizations")
+		fmt.Println("Hint: use --recommend-only=false to apply optimizations")
 		return
 	}
 
@@ -418,11 +418,11 @@ func runConfigOptimizeCommand(cmd *cobra.Command, args []string) {
 
 	// Write optimized configuration
 	if err := writeConfigFile(optimizedConfig, outputFile, "toml"); err != nil {
-		fmt.Printf("❌ Failed to write optimized configuration: %v\n", err)
+		fmt.Printf("Failed to write optimized configuration: %v\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Printf("✅ Applied %d optimizations to %s\n", len(optimizations), outputFile)
+	fmt.Printf("Applied %d optimizations to %s\n", len(optimizations), outputFile)
 }
 
 // runConfigTemplateCommand generates configuration from templates
@@ -433,19 +433,19 @@ func runConfigTemplateCommand(cmd *cobra.Command, args []string) {
 	}
 
 	if len(args) == 0 {
-		fmt.Println("❌ Template name required")
-		fmt.Println("💡 Use --list to see available templates")
+		fmt.Println("Template name required")
+		fmt.Println("Hint: use --list to see available templates")
 		os.Exit(1)
 	}
 
 	templateName := args[0]
 
-	fmt.Printf("📋 Generating configuration from template: %s\n", templateName)
+	fmt.Printf("Generating configuration from template: %s\n", templateName)
 
 	// Check if template exists
 	templates, err := scaffold.ListAvailableTemplates()
 	if err != nil {
-		fmt.Printf("❌ Failed to list templates: %v\n", err)
+		fmt.Printf("Failed to list templates: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -458,10 +458,10 @@ func runConfigTemplateCommand(cmd *cobra.Command, args []string) {
 	}
 
 	if !templateExists {
-		fmt.Printf("❌ Template not found: %s\n", templateName)
-		fmt.Println("💡 Available templates:")
+		fmt.Printf("Template not found: %s\n", templateName)
+		fmt.Println("Available templates:")
 		for _, tmpl := range templates {
-			fmt.Printf("  • %s\n", tmpl)
+			fmt.Printf("  - %s\n", tmpl)
 		}
 		os.Exit(1)
 	}
@@ -469,7 +469,7 @@ func runConfigTemplateCommand(cmd *cobra.Command, args []string) {
 	// Load template
 	templateInfo, err := scaffold.GetTemplateInfo(templateName)
 	if err != nil {
-		fmt.Printf("❌ Failed to load template: %v\n", err)
+		fmt.Printf("Failed to load template: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -489,7 +489,7 @@ func runConfigTemplateCommand(cmd *cobra.Command, args []string) {
 	// Generate configuration content
 	configContent, err := generateConfigFromTemplate(templateInfo)
 	if err != nil {
-		fmt.Printf("❌ Failed to generate configuration: %v\n", err)
+		fmt.Printf("Failed to generate configuration: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -512,7 +512,7 @@ func analyzeAgentFiles(agentsDir string) (map[string]AgentConfigExtract, error) 
 
 	for _, file := range agentFiles {
 		agentName := strings.TrimSuffix(filepath.Base(file), ".go")
-		
+
 		// Extract configuration from file (simplified)
 		config := AgentConfigExtract{
 			Name:         agentName,
@@ -523,7 +523,7 @@ func analyzeAgentFiles(agentsDir string) (map[string]AgentConfigExtract, error) 
 			Enabled:      true,
 			Timeout:      30,
 		}
-		
+
 		configs[agentName] = config
 	}
 
@@ -599,12 +599,12 @@ func copyFile(src, dst string) error {
 
 func analyzeMigrationNeeds(config *core.Config) (bool, []string) {
 	changes := []string{}
-	
+
 	// Example migration checks
 	if config.AgentFlow.Version == "" {
 		changes = append(changes, "Add version field to agent_flow section")
 	}
-	
+
 	return len(changes) > 0, changes
 }
 
@@ -624,7 +624,7 @@ type OptimizationOpportunity struct {
 
 func analyzeOptimizations(config *core.Config, focus string) []OptimizationOpportunity {
 	optimizations := []OptimizationOpportunity{}
-	
+
 	// Example optimization analysis
 	for agentName, agent := range config.Agents {
 		if agent.Timeout > 60 {
@@ -635,7 +635,7 @@ func analyzeOptimizations(config *core.Config, focus string) []OptimizationOppor
 			})
 		}
 	}
-	
+
 	return optimizations
 }
 
@@ -653,28 +653,28 @@ func applyOptimizations(config *core.Config, optimizations []OptimizationOpportu
 func generateConfigFromTemplate(templateInfo *scaffold.TemplateConfig) (string, error) {
 	// Generate TOML configuration from template
 	// This is simplified - would use proper TOML generation
-	return fmt.Sprintf("# Generated from template: %s\n# %s\n\n[agent_flow]\nname = \"template-project\"\n", 
+	return fmt.Sprintf("# Generated from template: %s\n# %s\n\n[agent_flow]\nname = \"template-project\"\n",
 		templateInfo.Name, templateInfo.Description), nil
 }
 
 func listConfigTemplates() {
-	fmt.Println("📋 Available Configuration Templates:")
+	fmt.Println("Available Configuration Templates:")
 	fmt.Println("====================================")
-	
+
 	templates, err := scaffold.ListAvailableTemplates()
 	if err != nil {
-		fmt.Printf("❌ Failed to list templates: %v\n", err)
+		fmt.Printf("Failed to list templates: %v\n", err)
 		return
 	}
-	
+
 	for _, templateName := range templates {
 		info, err := scaffold.GetTemplateInfo(templateName)
 		if err != nil {
-			fmt.Printf("  • %s (error loading info)\n", templateName)
+			fmt.Printf("  - %s (error loading info)\n", templateName)
 			continue
 		}
-		
-		fmt.Printf("  • %s\n", templateName)
+
+		fmt.Printf("  - %s\n", templateName)
 		fmt.Printf("    %s\n", info.Description)
 		fmt.Printf("    Features: %s\n", strings.Join(info.Features, ", "))
 		fmt.Printf("    Agents: %d\n", info.Config.NumAgents)

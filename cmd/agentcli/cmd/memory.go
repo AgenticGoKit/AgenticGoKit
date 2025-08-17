@@ -13,14 +13,14 @@ import (
 
 // Memory debug command flags
 var (
-	memoryStats     bool
-	memoryList      bool
-	memorySessions  bool
-	memoryDocs      bool
-	memorySearch    string
-	memoryValidate  bool
-	memoryClear     bool
-	memoryConfig    bool
+	memoryStats      bool
+	memoryList       bool
+	memorySessions   bool
+	memoryDocs       bool
+	memorySearch     string
+	memoryValidate   bool
+	memoryClear      bool
+	memoryConfig     bool
 	memoryConfigPath string
 )
 
@@ -187,7 +187,7 @@ func (m *MemoryDebugger) ShowOverview() error {
 	// Basic configuration info
 	fmt.Printf("Config File: %s\n", m.configPath)
 	fmt.Printf("Provider: %s\n", m.config.AgentMemory.Provider)
-	fmt.Printf("Embedding: %s/%s (%d dimensions)\n", 
+	fmt.Printf("Embedding: %s/%s (%d dimensions)\n",
 		m.config.AgentMemory.Embedding.Provider,
 		m.config.AgentMemory.Embedding.Model,
 		m.config.AgentMemory.Dimensions)
@@ -257,7 +257,7 @@ func (m *MemoryDebugger) ShowStats() error {
 
 	// Try to get memory statistics
 	fmt.Printf("Memory Usage:\n")
-	
+
 	// Test basic memory operations
 	testQuery := "test query for statistics"
 	results, err := m.memory.Query(ctx, testQuery, 5)
@@ -349,7 +349,7 @@ func (m *MemoryDebugger) ShowSessions() error {
 
 	// Set session context and test
 	sessionCtx := m.memory.SetSession(ctx, sessionID)
-	
+
 	// Store some test data in the session
 	testContent := fmt.Sprintf("Session test data at %s", time.Now().Format("15:04:05"))
 	if err := m.memory.Store(sessionCtx, testContent, "session-test"); err != nil {
@@ -407,33 +407,33 @@ func (m *MemoryDebugger) ListDocuments() error {
 	// Try to query for document-like content
 	// This is a basic implementation - actual document listing would depend on the memory provider
 	fmt.Printf("Searching for document-like content...\n")
-	
+
 	// Search for various document indicators
 	documentQueries := []string{"document", "file", "pdf", "text", "content", "knowledge"}
 	totalDocuments := 0
-	
+
 	for _, query := range documentQueries {
 		results, err := m.memory.Query(ctx, query, 5)
 		if err != nil {
 			continue
 		}
-		
+
 		for _, result := range results {
 			if result.Score > m.config.AgentMemory.KnowledgeScoreThreshold {
 				totalDocuments++
-				
+
 				// Truncate content for display
 				content := result.Content
 				if len(content) > 150 {
 					content = content[:147] + "..."
 				}
-				
+
 				fmt.Printf("Document %d (Score: %.3f):\n", totalDocuments, result.Score)
 				fmt.Printf("   Content: %s\n", content)
 				fmt.Printf("\n")
 			}
 		}
-		
+
 		if totalDocuments >= 10 { // Limit display
 			break
 		}
@@ -500,34 +500,34 @@ func (m *MemoryDebugger) TestSearch(query string) error {
 		}
 
 		fmt.Printf("%s Result %d (Score: %.4f)\n", scoreIcon, i+1, result.Score)
-		
+
 		// Truncate content but show more than in list view
 		content := result.Content
 		if len(content) > 200 {
 			content = content[:197] + "..."
 		}
-		
+
 		fmt.Printf("   Content: %s\n", content)
-		
+
 		// Show relevance assessment
 		if result.Score >= m.config.AgentMemory.KnowledgeScoreThreshold {
 			fmt.Printf("   Above threshold (%.2f) - would be used in RAG\n", m.config.AgentMemory.KnowledgeScoreThreshold)
 		} else {
 			fmt.Printf("   Below threshold (%.2f) - would be filtered out\n", m.config.AgentMemory.KnowledgeScoreThreshold)
 		}
-		
+
 		fmt.Printf("\n")
 	}
 
 	// Search analysis
 	fmt.Printf("Search Analysis:\n")
 	fmt.Printf("==================\n")
-	
+
 	highRelevance := 0
 	mediumRelevance := 0
 	lowRelevance := 0
 	aboveThreshold := 0
-	
+
 	for _, result := range results {
 		if result.Score >= 0.8 {
 			highRelevance++
@@ -536,17 +536,17 @@ func (m *MemoryDebugger) TestSearch(query string) error {
 		} else {
 			lowRelevance++
 		}
-		
+
 		if result.Score >= m.config.AgentMemory.KnowledgeScoreThreshold {
 			aboveThreshold++
 		}
 	}
-	
+
 	fmt.Printf("High relevance (≥0.8): %d\n", highRelevance)
 	fmt.Printf("Medium relevance (≥0.6): %d\n", mediumRelevance)
 	fmt.Printf("Low relevance (<0.6): %d\n", lowRelevance)
 	fmt.Printf("Above threshold (≥%.2f): %d\n", m.config.AgentMemory.KnowledgeScoreThreshold, aboveThreshold)
-	
+
 	if aboveThreshold == 0 {
 		fmt.Printf("\nNo results above threshold - consider:\n")
 		fmt.Printf("   - Lowering knowledge_score_threshold in agentflow.toml\n")
@@ -568,7 +568,7 @@ func (m *MemoryDebugger) ValidateConfig() error {
 
 	// Basic configuration validation
 	fmt.Printf("Basic Configuration:\n")
-	
+
 	if m.config.AgentMemory.Provider == "" {
 		validationErrors = append(validationErrors, "Memory provider not specified")
 	} else {
@@ -595,7 +595,7 @@ func (m *MemoryDebugger) ValidateConfig() error {
 
 	// Connection validation
 	fmt.Printf("\nConnection Validation:\n")
-	
+
 	// Test basic connection
 	testContent := fmt.Sprintf("Validation test at %s", time.Now().Format("15:04:05"))
 	if err := m.memory.Store(ctx, testContent, "validation-test"); err != nil {
@@ -615,7 +615,7 @@ func (m *MemoryDebugger) ValidateConfig() error {
 
 	// Provider-specific validation
 	fmt.Printf("\nProvider-Specific Validation:\n")
-	
+
 	switch m.config.AgentMemory.Provider {
 	case "pgvector":
 		if m.config.AgentMemory.Connection == "" {
@@ -625,7 +625,7 @@ func (m *MemoryDebugger) ValidateConfig() error {
 		} else {
 			fmt.Printf("   PgVector connection string format valid\n")
 		}
-		
+
 		if m.config.AgentMemory.Dimensions > 2000 {
 			validationWarnings = append(validationWarnings, "Large dimensions may impact PgVector performance")
 		}
@@ -687,7 +687,7 @@ func (m *MemoryDebugger) ClearData() error {
 
 	// Show current data overview
 	fmt.Printf("Current Memory Overview:\n")
-	
+
 	// Get current memory count
 	results, err := m.memory.Query(ctx, "test", 100) // Get up to 100 items for counting
 	if err != nil {
@@ -744,10 +744,10 @@ func (m *MemoryDebugger) clearMemories(ctx context.Context) error {
 	fmt.Printf("This will delete all stored memories (content, embeddings, metadata)\n")
 	fmt.Printf("Chat history will be preserved\n")
 	fmt.Printf("\nType 'DELETE' to confirm: ")
-	
+
 	var confirmation string
 	fmt.Scanln(&confirmation)
-	
+
 	if confirmation != "DELETE" {
 		fmt.Printf("Confirmation failed. Operation cancelled.\n")
 		return nil
@@ -760,7 +760,7 @@ func (m *MemoryDebugger) clearMemories(ctx context.Context) error {
 	fmt.Printf("   1. Restart with a fresh database (for pgvector/weaviate)\n")
 	fmt.Printf("   2. Restart the application (for in-memory provider)\n")
 	fmt.Printf("   3. Manually clear the database tables\n")
-	
+
 	if m.config.AgentMemory.Provider == "pgvector" {
 		fmt.Printf("\nPostgreSQL/PgVector clearing commands:\n")
 		fmt.Printf("   psql -h localhost -U user -d agentflow -c \"TRUNCATE TABLE agent_memory;\"\n")
@@ -781,10 +781,10 @@ func (m *MemoryDebugger) clearHistory(ctx context.Context) error {
 	fmt.Printf("This will delete all chat history\n")
 	fmt.Printf("Stored memories will be preserved\n")
 	fmt.Printf("\nType 'DELETE' to confirm: ")
-	
+
 	var confirmation string
 	fmt.Scanln(&confirmation)
-	
+
 	if confirmation != "DELETE" {
 		fmt.Printf("Confirmation failed. Operation cancelled.\n")
 		return nil
@@ -809,10 +809,10 @@ func (m *MemoryDebugger) clearEverything(ctx context.Context) error {
 	fmt.Printf("   - All embeddings\n")
 	fmt.Printf("   - All metadata\n")
 	fmt.Printf("\nType 'DELETE EVERYTHING' to confirm: ")
-	
+
 	var confirmation string
 	fmt.Scanln(&confirmation)
-	
+
 	if confirmation != "DELETE EVERYTHING" {
 		fmt.Printf("Confirmation failed. Operation cancelled.\n")
 		return nil
@@ -820,7 +820,7 @@ func (m *MemoryDebugger) clearEverything(ctx context.Context) error {
 
 	fmt.Printf("Complete data clearing not supported by current Memory interface\n")
 	fmt.Printf("To clear all data:\n")
-	
+
 	if m.config.AgentMemory.Provider == "pgvector" {
 		fmt.Printf("\nPostgreSQL/PgVector - Complete reset:\n")
 		fmt.Printf("   docker compose down\n")
@@ -842,7 +842,7 @@ func (m *MemoryDebugger) clearEverything(ctx context.Context) error {
 
 // ShowConfig displays current memory configuration in readable format
 func (m *MemoryDebugger) ShowConfig() error {
-	fmt.Printf("⚙️  Memory Configuration\n")
+	fmt.Printf("Memory Configuration\n")
 	fmt.Printf("========================\n\n")
 
 	fmt.Printf("📁 Configuration File: %s\n\n", m.configPath)
@@ -857,7 +857,7 @@ func (m *MemoryDebugger) ShowConfig() error {
 	fmt.Printf("\n")
 
 	// Embedding configuration
-	fmt.Printf("🤖 Embedding Configuration:\n")
+	fmt.Printf("Embedding Configuration:\n")
 	fmt.Printf("   Provider: %s\n", m.config.AgentMemory.Embedding.Provider)
 	fmt.Printf("   Model: %s\n", m.config.AgentMemory.Embedding.Model)
 	if m.config.AgentMemory.Embedding.BaseURL != "" {

@@ -152,20 +152,20 @@ type PublicAzureOpenAIAdapterOptions struct {
 }
 
 type PublicLLMProviderConfig struct {
-	Type        string        `json:"type" toml:"type"`
-	APIKey      string        `json:"api_key,omitempty" toml:"api_key,omitempty"`
-	Model       string        `json:"model,omitempty" toml:"model,omitempty"`
-	MaxTokens   int           `json:"max_tokens,omitempty" toml:"max_tokens,omitempty"`
-	Temperature float32       `json:"temperature,omitempty" toml:"temperature,omitempty"`
-	
+	Type        string  `json:"type" toml:"type"`
+	APIKey      string  `json:"api_key,omitempty" toml:"api_key,omitempty"`
+	Model       string  `json:"model,omitempty" toml:"model,omitempty"`
+	MaxTokens   int     `json:"max_tokens,omitempty" toml:"max_tokens,omitempty"`
+	Temperature float64 `json:"temperature,omitempty" toml:"temperature,omitempty"`
+
 	// Azure-specific fields
 	Endpoint            string `json:"endpoint,omitempty" toml:"endpoint,omitempty"`
 	ChatDeployment      string `json:"chat_deployment,omitempty" toml:"chat_deployment,omitempty"`
 	EmbeddingDeployment string `json:"embedding_deployment,omitempty" toml:"embedding_deployment,omitempty"`
-	
+
 	// Ollama-specific fields
 	BaseURL string `json:"base_url,omitempty" toml:"base_url,omitempty"`
-	
+
 	// HTTP client configuration
 	HTTPTimeout time.Duration `json:"http_timeout,omitempty" toml:"http_timeout,omitempty"`
 }
@@ -216,19 +216,19 @@ func NewModelProviderFromConfigWrapped(config PublicLLMProviderConfig) (PublicMo
 		APIKey:              config.APIKey,
 		Model:               config.Model,
 		MaxTokens:           config.MaxTokens,
-		Temperature:         config.Temperature,
+		Temperature:         float32(config.Temperature), // Convert float64 to float32 at boundary
 		Endpoint:            config.Endpoint,
 		ChatDeployment:      config.ChatDeployment,
 		EmbeddingDeployment: config.EmbeddingDeployment,
 		BaseURL:             config.BaseURL,
 		HTTPTimeout:         config.HTTPTimeout,
 	}
-	
+
 	adapter, err := CreateProviderFromConfig(internalConfig)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return NewModelProviderWrapper(adapter), nil
 }
 

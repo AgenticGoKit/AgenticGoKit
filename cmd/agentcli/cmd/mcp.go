@@ -279,11 +279,11 @@ func displayServersDefault(mcpManager core.MCPManager, servers []string) error {
 		tools := mcpManager.GetToolsFromServer(server)
 
 		fmt.Printf("%d. %s\n", i+1, server)
-		fmt.Printf("   • Tools: %d available\n", len(tools))
-		fmt.Printf("   • Status: Connected\n")
+		fmt.Printf("   - Tools: %d available\n", len(tools))
+		fmt.Printf("   - Status: Connected\n")
 
 		if mcpVerbose && len(tools) > 0 {
-			fmt.Printf("   • Available tools: ")
+			fmt.Printf("   - Available tools: ")
 			toolNames := make([]string, len(tools))
 			for j, tool := range tools {
 				toolNames[j] = tool.Name
@@ -352,7 +352,7 @@ func displayToolsDefault(tools []core.MCPToolInfo) error {
 		fmt.Println(strings.Repeat("-", len(server)+15))
 
 		for _, tool := range toolList {
-			fmt.Printf("  • %s: %s\n", tool.Name, tool.Description)
+			fmt.Printf("  - %s: %s\n", tool.Name, tool.Description)
 
 			if mcpVerbose {
 				// Show tool schema if available (would need to extend the interface)
@@ -429,10 +429,10 @@ func executeToolTest(ctx context.Context, mcpManager core.MCPManager, server, to
 	// For now, show what the test would do
 	fmt.Println("Tool execution test not yet implemented.")
 	fmt.Println("Future implementation will:")
-	fmt.Printf("   • Execute %s:%s with provided arguments\n", server, tool)
-	fmt.Println("   • Measure execution time and performance")
-	fmt.Println("   • Validate result format and content")
-	fmt.Println("   • Report any errors or warnings")
+	fmt.Printf("   - Execute %s:%s with provided arguments\n", server, tool)
+	fmt.Println("   - Measure execution time and performance")
+	fmt.Println("   - Validate result format and content")
+	fmt.Println("   - Report any errors or warnings")
 
 	return nil
 }
@@ -460,8 +460,8 @@ func showServerInfo(ctx context.Context, mcpManager core.MCPManager, serverName 
 	tools := mcpManager.GetToolsFromServer(serverName)
 
 	fmt.Printf("Basic Information:\n")
-	fmt.Printf("   • Status: Connected\n")
-	fmt.Printf("   • Available Tools: %d\n", len(tools))
+	fmt.Printf("   - Status: Connected\n")
+	fmt.Printf("   - Available Tools: %d\n", len(tools))
 
 	// Show tools
 	if len(tools) > 0 {
@@ -483,10 +483,10 @@ func showServerInfo(ctx context.Context, mcpManager core.MCPManager, serverName 
 		if health.Status != "healthy" {
 			statusText = "Unhealthy"
 		}
-		fmt.Printf("   • Status: %s\n", statusText)
-		fmt.Printf("   • Response Time: %v\n", health.ResponseTime)
+		fmt.Printf("   - Status: %s\n", statusText)
+		fmt.Printf("   - Response Time: %v\n", health.ResponseTime)
 		if health.Error != "" {
-			fmt.Printf("   • Last Error: %s\n", health.Error)
+			fmt.Printf("   - Last Error: %s\n", health.Error)
 		}
 	}
 
@@ -521,4 +521,3 @@ func init() {
 	// Info command flags
 	mcpInfoCmd.Flags().StringVar(&mcpServer, "server", "", "Server name to show info for (required)")
 }
-

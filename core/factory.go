@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"sync"
 	"time"
-
-	"github.com/kunalkushwaha/agenticgokit/internal/logging"
 )
 
 // Essential factory functions for agents and runners
@@ -197,21 +195,29 @@ const (
 
 // Essential logging functions - implementations moved to internal packages
 func SetLogLevel(level LogLevel) {
-	// Bridge to internal implementation
-	internalLevel := logging.LogLevel(level)
-	logging.SetLogLevel(internalLevel)
+	// Delegate to active logging provider if available
+	p := getActiveLoggingProvider()
+	if p.SetLevel != nil {
+		p.SetLevel(level)
+	}
 }
 
 func GetLogLevel() LogLevel {
-	// Bridge to internal implementation
-	internalLevel := logging.GetLogLevel()
-	return LogLevel(internalLevel)
+	// Delegate to active logging provider if available
+	p := getActiveLoggingProvider()
+	if p.GetLevel != nil {
+		return p.GetLevel()
+	}
+	return INFO
 }
 
 func Logger() CoreLogger {
-	// Bridge to internal implementation
-	internalLogger := logging.GetLogger()
-	return &coreLoggerAdapter{internal: internalLogger}
+	// Return logger from the active provider or a safe no-op
+	p := getActiveLoggingProvider()
+	if p.New != nil {
+		return p.New()
+	}
+	return &noopCoreLogger{}
 }
 
 // CoreLogger interface for essential logging operations
@@ -245,142 +251,90 @@ type LogEvent interface {
 
 	// Logger creation for With() pattern
 	Logger() CoreLogger
-} // Adapter to bridge internal zerolog.Logger to CoreLogger interface
-type coreLoggerAdapter struct {
-	internal interface{} // Using interface{} to avoid import cycles
 }
 
-func (l *coreLoggerAdapter) Debug() LogEvent {
-	return &logEventAdapter{level: "debug", internal: l.internal}
+// =============================================================================
+// LOGGING PROVIDER REGISTRY (Plugins register here)
+// =============================================================================
+
+// LoggingProvider wires a concrete logger into core.
+type LoggingProvider struct {
+	// New returns a new CoreLogger instance (can share underlying sink).
+	New func() CoreLogger
+	// SetLevel sets global log level (optional).
+	SetLevel func(LogLevel)
+	// GetLevel gets global log level (optional).
+	GetLevel func() LogLevel
 }
 
-func (l *coreLoggerAdapter) Info() LogEvent {
-	return &logEventAdapter{level: "info", internal: l.internal}
-}
+var (
+	loggingProvidersMu    sync.RWMutex
+	loggingProviders      = map[string]LoggingProvider{}
+	activeLoggingProvider string
+)
 
-func (l *coreLoggerAdapter) Warn() LogEvent {
-	return &logEventAdapter{level: "warn", internal: l.internal}
-}
-
-func (l *coreLoggerAdapter) Error() LogEvent {
-	return &logEventAdapter{level: "error", internal: l.internal}
-}
-
-func (l *coreLoggerAdapter) With() LogEvent {
-	// Return a new log event that can be chained
-	return &logEventAdapter{level: "with", internal: l.internal}
-}
-
-// Adapter for log events
-type logEventAdapter struct {
-	level    string
-	internal interface{}
-	fields   map[string]interface{}
-}
-
-func (l *logEventAdapter) Str(key, val string) LogEvent {
-	if l.fields == nil {
-		l.fields = make(map[string]interface{})
+// RegisterLoggingProvider registers a logging provider by name. First registered becomes active by default.
+func RegisterLoggingProvider(name string, provider LoggingProvider) {
+	if name == "" || provider.New == nil {
+		return
 	}
-	l.fields[key] = val
-	return l
-}
-
-func (l *logEventAdapter) Strs(key string, val []string) LogEvent {
-	if l.fields == nil {
-		l.fields = make(map[string]interface{})
+	loggingProvidersMu.Lock()
+	defer loggingProvidersMu.Unlock()
+	loggingProviders[name] = provider
+	if activeLoggingProvider == "" {
+		activeLoggingProvider = name
 	}
-	l.fields[key] = val
-	return l
 }
 
-func (l *logEventAdapter) Int(key string, val int) LogEvent {
-	if l.fields == nil {
-		l.fields = make(map[string]interface{})
+// UseLoggingProvider selects an already-registered provider by name. Returns true if switched.
+func UseLoggingProvider(name string) bool {
+	loggingProvidersMu.Lock()
+	defer loggingProvidersMu.Unlock()
+	if _, ok := loggingProviders[name]; ok {
+		activeLoggingProvider = name
+		return true
 	}
-	l.fields[key] = val
-	return l
+	return false
 }
 
-func (l *logEventAdapter) Bool(key string, val bool) LogEvent {
-	if l.fields == nil {
-		l.fields = make(map[string]interface{})
+func getActiveLoggingProvider() LoggingProvider {
+	loggingProvidersMu.RLock()
+	name := activeLoggingProvider
+	provider, ok := loggingProviders[name]
+	loggingProvidersMu.RUnlock()
+	if ok {
+		return provider
 	}
-	l.fields[key] = val
-	return l
+	return LoggingProvider{New: func() CoreLogger { return &noopCoreLogger{} }}
 }
 
-func (l *logEventAdapter) Float64(key string, val float64) LogEvent {
-	if l.fields == nil {
-		l.fields = make(map[string]interface{})
-	}
-	l.fields[key] = val
-	return l
-}
+// Safe no-op implementations to avoid nil panics before a provider is registered
+type noopCoreLogger struct{}
 
-func (l *logEventAdapter) Dur(key string, val time.Duration) LogEvent {
-	if l.fields == nil {
-		l.fields = make(map[string]interface{})
-	}
-	l.fields[key] = val
-	return l
-}
+func (l *noopCoreLogger) Debug() LogEvent { return &noopLogEvent{} }
+func (l *noopCoreLogger) Info() LogEvent  { return &noopLogEvent{} }
+func (l *noopCoreLogger) Warn() LogEvent  { return &noopLogEvent{} }
+func (l *noopCoreLogger) Error() LogEvent { return &noopLogEvent{} }
+func (l *noopCoreLogger) With() LogEvent  { return &noopLogEvent{} }
 
-func (l *logEventAdapter) Time(key string, val time.Time) LogEvent {
-	if l.fields == nil {
-		l.fields = make(map[string]interface{})
-	}
-	l.fields[key] = val
-	return l
-}
+type noopLogEvent struct{}
 
-func (l *logEventAdapter) Interface(key string, val interface{}) LogEvent {
-	if l.fields == nil {
-		l.fields = make(map[string]interface{})
-	}
-	l.fields[key] = val
-	return l
-}
-
-func (l *logEventAdapter) Err(err error) LogEvent {
-	if l.fields == nil {
-		l.fields = make(map[string]interface{})
-	}
-	l.fields["error"] = err
-	return l
-}
-
-func (l *logEventAdapter) Msg(msg string) {
-	// TODO: Wire to internal logger properly
-	// For now, this is a no-op during refactoring
-}
-
-func (l *logEventAdapter) Msgf(format string, args ...interface{}) {
-	// TODO: Wire to internal logger properly
-	// For now, this is a no-op during refactoring
-}
-
-func (l *logEventAdapter) Logger() CoreLogger {
-	// Return a new logger instance with the accumulated fields
-	return &coreLoggerAdapter{internal: l.internal}
-}
-
-// LogEvent can also act as a logger for chaining
-func (l *logEventAdapter) Debug() LogEvent {
-	return &logEventAdapter{level: "debug", internal: l.internal, fields: l.fields}
-}
-
-func (l *logEventAdapter) Info() LogEvent {
-	return &logEventAdapter{level: "info", internal: l.internal, fields: l.fields}
-}
-
-func (l *logEventAdapter) Warn() LogEvent {
-	return &logEventAdapter{level: "warn", internal: l.internal, fields: l.fields}
-}
-
-func (l *logEventAdapter) Error() LogEvent {
-	return &logEventAdapter{level: "error", internal: l.internal, fields: l.fields}
-}
+func (e *noopLogEvent) Str(key, val string) LogEvent                   { return e }
+func (e *noopLogEvent) Strs(key string, val []string) LogEvent         { return e }
+func (e *noopLogEvent) Int(key string, val int) LogEvent               { return e }
+func (e *noopLogEvent) Bool(key string, val bool) LogEvent             { return e }
+func (e *noopLogEvent) Float64(key string, val float64) LogEvent       { return e }
+func (e *noopLogEvent) Dur(key string, val time.Duration) LogEvent     { return e }
+func (e *noopLogEvent) Time(key string, val time.Time) LogEvent        { return e }
+func (e *noopLogEvent) Interface(key string, val interface{}) LogEvent { return e }
+func (e *noopLogEvent) Err(err error) LogEvent                         { return e }
+func (e *noopLogEvent) Msg(msg string)                                 {}
+func (e *noopLogEvent) Msgf(format string, args ...interface{})        {}
+func (e *noopLogEvent) Debug() LogEvent                                { return e }
+func (e *noopLogEvent) Info() LogEvent                                 { return e }
+func (e *noopLogEvent) Warn() LogEvent                                 { return e }
+func (e *noopLogEvent) Error() LogEvent                                { return e }
+func (e *noopLogEvent) Logger() CoreLogger                             { return &noopCoreLogger{} }
 
 // Essential tracing types and interfaces
 type TraceEntry struct {

@@ -19,12 +19,12 @@ func CreateAgentProject(config ProjectConfig) error {
 // CreateAgentProjectFromTemplate creates a new AgentFlow project from a template
 func CreateAgentProjectFromTemplate(templateName, projectName string) error {
 	templatePath := filepath.Join("examples/templates", templateName+".yaml")
-	
+
 	generator, err := NewTemplateGenerator(templatePath)
 	if err != nil {
 		return fmt.Errorf("failed to create template generator: %w", err)
 	}
-	
+
 	return generator.GenerateProject(projectName)
 }
 
@@ -63,6 +63,11 @@ func CreateAgentProjectModular(config ProjectConfig) error {
 
 	// Create agent files using the new template-based approach
 	if err := createAgentFilesWithTemplates(config); err != nil {
+		return err
+	}
+
+	// Create plugins bundle (blank imports) to activate selected providers
+	if err := createPluginsBundle(config); err != nil {
 		return err
 	}
 
@@ -431,7 +436,7 @@ enabled = false
 	if config.MemoryEnabled {
 		// Get embedding dimensions from intelligence system
 		dimensions := GetModelDimensions(config.EmbeddingProvider, config.EmbeddingModel)
-		
+
 		memoryConfig := fmt.Sprintf(`
 [agent_memory]
 provider = "%s"
@@ -470,7 +475,7 @@ model = "%s"`,
 			memoryConfig += `
 base_url = "http://localhost:11434"`
 		}
-		
+
 		memoryConfig += `
 cache_embeddings = true
 max_batch_size = 100
@@ -657,7 +662,7 @@ description = "%s"
 system_prompt = "%s"
 capabilities = %s
 enabled = true
-`, agent.Name, agent.Name, agent.Purpose, 
+`, agent.Name, agent.Name, agent.Purpose,
 			generateSystemPromptForConfig(agent, i, len(agents), config.OrchestrationMode),
 			formatCapabilitiesArray(generateCapabilitiesForAgent(agent.Name)))
 
@@ -697,7 +702,7 @@ backoff_factor = 2.0`, agent.DisplayName, agent.Name)
 // generateSystemPromptForConfig creates a system prompt suitable for configuration files
 func generateSystemPromptForConfig(agent utils.AgentInfo, index, total int, orchestrationMode string) string {
 	basePrompt := fmt.Sprintf("You are %s, %s", agent.DisplayName, agent.Purpose)
-	
+
 	// Add orchestration context
 	switch orchestrationMode {
 	case "sequential":
@@ -713,15 +718,15 @@ func generateSystemPromptForConfig(agent utils.AgentInfo, index, total int, orch
 	case "loop":
 		basePrompt += " You process requests iteratively, improving results with each iteration."
 	}
-	
+
 	// Add capability context
 	capabilities := generateCapabilitiesForAgent(agent.Name)
 	if len(capabilities) > 0 {
 		basePrompt += fmt.Sprintf(" Your capabilities include: %s.", strings.Join(capabilities, ", "))
 	}
-	
+
 	basePrompt += " Always provide helpful, accurate, and relevant responses."
-	
+
 	return basePrompt
 }
 
@@ -760,12 +765,12 @@ func formatCapabilitiesArray(capabilities []string) string {
 	if len(capabilities) == 0 {
 		return `["general_assistance"]`
 	}
-	
+
 	quotedCapabilities := make([]string, len(capabilities))
 	for i, cap := range capabilities {
 		quotedCapabilities[i] = fmt.Sprintf(`"%s"`, cap)
 	}
-	
+
 	return fmt.Sprintf("[%s]", strings.Join(quotedCapabilities, ", "))
 }
 
@@ -1175,6 +1180,7 @@ func generateCacheInitFunction(config ProjectConfig) string {
 	return nil
 }`
 }
+
 // createProjectDirectories creates the main project subdirectories
 func createProjectDirectories(config ProjectConfig) error {
 	// Create agents directory
@@ -1212,7 +1218,7 @@ func createInternalDirectory(config ProjectConfig) error {
 		return fmt.Errorf("failed to create internal directory %s: %w", internalDir, err)
 	}
 	fmt.Printf("Created directory: %s\n", internalDir)
-	
+
 	// Create subdirectories within internal
 	configDir := filepath.Join(internalDir, "config")
 	if err := os.MkdirAll(configDir, 0755); err != nil {
@@ -1368,5 +1374,27 @@ func createCustomizationGuide(config ProjectConfig) error {
 	}
 
 	fmt.Printf("Created file: %s\n", guidePath)
+	return nil
+}
+
+// createPluginsBundle generates a plugins.go file that blank-imports selected plugins
+func createPluginsBundle(config ProjectConfig) error {
+	tmpl, err := template.New("plugins").Parse(templates.PluginsBundleTemplate)
+	if err != nil {
+		return fmt.Errorf("failed to parse plugins bundle template: %w", err)
+	}
+
+	pluginsPath := filepath.Join(config.Name, "plugins.go")
+	f, err := os.Create(pluginsPath)
+	if err != nil {
+		return fmt.Errorf("failed to create plugins.go: %w", err)
+	}
+	defer f.Close()
+
+	if err := tmpl.Execute(f, struct{ Config ProjectConfig }{Config: config}); err != nil {
+		return fmt.Errorf("failed to execute plugins bundle template: %w", err)
+	}
+
+	fmt.Printf("Created file: %s\n", pluginsPath)
 	return nil
 }

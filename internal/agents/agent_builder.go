@@ -25,8 +25,8 @@ type AgentBuilder struct {
 	// Multi-agent composition fields
 	compositionMode string
 	subAgents       []core.Agent
-	multiConfig     MultiAgentConfig
-	loopConfig      LoopConfig
+	multiConfig     core.MultiAgentConfig
+	loopConfig      core.LoopConfig
 }
 
 // AgentBuilderConfig contains configuration for the agent builder
@@ -86,32 +86,33 @@ func (b *AgentBuilder) WithStrictMode(strict bool) *AgentBuilder {
 // =============================================================================
 
 // WithParallelAgents configures the agent to run sub-agents in parallel
-func (b *AgentBuilder) WithParallelAgents(agents ...Agent) *AgentBuilder {
+func (b *AgentBuilder) WithParallelAgents(agents ...core.Agent) *AgentBuilder {
 	b.compositionMode = "parallel"
 	b.subAgents = append(b.subAgents, agents...)
 	return b
 }
 
 // WithSequentialAgents configures the agent to run sub-agents sequentially
-func (b *AgentBuilder) WithSequentialAgents(agents ...Agent) *AgentBuilder {
+func (b *AgentBuilder) WithSequentialAgents(agents ...core.Agent) *AgentBuilder {
 	b.compositionMode = "sequential"
 	b.subAgents = append(b.subAgents, agents...)
 	return b
 }
 
 // WithLoopAgent configures the agent to repeatedly run a sub-agent
-func (b *AgentBuilder) WithLoopAgent(agent Agent, maxIterations int, condition func(State) bool) *AgentBuilder {
+func (b *AgentBuilder) WithLoopAgent(agent core.Agent, maxIterations int, condition func(core.State) bool) *AgentBuilder {
 	b.compositionMode = "loop"
-	b.subAgents = []Agent{agent}
-	b.loopConfig = LoopConfig{
-		MaxIterations: maxIterations,
-		Condition:     condition,
+	b.subAgents = []core.Agent{agent}
+	b.loopConfig = core.LoopConfig{
+		MaxIterations:  maxIterations,
+		Timeout:        0, // Will be set from multiConfig if needed
+		BreakCondition: condition,
 	}
 	return b
 }
 
 // WithMultiAgentConfig sets the configuration for multi-agent composition
-func (b *AgentBuilder) WithMultiAgentConfig(config MultiAgentConfig) *AgentBuilder {
+func (b *AgentBuilder) WithMultiAgentConfig(config core.MultiAgentConfig) *AgentBuilder {
 	b.multiConfig = config
 	return b
 }
@@ -119,16 +120,16 @@ func (b *AgentBuilder) WithMultiAgentConfig(config MultiAgentConfig) *AgentBuild
 // WithMultiAgentTimeout sets the timeout for multi-agent composition
 func (b *AgentBuilder) WithMultiAgentTimeout(timeout time.Duration) *AgentBuilder {
 	if b.multiConfig.Timeout == 0 {
-		b.multiConfig = DefaultMultiAgentConfig()
+		b.multiConfig = core.DefaultMultiAgentConfig()
 	}
 	b.multiConfig.Timeout = timeout
 	return b
 }
 
 // WithMultiAgentErrorStrategy sets the error handling strategy for multi-agent composition
-func (b *AgentBuilder) WithMultiAgentErrorStrategy(strategy ErrorHandlingStrategy) *AgentBuilder {
+func (b *AgentBuilder) WithMultiAgentErrorStrategy(strategy core.ErrorHandlingStrategy) *AgentBuilder {
 	if b.multiConfig.Timeout == 0 {
-		b.multiConfig = DefaultMultiAgentConfig()
+		b.multiConfig = core.DefaultMultiAgentConfig()
 	}
 	b.multiConfig.ErrorStrategy = strategy
 	return b
@@ -466,10 +467,10 @@ type SimpleAgentConfig struct {
 	Name string `toml:"name"`
 
 	// Capability configurations
-	LLM     *LLMConfig     `toml:"llm"`
-	MCP     *MCPConfig     `toml:"mcp"`
-	Cache   *interface{}   `toml:"cache"` // Flexible cache configuration
-	Metrics *MetricsConfig `toml:"metrics"`
+	LLM     *core.LLMConfig     `toml:"llm"`
+	MCP     *core.MCPConfig     `toml:"mcp"`
+	Cache   *interface{}        `toml:"cache"` // Flexible cache configuration
+	Metrics *core.MetricsConfig `toml:"metrics"`
 
 	// Feature flags
 	LLMEnabled     bool `toml:"llm_enabled"`
@@ -547,14 +548,14 @@ type PlaceholderAgent struct {
 	logger       zerolog.Logger
 
 	// Capability-specific fields
-	llmProvider     ModelProvider
-	llmConfig       LLMConfig
-	mcpManager      MCPManager
-	mcpConfig       MCPAgentConfig
-	mcpCacheManager MCPCacheManager
+	llmProvider     core.ModelProvider
+	llmConfig       core.LLMConfig
+	mcpManager      core.MCPManager
+	mcpConfig       core.MCPAgentConfig
+	mcpCacheManager core.MCPCacheManager
 	cacheManager    interface{}
 	cacheConfig     interface{}
-	metricsConfig   MetricsConfig
+	metricsConfig   core.MetricsConfig
 }
 
 // Name implements the Agent interface

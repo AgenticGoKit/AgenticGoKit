@@ -2305,6 +2305,7 @@ func init() {
 	// If the factory package is available, it will register itself
 	//Logger().Debug().Msg("Core MCP package initialized")
 }
+
 // =============================================================================
 // MCP AGENT TYPES (MINIMAL PUBLIC INTERFACE)
 // =============================================================================
@@ -2381,8 +2382,63 @@ func (a *basicMCPAwareAgent) Run(ctx context.Context, inputState State) (State, 
 	return inputState, nil
 }
 
+func (a *basicMCPAwareAgent) HandleEvent(ctx context.Context, event Event, state State) (AgentResult, error) {
+	startTime := time.Now()
+	outputState, err := a.Run(ctx, state)
+	endTime := time.Now()
+
+	result := AgentResult{
+		OutputState: outputState,
+		StartTime:   startTime,
+		EndTime:     endTime,
+		Duration:    endTime.Sub(startTime),
+	}
+
+	if err != nil {
+		result.Error = err.Error()
+	}
+
+	return result, nil
+}
+
 func (a *basicMCPAwareAgent) Name() string {
 	return a.name
+}
+
+func (a *basicMCPAwareAgent) GetRole() string {
+	return "mcp_basic_agent"
+}
+
+func (a *basicMCPAwareAgent) GetDescription() string {
+	return fmt.Sprintf("Basic MCP-aware agent: %s", a.name)
+}
+
+func (a *basicMCPAwareAgent) GetCapabilities() []string {
+	return []string{"mcp_processing", "basic_processing"}
+}
+
+func (a *basicMCPAwareAgent) GetSystemPrompt() string {
+	return "You are a basic MCP-aware agent."
+}
+
+func (a *basicMCPAwareAgent) GetTimeout() time.Duration {
+	return 30 * time.Second
+}
+
+func (a *basicMCPAwareAgent) IsEnabled() bool {
+	return true
+}
+
+func (a *basicMCPAwareAgent) GetLLMConfig() *ResolvedLLMConfig {
+	return nil
+}
+
+func (a *basicMCPAwareAgent) Initialize(ctx context.Context) error {
+	return nil
+}
+
+func (a *basicMCPAwareAgent) Shutdown(ctx context.Context) error {
+	return nil
 }
 
 func (a *basicMCPAwareAgent) GetMCPManager() MCPManager {

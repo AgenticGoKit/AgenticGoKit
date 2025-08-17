@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -263,11 +264,18 @@ func NewMemory(config AgentMemoryConfig) (Memory, error) {
 		config.ChunkOverlap = 200
 	}
 
-	// Use factory pattern to avoid circular imports
+	// Try registry-based factory first (plugin providers)
+	if config.Provider != "" {
+		if factory, ok := getMemoryProviderFactory(config.Provider); ok {
+			return factory(config)
+		}
+	}
+
+	// Fallback to single internal factory to avoid circular imports (legacy path)
 	if memoryFactory != nil {
 		return memoryFactory(config)
 	}
-	
+
 	Logger().Warn().Msg("No memory factory registered - using no-op memory")
 	return &noOpMemory{}, nil
 }
@@ -280,7 +288,6 @@ func QuickMemory() Memory {
 		MaxResults: 10,
 		Dimensions: 1536,
 	}
-
 	memory, err := NewMemory(config)
 	if err != nil {
 		return &noOpMemory{}
@@ -291,6 +298,32 @@ func QuickMemory() Memory {
 // RegisterMemoryFactory allows internal packages to register their factory function
 func RegisterMemoryFactory(factory func(AgentMemoryConfig) (Memory, error)) {
 	memoryFactory = factory
+}
+
+// =============================================================================
+// MEMORY PROVIDER REGISTRY (Plugins register here)
+// =============================================================================
+
+// MemoryProviderFactory constructs a Memory implementation based on AgentMemoryConfig.
+type MemoryProviderFactory func(AgentMemoryConfig) (Memory, error)
+
+var (
+	memoryProviderFactoriesMu sync.RWMutex
+	memoryProviderFactories   = map[string]MemoryProviderFactory{}
+)
+
+// RegisterMemoryProviderFactory registers a named memory provider factory (e.g., "memory", "pgvector").
+func RegisterMemoryProviderFactory(name string, factory MemoryProviderFactory) {
+	memoryProviderFactoriesMu.Lock()
+	defer memoryProviderFactoriesMu.Unlock()
+	memoryProviderFactories[strings.ToLower(name)] = factory
+}
+
+func getMemoryProviderFactory(name string) (MemoryProviderFactory, bool) {
+	memoryProviderFactoriesMu.RLock()
+	defer memoryProviderFactoriesMu.RUnlock()
+	f, ok := memoryProviderFactories[strings.ToLower(name)]
+	return f, ok
 }
 
 // Embedding service factory functions
@@ -491,30 +524,40 @@ func calculateScore(content, query string) float32 {
 // =============================================================================
 
 var (
-	memoryFactory              func(AgentMemoryConfig) (Memory, error)
-	openAIEmbeddingFactory     func(string, string) EmbeddingService
-	ollamaEmbeddingFactory     func(string, string) EmbeddingService
-	dummyEmbeddingFactory      func(int) EmbeddingService
+	memoryFactory          func(AgentMemoryConfig) (Memory, error)
+	openAIEmbeddingFactory func(string, string) EmbeddingService
+	ollamaEmbeddingFactory func(string, string) EmbeddingService
+	dummyEmbeddingFactory  func(int) EmbeddingService
 )
 
 // Temporary no-op implementations during refactoring
 type noOpMemory struct{}
 
 func (m *noOpMemory) Store(ctx context.Context, content string, tags ...string) error { return nil }
-func (m *noOpMemory) Query(ctx context.Context, query string, limit ...int) ([]Result, error) { return []Result{}, nil }
-func (m *noOpMemory) Remember(ctx context.Context, key string, value any) error { return nil }
-func (m *noOpMemory) Recall(ctx context.Context, key string) (any, error) { return nil, nil }
+func (m *noOpMemory) Query(ctx context.Context, query string, limit ...int) ([]Result, error) {
+	return []Result{}, nil
+}
+func (m *noOpMemory) Remember(ctx context.Context, key string, value any) error  { return nil }
+func (m *noOpMemory) Recall(ctx context.Context, key string) (any, error)        { return nil, nil }
 func (m *noOpMemory) AddMessage(ctx context.Context, role, content string) error { return nil }
-func (m *noOpMemory) GetHistory(ctx context.Context, limit ...int) ([]Message, error) { return []Message{}, nil }
-func (m *noOpMemory) NewSession() string { return "default" }
+func (m *noOpMemory) GetHistory(ctx context.Context, limit ...int) ([]Message, error) {
+	return []Message{}, nil
+}
+func (m *noOpMemory) NewSession() string                                               { return "default" }
 func (m *noOpMemory) SetSession(ctx context.Context, sessionID string) context.Context { return ctx }
-func (m *noOpMemory) ClearSession(ctx context.Context) error { return nil }
-func (m *noOpMemory) Close() error { return nil }
-func (m *noOpMemory) IngestDocument(ctx context.Context, doc Document) error { return nil }
-func (m *noOpMemory) IngestDocuments(ctx context.Context, docs []Document) error { return nil }
-func (m *noOpMemory) SearchKnowledge(ctx context.Context, query string, options ...SearchOption) ([]KnowledgeResult, error) { return []KnowledgeResult{}, nil }
-func (m *noOpMemory) SearchAll(ctx context.Context, query string, options ...SearchOption) (*HybridResult, error) { return &HybridResult{}, nil }
-func (m *noOpMemory) BuildContext(ctx context.Context, query string, options ...ContextOption) (*RAGContext, error) { return &RAGContext{}, nil }
+func (m *noOpMemory) ClearSession(ctx context.Context) error                           { return nil }
+func (m *noOpMemory) Close() error                                                     { return nil }
+func (m *noOpMemory) IngestDocument(ctx context.Context, doc Document) error           { return nil }
+func (m *noOpMemory) IngestDocuments(ctx context.Context, docs []Document) error       { return nil }
+func (m *noOpMemory) SearchKnowledge(ctx context.Context, query string, options ...SearchOption) ([]KnowledgeResult, error) {
+	return []KnowledgeResult{}, nil
+}
+func (m *noOpMemory) SearchAll(ctx context.Context, query string, options ...SearchOption) (*HybridResult, error) {
+	return &HybridResult{}, nil
+}
+func (m *noOpMemory) BuildContext(ctx context.Context, query string, options ...ContextOption) (*RAGContext, error) {
+	return &RAGContext{}, nil
+}
 
 type noOpEmbeddingService struct {
 	dimensions int

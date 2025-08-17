@@ -76,11 +76,11 @@ type AgentConfig struct {
 	Enabled      bool              `toml:"enabled"`
 	LLM          *AgentLLMConfig   `toml:"llm,omitempty"`
 	Metadata     map[string]string `toml:"metadata,omitempty"`
-	
+
 	// Advanced configuration
-	RetryPolicy  *AgentRetryPolicyConfig  `toml:"retry_policy,omitempty"`
-	RateLimit    *RateLimitConfig         `toml:"rate_limit,omitempty"`
-	Timeout      int                      `toml:"timeout_seconds,omitempty"`
+	RetryPolicy *AgentRetryPolicyConfig `toml:"retry_policy,omitempty"`
+	RateLimit   *RateLimitConfig        `toml:"rate_limit,omitempty"`
+	Timeout     int                     `toml:"timeout_seconds,omitempty"`
 }
 
 // AgentRetryPolicyConfig represents retry policy configuration for agents
@@ -101,6 +101,7 @@ type RateLimitConfig struct {
 type ResolvedLLMConfig struct {
 	Provider         string
 	Model            string
+	APIKey           string // API key for the provider
 	Temperature      float64
 	MaxTokens        int
 	Timeout          time.Duration
@@ -162,7 +163,7 @@ type Config struct {
 		CircuitBreaker       CircuitBreakerConfigToml `toml:"circuit_breaker"`
 		Retry                RetryConfigToml          `toml:"retry"`
 	} `toml:"error_routing"`
-	
+
 	Providers map[string]map[string]interface{} `toml:"providers"`
 
 	// MCP configuration
@@ -324,7 +325,7 @@ func (r *noOpResolver) ResolveAgentConfigWithEnv(agentName string) (*ResolvedAge
 	if !exists {
 		return nil, fmt.Errorf("agent '%s' not found in configuration", agentName)
 	}
-	
+
 	// Simple resolution without environment overrides for now
 	return &ResolvedAgentConfig{
 		Name:         agentName,
@@ -579,17 +580,17 @@ func applyConfigDefaults(config *Config) {
 		if agent.Role == "" {
 			agent.Role = name + "_agent"
 		}
-		
+
 		// Set default description if not specified
 		if agent.Description == "" {
 			agent.Description = "Agent for " + name
 		}
-		
+
 		// Set default timeout if not specified
 		if agent.Timeout == 0 {
 			agent.Timeout = 30
 		}
-		
+
 		// Update the agent in the map
 		config.Agents[name] = agent
 	}
