@@ -255,6 +255,7 @@ enabled = true
 {{if .Config.WithMetrics}}enable_metrics = true
 metrics_port = {{.Config.MetricsPort}}{{end}}
 {{if .Config.WithLoadBalancer}}enable_load_balancer = true{{end}}
+transport = "{{if .Config.MCPTransport}}{{.Config.MCPTransport}}{{else}}tcp{{end}}"  # tcp | stdio | websocket
 connection_pool_size = {{.Config.ConnectionPoolSize}}
 retry_policy = "{{.Config.RetryPolicy}}"
 
@@ -274,6 +275,30 @@ enabled = true
 
 **Available Tools**:
 {{range .Config.MCPTools}}- {{.}}
+{{end}}
+
+{{if .Config.WithCache}}#### MCP Cache Configuration
+
+` + "```toml" + `
+[mcp.cache]
+enabled = true
+default_ttl_ms = 900000      # 15 minutes
+max_size_mb = 100
+max_keys = 10000
+eviction_policy = "lru"     # lru | lfu | ttl
+cleanup_interval_ms = 300000 # 5 minutes
+backend = "memory"          # memory | redis | file
+
+[mcp.cache.backend_config]
+redis_addr = "localhost:6379"
+redis_password = ""
+redis_db = "0"
+file_path = "./cache"
+
+[mcp.cache.tool_ttls_ms]
+# web_search = 300000
+# content_fetch = 1800000
+` + "```" + `
 {{end}}
 {{end}}
 

@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
-	
+
 	"github.com/kunalkushwaha/agenticgokit/cmd/agentcli/version"
 )
 
@@ -31,12 +31,12 @@ func getAgenticGoKitVersion() string {
 		}
 		return cliVersion
 	}
-	
+
 	// Strategy 2: Try to fetch the latest version from GitHub API
 	if latestVersion := fetchLatestVersionFromGitHub(); latestVersion != "" {
 		return latestVersion
 	}
-	
+
 	// Strategy 3: Fallback to a known stable version
 	// This should be updated periodically, but serves as a last resort
 	return "v0.3.4"
@@ -47,39 +47,39 @@ func fetchLatestVersionFromGitHub() string {
 	client := &http.Client{
 		Timeout: 10 * time.Second,
 	}
-	
+
 	req, err := http.NewRequest("GET", "https://api.github.com/repos/kunalkushwaha/agenticgokit/releases/latest", nil)
 	if err != nil {
 		return ""
 	}
-	
+
 	// Set User-Agent to avoid rate limiting
 	req.Header.Set("User-Agent", "AgenticGoKit-CLI")
-	
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return ""
 	}
 	defer resp.Body.Close()
-	
+
 	if resp.StatusCode != http.StatusOK {
 		return ""
 	}
-	
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return ""
 	}
-	
+
 	var release GitHubRelease
 	if err := json.Unmarshal(body, &release); err != nil {
 		return ""
 	}
-	
+
 	if release.TagName != "" && isValidSemanticVersion(release.TagName) {
 		return release.TagName
 	}
-	
+
 	return ""
 }
 
@@ -87,25 +87,25 @@ func fetchLatestVersionFromGitHub() string {
 func isValidSemanticVersion(version string) bool {
 	// Remove 'v' prefix if present
 	v := strings.TrimPrefix(version, "v")
-	
+
 	// Handle pre-release and build metadata
 	// Split on '+' first to handle build metadata
 	mainVersion := v
 	if idx := strings.Index(v, "+"); idx != -1 {
 		mainVersion = v[:idx]
 	}
-	
+
 	// Split on '-' to handle pre-release
 	if idx := strings.Index(mainVersion, "-"); idx != -1 {
 		mainVersion = mainVersion[:idx]
 	}
-	
+
 	// Basic semantic version pattern: X.Y.Z (exactly 3 parts)
 	parts := strings.Split(mainVersion, ".")
 	if len(parts) != 3 {
 		return false
 	}
-	
+
 	// Check that all three parts are valid numbers
 	for _, part := range parts {
 		// Check if it's a valid number
@@ -118,14 +118,14 @@ func isValidSemanticVersion(version string) bool {
 			}
 		}
 	}
-	
+
 	return true
 }
 
 // GetAgenticGoKitVersionWithFallback returns the AgenticGoKit version with explicit fallback handling
 func GetAgenticGoKitVersionWithFallback() (string, string) {
 	cliVersion := version.Version
-	
+
 	// If CLI version is valid, use it
 	if cliVersion != "" && cliVersion != "dev" && isValidSemanticVersion(cliVersion) {
 		if !strings.HasPrefix(cliVersion, "v") {
@@ -133,12 +133,12 @@ func GetAgenticGoKitVersionWithFallback() (string, string) {
 		}
 		return cliVersion, "cli-version"
 	}
-	
+
 	// Try GitHub API
 	if latestVersion := fetchLatestVersionFromGitHub(); latestVersion != "" {
 		return latestVersion, "github-api"
 	}
-	
+
 	// Fallback
 	return "v0.3.4", "fallback"
 }
@@ -163,6 +163,7 @@ type ProjectConfig struct {
 	// MCP configuration
 	MCPEnabled         bool
 	MCPProduction      bool
+	MCPTransport       string
 	WithCache          bool
 	WithMetrics        bool
 	MCPTools           []string
@@ -216,6 +217,7 @@ type TemplateData struct {
 	SystemPrompt   string
 	RoutingComment string
 }
+
 // ProjectStructureInfo contains information about the project's directory structure
 type ProjectStructureInfo struct {
 	AgentsPackage   string // Package name for agents (e.g., "agents")
@@ -245,23 +247,23 @@ type ImportPathInfo struct {
 
 // EnhancedTemplateData represents the enhanced data structure passed to templates
 type EnhancedTemplateData struct {
-	Config              ProjectConfig
-	Agent               AgentInfo
-	Agents              []AgentInfo
-	AgentIndex          int
-	TotalAgents         int
-	NextAgent           string
-	PrevAgent           string
-	IsFirstAgent        bool
-	IsLastAgent         bool
-	SystemPrompt        string
-	RoutingComment      string
-	
+	Config         ProjectConfig
+	Agent          AgentInfo
+	Agents         []AgentInfo
+	AgentIndex     int
+	TotalAgents    int
+	NextAgent      string
+	PrevAgent      string
+	IsFirstAgent   bool
+	IsLastAgent    bool
+	SystemPrompt   string
+	RoutingComment string
+
 	// New enhanced fields
 	ProjectStructure    ProjectStructureInfo
 	CustomizationPoints []CustomizationPoint
 	ImportPaths         ImportPathInfo
-	
+
 	// Additional metadata
 	GenerationTimestamp string
 	FrameworkVersion    string
@@ -285,7 +287,7 @@ func CreateImportPathInfo(config ProjectConfig) ImportPathInfo {
 	// Use safe import path resolution to handle any edge cases
 	agentsImport := ResolveImportPathSafe(config.Name, "agents")
 	internalImport := ResolveImportPathSafe(config.Name, "internal")
-	
+
 	return ImportPathInfo{
 		AgentsImport:   agentsImport,
 		InternalImport: internalImport,
@@ -445,7 +447,7 @@ func GetEnabledFeatures(config ProjectConfig) []string {
 // CreateEnhancedTemplateData creates enhanced template data with all the new fields
 func CreateEnhancedTemplateData(config ProjectConfig, agent AgentInfo, agents []AgentInfo, agentIndex int) EnhancedTemplateData {
 	var nextAgent, prevAgent string
-	
+
 	// Determine next and previous agents
 	if agentIndex < len(agents)-1 {
 		nextAgent = agents[agentIndex+1].Name
@@ -476,12 +478,12 @@ func CreateEnhancedTemplateData(config ProjectConfig, agent AgentInfo, agents []
 		IsLastAgent:    agentIndex == len(agents)-1,
 		SystemPrompt:   CreateSystemPrompt(agent, agentIndex, len(agents), config.OrchestrationMode),
 		RoutingComment: routingComment,
-		
+
 		// Enhanced fields
 		ProjectStructure:    CreateProjectStructureInfo(config),
 		CustomizationPoints: CreateCustomizationPoints(config),
 		ImportPaths:         CreateImportPathInfo(config),
-		
+
 		// Metadata
 		GenerationTimestamp: time.Now().Format("2006-01-02 15:04:05"),
 		FrameworkVersion:    AgenticGoKitVersion,
@@ -492,12 +494,12 @@ func CreateEnhancedTemplateData(config ProjectConfig, agent AgentInfo, agents []
 // CreateSystemPrompt creates a system prompt for an agent based on its role and position
 func CreateSystemPrompt(agent AgentInfo, index, total int, orchestrationMode string) string {
 	basePrompt := fmt.Sprintf("You are %s, a specialized AI agent", agent.DisplayName)
-	
+
 	// Add purpose
 	if agent.Purpose != "" {
 		basePrompt += fmt.Sprintf(" whose purpose is to %s", agent.Purpose)
 	}
-	
+
 	// Add orchestration context
 	switch orchestrationMode {
 	case "sequential":
@@ -515,9 +517,9 @@ func CreateSystemPrompt(agent AgentInfo, index, total int, orchestrationMode str
 	default:
 		basePrompt += ". You are part of a route-based workflow. Process requests that are specifically routed to you based on their content or type."
 	}
-	
+
 	basePrompt += " Always provide clear, helpful, and accurate responses."
-	
+
 	return basePrompt
 }
 
@@ -589,11 +591,11 @@ func SanitizeModuleName(moduleName string) string {
 
 	// Convert to lowercase and replace invalid characters
 	sanitized := strings.ToLower(moduleName)
-	
+
 	// Replace invalid characters with hyphens, but avoid consecutive hyphens
 	var result strings.Builder
 	lastWasHyphen := false
-	
+
 	for _, char := range sanitized {
 		if isValidModuleChar(char) && char != '_' {
 			result.WriteRune(char)
@@ -634,7 +636,7 @@ func SanitizePackageName(packageName string) string {
 
 	// Convert to lowercase
 	sanitized := strings.ToLower(packageName)
-	
+
 	// Replace invalid characters with underscores
 	var result strings.Builder
 	for i, char := range sanitized {
@@ -686,7 +688,7 @@ func ResolveImportPath(moduleName, packagePath string) (string, error) {
 
 	// Clean the package path
 	packagePath = strings.Trim(packagePath, "/")
-	
+
 	// Validate each component of the package path
 	components := strings.Split(packagePath, "/")
 	for _, component := range components {
@@ -701,7 +703,7 @@ func ResolveImportPath(moduleName, packagePath string) (string, error) {
 // ResolveImportPathSafe generates import paths with automatic sanitization
 func ResolveImportPathSafe(moduleName, packagePath string) string {
 	sanitizedModule := SanitizeModuleName(moduleName)
-	
+
 	if packagePath == "" {
 		return sanitizedModule
 	}
@@ -709,7 +711,7 @@ func ResolveImportPathSafe(moduleName, packagePath string) string {
 	// Clean and sanitize the package path
 	packagePath = strings.Trim(packagePath, "/")
 	components := strings.Split(packagePath, "/")
-	
+
 	var sanitizedComponents []string
 	for _, component := range components {
 		sanitized := SanitizePackageName(component)
@@ -774,13 +776,13 @@ func isReservedModuleName(name string) bool {
 		"main", "test", "example", "internal", "vendor",
 		"go", "golang", "std", "builtin", "unsafe",
 	}
-	
+
 	for _, r := range reserved {
 		if strings.EqualFold(name, r) {
 			return true
 		}
 	}
-	
+
 	return false
 }
 
@@ -792,20 +794,20 @@ func isReservedPackageName(name string) bool {
 		"if", "else", "switch", "case", "default", "for", "range",
 		"builtin", "unsafe", "reflect", "runtime", "sync", "context",
 	}
-	
+
 	for _, r := range reserved {
 		if name == r {
 			return true
 		}
 	}
-	
+
 	return false
 }
 
 // ValidateAndSanitizeProjectConfig validates and sanitizes project configuration
 func ValidateAndSanitizeProjectConfig(config *ProjectConfig) error {
 	originalName := config.Name
-	
+
 	// Sanitize the project name if needed
 	if err := ValidateGoModuleName(config.Name); err != nil {
 		fmt.Printf("⚠️  Project name '%s' is invalid: %v\n", config.Name, err)
@@ -837,7 +839,7 @@ func ValidateAndSanitizeProjectConfig(config *ProjectConfig) error {
 			break
 		}
 	}
-	
+
 	if !isValidProvider {
 		return fmt.Errorf("invalid provider '%s'. Valid providers: %v", config.Provider, validProviders)
 	}
@@ -851,7 +853,7 @@ func ValidateAndSanitizeProjectConfig(config *ProjectConfig) error {
 			break
 		}
 	}
-	
+
 	if !isValidMode && config.OrchestrationMode != "" {
 		fmt.Printf("⚠️  Invalid orchestration mode '%s', defaulting to 'sequential'\n", config.OrchestrationMode)
 		config.OrchestrationMode = "sequential"
@@ -867,9 +869,9 @@ func ValidateAndSanitizeProjectConfig(config *ProjectConfig) error {
 // ShowVersionInfo displays information about the AgenticGoKit version being used
 func ShowVersionInfo() {
 	version, source := GetAgenticGoKitVersionWithFallback()
-	
+
 	fmt.Printf("📦 Using AgenticGoKit version: %s", version)
-	
+
 	switch source {
 	case "cli-version":
 		fmt.Printf(" (from CLI version)\n")
@@ -886,7 +888,7 @@ func ShowVersionInfo() {
 func CreateProjectWithValidation(config ProjectConfig) error {
 	// Show version information
 	ShowVersionInfo()
-	
+
 	// Validate and sanitize configuration
 	if err := ValidateAndSanitizeProjectConfig(&config); err != nil {
 		return fmt.Errorf("configuration validation failed: %w", err)

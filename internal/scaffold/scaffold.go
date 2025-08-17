@@ -306,6 +306,11 @@ func createAgentFilesWithTemplates(config ProjectConfig) error {
 
 // createMainGoWithTemplate creates main.go using templates
 func createMainGoWithTemplate(config ProjectConfig) error {
+	// Ensure embedding dimensions are available for templates
+	if config.EmbeddingDimensions == 0 {
+		config.EmbeddingDimensions = GetModelDimensions(config.EmbeddingProvider, config.EmbeddingModel)
+	}
+
 	utilsConfig := convertToUtilsConfig(config)
 	agents := utils.ResolveAgentNames(utilsConfig)
 
@@ -430,6 +435,38 @@ command = "npx @modelcontextprotocol/server-brave-search"
 enabled = false
 `
 		configContent += mcpConfig
+
+		// Include cache configuration section if caching is requested
+		if config.WithCache {
+			mcpCache := `
+[mcp.cache]
+enabled = true
+# Default TTL for cached tool results (milliseconds)
+default_ttl_ms = 900000
+# Maximum cache size (MB) and max number of keys
+max_size_mb = 100
+max_keys = 10000
+# Eviction policy: lru | lfu | ttl
+eviction_policy = "lru"
+# Cleanup interval for expired entries (milliseconds)
+cleanup_interval_ms = 300000
+# Backend: memory | redis | file
+backend = "memory"
+
+# Backend-specific configuration (keys depend on selected backend)
+[mcp.cache.backend_config]
+redis_addr = "localhost:6379"
+redis_password = ""
+redis_db = "0"
+file_path = "./cache"
+
+# Optional per-tool TTL overrides (milliseconds)
+[mcp.cache.tool_ttls_ms]
+# web_search = 300000
+# content_fetch = 1800000
+`
+			configContent += mcpCache
+		}
 	}
 
 	// Add memory configuration if enabled
@@ -1176,7 +1213,77 @@ func generateMCPInitFunction(config ProjectConfig) string {
 // generateCacheInitFunction generates the cache initialization function code
 func generateCacheInitFunction(config ProjectConfig) string {
 	return `func initializeCache() error {
-	// Cache initialization placeholder
+	// Initialize MCP cache manager if MCP caching is enabled
+	cfg, err := core.LoadConfig("agentflow.toml")
+	if err != nil {
+		return fmt.Errorf("failed to load config for cache: %w", err)
+	}
+	if !cfg.MCP.Enabled {
+		return nil
+	}
+
+	// Only proceed if caching is enabled globally or via [mcp.cache]
+	if !(cfg.MCP.EnableCaching || cfg.MCP.Cache.Enabled) {
+		return nil
+	}
+
+	// Start from defaults and override using TOML values
+	cacheCfg := core.DefaultMCPCacheConfig()
+
+	// Global toggle
+	cacheCfg.Enabled = cfg.MCP.EnableCaching || cfg.MCP.Cache.Enabled
+
+	// TTL and cleanup
+	if cfg.MCP.Cache.DefaultTTLMS > 0 {
+		cacheCfg.DefaultTTL = time.Duration(cfg.MCP.Cache.DefaultTTLMS) * time.Millisecond
+	} else if cfg.MCP.CacheTimeout > 0 {
+		// Back-compat global cache_timeout_ms
+		cacheCfg.DefaultTTL = time.Duration(cfg.MCP.CacheTimeout) * time.Millisecond
+	}
+	if cfg.MCP.Cache.CleanupIntervalMS > 0 {
+		cacheCfg.CleanupInterval = time.Duration(cfg.MCP.Cache.CleanupIntervalMS) * time.Millisecond
+	}
+
+	// Size & keys
+	if cfg.MCP.Cache.MaxSizeMB > 0 {
+		cacheCfg.MaxSize = cfg.MCP.Cache.MaxSizeMB
+	}
+	if cfg.MCP.Cache.MaxKeys > 0 {
+		cacheCfg.MaxKeys = cfg.MCP.Cache.MaxKeys
+	}
+
+	// Policy
+	if cfg.MCP.Cache.EvictionPolicy != "" {
+		cacheCfg.EvictionPolicy = cfg.MCP.Cache.EvictionPolicy
+	}
+
+	// Backend
+	if cfg.MCP.Cache.Backend != "" {
+		cacheCfg.Backend = cfg.MCP.Cache.Backend
+	}
+	if cfg.MCP.Cache.BackendConfig != nil {
+		// Ensure map exists then copy entries
+		if cacheCfg.BackendConfig == nil {
+			cacheCfg.BackendConfig = map[string]string{}
+		}
+		for k, v := range cfg.MCP.Cache.BackendConfig {
+			cacheCfg.BackendConfig[k] = v
+		}
+	}
+
+	// Per-tool TTLs
+	if len(cfg.MCP.Cache.ToolTTLsMS) > 0 {
+		cacheCfg.ToolTTLs = map[string]time.Duration{}
+		for tool, ms := range cfg.MCP.Cache.ToolTTLsMS {
+			if ms > 0 {
+				cacheCfg.ToolTTLs[tool] = time.Duration(ms) * time.Millisecond
+			}
+		}
+	}
+
+	if err := core.InitializeMCPCacheManager(cacheCfg); err != nil {
+		return fmt.Errorf("failed to initialize MCP cache manager: %w", err)
+	}
 	return nil
 }`
 }

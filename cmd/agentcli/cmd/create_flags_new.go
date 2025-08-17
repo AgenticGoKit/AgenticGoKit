@@ -47,6 +47,62 @@ func init() {
 	templateLoader = NewTemplateLoader()
 }
 
+// normalize maps user-provided flag values to canonical plugin keys and modes.
+func (f *ConsolidatedCreateFlags) normalize() {
+	// Provider synonyms
+	switch strings.ToLower(f.Provider) {
+	case "azureopenai", "aoai", "msazure", "azure-openai", "azure_oai":
+		f.Provider = "azure"
+	case "oai":
+		f.Provider = "openai"
+	case "local":
+		f.Provider = "ollama"
+	}
+
+	// Memory provider synonyms
+	switch strings.ToLower(f.Memory) {
+	case "pg", "postgres", "postgresql", "pg_vec", "pg-vector":
+		f.Memory = "pgvector"
+	case "mem", "inmemory", "in-memory":
+		f.Memory = "memory"
+	}
+
+	// Embedding provider synonyms (provider[:model])
+	if f.Embedding != "" {
+		parts := strings.Split(f.Embedding, ":")
+		prov := strings.ToLower(parts[0])
+		switch prov {
+		case "oai":
+			prov = "openai"
+		case "local":
+			prov = "ollama"
+		}
+		if len(parts) > 1 {
+			f.Embedding = prov + ":" + parts[1]
+		} else {
+			f.Embedding = prov
+		}
+	}
+
+	// Orchestration mode synonyms
+	switch strings.ToLower(f.Orchestration) {
+	case "router", "routing":
+		f.Orchestration = "route"
+	case "collab", "collaborate":
+		f.Orchestration = "collaborative"
+	case "seq", "sequential-pipeline":
+		f.Orchestration = "sequential"
+	case "hybrid":
+		f.Orchestration = "mixed"
+	}
+
+	// MCP level synonyms
+	switch strings.ToLower(f.MCP) {
+	case "prod":
+		f.MCP = "production"
+	}
+}
+
 // Available project templates (now loaded dynamically)
 var ProjectTemplates = map[string]ProjectTemplate{
 	"basic": {
@@ -128,6 +184,8 @@ var ProjectTemplates = map[string]ProjectTemplate{
 
 // ParseConsolidatedFlags converts consolidated flags to ProjectConfig
 func (f *ConsolidatedCreateFlags) ToProjectConfig(projectName string) (scaffold.ProjectConfig, error) {
+	// Normalize inputs first
+	f.normalize()
 	config := scaffold.ProjectConfig{
 		Name:          projectName,
 		NumAgents:     f.Agents,
@@ -141,14 +199,14 @@ func (f *ConsolidatedCreateFlags) ToProjectConfig(projectName string) (scaffold.
 	if f.Template != "" {
 		template, exists := templateLoader.GetTemplate(f.Template)
 		if !exists {
-			return config, fmt.Errorf("unknown template: %s. Available templates: %s", 
+			return config, fmt.Errorf("unknown template: %s. Available templates: %s",
 				f.Template, strings.Join(getTemplateNames(), ", "))
 		}
-		
+
 		// Start with template config
 		config = template.Config
 		config.Name = projectName // Override name
-		
+
 		// Override with explicit flags
 		if f.Agents > 0 {
 			config.NumAgents = f.Agents
@@ -162,7 +220,7 @@ func (f *ConsolidatedCreateFlags) ToProjectConfig(projectName string) (scaffold.
 	if f.Memory != "" {
 		config.MemoryEnabled = true
 		config.MemoryProvider = f.Memory
-		
+
 		// Set intelligent defaults based on provider
 		switch f.Memory {
 		case "pgvector":
@@ -197,7 +255,7 @@ func (f *ConsolidatedCreateFlags) ToProjectConfig(projectName string) (scaffold.
 				config.EmbeddingModel = "dummy"
 			}
 		}
-		
+
 		// Auto-enable memory if embedding is specified
 		if !config.MemoryEnabled {
 			config.MemoryEnabled = true
@@ -231,7 +289,7 @@ func (f *ConsolidatedCreateFlags) ToProjectConfig(projectName string) (scaffold.
 	// Parse RAG flag
 	if f.RAG != "" {
 		config.RAGEnabled = true
-		
+
 		// Auto-enable memory if not already enabled
 		if !config.MemoryEnabled {
 			config.MemoryEnabled = true
@@ -240,7 +298,7 @@ func (f *ConsolidatedCreateFlags) ToProjectConfig(projectName string) (scaffold.
 				config.EmbeddingProvider = "openai"
 			}
 		}
-		
+
 		if f.RAG == "default" || f.RAG == "true" {
 			config.RAGChunkSize = 1000
 			config.RAGOverlap = 100
@@ -260,7 +318,7 @@ func (f *ConsolidatedCreateFlags) ToProjectConfig(projectName string) (scaffold.
 	// Parse orchestration flag
 	if f.Orchestration != "" {
 		config.OrchestrationMode = f.Orchestration
-		
+
 		// Set intelligent defaults based on mode
 		switch f.Orchestration {
 		case "collaborative":
@@ -302,7 +360,7 @@ func (f *ConsolidatedCreateFlags) Validate() error {
 	// Validate template
 	if f.Template != "" {
 		if _, exists := templateLoader.GetTemplate(f.Template); !exists {
-			return fmt.Errorf("unknown template: %s. Available: %s", 
+			return fmt.Errorf("unknown template: %s. Available: %s",
 				f.Template, strings.Join(getTemplateNames(), ", "))
 		}
 	}
@@ -310,7 +368,7 @@ func (f *ConsolidatedCreateFlags) Validate() error {
 	// Validate provider
 	validProviders := []string{"openai", "azure", "ollama", "mock"}
 	if f.Provider != "" && !containsString(validProviders, f.Provider) {
-		return fmt.Errorf("invalid provider: %s. Valid options: %s", 
+		return fmt.Errorf("invalid provider: %s. Valid options: %s",
 			f.Provider, strings.Join(validProviders, ", "))
 	}
 
@@ -318,7 +376,7 @@ func (f *ConsolidatedCreateFlags) Validate() error {
 	if f.Memory != "" {
 		validMemoryProviders := []string{"memory", "pgvector", "weaviate"}
 		if !containsString(validMemoryProviders, f.Memory) {
-			return fmt.Errorf("invalid memory provider: %s. Valid options: %s", 
+			return fmt.Errorf("invalid memory provider: %s. Valid options: %s",
 				f.Memory, strings.Join(validMemoryProviders, ", "))
 		}
 	}
@@ -328,7 +386,7 @@ func (f *ConsolidatedCreateFlags) Validate() error {
 		parts := strings.Split(f.Embedding, ":")
 		validEmbeddingProviders := []string{"openai", "ollama", "dummy"}
 		if !containsString(validEmbeddingProviders, parts[0]) {
-			return fmt.Errorf("invalid embedding provider: %s. Valid options: %s", 
+			return fmt.Errorf("invalid embedding provider: %s. Valid options: %s",
 				parts[0], strings.Join(validEmbeddingProviders, ", "))
 		}
 	}
@@ -337,7 +395,7 @@ func (f *ConsolidatedCreateFlags) Validate() error {
 	if f.MCP != "" {
 		validMCPLevels := []string{"basic", "production", "full"}
 		if !containsString(validMCPLevels, f.MCP) && !strings.Contains(f.MCP, ",") {
-			return fmt.Errorf("invalid MCP level: %s. Valid options: %s or comma-separated tool list", 
+			return fmt.Errorf("invalid MCP level: %s. Valid options: %s or comma-separated tool list",
 				f.MCP, strings.Join(validMCPLevels, ", "))
 		}
 	}
@@ -346,7 +404,7 @@ func (f *ConsolidatedCreateFlags) Validate() error {
 	if f.Orchestration != "" {
 		validModes := []string{"sequential", "collaborative", "loop", "route"}
 		if !containsString(validModes, f.Orchestration) {
-			return fmt.Errorf("invalid orchestration mode: %s. Valid options: %s", 
+			return fmt.Errorf("invalid orchestration mode: %s. Valid options: %s",
 				f.Orchestration, strings.Join(validModes, ", "))
 		}
 	}
@@ -377,19 +435,19 @@ func containsString(slice []string, item string) bool {
 func GetTemplateHelp() string {
 	var help strings.Builder
 	help.WriteString("Available project templates:\n")
-	
+
 	allTemplates := templateLoader.GetAllTemplates()
 	for name, template := range allTemplates {
 		help.WriteString(fmt.Sprintf("  %-20s %s\n", name, template.Description))
 		help.WriteString(fmt.Sprintf("  %-20s Features: %s\n", "", strings.Join(template.Features, ", ")))
 		help.WriteString("\n")
 	}
-	
+
 	// Show template search paths
 	help.WriteString("\nTemplate search paths:\n")
 	for _, path := range templateLoader.ListTemplatePaths() {
 		help.WriteString(fmt.Sprintf("  %s\n", path))
 	}
-	
+
 	return help.String()
 }

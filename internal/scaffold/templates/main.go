@@ -74,8 +74,8 @@ func main() {
 	if err != nil {
 		// TODO: Add custom error handling for configuration loading
 		// You might want to provide more specific error messages or fallback configurations
-		fmt.Printf("Failed to load configuration: %v\n", err)
-		fmt.Printf("💡 Make sure agentflow.toml exists and is properly formatted\n")
+	fmt.Printf("Failed to load configuration: %v\n", err)
+	fmt.Printf("Hint: Make sure agentflow.toml exists and is properly formatted\n")
 		os.Exit(1)
 	}
 
@@ -85,8 +85,8 @@ func main() {
 	// You might want to add connection pooling, rate limiting, or custom authentication
 	llmProvider, err := initializeProvider(config.AgentFlow.Provider)
 	if err != nil {
-		fmt.Printf("❌ Failed to initialize LLM provider '%s': %v\n", config.AgentFlow.Provider, err)
-		fmt.Printf("\n💡 Make sure you have set the appropriate environment variables:\n")
+		fmt.Printf("ERROR: Failed to initialize LLM provider '%s': %v\n", config.AgentFlow.Provider, err)
+		fmt.Printf("\nHint: Make sure you have set the appropriate environment variables:\n")
 		switch config.AgentFlow.Provider {
 		case "azure":
 			fmt.Printf("  AZURE_OPENAI_API_KEY=your-api-key\n")
@@ -114,7 +114,7 @@ func main() {
 	// databases, APIs, and other integrations defined in your agentflow.toml
 	// TODO: Customize MCP initialization for your specific tool requirements
 	// You might want to add custom tool validation, authentication, or configuration
-	logger.Info().Msg("🔧 Initializing MCP with timeout handling...")
+	logger.Info().Msg("Initializing MCP with timeout handling...")
 	mcpInitCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 
@@ -184,6 +184,15 @@ func main() {
 			logger.Warn().Msg("MCP tools registration timed out")
 		}
 	}
+
+	{{if and .Config.MCPEnabled .Config.WithCache}}
+	// Initialize MCP cache manager from agentflow.toml
+	if err := initializeCache(); err != nil {
+		logger.Warn().Err(err).Msg("MCP cache initialization failed; continuing without cache")
+	} else {
+		logger.Info().Msg("MCP cache manager initialized successfully")
+	}
+	{{end}}
 	{{end}}
 
 	{{if .Config.MemoryEnabled}}
@@ -192,7 +201,7 @@ func main() {
 	// and perform RAG (Retrieval-Augmented Generation) operations
 	// TODO: Customize memory initialization for your specific use case
 	// You might want to add custom indexing, data preprocessing, or storage optimization
-	fmt.Println("🧠 Initializing memory system...")
+	fmt.Println("Initializing memory system...")
 	
 	// Create memory configuration from agentflow.toml settings
 	// This includes database connections, embedding models, and RAG parameters
@@ -200,7 +209,7 @@ func main() {
 	memoryConfig := config.AgentMemory
 	
 	// Validate configuration before initializing memory
-	fmt.Println("🔍 Validating memory configuration...")
+	fmt.Println("Validating memory configuration...")
 	if err := validateMemoryConfig(memoryConfig, "{{.Config.EmbeddingModel}}"); err != nil {
 		logger.Error().Err(err).Msg("Memory configuration validation failed")
 		fmt.Printf("❌ Configuration Error: %v\n", err)
@@ -208,7 +217,7 @@ func main() {
 	}
 	
 	logger.Info().Msg("Memory configuration validation passed")
-	fmt.Println("✅ Configuration validated!")
+	fmt.Println("Configuration validated.")
 	
 	memory, err := core.NewMemory(memoryConfig)
 	if err != nil {
@@ -218,29 +227,29 @@ func main() {
 		// Provide specific troubleshooting based on provider
 		switch memoryConfig.Provider {
 		case "pgvector":
-			fmt.Printf("\n💡 PostgreSQL/PgVector Troubleshooting:\n")
+		fmt.Printf("\nTip: PostgreSQL/PgVector Troubleshooting:\n")
 			fmt.Printf("   1. Start database: docker compose up -d\n")
 			fmt.Printf("   2. Run setup script: ./setup.sh (or setup.bat on Windows)\n")
 			fmt.Printf("   3. Check connection string in agentflow.toml\n")
 			fmt.Printf("   4. Verify database exists: psql -h localhost -U user -d agentflow\n")
 		case "weaviate":
-			fmt.Printf("\n💡 Weaviate Troubleshooting:\n")
+		fmt.Printf("\nTip: Weaviate Troubleshooting:\n")
 			fmt.Printf("   1. Start Weaviate: docker compose up -d\n")
 			fmt.Printf("   2. Check Weaviate is running: curl http://localhost:8080/v1/meta\n")
 			fmt.Printf("   3. Verify connection string in agentflow.toml\n")
 		case "memory":
-			fmt.Printf("\n💡 In-Memory Provider Issue:\n")
+			fmt.Printf("\nTip: In-Memory Provider Issue:\n")
 			fmt.Printf("   This shouldn't fail - check your configuration\n")
 		}
 		
 		// Check embedding provider availability
 		if memoryConfig.Embedding.Provider == "ollama" {
-			fmt.Printf("\n💡 Ollama Troubleshooting:\n")
+			fmt.Printf("\nTip: Ollama Troubleshooting:\n")
 			fmt.Printf("   1. Start Ollama: ollama serve\n")
 			fmt.Printf("   2. Pull model: ollama pull %s\n", memoryConfig.Embedding.Model)
 			fmt.Printf("   3. Test connection: curl http://localhost:11434/api/tags\n")
 		} else if memoryConfig.Embedding.Provider == "openai" {
-			fmt.Printf("\n💡 OpenAI Troubleshooting:\n")
+			fmt.Printf("\nTip: OpenAI Troubleshooting:\n")
 			fmt.Printf("   1. Set API key: export OPENAI_API_KEY=\"your-key\"\n")
 			fmt.Printf("   2. Verify key is valid and has credits\n")
 		}
@@ -253,11 +262,11 @@ func main() {
 	testContent := fmt.Sprintf("System initialized at %s", time.Now().Format("2006-01-02 15:04:05"))
 	if err := memory.Store(ctx, testContent, "system-init"); err != nil {
 		logger.Warn().Err(err).Msg("Memory connection test failed, continuing anyway")
-		fmt.Printf("⚠️  Memory connection test failed: %v\n", err)
-		fmt.Printf("Your agents will still work, but memory features may be limited\n")
+	fmt.Printf("Warning: Memory connection test failed: %v\n", err)
+	fmt.Printf("Agents will still work, but memory features may be limited\n")
 	} else {
 		logger.Info().Msg("Memory system initialized successfully")
-		fmt.Printf("✅ Memory system ready!\n")
+	fmt.Printf("Memory system ready.\n")
 	}
 	{{end}}
 
@@ -266,12 +275,12 @@ func main() {
 	// instead of hardcoded agent constructors, providing much more flexibility
 	// TODO: Customize agent factory initialization if needed
 	// You might want to add custom agent types or initialization logic
-	logger.Info().Msg("🤖 Initializing configuration-driven agent factory...")
+	logger.Info().Msg("Initializing configuration-driven agent factory...")
 	
 	factory := core.NewConfigurableAgentFactory(config)
 	if factory == nil {
 		logger.Error().Msg("Failed to create agent factory")
-		fmt.Printf("❌ Error creating agent factory\n")
+	fmt.Printf("ERROR: Error creating agent factory\n")
 		os.Exit(1)
 	}
 
@@ -281,8 +290,8 @@ func main() {
 	agentManager := core.NewAgentManager(config)
 	if err := agentManager.InitializeAgents(); err != nil {
 		logger.Error().Err(err).Msg("Failed to initialize agents from configuration")
-		fmt.Printf("❌ Error initializing agents: %v\n", err)
-		fmt.Printf("💡 Check your agentflow.toml [agents] configuration\n")
+	fmt.Printf("ERROR: Error initializing agents: %v\n", err)
+	fmt.Printf("Hint: Check your agentflow.toml [agents] configuration\n")
 		os.Exit(1)
 	}
 
@@ -318,9 +327,9 @@ func main() {
 	// Validate that we have at least one active agent
 	if len(agentHandlers) == 0 {
 		logger.Error().Msg("No active agents found in configuration")
-		fmt.Printf("❌ No active agents configured\n")
-		fmt.Printf("💡 Check your agentflow.toml [agents] section and ensure at least one agent is enabled\n")
-		fmt.Printf("💡 Example agent configuration:\n")
+	fmt.Printf("ERROR: No active agents configured\n")
+	fmt.Printf("Hint: Check your agentflow.toml [agents] section and ensure at least one agent is enabled\n")
+	fmt.Printf("Example agent configuration:\n")
 		fmt.Printf("   [agents.my_agent]\n")
 		fmt.Printf("   role = \"processor\"\n")
 		fmt.Printf("   description = \"My processing agent\"\n")
@@ -401,7 +410,7 @@ func main() {
 	for name, handler := range agentHandlers {
 		if err := runner.RegisterAgent(name, handler); err != nil {
 			logger.Error().Err(err).Str("agent", name).Msg("Failed to register agent")
-			fmt.Printf("❌ Error registering agent %s: %v\n", name, err)
+			fmt.Printf("ERROR: Error registering agent %s: %v\n", name, err)
 			os.Exit(1)
 		}
 		logger.Debug().Str("agent", name).Msg("Agent registered successfully")
@@ -427,7 +436,7 @@ func main() {
 		// Interactive mode: prompt user for input
 		// TODO: Enhance interactive input with better UX
 		// Examples: multi-line input, input history, auto-completion
-		fmt.Print("💬 Enter your message: ")
+	fmt.Print("Enter your message: ")
 		fmt.Scanln(&message)
 	}
 
@@ -511,7 +520,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	logger.Info().Msg("🚀 Workflow execution started")
+	logger.Info().Msg("Workflow execution started")
 
 	// Wait for processing to complete BEFORE printing results.
 	// We call runner.Stop() explicitly here (instead of using defer runner.Stop()).
@@ -537,9 +546,9 @@ func main() {
 		// TODO: Customize result display format
 		// Examples: structured output, color coding, progress indicators
 		for i, result := range results {
-			fmt.Printf("\n🤖 %s (Step %d):\n", result.AgentName, i+1)
+			fmt.Printf("\nAgent %s (Step %d):\n", result.AgentName, i+1)
 			fmt.Printf("%s\n", result.Content)
-			fmt.Printf("⏰ Completed at: %s\n", result.Timestamp.Format("15:04:05"))
+			fmt.Printf("Completed at: %s\n", result.Timestamp.Format("15:04:05"))
 			
 			// TODO: Add custom result metadata display here
 			// Examples: processing time, confidence scores, source information
@@ -547,19 +556,19 @@ func main() {
 		
 		// TODO: Add result summary or analytics here
 		// Examples: total processing time, success rate, performance metrics
-		fmt.Printf("\n📊 Summary: %d agents completed successfully\n", len(results))
+	fmt.Printf("\nSummary: %d agents completed successfully\n", len(results))
 	} else {
-		fmt.Printf("❌ No agent responses captured. This might indicate:\n")
-		fmt.Printf("   • LLM provider credentials are not configured\n")
-		fmt.Printf("   • An agent encountered an error during processing\n")
-		fmt.Printf("   • The LLM provider is not responding\n")
-		fmt.Printf("   • Network connectivity issues\n")
+	fmt.Printf("ERROR: No agent responses captured. This might indicate:\n")
+	fmt.Printf("   - LLM provider credentials are not configured\n")
+	fmt.Printf("   - An agent encountered an error during processing\n")
+	fmt.Printf("   - The LLM provider is not responding\n")
+	fmt.Printf("   - Network connectivity issues\n")
 		
 		// TODO: Add custom troubleshooting guidance for your specific setup
-		fmt.Printf("\n💡 Troubleshooting tips:\n")
-		fmt.Printf("   • Check your environment variables\n")
-		fmt.Printf("   • Verify agentflow.toml configuration\n")
-		fmt.Printf("   • Review the logs above for detailed error information\n")
+	fmt.Printf("\nTroubleshooting tips:\n")
+	fmt.Printf("   - Check your environment variables\n")
+	fmt.Printf("   - Verify agentflow.toml configuration\n")
+	fmt.Printf("   - Review the logs above for detailed error information\n")
 	}
 	resultsMutex.Unlock()
 
@@ -571,12 +580,12 @@ func main() {
 	// - Trigger follow-up workflows
 
 	fmt.Printf("\n=== Workflow Completed ===\n")
-	fmt.Printf("✅ Check the logs above for detailed agent execution results.\n")
+	fmt.Printf("Check the logs above for detailed agent execution results.\n")
 	
 	// TODO: Add custom completion logic here
 	// Examples: cleanup resources, send completion notifications, update status
 
-	logger.Info().Msg("🎉 Workflow completed successfully")
+	logger.Info().Msg("Workflow completed successfully")
 }
 
 {{.ProviderInitFunction}}
@@ -714,7 +723,7 @@ func validateMemoryConfig(memoryConfig core.AgentMemoryConfig, expectedModel str
 	// Validate embedding dimensions
 	expectedDimensions := {{.Config.EmbeddingDimensions}}
 	if memoryConfig.Dimensions != expectedDimensions {
-		return fmt.Errorf("%s requires %d dimensions, but %d configured in agentflow.toml\n💡 Solution: Update [agent_memory] dimensions = %d", 
+	return fmt.Errorf("%s requires %d dimensions, but %d configured in agentflow.toml\nSolution: Update [agent_memory] dimensions = %d", 
 			expectedModel, expectedDimensions, memoryConfig.Dimensions, expectedDimensions)
 	}
 	
@@ -723,12 +732,12 @@ func validateMemoryConfig(memoryConfig core.AgentMemoryConfig, expectedModel str
 	expectedModelName := "{{.Config.EmbeddingModel}}"
 	
 	if memoryConfig.Embedding.Provider != expectedProvider {
-		return fmt.Errorf("embedding provider mismatch: expected '%s', got '%s'\n💡 Solution: Update [agent_memory.embedding] provider = \"%s\"", 
+	return fmt.Errorf("embedding provider mismatch: expected '%s', got '%s'\nSolution: Update [agent_memory.embedding] provider = \"%s\"", 
 			expectedProvider, memoryConfig.Embedding.Provider, expectedProvider)
 	}
 	
 	if memoryConfig.Embedding.Model != expectedModelName {
-		return fmt.Errorf("embedding model mismatch: expected '%s', got '%s'\n💡 Solution: Update [agent_memory.embedding] model = \"%s\"", 
+	return fmt.Errorf("embedding model mismatch: expected '%s', got '%s'\nSolution: Update [agent_memory.embedding] model = \"%s\"", 
 			expectedModelName, memoryConfig.Embedding.Model, expectedModelName)
 	}
 	
@@ -736,14 +745,14 @@ func validateMemoryConfig(memoryConfig core.AgentMemoryConfig, expectedModel str
 	switch memoryConfig.Provider {
 	case "pgvector":
 		if memoryConfig.Connection == "" {
-			return fmt.Errorf("pgvector provider requires a connection string\n💡 Solution: Set [agent_memory] connection = \"postgres://user:password@localhost:15432/agentflow?sslmode=disable\"")
+			return fmt.Errorf("pgvector provider requires a connection string\nSolution: Set [agent_memory] connection = \"postgres://user:password@localhost:15432/agentflow?sslmode=disable\"")
 		}
 		if !strings.Contains(memoryConfig.Connection, "postgres://") {
 			return fmt.Errorf("pgvector connection string should start with 'postgres://'\n💡 Current: %s", memoryConfig.Connection)
 		}
 	case "weaviate":
 		if memoryConfig.Connection == "" {
-			return fmt.Errorf("weaviate provider requires a connection string\n💡 Solution: Set [agent_memory] connection = \"http://localhost:8080\"")
+			return fmt.Errorf("weaviate provider requires a connection string\nSolution: Set [agent_memory] connection = \"http://localhost:8080\"")
 		}
 		if !strings.Contains(memoryConfig.Connection, "http") {
 			return fmt.Errorf("weaviate connection string should be an HTTP URL\n💡 Current: %s", memoryConfig.Connection)
@@ -751,21 +760,21 @@ func validateMemoryConfig(memoryConfig core.AgentMemoryConfig, expectedModel str
 	case "memory":
 		// In-memory provider doesn't need connection validation
 	default:
-		return fmt.Errorf("unknown memory provider: %s\n💡 Valid options: memory, pgvector, weaviate", memoryConfig.Provider)
+	return fmt.Errorf("unknown memory provider: %s\nValid options: memory, pgvector, weaviate", memoryConfig.Provider)
 	}
 	
 	// Validate RAG configuration if enabled
 	{{if .Config.RAGEnabled}}
 	if memoryConfig.EnableRAG {
 		if memoryConfig.ChunkSize <= 0 {
-			return fmt.Errorf("RAG chunk size must be positive, got %d\n💡 Solution: Set [agent_memory] chunk_size = 1000", memoryConfig.ChunkSize)
+			return fmt.Errorf("RAG chunk size must be positive, got %d\nSolution: Set [agent_memory] chunk_size = 1000", memoryConfig.ChunkSize)
 		}
 		if memoryConfig.ChunkOverlap < 0 || memoryConfig.ChunkOverlap >= memoryConfig.ChunkSize {
-			return fmt.Errorf("RAG chunk overlap must be between 0 and chunk_size (%d), got %d\n💡 Solution: Set [agent_memory] chunk_overlap = 100", 
+			return fmt.Errorf("RAG chunk overlap must be between 0 and chunk_size (%d), got %d\nSolution: Set [agent_memory] chunk_overlap = 100", 
 				memoryConfig.ChunkSize, memoryConfig.ChunkOverlap)
 		}
 		if memoryConfig.KnowledgeScoreThreshold < 0.0 || memoryConfig.KnowledgeScoreThreshold > 1.0 {
-			return fmt.Errorf("RAG score threshold must be between 0.0 and 1.0, got %.2f\n💡 Solution: Set [agent_memory] knowledge_score_threshold = 0.7", 
+			return fmt.Errorf("RAG score threshold must be between 0.0 and 1.0, got %.2f\nSolution: Set [agent_memory] knowledge_score_threshold = 0.7", 
 				memoryConfig.KnowledgeScoreThreshold)
 		}
 	}
@@ -775,19 +784,19 @@ func validateMemoryConfig(memoryConfig core.AgentMemoryConfig, expectedModel str
 	switch memoryConfig.Embedding.Provider {
 	case "ollama":
 		if memoryConfig.Embedding.BaseURL == "" {
-			return fmt.Errorf("ollama embedding provider requires base_url\n💡 Solution: Set [agent_memory.embedding] base_url = \"http://localhost:11434\"")
+			return fmt.Errorf("ollama embedding provider requires base_url\nSolution: Set [agent_memory.embedding] base_url = \"http://localhost:11434\"")
 		}
 	case "openai":
 		// OpenAI uses environment variables, so we can't validate API key here
 		// But we can check if the model name looks reasonable
 		if !strings.Contains(memoryConfig.Embedding.Model, "embedding") {
-			return fmt.Errorf("OpenAI model '%s' doesn't look like an embedding model\n💡 Recommended: text-embedding-3-small or text-embedding-3-large", 
+			return fmt.Errorf("OpenAI model '%s' doesn't look like an embedding model\nRecommended: text-embedding-3-small or text-embedding-3-large", 
 				memoryConfig.Embedding.Model)
 		}
 	case "dummy":
 		// Dummy provider doesn't need validation
 	default:
-		return fmt.Errorf("unknown embedding provider: %s\n💡 Valid options: openai, ollama, dummy", memoryConfig.Embedding.Provider)
+	return fmt.Errorf("unknown embedding provider: %s\nValid options: openai, ollama, dummy", memoryConfig.Embedding.Provider)
 	}
 	
 	return nil

@@ -204,6 +204,8 @@ type MCPConfigToml struct {
 	CacheTimeout      int                   `toml:"cache_timeout_ms"`
 	MaxConnections    int                   `toml:"max_connections"`
 	Servers           []MCPServerConfigToml `toml:"servers"`
+	// Optional cache configuration
+	Cache MCPCacheConfigToml `toml:"cache"`
 }
 
 // MCPServerConfigToml represents individual MCP server configuration in TOML
@@ -214,6 +216,19 @@ type MCPServerConfigToml struct {
 	Port    int    `toml:"port,omitempty"`
 	Command string `toml:"command,omitempty"` // for stdio transport
 	Enabled bool   `toml:"enabled"`
+}
+
+// MCPCacheConfigToml represents MCP cache configuration in TOML format
+type MCPCacheConfigToml struct {
+	Enabled           bool              `toml:"enabled"`
+	DefaultTTLMS      int               `toml:"default_ttl_ms"`
+	MaxSizeMB         int64             `toml:"max_size_mb"`
+	MaxKeys           int               `toml:"max_keys"`
+	EvictionPolicy    string            `toml:"eviction_policy"` // lru, lfu, ttl
+	CleanupIntervalMS int               `toml:"cleanup_interval_ms"`
+	Backend           string            `toml:"backend"` // memory, redis, file
+	BackendConfig     map[string]string `toml:"backend_config"`
+	ToolTTLsMS        map[string]int    `toml:"tool_ttls_ms"` // per-tool TTLs in ms
 }
 
 // OrchestrationConfigToml represents orchestration configuration in TOML format
