@@ -12,17 +12,30 @@ The core interface for agent memory systems:
 
 ```go
 type Memory interface {
-    // Store stores a memory with optional metadata
-    Store(ctx context.Context, content string, metadata map[string]interface{}) (string, error)
-    
-    // Search finds memories similar to the query
-    Search(ctx context.Context, query string, limit int, minScore float64) ([]MemorySearchResult, error)
-    
-    // Get retrieves a specific memory by ID
-    Get(ctx context.Context, id string) (*MemorySearchResult, error)
-    
-    // Delete removes a memory by ID
-    Delete(ctx context.Context, id string) error
+    // Personal memory operations
+    Store(ctx context.Context, content string, tags ...string) error
+    Query(ctx context.Context, query string, limit ...int) ([]core.Result, error)
+
+    // Key-value storage
+    Remember(ctx context.Context, key string, value any) error
+    Recall(ctx context.Context, key string) (any, error)
+
+    // Chat history
+    AddMessage(ctx context.Context, role, content string) error
+    GetHistory(ctx context.Context, limit ...int) ([]core.Message, error)
+
+    // Knowledge base (RAG)
+    IngestDocument(ctx context.Context, doc core.Document) error
+    IngestDocuments(ctx context.Context, docs []core.Document) error
+    SearchKnowledge(ctx context.Context, query string, options ...core.SearchOption) ([]core.KnowledgeResult, error)
+    SearchAll(ctx context.Context, query string, options ...core.SearchOption) (*core.HybridResult, error)
+    BuildContext(ctx context.Context, query string, options ...core.ContextOption) (*core.RAGContext, error)
+
+    // Session management
+    NewSession() string
+    SetSession(ctx context.Context, sessionID string) context.Context
+    ClearSession(ctx context.Context) error
+    Close() error
 }
 ```
 

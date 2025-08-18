@@ -259,8 +259,12 @@ func (a *ResearchAgent) retryWithPolicy(ctx context.Context, prompt core.Prompt)
 **Before (Hardcoded):**
 ```go
 func main() {
-    // Initialize LLM provider
-    llmProvider, err := core.NewProviderFromWorkingDir()
+    // Initialize LLM provider from configuration
+    cfg, err := core.LoadConfigFromWorkingDir()
+    if err != nil {
+        log.Fatal(err)
+    }
+    llmProvider, err := cfg.InitializeProvider()
     if err != nil {
         log.Fatal(err)
     }
@@ -303,9 +307,9 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    
+
     // Initialize LLM provider
-    llmProvider, err := core.NewProviderFromWorkingDir()
+    llmProvider, err := config.InitializeProvider()
     if err != nil {
         log.Fatal(err)
     }
@@ -358,8 +362,10 @@ func main() {
     }
     
     // Start workflow
-    runner.Start(context.Background())
-    // ... rest of application
+    ctx := context.Background()
+    _ = runner.Start(ctx)
+    defer runner.Stop()
+    _ = runner.Emit(core.NewEvent("researcher", core.EventData{"message": "Hello"}, nil))
 }
 ```
 

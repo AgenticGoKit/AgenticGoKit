@@ -351,8 +351,15 @@ AgentFlow automatically looks for configuration in this order:
 
 ```go
 // Automatic loading
-provider, err := core.NewProviderFromWorkingDir()
-runner, err := core.NewRunnerFromWorkingDir()
+config, err := core.LoadConfigFromWorkingDir()
+if err != nil {
+    log.Fatal(err)
+}
+provider, err := config.InitializeProvider()
+if err != nil {
+    log.Fatal(err)
+}
+runner, err := core.NewRunnerFromConfig("agentflow.toml")
 ```
 
 ### Explicit Configuration
@@ -365,7 +372,7 @@ if err != nil {
 }
 
 // Create provider from config
-provider, err := core.NewProviderFromConfig(config)
+provider, err := config.InitializeProvider()
 if err != nil {
     log.Fatal(err)
 }
@@ -399,7 +406,7 @@ config := core.Config{
 }
 
 // Use programmatic config
-provider, err := core.NewProviderFromConfig(config)
+provider, err := config.InitializeProvider()
 mcpManager, err := core.InitializeMCPFromConfig(ctx, config.MCP)
 ```
 

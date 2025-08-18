@@ -279,6 +279,7 @@ func (a *MyAgent) execute(ctx context.Context, event Event, state State) (AgentR
     defer a.cleanup(execCtx)
     
     // Main execution logic
+    // Internal call shown for illustration only; public orchestration uses runner.Emit
     return a.processEvent(ctx, event, state)
 }
 

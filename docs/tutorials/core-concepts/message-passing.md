@@ -146,7 +146,7 @@ runner.RegisterCallback(core.HookAfterAgentRun, "my-callback",
 )
 ```
 
-## Under the Hood: The Runner Implementation
+## Under the Hood: The Runner Implementation (Internals)
 
 The Runner implementation uses a combination of channels, goroutines, and queues to manage event flow:
 
@@ -162,12 +162,12 @@ func (r *RunnerImpl) loop(ctx context.Context) {
             return
         case event := <-r.queue:
             // Process event in the main goroutine
-            r.processEvent(ctx, event)
+            // internal: r.processEvent(ctx, event) — use runner.Emit(event) in public API
         }
     }
 }
 
-func (r *RunnerImpl) processEvent(ctx context.Context, event Event) {
+// internal: func (r *RunnerImpl) processEvent(ctx context.Context, event Event) {
     // 1. Invoke BeforeEventHandling callbacks
     // 2. Route to orchestrator for agent dispatch
     // 3. Handle agent result

@@ -228,7 +228,7 @@ api_key_env = "ANTHROPIC_API_KEY"
 ```toml
 [llm]
 provider = "ollama"
-model = "llama2"
+model = "gemma3:1b"
 temperature = 0.7
 max_tokens = 2000
 base_url = "http://localhost:11434"

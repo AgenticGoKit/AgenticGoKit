@@ -78,7 +78,9 @@ func main() {
         "input": "Debug this workflow",
     })
     
-    results, err := runner.ProcessEvent(ctx, event)
+    _ = runner.Start(ctx)
+    defer runner.Stop()
+    err := runner.Emit(event)
     if err != nil {
         log.Printf("Error processing event: %v", err)
     }

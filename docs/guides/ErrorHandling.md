@@ -23,6 +23,7 @@ type AgentError struct {
     Context   map[string]interface{}
 }
 
+
 func (e *AgentError) Error() string {
     return fmt.Sprintf("agent %s failed in %s: %v", e.AgentName, e.Operation, e.Err)
 }
@@ -121,8 +122,9 @@ func (h *RetryableHandler) Run(ctx context.Context, event core.Event, state core
             &core.NetworkErrorChecker{},
         },
     }
-    
-    return core.WithRetry(ctx, retryConfig, func(ctx context.Context) (core.AgentResult, error) {
+            // Pseudocode for fault-tolerant orchestration handling; use Runner Start/Emit/Stop in real code
+            // ... implementation ...
+            return nil
         return h.executeWithPossibleFailure(ctx, event, state)
     })
 }
@@ -416,10 +418,10 @@ func (h *StatefulHandler) Run(ctx context.Context, event core.Event, state core.
 
 ### **Multi-Agent Error Recovery**
 
-Coordinate error handling across multiple agents:
+Coordinate error handling across multiple agents (pseudocode example):
 
 ```go
-func (o *FaultTolerantOrchestrator) ProcessEvent(ctx context.Context, event core.Event) error {
+func (o *FaultTolerantOrchestrator) Handle(ctx context.Context, event core.Event) error {
     agents := o.getActiveAgents()
     results := make(chan agentResult, len(agents))
     

@@ -40,7 +40,9 @@ if err != nil {
 }
 
 // Create provider from configuration
-provider, err := core.NewProviderFromConfig("agentflow.toml")
+cfg, err := core.LoadConfig("agentflow.toml")
+if err != nil { /* handle */ }
+provider, err := cfg.InitializeProvider()
 if err != nil {
     log.Fatal(err)
 }
@@ -352,7 +354,9 @@ if err != nil {
 }
 
 // Create provider from configuration
-provider, err := core.NewProviderFromConfig(configFile)
+cfg, err := core.LoadConfig(configFile)
+if err != nil { /* handle */ }
+provider, err := cfg.InitializeProvider()
 if err != nil {
     log.Fatal(err)
 }
@@ -381,7 +385,9 @@ if err != nil {
 }
 
 // Create provider from configuration
-provider, err := core.NewProviderFromConfig("agentflow.toml")
+cfg, err := core.LoadConfig("agentflow.toml")
+if err != nil { /* handle */ }
+provider, err := cfg.InitializeProvider()
 if err != nil {
     log.Fatal(err)
 }
@@ -556,21 +562,8 @@ agentcli create test-loop --orchestration-mode loop
 #### Before (Hardcoded)
 
 ```go
-// Old approach - hardcoded orchestration
-agents := map[string]core.AgentHandler{
-    "agent1": myAgent1,
-    "agent2": myAgent2,
-}
-
-runner := core.NewRunnerWithOrchestration(core.EnhancedRunnerConfig{
-    RunnerConfig: core.RunnerConfig{
-        Agents: agents,
-        Memory: memory,
-        SessionID: sessionID,
-    },
-    OrchestrationMode: core.OrchestrationSequential,
-    SequentialAgents: []string{"agent1", "agent2"},
-})
+// Old approach - hardcoded orchestration (deprecated)
+// Prefer configuration-driven orchestration using core.NewRunnerFromConfig.
 ```
 
 #### After (Configuration-Based)
@@ -583,7 +576,9 @@ if err != nil {
 }
 
 // Create provider from configuration
-provider, err := core.NewProviderFromConfig("agentflow.toml")
+cfg, err := core.LoadConfig("agentflow.toml")
+if err != nil { /* handle */ }
+provider, err := cfg.InitializeProvider()
 if err != nil {
     log.Fatal(err)
 }
@@ -636,7 +631,7 @@ sequential_agents = ["agent1", "agent2"]
 3. **Update Code**
    ```go
    // Replace hardcoded orchestration
-   runner, err := core.NewRunnerFromConfig("agentflow.toml")
+    runner, err := core.NewRunnerFromConfig("agentflow.toml")
    ```
 
 4. **Test Configuration**

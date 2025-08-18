@@ -238,8 +238,10 @@ agents := map[string]core.AgentHandler{
     "validator":  NewValidationAgent(),
 }
 
-runner := core.CreateCollaborativeRunner(agents, 30*time.Second)
-result, err := runner.ProcessEvent(ctx, event)
+runner, _ := core.NewRunnerFromConfig("agentflow.toml")
+_ = runner.Start(context.Background())
+defer runner.Stop()
+_ = runner.Emit(core.NewEvent("all", map[string]any{"task": "analyze"}, nil))
 ```
 
 ### **Configuration-Based Setup**

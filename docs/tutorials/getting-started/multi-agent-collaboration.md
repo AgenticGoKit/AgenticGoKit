@@ -2,12 +2,21 @@
 
 ## Overview
 
-Learn how to orchestrate multiple agents working together using different patterns. You'll explore collaborative, sequential, and mixed orchestration modes to build sophisticated multi-agent workflows.
+Learn how to orchestrate multiple agents working together using different patterns. You'll explore collaborative, sequential, loop, and mixed orchestration modes using configuration-driven runners.
 
 ## Prerequisites
 
 - Complete the [5-Minute Quickstart](quickstart.md)
 - Basic understanding of AgenticGoKit concepts
+- An LLM provider configured. Recommended for local dev: Ollama with model gemma3:1b
+
+    In `agentflow.toml`:
+
+    ```toml
+    [llm]
+    provider = "ollama"
+    model = "gemma3:1b"
+    ```
 
 ## Learning Objectives
 
@@ -20,15 +29,16 @@ By the end of this tutorial, you'll understand:
 ## What You'll Build
 
 Three different multi-agent systems:
-1. **Collaborative System**: Agents work in parallel for faster processing
-2. **Sequential Pipeline**: Agents work in sequence for data transformation
-3. **Mixed Workflow**: Combination of parallel and sequential processing
+1. Collaborative System: agents work in parallel for faster processing
+2. Sequential Pipeline: agents work in sequence for data transformation
+3. Loop Refinement: a single agent iterates to improve output
+4. Mixed Workflow: combine parallel and sequential processing
 
 ---
 
 ## Part 1: Collaborative Orchestration (5 minutes)
 
-Collaborative orchestration runs all agents in parallel, combining their outputs.
+Collaborative orchestration runs all agents in parallel, combining their outputs. Use config-driven orchestration so you can switch patterns without code changes.
 
 ### Create a Collaborative Analysis System
 
@@ -40,26 +50,30 @@ cd analysis-system
 
 ### Understanding the Generated Code
 
-The generated `main.go` creates three agents that work together:
+Generated projects use configuration to select orchestration. The runner is created from `agentflow.toml` and will orchestrate in collaborative mode when configured:
+
+```toml
+[orchestration]
+mode = "collaborative"      # route, collaborative, sequential, loop, mixed
+timeout_seconds = 30
+```
 
 ```go
-// Generated agents work in parallel
-agents := map[string]core.AgentHandler{
-    "researcher": researcherHandler,
-    "analyst":    analystHandler, 
-    "validator":  validatorHandler,
-}
-
-// Collaborative runner sends events to ALL agents simultaneously
-runner := core.CreateCollaborativeRunner(agents, 30*time.Second)
+// Create runner from config and register agents
+runner, err := core.NewRunnerFromConfig("agentflow.toml")
+if err != nil { panic(err) }
+_ = runner.RegisterAgent("researcher", researcherHandler)
+_ = runner.RegisterAgent("analyst", analystHandler)
+_ = runner.RegisterAgent("validator", validatorHandler)
+ctx := context.Background()
+_ = runner.Start(ctx)
+defer runner.Stop()
+_ = runner.Emit(core.NewEvent("researcher", core.EventData{"message":"Test"}, map[string]string{"route":"researcher"}))
 ```
 
 ### Test Collaborative Processing
 
 ```bash
-# Set your API key
-export OPENAI_API_KEY=your-api-key-here
-
 # Run the collaborative system
 go run main.go
 ```
@@ -99,19 +113,20 @@ cd data-pipeline
 
 ### Understanding Sequential Processing
 
-```go
-// Generated sequential configuration
-runner := core.NewRunnerWithOrchestration(core.EnhancedRunnerConfig{
-    OrchestrationMode: core.OrchestrationSequential,
-    SequentialAgents:  []string{"extractor", "transformer", "enricher", "formatter"},
-    // ... other config
-})
+Set the mode and sequence in config:
+
+```toml
+[orchestration]
+mode = "sequential"
+timeout_seconds = 30
+sequential_agents = ["extractor", "transformer", "enricher", "formatter"]
 ```
+
+Your `main.go` stays the same: build the runner from config, register agents, Start/Emit/Stop.
 
 ### Test Sequential Processing
 
 ```bash
-export OPENAI_API_KEY=your-api-key-here
 go run main.go
 ```
 
@@ -133,7 +148,25 @@ agentcli trace --flow-only <session-id>
 
 ---
 
-## Part 3: Mixed Orchestration (5 minutes)
+## Part 3: Loop Orchestration (3 minutes)
+
+Loop orchestration repeats a single agent until a condition is met or the maximum iterations is reached.
+
+### Configure a Loop
+
+```toml
+[orchestration]
+mode = "loop"
+timeout_seconds = 120
+loop_agent = "quality-checker"
+max_iterations = 5
+```
+
+Run your app as usual. The runner will dispatch events to the loop agent until completion conditions are met.
+
+---
+
+## Part 4: Mixed Orchestration (5 minutes)
 
 Mixed orchestration combines parallel and sequential processing for complex workflows.
 
@@ -141,25 +174,27 @@ Mixed orchestration combines parallel and sequential processing for complex work
 
 ```bash
 # Create a mixed orchestration project
-agentcli create content-system --orchestration collaborative --agents 5
+agentcli create content-system --orchestration-mode mixed --agents 5
 cd content-system
 ```
 
 ### Understanding Mixed Processing
 
-```go
-// Mixed orchestration configuration
-runner := core.NewRunnerWithOrchestration(core.EnhancedRunnerConfig{
-    OrchestrationMode:   core.OrchestrationMixed,
-    CollaborativeAgents: []string{"researcher", "fact-checker"}, // Run in parallel
-    SequentialAgents:    []string{"writer", "editor", "publisher"}, // Run in sequence
-})
+Configure phases in TOML:
+
+```toml
+[orchestration]
+mode = "mixed"
+timeout_seconds = 90
+collaborative_agents = ["researcher", "fact-checker"]
+sequential_agents    = ["writer", "editor", "publisher"]
 ```
+
+The runner created via `NewRunnerFromConfig` will honor this configuration.
 
 ### Test Mixed Processing
 
 ```bash
-export OPENAI_API_KEY=your-api-key-here
 go run main.go
 ```
 
@@ -191,9 +226,10 @@ Phase 2 - Sequential:
 
 | Pattern | Use Case | Pros | Cons |
 |---------|----------|------|------|
-| **Collaborative** | Analysis, validation, multiple perspectives | Fast (parallel), diverse outputs | Higher resource usage |
-| **Sequential** | Data pipelines, step-by-step processing | Efficient, clear flow | Slower (serial) |
-| **Mixed** | Complex workflows, content creation | Best of both worlds | More complex setup |
+| Collaborative | Analysis, validation, multiple perspectives | Fast (parallel), diverse outputs | Higher resource usage |
+| Sequential | Data pipelines, step-by-step processing | Efficient, clear flow | Slower (serial) |
+| Loop | Iterative refinement, quality checks | Converges to better output | Requires good termination conditions |
+| Mixed | Complex workflows, content creation | Best of both worlds | More complex setup |
 
 ## Performance Characteristics
 
@@ -216,37 +252,35 @@ Phase 2 - Sequential:
 
 ### Timeout and Concurrency Settings
 
-```bash
-# Create with custom settings
-agentcli create advanced-system --orchestration collaborative --agents 3
+Configure timeouts and other settings in `agentflow.toml`:
+
+```toml
+[orchestration]
+timeout_seconds = 60
 ```
 
 ### Error Handling Configuration
 
-```bash
-# Create with fault tolerance
-agentcli create resilient-system --orchestration collaborative --agents 4
-```
+Use configuration to tune retries and failure thresholds if available in your version, and add callbacks for observability.
 
 ## Troubleshooting
 
 ### Common Issues
 
 **Agents not running in parallel:**
-```bash
-# Check orchestration mode in agentflow.toml
+```toml
 [orchestration]
 mode = "collaborative"  # Should be collaborative, not route
 ```
 
 **Sequential agents running out of order:**
-```bash
+```toml
 # Verify agent sequence in configuration
 sequential_agents = ["step1", "step2", "step3"]  # Order matters
 ```
 
 **Mixed orchestration not working:**
-```bash
+```toml
 # Ensure both agent lists are specified
 collaborative_agents = ["agent1", "agent2"]
 sequential_agents = ["agent3", "agent4"]

@@ -330,7 +330,9 @@ func TestAgentOrchestration(t *testing.T) {
         "data": "test data for processing",
     })
     
-    results, err := runner.ProcessEvent(context.Background(), event)
+    _ = runner.Start(context.Background())
+    defer runner.Stop()
+    err := runner.Emit(event)
     
     assert.NoError(t, err)
     assert.Len(t, results, 2)
@@ -702,7 +704,9 @@ func (ts *TestSystem) ProcessRequest(ctx context.Context, request *api.Request) 
         UserID:    request.UserID,
     }
     
-    results, err := ts.runner.ProcessEvent(ctx, event)
+    _ = ts.runner.Start(ctx)
+    defer ts.runner.Stop()
+    err := ts.runner.Emit(event)
     if err != nil {
         return nil, err
     }

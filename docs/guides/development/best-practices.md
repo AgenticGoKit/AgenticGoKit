@@ -386,7 +386,9 @@ func TestAgentWorkflow(t *testing.T) {
         "input": "test data",
     })
     
-    results, err := runner.ProcessEvent(context.Background(), event)
+    _ = runner.Start(context.Background())
+    defer runner.Stop()
+    err := runner.Emit(event)
     
     require.NoError(t, err)
     assert.Len(t, results, 2)
@@ -458,7 +460,10 @@ func (a *MyAgent) Run(ctx context.Context, event core.Event, state core.State) (
     logger.Info("Agent execution started")
     start := time.Now()
     
-    result, err := a.processEvent(ctx, event, state)
+    // Invoke agent normally via the runner orchestration
+    _ = runner.Start(ctx)
+    defer runner.Stop()
+    err := runner.Emit(event)
     
     duration := time.Since(start)
     

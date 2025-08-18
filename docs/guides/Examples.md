@@ -29,56 +29,52 @@ import (
 )
 
 func main() {
-    // Initialize MCP for tool discovery
-    core.QuickStartMCP()
-    
-    // Create LLM provider (using mock for this example)
-    llm := &core.MockLLM{}
-    
-    // Create an agent
-    agent, err := core.NewMCPAgent("helper", llm)
-    if err != nil {
-        log.Fatal(err)
-    }
-    
+    // Create LLM provider (Ollama gemma3:1b recommended for local examples)
+    provider, err := core.NewLLMProvider(core.AgentLLMConfig{Provider: "ollama", Model: "gemma3:1b"})
+    if err != nil { log.Fatal(err) }
+
+    // Create a simple unified agent
+    agent, err := core.NewUnifiedAgentBuilder("helper").
+        WithDescription("Helpful assistant").
+        Build()
+    if err != nil { log.Fatal(err) }
+    agent.SetLLMProvider(provider, core.LLMConfig{Provider: "ollama", Model: "gemma3:1b"})
+
     // Create state with query
-    state := core.NewState()
-    state.Set("query", "What is the capital of France?")
-    
+    st := core.NewState()
+    st.Set("query", "What is the capital of France?")
+
     // Run agent
-    result, err := agent.Run(context.Background(), state)
-    if err != nil {
-        log.Fatal(err)
-    }
-    
-    fmt.Println("Response:", result.GetResult())
+    res, err := agent.Run(context.Background(), st)
+    if err != nil { log.Fatal(err) }
+    fmt.Println("Response:", res.GetResult())
 }
 ```
 
 ### Multi-Agent Orchestration (Quick Start)
 
-Generate complete multi-agent workflows with the CLI:
+Generate complete multi-agent workflows with the CLI (config-driven):
 
 ```bash
 # Collaborative workflow - all agents work in parallel
 agentcli create research-system \
-  --orchestration-mode collaborative \
-  --collaborative-agents "researcher,analyzer,validator" \
-  --visualize \
-  --mcp-enabled
+    --orchestration-mode collaborative \
+    --collaborative-agents "researcher,analyzer,validator" \
+    --visualize \
+    --mcp-enabled
 
 # Sequential pipeline - agents process one after another
 agentcli create data-pipeline \
-  --orchestration-mode sequential \
-  --sequential-agents "collector,processor,formatter" \
-  --visualize
+    --orchestration-mode sequential \
+    --sequential-agents "collector,processor,formatter" \
+    --visualize
 
 # Loop-based workflow - single agent repeats with conditions
 agentcli create quality-loop \
-  --orchestration-mode loop \
-  --loop-agent "quality-checker" \
-  --max-iterations 5 \
-  --visualize
+    --orchestration-mode loop \
+    --loop-agent "quality-checker" \
+    --max-iterations 5 \
+    --visualize
 ```
 
 ### Using CLI Scaffolding
@@ -88,11 +84,11 @@ Generate a complete project in seconds:
 ```bash
 # Create a new project with mixed orchestration
 agentcli create my-ai-app \
-  --orchestration-mode mixed \
-  --collaborative-agents "analyzer,validator" \
-  --sequential-agents "processor,reporter" \
-  --visualize-output "docs/diagrams" \
-  --mcp-enabled
+    --orchestration-mode mixed \
+    --collaborative-agents "analyzer,validator" \
+    --sequential-agents "processor,reporter" \
+    --visualize-output "docs/diagrams" \
+    --mcp-enabled
 
 cd my-ai-app
 
@@ -122,7 +118,7 @@ import (
     "fmt"
     "log"
     
-    "github.com/kunalkushwaha/agentflow/core"
+    "github.com/kunalkushwaha/agenticgokit/core"
 )
 
 type ResearchAgent struct {
@@ -214,7 +210,7 @@ type AnalysisResult struct {
 
 ### Collaborative Research System
 
-All agents work in parallel to process the same task:
+All agents work in parallel to process the same task (config-driven):
 
 ```go
 package main
@@ -223,39 +219,32 @@ import (
     "context"
     "fmt"
     "log"
-    "time"
     
-    "github.com/kunalkushwaha/agentflow/core"
+    "github.com/kunalkushwaha/agenticgokit/core"
 )
 
 func main() {
-    // Create specialized agents
-    agents := map[string]core.AgentHandler{
-        "researcher": NewResearchAgent(),
-        "analyzer":   NewAnalysisAgent(),
-        "validator":  NewValidationAgent(),
-    }
-    
-    // Create collaborative orchestration
-    runner := core.NewOrchestrationBuilder(core.OrchestrationCollaborate).
-        WithAgents(agents).
-        WithTimeout(2 * time.Minute).
-        WithFailureThreshold(0.8).
-        WithMaxConcurrency(10).
-        Build()
-    
+    // Build runner from agentflow.toml (mode: collaborative)
+    runner, err := core.NewRunnerFromConfig("agentflow.toml")
+    if err != nil { log.Fatal(err) }
+
+    // Register agents
+    _ = runner.RegisterAgent("researcher", NewResearchAgent())
+    _ = runner.RegisterAgent("analyzer", NewAnalysisAgent())
+    _ = runner.RegisterAgent("validator", NewValidationAgent())
+
     // Create event
     event := core.NewEvent("all", map[string]interface{}{
         "task": "research AI trends and provide comprehensive analysis",
     }, nil)
-    
-    // All agents process in parallel
-    result, err := runner.Run(context.Background(), event)
-    if err != nil {
-        log.Fatal(err)
-    }
-    
-    fmt.Printf("Collaborative Result: %s\n", result.GetResult())
+
+    // Start runner and emit event
+    ctx := context.Background()
+    if err := runner.Start(ctx); err != nil { log.Fatal(err) }
+    defer runner.Stop()
+
+    if err := runner.Emit(event); err != nil { log.Fatal(err) }
+    fmt.Println("Collaborative workflow started; check logs for outputs")
 }
 ```
 
@@ -270,38 +259,32 @@ import (
     "context"
     "fmt"
     "log"
-    "time"
     
-    "github.com/kunalkushwaha/agentflow/core"
+    "github.com/kunalkushwaha/agenticgokit/core"
 )
 
 func main() {
-    // Create pipeline agents
-    agents := map[string]core.AgentHandler{
-        "collector":  NewDataCollectorAgent(),
-        "processor":  NewDataProcessorAgent(),
-        "formatter":  NewDataFormatterAgent(),
-    }
-    
-    // Create sequential orchestration
-    runner := core.NewOrchestrationBuilder(core.OrchestrationSequential).
-        WithAgents(agents).
-        WithTimeout(5 * time.Minute).
-        Build()
-    
+    // Build runner from agentflow.toml (mode: sequential)
+    runner, err := core.NewRunnerFromConfig("agentflow.toml")
+    if err != nil { log.Fatal(err) }
+
+    _ = runner.RegisterAgent("collector", NewDataCollectorAgent())
+    _ = runner.RegisterAgent("processor", NewDataProcessorAgent())
+    _ = runner.RegisterAgent("formatter", NewDataFormatterAgent())
+
     // Create pipeline event
     event := core.NewEvent("pipeline", map[string]interface{}{
         "data_source": "market_data",
         "format":      "json",
     }, nil)
-    
-    // Process through pipeline
-    result, err := runner.Run(context.Background(), event)
-    if err != nil {
-        log.Fatal(err)
-    }
-    
-    fmt.Printf("Pipeline Result: %s\n", result.GetResult())
+
+    // Start runner and emit event
+    ctx := context.Background()
+    if err := runner.Start(ctx); err != nil { log.Fatal(err) }
+    defer runner.Stop()
+
+    if err := runner.Emit(event); err != nil { log.Fatal(err) }
+    fmt.Println("Sequential pipeline started; check logs for outputs")
 }
 ```
 
@@ -316,43 +299,36 @@ import (
     "context"
     "fmt"
     "log"
-    "time"
     
-    "github.com/kunalkushwaha/agentflow/core"
+    "github.com/kunalkushwaha/agenticgokit/core"
 )
 
 func main() {
-    // Create quality checker agent
-    agents := map[string]core.AgentHandler{
-        "quality-checker": NewQualityCheckerAgent(),
-    }
-    
-    // Create loop orchestration
-    runner := core.NewOrchestrationBuilder(core.OrchestrationLoop).
-        WithAgents(agents).
-        WithMaxIterations(10).
-        WithTimeout(10 * time.Minute).
-        Build()
-    
+    // Build runner from agentflow.toml (mode: loop)
+    runner, err := core.NewRunnerFromConfig("agentflow.toml")
+    if err != nil { log.Fatal(err) }
+
+    _ = runner.RegisterAgent("quality-checker", NewQualityCheckerAgent())
+
     // Create quality check event
     event := core.NewEvent("loop", map[string]interface{}{
-        "content":          "document to check",
+        "content":           "document to check",
         "quality_threshold": 0.95,
     }, nil)
-    
-    // Loop until quality is met
-    result, err := runner.Run(context.Background(), event)
-    if err != nil {
-        log.Fatal(err)
-    }
-    
-    fmt.Printf("Quality Check Result: %s\n", result.GetResult())
+
+    // Start runner and emit event
+    ctx := context.Background()
+    if err := runner.Start(ctx); err != nil { log.Fatal(err) }
+    defer runner.Stop()
+
+    if err := runner.Emit(event); err != nil { log.Fatal(err) }
+    fmt.Println("Quality loop started; check logs for outputs")
 }
 ```
 
 ### Mixed Orchestration Workflow
 
-Combine collaborative and sequential patterns:
+Combine collaborative and sequential patterns via configuration:
 
 ```go
 package main
@@ -361,94 +337,42 @@ import (
     "context"
     "fmt"
     "log"
-    "time"
     
-    "github.com/kunalkushwaha/agentflow/core"
+    "github.com/kunalkushwaha/agenticgokit/core"
 )
 
 func main() {
-    // Collaborative agents (parallel processing)
-    collaborativeAgents := map[string]core.AgentHandler{
-        "analyzer":  NewAnalyzerAgent(),
-        "validator": NewValidatorAgent(),
-    }
-    
-    // Sequential agents (pipeline processing)
-    sequentialAgents := map[string]core.AgentHandler{
-        "processor": NewProcessorAgent(),
-        "reporter":  NewReporterAgent(),
-    }
-    
-    // Create mixed orchestration
-    runner := core.NewOrchestrationBuilder(core.OrchestrationMixed).
-        WithCollaborativeAgents(collaborativeAgents).
-        WithSequentialAgents(sequentialAgents).
-        WithTimeout(8 * time.Minute).
-        WithFailureThreshold(0.8).
-        Build()
-    
+    // Build runner from agentflow.toml (mode: mixed)
+    runner, err := core.NewRunnerFromConfig("agentflow.toml")
+    if err != nil { log.Fatal(err) }
+
+    // Register agents referenced by config
+    _ = runner.RegisterAgent("analyzer", NewAnalyzerAgent())
+    _ = runner.RegisterAgent("validator", NewValidatorAgent())
+    _ = runner.RegisterAgent("processor", NewProcessorAgent())
+    _ = runner.RegisterAgent("reporter", NewReporterAgent())
+
     // Create mixed workflow event
     event := core.NewEvent("mixed", map[string]interface{}{
         "task": "analyze data, validate results, process, and generate report",
     }, nil)
-    
-    // Execute mixed workflow
-    result, err := runner.Run(context.Background(), event)
-    if err != nil {
-        log.Fatal(err)
-    }
-    
-    fmt.Printf("Mixed Workflow Result: %s\n", result.GetResult())
+
+    // Start runner and emit event
+    ctx := context.Background()
+    if err := runner.Start(ctx); err != nil { log.Fatal(err) }
+    defer runner.Stop()
+
+    if err := runner.Emit(event); err != nil { log.Fatal(err) }
+    fmt.Println("Mixed workflow started; check logs for outputs")
 }
 ```
 
 ### Workflow Visualization
 
-Generate Mermaid diagrams for any orchestration:
+Generate Mermaid diagrams using the CLI at scaffold time. Runtime builders do not generate diagrams.
 
-```go
-package main
-
-import (
-    "fmt"
-    "os"
-    "path/filepath"
-    
-    "github.com/kunalkushwaha/agentflow/core"
-)
-
-func main() {
-    // Create agents
-    agents := map[string]core.AgentHandler{
-        "researcher": NewResearchAgent(),
-        "analyzer":   NewAnalysisAgent(),
-        "validator":  NewValidationAgent(),
-    }
-    
-    // Create orchestration builder
-    builder := core.NewOrchestrationBuilder(core.OrchestrationCollaborate).
-        WithAgents(agents).
-        WithTimeout(2 * time.Minute).
-        WithFailureThreshold(0.8)
-    
-    // Generate Mermaid diagram
-    diagram := builder.GenerateMermaidDiagram()
-    
-    // Save to file
-    outputDir := "docs/diagrams"
-    os.MkdirAll(outputDir, 0755)
-    
-    filename := filepath.Join(outputDir, "workflow.mmd")
-    err := os.WriteFile(filename, []byte(diagram), 0644)
-    if err != nil {
-        fmt.Printf("Error saving diagram: %v\n", err)
-        return
-    }
-    
-    fmt.Printf("Workflow diagram saved to: %s\n", filename)
-    fmt.Println("Diagram content:")
-    fmt.Println(diagram)
-}
+```text
+Use: agentcli create ... --visualize or agentcli visualize to generate Mermaid diagrams
 ```
 
 ### Research and Analysis Pipeline
@@ -463,28 +387,21 @@ import (
     "fmt"
     "log"
     
-    "github.com/kunalkushwaha/agentflow/core"
+    "github.com/kunalkushwaha/agenticgokit/core"
 )
 
 func main() {
-    // Initialize MCP
-    core.QuickStartMCP()
-    
-    // Create LLM provider
-    llm := core.NewAzureOpenAIAdapter(core.LLMConfig{
-        Provider: "azure-openai",
-        APIKey:   "your-api-key",
-        BaseURL:  "https://your-resource.openai.azure.com",
-    })
+    // Create LLM provider (Ollama gemma3:1b for examples)
+    llm, _ := core.NewLLMProvider(core.AgentLLMConfig{Provider: "ollama", Model: "gemma3:1b"})
     
     // Create agents
     researcher, _ := core.NewMCPAgent("researcher", llm)
     analyst, _ := core.NewMCPAgent("analyst", llm)
     
-    // Create workflow runner
-    runner := core.NewSequentialRunner()
-    runner.AddAgent(researcher)
-    runner.AddAgent(analyst)
+    // Build a runner from config-driven setup
+    runner, _ := core.NewRunnerFromConfig("agentflow.toml")
+    _ = runner.RegisterAgent("researcher", researcher)
+    _ = runner.RegisterAgent("analyst", analyst)
     
     // Create initial state
     state := core.NewState()
@@ -514,40 +431,15 @@ func main() {
 
 ### Parallel Processing Workflow
 
-Process multiple tasks concurrently:
+Use collaborative mode for parallel fan-out via configuration. Example uses Start/Emit/Stop with a config-driven runner:
 
 ```go
-func parallelWorkflow() {
-    // Create parallel runner
-    runner := core.NewParallelRunner()
-    
-    // Add multiple agents for different tasks
-    webAgent, _ := core.NewMCPAgent("web-searcher", llm)
-    dbAgent, _ := core.NewMCPAgent("database-query", llm)
-    fileAgent, _ := core.NewMCPAgent("file-processor", llm)
-    
-    runner.AddAgent(webAgent)
-    runner.AddAgent(dbAgent)
-    runner.AddAgent(fileAgent)
-    
-    // Create states for each agent
-    states := []core.State{
-        core.NewStateWithQuery("search web for latest news"),
-        core.NewStateWithQuery("query database for user statistics"),
-        core.NewStateWithQuery("process uploaded files"),
-    }
-    
-    // Run all agents in parallel
-    results, err := runner.RunParallel(context.Background(), states)
-    if err != nil {
-        log.Fatal(err)
-    }
-    
-    // Process results
-    for i, result := range results {
-        fmt.Printf("Agent %d result: %s\n", i+1, result.GetResult())
-    }
-}
+ctx := context.Background()
+runner, _ := core.NewRunnerFromConfig("agentflow.toml")
+// Register agents...
+_ = runner.Start(ctx)
+defer runner.Stop()
+_ = runner.Emit(core.NewEvent("all", map[string]interface{}{"task": "process"}, nil))
 ```
 
 ### Conditional Workflow
@@ -720,35 +612,32 @@ func (p *ProductionAgent) ProcessWithRetry(ctx context.Context, query string) (s
 
 ### Monitoring and Observability
 
-Add comprehensive monitoring:
+Add comprehensive monitoring with callbacks and trace dumping:
 
 ```go
 func monitoredWorkflow() {
-    // Create runner with monitoring
-    runner := core.NewSequentialRunner()
-    
+    runner, _ := core.NewRunnerFromConfig("agentflow.toml")
+
     // Register callbacks for monitoring
-    runner.RegisterCallback(core.HookBeforeAgentRun, func(ctx context.Context, state core.State) {
-        log.Printf("Starting agent run: %s", state.Get("agent_name"))
+    _ = runner.RegisterCallback(core.HookBeforeAgentRun, "logBefore", func(ctx context.Context, args core.CallbackArgs) (core.State, error) {
+        log.Printf("Starting agent run: %s", args.AgentID)
+        return args.State, nil
     })
-    
-    runner.RegisterCallback(core.HookAfterAgentRun, func(ctx context.Context, result core.Result) {
-        metrics := result.GetMetrics()
-        log.Printf("Agent completed: duration=%v, tokens=%d", 
-            metrics.Duration, metrics.TokensUsed)
+    _ = runner.RegisterCallback(core.HookAfterEventHandling, "logAfter", func(ctx context.Context, args core.CallbackArgs) (core.State, error) {
+        log.Printf("Event handled for agent=%s", args.AgentID)
+        return args.State, nil
     })
-    
-    runner.RegisterCallback(core.HookOnError, func(ctx context.Context, err error) {
-        log.Printf("Agent error: %v", err)
-        // Send to monitoring system
+    _ = runner.RegisterCallback(core.HookAgentError, "logErr", func(ctx context.Context, args core.CallbackArgs) (core.State, error) {
+        log.Printf("Agent error: %v", args.Error)
+        return args.State, nil
     })
-    
-    // Run workflow with monitoring
-    result, err := runner.Run(context.Background(), state)
-    if err != nil {
-        log.Fatal(err)
-    }
-    
+
+    // Start and emit an event
+    ctx := context.Background()
+    _ = runner.Start(ctx)
+    defer runner.Stop()
+    _ = runner.Emit(core.NewEvent("agent1", map[string]interface{}{"message": "hello"}, nil))
+
     // Get comprehensive traces
     traces, _ := runner.DumpTrace("session-123")
     for _, trace := range traces {

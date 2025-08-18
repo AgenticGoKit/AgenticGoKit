@@ -101,12 +101,16 @@ package main
 import (
     "context"
     "fmt"
-    agentflow "github.com/kunalkushwaha/agenticgokit/core"
+    "github.com/kunalkushwaha/agenticgokit/core"
 )
 
 func main() {
     // Load provider from configuration
-    provider, err := agentflow.NewProviderFromWorkingDir()
+    cfg, err := core.LoadConfigFromWorkingDir()
+    if err != nil {
+        panic(err)
+    }
+    provider, err := cfg.InitializeProvider()
     if err != nil {
         panic(err)
     }
@@ -127,30 +131,18 @@ func main() {
 ### Provider Selection Strategies
 
 ```go
-func createProvider() (agentflow.ModelProvider, error) {
+func createProvider() (core.ModelProvider, error) {
     providerType := os.Getenv("LLM_PROVIDER")
     
     switch providerType {
     case "azure":
-        return agentflow.NewAzureProvider(agentflow.AzureConfig{
-            APIKey:     os.Getenv("AZURE_OPENAI_API_KEY"),
-            Endpoint:   os.Getenv("AZURE_OPENAI_ENDPOINT"),
-            Deployment: os.Getenv("AZURE_OPENAI_DEPLOYMENT"),
-        })
+    return core.NewAzureOpenAIAdapter(os.Getenv("AZURE_OPENAI_ENDPOINT"), os.Getenv("AZURE_OPENAI_API_KEY"), os.Getenv("AZURE_OPENAI_DEPLOYMENT"))
     case "openai":
-        return agentflow.NewOpenAIProvider(agentflow.OpenAIConfig{
-            APIKey: os.Getenv("OPENAI_API_KEY"),
-            Model:  "gpt-4",
-        })
+    return core.NewOpenAIAdapter(os.Getenv("OPENAI_API_KEY"), "gpt-4o-mini", 8192, 0.7)
     case "ollama":
-        return agentflow.NewOllamaProvider(agentflow.OllamaConfig{
-            Host:  "http://localhost:11434",
-            Model: "llama3.2:3b",
-        })
+    return core.NewOllamaAdapter("http://localhost:11434", "gemma3:1b", 8192, 0.7)
     default:
-        return agentflow.NewMockProvider(agentflow.MockConfig{
-            Response: "Mock response for testing",
-        }), nil
+    return nil, fmt.Errorf("unsupported provider: %s", providerType)
     }
 }
 ```
@@ -184,7 +176,7 @@ export OPENAI_API_KEY="fallback-api-key"
 # Local development
 export LLM_PROVIDER="ollama"
 export OLLAMA_HOST="http://localhost:11434"
-export OLLAMA_MODEL="llama3.2:3b"
+export OLLAMA_MODEL="gemma3:1b"
 ```
 
 ## Next Steps

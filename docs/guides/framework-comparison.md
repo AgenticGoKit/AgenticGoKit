@@ -24,22 +24,12 @@
 ### **Why Go for Agent Systems?**
 
 ```go
-// AgenticGoKit: Leverages Go's concurrency model
-func (r *Runner) ProcessEvents(ctx context.Context, events []core.Event) {
-    var wg sync.WaitGroup
-    results := make(chan *core.AgentResult, len(events))
-    
-    for _, event := range events {
-        wg.Add(1)
-        go func(e core.Event) {
-            defer wg.Done()
-            result, _ := r.processEvent(ctx, e)
-            results <- result
-        }(event)
-    }
-    
-    wg.Wait()
-    close(results)
+// AgenticGoKit: Leverages Go's concurrency model (public API example)
+runner, _ := core.NewRunnerFromConfig("agentflow.toml")
+_ = runner.Start(context.Background())
+defer runner.Stop()
+for _, e := range events {
+    _ = runner.Emit(e)
 }
 ```
 
