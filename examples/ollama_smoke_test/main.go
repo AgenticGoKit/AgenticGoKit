@@ -27,11 +27,17 @@ func main() {
 	}
 	logger.Info().Str("base_url", baseURL).Str("model", model).Msg("Ollama provider ready")
 
-	// Build a UnifiedAgent with LLM capability
-	agent, err := ia.NewAgent("ollama_smoke").
-		WithLLMAndConfig(provider, core.LLMConfig{Model: model, Temperature: 0.7, MaxTokens: 512, TimeoutSeconds: 30}).
-		WithDefaultMetrics().
-		Build()
+	// Build a UnifiedAgent with LLM capability - step by step to debug
+	builder := ia.NewAgent("ollama_smoke")
+	fmt.Printf("Step 1: Initial builder, count: %d\n", builder.CapabilityCount())
+
+	builder = builder.WithLLMAndConfig(provider, core.LLMConfig{Model: model, Temperature: 0.7, MaxTokens: 512, TimeoutSeconds: 30})
+	fmt.Printf("Step 2: After LLM, count: %d, types: %v\n", builder.CapabilityCount(), builder.ListCapabilities())
+
+	builder = builder.WithDefaultMetrics()
+	fmt.Printf("Step 3: After Metrics, count: %d, types: %v\n", builder.CapabilityCount(), builder.ListCapabilities())
+
+	agent, err := builder.Build()
 	if err != nil {
 		fmt.Printf("Failed to build agent: %v\n", err)
 		os.Exit(1)
@@ -42,7 +48,7 @@ func main() {
 	defer cancel()
 
 	state := core.NewState(map[string]interface{}{
-		"message":       "Say a short hello from Ollama.",
+		"message":       "What is Docker?",
 		"system_prompt": "You are a concise assistant.",
 	})
 

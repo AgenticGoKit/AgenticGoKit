@@ -379,7 +379,11 @@ func SortCapabilitiesByPriority(capabilities []AgentCapability) []AgentCapabilit
 // ValidateCapabilityCombination validates that a set of capabilities can work together
 func ValidateCapabilityCombination(capabilities []AgentCapability) error {
 	for i, cap := range capabilities {
-		others := append(capabilities[:i], capabilities[i+1:]...)
+		// Create a proper copy of "others" to avoid slice corruption
+		others := make([]AgentCapability, 0, len(capabilities)-1)
+		others = append(others, capabilities[:i]...)
+		others = append(others, capabilities[i+1:]...)
+
 		if err := cap.Validate(others); err != nil {
 			return NewCapabilityError(cap.Name(), "validation", err)
 		}

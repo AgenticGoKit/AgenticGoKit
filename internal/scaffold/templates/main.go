@@ -378,6 +378,46 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Create and configure the orchestrator based on the configuration
+	orchestratorConfig := core.OrchestratorConfig{
+		Type: config.Orchestration.Mode,
+	}
+	
+	// Set up agent names based on orchestration mode
+	switch config.Orchestration.Mode {
+	case "sequential":
+		orchestratorConfig.SequentialAgentNames = config.Orchestration.SequentialAgents
+		orchestratorConfig.AgentNames = config.Orchestration.SequentialAgents
+	case "collaborative", "parallel":
+		orchestratorConfig.CollaborativeAgentNames = config.Orchestration.CollaborativeAgents
+		orchestratorConfig.AgentNames = config.Orchestration.CollaborativeAgents
+	case "loop":
+		orchestratorConfig.AgentNames = config.Orchestration.SequentialAgents
+		orchestratorConfig.MaxIterations = config.Orchestration.MaxIterations
+	case "mixed":
+		orchestratorConfig.CollaborativeAgentNames = config.Orchestration.CollaborativeAgents
+		orchestratorConfig.SequentialAgentNames = config.Orchestration.SequentialAgents
+	}
+	
+	// Create the orchestrator using the registered factory
+	orchestrator, err := core.NewOrchestrator(orchestratorConfig, runner.GetCallbackRegistry())
+	if err != nil {
+		logger.Error().Err(err).Str("mode", config.Orchestration.Mode).Msg("Failed to create orchestrator")
+		fmt.Printf("ERROR: Failed to create orchestrator for mode '%s': %v\n", config.Orchestration.Mode, err)
+		fmt.Printf("Hint: Make sure the orchestration mode is valid (sequential, collaborative, parallel, loop, mixed, route)\n")
+		os.Exit(1)
+	}
+	
+	// Attach the orchestrator to the runner (type assert to concrete implementation)
+	if runnerImpl, ok := runner.(*core.RunnerImpl); ok {
+		runnerImpl.SetOrchestrator(orchestrator)
+		logger.Info().Str("mode", config.Orchestration.Mode).Msg("Orchestrator configured successfully")
+	} else {
+		logger.Error().Msg("Failed to cast runner to RunnerImpl for orchestrator setup")
+		fmt.Printf("ERROR: Failed to configure orchestrator - runner type assertion failed\n")
+		os.Exit(1)
+	}
+
 	// --- Hooks & Callbacks (Observability/Policies) ---
 	// You can register before/after hooks and error hooks for traceability, metrics, or policy checks.
 	// Hook points include:
