@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/kunalkushwaha/agenticgokit/core"
+	_ "github.com/kunalkushwaha/agenticgokit/plugins/orchestrator/default"
 	_ "{{.Config.Name}}/agents"
 )
 
@@ -392,7 +393,7 @@ func main() {
 		orchestratorConfig.CollaborativeAgentNames = config.Orchestration.CollaborativeAgents
 		orchestratorConfig.AgentNames = config.Orchestration.CollaborativeAgents
 	case "loop":
-		orchestratorConfig.AgentNames = config.Orchestration.SequentialAgents
+		orchestratorConfig.AgentNames = []string{config.Orchestration.LoopAgent}
 		orchestratorConfig.MaxIterations = config.Orchestration.MaxIterations
 	case "mixed":
 		orchestratorConfig.CollaborativeAgentNames = config.Orchestration.CollaborativeAgents

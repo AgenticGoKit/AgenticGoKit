@@ -607,6 +607,23 @@ state_key_prefix = "agent_state_"
 cleanup_interval = "1h"
 ```
 
+### Challenge 4: Missing plugin registrations
+
+**Problem**: After migrating to plugin registries, you encounter errors like "provider not registered" or "orchestrator factory not registered" at runtime.
+
+**Solution**: Add blank imports for the plugins you use in your main package (or in a central plugins bundle file) so they self-register:
+
+```go
+import (
+    _ "github.com/kunalkushwaha/agenticgokit/plugins/llm/ollama"
+    _ "github.com/kunalkushwaha/agenticgokit/plugins/logging/zerolog"
+    _ "github.com/kunalkushwaha/agenticgokit/plugins/orchestrator/default"
+    _ "github.com/kunalkushwaha/agenticgokit/plugins/runner/default"
+)
+```
+
+Note: Projects generated via `agentcli create` include these imports by default.
+
 ## Best Practices for Migration
 
 ### 1. Incremental Migration
