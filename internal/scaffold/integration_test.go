@@ -132,16 +132,16 @@ func TestGeneratedProjectCompilation(t *testing.T) {
 				strings.Contains(outputStr, "updates to go.mod needed") ||
 				strings.Contains(outputStr, "go mod tidy")) {
 				// This is expected for integration tests - dependencies aren't available
-				t.Logf("✅ Project structure is valid (dependency resolution expected to fail in tests)")
+				t.Logf("Project structure is valid (dependency resolution expected to fail in tests)")
 			} else if err != nil {
 				// This is a real compilation error
 				t.Fatalf("Failed to compile project (syntax error): %v\nOutput: %s", err, output)
 			} else {
 				// Compilation succeeded completely
-				t.Logf("✅ Project compiled successfully")
+				t.Logf("Project compiled successfully")
 			}
 
-			t.Logf("✅ Project %s structure validation completed", tt.config.Name)
+			t.Logf("Project %s structure validation completed", tt.config.Name)
 		})
 	}
 }
@@ -233,7 +233,7 @@ func TestGeneratedProjectExecution(t *testing.T) {
 				strings.Contains(outputStr, "updates to go.mod needed") ||
 				strings.Contains(outputStr, "go mod tidy")) {
 				// This is expected for integration tests - dependencies aren't available
-				t.Logf("✅ Project structure is valid (dependency resolution expected to fail in tests)")
+				t.Logf("Project structure is valid (dependency resolution expected to fail in tests)")
 				return // Skip execution test since we can't build
 			} else if err != nil {
 				t.Fatalf("Failed to build project: %v\nOutput: %s", err, output)
@@ -268,10 +268,10 @@ func TestGeneratedProjectExecution(t *testing.T) {
 				if cmd.Process != nil {
 					cmd.Process.Kill()
 				}
-				t.Logf("✅ Binary ran for expected timeout duration (likely waiting for input)")
+				t.Logf("Binary ran for expected timeout duration (likely waiting for input)")
 			}
 
-			t.Logf("✅ Project %s executed successfully", tt.config.Name)
+			t.Logf("Project %s executed successfully", tt.config.Name)
 		})
 	}
 }
@@ -438,14 +438,14 @@ func TestImportPathResolvability(t *testing.T) {
 				strings.Contains(outputStr, "updates to go.mod needed") ||
 				strings.Contains(outputStr, "go mod tidy")) {
 				// This is expected for integration tests - dependencies aren't available
-				t.Logf("✅ Import paths are syntactically valid (dependency resolution expected to fail in tests)")
+				t.Logf("Import paths are syntactically valid (dependency resolution expected to fail in tests)")
 			} else if err != nil {
 				t.Fatalf("Failed to build project (import resolution failed): %v\nOutput: %s", err, output)
 			} else {
-				t.Logf("✅ All imports resolved successfully")
+				t.Logf("All imports resolved successfully")
 			}
 
-			t.Logf("✅ All import paths in %s are resolvable", tt.config.Name)
+			t.Logf("All import paths in %s are resolvable", tt.config.Name)
 		})
 	}
 }
@@ -691,14 +691,14 @@ func TestVariousConfigurationCombinations(t *testing.T) {
 				strings.Contains(outputStr, "updates to go.mod needed") ||
 				strings.Contains(outputStr, "go mod tidy")) {
 				// This is expected for integration tests - dependencies aren't available
-				t.Logf("✅ Project structure is valid (dependency resolution expected to fail in tests)")
+				t.Logf("Project structure is valid (dependency resolution expected to fail in tests)")
 			} else if err != nil {
 				t.Fatalf("Failed to compile project: %v\nOutput: %s", err, output)
 			} else {
-				t.Logf("✅ Project compiled successfully")
+				t.Logf("Project compiled successfully")
 			}
 
-			t.Logf("✅ Configuration combination %s works correctly", tt.name)
+			t.Logf("Configuration combination %s works correctly", tt.name)
 		})
 	}
 }

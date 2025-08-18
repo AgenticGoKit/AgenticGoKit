@@ -138,37 +138,37 @@ mode = "{{.Config.OrchestrationMode}}"
 {{if eq .Config.OrchestrationMode "sequential"}}agents = [{{range $i, $agent := .Agents}}{{if $i}}, {{end}}"{{$agent.Name}}"{{end}}]{{end}}
 ` + "```" + `
 
-## 🏗️ Architecture
+## Architecture
 
 ### System Overview
 
 {{.Config.Name}} implements a {{.Config.OrchestrationMode}} multi-agent architecture with {{len .Agents}} specialized agents:
 
 ` + "```" + `
-{{if eq .Config.OrchestrationMode "sequential"}}User Input → Agent1 → Agent2 → ... → Final Response{{else if eq .Config.OrchestrationMode "collaborative"}}User Input → [Agent1, Agent2, Agent3] → Aggregated Response{{else if eq .Config.OrchestrationMode "loop"}}User Input → Agent → Agent → ... ({{.Config.MaxIterations}} iterations) → Final Response{{else}}User Input → Router → Appropriate Agent → Response{{end}}
+{{if eq .Config.OrchestrationMode "sequential"}}User Input -> Agent1 -> Agent2 -> ... -> Final Response{{else if eq .Config.OrchestrationMode "collaborative"}}User Input -> [Agent1, Agent2, Agent3] -> Aggregated Response{{else if eq .Config.OrchestrationMode "loop"}}User Input -> Agent -> Agent -> ... ({{.Config.MaxIterations}} iterations) -> Final Response{{else}}User Input -> Router -> Appropriate Agent -> Response{{end}}
 ` + "```" + `
 
 ### Project Structure
 
 ` + "```" + `
 {{.Config.Name}}/
-├── agents/                 # Agent implementations
-{{range .Agents}}│   ├── {{.FileName}}           # {{.DisplayName}} agent
-{{end}}│   └── README.md           # Agent documentation
-├── internal/               # Internal packages
-│   ├── config/               # Configuration utilities
-│   └── handlers/             # Shared handler utilities
-├── docs/                  # Documentation
-│   └── CUSTOMIZATION.md      # Customization guide
-├── 📄 main.go                # Application entry point
-├── 📄 agentflow.toml         # Main configuration file
-{{if .Config.MemoryEnabled}}├── 📄 docker-compose.yml     # Database services
-{{if eq .Config.MemoryProvider "pgvector"}}├── 📄 setup.sh               # Database setup script{{end}}{{end}}
-├── 📄 agentflow.toml         # System configuration
-├── 📄 go.mod                 # Go module definition
-{{if .Config.MemoryEnabled}}{{if or (eq .Config.MemoryProvider "pgvector") (eq .Config.MemoryProvider "weaviate")}}├── 📄 docker-compose.yml     # Database services
-├── 📄 setup.sh               # Database setup script
-{{end}}{{end}}└── 📄 README.md              # This file
+|-- agents/                 # Agent implementations
+{{range .Agents}}|   |-- {{.FileName}}           # {{.DisplayName}} agent
+{{end}}|   ` + "`" + `-- README.md           # Agent documentation
+|-- internal/               # Internal packages
+|   |-- config/             # Configuration utilities
+|   ` + "`" + `-- handlers/           # Shared handler utilities
+|-- docs/                   # Documentation
+|   ` + "`" + `-- CUSTOMIZATION.md    # Customization guide
+|-- main.go                 # Application entry point
+|-- agentflow.toml          # Main configuration file
+{{if .Config.MemoryEnabled}}|-- docker-compose.yml        # Database services
+{{if eq .Config.MemoryProvider "pgvector"}}|-- setup.sh                 # Database setup script{{end}}{{end}}
+|-- agentflow.toml          # System configuration
+|-- go.mod                  # Go module definition
+{{if .Config.MemoryEnabled}}{{if or (eq .Config.MemoryProvider "pgvector") (eq .Config.MemoryProvider "weaviate")}}|-- docker-compose.yml        # Database services
+|-- setup.sh                # Database setup script
+{{end}}{{end}}` + "`" + `-- README.md               # This file
 ` + "```" + `
 
 ### Agent Responsibilities
@@ -302,7 +302,7 @@ file_path = "./cache"
 {{end}}
 {{end}}
 
-## 🎯 Usage Examples
+## Usage Examples
 
 ### Basic Usage
 
@@ -650,7 +650,7 @@ LOG_LEVEL=debug go run . -m "test" 2>&1 | grep -i config
 3. **Test Components**: Test LLM provider, memory, and tools individually
 4. **Community Support**: Create an issue in the [AgenticGoKit repository](https://github.com/kunalkushwaha/agenticgokit)
 
-## 📚 Resources
+## Resources
 
 ### Documentation
 
@@ -671,11 +671,11 @@ LOG_LEVEL=debug go run . -m "test" 2>&1 | grep -i config
 - [Discussions](https://github.com/kunalkushwaha/agenticgokit/discussions)
 - [Contributing Guide](https://github.com/kunalkushwaha/agenticgokit/CONTRIBUTING.md)
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - Built with [AgenticGoKit](https://github.com/kunalkushwaha/agenticgokit)
 - Powered by {{if eq .Config.Provider "openai"}}OpenAI{{else if eq .Config.Provider "azure"}}Azure OpenAI{{else if eq .Config.Provider "ollama"}}Ollama{{else}}{{.Config.Provider}}{{end}}

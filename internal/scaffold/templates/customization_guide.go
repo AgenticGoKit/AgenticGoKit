@@ -121,7 +121,7 @@ runner.SetCustomRouter(func(ctx context.Context, event core.Event, state core.St
 })
 ` + "```" + `
 
-## Component Customization
+## Architecture Customization
 
 ### LLM Provider Configuration
 
@@ -630,7 +630,7 @@ spec:
         - containerPort: 8080
 ` + "```" + `
 
-## 📚 Advanced Patterns
+## Advanced Patterns
 
 ### Plugin Architecture
 ` + "```go" + `

@@ -223,6 +223,11 @@ func (b *AgentBuilder) WithLLMAndConfig(provider core.ModelProvider, config core
 
 	capability := NewLLMCapability(provider, config)
 	b.capabilities = append(b.capabilities, capability)
+	core.Logger().Info().
+		Str("agent", b.name).
+		Str("added_capability", capability.Name()).
+		Str("addr", fmt.Sprintf("%p", capability)).
+		Msg("AgentBuilder: capability added")
 	return b
 }
 
@@ -253,6 +258,11 @@ func (b *AgentBuilder) WithMetrics(config core.MetricsConfig) *AgentBuilder {
 func (b *AgentBuilder) WithDefaultMetrics() *AgentBuilder {
 	capability := NewMetricsCapability(DefaultMetricsConfig())
 	b.capabilities = append(b.capabilities, capability)
+	core.Logger().Info().
+		Str("agent", b.name).
+		Str("added_capability", capability.Name()).
+		Str("addr", fmt.Sprintf("%p", capability)).
+		Msg("AgentBuilder: capability added")
 	return b
 }
 
@@ -361,6 +371,21 @@ func (b *AgentBuilder) Build() (core.Agent, error) {
 		capabilities = SortCapabilitiesByPriority(b.capabilities)
 	}
 
+	// Debug: list capabilities prior to configuration
+	core.Logger().Info().
+		Str("agent", b.name).
+		Strs("capability_types", capabilityNames(capabilities)).
+		Msg("Builder: configuring capabilities")
+	for idx, cap := range capabilities {
+		core.Logger().Info().
+			Str("agent", b.name).
+			Int("index", idx).
+			Str("capability", cap.Name()).
+			Str("concrete_type", fmt.Sprintf("%T", cap)).
+			Str("addr", fmt.Sprintf("%p", cap)).
+			Msg("Builder: capability detail")
+	}
+
 	// Create the unified agent backed by core.UnifiedAgent
 	agent, err := createUnifiedAgent(b.name, capabilities)
 	if err != nil {
@@ -376,6 +401,10 @@ func (b *AgentBuilder) Build() (core.Agent, error) {
 	}
 
 	for _, cap := range capabilities {
+		core.Logger().Info().
+			Str("agent", b.name).
+			Str("configuring_capability", cap.Name()).
+			Msg("AgentBuilder: configuring capability")
 		if err := cap.Configure(configurableAgent); err != nil {
 			if b.config.StrictMode {
 				return nil, fmt.Errorf("failed to configure capability %s: %w", cap.Name(), err)

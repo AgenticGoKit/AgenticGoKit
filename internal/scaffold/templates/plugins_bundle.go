@@ -26,6 +26,8 @@ import (
 
     // Logging provider (zerolog)
     _ "github.com/kunalkushwaha/agenticgokit/plugins/logging/zerolog"
+    // Agents (configurable factory registration)
+    _ "github.com/kunalkushwaha/agenticgokit/plugins/agents/configurable"
 
     {{- /* LLM provider based on config */}}
     {{- if eq .Config.Provider "openai" }}

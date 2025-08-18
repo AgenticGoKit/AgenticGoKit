@@ -819,7 +819,7 @@ func ValidateAndSanitizeProjectConfig(config *ProjectConfig) error {
 
 	// Sanitize the project name if needed
 	if err := ValidateGoModuleName(config.Name); err != nil {
-		fmt.Printf("⚠️  Project name '%s' is invalid: %v\n", config.Name, err)
+		fmt.Printf("WARNING: Project name '%s' is invalid: %v\n", config.Name, err)
 		config.Name = SanitizeModuleName(config.Name)
 		fmt.Printf("Auto-corrected to: '%s'\n", config.Name)
 	}
@@ -836,7 +836,7 @@ func ValidateAndSanitizeProjectConfig(config *ProjectConfig) error {
 	}
 
 	if config.NumAgents > 10 {
-		fmt.Printf("⚠️  Large number of agents (%d) may impact performance\n", config.NumAgents)
+		fmt.Printf("WARNING: Large number of agents (%d) may impact performance\n", config.NumAgents)
 	}
 
 	// Validate provider
@@ -864,7 +864,7 @@ func ValidateAndSanitizeProjectConfig(config *ProjectConfig) error {
 	}
 
 	if !isValidMode && config.OrchestrationMode != "" {
-		fmt.Printf("⚠️  Invalid orchestration mode '%s', defaulting to 'sequential'\n", config.OrchestrationMode)
+		fmt.Printf("WARNING: Invalid orchestration mode '%s', defaulting to 'sequential'\n", config.OrchestrationMode)
 		config.OrchestrationMode = "sequential"
 	}
 

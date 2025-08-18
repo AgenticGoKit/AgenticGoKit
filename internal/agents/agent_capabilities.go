@@ -175,7 +175,7 @@ type LLMCapability struct {
 
 // NewLLMCapability creates a new LLM capability
 func NewLLMCapability(provider core.ModelProvider, config core.LLMConfig) *LLMCapability {
-	return &LLMCapability{
+	c := &LLMCapability{
 		BaseCapability: BaseCapability{
 			name:     string(CapabilityTypeLLM),
 			priority: 10, // Initialize early
@@ -183,20 +183,32 @@ func NewLLMCapability(provider core.ModelProvider, config core.LLMConfig) *LLMCa
 		Provider: provider,
 		Config:   config,
 	}
+	core.Logger().Info().
+		Str("capability_ctor", "llm").
+		Str("type", fmt.Sprintf("%T", c)).
+		Str("addr", fmt.Sprintf("%p", c)).
+		Str("name", c.Name()).
+		Int("priority", c.Priority()).
+		Msg("Constructed capability")
+	return c
 }
 
 func (c *LLMCapability) Configure(agent CapabilityConfigurable) error {
+	logger := core.Logger().With().Str("capability", c.Name()).Logger()
 	if c.Provider == nil {
+		logger.Warn().Msg("LLM capability Configure called with nil provider")
 		return NewCapabilityError(c.Name(), "configuration",
 			fmt.Errorf("LLM provider is required"))
 	}
 
+	// Trace provider name, if available
+	if c.Provider != nil {
+		logger.Debug().Msg("LLM capability: provider non-nil; setting on agent")
+	}
+
 	agent.SetLLMProvider(c.Provider, c.Config)
 
-	core.Logger().Info().
-		Str("capability", c.Name()).
-		Msg("LLM capability configured")
-
+	logger.Info().Msg("LLM capability configured")
 	return nil
 }
 
@@ -255,13 +267,21 @@ type MetricsCapability struct {
 
 // NewMetricsCapability creates a new metrics capability
 func NewMetricsCapability(config core.MetricsConfig) *MetricsCapability {
-	return &MetricsCapability{
+	c := &MetricsCapability{
 		BaseCapability: BaseCapability{
 			name:     string(CapabilityTypeMetrics),
 			priority: 30, // Initialize after other capabilities
 		},
 		Config: config,
 	}
+	core.Logger().Info().
+		Str("capability_ctor", "metrics").
+		Str("type", fmt.Sprintf("%T", c)).
+		Str("addr", fmt.Sprintf("%p", c)).
+		Str("name", c.Name()).
+		Int("priority", c.Priority()).
+		Msg("Constructed capability")
+	return c
 }
 
 func (c *MetricsCapability) Configure(agent CapabilityConfigurable) error {

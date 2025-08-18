@@ -354,7 +354,7 @@ echo "Docker and Docker Compose are available"
 if [ ! -f .env ]; then
     echo "Creating .env file from template..."
     cp .env.example .env
-    echo "⚠️  Please update the .env file with your actual API keys and configuration"
+    echo "WARNING: Please update the .env file with your actual API keys and configuration"
 fi
 
 # Start the database
@@ -379,7 +379,7 @@ if docker exec agentflow-postgres pg_isready -U user -d agentflow > /dev/null 2>
     echo "   go mod tidy"
     echo "   go run . -m \"Your message here\""
     echo ""
-    echo "📚 Useful commands:"
+    echo "Useful commands:"
     echo "   - View logs: docker logs agentflow-postgres"
     echo "   - Stop database: docker-compose down"
     echo "   - Connect to database: docker exec -it agentflow-postgres psql -U user -d agentflow"
@@ -417,7 +417,7 @@ REM Create .env file if it doesn't exist
 if not exist .env (
     echo Creating .env file from template...
     copy .env.example .env
-    echo ⚠️  Please update the .env file with your actual API keys and configuration
+    echo WARNING: Please update the .env file with your actual API keys and configuration
 )
 
 REM Start the database
@@ -439,7 +439,7 @@ if %errorlevel% equ 0 (
     echo    go mod tidy
     echo    go run . -m "Your message here"
     echo.
-    echo 📚 Useful commands:
+    echo Useful commands:
     echo    - View logs: docker logs agentflow-postgres
     echo    - Stop database: docker compose down
     echo    - Connect to database: docker exec -it agentflow-postgres psql -U user -d agentflow
@@ -488,7 +488,7 @@ echo "Docker and Docker Compose are available"
 if [ ! -f .env ]; then
     echo "Creating .env file from template..."
     cp .env.example .env
-    echo "⚠️  Please update the .env file with your actual API keys and configuration"
+    echo "WARNING: Please update the .env file with your actual API keys and configuration"
 fi
 
 # Start Weaviate
@@ -514,7 +514,7 @@ if curl -f http://localhost:8080/v1/.well-known/ready > /dev/null 2>&1; then
     echo "   go mod tidy"
     echo "   go run . -m \"Your message here\""
     echo ""
-    echo "📚 Useful commands:"
+    echo "Useful commands:"
     echo "   - View logs: docker logs agentflow-weaviate"
     echo "   - Stop Weaviate: docker-compose down"
     echo "   - Check status: curl http://localhost:8080/v1/.well-known/ready"
@@ -552,7 +552,7 @@ REM Create .env file if it doesn't exist
 if not exist .env (
     echo Creating .env file from template...
     copy .env.example .env
-    echo ⚠️  Please update the .env file with your actual API keys and configuration
+    echo WARNING: Please update the .env file with your actual API keys and configuration
 )
 
 REM Start Weaviate
@@ -575,7 +575,7 @@ if %errorlevel% equ 0 (
     echo    go mod tidy
     echo    go run . -m "Your message here"
     echo.
-    echo 📚 Useful commands:
+    echo Useful commands:
     echo    - View logs: docker logs agentflow-weaviate
     echo    - Stop Weaviate: docker compose down
     echo    - Check status: curl http://localhost:8080/v1/.well-known/ready

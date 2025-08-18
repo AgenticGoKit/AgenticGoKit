@@ -112,7 +112,7 @@ type AgentCapability interface {
 // CapabilityConfigurable represents an agent that can have capabilities configured on it.
 type CapabilityConfigurable interface {
 	// SetLLMProvider sets the LLM provider for the agent
-	SetLLMProvider(provider ModelProvider, config AgentLLMConfig)
+	SetLLMProvider(provider ModelProvider, config LLMConfig)
 
 	// SetCacheManager sets the cache manager for the agent
 	SetCacheManager(manager interface{}, config interface{})

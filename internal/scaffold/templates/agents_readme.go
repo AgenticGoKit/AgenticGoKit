@@ -8,10 +8,10 @@ This directory contains all the agent implementations for your multi-agent syste
 
 ` + "```" + `
 agents/
-├── agent1.go          # First agent in your workflow
-├── agent2.go          # Second agent (if configured)
-├── ...                # Additional agents as configured
-└── README.md          # This file
+|-- agent1.go          # First agent in your workflow
+|-- agent2.go          # Second agent (if configured)
+|-- ...                # Additional agents as configured
+` + "`" + `-- README.md          # This file
 ` + "```" + `
 
 ## Agent Overview
@@ -115,7 +115,7 @@ func (a *MyAgentHandler) formatOutput(output string) (string, error) {
 ## Workflow Integration
 
 ### Sequential Mode
-Agents process input in order: Agent1 → Agent2 → Agent3...
+Agents process input in order: Agent1 -> Agent2 -> Agent3...
 - Each agent receives output from the previous agent
 - Final agent produces the workflow result
 
@@ -253,7 +253,7 @@ Run with debug logging to see detailed execution flow:
 go run . -m "your message" --debug
 ` + "```" + `
 
-## 📚 Additional Resources
+## Additional Resources
 
 - [AgenticGoKit Documentation](https://github.com/kunalkushwaha/agenticgokit)
 - [Multi-Agent Patterns](https://github.com/kunalkushwaha/agenticgokit/docs/patterns)
