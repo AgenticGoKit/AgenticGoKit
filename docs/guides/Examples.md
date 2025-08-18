@@ -15,7 +15,7 @@ This guide provides practical examples of building AI agents and workflows with 
 
 ### Simple Query Agent (5 minutes)
 
-The fastest way to create an agent that can answer questions:
+The fastest way to create an agent that can answer questions (config + handler):
 
 ```go
 package main
@@ -29,25 +29,25 @@ import (
 )
 
 func main() {
-    // Create LLM provider (Ollama gemma3:1b recommended for local examples)
-    provider, err := core.NewLLMProvider(core.AgentLLMConfig{Provider: "ollama", Model: "gemma3:1b"})
+    // Build runner from config (use [llm] type = "ollama", model = "gemma3:1b")
+    runner, err := core.NewRunnerFromConfig("agentflow.toml")
     if err != nil { log.Fatal(err) }
 
-    // Create a simple unified agent
-    agent, err := core.NewUnifiedAgentBuilder("helper").
-        WithDescription("Helpful assistant").
-        Build()
-    if err != nil { log.Fatal(err) }
-    agent.SetLLMProvider(provider, core.LLMConfig{Provider: "ollama", Model: "gemma3:1b"})
+    // Minimal agent handler
+    _ = runner.RegisterAgent("helper", core.AgentHandlerFunc(func(ctx context.Context, ev core.Event, st core.State) (core.AgentResult, error) {
+        out := st.Clone()
+        out.Set("result", "Paris")
+        return core.AgentResult{OutputState: out}, nil
+    }))
 
-    // Create state with query
+    ctx := context.Background()
+    if err := runner.Start(ctx); err != nil { log.Fatal(err) }
+    defer runner.Stop()
+
     st := core.NewState()
     st.Set("query", "What is the capital of France?")
-
-    // Run agent
-    res, err := agent.Run(context.Background(), st)
-    if err != nil { log.Fatal(err) }
-    fmt.Println("Response:", res.GetResult())
+    if err := runner.Emit(core.NewEvent("helper", st.GetAll(), map[string]string{"session_id": "demo-1"})); err != nil { log.Fatal(err) }
+    fmt.Println("Emitted; check logs/callbacks for output")
 }
 ```
 
@@ -108,68 +108,25 @@ The generated project includes:
 
 ### Research Agent
 
-An agent that searches for information and provides summaries:
+An MCP-enabled agent that can use tools to gather information:
 
 ```go
-package main
+// Ensure you import the MCP plugin and the LLM provider plugin in your project:
+// _ "github.com/kunalkushwaha/agenticgokit/plugins/mcp/default"
+// _ "github.com/kunalkushwaha/agenticgokit/plugins/llm/ollama"
 
-import (
-    "context"
-    "fmt"
-    "log"
-    
-    "github.com/kunalkushwaha/agenticgokit/core"
-)
+type ResearchAgent struct { agent core.Agent }
 
-type ResearchAgent struct {
-    agent core.Agent
+func NewResearchAgent(name string) (*ResearchAgent, error) {
+    // Create a basic MCP-aware agent (manager initialized elsewhere)
+    // or wrap a handler if your logic is simple.
+    return &ResearchAgent{agent: &myResearchAgent{name: name}}, nil
 }
 
-func NewResearchAgent(llm core.ModelProvider) (*ResearchAgent, error) {
-    agent, err := core.NewMCPAgent("researcher", llm)
-    if err != nil {
-        return nil, err
-    }
-    
-    return &ResearchAgent{agent: agent}, nil
-}
-
-func (r *ResearchAgent) Research(ctx context.Context, topic string) (string, error) {
-    state := core.NewState()
-    state.Set("query", fmt.Sprintf("Research the topic: %s. Provide a comprehensive summary with key points.", topic))
-    
-    result, err := r.agent.Run(ctx, state)
-    if err != nil {
-        return "", err
-    }
-    
-    return result.GetResult(), nil
-}
-
-func main() {
-    // Initialize with real LLM provider
-    config := core.LLMConfig{
-        Provider: "azure-openai",
-        APIKey:   "your-api-key",
-        BaseURL:  "https://your-resource.openai.azure.com",
-    }
-    
-    llm := core.NewAzureOpenAIAdapter(config)
-    
-    // Create research agent
-    researcher, err := NewResearchAgent(llm)
-    if err != nil {
-        log.Fatal(err)
-    }
-    
-    // Conduct research
-    summary, err := researcher.Research(context.Background(), "quantum computing applications")
-    if err != nil {
-        log.Fatal(err)
-    }
-    
-    fmt.Println("Research Summary:", summary)
-}
+// myResearchAgent is a minimal example using Agent interface
+type myResearchAgent struct { name string }
+func (a *myResearchAgent) Name() string { return a.name }
+// Implement other Agent methods or use a handler in real apps
 ```
 
 ### Data Analysis Agent
@@ -369,11 +326,9 @@ func main() {
 
 ### Workflow Visualization
 
-Generate Mermaid diagrams using the CLI at scaffold time. Runtime builders do not generate diagrams.
+Use the CLI to generate diagrams. Runtime code doesn’t emit diagrams.
 
-```text
-Use: agentcli create ... --visualize or agentcli visualize to generate Mermaid diagrams
-```
+Text: Use `agentcli create ... --visualize` or `agentcli visualize` to create Mermaid diagrams.
 
 ### Research and Analysis Pipeline
 
@@ -508,27 +463,7 @@ func (w *ConditionalWorkflow) processWithAgent(ctx context.Context, agent core.A
 
 ### Web Search Integration
 
-Using MCP tools for web search:
-
-```go
-func webSearchExample() {
-    // Initialize MCP with web search tools
-    core.QuickStartMCP()
-    
-    agent, _ := core.NewMCPAgent("web-searcher", llm)
-    
-    state := core.NewState()
-    state.Set("query", "Search for the latest Docker tutorials and summarize the top 3 results")
-    
-    result, err := agent.Run(context.Background(), state)
-    if err != nil {
-        log.Fatal(err)
-    }
-    
-    // The agent automatically uses web search tools
-    fmt.Println("Search Results:", result.GetResult())
-}
-```
+Using MCP tools for web search requires registering an MCP transport plugin and initializing the MCP manager in your app startup. Then create MCP-aware agents via the public factory in core or internal plugin APIs.
 
 ### Database Integration
 
@@ -648,40 +583,7 @@ func monitoredWorkflow() {
 
 ### Caching for Performance
 
-Implement caching for better performance:
-
-```go
-func cachedAgent() {
-    // Create agent with caching enabled
-    config := core.AgentConfig{
-        CacheEnabled:    true,
-        CacheTTL:        time.Hour,
-        CacheProvider:   "redis",
-    }
-    
-    agent := core.NewAgentBuilder("cached-agent").
-        WithLLM(llm).
-        WithConfig(config).
-        WithMCP().
-        WithCache().
-        Build()
-    
-    // First call - will hit LLM
-    start := time.Now()
-    result1, _ := agent.Run(context.Background(), state)
-    duration1 := time.Since(start)
-    fmt.Printf("First call: %v\n", duration1)
-    
-    // Second call - will hit cache
-    start = time.Now()
-    result2, _ := agent.Run(context.Background(), state)
-    duration2 := time.Since(start)
-    fmt.Printf("Cached call: %v\n", duration2)
-    
-    // Results should be identical, but second call much faster
-    fmt.Printf("Results match: %v\n", result1.GetResult() == result2.GetResult())
-}
-```
+Enable MCP caching through config and plugins. Prefer configuring cache in `agentflow.toml` or production config; avoid ad-hoc builders in code.
 
 ## Custom Provider Examples
 
@@ -861,11 +763,11 @@ func TestResearchAgent(t *testing.T) {
 
 ## Next Steps
 
-- **[Production Guide](Production.md)** - Deploy your agents to production
-- **[Error Handling](ErrorHandling.md)** - Advanced error handling strategies
-- **[Performance Guide](Performance.md)** - Optimize your agent performance
-- **[Custom Tools](CustomTools.md)** - Build your own MCP tools
-- **[API Reference](../reference/api/agent.md)** - Complete API documentation
+- Production - Deploy your agents reliably
+- Error Handling - Advanced strategies and hooks
+- Performance - Optimize throughput and latency
+- Custom Tools - Build MCP tools
+- API Reference - Runner and Agent
 
 ## Example Projects
 
