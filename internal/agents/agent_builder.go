@@ -2,13 +2,11 @@
 package agents
 
 import (
-	"context"
 	"fmt"
 	"sort"
 	"time"
 
 	"github.com/kunalkushwaha/agenticgokit/core"
-	"github.com/rs/zerolog"
 )
 
 // =============================================================================
@@ -138,7 +136,7 @@ func (b *AgentBuilder) WithMultiAgentErrorStrategy(strategy core.ErrorHandlingSt
 // WithMultiAgentConcurrency sets the maximum concurrency for multi-agent composition
 func (b *AgentBuilder) WithMultiAgentConcurrency(maxConcurrency int) *AgentBuilder {
 	if b.multiConfig.Timeout == 0 {
-		b.multiConfig = DefaultMultiAgentConfig()
+		b.multiConfig = core.DefaultMultiAgentConfig()
 	}
 	b.multiConfig.MaxConcurrency = maxConcurrency
 	return b
@@ -149,7 +147,7 @@ func (b *AgentBuilder) WithMultiAgentConcurrency(maxConcurrency int) *AgentBuild
 // =============================================================================
 
 // WithMCP adds MCP capability to the agent
-func (b *AgentBuilder) WithMCP(manager MCPManager) *AgentBuilder {
+func (b *AgentBuilder) WithMCP(manager core.MCPManager) *AgentBuilder {
 	if manager == nil {
 		if b.config.StrictMode {
 			b.errors = append(b.errors, fmt.Errorf("MCP manager cannot be nil"))
@@ -159,13 +157,13 @@ func (b *AgentBuilder) WithMCP(manager MCPManager) *AgentBuilder {
 		return b
 	}
 
-	capability := NewMCPCapability(manager, DefaultMCPAgentConfig())
+	capability := NewMCPCapability(manager, core.DefaultMCPAgentConfig())
 	b.capabilities = append(b.capabilities, capability)
 	return b
 }
 
 // WithMCPAndConfig adds MCP capability with custom configuration
-func (b *AgentBuilder) WithMCPAndConfig(manager MCPManager, config MCPAgentConfig) *AgentBuilder {
+func (b *AgentBuilder) WithMCPAndConfig(manager core.MCPManager, config core.MCPAgentConfig) *AgentBuilder {
 	if manager == nil {
 		if b.config.StrictMode {
 			b.errors = append(b.errors, fmt.Errorf("MCP manager cannot be nil"))
@@ -181,7 +179,7 @@ func (b *AgentBuilder) WithMCPAndConfig(manager MCPManager, config MCPAgentConfi
 }
 
 // WithMCPAndCache adds MCP capability with caching
-func (b *AgentBuilder) WithMCPAndCache(manager MCPManager, cacheManager MCPCacheManager) *AgentBuilder {
+func (b *AgentBuilder) WithMCPAndCache(manager core.MCPManager, cacheManager core.MCPCacheManager) *AgentBuilder {
 	if manager == nil {
 		if b.config.StrictMode {
 			b.errors = append(b.errors, fmt.Errorf("MCP manager cannot be nil"))
@@ -199,13 +197,13 @@ func (b *AgentBuilder) WithMCPAndCache(manager MCPManager, cacheManager MCPCache
 		return b
 	}
 
-	capability := NewMCPCapabilityWithCache(manager, DefaultMCPAgentConfig(), cacheManager)
+	capability := NewMCPCapabilityWithCache(manager, core.DefaultMCPAgentConfig(), cacheManager)
 	b.capabilities = append(b.capabilities, capability)
 	return b
 }
 
 // WithLLM adds LLM capability to the agent
-func (b *AgentBuilder) WithLLM(provider ModelProvider) *AgentBuilder {
+func (b *AgentBuilder) WithLLM(provider core.ModelProvider) *AgentBuilder {
 	if provider == nil {
 		b.errors = append(b.errors, fmt.Errorf("LLM provider cannot be nil"))
 		return b
@@ -217,7 +215,7 @@ func (b *AgentBuilder) WithLLM(provider ModelProvider) *AgentBuilder {
 }
 
 // WithLLMAndConfig adds LLM capability with custom configuration
-func (b *AgentBuilder) WithLLMAndConfig(provider ModelProvider, config LLMConfig) *AgentBuilder {
+func (b *AgentBuilder) WithLLMAndConfig(provider core.ModelProvider, config core.LLMConfig) *AgentBuilder {
 	if provider == nil {
 		b.errors = append(b.errors, fmt.Errorf("LLM provider cannot be nil"))
 		return b
@@ -245,7 +243,7 @@ func (b *AgentBuilder) WithCache(manager interface{}, config interface{}) *Agent
 }
 
 // WithMetrics adds metrics capability to the agent
-func (b *AgentBuilder) WithMetrics(config MetricsConfig) *AgentBuilder {
+func (b *AgentBuilder) WithMetrics(config core.MetricsConfig) *AgentBuilder {
 	capability := NewMetricsCapability(config)
 	b.capabilities = append(b.capabilities, capability)
 	return b
@@ -345,7 +343,7 @@ func (b *AgentBuilder) ClearErrors() *AgentBuilder {
 // =============================================================================
 
 // Build creates the final agent with all configured capabilities
-func (b *AgentBuilder) Build() (Agent, error) {
+func (b *AgentBuilder) Build() (core.Agent, error) {
 	// Validate the configuration
 	if err := b.Validate(); err != nil {
 		return nil, fmt.Errorf("agent validation failed: %w", err)
@@ -353,7 +351,8 @@ func (b *AgentBuilder) Build() (Agent, error) {
 
 	// Check if this is a multi-agent composition
 	if b.compositionMode != "" {
-		return b.buildCompositeAgent()
+		// Multi-agent composition wiring will be bridged to core agents in a later step
+		return nil, fmt.Errorf("multi-agent composition not implemented yet in this refactor")
 	}
 
 	// Sort capabilities by priority if enabled
@@ -362,13 +361,13 @@ func (b *AgentBuilder) Build() (Agent, error) {
 		capabilities = SortCapabilitiesByPriority(b.capabilities)
 	}
 
-	// Create the unified agent
+	// Create the unified agent backed by core.UnifiedAgent
 	agent, err := createUnifiedAgent(b.name, capabilities)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create unified agent: %w", err)
 	}
 	// Configure each capability on the agent
-	logger := Logger().With().Str("agent", b.name).Logger()
+	logger := core.Logger().With().Str("agent", b.name).Logger()
 
 	// We need to cast the agent to CapabilityConfigurable to configure capabilities
 	configurableAgent, ok := agent.(CapabilityConfigurable)
@@ -399,7 +398,7 @@ func (b *AgentBuilder) Build() (Agent, error) {
 
 // BuildOrPanic builds the agent and panics if there are any errors.
 // This is useful for testing or when you're certain the configuration is valid.
-func (b *AgentBuilder) BuildOrPanic() Agent {
+func (b *AgentBuilder) BuildOrPanic() core.Agent {
 	agent, err := b.Build()
 	if err != nil {
 		panic(fmt.Sprintf("failed to build agent '%s': %v", b.name, err))
@@ -413,7 +412,7 @@ func (b *AgentBuilder) BuildOrPanic() Agent {
 
 // CreateDataProcessingPipeline creates a sequential agent for data processing workflows
 // Usage: input -> processing -> output
-func CreateDataProcessingPipeline(name string, inputAgent, processingAgent, outputAgent Agent) Agent {
+func CreateDataProcessingPipeline(name string, inputAgent, processingAgent, outputAgent core.Agent) core.Agent {
 	pipeline, _ := NewAgent(name).
 		WithSequentialAgents(inputAgent, processingAgent, outputAgent).
 		Build()
@@ -422,29 +421,29 @@ func CreateDataProcessingPipeline(name string, inputAgent, processingAgent, outp
 
 // CreateParallelAnalysis creates a parallel agent for analysis workflows
 // Usage: Multiple analysis agents process the same input concurrently
-func CreateParallelAnalysisWorkflow(name string, timeout time.Duration, analysisAgents ...Agent) Agent {
+func CreateParallelAnalysisWorkflow(name string, timeout time.Duration, analysisAgents ...core.Agent) core.Agent {
 	workflow, _ := NewAgent(name).
 		WithParallelAgents(analysisAgents...).
 		WithMultiAgentTimeout(timeout).
-		WithMultiAgentErrorStrategy(ErrorStrategyCollectAll).
+		WithMultiAgentErrorStrategy(core.ErrorStrategyCollectAll).
 		Build()
 	return workflow
 }
 
 // CreateResilientWorkflow creates a parallel agent with fault tolerance
-func CreateResilientWorkflow(name string, agents ...Agent) Agent {
+func CreateResilientWorkflow(name string, agents ...core.Agent) core.Agent {
 	workflow, _ := NewAgent(name).
 		WithParallelAgents(agents...).
 		WithMultiAgentTimeout(60 * time.Second).
-		WithMultiAgentErrorStrategy(ErrorStrategyContinue).
+		WithMultiAgentErrorStrategy(core.ErrorStrategyContinue).
 		WithMultiAgentConcurrency(20).
 		Build()
 	return workflow
 }
 
 // CreateConditionalProcessor creates a loop agent with a simple condition
-func CreateConditionalProcessor(name string, maxIterations int, conditionKey string, expectedValue interface{}, agent Agent) Agent {
-	condition := func(state State) bool {
+func CreateConditionalProcessor(name string, maxIterations int, conditionKey string, expectedValue interface{}, agent core.Agent) core.Agent {
+	condition := func(state core.State) bool {
 		if value, exists := state.Get(conditionKey); exists {
 			return value == expectedValue
 		}
@@ -482,7 +481,7 @@ type SimpleAgentConfig struct {
 // NewAgentFromConfig creates an agent from configuration
 // Note: This is a placeholder implementation. Full implementation would require
 // creating providers and managers from configuration.
-func NewAgentFromConfig(name string, config SimpleAgentConfig) (Agent, error) {
+func NewAgentFromConfig(name string, config SimpleAgentConfig) (core.Agent, error) {
 	builder := NewAgent(name)
 
 	// Add LLM capability if configured
@@ -511,103 +510,11 @@ func NewAgentFromConfig(name string, config SimpleAgentConfig) (Agent, error) {
 // HELPER FUNCTIONS
 // =============================================================================
 
-// createUnifiedAgent creates a UnifiedAgent instance.
-// createUnifiedAgent creates a new unified agent with the specified capabilities.
-// This replaces the previous placeholder implementation with the actual UnifiedAgent.
-func createUnifiedAgent(name string, capabilities []AgentCapability) (Agent, error) {
-	// Convert slice to map for efficient lookup
-	capabilityMap := make(map[CapabilityType]AgentCapability)
-	for _, cap := range capabilities {
-		// Determine capability type from the concrete implementation
-		var capType CapabilityType
-		switch cap.(type) {
-		case *LLMCapability:
-			capType = CapabilityTypeLLM
-		case *CacheCapability:
-			capType = CapabilityTypeCache
-		case *MetricsCapability:
-			capType = CapabilityTypeMetrics
-		case *MCPCapability:
-			capType = CapabilityTypeMCP
-		default:
-			// For unknown types, use the capability name as the type
-			capType = CapabilityType(cap.Name())
-		}
-		capabilityMap[capType] = cap
-	}
-
-	// Create and return the unified agent
-	return NewUnifiedAgent(name, capabilityMap, nil), nil
-}
-
-// PlaceholderAgent is a temporary implementation of both Agent and CapabilityConfigurable interfaces
-// This will be replaced by the actual UnifiedAgent implementation
-type PlaceholderAgent struct {
-	name         string
-	capabilities []AgentCapability
-	logger       zerolog.Logger
-
-	// Capability-specific fields
-	llmProvider     core.ModelProvider
-	llmConfig       core.LLMConfig
-	mcpManager      core.MCPManager
-	mcpConfig       core.MCPAgentConfig
-	mcpCacheManager core.MCPCacheManager
-	cacheManager    interface{}
-	cacheConfig     interface{}
-	metricsConfig   core.MetricsConfig
-}
-
-// Name implements the Agent interface
-func (p *PlaceholderAgent) Name() string {
-	return p.name
-}
-
-// Run implements the Agent interface - placeholder implementation
-func (p *PlaceholderAgent) Run(ctx context.Context, inputState State) (State, error) {
-	// Placeholder implementation - will be replaced by actual UnifiedAgent logic
-	outputState := inputState.Clone()
-	outputState.Set("processed_by", p.name)
-	outputState.Set("capabilities", p.getCapabilityNames())
-	return outputState, nil
-}
-
-// CapabilityConfigurable interface implementation
-func (p *PlaceholderAgent) SetLLMProvider(provider ModelProvider, config LLMConfig) {
-	p.llmProvider = provider
-	p.llmConfig = config
-}
-
-func (p *PlaceholderAgent) SetCacheManager(manager interface{}, config interface{}) {
-	p.cacheManager = manager
-	p.cacheConfig = config
-}
-
-func (p *PlaceholderAgent) SetMetricsConfig(config MetricsConfig) {
-	p.metricsConfig = config
-}
-
-func (p *PlaceholderAgent) GetLogger() *zerolog.Logger {
-	return &p.logger
-}
-
-// MCP-specific configuration methods
-func (p *PlaceholderAgent) SetMCPManager(manager MCPManager, config MCPAgentConfig) {
-	p.mcpManager = manager
-	p.mcpConfig = config
-}
-
-func (p *PlaceholderAgent) SetMCPCacheManager(manager MCPCacheManager) {
-	p.mcpCacheManager = manager
-}
-
-// Helper method to get capability names
-func (p *PlaceholderAgent) getCapabilityNames() []string {
-	names := make([]string, len(p.capabilities))
-	for i, cap := range p.capabilities {
-		names[i] = cap.Name()
-	}
-	return names
+// createUnifiedAgent creates a UnifiedAgent instance using core.UnifiedAgent.
+func createUnifiedAgent(name string, _ []AgentCapability) (core.Agent, error) {
+	// We pass nil for core capabilities; internal capabilities will configure via Configure().
+	ua := core.NewUnifiedAgent(name, nil, nil)
+	return ua, nil
 }
 
 // capabilityNames extracts the names of capabilities for logging
@@ -621,48 +528,8 @@ func capabilityNames(capabilities []AgentCapability) []string {
 }
 
 // buildCompositeAgent creates a composite agent based on the composition mode
-func (b *AgentBuilder) buildCompositeAgent() (Agent, error) {
-	if len(b.subAgents) == 0 {
-		return nil, fmt.Errorf("composite agent '%s' requires at least one sub-agent", b.name)
-	}
-
-	// Use default config if not set
-	config := b.multiConfig
-	if config.Timeout == 0 {
-		config = DefaultMultiAgentConfig()
-	}
-
-	logger := Logger().With().Str("agent", b.name).Str("composition_mode", b.compositionMode).Logger()
-
-	switch b.compositionMode {
-	case "parallel":
-		logger.Info().
-			Int("sub_agents", len(b.subAgents)).
-			Dur("timeout", config.Timeout).
-			Str("error_strategy", string(config.ErrorStrategy)).
-			Msg("Building parallel composite agent")
-		return NewParallelAgentWithConfig(b.name, config, b.subAgents...), nil
-
-	case "sequential":
-		logger.Info().
-			Int("sub_agents", len(b.subAgents)).
-			Msg("Building sequential composite agent")
-		return NewSequentialAgent(b.name, b.subAgents...), nil
-
-	case "loop":
-		if len(b.subAgents) != 1 {
-			return nil, fmt.Errorf("loop composite agent '%s' requires exactly one sub-agent, got %d", b.name, len(b.subAgents))
-		}
-		logger.Info().
-			Int("max_iterations", b.loopConfig.MaxIterations).
-			Dur("timeout", config.Timeout).
-			Msg("Building loop composite agent")
-		return NewLoopAgent(b.name, b.loopConfig.MaxIterations, config.Timeout,
-			b.loopConfig.Condition, b.subAgents[0]), nil
-
-	default:
-		return nil, fmt.Errorf("unknown composition mode '%s' for agent '%s'", b.compositionMode, b.name)
-	}
+func (b *AgentBuilder) buildCompositeAgent() (core.Agent, error) {
+	return nil, fmt.Errorf("multi-agent composition not implemented yet in this refactor")
 }
 
 // =============================================================================
@@ -671,41 +538,10 @@ func (b *AgentBuilder) buildCompositeAgent() (Agent, error) {
 
 // GenerateMermaidDiagram generates a Mermaid diagram for the multi-agent composition
 // Returns empty string if not a multi-agent composition
-func (b *AgentBuilder) GenerateMermaidDiagram() string {
-	return b.GenerateMermaidDiagramWithConfig(DefaultMermaidConfig())
-}
+func (b *AgentBuilder) GenerateMermaidDiagram() string { return "" }
 
 // GenerateMermaidDiagramWithConfig generates a Mermaid diagram with custom configuration
-func (b *AgentBuilder) GenerateMermaidDiagramWithConfig(config MermaidConfig) string {
-	if b.compositionMode == "" || len(b.subAgents) == 0 {
-		return "" // Not a multi-agent composition
-	}
-
-	// Create a temporary composition builder to generate the diagram
-	composition := NewComposition(b.name).WithAgents(b.subAgents...)
-
-	// Apply composition mode
-	switch b.compositionMode {
-	case "parallel":
-		composition = composition.AsParallel()
-	case "sequential":
-		composition = composition.AsSequential()
-	case "loop":
-		if len(b.subAgents) == 1 && b.loopConfig.Condition != nil {
-			composition = composition.AsLoop(b.loopConfig.MaxIterations, b.loopConfig.Condition)
-		}
-	}
-
-	// Apply multi-agent configuration
-	if b.multiConfig.Timeout > 0 {
-		composition = composition.WithTimeout(b.multiConfig.Timeout)
-	}
-	if b.multiConfig.ErrorStrategy != "" {
-		composition = composition.WithErrorStrategy(b.multiConfig.ErrorStrategy)
-	}
-
-	return composition.GenerateMermaidDiagramWithConfig(config)
-}
+func (b *AgentBuilder) GenerateMermaidDiagramWithConfig(_ core.MermaidConfig) string { return "" }
 
 // CanVisualize returns true if the agent builder has a multi-agent composition that can be visualized
 func (b *AgentBuilder) CanVisualize() bool {

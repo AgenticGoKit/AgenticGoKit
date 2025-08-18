@@ -2,7 +2,7 @@ package visualization
 
 import (
 	"fmt"
-	
+
 	"github.com/kunalkushwaha/agenticgokit/core"
 )
 
@@ -83,7 +83,7 @@ flowchart TD
     `, mode)
 }
 
-func (mg *simpleMermaidGenerator) GenerateOrchestrationDiagram(mode OrchestrationMode, agents map[string]AgentHandler, config MermaidConfig) string {
+func (mg *simpleMermaidGenerator) GenerateOrchestrationDiagram(mode core.OrchestrationMode, agents map[string]core.AgentHandler, config MermaidConfig) string {
 	return `---
 title: "Orchestration"
 ---

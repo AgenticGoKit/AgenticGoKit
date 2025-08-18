@@ -7,14 +7,12 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	{{if or (eq .Config.OrchestrationMode "collaborative") .Config.MemoryEnabled}}
 	"strings"
-	{{end}}
 	"sync"
 	"time"
 
 	"github.com/kunalkushwaha/agenticgokit/core"
-	"{{.Config.Name}}/agents"
+	_ "{{.Config.Name}}/agents"
 )
 
 {{if .Config.MemoryEnabled}}
@@ -103,6 +101,8 @@ func main() {
 		// Example: Try a fallback provider or provide offline mode
 		os.Exit(1)
 	}
+	// Currently not used directly; agents created via configuration
+	_ = llmProvider
 	
 	// TODO: Add LLM provider validation or health checks here
 	// Example: Test the connection with a simple query
@@ -212,7 +212,7 @@ func main() {
 	fmt.Println("Validating memory configuration...")
 	if err := validateMemoryConfig(memoryConfig, "{{.Config.EmbeddingModel}}"); err != nil {
 		logger.Error().Err(err).Msg("Memory configuration validation failed")
-		fmt.Printf("❌ Configuration Error: %v\n", err)
+	fmt.Printf("Configuration error: %v\n", err)
 		os.Exit(1)
 	}
 	
@@ -309,17 +309,20 @@ func main() {
 	// Register all active agents with result collection wrappers
 	for _, agent := range activeAgents {
 		agentName := agent.GetRole()
-		
-		// Wrap the agent with result collection for output tracking
-		// TODO: Add custom agent middleware here if needed
-		// Examples: logging, metrics, rate limiting, caching, authentication
+        
+		// Adapt core.Agent to core.AgentHandler by delegating to HandleEvent
+		baseHandler := core.AgentHandlerFunc(func(ctx context.Context, event core.Event, state core.State) (core.AgentResult, error) {
+			return agent.HandleEvent(ctx, event, state)
+		})
+
+		// Wrap the adapted handler with result collection for output tracking
 		wrappedAgent := &ResultCollectorHandler{
-			originalHandler: agent,
+			originalHandler: baseHandler,
 			agentName:       agentName,
 			outputs:         &results,
 			mutex:           &resultsMutex,
 		}
-		
+
 		agentHandlers[agentName] = wrappedAgent
 		logger.Debug().Str("agent", agentName).Msg("Agent registered with result collection")
 	}
@@ -366,26 +369,14 @@ func main() {
 		logger.Debug().Msg("Error handlers registered using first active agent as fallback")
 	}
 
-	// Create the workflow orchestrator (runner) using the registry-based builder
+	// Create the workflow orchestrator (runner) from configuration
 	// This honors the orchestration mode from agentflow.toml and uses the plugin-registered orchestrator
-	// Modes: route (default), collaborative, sequential, loop, mixed
-	var mode core.OrchestrationMode = core.OrchestrationRoute
-	switch config.Orchestration.Mode {
-	case "collaborative":
-		mode = core.OrchestrationCollaborate
-	case "sequential":
-		mode = core.OrchestrationSequential
-	case "parallel":
-		mode = core.OrchestrationParallel
-	case "loop":
-		mode = core.OrchestrationLoop
-	case "mixed":
-		mode = core.OrchestrationMixed
+	runner, err := core.NewRunnerFromConfig("agentflow.toml")
+	if err != nil {
+		logger.Error().Err(err).Msg("Failed to create runner from configuration")
+		fmt.Printf("ERROR: Failed to create runner from configuration: %v\n", err)
+		os.Exit(1)
 	}
-
-	runner := core.NewOrchestrationBuilder(mode).
-		WithAgents(agentHandlers).
-		Build()
 
 	// --- Hooks & Callbacks (Observability/Policies) ---
 	// You can register before/after hooks and error hooks for traceability, metrics, or policy checks.
@@ -515,7 +506,7 @@ func main() {
 	// Examples: event batching, priority queuing, or conditional routing
 	if err := runner.Emit(event); err != nil {
 		logger.Error().Err(err).Msg("Workflow execution failed")
-		fmt.Printf("❌ Workflow execution error: %v\n", err)
+	fmt.Printf("Workflow execution error: %v\n", err)
 		// TODO: Add custom error recovery or fallback logic here
 		os.Exit(1)
 	}
@@ -723,8 +714,9 @@ func validateMemoryConfig(memoryConfig core.AgentMemoryConfig, expectedModel str
 	// Validate embedding dimensions
 	expectedDimensions := {{.Config.EmbeddingDimensions}}
 	if memoryConfig.Dimensions != expectedDimensions {
-	return fmt.Errorf("%s requires %d dimensions, but %d configured in agentflow.toml\nSolution: Update [agent_memory] dimensions = %d", 
-			expectedModel, expectedDimensions, memoryConfig.Dimensions, expectedDimensions)
+		// Use literal template values so template tests can verify expected guidance text
+		return fmt.Errorf("{{.Config.EmbeddingModel}} requires {{.Config.EmbeddingDimensions}} dimensions, but %d configured in agentflow.toml\nSolution: Update [agent_memory] dimensions = %d", 
+			memoryConfig.Dimensions, expectedDimensions)
 	}
 	
 	// Validate embedding provider and model
@@ -748,14 +740,14 @@ func validateMemoryConfig(memoryConfig core.AgentMemoryConfig, expectedModel str
 			return fmt.Errorf("pgvector provider requires a connection string\nSolution: Set [agent_memory] connection = \"postgres://user:password@localhost:15432/agentflow?sslmode=disable\"")
 		}
 		if !strings.Contains(memoryConfig.Connection, "postgres://") {
-			return fmt.Errorf("pgvector connection string should start with 'postgres://'\n💡 Current: %s", memoryConfig.Connection)
+			return fmt.Errorf("pgvector connection string should start with 'postgres://'. Current: %s", memoryConfig.Connection)
 		}
 	case "weaviate":
 		if memoryConfig.Connection == "" {
 			return fmt.Errorf("weaviate provider requires a connection string\nSolution: Set [agent_memory] connection = \"http://localhost:8080\"")
 		}
 		if !strings.Contains(memoryConfig.Connection, "http") {
-			return fmt.Errorf("weaviate connection string should be an HTTP URL\n💡 Current: %s", memoryConfig.Connection)
+			return fmt.Errorf("weaviate connection string should be an HTTP URL. Current: %s", memoryConfig.Connection)
 		}
 	case "memory":
 		// In-memory provider doesn't need connection validation

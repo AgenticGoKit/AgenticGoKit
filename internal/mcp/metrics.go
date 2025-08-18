@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kunalkushwaha/agenticgokit/core"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog"
@@ -466,13 +467,13 @@ func (m *MCPMetrics) Close() error {
 // HealthChecker provides health check endpoints for MCP services
 type HealthChecker struct {
 	connectionPool *ConnectionPool
-	cacheManager   *CacheManager
+	cacheManager   core.MCPCacheManager
 	metrics        *MCPMetrics
 	logger         *zerolog.Logger
 }
 
 // NewHealthChecker creates a new health checker
-func NewHealthChecker(connectionPool *ConnectionPool, cacheManager *CacheManager, metrics *MCPMetrics, logger *zerolog.Logger) *HealthChecker {
+func NewHealthChecker(connectionPool *ConnectionPool, cacheManager core.MCPCacheManager, metrics *MCPMetrics, logger *zerolog.Logger) *HealthChecker {
 	return &HealthChecker{
 		connectionPool: connectionPool,
 		cacheManager:   cacheManager,

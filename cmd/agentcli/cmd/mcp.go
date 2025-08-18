@@ -348,7 +348,7 @@ func displayToolsDefault(tools []core.MCPToolInfo) error {
 	}
 
 	for server, toolList := range serverTools {
-		fmt.Printf("\n📡 %s (%d tools)\n", server, len(toolList))
+		fmt.Printf("\n%s (%d tools)\n", server, len(toolList))
 		fmt.Println(strings.Repeat("-", len(server)+15))
 
 		for _, tool := range toolList {
@@ -366,7 +366,7 @@ func displayToolsDefault(tools []core.MCPToolInfo) error {
 
 // Health status display
 func displayHealthStatus(healthStatus map[string]core.MCPHealthStatus) error {
-	fmt.Println("🏥 MCP Server Health Status")
+	fmt.Println("MCP Server Health Status")
 	fmt.Println("===========================")
 
 	if len(healthStatus) == 0 {
@@ -388,16 +388,13 @@ func displayHealthStatus(healthStatus map[string]core.MCPHealthStatus) error {
 			}
 		}
 
-		statusIcon := "🟢"
 		statusText := "Healthy"
 		if status.Status != "healthy" {
-			statusIcon = "🔴"
 			statusText = "Unhealthy"
 		}
 
-		fmt.Fprintf(w, "%s\t%s %s\t%v\t%s\n",
+		fmt.Fprintf(w, "%s\t%s\t%v\t%s\n",
 			server,
-			statusIcon,
 			statusText,
 			status.ResponseTime,
 			errorMsg)

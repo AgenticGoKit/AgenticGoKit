@@ -13,8 +13,7 @@ import (
 
 // Initialize the basic implementations in the core package during package initialization
 func init() {
-	// Set the factory functions in the core package
-	core.SetBasicFactories(newBasicAgentManager, newBasicConfigurableAgentFactory)
+	// Basic implementations are available in core; no registration required here post-refactor
 }
 
 // basicAgentManager provides a minimal implementation when internal packages aren't imported

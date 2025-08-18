@@ -386,14 +386,14 @@ func (g *ProjectGenerator) generateCollaborativeDiagram(config scaffold.ProjectC
 
 	diagram := "```mermaid\n---\ntitle: Collaborative Orchestration\n---\nflowchart TD\n"
 	diagram += "    EVENT[\"📨 Input Event\"]\n"
-	diagram += "    ORCHESTRATOR[\"🎯 Collaborative Orchestrator\"]\n"
-	diagram += "    AGGREGATOR[\"📊 Result Aggregator\"]\n"
+	diagram += "    ORCHESTRATOR[\"Collaborative Orchestrator\"]\n"
+	diagram += "    AGGREGATOR[\"Result Aggregator\"]\n"
 	diagram += "    RESULT[\"📤 Final Result\"]\n\n"
 	diagram += "    EVENT --> ORCHESTRATOR\n"
 
 	for i, agent := range agents {
 		agentId := fmt.Sprintf("AGENT%d", i+1)
-		diagram += fmt.Sprintf("    %s[\"🤖 %s\"]\n", agentId, agent)
+		diagram += fmt.Sprintf("    %s[\"%s\"]\n", agentId, agent)
 		diagram += fmt.Sprintf("    ORCHESTRATOR --> %s\n", agentId)
 		diagram += fmt.Sprintf("    %s --> AGGREGATOR\n", agentId)
 	}
@@ -421,7 +421,7 @@ func (g *ProjectGenerator) generateSequentialDiagram(config scaffold.ProjectConf
 	var prevNode = "INPUT"
 	for i, agent := range agents {
 		agentId := fmt.Sprintf("AGENT%d", i+1)
-		diagram += fmt.Sprintf("    %s[\"🤖 %s\"]\n", agentId, agent)
+		diagram += fmt.Sprintf("    %s[\"%s\"]\n", agentId, agent)
 		diagram += fmt.Sprintf("    %s --> %s\n", prevNode, agentId)
 		prevNode = agentId
 	}
@@ -442,8 +442,8 @@ func (g *ProjectGenerator) generateLoopDiagram(config scaffold.ProjectConfig) (s
 
 	diagram := "```mermaid\n---\ntitle: Loop Processing\n---\nflowchart TD\n"
 	diagram += "    INPUT[\"📨 Input Event\"]\n"
-	diagram += "    AGENT[\"🤖 " + agentName + "\"]\n"
-	diagram += "    CONDITION{\"🔄 Continue Loop?\"}\n"
+	diagram += "    AGENT[\"" + agentName + "\"]\n"
+	diagram += "    CONDITION{\"Continue Loop?\"}\n"
 	diagram += "    OUTPUT[\"📤 Final Result\"]\n\n"
 	diagram += "    INPUT --> AGENT\n"
 	diagram += "    AGENT --> CONDITION\n"
@@ -468,7 +468,7 @@ func (g *ProjectGenerator) generateMixedDiagram(config scaffold.ProjectConfig) (
 	if len(config.CollaborativeAgents) > 0 {
 		for i, agent := range config.CollaborativeAgents {
 			agentId := fmt.Sprintf("COLLAB%d", i+1)
-			diagram += fmt.Sprintf("    %s[\"🤖 %s\"]\n", agentId, agent)
+			diagram += fmt.Sprintf("    %s[\"%s\"]\n", agentId, agent)
 			diagram += fmt.Sprintf("    PHASE1 --> %s\n", agentId)
 			diagram += fmt.Sprintf("    %s --> PHASE2\n", agentId)
 		}
@@ -479,7 +479,7 @@ func (g *ProjectGenerator) generateMixedDiagram(config scaffold.ProjectConfig) (
 		var prevNode = "PHASE2"
 		for i, agent := range config.SequentialAgents {
 			agentId := fmt.Sprintf("SEQ%d", i+1)
-			diagram += fmt.Sprintf("    %s[\"🤖 %s\"]\n", agentId, agent)
+			diagram += fmt.Sprintf("    %s[\"%s\"]\n", agentId, agent)
 			diagram += fmt.Sprintf("    %s --> %s\n", prevNode, agentId)
 			prevNode = agentId
 		}
@@ -497,14 +497,14 @@ func (g *ProjectGenerator) generateMixedDiagram(config scaffold.ProjectConfig) (
 func (g *ProjectGenerator) generateRouteDiagram(config scaffold.ProjectConfig) (string, string) {
 	diagram := "```mermaid\n---\ntitle: Route Orchestration\n---\nflowchart TD\n"
 	diagram += "    INPUT[\"📨 Input Event\"]\n"
-	diagram += "    ROUTER[\"🎯 Event Router\"]\n"
+	diagram += "    ROUTER[\"Event Router\"]\n"
 	diagram += "    OUTPUT[\"📤 Result\"]\n\n"
 	diagram += "    INPUT --> ROUTER\n"
 
 	for i := 0; i < config.NumAgents; i++ {
 		agentId := fmt.Sprintf("AGENT%d", i+1)
 		agentName := fmt.Sprintf("agent%d", i+1)
-		diagram += fmt.Sprintf("    %s[\"🤖 %s\"]\n", agentId, agentName)
+		diagram += fmt.Sprintf("    %s[\"%s\"]\n", agentId, agentName)
 		diagram += fmt.Sprintf("    ROUTER -.->|Route| %s\n", agentId)
 		diagram += fmt.Sprintf("    %s --> OUTPUT\n", agentId)
 	}

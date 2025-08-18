@@ -103,7 +103,7 @@ func (mg *MermaidGeneratorImplementation) GenerateAgentDiagram(agent core.Agent,
 	diagram.WriteString(fmt.Sprintf("flowchart %s\n", config.Direction))
 
 	diagram.WriteString("    INPUT[\"📨 Input State\"]\n")
-	diagram.WriteString(fmt.Sprintf("    AGENT[\"🤖 %s\"]\n", agent.Name()))
+	diagram.WriteString(fmt.Sprintf("    AGENT[\"%s\"]\n", agent.Name()))
 	diagram.WriteString("    OUTPUT[\"📤 Output State\"]\n\n")
 
 	diagram.WriteString("    INPUT --> AGENT\n")
@@ -154,10 +154,10 @@ func (mg *MermaidGeneratorImplementation) GenerateWorkflowPatternDiagram(pattern
 
 // generateParallelDiagram creates a parallel composition diagram
 func (mg *MermaidGeneratorImplementation) generateParallelDiagram(diagram *strings.Builder, agents []core.Agent, config core.MermaidConfig) {
-	diagram.WriteString("    INPUT[\"🎯 Input Event\"]\n")
+	diagram.WriteString("    INPUT[\"Input Event\"]\n")
 	diagram.WriteString("    FANOUT[\"📤 Fan-Out\"]\n")
-	diagram.WriteString("    MERGE[\"🔄 Merge Results\"]\n")
-	diagram.WriteString("    OUTPUT[\"✅ Final Output\"]\n\n")
+	diagram.WriteString("    MERGE[\"Merge Results\"]\n")
+	diagram.WriteString("    OUTPUT[\"Final Output\"]\n\n")
 
 	// Connect input to fan-out
 	diagram.WriteString("    INPUT --> FANOUT\n")
@@ -183,7 +183,7 @@ func (mg *MermaidGeneratorImplementation) generateParallelDiagram(diagram *strin
 
 // generateSequentialDiagram creates a sequential composition diagram
 func (mg *MermaidGeneratorImplementation) generateSequentialDiagram(diagram *strings.Builder, agents []core.Agent, config core.MermaidConfig) {
-	diagram.WriteString("    INPUT[\"🎯 Input Event\"]\n")
+	diagram.WriteString("    INPUT[\"Input Event\"]\n")
 
 	var prevNode = "INPUT"
 	for i, agent := range agents {
@@ -200,7 +200,7 @@ func (mg *MermaidGeneratorImplementation) generateSequentialDiagram(diagram *str
 		prevNode = agentId
 	}
 
-	diagram.WriteString("    OUTPUT[\"✅ Final Output\"]\n")
+	diagram.WriteString("    OUTPUT[\"Final Output\"]\n")
 	diagram.WriteString(fmt.Sprintf("    %s --> OUTPUT\n", prevNode))
 }
 
@@ -213,10 +213,10 @@ func (mg *MermaidGeneratorImplementation) generateLoopDiagram(diagram *strings.B
 	agent := agents[0]
 	agentName := mg.getAgentDisplayName(agent, 1)
 
-	diagram.WriteString("    INPUT[\"🎯 Input Event\"]\n")
-	diagram.WriteString("    CONDITION{\"🔍 Check Condition\"}\n")
+	diagram.WriteString("    INPUT[\"Input Event\"]\n")
+	diagram.WriteString("    CONDITION{\"Check Condition\"}\n")
 	diagram.WriteString(fmt.Sprintf("    AGENT[%s]\n", agentName))
-	diagram.WriteString("    OUTPUT[\"✅ Final Output\"]\n")
+	diagram.WriteString("    OUTPUT[\"Final Output\"]\n")
 	diagram.WriteString("    MAXITER[\"⚠️ Max Iterations\"]\n\n")
 
 	// Create the loop flow
@@ -230,8 +230,8 @@ func (mg *MermaidGeneratorImplementation) generateLoopDiagram(diagram *strings.B
 
 // generateDefaultDiagram creates a default diagram when mode is not set
 func (mg *MermaidGeneratorImplementation) generateDefaultDiagram(diagram *strings.Builder, agents []core.Agent, config core.MermaidConfig) {
-	diagram.WriteString("    INPUT[\"🎯 Input Event\"]\n")
-	diagram.WriteString("    CONFIG[\"⚙️ Configuration Needed\"]\n")
+	diagram.WriteString("    INPUT[\"Input Event\"]\n")
+	diagram.WriteString("    CONFIG[\"Configuration Needed\"]\n")
 	diagram.WriteString("    OUTPUT[\"❓ Unknown Output\"]\n\n")
 
 	diagram.WriteString("    INPUT --> CONFIG\n")
@@ -249,8 +249,8 @@ func (mg *MermaidGeneratorImplementation) generateDefaultDiagram(diagram *string
 func (mg *MermaidGeneratorImplementation) generateCollaborativeDiagram(diagram *strings.Builder, agents map[string]core.AgentHandler, config core.MermaidConfig) {
 	diagram.WriteString("    EVENT[\"📨 Event\"]\n")
 	diagram.WriteString("    BROADCAST[\"📡 Broadcast to All\"]\n")
-	diagram.WriteString("    COLLECT[\"📊 Collect Results\"]\n")
-	diagram.WriteString("    RESULT[\"🎯 Combined Result\"]\n\n")
+	diagram.WriteString("    COLLECT[\"Collect Results\"]\n")
+	diagram.WriteString("    RESULT[\"Combined Result\"]\n\n")
 
 	diagram.WriteString("    EVENT --> BROADCAST\n")
 
@@ -270,7 +270,7 @@ func (mg *MermaidGeneratorImplementation) generateCollaborativeDiagram(diagram *
 // generateRoutingDiagram creates a routing orchestration diagram
 func (mg *MermaidGeneratorImplementation) generateRoutingDiagram(diagram *strings.Builder, agents map[string]core.AgentHandler, config core.MermaidConfig) {
 	diagram.WriteString("    EVENT[\"📨 Event\"]\n")
-	diagram.WriteString("    ROUTER{\"🎯 Route Decision\"}\n")
+	diagram.WriteString("    ROUTER{\"Route Decision\"}\n")
 	diagram.WriteString("    RESULT[\"📤 Result\"]\n\n")
 
 	diagram.WriteString("    EVENT --> ROUTER\n")
@@ -298,7 +298,7 @@ func (mg *MermaidGeneratorImplementation) generateSequentialOrchestrationDiagram
 		prevNode = agentId
 	}
 
-	diagram.WriteString("    RESULT[\"🎯 Final Result\"]\n")
+	diagram.WriteString("    RESULT[\"Final Result\"]\n")
 	diagram.WriteString(fmt.Sprintf("    %s --> RESULT\n", prevNode))
 }
 
@@ -311,8 +311,8 @@ func (mg *MermaidGeneratorImplementation) generateParallelOrchestrationDiagram(d
 // generateLoopOrchestrationDiagram creates a loop orchestration diagram
 func (mg *MermaidGeneratorImplementation) generateLoopOrchestrationDiagram(diagram *strings.Builder, agents map[string]core.AgentHandler, config core.MermaidConfig) {
 	diagram.WriteString("    EVENT[\"📨 Input Event\"]\n")
-	diagram.WriteString("    CONDITION{\"🔍 Continue Loop?\"}\n")
-	diagram.WriteString("    RESULT[\"🎯 Final Result\"]\n\n")
+	diagram.WriteString("    CONDITION{\"Continue Loop?\"}\n")
+	diagram.WriteString("    RESULT[\"Final Result\"]\n\n")
 
 	// Add single agent for loop
 	if len(agents) > 0 {
@@ -346,10 +346,10 @@ func (mg *MermaidGeneratorImplementation) generateDefaultOrchestrationDiagram(di
 
 // generateMapReduceDiagram creates a map-reduce pattern diagram
 func (mg *MermaidGeneratorImplementation) generateMapReduceDiagram(diagram *strings.Builder, agents []core.Agent) {
-	diagram.WriteString("    INPUT[\"📊 Input Data\"]\n")
-	diagram.WriteString("    SPLIT[\"🔄 Split Data\"]\n")
-	diagram.WriteString("    REDUCE[\"🔄 Reduce Results\"]\n")
-	diagram.WriteString("    OUTPUT[\"📈 Final Result\"]\n\n")
+	diagram.WriteString("    INPUT[\"Input Data\"]\n")
+	diagram.WriteString("    SPLIT[\"Split Data\"]\n")
+	diagram.WriteString("    REDUCE[\"Reduce Results\"]\n")
+	diagram.WriteString("    OUTPUT[\"Final Result\"]\n\n")
 
 	diagram.WriteString("    INPUT --> SPLIT\n")
 
@@ -380,7 +380,7 @@ func (mg *MermaidGeneratorImplementation) generatePipelineDiagram(diagram *strin
 	var prevNode = "INPUT"
 	for i, agent := range agents {
 		stageId := fmt.Sprintf("STAGE%d", i+1)
-		diagram.WriteString(fmt.Sprintf("    %s[\"⚙️ %s\"]\n", stageId, agent.Name()))
+		diagram.WriteString(fmt.Sprintf("    %s[\"%s\"]\n", stageId, agent.Name()))
 		diagram.WriteString(fmt.Sprintf("    %s --> %s\n", prevNode, stageId))
 		prevNode = stageId
 	}
@@ -394,7 +394,7 @@ func (mg *MermaidGeneratorImplementation) generateScatterGatherDiagram(diagram *
 	diagram.WriteString("    INPUT[\"📨 Input\"]\n")
 	diagram.WriteString("    SCATTER[\"📤 Scatter\"]\n")
 	diagram.WriteString("    GATHER[\"📥 Gather\"]\n")
-	diagram.WriteString("    OUTPUT[\"📊 Output\"]\n\n")
+	diagram.WriteString("    OUTPUT[\"Output\"]\n\n")
 
 	diagram.WriteString("    INPUT --> SCATTER\n")
 
@@ -413,7 +413,7 @@ func (mg *MermaidGeneratorImplementation) generateFanOutFanInDiagram(diagram *st
 	diagram.WriteString("    INPUT[\"📨 Input\"]\n")
 	diagram.WriteString("    FANOUT[\"📤 Fan-Out\"]\n")
 	diagram.WriteString("    FANIN[\"📥 Fan-In\"]\n")
-	diagram.WriteString("    OUTPUT[\"📊 Output\"]\n\n")
+	diagram.WriteString("    OUTPUT[\"Output\"]\n\n")
 
 	diagram.WriteString("    INPUT --> FANOUT\n")
 
@@ -437,7 +437,7 @@ func (mg *MermaidGeneratorImplementation) generateGenericPatternDiagram(diagram 
 
 	for i, agent := range agents {
 		agentId := fmt.Sprintf("AGENT%d", i+1)
-		diagram.WriteString(fmt.Sprintf("    %s[\"🤖 %s\"]\n", agentId, agent.Name()))
+		diagram.WriteString(fmt.Sprintf("    %s[\"%s\"]\n", agentId, agent.Name()))
 		diagram.WriteString(fmt.Sprintf("    PATTERN --> %s\n", agentId))
 		diagram.WriteString(fmt.Sprintf("    %s --> PATTERN\n", agentId))
 	}
@@ -466,7 +466,7 @@ func (mg *MermaidGeneratorImplementation) getCompositionTitle(mode, name string,
 // getAgentDisplayName returns a formatted agent display name
 func (mg *MermaidGeneratorImplementation) getAgentDisplayName(agent core.Agent, index int) string {
 	if agent == nil {
-		return fmt.Sprintf("🤖 Agent %d", index)
+		return fmt.Sprintf("Agent %d", index)
 	}
 
 	name := agent.Name()
@@ -474,7 +474,7 @@ func (mg *MermaidGeneratorImplementation) getAgentDisplayName(agent core.Agent, 
 		name = fmt.Sprintf("Agent%d", index)
 	}
 
-	return fmt.Sprintf("🤖 %s", name)
+	return fmt.Sprintf("%s", name)
 }
 
 // addCompositionMetadata adds metadata information to the diagram

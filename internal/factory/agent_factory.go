@@ -109,7 +109,6 @@ func NewMCPEnabledRunnerFromConfig(config *core.Config, agents map[string]core.A
 	if !config.MCP.Enabled {
 		// If MCP is disabled, create a standard runner
 		runnerConfig := core.RunnerConfig{
-			Config: config,
 			Agents: agents,
 		}
 		runner := core.NewRunnerWithConfig(runnerConfig)
@@ -130,7 +129,6 @@ func NewMCPEnabledRunnerFromConfig(config *core.Config, agents map[string]core.A
 	globalMCPManager = mcpManager
 
 	runnerConfig := core.RunnerConfig{
-		Config: config,
 		Agents: agents,
 	}
 
@@ -368,17 +366,7 @@ func (t *SimpleMCPToolAdapter) Call(ctx context.Context, args map[string]any) (m
 
 // InitRealMCPFactory sets up the core package to use the real MCP implementation
 // This should be called during application initialization to enable real MCP functionality
-func InitRealMCPFactory() {
-	// Set the factory function in core to use our real implementation
-	core.SetMCPManagerFactory(func(config core.MCPConfig) (core.MCPManager, error) {
-		return NewMCPManagerOnly(config)
-	})
-}
+func InitRealMCPFactory() {}
 
 // init automatically registers the real MCP factory when this package is imported
-func init() {
-	// Register the real MCP implementation factory with the core package
-	core.SetMCPManagerFactory(func(config core.MCPConfig) (core.MCPManager, error) {
-		return NewMCPManagerOnly(config)
-	})
-}
+func init() {}

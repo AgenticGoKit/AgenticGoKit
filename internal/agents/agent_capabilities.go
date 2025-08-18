@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/kunalkushwaha/agenticgokit/core"
-	"github.com/rs/zerolog"
 )
 
 // =============================================================================
@@ -24,8 +23,7 @@ type CapabilityConfigurable interface {
 	// SetMetricsConfig sets the metrics configuration for the agent
 	SetMetricsConfig(config core.MetricsConfig)
 
-	// GetLogger returns the agent's logger for capability configuration
-	GetLogger() *zerolog.Logger
+	// GetLogger removed to avoid direct logger dependency; use core.Logger() instead
 }
 
 // AgentCapability represents a feature that can be added to any agent.
@@ -195,7 +193,7 @@ func (c *LLMCapability) Configure(agent CapabilityConfigurable) error {
 
 	agent.SetLLMProvider(c.Provider, c.Config)
 
-	agent.GetLogger().Info().
+	core.Logger().Info().
 		Str("capability", c.Name()).
 		Msg("LLM capability configured")
 
@@ -238,7 +236,7 @@ func (c *CacheCapability) Configure(agent CapabilityConfigurable) error {
 
 	agent.SetCacheManager(c.Manager, c.Config)
 
-	agent.GetLogger().Info().
+	core.Logger().Info().
 		Str("capability", c.Name()).
 		Msg("Cache capability configured")
 
@@ -269,7 +267,7 @@ func NewMetricsCapability(config core.MetricsConfig) *MetricsCapability {
 func (c *MetricsCapability) Configure(agent CapabilityConfigurable) error {
 	agent.SetMetricsConfig(c.Config)
 
-	agent.GetLogger().Info().
+	core.Logger().Info().
 		Str("capability", c.Name()).
 		Int("port", c.Config.Port).
 		Msg("Metrics capability configured")
@@ -281,20 +279,11 @@ func (c *MetricsCapability) Configure(agent CapabilityConfigurable) error {
 // CAPABILITY CONFIGURATION TYPES
 // =============================================================================
 
-// LLMConfig holds configuration for LLM capabilities
-type LLMConfig struct {
-	Temperature    float64 `toml:"temperature"`
-	MaxTokens      int     `toml:"max_tokens"`
-	SystemPrompt   string  `toml:"system_prompt"`
-	TimeoutSeconds int     `toml:"timeout_seconds"`
-}
-
-// DefaultLLMConfig returns sensible defaults for LLM configuration
-func DefaultLLMConfig() LLMConfig {
-	return LLMConfig{
+// DefaultLLMConfig returns sensible defaults for LLM configuration using core types
+func DefaultLLMConfig() core.LLMConfig {
+	return core.LLMConfig{
 		Temperature:    0.7,
 		MaxTokens:      1000,
-		SystemPrompt:   "You are a helpful AI assistant.",
 		TimeoutSeconds: 30,
 	}
 }

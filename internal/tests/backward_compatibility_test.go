@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/kunalkushwaha/agenticgokit/core"
 )
@@ -151,6 +152,21 @@ func (a *testAgent) Run(ctx context.Context, inputState core.State) (core.State,
 func (a *testAgent) Name() string {
 	return "test-agent"
 }
+
+// Additional methods to satisfy the expanded core.Agent interface
+func (a *testAgent) GetRole() string        { return "tester" }
+func (a *testAgent) GetDescription() string { return "test agent" }
+func (a *testAgent) HandleEvent(ctx context.Context, event core.Event, state core.State) (core.AgentResult, error) {
+	s, err := a.Run(ctx, state)
+	return core.AgentResult{OutputState: s}, err
+}
+func (a *testAgent) GetCapabilities() []string             { return []string{"test"} }
+func (a *testAgent) GetSystemPrompt() string               { return "You are a test agent." }
+func (a *testAgent) GetTimeout() time.Duration             { return 5 * time.Second }
+func (a *testAgent) IsEnabled() bool                       { return true }
+func (a *testAgent) GetLLMConfig() *core.ResolvedLLMConfig { return nil }
+func (a *testAgent) Initialize(ctx context.Context) error  { return nil }
+func (a *testAgent) Shutdown(ctx context.Context) error    { return nil }
 
 type testAgentHandler struct{}
 

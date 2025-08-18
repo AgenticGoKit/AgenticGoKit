@@ -3,6 +3,7 @@ package error_handling
 
 import (
 	"context"
+	"time"
 
 	"github.com/kunalkushwaha/agenticgokit/core"
 )
@@ -20,16 +21,10 @@ func init() {
 		return &circuitBreakerAdapter{impl: impl}
 	})
 
-	// Register retrier factory
-	core.RegisterRetrierFactory(func(policy *core.RetryPolicy) core.Retrier {
+	// Register retry handler factory (align with core.RetryHandler)
+	core.RegisterRetryHandlerFactory(func(policy *core.RetryPolicy) core.RetryHandler {
 		impl := NewRetrierImplementation(policy)
-		return &retrierAdapter{impl: impl}
-	})
-
-	// Register retry manager factory
-	core.RegisterRetryManagerFactory(func() core.RetryManager {
-		impl := NewRetryManagerImplementation()
-		return &retryManagerAdapter{impl: impl}
+		return &retryHandlerAdapter{impl: impl}
 	})
 }
 
@@ -59,33 +54,39 @@ func (cba *circuitBreakerAdapter) GetMetrics() core.CircuitBreakerMetrics {
 }
 
 // retrierAdapter adapts the internal implementation to the core interface
-type retrierAdapter struct {
+type retryHandlerAdapter struct {
 	impl *RetrierImplementation
 }
 
-func (ra *retrierAdapter) Execute(ctx context.Context, fn core.RetryFunc) *core.RetryResult {
-	return ra.impl.Execute(ctx, fn)
+func (ra *retryHandlerAdapter) ExecuteWithRetry(ctx context.Context, operation func() error) error {
+	// Bridge to internal Execute which returns detailed result; here we mimic core interface
+	res := ra.impl.Execute(ctx, func() error { return operation() })
+	if res != nil && !res.Success {
+		if res.LastError != nil {
+			return res.LastError
+		}
+		return context.Canceled // generic
+	}
+	return nil
 }
 
-func (ra *retrierAdapter) SetCallbacks(callbacks core.RetryCallbacks) {
-	ra.impl.SetCallbacks(callbacks)
+func (ra *retryHandlerAdapter) ShouldRetry(attempt int, err error) bool {
+	// Use policy from impl
+	if ra.impl == nil || ra.impl.policy == nil {
+		return false
+	}
+	if attempt >= ra.impl.policy.MaxRetries {
+		return false
+	}
+	return ra.impl.isRetryableError(err)
+}
+
+func (ra *retryHandlerAdapter) CalculateDelay(attempt int) time.Duration {
+	if ra.impl == nil {
+		return 0
+	}
+	return ra.impl.calculateDelay(attempt)
 }
 
 // retryManagerAdapter adapts the internal implementation to the core interface
-type retryManagerAdapter struct {
-	impl *RetryManagerImplementation
-}
-
-func (rma *retryManagerAdapter) AddRetrier(name string, retrier core.Retrier) {
-	// This would need proper adaptation between core.Retrier and internal implementation
-	// For now, this is a placeholder
-}
-
-func (rma *retryManagerAdapter) GetRetrier(name string) (core.Retrier, bool) {
-	// This would need proper adaptation
-	return nil, false
-}
-
-func (rma *retryManagerAdapter) GetMetrics(name string) (*core.RetryMetrics, bool) {
-	return rma.impl.GetMetrics(name)
-}
+// Remove retry manager adapter for now; core exposes RetryHandler only

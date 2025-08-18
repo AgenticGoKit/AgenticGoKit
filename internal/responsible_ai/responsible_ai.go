@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 	"time"
-	
+
 	"github.com/kunalkushwaha/agenticgokit/core"
 )
 
@@ -133,7 +133,7 @@ func (m *RAIMiddleware) BeforeModelCall(ctx context.Context, args core.CallbackA
 	// Check the content
 	result, err := m.CheckContent(ctx, content, "input")
 	if err != nil {
-		Logger().Error().Err(err).Msg("RAI input check failed")
+		core.Logger().Error().Err(err).Msg("RAI input check failed")
 		if m.config.StrictMode {
 			return nil, fmt.Errorf("RAI input validation failed: %w", err)
 		}
@@ -151,7 +151,7 @@ func (m *RAIMiddleware) BeforeModelCall(ctx context.Context, args core.CallbackA
 	}
 
 	if result.Action == RAIActionWarn {
-		Logger().Warn().
+		core.Logger().Warn().
 			Str("content_type", "input").
 			Strs("violations", result.Violations).
 			Msg("RAI warning: potentially problematic content detected")
@@ -175,7 +175,7 @@ func (m *RAIMiddleware) AfterModelCall(ctx context.Context, args core.CallbackAr
 	// Check the content
 	result, err := m.CheckContent(ctx, content, "output")
 	if err != nil {
-		Logger().Error().Err(err).Msg("RAI output check failed")
+		core.Logger().Error().Err(err).Msg("RAI output check failed")
 		if m.config.StrictMode {
 			return nil, fmt.Errorf("RAI output validation failed: %w", err)
 		}
@@ -197,14 +197,14 @@ func (m *RAIMiddleware) AfterModelCall(ctx context.Context, args core.CallbackAr
 			newState.Set("model_response_modified", true)
 			newState.Set("original_model_response", content)
 			newState.Set("model_response", result.ModifiedContent)
-			Logger().Info().
+			core.Logger().Info().
 				Str("action", "auto_modify").
 				Msg("RAI automatically modified unsafe model output")
 		}
 	}
 
 	if result.Action == RAIActionWarn {
-		Logger().Warn().
+		core.Logger().Warn().
 			Str("content_type", "output").
 			Strs("violations", result.Violations).
 			Msg("RAI warning: potentially problematic content in model output")

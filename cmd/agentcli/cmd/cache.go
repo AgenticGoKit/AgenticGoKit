@@ -433,7 +433,7 @@ func showCacheInfo(ctx context.Context, cacheManager core.MCPCacheManager) error
 		return err
 	}
 
-	fmt.Println("🔍 Detailed Cache Information")
+	fmt.Println("Detailed Cache Information")
 	fmt.Println("=============================")
 
 	// Show basic stats
@@ -451,7 +451,7 @@ func showCacheInfo(ctx context.Context, cacheManager core.MCPCacheManager) error
 
 // Cache warming
 func warmUpCaches(ctx context.Context, cacheManager core.MCPCacheManager) error {
-	fmt.Println("🔥 Warming up caches...")
+	fmt.Println("Warming up caches...")
 	fmt.Println("This feature is not yet implemented.")
 	fmt.Println("Future implementation will:")
 	fmt.Println("   - Execute common tool combinations")

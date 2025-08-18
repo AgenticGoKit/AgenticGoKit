@@ -46,7 +46,7 @@ type JSONTraceEntry struct {
 	SourceAgentID string           `json:"source_agent_id,omitempty"`
 }
 
-// AgentFlowEntry represents a single hop recorded in the flow‑only view.
+// AgentFlowEntry represents a single hop recorded in the flow-only view.
 type AgentFlowEntry struct {
 	Timestamp time.Time
 	Agent     string
@@ -298,24 +298,24 @@ func printFormattedTable(entries []agenticgokit.TraceEntry) {
 	)
 
 	// Print table header with box-drawing characters
-	fmt.Println("┌" + strings.Repeat("─", timeWidth) + "┬" +
-		strings.Repeat("─", hookWidth) + "┬" +
-		strings.Repeat("─", agentWidth) + "┬" +
-		strings.Repeat("─", stateWidth) + "┬" +
-		strings.Repeat("─", errorWidth) + "┐")
+	fmt.Println("+" + strings.Repeat("-", timeWidth) + "+" +
+		strings.Repeat("-", hookWidth) + "+" +
+		strings.Repeat("-", agentWidth) + "+" +
+		strings.Repeat("-", stateWidth) + "+" +
+		strings.Repeat("-", errorWidth) + "+")
 
-	fmt.Printf("│ %-*s │ %-*s │ %-*s │ %-*s │ %-*s │\n",
+	fmt.Printf("| %-*s | %-*s | %-*s | %-*s | %-*s |\n",
 		timeWidth-2, "TIMESTAMP",
 		hookWidth-2, "HOOK",
 		agentWidth-2, "AGENT",
 		stateWidth-2, "STATE",
 		errorWidth-2, "ERROR")
 
-	fmt.Println("├" + strings.Repeat("─", timeWidth) + "┼" +
-		strings.Repeat("─", hookWidth) + "┼" +
-		strings.Repeat("─", agentWidth) + "┼" +
-		strings.Repeat("─", stateWidth) + "┼" +
-		strings.Repeat("─", errorWidth) + "┤")
+	fmt.Println("+" + strings.Repeat("-", timeWidth) + "+" +
+		strings.Repeat("-", hookWidth) + "+" +
+		strings.Repeat("-", agentWidth) + "+" +
+		strings.Repeat("-", stateWidth) + "+" +
+		strings.Repeat("-", errorWidth) + "+")
 
 	// Print each row
 	for _, entry := range entries {
@@ -336,7 +336,7 @@ func printFormattedTable(entries []agenticgokit.TraceEntry) {
 			errorText = "-"
 		}
 
-		fmt.Printf("│ %-*s │ %-*s │ %-*s │ %-*s │ %-*s │\n",
+		fmt.Printf("| %-*s | %-*s | %-*s | %-*s | %-*s |\n",
 			timeWidth-2, timeStr,
 			hookWidth-2, hook,
 			agentWidth-2, agent,
@@ -344,11 +344,11 @@ func printFormattedTable(entries []agenticgokit.TraceEntry) {
 			errorWidth-2, errorText)
 	}
 
-	fmt.Println("└" + strings.Repeat("─", timeWidth) + "┴" +
-		strings.Repeat("─", hookWidth) + "┴" +
-		strings.Repeat("─", agentWidth) + "┴" +
-		strings.Repeat("─", stateWidth) + "┴" +
-		strings.Repeat("─", errorWidth) + "┘")
+	fmt.Println("+" + strings.Repeat("-", timeWidth) + "+" +
+		strings.Repeat("-", hookWidth) + "+" +
+		strings.Repeat("-", agentWidth) + "+" +
+		strings.Repeat("-", stateWidth) + "+" +
+		strings.Repeat("-", errorWidth) + "+")
 }
 
 // truncateString shortens a string to fit within width and adds ellipsis if needed
@@ -549,7 +549,7 @@ func displayAgentFlow(sessionID, filter string) {
 		// Extract route metadata from trace entry's state
 		nextAgent := "-"
 
-		// 2a. try state / agent‑result meta (unchanged)
+		// 2a. try state / agent-result meta (unchanged)
 		if je.State != nil && je.State.Meta != nil {
 			if route, ok := je.State.Meta["route"]; ok && route != "" {
 				nextAgent = route
@@ -644,7 +644,7 @@ func displayAgentFlow(sessionID, filter string) {
 
 	// Print the sequence
 	for i, entry := range flowEntries {
-		fmt.Printf("%d. %s → ", i+1, entry.Agent)
+		fmt.Printf("%d. %s -> ", i+1, entry.Agent)
 		if entry.NextAgent != "-" {
 			fmt.Printf("%s\n", entry.NextAgent)
 		} else {
@@ -658,11 +658,11 @@ func displayAgentFlow(sessionID, filter string) {
 	condensed := buildRouteChain(flowEntries)
 	if len(condensed) > 1 {
 		fmt.Println("\nCondensed route:")
-		fmt.Println(strings.Join(condensed, " → "))
+		fmt.Println(strings.Join(condensed, " -> "))
 	}
 
 	// ---------------------------------------------------------------
-	// Per‑event sequence diagrams
+	// Per-event sequence diagrams
 	// ---------------------------------------------------------------
 	// 1. bucket entries by EventID
 	eventBuckets := make(map[string][]AgentFlowEntry)
@@ -690,17 +690,17 @@ func displayAgentFlow(sessionID, filter string) {
 	}
 	sort.Slice(ordered, func(i, j int) bool { return ordered[i].t.Before(ordered[j].t) })
 
-	fmt.Println("\nPer‑event sequence diagrams:")
+	fmt.Println("\nPer-event sequence diagrams:")
 	fmt.Println("-----------------------------")
 
-	seenLabel := make(map[string]int) // to avoid duplicate “[req‑1746…]” labels
+	seenLabel := make(map[string]int) // to avoid duplicate "[req-1746...]" labels
 
 	for _, it := range ordered {
 		if _, isAgent := agentNames[it.id]; isAgent {
 			continue // skip synthetic ids that equal agent names
 		}
 
-		entries := eventBuckets[it.id] // show even 1‑hop events
+		entries := eventBuckets[it.id] // show even 1-hop events
 
 		sort.Slice(entries, func(i, j int) bool {
 			return entries[i].Timestamp.Before(entries[j].Timestamp)
@@ -709,7 +709,7 @@ func displayAgentFlow(sessionID, filter string) {
 		// create a unique, compact label
 		label := compactID(it.id)
 		if n := seenLabel[label]; n > 0 {
-			label = fmt.Sprintf("%s~%d", label, n) // req‑1746…~1, req‑1746…~2, …
+			label = fmt.Sprintf("%s~%d", label, n) // req-1746...~1, req-1746...~2, ...
 		}
 		seenLabel[label]++
 
@@ -719,9 +719,9 @@ func displayAgentFlow(sessionID, filter string) {
 			if e.NextAgent == "-" {
 				tail = "(end)"
 			} else {
-				tail = e.NextAgent // show even self‑dispatch explicitly
+				tail = e.NextAgent // show even self-dispatch explicitly
 			}
-			line := fmt.Sprintf("%s → %s", e.Agent, tail)
+			line := fmt.Sprintf("%s -> %s", e.Agent, tail)
 			if e.Kind != "" {
 				line += "  [" + e.Kind + "]"
 			}
@@ -741,13 +741,13 @@ func shortenID(id string) string {
 // compactID returns the first 8 characters followed by an ellipsis.
 // Examples:
 //
-//	req-17461593abcd  -> req-1746…
+//	req-17461593abcd  -> req-1746...
 //	1f78e6e6          -> 1f78e6e6   (already ≤8)
 func compactID(id string) string {
 	if len(id) <= 8 {
 		return id
 	}
-	return id[:8] + "…"
+	return id[:8] + "..."
 }
 
 // buildRouteChain derives a linear chain without duplicates
@@ -771,12 +771,12 @@ func buildRouteChain(entries []AgentFlowEntry) []string {
 
 // normalizeEventID collapses variants like
 //
-//	req-17461596-planner / req-17461596-summarizer → req-17461596
-//	1f78e6e6-beb2…      / 1f78e6e6-c2fc…          → 1f78e6e6
+//	req-17461596-planner / req-17461596-summarizer -> req-17461596
+//	1f78e6e6-beb2...      / 1f78e6e6-c2fc...          -> 1f78e6e6
 //
 // Other ids are returned unchanged.
 func normalizeEventID(id string) string {
-	// Case 1: user‑request ids
+	// Case 1: user-request ids
 	if strings.HasPrefix(id, "req-") {
 		i := 4
 		for i < len(id) && id[i] >= '0' && id[i] <= '9' {
@@ -785,7 +785,7 @@ func normalizeEventID(id string) string {
 		return id[:i] // e.g. req-17461596
 	}
 
-	// Case 2: GUID‑like ids where the first 8 chars are hex and the 9th is '-'
+	// Case 2: GUID-like ids where the first 8 chars are hex and the 9th is '-'
 	if len(id) > 8 && id[8] == '-' {
 		if _, err := strconv.ParseUint(id[:8], 16, 32); err == nil {
 			return id[:8] // e.g. 1f78e6e6

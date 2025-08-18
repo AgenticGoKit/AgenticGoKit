@@ -11,6 +11,24 @@ import (
 	agenticgokit "github.com/kunalkushwaha/agenticgokit/internal/core"
 )
 
+// Helper: filter out execution metadata keys added by agents
+func filterExecutionDataKeys(keys []string) []string {
+	skip := map[string]bool{
+		"executed_by":                    true,
+		"execution_timestamp":            true,
+		"execution_role":                 true,
+		"parallel_execution_completed":   true,
+		"sequential_execution_completed": true,
+	}
+	out := make([]string, 0, len(keys))
+	for _, k := range keys {
+		if !skip[k] {
+			out = append(out, k)
+		}
+	}
+	return out
+}
+
 // --- Test Helper Agents ---
 // Definitions for DelayAgent and NoOpAgent are REMOVED from here.
 // They reside in agents_test_helpers.go
@@ -46,7 +64,7 @@ func TestParallelAgent_Run_AllSuccess(t *testing.T) {
 		"agent2":  "processed_by_agent2",
 		"agent3":  "processed_by_agent3",
 	}
-	finalKeys := finalState.Keys()
+	finalKeys := filterExecutionDataKeys(finalState.Keys())
 	if len(finalKeys) != len(expectedData) {
 		t.Errorf("Final state data key count mismatch: got %d (%v), want %d (%v)", len(finalKeys), finalKeys, len(expectedData), keysFromMap(expectedData))
 	}
@@ -128,7 +146,7 @@ func TestParallelAgent_Run_PartialFailure(t *testing.T) {
 		"agent1":  "processed_by_agent1",
 		"agent3":  "processed_by_agent3",
 	}
-	finalKeys := finalState.Keys()
+	finalKeys := filterExecutionDataKeys(finalState.Keys())
 	if len(finalKeys) != len(expectedData) {
 		t.Errorf("Final state data key count mismatch on partial failure: got %d (%v), want %d (%v)", len(finalKeys), finalKeys, len(expectedData), keysFromMap(expectedData))
 	}
@@ -215,7 +233,7 @@ func TestParallelAgent_Run_Timeout(t *testing.T) {
 		"agent1":  "processed_by_agent1",
 		"agent3":  "processed_by_agent3",
 	}
-	finalKeys := finalState.Keys()
+	finalKeys := filterExecutionDataKeys(finalState.Keys())
 	if len(finalKeys) != len(expectedData) {
 		t.Errorf("Final state data key count mismatch on timeout: got %d (%v), want %d (%v)", len(finalKeys), finalKeys, len(expectedData), keysFromMap(expectedData))
 	}
@@ -307,7 +325,7 @@ func TestParallelAgent_Run_ExternalContextCancellation(t *testing.T) {
 		"initial": "value",
 		"agent3":  "processed_by_agent3",
 	}
-	finalKeys := finalState.Keys()
+	finalKeys := filterExecutionDataKeys(finalState.Keys())
 	if len(finalKeys) != len(expectedData) {
 		t.Errorf("Final state data key count mismatch on cancellation: got %d (%v), want %d (%v)", len(finalKeys), finalKeys, len(expectedData), keysFromMap(expectedData))
 	}
@@ -413,7 +431,7 @@ func TestParallelAgent_Run_NilAgentsFiltered(t *testing.T) {
 		"agent1":  "processed_by_agent1",
 		"agent3":  "processed_by_agent3",
 	}
-	finalKeys := finalState.Keys()
+	finalKeys := filterExecutionDataKeys(finalState.Keys())
 	if len(finalKeys) != len(expectedData) {
 		t.Errorf("Final state data key count mismatch after filtering nil: got %d (%v), want %d (%v)", len(finalKeys), finalKeys, len(expectedData), keysFromMap(expectedData))
 	}

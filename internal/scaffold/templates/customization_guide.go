@@ -4,7 +4,7 @@ const CustomizationGuideTemplate = `# Customization Guide
 
 This guide provides comprehensive instructions for customizing your {{.Config.Name}} multi-agent system to meet your specific requirements.
 
-## 🎯 Quick Start Customization
+## Quick Start Customization
 
 ### 1. Modify Agent Behavior
 
@@ -121,7 +121,7 @@ runner.SetCustomRouter(func(ctx context.Context, event core.Event, state core.St
 })
 ` + "```" + `
 
-## 🔧 Component Customization
+## Component Customization
 
 ### LLM Provider Configuration
 
@@ -377,7 +377,7 @@ func saveResultsToFile(results []AgentOutput, filename string) error {
 }
 ` + "```" + `
 
-## 🔒 Security Customization
+## Security Customization
 
 ### Input Validation
 ` + "```go" + `
@@ -438,7 +438,7 @@ func authenticateRequest(ctx context.Context, token string) error {
 }
 ` + "```" + `
 
-## 📊 Monitoring and Observability
+## Monitoring and Observability
 
 ### Custom Metrics
 ` + "```go" + `
@@ -506,7 +506,7 @@ func (a *YourAgentHandler) HealthCheck(ctx context.Context) error {
 }
 ` + "```" + `
 
-## 🧪 Testing Customization
+## Testing Customization
 
 ### Unit Testing Agents
 ` + "```go" + `
@@ -569,7 +569,7 @@ func TestWorkflowIntegration(t *testing.T) {
 }
 ` + "```" + `
 
-## 🚀 Deployment Customization
+## Deployment Customization
 
 ### Docker Configuration
 ` + "```dockerfile" + `
@@ -700,7 +700,7 @@ func (a *YourAgentHandler) Run(ctx context.Context, event core.Event, state core
 }
 ` + "```" + `
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
 ### Common Issues and Solutions
 

@@ -83,11 +83,10 @@ func (r *DefaultCallbackRegistry) Invoke(ctx context.Context, args core.Callback
 
 	currentState := args.State
 	if currentState == nil {
-		currentState := core.NewState()
 		core.Logger().Warn().
 			Str("hook", string(args.Hook)).
 			Msg("Initial state was nil, created new State")
-		currentState = currentState
+		currentState = core.NewState()
 	}
 
 	hookRegistrations := r.callbacks[args.Hook]

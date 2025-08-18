@@ -177,9 +177,9 @@ func (tg *TemplateGenerator) GenerateProject(projectName string) error {
 		return fmt.Errorf("failed to generate enhanced configuration: %w", err)
 	}
 
-	fmt.Printf("✅ Project '%s' created successfully from template '%s'!\n", projectName, tg.templateConfig.Name)
-	fmt.Printf("📋 Template: %s\n", tg.templateConfig.Description)
-	fmt.Printf("🎯 Features: %s\n", strings.Join(tg.templateConfig.Features, ", "))
+	fmt.Printf("Project '%s' created successfully from template '%s'.\n", projectName, tg.templateConfig.Name)
+	fmt.Printf("Template: %s\n", tg.templateConfig.Description)
+	fmt.Printf("Features: %s\n", strings.Join(tg.templateConfig.Features, ", "))
 
 	return nil
 }
@@ -254,18 +254,9 @@ func (tg *TemplateGenerator) generateEnhancedConfig(projectName string) error {
 		MCPServers:       tg.templateConfig.MCPServers,
 	}
 
-	// Parse and execute template
-	// TODO: Create CompleteAgentConfigTemplate or use existing template
-	// tmpl, err := template.New("config").Parse(templates.CompleteAgentConfigTemplate)
-	// if err != nil {
-	// 	return fmt.Errorf("failed to parse config template: %w", err)
-	// }
-
-	// For now, return an error indicating this feature is not implemented
-	return fmt.Errorf("CompleteAgentConfigTemplate not implemented yet")
-
-	// For now, just return the error since template is not implemented
-	_ = templateData // Avoid unused variable error
+	// TODO: Parse and execute config template when implemented
+	// Avoid unused variable warning until implemented
+	_ = templateData
 	return fmt.Errorf("CompleteAgentConfigTemplate not implemented yet")
 }
 

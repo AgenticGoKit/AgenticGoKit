@@ -93,18 +93,14 @@ func NewWorkflowValidator() WorkflowValidator {
 // Simple implementation for core package
 type simpleWorkflowValidator struct{}
 
-func (wv *simpleWorkflowValidator) ValidateComposition(agents []Agent, mode string) WorkflowValidationResult {
-	result := WorkflowValidationResult{
-		IsValid:  true,
-		Errors:   []WorkflowValidationError{},
-		Warnings: []WorkflowValidationWarning{},
-	}
+func (wv *simpleWorkflowValidator) ValidateComposition(agents []core.Agent, mode string) core.WorkflowValidationResult {
+	result := core.WorkflowValidationResult{IsValid: true}
 
 	// Basic validation
 	if len(agents) == 0 {
 		result.IsValid = false
-		result.Errors = append(result.Errors, WorkflowValidationError{
-			Type:      string(ValidationErrorNoEntryPoint),
+		result.Errors = append(result.Errors, core.WorkflowValidationError{
+			Type:      string(core.ValidationErrorNoEntryPoint),
 			Message:   "No agents defined",
 			Severity:  "error",
 			Component: "composition",
@@ -114,18 +110,14 @@ func (wv *simpleWorkflowValidator) ValidateComposition(agents []Agent, mode stri
 	return result
 }
 
-func (wv *simpleWorkflowValidator) ValidateOrchestration(agents map[string]AgentHandler, mode OrchestrationMode) WorkflowValidationResult {
-	result := WorkflowValidationResult{
-		IsValid:  true,
-		Errors:   []WorkflowValidationError{},
-		Warnings: []WorkflowValidationWarning{},
-	}
+func (wv *simpleWorkflowValidator) ValidateOrchestration(agents map[string]core.AgentHandler, mode core.OrchestrationMode) core.WorkflowValidationResult {
+	result := core.WorkflowValidationResult{IsValid: true}
 
 	// Basic validation
 	if len(agents) == 0 {
 		result.IsValid = false
-		result.Errors = append(result.Errors, WorkflowValidationError{
-			Type:      string(ValidationErrorNoEntryPoint),
+		result.Errors = append(result.Errors, core.WorkflowValidationError{
+			Type:      string(core.ValidationErrorNoEntryPoint),
 			Message:   "No agents registered",
 			Severity:  "error",
 			Component: "orchestration",
@@ -135,18 +127,14 @@ func (wv *simpleWorkflowValidator) ValidateOrchestration(agents map[string]Agent
 	return result
 }
 
-func (wv *simpleWorkflowValidator) ValidateWorkflowGraph(graph WorkflowGraph) WorkflowValidationResult {
-	result := WorkflowValidationResult{
-		IsValid:  true,
-		Errors:   []WorkflowValidationError{},
-		Warnings: []WorkflowValidationWarning{},
-	}
+func (wv *simpleWorkflowValidator) ValidateWorkflowGraph(graph core.WorkflowGraph) core.WorkflowValidationResult {
+	result := core.WorkflowValidationResult{IsValid: true}
 
 	// Basic validation
 	if len(graph.Nodes) == 0 {
 		result.IsValid = false
-		result.Errors = append(result.Errors, WorkflowValidationError{
-			Type:      string(ValidationErrorNoEntryPoint),
+		result.Errors = append(result.Errors, core.WorkflowValidationError{
+			Type:      string(core.ValidationErrorNoEntryPoint),
 			Message:   "No nodes in graph",
 			Severity:  "error",
 			Component: "graph",

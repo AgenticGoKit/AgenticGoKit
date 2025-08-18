@@ -1,9 +1,11 @@
 package scaffold
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"text/template"
 
@@ -11,7 +13,6 @@ import (
 	"github.com/kunalkushwaha/agenticgokit/internal/scaffold/utils"
 )
 
-// CreateAgentProject creates a new AgentFlow project (alias for CreateAgentProjectModular)
 func CreateAgentProject(config ProjectConfig) error {
 	return CreateAgentProjectModular(config)
 }
@@ -109,9 +110,9 @@ func CreateAgentProjectModular(config ProjectConfig) error {
 		}
 	}
 
-	fmt.Printf("\n✅ Project '%s' created successfully using modular templates!\n", config.Name)
-	fmt.Printf("📁 Directory: %s\n", config.Name)
-	fmt.Printf("🚀 Run: cd %s && go mod tidy && go run . -m \"Your message\"\n", config.Name)
+	fmt.Printf("\nProject '%s' created successfully using modular templates.\n", config.Name)
+	fmt.Printf("Directory: %s\n", config.Name)
+	fmt.Printf("Run: cd %s && go mod tidy && go run . -m \"Your message\"\n", config.Name)
 
 	return nil
 }
@@ -126,12 +127,50 @@ go 1.21
 require github.com/kunalkushwaha/agenticgokit %s
 `, config.Name, AgenticGoKitVersion)
 
+	// If running from a local source checkout, add a replace to the repo root so
+	// generated projects can resolve in-repo packages (e.g., plugins/*) during tests/dev.
+	if repoRoot := findLocalRepoRoot(); repoRoot != "" {
+		goModContent += fmt.Sprintf("\nreplace github.com/kunalkushwaha/agenticgokit => %s\n", repoRoot)
+	}
+
 	goModPath := filepath.Join(config.Name, "go.mod")
 	if err := os.WriteFile(goModPath, []byte(goModContent), 0644); err != nil {
 		return fmt.Errorf("failed to create go.mod: %w", err)
 	}
 	fmt.Printf("Created file: %s\n", goModPath)
 	return nil
+}
+
+// findLocalRepoRoot walks up from this file to locate the repo root containing go.mod
+// that declares module github.com/kunalkushwaha/agenticgokit. Returns "" if not found.
+func findLocalRepoRoot() string {
+	// This file lives under internal/scaffold. Start from there.
+	_, file, _, ok := runtime.Caller(0)
+	if !ok {
+		return ""
+	}
+	dir := filepath.Dir(file)
+	const modDecl = "module github.com/kunalkushwaha/agenticgokit"
+
+	for {
+		gm := filepath.Join(dir, "go.mod")
+		if f, err := os.Open(gm); err == nil {
+			scanner := bufio.NewScanner(f)
+			for scanner.Scan() {
+				if strings.HasPrefix(strings.TrimSpace(scanner.Text()), modDecl) {
+					f.Close()
+					return dir
+				}
+			}
+			f.Close()
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			break
+		}
+		dir = parent
+	}
+	return ""
 }
 
 // createReadme creates the README.md file using the enhanced template
@@ -403,9 +442,16 @@ model = "llama2"
 
 	// Add MCP configuration if enabled
 	if config.MCPEnabled {
+		// Determine transport string (default to tcp)
+		transport := config.MCPTransport
+		if transport == "" {
+			transport = "tcp"
+		}
+
 		mcpConfig := `
 [mcp]
 enabled = true
+transport = "` + transport + `"
 enable_discovery = true
 connection_timeout = 5000
 max_retries = 3
@@ -621,14 +667,14 @@ func generateCollaborativeDiagram(config ProjectConfig) (string, string) {
 
 	diagram := "```mermaid\n---\ntitle: Collaborative Orchestration\n---\nflowchart TD\n"
 	diagram += "    EVENT[\"📨 Input Event\"]\n"
-	diagram += "    ORCHESTRATOR[\"🎯 Collaborative Orchestrator\"]\n"
-	diagram += "    AGGREGATOR[\"📊 Result Aggregator\"]\n"
+	diagram += "    ORCHESTRATOR[\"Collaborative Orchestrator\"]\n"
+	diagram += "    AGGREGATOR[\"Result Aggregator\"]\n"
 	diagram += "    RESULT[\"📤 Final Result\"]\n\n"
 	diagram += "    EVENT --> ORCHESTRATOR\n"
 
 	for i, agent := range agents {
 		agentId := fmt.Sprintf("AGENT%d", i+1)
-		diagram += fmt.Sprintf("    %s[\"🤖 %s\"]\n", agentId, agent)
+		diagram += fmt.Sprintf("    %s[\"%s\"]\n", agentId, agent)
 		diagram += fmt.Sprintf("    ORCHESTRATOR --> %s\n", agentId)
 		diagram += fmt.Sprintf("    %s --> AGGREGATOR\n", agentId)
 	}
@@ -656,7 +702,7 @@ func generateSequentialDiagram(config ProjectConfig) (string, string) {
 	var prevNode = "INPUT"
 	for i, agent := range agents {
 		agentId := fmt.Sprintf("AGENT%d", i+1)
-		diagram += fmt.Sprintf("    %s[\"🤖 %s\"]\n", agentId, agent)
+		diagram += fmt.Sprintf("    %s[\"%s\"]\n", agentId, agent)
 		diagram += fmt.Sprintf("    %s --> %s\n", prevNode, agentId)
 		prevNode = agentId
 	}
@@ -883,16 +929,6 @@ timeout_seconds = %d`, config.OrchestrationMode, config.OrchestrationTimeout)
 				orchestrationConfig += fmt.Sprintf("\"%s\"", agent)
 			}
 			orchestrationConfig += "]"
-		} else {
-			// Generate default collaborative agents based on NumAgents
-			orchestrationConfig += "\ncollaborative_agents = ["
-			for i := 0; i < config.NumAgents; i++ {
-				if i > 0 {
-					orchestrationConfig += ", "
-				}
-				orchestrationConfig += fmt.Sprintf("\"agent%d\"", i+1)
-			}
-			orchestrationConfig += "]"
 		}
 
 	case "sequential":
@@ -980,8 +1016,8 @@ func generateLoopDiagram(config ProjectConfig) (string, string) {
 
 	diagram := "```mermaid\n---\ntitle: Loop Processing\n---\nflowchart TD\n"
 	diagram += "    INPUT[\"📨 Input Event\"]\n"
-	diagram += "    AGENT[\"🤖 " + agentName + "\"]\n"
-	diagram += "    CONDITION{\"🔄 Continue Loop?\"}\n"
+	diagram += "    AGENT[\"" + agentName + "\"]\n"
+	diagram += "    CONDITION{\"Continue Loop?\"}\n"
 	diagram += "    OUTPUT[\"📤 Final Result\"]\n\n"
 	diagram += "    INPUT --> AGENT\n"
 	diagram += "    AGENT --> CONDITION\n"
@@ -1006,7 +1042,7 @@ func generateMixedDiagram(config ProjectConfig) (string, string) {
 	if len(config.CollaborativeAgents) > 0 {
 		for i, agent := range config.CollaborativeAgents {
 			agentId := fmt.Sprintf("COLLAB%d", i+1)
-			diagram += fmt.Sprintf("    %s[\"🤖 %s\"]\n", agentId, agent)
+			diagram += fmt.Sprintf("    %s[\"%s\"]\n", agentId, agent)
 			diagram += fmt.Sprintf("    PHASE1 --> %s\n", agentId)
 			diagram += fmt.Sprintf("    %s --> PHASE2\n", agentId)
 		}
@@ -1017,7 +1053,7 @@ func generateMixedDiagram(config ProjectConfig) (string, string) {
 		var prevNode = "PHASE2"
 		for i, agent := range config.SequentialAgents {
 			agentId := fmt.Sprintf("SEQ%d", i+1)
-			diagram += fmt.Sprintf("    %s[\"🤖 %s\"]\n", agentId, agent)
+			diagram += fmt.Sprintf("    %s[\"%s\"]\n", agentId, agent)
 			diagram += fmt.Sprintf("    %s --> %s\n", prevNode, agentId)
 			prevNode = agentId
 		}
@@ -1035,14 +1071,14 @@ func generateMixedDiagram(config ProjectConfig) (string, string) {
 func generateRouteDiagram(config ProjectConfig) (string, string) {
 	diagram := "```mermaid\n---\ntitle: Route Orchestration\n---\nflowchart TD\n"
 	diagram += "    INPUT[\"📨 Input Event\"]\n"
-	diagram += "    ROUTER[\"🎯 Event Router\"]\n"
+	diagram += "    ROUTER[\"Event Router\"]\n"
 	diagram += "    OUTPUT[\"📤 Result\"]\n\n"
 	diagram += "    INPUT --> ROUTER\n"
 
 	for i := 0; i < config.NumAgents; i++ {
 		agentId := fmt.Sprintf("AGENT%d", i+1)
 		agentName := fmt.Sprintf("agent%d", i+1)
-		diagram += fmt.Sprintf("    %s[\"🤖 %s\"]\n", agentId, agentName)
+		diagram += fmt.Sprintf("    %s[\"%s\"]\n", agentId, agentName)
 		diagram += fmt.Sprintf("    ROUTER -.->|Route| %s\n", agentId)
 		diagram += fmt.Sprintf("    %s --> OUTPUT\n", agentId)
 	}

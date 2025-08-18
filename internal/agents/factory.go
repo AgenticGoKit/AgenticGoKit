@@ -31,8 +31,8 @@ func (f *ConfigurableAgentFactory) CreateAgent(name string, resolvedConfig *core
 		return nil, fmt.Errorf("agent '%s' is disabled in configuration", name)
 	}
 
-	// Start building the agent
-	builder := core.NewAgent(name)
+	// Start building the agent using internal builder
+	builder := NewAgent(name)
 
 	// Add LLM capability if provider is available
 	if llmProvider != nil && resolvedConfig.LLMConfig != nil {
@@ -179,7 +179,6 @@ func (f *ConfigurableAgentFactory) createLLMConfigFromResolved(resolved *core.Re
 	return core.LLMConfig{
 		Temperature:    resolved.Temperature,
 		MaxTokens:      resolved.MaxTokens,
-		SystemPrompt:   "", // System prompt is handled separately in ConfiguredAgent
 		TimeoutSeconds: int(resolved.Timeout.Seconds()),
 	}
 }
@@ -371,4 +370,33 @@ func (ca *ConfiguredAgent) GetLLMConfig() *core.ResolvedLLMConfig {
 // GetDescription returns the agent's description
 func (ca *ConfiguredAgent) GetDescription() string {
 	return ca.Config.Description
+}
+
+// HandleEvent implements the event-driven pattern by delegating to Run
+func (ca *ConfiguredAgent) HandleEvent(ctx context.Context, event core.Event, state core.State) (core.AgentResult, error) {
+	start := time.Now()
+	out, err := ca.Run(ctx, state)
+	end := time.Now()
+	res := core.AgentResult{OutputState: out, StartTime: start, EndTime: end, Duration: end.Sub(start)}
+	if err != nil {
+		res.Error = err.Error()
+	}
+	return res, err
+}
+
+// Initialize delegates to underlying agent if it implements Initialize
+func (ca *ConfiguredAgent) Initialize(ctx context.Context) error {
+	return ca.Agent.Initialize(ctx)
+}
+
+// Shutdown delegates to underlying agent if it implements Shutdown
+func (ca *ConfiguredAgent) Shutdown(ctx context.Context) error {
+	return ca.Agent.Shutdown(ctx)
+}
+
+// Register this factory as the enhanced implementation for core
+func init() {
+	core.RegisterConfigurableAgentFactory(func(cfg *core.Config) core.ConfigurableAgentFactory {
+		return NewConfigurableAgentFactory(cfg)
+	})
 }

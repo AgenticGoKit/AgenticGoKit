@@ -10,14 +10,14 @@ import (
 
 // DefaultAgentManager implements the AgentManager interface
 type DefaultAgentManager struct {
-	factory      *core.ConfigurableAgentFactory
+	factory      core.ConfigurableAgentFactory
 	agents       map[string]core.Agent
 	agentConfigs map[string]*core.ResolvedAgentConfig
 	mutex        sync.RWMutex
 }
 
 // NewDefaultAgentManager creates a new agent manager
-func NewDefaultAgentManager(factory *core.ConfigurableAgentFactory) *DefaultAgentManager {
+func NewDefaultAgentManager(factory core.ConfigurableAgentFactory) *DefaultAgentManager {
 	return &DefaultAgentManager{
 		factory:      factory,
 		agents:       make(map[string]core.Agent),
@@ -36,15 +36,15 @@ func (am *DefaultAgentManager) UpdateAgentConfigurations(config *core.Config) er
 
 	// Track which agents are in the new configuration
 	newAgentNames := make(map[string]bool)
-	
+
 	// Update or create agents from the new configuration
 	for agentName := range config.Agents {
 		newAgentNames[agentName] = true
-		
+
 		core.Logger().Debug().
 			Str("agent", agentName).
 			Msg("Processing agent configuration")
-		
+
 		// Create resolver and resolve the agent configuration
 		resolver := core.NewConfigResolver(config)
 		err := resolver.ApplyEnvironmentOverrides()
@@ -55,7 +55,7 @@ func (am *DefaultAgentManager) UpdateAgentConfigurations(config *core.Config) er
 				Msg("Failed to apply environment overrides")
 			continue
 		}
-		
+
 		resolvedConfig, err := resolver.ResolveAgentConfigWithEnv(agentName)
 		if err != nil {
 			core.Logger().Error().
@@ -70,7 +70,7 @@ func (am *DefaultAgentManager) UpdateAgentConfigurations(config *core.Config) er
 			core.Logger().Debug().
 				Str("agent", agentName).
 				Msg("Processing disabled agent")
-				
+
 			// If agent exists, disable it (using internal method to avoid deadlock)
 			if _, exists := am.agents[agentName]; exists {
 				err := am.disableAgentInternal(agentName)
@@ -106,9 +106,9 @@ func (am *DefaultAgentManager) UpdateAgentConfigurations(config *core.Config) er
 						Msg("Failed to update existing agent configuration")
 					continue
 				}
-				
+
 				am.agentConfigs[agentName] = resolvedConfig
-				
+
 				core.Logger().Info().
 					Str("agent", agentName).
 					Str("role", resolvedConfig.Role).
@@ -124,10 +124,10 @@ func (am *DefaultAgentManager) UpdateAgentConfigurations(config *core.Config) er
 						Msg("Failed to recreate agent with new configuration")
 					continue
 				}
-				
+
 				am.agents[agentName] = newAgent
 				am.agentConfigs[agentName] = resolvedConfig
-				
+
 				core.Logger().Info().
 					Str("agent", agentName).
 					Str("role", resolvedConfig.Role).
@@ -141,7 +141,7 @@ func (am *DefaultAgentManager) UpdateAgentConfigurations(config *core.Config) er
 				Str("role", resolvedConfig.Role).
 				Bool("enabled", resolvedConfig.Enabled).
 				Msg("Creating new agent from configuration")
-				
+
 			newAgent, err := am.factory.CreateAgent(agentName, resolvedConfig, nil)
 			if err != nil {
 				core.Logger().Error().
@@ -150,10 +150,10 @@ func (am *DefaultAgentManager) UpdateAgentConfigurations(config *core.Config) er
 					Msg("Failed to create new agent")
 				continue
 			}
-			
+
 			am.agents[agentName] = newAgent
 			am.agentConfigs[agentName] = resolvedConfig
-			
+
 			core.Logger().Info().
 				Str("agent", agentName).
 				Str("role", resolvedConfig.Role).
@@ -246,7 +246,7 @@ func (am *DefaultAgentManager) disableAgentInternal(name string) error {
 			// Create a disabled version of the configuration
 			disabledConfig := *config
 			disabledConfig.Enabled = false
-			
+
 			err := configurableAgent.UpdateConfiguration(&disabledConfig)
 			if err != nil {
 				core.Logger().Error().
@@ -338,4 +338,72 @@ func (am *DefaultAgentManager) GetEnabledAgentCount() int {
 		}
 	}
 	return count
+}
+
+// InitializeAgents initializes agents from the factory's configuration
+func (am *DefaultAgentManager) InitializeAgents() error {
+	am.mutex.Lock()
+	defer am.mutex.Unlock()
+
+	// Try to get the underlying config from our factory implementation
+	var cfg *core.Config
+	if f, ok := am.factory.(*ConfigurableAgentFactory); ok {
+		cfg = f.config
+	}
+	if cfg == nil || len(cfg.Agents) == 0 {
+		return nil
+	}
+
+	resolver := core.NewConfigResolver(cfg)
+	if err := resolver.ApplyEnvironmentOverrides(); err != nil {
+		core.Logger().Warn().Err(err).Msg("InitializeAgents: failed to apply environment overrides")
+	}
+
+	for name := range cfg.Agents {
+		// Skip if already present
+		if _, exists := am.agents[name]; exists {
+			continue
+		}
+
+		resolved, err := resolver.ResolveAgentConfigWithEnv(name)
+		if err != nil {
+			core.Logger().Error().Str("agent", name).Err(err).Msg("InitializeAgents: resolve config failed")
+			continue
+		}
+		if !resolved.Enabled {
+			continue
+		}
+
+		agent, err := am.factory.CreateAgentFromConfig(name, cfg)
+		if err != nil {
+			core.Logger().Error().Str("agent", name).Err(err).Msg("InitializeAgents: create agent failed")
+			continue
+		}
+		am.agents[name] = agent
+		am.agentConfigs[name] = resolved
+		core.Logger().Info().Str("agent", name).Msg("InitializeAgents: agent created")
+	}
+	return nil
+}
+
+// GetActiveAgents returns a slice of currently active (enabled) agents
+func (am *DefaultAgentManager) GetActiveAgents() []core.Agent {
+	am.mutex.RLock()
+	defer am.mutex.RUnlock()
+
+	out := make([]core.Agent, 0, len(am.agents))
+	for name, agent := range am.agents {
+		if cfg, ok := am.agentConfigs[name]; ok && cfg != nil && cfg.Enabled {
+			out = append(out, agent)
+		}
+	}
+	return out
+}
+
+// Register this manager as the enhanced implementation for core
+func init() {
+	core.RegisterAgentManagerFactory(func(cfg *core.Config) core.AgentManager {
+		factory := NewConfigurableAgentFactory(cfg)
+		return NewDefaultAgentManager(factory)
+	})
 }

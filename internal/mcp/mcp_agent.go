@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 	"time"
-	
+
 	"github.com/kunalkushwaha/agenticgokit/core"
 )
 
@@ -57,7 +57,7 @@ func DefaultMCPAgentConfig() MCPAgentConfig {
 		ToolSelectionPrompt:  DefaultToolSelectionPrompt,
 		ResultInterpretation: true,
 		EnableCaching:        true,
-		CacheConfig:          DefaultMCPCacheConfig(),
+		CacheConfig:          core.DefaultMCPCacheConfig(),
 	}
 }
 
@@ -79,14 +79,14 @@ Please analyze the request and context, then respond with a JSON array of tool n
 Respond with only a JSON array of tool names, for example: ["search", "fetch_content", "summarize"]`
 
 // NewMCPAwareAgent creates a new MCP-aware agent.
-func NewMCPAwareAgent(name string, llmProvider ModelProvider, mcpManager MCPManager, config MCPAgentConfig) *MCPAwareAgent {
-	logger := Logger().With().Str("component", "mcp_agent").Str("name", name).Logger()
+func NewMCPAwareAgent(name string, llmProvider core.ModelProvider, mcpManager core.MCPManager, config MCPAgentConfig) *MCPAwareAgent {
+	logger := core.Logger().With().Str("component", "mcp_agent").Str("name", name).Logger()
 
 	// Initialize cache manager if caching is enabled
-	var cacheManager MCPCacheManager
+	var cacheManager core.MCPCacheManager
 	if config.EnableCaching {
-		// Create a cache manager with the provided config and MCP manager
-		cacheManager = createCacheManagerForAgentWithManager(config.CacheConfig, mcpManager)
+		// Use the globally initialized cache manager if available
+		cacheManager = core.GetMCPCacheManager()
 	}
 
 	return &MCPAwareAgent{
@@ -106,7 +106,7 @@ func (a *MCPAwareAgent) Name() string {
 
 // Run implements the Agent interface. It intelligently selects and executes MCP tools
 // based on the input state and LLM guidance.
-func (a *MCPAwareAgent) Run(ctx context.Context, inputState State) (State, error) {
+func (a *MCPAwareAgent) Run(ctx context.Context, inputState core.State) (core.State, error) {
 	a.logger.Info().Msg("MCPAwareAgent starting execution")
 
 	// Extract the query/task from state
@@ -150,7 +150,7 @@ func (a *MCPAwareAgent) Run(ctx context.Context, inputState State) (State, error
 
 // SelectTools implements the MCPAgent interface. It uses LLM to intelligently
 // select the most appropriate tools for the given query and context.
-func (a *MCPAwareAgent) SelectTools(ctx context.Context, query string, stateContext State) ([]string, error) {
+func (a *MCPAwareAgent) SelectTools(ctx context.Context, query string, stateContext core.State) ([]string, error) {
 	// Get available tools
 	availableTools := a.mcpManager.GetAvailableTools()
 	if len(availableTools) == 0 {
@@ -172,7 +172,7 @@ func (a *MCPAwareAgent) SelectTools(ctx context.Context, query string, stateCont
 	defer cancel()
 
 	// Create LLM prompt
-	llmPrompt := Prompt{
+	llmPrompt := core.Prompt{
 		System: "You are an intelligent agent that selects the most appropriate tools for a given task.",
 		User:   prompt,
 	}
@@ -201,9 +201,9 @@ func (a *MCPAwareAgent) SelectTools(ctx context.Context, query string, stateCont
 
 // ExecuteTools implements the MCPAgent interface. It executes the specified tools
 // either sequentially or in parallel based on configuration.
-func (a *MCPAwareAgent) ExecuteTools(ctx context.Context, tools []MCPToolExecution) ([]MCPToolResult, error) {
+func (a *MCPAwareAgent) ExecuteTools(ctx context.Context, tools []core.MCPToolExecution) ([]core.MCPToolResult, error) {
 	if len(tools) == 0 {
-		return []MCPToolResult{}, nil
+		return []core.MCPToolResult{}, nil
 	}
 
 	ctxWithTimeout, cancel := context.WithTimeout(ctx, a.config.ExecutionTimeout)
@@ -216,13 +216,13 @@ func (a *MCPAwareAgent) ExecuteTools(ctx context.Context, tools []MCPToolExecuti
 }
 
 // GetAvailableMCPTools implements the MCPAgent interface.
-func (a *MCPAwareAgent) GetAvailableMCPTools() []MCPToolInfo {
+func (a *MCPAwareAgent) GetAvailableMCPTools() []core.MCPToolInfo {
 	return a.mcpManager.GetAvailableTools()
 }
 
 // executeToolsSequential executes tools one after another.
-func (a *MCPAwareAgent) executeToolsSequential(ctx context.Context, tools []MCPToolExecution) ([]MCPToolResult, error) {
-	results := make([]MCPToolResult, 0, len(tools))
+func (a *MCPAwareAgent) executeToolsSequential(ctx context.Context, tools []core.MCPToolExecution) ([]core.MCPToolResult, error) {
+	results := make([]core.MCPToolResult, 0, len(tools))
 
 	for i, tool := range tools {
 		select {
@@ -244,7 +244,7 @@ func (a *MCPAwareAgent) executeToolsSequential(ctx context.Context, tools []MCPT
 			}
 			if err != nil {
 				// Return partial results with error
-				result = MCPToolResult{
+				result = core.MCPToolResult{
 					ToolName: tool.ToolName,
 					Success:  false,
 					Error:    err.Error(),
@@ -259,7 +259,7 @@ func (a *MCPAwareAgent) executeToolsSequential(ctx context.Context, tools []MCPT
 }
 
 // executeToolsParallel executes tools in parallel (future enhancement).
-func (a *MCPAwareAgent) executeToolsParallel(ctx context.Context, tools []MCPToolExecution) ([]MCPToolResult, error) {
+func (a *MCPAwareAgent) executeToolsParallel(ctx context.Context, tools []core.MCPToolExecution) ([]core.MCPToolResult, error) {
 	// For now, fall back to sequential execution
 	// This can be enhanced with goroutines and proper synchronization
 	a.logger.Debug().Msg("Parallel execution not fully implemented, falling back to sequential")
@@ -267,7 +267,7 @@ func (a *MCPAwareAgent) executeToolsParallel(ctx context.Context, tools []MCPToo
 }
 
 // executeSingleTool executes a single MCP tool with caching support.
-func (a *MCPAwareAgent) executeSingleTool(ctx context.Context, tool MCPToolExecution) (MCPToolResult, error) {
+func (a *MCPAwareAgent) executeSingleTool(ctx context.Context, tool core.MCPToolExecution) (core.MCPToolResult, error) {
 	a.logger.Debug().
 		Str("tool", tool.ToolName).
 		Interface("args", tool.Arguments).
@@ -278,7 +278,7 @@ func (a *MCPAwareAgent) executeSingleTool(ctx context.Context, tool MCPToolExecu
 		// Execute with cache - the cache manager accepts MCPToolExecution directly
 		result, err := a.cacheManager.ExecuteWithCache(ctx, tool)
 		if err != nil {
-			return MCPToolResult{}, fmt.Errorf("cached tool execution failed: %w", err)
+			return core.MCPToolResult{}, fmt.Errorf("cached tool execution failed: %w", err)
 		}
 
 		return result, nil
@@ -289,16 +289,16 @@ func (a *MCPAwareAgent) executeSingleTool(ctx context.Context, tool MCPToolExecu
 }
 
 // executeToolDirect executes a tool directly without caching.
-func (a *MCPAwareAgent) executeToolDirect(ctx context.Context, tool MCPToolExecution) (MCPToolResult, error) {
+func (a *MCPAwareAgent) executeToolDirect(ctx context.Context, tool core.MCPToolExecution) (core.MCPToolResult, error) {
 	// This would call the actual MCP tool execution through the manager
 	// For now, we'll create a placeholder implementation
 	// The actual implementation would involve calling the MCP manager's tool execution
 
 	// Simulate tool execution (replace with actual MCP tool call)
-	result := MCPToolResult{
+	result := core.MCPToolResult{
 		ToolName: tool.ToolName,
 		Success:  true,
-		Content: []MCPContent{
+		Content: []core.MCPContent{
 			{
 				Type: "text",
 				Text: fmt.Sprintf("Result from %s with args %v", tool.ToolName, tool.Arguments),
@@ -310,7 +310,7 @@ func (a *MCPAwareAgent) executeToolDirect(ctx context.Context, tool MCPToolExecu
 }
 
 // retryToolExecution retries a failed tool execution.
-func (a *MCPAwareAgent) retryToolExecution(ctx context.Context, tool MCPToolExecution, originalErr error) (MCPToolResult, error) {
+func (a *MCPAwareAgent) retryToolExecution(ctx context.Context, tool core.MCPToolExecution, originalErr error) (core.MCPToolResult, error) {
 	a.logger.Warn().
 		Str("tool", tool.ToolName).
 		Err(originalErr).
@@ -319,7 +319,7 @@ func (a *MCPAwareAgent) retryToolExecution(ctx context.Context, tool MCPToolExec
 	for attempt := 1; attempt <= a.config.MaxRetries; attempt++ {
 		select {
 		case <-ctx.Done():
-			return MCPToolResult{}, ctx.Err()
+			return core.MCPToolResult{}, ctx.Err()
 		default:
 		}
 
@@ -341,19 +341,19 @@ func (a *MCPAwareAgent) retryToolExecution(ctx context.Context, tool MCPToolExec
 		if attempt < a.config.MaxRetries {
 			select {
 			case <-ctx.Done():
-				return MCPToolResult{}, ctx.Err()
+				return core.MCPToolResult{}, ctx.Err()
 			case <-time.After(time.Duration(attempt) * time.Second):
 			}
 		}
 	}
 
-	return MCPToolResult{}, fmt.Errorf("tool execution failed after %d retries: %w", a.config.MaxRetries, originalErr)
+	return core.MCPToolResult{}, fmt.Errorf("tool execution failed after %d retries: %w", a.config.MaxRetries, originalErr)
 }
 
 // Helper methods
 
 // extractQuery extracts the main query/task from the input state.
-func (a *MCPAwareAgent) extractQuery(state State) (string, error) {
+func (a *MCPAwareAgent) extractQuery(state core.State) (string, error) {
 	// Try different common keys for the query
 	queryKeys := []string{"query", "task", "request", "message", "prompt", "input"}
 
@@ -384,7 +384,7 @@ func (a *MCPAwareAgent) extractQuery(state State) (string, error) {
 }
 
 // formatToolsForLLM creates a formatted description of available tools for the LLM.
-func (a *MCPAwareAgent) formatToolsForLLM(tools []MCPToolInfo) string {
+func (a *MCPAwareAgent) formatToolsForLLM(tools []core.MCPToolInfo) string {
 	var sb strings.Builder
 
 	for i, tool := range tools {
@@ -402,7 +402,7 @@ func (a *MCPAwareAgent) formatToolsForLLM(tools []MCPToolInfo) string {
 }
 
 // createToolSelectionPrompt creates the prompt for LLM tool selection.
-func (a *MCPAwareAgent) createToolSelectionPrompt(toolsDesc, query string, stateContext State) (string, error) {
+func (a *MCPAwareAgent) createToolSelectionPrompt(toolsDesc, query string, stateContext core.State) (string, error) {
 	prompt := a.config.ToolSelectionPrompt
 
 	// Replace placeholders
@@ -451,7 +451,7 @@ func (a *MCPAwareAgent) parseToolSelection(response string) ([]string, error) {
 }
 
 // validateSelectedTools ensures that selected tools actually exist.
-func (a *MCPAwareAgent) validateSelectedTools(selected []string, available []MCPToolInfo) []string {
+func (a *MCPAwareAgent) validateSelectedTools(selected []string, available []core.MCPToolInfo) []string {
 	if len(selected) == 0 {
 		return []string{}
 	}
@@ -487,8 +487,8 @@ func (a *MCPAwareAgent) validateSelectedTools(selected []string, available []MCP
 }
 
 // prepareToolExecutions prepares tool execution requests from tool names and state.
-func (a *MCPAwareAgent) prepareToolExecutions(ctx context.Context, toolNames []string, state State) ([]MCPToolExecution, error) {
-	executions := make([]MCPToolExecution, 0, len(toolNames))
+func (a *MCPAwareAgent) prepareToolExecutions(ctx context.Context, toolNames []string, state core.State) ([]core.MCPToolExecution, error) {
+	executions := make([]core.MCPToolExecution, 0, len(toolNames))
 
 	for _, toolName := range toolNames {
 		// Get tool info to understand its schema
@@ -502,7 +502,7 @@ func (a *MCPAwareAgent) prepareToolExecutions(ctx context.Context, toolNames []s
 		// Prepare arguments based on state and tool schema
 		args := a.prepareToolArguments(toolName, toolInfo, state)
 
-		execution := MCPToolExecution{
+		execution := core.MCPToolExecution{
 			ToolName:  toolName,
 			Arguments: args,
 		}
@@ -514,7 +514,7 @@ func (a *MCPAwareAgent) prepareToolExecutions(ctx context.Context, toolNames []s
 }
 
 // findToolInfo finds information about a specific tool.
-func (a *MCPAwareAgent) findToolInfo(toolName string) *MCPToolInfo {
+func (a *MCPAwareAgent) findToolInfo(toolName string) *core.MCPToolInfo {
 	tools := a.mcpManager.GetAvailableTools()
 	for _, tool := range tools {
 		if tool.Name == toolName {
@@ -525,7 +525,7 @@ func (a *MCPAwareAgent) findToolInfo(toolName string) *MCPToolInfo {
 }
 
 // prepareToolArguments prepares arguments for a tool based on state and schema.
-func (a *MCPAwareAgent) prepareToolArguments(toolName string, toolInfo *MCPToolInfo, state State) map[string]interface{} {
+func (a *MCPAwareAgent) prepareToolArguments(toolName string, toolInfo *core.MCPToolInfo, state core.State) map[string]interface{} {
 	args := make(map[string]interface{})
 
 	// Basic argument mapping based on common patterns
@@ -564,9 +564,9 @@ func (a *MCPAwareAgent) prepareToolArguments(toolName string, toolInfo *MCPToolI
 }
 
 // updateStateWithResults updates the state with tool execution results.
-func (a *MCPAwareAgent) updateStateWithResults(inputState State, results []MCPToolResult) State {
+func (a *MCPAwareAgent) updateStateWithResults(inputState core.State, results []core.MCPToolResult) core.State {
 	// Create a copy of the input state
-	outputState := NewState()
+	outputState := core.NewState()
 
 	// Copy all existing data
 	keys := inputState.Keys()
@@ -608,96 +608,4 @@ func (a *MCPAwareAgent) updateStateWithResults(inputState State, results []MCPTo
 	}
 
 	return outputState
-}
-
-// createCacheManagerForAgentWithManager creates a cache manager for an agent with MCP manager.
-func createCacheManagerForAgentWithManager(config MCPCacheConfig, mcpManager MCPManager) MCPCacheManager {
-	// Return nil if caching is disabled
-	if !config.Enabled {
-		return nil
-	}
-
-	// Create an executor with the actual MCP manager
-	executor := newAgentToolExecutor(mcpManager)
-
-	// Try to create the internal cache manager using the factory pattern
-	if createInternalCacheManager != nil {
-		if cacheManager, err := createInternalCacheManager(config, executor); err == nil {
-			return cacheManager
-		}
-	}
-
-	// Fallback: return nil if cache manager creation fails
-	return nil
-}
-
-// createCacheManagerForAgent creates a cache manager for an agent.
-func createCacheManagerForAgent(config MCPCacheConfig) MCPCacheManager {
-	// Return nil if caching is disabled
-	if !config.Enabled {
-		return nil
-	}
-
-	// Create a simple executor for the cache manager (without MCP manager)
-	executor := &agentToolExecutor{}
-
-	// Try to create the internal cache manager using the factory pattern
-	if createInternalCacheManager != nil {
-		if cacheManager, err := createInternalCacheManager(config, executor); err == nil {
-			return cacheManager
-		}
-	}
-
-	// Fallback: return nil and log that caching is disabled
-	// In a real implementation, we might want to return a no-op cache manager
-	return nil
-}
-
-// agentToolExecutor is a simple executor that can be used with the cache manager.
-type agentToolExecutor struct {
-	mcpManager MCPManager
-}
-
-// newAgentToolExecutor creates a new agent tool executor.
-func newAgentToolExecutor(mcpManager MCPManager) *agentToolExecutor {
-	return &agentToolExecutor{
-		mcpManager: mcpManager,
-	}
-}
-
-// ExecuteTool implements MCPToolExecutor interface.
-func (e *agentToolExecutor) ExecuteTool(ctx context.Context, execution MCPToolExecution) (MCPToolResult, error) {
-	// Use the actual MCP manager if available
-	if e.mcpManager != nil {
-		// This would call the actual MCP manager to execute the tool
-		// For now, we'll use a placeholder since ExecuteTool is not part of the current MCPManager interface
-		// In the future, we can extend the MCPManager interface to include tool execution
-	}
-
-	// Fallback to placeholder implementation
-	return MCPToolResult{
-		ToolName: execution.ToolName,
-		Success:  true,
-		Content: []MCPContent{
-			{
-				Type: "text",
-				Text: fmt.Sprintf("Mock result for %s", execution.ToolName),
-			},
-		},
-	}, nil
-}
-
-// Internal factory function for cache manager creation.
-// This will be set by the internal package during initialization.
-var createInternalCacheManager func(MCPCacheConfig, MCPToolExecutor) (MCPCacheManager, error)
-
-// MCPToolExecutor interface for cache manager integration.
-type MCPToolExecutor interface {
-	ExecuteTool(ctx context.Context, execution MCPToolExecution) (MCPToolResult, error)
-}
-
-// SetCacheManagerFactory sets the internal cache manager factory function.
-// This is called by the internal/mcp package during initialization.
-func SetCacheManagerFactory(factory func(MCPCacheConfig, MCPToolExecutor) (MCPCacheManager, error)) {
-	createInternalCacheManager = factory
 }

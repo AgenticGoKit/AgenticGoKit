@@ -6,7 +6,7 @@ const ProjectReadmeTemplate = `# {{.Config.Name}}
 
 {{.Config.Name}} is a sophisticated multi-agent workflow system that leverages multiple AI agents working {{if eq .Config.OrchestrationMode "sequential"}}sequentially{{else if eq .Config.OrchestrationMode "collaborative"}}collaboratively{{else if eq .Config.OrchestrationMode "loop"}}iteratively{{else}}in coordination{{end}} to process and respond to user queries.
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -78,15 +78,15 @@ go run . -m "Your message here"
 LOG_LEVEL=debug go run . -m "Your message"
 ` + "```" + `
 
-## ⚙️ Configuration-Driven Architecture
+## Configuration-Driven Architecture
 
 This project uses **AgentFlow's configuration-driven architecture**:
 
-- **📋 No hardcoded agents**: All agents defined in ` + "`agentflow.toml`" + `
-- **🔧 Flexible configuration**: Change behavior without code changes  
-- **🔄 Hot reload support**: Update config without restarting
-- **🌍 Environment-specific**: Different settings per environment
-- **✅ Built-in validation**: Comprehensive validation with helpful errors
+- **No hardcoded agents**: All agents defined in ` + "`agentflow.toml`" + `
+- **Flexible configuration**: Change behavior without code changes  
+- **Hot reload support**: Update config without restarting
+- **Environment-specific**: Different settings per environment
+- **Built-in validation**: Comprehensive validation with helpful errors
 
 ### Key Configuration Files
 
@@ -152,13 +152,13 @@ mode = "{{.Config.OrchestrationMode}}"
 
 ` + "```" + `
 {{.Config.Name}}/
-├── 📁 agents/                 # Agent implementations
+├── agents/                 # Agent implementations
 {{range .Agents}}│   ├── {{.FileName}}           # {{.DisplayName}} agent
 {{end}}│   └── README.md           # Agent documentation
-├── 📁 internal/               # Internal packages
+├── internal/               # Internal packages
 │   ├── config/               # Configuration utilities
 │   └── handlers/             # Shared handler utilities
-├── 📁 docs/                  # Documentation
+├── docs/                  # Documentation
 │   └── CUSTOMIZATION.md      # Customization guide
 ├── 📄 main.go                # Application entry point
 ├── 📄 agentflow.toml         # Main configuration file
@@ -181,13 +181,13 @@ mode = "{{.Config.OrchestrationMode}}"
 **Role**: {{if eq $.Config.OrchestrationMode "sequential"}}{{if $agent.IsFirstAgent}}Processes initial user input and prepares data for downstream agents{{else if $agent.IsLastAgent}}Finalizes processing and generates the final response{{else}}Processes input from previous agents and passes refined data forward{{end}}{{else if eq $.Config.OrchestrationMode "collaborative"}}Works in parallel with other agents to process user input from different perspectives{{else if eq $.Config.OrchestrationMode "loop"}}Iteratively processes and refines the input over multiple cycles{{else}}Handles specific types of requests based on routing logic{{end}}
 
 **Key Features**:
-- {{if $.Config.MemoryEnabled}}✅ Memory-enabled for context retention{{else}}❌ Memory not enabled{{end}}
-- {{if $.Config.MCPEnabled}}✅ Tool integration via MCP{{else}}❌ No tool integration{{end}}
-- {{if $.Config.RAGEnabled}}✅ RAG capabilities for knowledge retrieval{{else}}❌ No RAG capabilities{{end}}
+- {{if $.Config.MemoryEnabled}}Memory-enabled for context retention{{else}}Memory not enabled{{end}}
+- {{if $.Config.MCPEnabled}}Tool integration via MCP{{else}}No tool integration{{end}}
+- {{if $.Config.RAGEnabled}}RAG capabilities for knowledge retrieval{{else}}No RAG capabilities{{end}}
 
 {{end}}
 
-## ⚙️ Configuration
+## Configuration
 
 ### Core Settings (` + "`agentflow.toml`" + `)
 
@@ -364,7 +364,7 @@ func main() {
 }
 ` + "```" + `
 
-## 🛠️ Customization
+## Customization
 
 ### Quick Customizations
 
@@ -415,7 +415,7 @@ func (a *Agent1Handler) callExternalAPI(ctx context.Context, data interface{}) (
 // In main.go
 func formatResults(results []AgentOutput) {
     for _, result := range results {
-        fmt.Printf("🤖 %s: %s\n", result.AgentName, result.Content)
+    fmt.Printf("%s: %s\n", result.AgentName, result.Content)
     }
 }
 ` + "```" + `
@@ -457,7 +457,7 @@ curl http://localhost:8080/health/memory
 curl http://localhost:8080/health/mcp
 ` + "```" + `
 
-## 🧪 Testing
+## Testing
 
 ### Running Tests
 
@@ -492,7 +492,7 @@ go install github.com/rakyll/hey@latest
 hey -n 100 -c 10 -m POST -d '{"message":"test"}' http://localhost:8080/process
 ` + "```" + `
 
-## 🚀 Deployment
+## Deployment
 
 ### Docker
 
@@ -579,7 +579,7 @@ func main() {
 }
 ` + "```" + `
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -686,7 +686,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Happy coding! 🚀**
+**Happy coding!**
 
 For questions or support, please refer to the [documentation](https://github.com/kunalkushwaha/agenticgokit) or create an issue.
 `

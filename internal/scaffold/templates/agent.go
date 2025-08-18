@@ -38,7 +38,6 @@ import (
 type {{.Agent.DisplayName}}Handler struct {
 	config agenticgokit.ResolvedAgentConfig
 	llm    agenticgokit.ModelProvider
-	{{if .Config.MemoryEnabled}}memory agenticgokit.Memory{{end}}
 	
 	// TODO: Add your custom fields here
 	// Examples:
@@ -56,23 +55,25 @@ type {{.Agent.DisplayName}}Handler struct {
 // if you need custom initialization logic.
 func New{{.Agent.DisplayName}}FromConfig(config agenticgokit.ResolvedAgentConfig) (*{{.Agent.DisplayName}}Handler, error) {
 	// Initialize LLM provider from resolved configuration
-	llm, err := agenticgokit.NewLLMProvider(config.LLM)
-	if err != nil {
-		return nil, fmt.Errorf("failed to initialize LLM provider: %w", err)
+	var llm agenticgokit.ModelProvider
+	if config.LLMConfig != nil {
+		providerCfg := agenticgokit.LLMProviderConfig{
+			Type:        config.LLMConfig.Provider,
+			Model:       config.LLMConfig.Model,
+			Temperature: config.LLMConfig.Temperature,
+			MaxTokens:   config.LLMConfig.MaxTokens,
+			HTTPTimeout: config.LLMConfig.Timeout,
+		}
+		var err error
+		llm, err = agenticgokit.NewModelProviderFromConfig(providerCfg)
+		if err != nil {
+			return nil, fmt.Errorf("failed to initialize LLM provider: %w", err)
+		}
 	}
-
-	{{if .Config.MemoryEnabled}}
-	// Get memory instance from global context
-	memory := agenticgokit.GetGlobalMemory()
-	if memory == nil {
-		return nil, fmt.Errorf("memory system not initialized")
-	}
-	{{end}}
 
 	return &{{.Agent.DisplayName}}Handler{
 		config: config,
 		llm:    llm,
-		{{if .Config.MemoryEnabled}}memory: memory,{{end}}
 		
 		// TODO: Initialize your custom fields here
 		// Examples:
@@ -223,23 +224,24 @@ func (a *{{.Agent.DisplayName}}Handler) Run(ctx context.Context, event agenticgo
 	{{if .Config.MemoryEnabled}}
 	// Memory system integration with error handling
 	var memoryContext string
-	if a.memory != nil {
+	mem := agenticgokit.GetMemory(ctx)
+	if mem != nil { // GetMemory returns NoOpMemory when uninitialized
 		logger.Debug().Str("agent", "{{.Agent.Name}}").Msg("Building memory context")
 		
 		{{if .Config.SessionMemory}}
 		// Create or get session context with validation
-		sessionID := a.memory.NewSession()
+		sessionID := mem.NewSession()
 		if sessionID == "" {
 			logger.Warn().Str("agent", "{{.Agent.Name}}").Msg("Failed to create session ID, continuing without session context")
 		} else {
-			ctx = a.memory.SetSession(ctx, sessionID)
+			ctx = mem.SetSession(ctx, sessionID)
 			logger.Debug().Str("agent", "{{.Agent.Name}}").Str("session_id", sessionID).Msg("Session context created")
 		}
 		{{end}}
 		
 		{{if .Config.RAGEnabled}}
 		// Build RAG context from knowledge base with error handling
-		ragContext, err := a.memory.BuildContext(ctx, fmt.Sprintf("%v", inputToProcess),
+		ragContext, err := mem.BuildContext(ctx, fmt.Sprintf("%v", inputToProcess),
 			agenticgokit.WithMaxTokens({{.Config.RAGChunkSize}}),
 			agenticgokit.WithIncludeSources(true))
 		if err != nil {
@@ -253,7 +255,7 @@ func (a *{{.Agent.DisplayName}}Handler) Run(ctx context.Context, event agenticgo
 		{{end}}
 		
 		// Query relevant memories with error handling
-		memoryResults, err := a.memory.Query(ctx, fmt.Sprintf("%v", inputToProcess), {{.Config.RAGTopK}})
+		memoryResults, err := mem.Query(ctx, fmt.Sprintf("%v", inputToProcess), {{.Config.RAGTopK}})
 		if err != nil {
 			logger.Warn().Str("agent", "{{.Agent.Name}}").Err(err).Msg("Failed to query memories - continuing without memory context")
 		} else if len(memoryResults) > 0 {
@@ -269,7 +271,7 @@ func (a *{{.Agent.DisplayName}}Handler) Run(ctx context.Context, event agenticgo
 		}
 		
 		// Get chat history with error handling
-		chatHistory, err := a.memory.GetHistory(ctx, 3)
+		chatHistory, err := mem.GetHistory(ctx, 3)
 		if err != nil {
 			logger.Warn().Str("agent", "{{.Agent.Name}}").Err(err).Msg("Failed to get chat history - continuing without history context")
 		} else if len(chatHistory) > 0 {
@@ -432,22 +434,23 @@ func (a *{{.Agent.DisplayName}}Handler) Run(ctx context.Context, event agenticgo
 	
 	{{if .Config.MemoryEnabled}}
 	// Store interaction in memory
-	if a.memory != nil {
+	mem = agenticgokit.GetMemory(ctx)
+	if mem != nil {
 		// Store the user query
-		if err := a.memory.Store(ctx, fmt.Sprintf("%v", inputToProcess), "user-query", "{{.Agent.Name}}"); err != nil {
+		if err := mem.Store(ctx, fmt.Sprintf("%v", inputToProcess), "user-query", "{{.Agent.Name}}"); err != nil {
 			logger.Warn().Str("agent", "{{.Agent.Name}}").Err(err).Msg("Failed to store user query in memory")
 		}
 		
 		// Store the agent response
-		if err := a.memory.Store(ctx, finalResponse, "agent-response", "{{.Agent.Name}}"); err != nil {
+		if err := mem.Store(ctx, finalResponse, "agent-response", "{{.Agent.Name}}"); err != nil {
 			logger.Warn().Str("agent", "{{.Agent.Name}}").Err(err).Msg("Failed to store agent response in memory")
 		}
 		
 		// Add to chat history
-		if err := a.memory.AddMessage(ctx, "user", fmt.Sprintf("%v", inputToProcess)); err != nil {
+		if err := mem.AddMessage(ctx, "user", fmt.Sprintf("%v", inputToProcess)); err != nil {
 			logger.Warn().Str("agent", "{{.Agent.Name}}").Err(err).Msg("Failed to add user message to chat history")
 		}
-		if err := a.memory.AddMessage(ctx, "assistant", finalResponse); err != nil {
+		if err := mem.AddMessage(ctx, "assistant", finalResponse); err != nil {
 			logger.Warn().Str("agent", "{{.Agent.Name}}").Err(err).Msg("Failed to add assistant message to chat history")
 		}
 		

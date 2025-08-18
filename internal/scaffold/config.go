@@ -637,25 +637,33 @@ func SanitizePackageName(packageName string) string {
 	// Convert to lowercase
 	sanitized := strings.ToLower(packageName)
 
-	// Replace invalid characters with underscores
+	// Replace invalid characters with underscores, collapse consecutive underscores,
+	// and avoid introducing leading underscores.
 	var result strings.Builder
-	for i, char := range sanitized {
-		if isValidPackageChar(char) {
-			// Don't allow numbers at the start
-			if i == 0 && char >= '0' && char <= '9' {
-				result.WriteRune('_')
+	lastUnderscore := false
+	for _, char := range sanitized {
+		// Treat hyphens, spaces, and underscores uniformly as underscore separators
+		if char == '-' || char == ' ' || char == '_' {
+			// Skip writing underscore if it's leading or duplicate
+			if result.Len() == 0 || lastUnderscore {
+				lastUnderscore = true
+				continue
 			}
-			result.WriteRune(char)
-		} else if char == '-' || char == ' ' {
 			result.WriteRune('_')
-		} else {
-			// Skip other invalid characters
+			lastUnderscore = true
+			continue
 		}
+
+		if isValidPackageChar(char) {
+			result.WriteRune(char)
+			lastUnderscore = false
+		}
+		// Skip other invalid characters silently
 	}
 
 	sanitized = result.String()
 
-	// Remove leading/trailing underscores
+	// Remove any trailing underscore that may remain
 	sanitized = strings.Trim(sanitized, "_")
 
 	// Ensure it's not empty after sanitization
@@ -668,8 +676,9 @@ func SanitizePackageName(packageName string) string {
 		sanitized = "pkg_" + sanitized
 	}
 
-	// Ensure it's not a reserved name
-	if isReservedPackageName(sanitized) {
+	// Minimal reserved handling for sanitizer: only special-case "main"
+	// Validation still uses the full reserved keyword list.
+	if sanitized == "main" {
 		sanitized = "my_" + sanitized
 	}
 
@@ -747,7 +756,7 @@ func ValidateImportPaths(config ProjectConfig) error {
 	}
 
 	// Log successful validation
-	fmt.Printf("✅ Import paths validated:\n")
+	fmt.Printf("Import paths validated:\n")
 	fmt.Printf("   Module: %s\n", config.Name)
 	fmt.Printf("   Agents: %s\n", agentsImport)
 	fmt.Printf("   Internal: %s\n", internalImport)
@@ -812,18 +821,18 @@ func ValidateAndSanitizeProjectConfig(config *ProjectConfig) error {
 	if err := ValidateGoModuleName(config.Name); err != nil {
 		fmt.Printf("⚠️  Project name '%s' is invalid: %v\n", config.Name, err)
 		config.Name = SanitizeModuleName(config.Name)
-		fmt.Printf("✅ Auto-corrected to: '%s'\n", config.Name)
+		fmt.Printf("Auto-corrected to: '%s'\n", config.Name)
 	}
 
 	// Validate that the corrected name is different from original
 	if originalName != config.Name {
-		fmt.Printf("📝 Project name changed from '%s' to '%s'\n", originalName, config.Name)
+		fmt.Printf("Project name changed from '%s' to '%s'\n", originalName, config.Name)
 	}
 
 	// Validate other configuration aspects
 	if config.NumAgents < 1 {
 		config.NumAgents = 1
-		fmt.Printf("✅ Auto-corrected NumAgents to 1 (minimum required)\n")
+		fmt.Printf("Auto-corrected NumAgents to 1 (minimum required)\n")
 	}
 
 	if config.NumAgents > 10 {
@@ -870,7 +879,7 @@ func ValidateAndSanitizeProjectConfig(config *ProjectConfig) error {
 func ShowVersionInfo() {
 	version, source := GetAgenticGoKitVersionWithFallback()
 
-	fmt.Printf("📦 Using AgenticGoKit version: %s", version)
+	fmt.Printf("Using AgenticGoKit version: %s", version)
 
 	switch source {
 	case "cli-version":
@@ -879,7 +888,7 @@ func ShowVersionInfo() {
 		fmt.Printf(" (latest from GitHub)\n")
 	case "fallback":
 		fmt.Printf(" (fallback - consider updating CLI)\n")
-		fmt.Printf("   💡 Run the installer to get the latest version:\n")
+		fmt.Printf("   Run the installer to get the latest version:\n")
 		fmt.Printf("      curl -fsSL https://raw.githubusercontent.com/kunalkushwaha/agenticgokit/master/install.sh | bash\n")
 	}
 }

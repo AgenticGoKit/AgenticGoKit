@@ -41,11 +41,11 @@ func TestSequentialAgent_Run_AllSuccess(t *testing.T) {
 		"agent3":         "processed_by_agent3",
 		"last_processed": "agent3", // Agent 3 was last
 	}
-	// FIX: Use Keys() and Get()
+	// Collect only expected keys (ignore execution metadata)
 	finalData := make(map[string]interface{})
-	for _, key := range finalState.Keys() {
-		if val, ok := finalState.Get(key); ok {
-			finalData[key] = val
+	for k := range expectedData {
+		if val, ok := finalState.Get(k); ok {
+			finalData[k] = val
 		}
 	}
 	if !reflect.DeepEqual(finalData, expectedData) {
@@ -96,17 +96,17 @@ func TestSequentialAgent_Run_PartialFailure(t *testing.T) {
 		"agent1":         "processed_by_agent1",
 		"last_processed": "agent1",
 	}
-	// FIX: Use Keys() and Get()
+	// Collect only expected keys (ignore execution metadata)
 	finalData := make(map[string]interface{})
-	if finalState != nil { // Check if finalState is nil before accessing
-		for _, key := range finalState.Keys() {
-			if val, ok := finalState.Get(key); ok {
-				finalData[key] = val
-			}
-		}
-	} else {
+	if finalState == nil {
 		t.Log("Final state was nil on partial failure, cannot compare data.")
 		// Depending on desired behavior, you might want to fail here if state shouldn't be nil
+	} else {
+		for k := range expectedData {
+			if val, ok := finalState.Get(k); ok {
+				finalData[k] = val
+			}
+		}
 	}
 
 	if finalState != nil && !reflect.DeepEqual(finalData, expectedData) {
@@ -139,10 +139,8 @@ func TestSequentialAgent_Run_ZeroAgents(t *testing.T) {
 	// expectedData := map[string]interface{}{"initial": "value"} // REMOVE THIS LINE
 
 	finalData := make(map[string]interface{})
-	for _, key := range finalState.Keys() {
-		if val, ok := finalState.Get(key); ok {
-			finalData[key] = val
-		}
+	if val, ok := finalState.Get("initial"); ok {
+		finalData["initial"] = val
 	}
 	initialData := make(map[string]interface{})
 	for _, key := range initialState.Keys() { // Compare against original initialState data
@@ -191,11 +189,10 @@ func TestSequentialAgent_Run_NilAgentsFiltered(t *testing.T) {
 		"agent3":         "processed_by_agent3",
 		"last_processed": "agent3", // Agent 3 was last
 	}
-	// FIX: Use Keys() and Get()
 	finalData := make(map[string]interface{})
-	for _, key := range finalState.Keys() {
-		if val, ok := finalState.Get(key); ok {
-			finalData[key] = val
+	for k := range expectedData {
+		if val, ok := finalState.Get(k); ok {
+			finalData[k] = val
 		}
 	}
 	if !reflect.DeepEqual(finalData, expectedData) {

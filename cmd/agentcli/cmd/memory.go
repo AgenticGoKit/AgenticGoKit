@@ -486,20 +486,20 @@ func (m *MemoryDebugger) TestSearch(query string) error {
 	fmt.Printf("========================================\n\n")
 
 	for i, result := range results {
-		// Color-code scores
-		var scoreIcon string
+		// Score band label
+		var band string
 		switch {
 		case result.Score >= 0.8:
-			scoreIcon = "🟢" // High relevance
+			band = "HIGH"
 		case result.Score >= 0.6:
-			scoreIcon = "🟡" // Medium relevance
+			band = "MEDIUM"
 		case result.Score >= 0.4:
-			scoreIcon = "🟠" // Low relevance
+			band = "LOW"
 		default:
-			scoreIcon = "🔴" // Very low relevance
+			band = "VERY LOW"
 		}
 
-		fmt.Printf("%s Result %d (Score: %.4f)\n", scoreIcon, i+1, result.Score)
+		fmt.Printf("[%s] Result %d (Score: %.4f)\n", band, i+1, result.Score)
 
 		// Truncate content but show more than in list view
 		content := result.Content
@@ -542,10 +542,10 @@ func (m *MemoryDebugger) TestSearch(query string) error {
 		}
 	}
 
-	fmt.Printf("High relevance (≥0.8): %d\n", highRelevance)
-	fmt.Printf("Medium relevance (≥0.6): %d\n", mediumRelevance)
+	fmt.Printf("High relevance (>=0.8): %d\n", highRelevance)
+	fmt.Printf("Medium relevance (>=0.6): %d\n", mediumRelevance)
 	fmt.Printf("Low relevance (<0.6): %d\n", lowRelevance)
-	fmt.Printf("Above threshold (≥%.2f): %d\n", m.config.AgentMemory.KnowledgeScoreThreshold, aboveThreshold)
+	fmt.Printf("Above threshold (>=%.2f): %d\n", m.config.AgentMemory.KnowledgeScoreThreshold, aboveThreshold)
 
 	if aboveThreshold == 0 {
 		fmt.Printf("\nNo results above threshold - consider:\n")
@@ -833,7 +833,7 @@ func (m *MemoryDebugger) clearEverything(ctx context.Context) error {
 		fmt.Printf("   docker volume rm $(docker volume ls -q | grep weaviate)\n")
 		fmt.Printf("   docker compose up -d\n")
 	} else {
-		fmt.Printf("\n🧠 In-memory provider:\n")
+		fmt.Printf("\nIn-memory provider:\n")
 		fmt.Printf("   Restart your application to clear all data\n")
 	}
 
@@ -845,10 +845,10 @@ func (m *MemoryDebugger) ShowConfig() error {
 	fmt.Printf("Memory Configuration\n")
 	fmt.Printf("========================\n\n")
 
-	fmt.Printf("📁 Configuration File: %s\n\n", m.configPath)
+	fmt.Printf("Configuration File: %s\n\n", m.configPath)
 
 	// Basic memory configuration
-	fmt.Printf("🧠 Memory Provider Configuration:\n")
+	fmt.Printf("Memory Provider Configuration:\n")
 	fmt.Printf("   Provider: %s\n", m.config.AgentMemory.Provider)
 	fmt.Printf("   Connection: %s\n", m.config.AgentMemory.Connection)
 	fmt.Printf("   Max Results: %d\n", m.config.AgentMemory.MaxResults)
@@ -903,7 +903,7 @@ func (m *MemoryDebugger) ShowConfig() error {
 	fmt.Printf("\n")
 
 	// Search configuration
-	fmt.Printf("🔎 Search Configuration:\n")
+	fmt.Printf("Search Configuration:\n")
 	fmt.Printf("   Hybrid Search: %t\n", m.config.AgentMemory.Search.HybridSearch)
 	if m.config.AgentMemory.Search.HybridSearch {
 		fmt.Printf("   Keyword Weight: %.1f\n", m.config.AgentMemory.Search.KeywordWeight)

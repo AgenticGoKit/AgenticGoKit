@@ -194,6 +194,7 @@ type RetryConfigToml struct {
 // MCPConfigToml represents MCP configuration in TOML format
 type MCPConfigToml struct {
 	Enabled           bool                  `toml:"enabled"`
+	Transport         string                `toml:"transport"`
 	EnableDiscovery   bool                  `toml:"enable_discovery"`
 	DiscoveryTimeout  int                   `toml:"discovery_timeout_ms"`
 	ScanPorts         []int                 `toml:"scan_ports"`
@@ -507,7 +508,7 @@ func (c *Config) ValidateOrchestrationConfig() error {
 		}
 	}
 	if !isValidMode {
-		return fmt.Errorf("invalid orchestration mode: %s", c.Orchestration.Mode)
+		return fmt.Errorf("invalid orchestration mode '%s'", c.Orchestration.Mode)
 	}
 
 	if c.Orchestration.TimeoutSeconds <= 0 {
@@ -517,18 +518,18 @@ func (c *Config) ValidateOrchestrationConfig() error {
 	switch c.Orchestration.Mode {
 	case "sequential":
 		if len(c.Orchestration.SequentialAgents) == 0 {
-			return fmt.Errorf("sequential mode requires at least one agent")
+			return fmt.Errorf("sequential orchestration requires 'sequential_agents' array")
 		}
 	case "loop":
 		if c.Orchestration.LoopAgent == "" {
-			return fmt.Errorf("loop mode requires a loop agent")
+			return fmt.Errorf("loop orchestration requires 'loop_agent' string")
 		}
 		if c.Orchestration.MaxIterations <= 0 {
 			return fmt.Errorf("orchestration max_iterations must be positive for loop mode")
 		}
 	case "mixed":
 		if len(c.Orchestration.SequentialAgents) == 0 && len(c.Orchestration.CollaborativeAgents) == 0 {
-			return fmt.Errorf("mixed mode requires at least one sequential or collaborative agent")
+			return fmt.Errorf("mixed orchestration requires either 'collaborative_agents' or 'sequential_agents'")
 		}
 	}
 

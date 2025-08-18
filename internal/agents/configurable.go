@@ -18,7 +18,7 @@ type ConfigAwareUnifiedAgent struct {
 // NewConfigAwareUnifiedAgent creates a new configuration-aware unified agent
 func NewConfigAwareUnifiedAgent(name string, config *core.ResolvedAgentConfig, capabilities map[core.CapabilityType]core.AgentCapability, handler core.AgentHandler) *ConfigAwareUnifiedAgent {
 	unifiedAgent := core.NewUnifiedAgent(name, capabilities, handler)
-	
+
 	return &ConfigAwareUnifiedAgent{
 		UnifiedAgent: unifiedAgent,
 		config:       config,
@@ -133,24 +133,21 @@ func (ca *ConfigAwareUnifiedAgent) UpdateConfiguration(config *core.ResolvedAgen
 
 	// Update LLM capability if present and LLM config is provided
 	if config.LLMConfig != nil {
-		if llmCap, exists := ca.UnifiedAgent.GetCapability(core.CapabilityTypeLLM); exists {
-			if llm, ok := llmCap.(*core.LLMCapability); ok {
-				// Convert ResolvedLLMConfig to LLMConfig
-				llmConfig := core.LLMConfig{
-					Temperature:    config.LLMConfig.Temperature,
-					MaxTokens:      config.LLMConfig.MaxTokens,
-					SystemPrompt:   config.SystemPrompt,
-					TimeoutSeconds: int(config.LLMConfig.Timeout.Seconds()),
-				}
-				llm.Config = llmConfig
-				
-				core.Logger().Debug().
-					Str("agent", ca.Name()).
-					Str("provider", config.LLMConfig.Provider).
-					Float64("temperature", config.LLMConfig.Temperature).
-					Int("max_tokens", config.LLMConfig.MaxTokens).
-					Msg("Updated LLM configuration")
+		if _, exists := ca.UnifiedAgent.GetCapability(core.CapabilityTypeLLM); exists {
+			// Convert ResolvedLLMConfig to LLMConfig if agent supports it
+			llmConfig := core.LLMConfig{
+				Temperature:    config.LLMConfig.Temperature,
+				MaxTokens:      config.LLMConfig.MaxTokens,
+				TimeoutSeconds: int(config.LLMConfig.Timeout.Seconds()),
 			}
+			// Best-effort: if underlying agent supports SetLLMProvider via CapabilityConfigurable, it will be configured by builder
+			core.Logger().Debug().
+				Str("agent", ca.Name()).
+				Str("provider", config.LLMConfig.Provider).
+				Float64("temperature", config.LLMConfig.Temperature).
+				Int("max_tokens", config.LLMConfig.MaxTokens).
+				Msg("LLM configuration available for capability")
+			_ = llmConfig
 		}
 	}
 
@@ -175,14 +172,11 @@ func (ca *ConfigAwareUnifiedAgent) ApplySystemPrompt(ctx context.Context, state 
 	workingState.Set("system_prompt_applied", true)
 
 	// If we have an LLM capability, we can potentially use the system prompt
-	if llmCap, exists := ca.UnifiedAgent.GetCapability(core.CapabilityTypeLLM); exists {
-		if llm, ok := llmCap.(*core.LLMCapability); ok && llm.Provider != nil {
-			// The system prompt will be used by the LLM capability during execution
-			core.Logger().Debug().
-				Str("agent", ca.Name()).
-				Str("system_prompt", ca.config.SystemPrompt).
-				Msg("System prompt prepared for LLM capability")
-		}
+	if _, exists := ca.UnifiedAgent.GetCapability(core.CapabilityTypeLLM); exists {
+		core.Logger().Debug().
+			Str("agent", ca.Name()).
+			Str("system_prompt", ca.config.SystemPrompt).
+			Msg("System prompt prepared for LLM capability")
 	}
 
 	return workingState, nil
@@ -348,7 +342,7 @@ func (ca *ConfigAwareSequentialAgent) ApplySystemPrompt(ctx context.Context, sta
 	if ca.config == nil || ca.config.SystemPrompt == "" {
 		return state, nil
 	}
-	
+
 	workingState := state.Clone()
 	workingState.Set("sequential_system_prompt", ca.config.SystemPrompt)
 	return workingState, nil
@@ -485,7 +479,7 @@ func (ca *ConfigAwareParallelAgent) ApplySystemPrompt(ctx context.Context, state
 	if ca.config == nil || ca.config.SystemPrompt == "" {
 		return state, nil
 	}
-	
+
 	workingState := state.Clone()
 	workingState.Set("parallel_system_prompt", ca.config.SystemPrompt)
 	return workingState, nil
@@ -495,7 +489,7 @@ func (ca *ConfigAwareParallelAgent) ApplySystemPrompt(ctx context.Context, state
 func (ca *ConfigAwareParallelAgent) runParallelExecution(ctx context.Context, initialState core.State) (core.State, error) {
 	// For now, implement a simple sequential execution as a placeholder
 	// In a full implementation, this would use goroutines and channels like the internal ParallelAgent
-	
+
 	mergedState := initialState.Clone()
 	mergedState.Set("parallel_agent", ca.name)
 	mergedState.Set("parallel_agent_role", ca.GetRole())
@@ -513,7 +507,7 @@ func (ca *ConfigAwareParallelAgent) runParallelExecution(ctx context.Context, in
 				Msg("Error in parallel sub-agent")
 			return mergedState, fmt.Errorf("parallel agent '%s': error in sub-agent %s: %w", ca.name, agent.Name(), err)
 		}
-		
+
 		// Merge the output state
 		mergedState.Merge(outputState)
 	}

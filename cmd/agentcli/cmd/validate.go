@@ -146,7 +146,7 @@ func runValidateCommand(cmd *cobra.Command, args []string) {
 
 	// Print validation header
 	if validateOutput == "text" {
-		fmt.Printf("🔍 AgenticGoKit Configuration Validation\n")
+		fmt.Printf("AgenticGoKit Configuration Validation\n")
 		fmt.Printf("==========================================\n")
 		fmt.Printf("Config: %s\n", configPath)
 		fmt.Printf("Level:  %s\n", validateLevel)
@@ -233,7 +233,7 @@ func validateComplete(results *ValidationResults) {
 // validateProjectStructure validates the project directory structure
 func validateProjectStructure(results *ValidationResults) {
 	if validateVerbose {
-		fmt.Println("📁 Validating project structure...")
+		fmt.Println("Validating project structure...")
 	}
 
 	// Check for required files and directories
@@ -322,14 +322,13 @@ func validateConfigurationOnly(results *ValidationResults) {
 		issueType := "warning"
 
 		// Determine severity and type based on error content
-		if strings.Contains(strings.ToLower(validationError.Message), "required") ||
-			strings.Contains(strings.ToLower(validationError.Message), "missing") ||
-			strings.Contains(strings.ToLower(validationError.Message), "invalid") {
+		msg := strings.ToLower(validationError.Message)
+		if strings.Contains(msg, "required") || strings.Contains(msg, "missing") || strings.Contains(msg, "invalid") {
 			severity = "high"
 			issueType = "error"
 		}
 
-		results.Warnings = append(results.Warnings, ValidationIssue{
+		issue := ValidationIssue{
 			Type:       issueType,
 			Code:       "CONFIG_VALIDATION_ERROR",
 			Field:      validationError.Field,
@@ -337,7 +336,13 @@ func validateConfigurationOnly(results *ValidationResults) {
 			Suggestion: validationError.Suggestion,
 			Severity:   severity,
 			Fixable:    false,
-		})
+		}
+
+		if issueType == "error" {
+			results.Errors = append(results.Errors, issue)
+		} else {
+			results.Warnings = append(results.Warnings, issue)
+		}
 	}
 }
 
@@ -440,7 +445,7 @@ func validateCrossReferences(results *ValidationResults) {
 // validatePerformanceOptimizations suggests performance optimizations
 func validatePerformanceOptimizations(results *ValidationResults) {
 	if validateVerbose {
-		fmt.Println("⚡ Analyzing performance optimizations...")
+		fmt.Println("Analyzing performance optimizations...")
 	}
 
 	config, err := core.LoadConfig(results.ConfigPath)
@@ -483,7 +488,7 @@ func validatePerformanceOptimizations(results *ValidationResults) {
 // validateBestPractices checks for best practice adherence
 func validateBestPractices(results *ValidationResults) {
 	if validateVerbose {
-		fmt.Println("✨ Checking best practices...")
+		fmt.Println("Checking best practices...")
 	}
 
 	config, err := core.LoadConfig(results.ConfigPath)
@@ -532,7 +537,7 @@ func applyAutomaticFixes(results *ValidationResults) {
 			switch issue.Code {
 			case "MISSING_DEPENDENCY":
 				// This would require running go mod tidy
-				fmt.Printf("  ✓ Would run 'go mod tidy' to fix dependency issue\n")
+				fmt.Printf("  Would run 'go mod tidy' to fix dependency issue\n")
 				results.Errors[i].Message += " [WOULD BE FIXED]"
 				fixCount++
 			}
@@ -616,7 +621,7 @@ func outputText(results *ValidationResults) {
 	}
 
 	// Print summary
-	fmt.Printf("📊 VALIDATION SUMMARY:\n")
+	fmt.Printf("VALIDATION SUMMARY:\n")
 	fmt.Printf("  Total Issues: %d\n", results.Summary.TotalIssues)
 	fmt.Printf("  Errors: %d\n", results.Summary.ErrorCount)
 	fmt.Printf("  Warnings: %d\n", results.Summary.WarningCount)

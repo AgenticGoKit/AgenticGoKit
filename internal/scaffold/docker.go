@@ -130,9 +130,12 @@ volumes:
 
 // generatePgVectorInitScript creates the database initialization script for pgvector
 func (dcg *DockerComposeGenerator) generatePgVectorInitScript() error {
-	// Get embedding dimensions from intelligence system
-	dimensions := GetModelDimensions(dcg.config.EmbeddingProvider, dcg.config.EmbeddingModel)
-	
+	// Prefer explicit embedding dimensions from config, fall back to intelligence system
+	dimensions := dcg.config.EmbeddingDimensions
+	if dimensions == 0 {
+		dimensions = GetModelDimensions(dcg.config.EmbeddingProvider, dcg.config.EmbeddingModel)
+	}
+
 	initScriptContent := fmt.Sprintf(`-- AgentFlow Database Initialization Script for pgvector
 -- Configured for %d-dimensional vectors (compatible with %s embeddings)
 -- This script sets up the database schema for AgentFlow memory system
@@ -330,26 +333,26 @@ func (dcg *DockerComposeGenerator) generatePgVectorSetupScript() error {
 	setupScriptContent := `#!/bin/bash
 # AgentFlow PostgreSQL with pgvector Setup Script
 
-echo "🚀 Setting up AgentFlow with PostgreSQL + pgvector..."
+echo "Setting up AgentFlow with PostgreSQL + pgvector..."
 
 # Check if Docker is installed
 if ! command -v docker &> /dev/null; then
-    echo "❌ Docker is not installed. Please install Docker first."
+    echo "Docker is not installed. Please install Docker first."
     echo "   Visit: https://docs.docker.com/get-docker/"
     exit 1
 fi
 
 # Check if Docker Compose is available
 if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
-    echo "❌ Docker Compose is not available. Please install Docker Compose."
+    echo "Docker Compose is not available. Please install Docker Compose."
     exit 1
 fi
 
-echo "✅ Docker and Docker Compose are available"
+echo "Docker and Docker Compose are available"
 
 # Create .env file if it doesn't exist
 if [ ! -f .env ]; then
-    echo "📝 Creating .env file from template..."
+    echo "Creating .env file from template..."
     cp .env.example .env
     echo "⚠️  Please update the .env file with your actual API keys and configuration"
 fi
@@ -367,12 +370,12 @@ echo "⏳ Waiting for database to be ready..."
 sleep 10
 
 # Check if database is ready
-echo "🔍 Checking database connection..."
+echo "Checking database connection..."
 if docker exec agentflow-postgres pg_isready -U user -d agentflow > /dev/null 2>&1; then
-    echo "✅ Database is ready!"
-    echo "📊 Database URL: postgres://user:password@localhost:15432/agentflow"
+    echo "Database is ready!"
+    echo "Database URL: postgres://user:password@localhost:15432/agentflow"
     echo ""
-    echo "🎉 Setup complete! You can now run your AgentFlow project:"
+    echo "Setup complete! You can now run your AgentFlow project:"
     echo "   go mod tidy"
     echo "   go run . -m \"Your message here\""
     echo ""
@@ -381,7 +384,7 @@ if docker exec agentflow-postgres pg_isready -U user -d agentflow > /dev/null 2>
     echo "   - Stop database: docker-compose down"
     echo "   - Connect to database: docker exec -it agentflow-postgres psql -U user -d agentflow"
 else
-    echo "❌ Database is not ready. Please check the logs:"
+    echo "Database is not ready. Please check the logs:"
     echo "   docker logs agentflow-postgres"
     exit 1
 fi
@@ -397,22 +400,22 @@ fi
 	windowsSetupContent := `@echo off
 REM AgentFlow PostgreSQL with pgvector Setup Script for Windows
 
-echo 🚀 Setting up AgentFlow with PostgreSQL + pgvector...
+echo Setting up AgentFlow with PostgreSQL + pgvector...
 
 REM Check if Docker is installed
 docker --version >nul 2>&1
 if %errorlevel% neq 0 (
-    echo ❌ Docker is not installed. Please install Docker Desktop first.
+    echo Docker is not installed. Please install Docker Desktop first.
     echo    Visit: https://docs.docker.com/desktop/windows/
     pause
     exit /b 1
 )
 
-echo ✅ Docker is available
+echo Docker is available
 
 REM Create .env file if it doesn't exist
 if not exist .env (
-    echo 📝 Creating .env file from template...
+    echo Creating .env file from template...
     copy .env.example .env
     echo ⚠️  Please update the .env file with your actual API keys and configuration
 )
@@ -426,13 +429,13 @@ echo ⏳ Waiting for database to be ready...
 timeout /t 10 /nobreak >nul
 
 REM Check if database is ready
-echo 🔍 Checking database connection...
+echo Checking database connection...
 docker exec agentflow-postgres pg_isready -U user -d agentflow >nul 2>&1
 if %errorlevel% equ 0 (
-    echo ✅ Database is ready!
-    echo 📊 Database URL: postgres://user:password@localhost:15432/agentflow
+    echo Database is ready!
+    echo Database URL: postgres://user:password@localhost:15432/agentflow
     echo.
-    echo 🎉 Setup complete! You can now run your AgentFlow project:
+    echo Setup complete! You can now run your AgentFlow project:
     echo    go mod tidy
     echo    go run . -m "Your message here"
     echo.
@@ -441,7 +444,7 @@ if %errorlevel% equ 0 (
     echo    - Stop database: docker compose down
     echo    - Connect to database: docker exec -it agentflow-postgres psql -U user -d agentflow
 ) else (
-    echo ❌ Database is not ready. Please check the logs:
+    echo Database is not ready. Please check the logs:
     echo    docker logs agentflow-postgres
     pause
     exit /b 1
@@ -464,32 +467,32 @@ func (dcg *DockerComposeGenerator) generateWeaviateSetupScript() error {
 	setupScriptContent := `#!/bin/bash
 # AgentFlow Weaviate Setup Script
 
-echo "🚀 Setting up AgentFlow with Weaviate..."
+echo "Setting up AgentFlow with Weaviate..."
 
 # Check if Docker is installed
 if ! command -v docker &> /dev/null; then
-    echo "❌ Docker is not installed. Please install Docker first."
+    echo "Docker is not installed. Please install Docker first."
     echo "   Visit: https://docs.docker.com/get-docker/"
     exit 1
 fi
 
 # Check if Docker Compose is available
 if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
-    echo "❌ Docker Compose is not available. Please install Docker Compose."
+    echo "Docker Compose is not available. Please install Docker Compose."
     exit 1
 fi
 
-echo "✅ Docker and Docker Compose are available"
+echo "Docker and Docker Compose are available"
 
 # Create .env file if it doesn't exist
 if [ ! -f .env ]; then
-    echo "📝 Creating .env file from template..."
+    echo "Creating .env file from template..."
     cp .env.example .env
     echo "⚠️  Please update the .env file with your actual API keys and configuration"
 fi
 
 # Start Weaviate
-echo "🔍 Starting Weaviate..."
+echo "Starting Weaviate..."
 if command -v docker-compose &> /dev/null; then
     docker-compose up -d
 else
@@ -501,13 +504,13 @@ echo "⏳ Waiting for Weaviate to be ready..."
 sleep 15
 
 # Check if Weaviate is ready
-echo "🔍 Checking Weaviate connection..."
+echo "Checking Weaviate connection..."
 if curl -f http://localhost:8080/v1/.well-known/ready > /dev/null 2>&1; then
-    echo "✅ Weaviate is ready!"
+    echo "Weaviate is ready!"
     echo "🌐 Weaviate URL: http://localhost:8080"
-    echo "📊 Weaviate Console: http://localhost:8080/v1/console"
+    echo "Weaviate Console: http://localhost:8080/v1/console"
     echo ""
-    echo "🎉 Setup complete! You can now run your AgentFlow project:"
+    echo "Setup complete! You can now run your AgentFlow project:"
     echo "   go mod tidy"
     echo "   go run . -m \"Your message here\""
     echo ""
@@ -516,7 +519,7 @@ if curl -f http://localhost:8080/v1/.well-known/ready > /dev/null 2>&1; then
     echo "   - Stop Weaviate: docker-compose down"
     echo "   - Check status: curl http://localhost:8080/v1/.well-known/ready"
 else
-    echo "❌ Weaviate is not ready. Please check the logs:"
+    echo "Weaviate is not ready. Please check the logs:"
     echo "   docker logs agentflow-weaviate"
     exit 1
 fi
@@ -532,28 +535,28 @@ fi
 	windowsSetupContent := `@echo off
 REM AgentFlow Weaviate Setup Script for Windows
 
-echo 🚀 Setting up AgentFlow with Weaviate...
+echo Setting up AgentFlow with Weaviate...
 
 REM Check if Docker is installed
 docker --version >nul 2>&1
 if %errorlevel% neq 0 (
-    echo ❌ Docker is not installed. Please install Docker Desktop first.
+    echo Docker is not installed. Please install Docker Desktop first.
     echo    Visit: https://docs.docker.com/desktop/windows/
     pause
     exit /b 1
 )
 
-echo ✅ Docker is available
+echo Docker is available
 
 REM Create .env file if it doesn't exist
 if not exist .env (
-    echo 📝 Creating .env file from template...
+    echo Creating .env file from template...
     copy .env.example .env
     echo ⚠️  Please update the .env file with your actual API keys and configuration
 )
 
 REM Start Weaviate
-echo 🔍 Starting Weaviate...
+echo Starting Weaviate...
 docker compose up -d
 
 REM Wait for Weaviate to be ready
@@ -561,14 +564,14 @@ echo ⏳ Waiting for Weaviate to be ready...
 timeout /t 15 /nobreak >nul
 
 REM Check if Weaviate is ready
-echo 🔍 Checking Weaviate connection...
+echo Checking Weaviate connection...
 curl -f http://localhost:8080/v1/.well-known/ready >nul 2>&1
 if %errorlevel% equ 0 (
-    echo ✅ Weaviate is ready!
+    echo Weaviate is ready!
     echo 🌐 Weaviate URL: http://localhost:8080
-    echo 📊 Weaviate Console: http://localhost:8080/v1/console
+    echo Weaviate Console: http://localhost:8080/v1/console
     echo.
-    echo 🎉 Setup complete! You can now run your AgentFlow project:
+    echo Setup complete! You can now run your AgentFlow project:
     echo    go mod tidy
     echo    go run . -m "Your message here"
     echo.
@@ -577,7 +580,7 @@ if %errorlevel% equ 0 (
     echo    - Stop Weaviate: docker compose down
     echo    - Check status: curl http://localhost:8080/v1/.well-known/ready
 ) else (
-    echo ❌ Weaviate is not ready. Please check the logs:
+    echo Weaviate is not ready. Please check the logs:
     echo    docker logs agentflow-weaviate
     pause
     exit /b 1

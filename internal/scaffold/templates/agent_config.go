@@ -26,8 +26,7 @@ import (
 // configuration-driven agents created automatically from agentflow.toml.
 type Example{{.Agent.DisplayName}}Agent struct {
 	config core.ResolvedAgentConfig
-	llm    core.LLMProvider
-	{{if .Config.MemoryEnabled}}memory core.Memory{{end}}
+	llm    core.ModelProvider
 }
 
 // NewExample{{.Agent.DisplayName}}Agent creates a configuration-aware agent instance.
@@ -35,23 +34,25 @@ type Example{{.Agent.DisplayName}}Agent struct {
 // This shows how to create agents that use configuration instead of hardcoded values.
 func NewExample{{.Agent.DisplayName}}Agent(config core.ResolvedAgentConfig) (*Example{{.Agent.DisplayName}}Agent, error) {
 	// Initialize LLM provider from resolved configuration
-	llm, err := core.NewLLMProvider(config.LLM)
-	if err != nil {
-		return nil, fmt.Errorf("failed to initialize LLM provider: %w", err)
+	var llm core.ModelProvider
+	if config.LLMConfig != nil {
+		providerCfg := core.LLMProviderConfig{
+			Type:        config.LLMConfig.Provider,
+			Model:       config.LLMConfig.Model,
+			Temperature: config.LLMConfig.Temperature,
+			MaxTokens:   config.LLMConfig.MaxTokens,
+			HTTPTimeout: config.LLMConfig.Timeout,
+		}
+		var err error
+		llm, err = core.NewModelProviderFromConfig(providerCfg)
+		if err != nil {
+			return nil, fmt.Errorf("failed to initialize LLM provider: %w", err)
+		}
 	}
-
-	{{if .Config.MemoryEnabled}}
-	// Get memory instance from global context
-	memory := core.GetGlobalMemory()
-	if memory == nil {
-		return nil, fmt.Errorf("memory system not initialized")
-	}
-	{{end}}
 
 	return &Example{{.Agent.DisplayName}}Agent{
 		config: config,
 		llm:    llm,
-		{{if .Config.MemoryEnabled}}memory: memory,{{end}}
 	}, nil
 }
 
@@ -103,10 +104,11 @@ func (a *Example{{.Agent.DisplayName}}Agent) Run(ctx context.Context, event core
 	{{if .Config.MemoryEnabled}}
 	// Use memory for context if available
 	var contextInfo string
-	if a.memory != nil {
-		memories, err := a.memory.Search(ctx, messageStr, 3)
-		if err == nil && len(memories) > 0 {
-			contextInfo = fmt.Sprintf("\\n\\nRelevant context from memory:\\n%s", memories[0].Content)
+	mem := core.GetMemory(ctx)
+	if mem != nil { // GetMemory never returns nil (NoOpMemory), but keep guard
+		results, err := mem.Query(ctx, messageStr, 3)
+		if err == nil && len(results) > 0 {
+			contextInfo = fmt.Sprintf("\\n\\nRelevant context from memory:\\n%s", results[0].Content)
 		}
 	}
 	{{end}}
@@ -117,21 +119,22 @@ func (a *Example{{.Agent.DisplayName}}Agent) Run(ctx context.Context, event core
 		systemPrompt = fmt.Sprintf("You are %s, a helpful AI assistant.", a.config.Role)
 	}
 
-	// Create full prompt with configuration-driven system prompt
-	fullPrompt := fmt.Sprintf("%s\\n\\nUser: %s{{if .Config.MemoryEnabled}}%s{{end}}", 
-		systemPrompt, messageStr{{if .Config.MemoryEnabled}}, contextInfo{{end}})
+	// Build LLM prompt
+	userPrompt := fmt.Sprintf("User: %s{{if .Config.MemoryEnabled}}%s{{end}}", messageStr{{if .Config.MemoryEnabled}}, contextInfo{{end}})
+	prompt := core.Prompt{System: systemPrompt, User: userPrompt}
 
 	// Generate response using configured LLM settings
-	response, err := a.llm.Generate(ctx, fullPrompt)
+	resp, err := a.llm.Call(ctx, prompt)
 	if err != nil {
 		return core.AgentResult{}, fmt.Errorf("LLM generation failed: %w", err)
 	}
 
 	{{if .Config.MemoryEnabled}}
 	// Store interaction in memory if available
-	if a.memory != nil {
-		interactionContent := fmt.Sprintf("User: %s\\nAgent (%s): %s", messageStr, a.config.Role, response)
-		if err := a.memory.Store(ctx, interactionContent, fmt.Sprintf("%s-interaction", a.config.Role)); err != nil {
+	mem = core.GetMemory(ctx)
+	if mem != nil {
+		interactionContent := fmt.Sprintf("User: %s\\nAgent (%s): %s", messageStr, a.config.Role, resp.Content)
+		if err := mem.Store(ctx, interactionContent, fmt.Sprintf("%s-interaction", a.config.Role)); err != nil {
 			logger.Warn().Err(err).Msg("Failed to store interaction in memory")
 		}
 	}
@@ -140,7 +143,7 @@ func (a *Example{{.Agent.DisplayName}}Agent) Run(ctx context.Context, event core
 	// Return result with configuration-aware metadata
 	return core.AgentResult{
 		OutputState: core.NewState(map[string]interface{}{
-			"response":     response,
+			"response":     resp.Content,
 			"agent_role":   a.config.Role,
 			"capabilities": a.config.Capabilities,
 			"message":      messageStr,

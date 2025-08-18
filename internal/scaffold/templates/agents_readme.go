@@ -4,7 +4,7 @@ const AgentsReadmeTemplate = `# Agents Directory
 
 This directory contains all the agent implementations for your multi-agent system. Each agent represents a specific processing step or capability in your workflow.
 
-## 📁 Directory Structure
+## Directory Structure
 
 ` + "```" + `
 agents/
@@ -14,7 +14,7 @@ agents/
 └── README.md          # This file
 ` + "```" + `
 
-## 🤖 Agent Overview
+## Agent Overview
 
 {{range .Agents}}
 ### {{.DisplayName}} ({{.FileName}})
@@ -31,7 +31,7 @@ agents/
 
 {{end}}
 
-## 🛠️ Customization Guide
+## Customization Guide
 
 ### Adding New Agents
 
@@ -112,7 +112,7 @@ func (a *MyAgentHandler) formatOutput(output string) (string, error) {
 }
 ` + "```" + `
 
-## 🔄 Workflow Integration
+## Workflow Integration
 
 ### Sequential Mode
 Agents process input in order: Agent1 → Agent2 → Agent3...
@@ -134,7 +134,7 @@ Combination of collaborative and sequential processing
 - First phase: collaborative processing
 - Second phase: sequential processing of aggregated results
 
-## 🧠 Memory System Integration
+## Memory System Integration
 
 {{if .Config.MemoryEnabled}}
 Your agents are configured with memory capabilities:
@@ -164,7 +164,7 @@ err := a.memory.AddMessage(ctx, "assistant", "agent response")
 Memory system is not enabled for this project. To enable it, update your ` + "`agentflow.toml`" + ` configuration.
 {{end}}
 
-## 🔧 Tool Integration (MCP)
+## Tool Integration (MCP)
 
 {{if .Config.MCPEnabled}}
 Your agents can access external tools via MCP (Model Context Protocol):
@@ -195,7 +195,7 @@ if mcpManager != nil {
 MCP (Model Context Protocol) is not enabled for this project. To enable tool integration, update your ` + "`agentflow.toml`" + ` configuration.
 {{end}}
 
-## 🚀 Best Practices
+## Best Practices
 
 ### 1. Error Handling
 - Always handle errors gracefully
@@ -222,7 +222,7 @@ MCP (Model Context Protocol) is not enabled for this project. To enable tool int
 - Document your business logic and assumptions
 - Maintain this README as you add new agents
 
-## 🔍 Debugging
+## Debugging
 
 ### Common Issues
 

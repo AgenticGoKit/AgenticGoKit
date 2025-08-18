@@ -193,6 +193,9 @@ const (
 	ERROR
 )
 
+// track current log level even if no provider is active (for tests and defaults)
+var currentLogLevel LogLevel = INFO
+
 // Essential logging functions - implementations moved to internal packages
 func SetLogLevel(level LogLevel) {
 	// Delegate to active logging provider if available
@@ -200,6 +203,8 @@ func SetLogLevel(level LogLevel) {
 	if p.SetLevel != nil {
 		p.SetLevel(level)
 	}
+	// Always record the desired level locally
+	currentLogLevel = level
 }
 
 func GetLogLevel() LogLevel {
@@ -208,7 +213,8 @@ func GetLogLevel() LogLevel {
 	if p.GetLevel != nil {
 		return p.GetLevel()
 	}
-	return INFO
+	// Fallback to locally tracked level
+	return currentLogLevel
 }
 
 func Logger() CoreLogger {

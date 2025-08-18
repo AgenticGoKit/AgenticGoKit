@@ -33,7 +33,7 @@ func (mg *MermaidGeneratorImpl) GenerateCompositionDiagram(mode, name string, ag
 	builder.WriteString(fmt.Sprintf("%s %s\n", config.DiagramType, config.Direction))
 
 	// Input node
-	builder.WriteString("    INPUT[\"🚀 Input\"] --> ORCHESTRATOR{\"Orchestrator\"}\n")
+	builder.WriteString("    INPUT[\"Input\"] --> ORCHESTRATOR{\"Orchestrator\"}\n")
 
 	// Agent nodes
 	for i, agent := range agents {
@@ -47,7 +47,7 @@ func (mg *MermaidGeneratorImpl) GenerateCompositionDiagram(mode, name string, ag
 		builder.WriteString(fmt.Sprintf("    ORCHESTRATOR --> %s[\"%s\"]\n", agentID, agentLabel))
 
 		if config.ShowMetadata {
-			builder.WriteString(fmt.Sprintf("    %s --> PROCESSING_%d[\"⚙️ Processing\"]\n", agentID, i))
+			builder.WriteString(fmt.Sprintf("    %s --> PROCESSING_%d[\"Processing\"]\n", agentID, i))
 			builder.WriteString(fmt.Sprintf("    PROCESSING_%d --> OUTPUT_%d[\"📤 Output\"]\n", i, i))
 		} else {
 			builder.WriteString(fmt.Sprintf("    %s --> OUTPUT_%d[\"📤 Output\"]\n", agentID, i))
@@ -63,7 +63,7 @@ func (mg *MermaidGeneratorImpl) GenerateCompositionDiagram(mode, name string, ag
 			}
 			builder.WriteString(fmt.Sprintf("OUTPUT_%d", i))
 		}
-		builder.WriteString(" --> FINAL_OUTPUT[\"✅ Final Result\"]\n")
+		builder.WriteString(" --> FINAL_OUTPUT[\"Final Result\"]\n")
 	}
 
 	// Styling
@@ -86,7 +86,7 @@ func (mg *MermaidGeneratorImpl) GenerateOrchestrationDiagram(mode core.Orchestra
 	builder.WriteString(fmt.Sprintf("%s %s\n", config.DiagramType, config.Direction))
 
 	// Input
-	builder.WriteString("    INPUT[\"🚀 Input Event\"] --> ORCHESTRATOR{\"" + string(mode) + " Orchestrator\"}\n")
+	builder.WriteString("    INPUT[\"Input Event\"] --> ORCHESTRATOR{\"" + string(mode) + " Orchestrator\"}\n")
 
 	switch mode {
 	case core.OrchestrationRoute:
@@ -119,18 +119,18 @@ func (mg *MermaidGeneratorImpl) GenerateAgentDiagram(agent core.Agent, config co
 	agentName := agent.Name()
 
 	// Agent flow
-	builder.WriteString(fmt.Sprintf("    INPUT[\"📥 Input\"] --> VALIDATE[\"✅ Validate\"]\n"))
-	builder.WriteString(fmt.Sprintf("    VALIDATE --> PROCESS[\"%s\\n🤖 Process\"]\n", agentName))
+	builder.WriteString(fmt.Sprintf("    INPUT[\"Input\"] --> VALIDATE[\"Validate\"]\n"))
+	builder.WriteString(fmt.Sprintf("    VALIDATE --> PROCESS[\"%s\\nProcess\"]\n", agentName))
 
 	if config.ShowMetadata {
-		builder.WriteString(fmt.Sprintf("    PROCESS --> METRICS[\"📊 Metrics\"]\n"))
+		builder.WriteString(fmt.Sprintf("    PROCESS --> METRICS[\"Metrics\"]\n"))
 		builder.WriteString(fmt.Sprintf("    METRICS --> OUTPUT[\"📤 Output\"]\n"))
 	} else {
 		builder.WriteString(fmt.Sprintf("    PROCESS --> OUTPUT[\"📤 Output\"]\n"))
 	}
 
 	// Error handling
-	builder.WriteString(fmt.Sprintf("    VALIDATE -->|Error| ERROR[\"❌ Error Handler\"]\n"))
+	builder.WriteString(fmt.Sprintf("    VALIDATE -->|Error| ERROR[\"Error Handler\"]\n"))
 	builder.WriteString(fmt.Sprintf("    PROCESS -->|Error| ERROR\n"))
 	builder.WriteString(fmt.Sprintf("    ERROR --> OUTPUT\n"))
 
@@ -223,7 +223,7 @@ func (mg *MermaidGeneratorImpl) generateCollaboratePattern(builder *strings.Buil
 		builder.WriteString(agentID)
 		i++
 	}
-	builder.WriteString(" --> COLLECT[\"🔗 Collect Results\"] --> OUTPUT[\"📤 Final Result\"]\n")
+	builder.WriteString(" --> COLLECT[\"Collect Results\"] --> OUTPUT[\"Final Result\"]\n")
 }
 
 func (mg *MermaidGeneratorImpl) generateSequentialPattern(builder *strings.Builder, agents map[string]core.AgentHandler, config core.MermaidConfig) {
@@ -291,7 +291,7 @@ func (mg *MermaidGeneratorImpl) generateForkJoinPattern(builder *strings.Builder
 		}
 		builder.WriteString(fmt.Sprintf("BRANCH_%d", i+1))
 	}
-	builder.WriteString(" --> JOIN{\"🔗 Join\"} --> OUTPUT[\"📤 Output\"]\n")
+	builder.WriteString(" --> JOIN{\"Join\"} --> OUTPUT[\"Output\"]\n")
 }
 
 func (mg *MermaidGeneratorImpl) generateMapReducePattern(builder *strings.Builder, agents []core.Agent, config core.MermaidConfig) {

@@ -295,7 +295,7 @@ func runConfigGenerateCommand(cmd *cobra.Command, args []string) {
 	}
 
 	fmt.Printf("Generated configuration file: %s\n", outputFile)
-	fmt.Printf("📊 Extracted %d agent configurations\n", len(agentConfigs))
+	fmt.Printf("Extracted %d agent configurations\n", len(agentConfigs))
 	fmt.Println()
 	fmt.Println("Next steps:")
 	fmt.Println("  1. Review the generated configuration")
@@ -310,7 +310,7 @@ func runConfigMigrateCommand(cmd *cobra.Command, args []string) {
 		configFile = args[0]
 	}
 
-	fmt.Printf("🔄 Migrating configuration: %s\n", configFile)
+	fmt.Printf("Migrating configuration: %s\n", configFile)
 
 	if !pathExists(configFile) {
 		fmt.Printf("Configuration file not found: %s\n", configFile)
@@ -338,7 +338,7 @@ func runConfigMigrateCommand(cmd *cobra.Command, args []string) {
 	}
 
 	if migrateDryRun {
-		fmt.Println("🔍 Dry run complete - no changes applied")
+		fmt.Println("Dry run complete - no changes applied")
 		return
 	}
 
@@ -371,7 +371,7 @@ func runConfigOptimizeCommand(cmd *cobra.Command, args []string) {
 		configFile = args[0]
 	}
 
-	fmt.Printf("⚡ Optimizing configuration: %s\n", configFile)
+	fmt.Printf("Optimizing configuration: %s\n", configFile)
 	fmt.Printf("Focus area: %s\n", optimizeFocus)
 
 	if !pathExists(configFile) {
@@ -394,7 +394,7 @@ func runConfigOptimizeCommand(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	fmt.Printf("📊 Found %d optimization opportunities:\n", len(optimizations))
+	fmt.Printf("Found %d optimization opportunities:\n", len(optimizations))
 	for _, opt := range optimizations {
 		fmt.Printf("  - %s: %s\n", opt.Area, opt.Description)
 		if opt.Impact != "" {
