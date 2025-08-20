@@ -8,6 +8,11 @@
 //   - Basic MCP: QuickStartMCP(), NewMCPAgent()
 //   - Enhanced MCP: InitializeMCPWithCache(), NewMCPAgentWithCache()
 //   - Production MCP: InitializeProductionMCP(), NewProductionMCPAgent()
+//
+// NOTE: This package currently includes real implementations for manager/cache/registry.
+// Upcoming change will move those into plugins (stdio/tcp/websocket, cache backends),
+// keeping only interfaces + factory hooks here. A default plugin is available at
+// plugins/mcp/default to preserve current behavior via SetMCPManagerFactory.
 package core
 
 import (
@@ -16,14 +21,10 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"net"
 	"sort"
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/kunalkushwaha/mcp-navigator-go/pkg/client"
-	"github.com/kunalkushwaha/mcp-navigator-go/pkg/mcp"
 )
 
 // ==========================================
@@ -129,6 +130,13 @@ type FunctionToolRegistry interface {
 	List() []string
 	// CallTool executes a tool by name with the given arguments.
 	CallTool(ctx context.Context, name string, args map[string]any) (map[string]any, error)
+}
+
+// MCPToolExecutor is an optional interface that MCPManager implementations
+// can satisfy to enable direct tool execution via ExecuteMCPTool/Cache.
+// Transport plugins should implement this when they support direct calls.
+type MCPToolExecutor interface {
+	ExecuteTool(ctx context.Context, toolName string, args map[string]interface{}) (MCPToolResult, error)
 }
 
 // ==========================================
@@ -481,7 +489,7 @@ func InitializeMCP(config MCPConfig) error {
 	globalMCPManager = manager
 	mcpManagerInitialized = true
 
-	Logger().Info().Msg("MCP manager initialized successfully")
+	Logger().Debug().Msg("MCP manager initialized successfully")
 	return nil
 }
 
@@ -498,7 +506,7 @@ func InitializeMCPWithCache(mcpConfig MCPConfig, cacheConfig MCPCacheConfig) err
 		return fmt.Errorf("failed to initialize MCP cache: %w", err)
 	}
 
-	Logger().Info().Msg("MCP with cache initialized successfully")
+	Logger().Debug().Msg("MCP with cache initialized successfully")
 	return nil
 }
 
@@ -526,7 +534,7 @@ func InitializeProductionMCP(ctx context.Context, config ProductionConfig) error
 		}
 	}
 
-	Logger().Info().Msg("Production MCP initialized successfully")
+	Logger().Debug().Msg("Production MCP initialized successfully")
 	return nil
 }
 
@@ -549,7 +557,7 @@ func InitializeMCPCacheManager(config MCPCacheConfig) error {
 	globalCacheManager = manager
 	cacheManagerInitialized = true
 
-	Logger().Info().Msg("MCP cache manager initialized successfully")
+	Logger().Debug().Msg("MCP cache manager initialized successfully")
 	return nil
 }
 
@@ -570,7 +578,7 @@ func InitializeMCPToolRegistry() error {
 	}
 
 	globalMCPRegistry = registry
-	Logger().Info().Msg("MCP tool registry initialized successfully")
+	Logger().Debug().Msg("MCP tool registry initialized successfully")
 	return nil
 }
 
@@ -582,7 +590,7 @@ func InitializeMCPManager(config MCPConfig) error {
 
 // CreateMCPAgentWithLLMAndTools creates an MCP-aware agent with the specified configuration.
 // This is a comprehensive factory function for creating fully configured agents.
-func CreateMCPAgentWithLLMAndTools(ctx context.Context, name string, llmProvider ModelProvider, mcpConfig MCPConfig, agentConfig MCPAgentConfig) (*MCPAwareAgent, error) {
+func CreateMCPAgentWithLLMAndTools(ctx context.Context, name string, llmProvider ModelProvider, mcpConfig MCPConfig, agentConfig MCPAgentConfig) (MCPAwareAgent, error) {
 	// Initialize MCP if not already done
 	if err := InitializeMCP(mcpConfig); err != nil {
 		return nil, fmt.Errorf("failed to initialize MCP: %w", err)
@@ -615,7 +623,7 @@ func ShutdownMCPManager() error {
 
 // NewMCPAgent creates a basic MCP-aware agent with essential capabilities.
 // This is the simplest way to create an agent that can use MCP tools.
-func NewMCPAgent(name string, llmProvider ModelProvider) (*MCPAwareAgent, error) {
+func NewMCPAgent(name string, llmProvider ModelProvider) (MCPAwareAgent, error) {
 	manager := GetMCPManager()
 	if manager == nil {
 		return nil, fmt.Errorf("MCP manager not initialized - call InitializeMCP() first")
@@ -627,7 +635,7 @@ func NewMCPAgent(name string, llmProvider ModelProvider) (*MCPAwareAgent, error)
 
 // NewMCPAgentWithCache creates an MCP-aware agent with caching capabilities.
 // This provides better performance through intelligent result caching.
-func NewMCPAgentWithCache(name string, llmProvider ModelProvider) (*MCPAwareAgent, error) {
+func NewMCPAgentWithCache(name string, llmProvider ModelProvider) (MCPAwareAgent, error) {
 	manager := GetMCPManager()
 	if manager == nil {
 		return nil, fmt.Errorf("MCP manager not initialized - call InitializeMCPWithCache() first")
@@ -649,7 +657,7 @@ func NewMCPAgentWithCache(name string, llmProvider ModelProvider) (*MCPAwareAgen
 
 // NewProductionMCPAgent creates a production-ready MCP agent with all advanced features.
 // This provides enterprise-grade capabilities: connection pooling, retry logic, metrics, etc.
-func NewProductionMCPAgent(name string, llmProvider ModelProvider, config ProductionConfig) (*MCPAwareAgent, error) {
+func NewProductionMCPAgent(name string, llmProvider ModelProvider, config ProductionConfig) (MCPAwareAgent, error) {
 	manager := GetMCPManager()
 	if manager == nil {
 		return nil, fmt.Errorf("production MCP not initialized - call InitializeProductionMCP() first")
@@ -717,13 +725,11 @@ func ExecuteMCPTool(ctx context.Context, toolName string, args map[string]interf
 		}
 		return cacheManager.ExecuteWithCache(ctx, execution)
 	}
-	// Direct execution without cache using the real MCP manager
-	realManager, ok := manager.(*realMCPManager)
-	if !ok {
-		return MCPToolResult{}, fmt.Errorf("manager does not support direct tool execution")
+	// Direct execution without cache using a manager that supports MCPToolExecutor
+	if exec, ok := manager.(MCPToolExecutor); ok {
+		return exec.ExecuteTool(ctx, toolName, args)
 	}
-
-	return realManager.executeTool(ctx, toolName, args)
+	return MCPToolResult{}, fmt.Errorf("MCP manager does not support direct tool execution. Import a transport plugin (e.g., plugins/mcp/tcp, plugins/mcp/stdio, or plugins/mcp/websocket)")
 }
 
 // RegisterMCPToolsWithRegistry discovers and registers all available MCP tools with the registry.
@@ -744,7 +750,7 @@ func RegisterMCPToolsWithRegistry(ctx context.Context) error {
 	}
 	// Get available tools and register them
 	tools := manager.GetAvailableTools()
-	Logger().Info().Int("tool_count", len(tools)).Msg("Registering MCP tools with registry")
+	Logger().Debug().Int("tool_count", len(tools)).Msg("Registering MCP tools with registry")
 
 	// Register each MCP tool as a FunctionTool
 	for _, toolInfo := range tools {
@@ -763,7 +769,7 @@ func RegisterMCPToolsWithRegistry(ctx context.Context) error {
 		}
 	}
 
-	Logger().Info().Int("registered_tools", len(tools)).Msg("Completed MCP tool registration")
+	Logger().Debug().Int("registered_tools", len(tools)).Msg("Completed MCP tool registration")
 	return nil
 }
 
@@ -887,6 +893,56 @@ func DefaultProductionConfig() ProductionConfig {
 			MetricsEnabled:      true,
 			NotificationEnabled: true,
 		},
+	}
+}
+
+// ProductionMCPConfig maps ProductionConfig to MCPConfig for initialization.
+// This stays minimal in core; transport/cache plugins can extend behavior.
+func ProductionMCPConfig(cfg ProductionConfig) MCPConfig {
+	return MCPConfig{
+		EnableDiscovery:   false,
+		DiscoveryTimeout:  0,
+		ScanPorts:         nil,
+		ConnectionTimeout: cfg.ConnectionPool.ConnectionTimeout,
+		MaxRetries:        cfg.RetryPolicy.MaxAttempts,
+		RetryDelay:        cfg.RetryPolicy.BaseDelay,
+		Servers:           []MCPServerConfig{},
+		EnableCaching:     cfg.Cache.Type != "",
+		CacheTimeout:      cfg.Cache.TTL,
+		MaxConnections:    cfg.ConnectionPool.MaxConnections,
+	}
+}
+
+// ProductionCacheConfig maps CacheConfig to MCPCacheConfig minimally.
+func ProductionCacheConfig(cfg CacheConfig) MCPCacheConfig {
+	backend := "memory"
+	if strings.ToLower(cfg.Type) == "redis" {
+		backend = "redis"
+	}
+	return MCPCacheConfig{
+		Enabled:         cfg.Type != "",
+		DefaultTTL:      cfg.TTL,
+		MaxSize:         int64(cfg.MaxSize),
+		EvictionPolicy:  "lru",
+		CleanupInterval: cfg.CleanupInterval,
+		Backend:         backend,
+		BackendConfig:   map[string]string{},
+	}
+}
+
+// ProductionAgentConfig maps ProductionConfig to MCPAgentConfig.
+func ProductionAgentConfig(cfg ProductionConfig) MCPAgentConfig {
+	return MCPAgentConfig{
+		MaxToolsPerExecution: 5,
+		ToolSelectionTimeout: 30 * time.Second,
+		ParallelExecution:    true,
+		ExecutionTimeout:     60 * time.Second,
+		RetryFailedTools:     true,
+		MaxRetries:           cfg.RetryPolicy.MaxAttempts,
+		UseToolDescriptions:  true,
+		ResultInterpretation: true,
+		EnableCaching:        cfg.Cache.Type != "",
+		CacheConfig:          ProductionCacheConfig(cfg.Cache),
 	}
 }
 
@@ -1067,7 +1123,7 @@ func ShutdownMCP() error {
 		return fmt.Errorf("shutdown errors: %v", errors)
 	}
 
-	Logger().Info().Msg("MCP shutdown completed successfully")
+	Logger().Debug().Msg("MCP shutdown completed successfully")
 	return nil
 }
 
@@ -1090,26 +1146,48 @@ func SetMCPManagerFactory(factory MCPManagerFactory) {
 	mcpManagerFactory = factory
 }
 
+// MCPCacheManagerFactory creates MCPCacheManager implementations.
+type MCPCacheManagerFactory func(config MCPCacheConfig) (MCPCacheManager, error)
+
+var mcpCacheManagerFactory MCPCacheManagerFactory
+
+// SetMCPCacheManagerFactory sets the cache manager factory from a plugin.
+func SetMCPCacheManagerFactory(factory MCPCacheManagerFactory) { mcpCacheManagerFactory = factory }
+
+// FunctionToolRegistryFactory creates FunctionToolRegistry implementations.
+type FunctionToolRegistryFactory func() (FunctionToolRegistry, error)
+
+var functionToolRegistryFactory FunctionToolRegistryFactory
+
+// SetFunctionToolRegistryFactory sets the function tool registry factory from a plugin.
+func SetFunctionToolRegistryFactory(factory FunctionToolRegistryFactory) {
+	functionToolRegistryFactory = factory
+}
+
 // createMCPManagerInternal creates an MCP manager through the configured factory.
 func createMCPManagerInternal(config MCPConfig) (MCPManager, error) {
 	if mcpManagerFactory != nil {
 		// Use the real factory if it's been set
 		return mcpManagerFactory(config)
 	}
-	// Fallback to real implementation
-	return createRealMCPManager(config)
+	// No plugin has registered a factory yet; provide actionable guidance.
+	return nil, fmt.Errorf("no MCP manager plugin registered: add a blank import for github.com/kunalkushwaha/agenticgokit/plugins/mcp/default (or a transport plugin like /tcp, /stdio, or /websocket)")
 }
 
 // createMCPCacheManagerInternal creates a cache manager through internal factory.
 func createMCPCacheManagerInternal(config MCPCacheConfig) (MCPCacheManager, error) {
-	// Create a real cache manager implementation
-	return createRealMCPCacheManager(config)
+	if mcpCacheManagerFactory != nil {
+		return mcpCacheManagerFactory(config)
+	}
+	return nil, fmt.Errorf("no MCP cache manager plugin registered: add a blank import for github.com/kunalkushwaha/agenticgokit/plugins/mcp/default or a cache plugin")
 }
 
 // createMCPToolRegistryInternal creates a tool registry through internal factory.
 func createMCPToolRegistryInternal() (FunctionToolRegistry, error) {
-	// Create a real function tool registry implementation
-	return createRealFunctionToolRegistry(), nil
+	if functionToolRegistryFactory != nil {
+		return functionToolRegistryFactory()
+	}
+	return nil, fmt.Errorf("no MCP function tool registry plugin registered: add a blank import for github.com/kunalkushwaha/agenticgokit/plugins/mcp/default or a registry plugin")
 }
 
 // initializeProductionMetrics initializes production metrics.
@@ -1120,905 +1198,14 @@ func initializeProductionMetrics(config MetricsConfig) error {
 	}
 
 	// Initialize basic metrics tracking
-	Logger().Info().
+	Logger().Debug().
 		Int("port", config.Port).
 		Str("path", config.Path).
 		Bool("prometheus", config.PrometheusEnabled).
 		Msg("Initializing production metrics")
 
-	// TODO: Implement actual metrics collection with Prometheus
-	// This would include:
-	// - Request/response counters
-	// - Latency histograms
-	// - Error rate tracking
-	// - Tool usage statistics
-	// - Connection pool metrics
-	// - Cache hit/miss ratios
-
-	Logger().Info().Msg("Production metrics initialized successfully")
+	// Real metrics exporters (Prometheus, OTEL) should be provided by plugins.
 	return nil
-}
-
-// ProductionMCPConfig converts production config to basic MCP config.
-func ProductionMCPConfig(config ProductionConfig) MCPConfig {
-	// Convert production config to basic MCP config
-	mcpConfig := DefaultMCPConfig()
-
-	// Apply production settings
-	mcpConfig.ConnectionTimeout = config.ConnectionPool.ConnectionTimeout
-	mcpConfig.MaxRetries = config.RetryPolicy.MaxAttempts
-	mcpConfig.RetryDelay = config.RetryPolicy.BaseDelay
-	mcpConfig.MaxConnections = config.ConnectionPool.MaxConnections
-
-	// Enable caching if configured
-	if config.Cache.Type != "" {
-		mcpConfig.EnableCaching = true
-		mcpConfig.CacheTimeout = config.Cache.TTL
-	}
-
-	return mcpConfig
-}
-
-// ProductionCacheConfig converts production cache config to MCP cache config.
-func ProductionCacheConfig(config CacheConfig) MCPCacheConfig {
-	// Convert production cache config to MCP cache config
-	cacheConfig := DefaultMCPCacheConfig()
-
-	// Apply production cache settings
-	cacheConfig.Enabled = config.Type != ""
-	cacheConfig.DefaultTTL = config.TTL
-	cacheConfig.MaxSize = int64(config.MaxSize)
-	cacheConfig.Backend = config.Type
-	cacheConfig.CleanupInterval = config.CleanupInterval
-
-	// Configure Redis if enabled
-	if config.Redis.Enabled {
-		cacheConfig.Backend = "redis"
-		cacheConfig.BackendConfig["redis_addr"] = config.Redis.Address
-		cacheConfig.BackendConfig["redis_password"] = config.Redis.Password
-		cacheConfig.BackendConfig["redis_db"] = fmt.Sprintf("%d", config.Redis.Database)
-	}
-
-	return cacheConfig
-}
-
-// ProductionAgentConfig converts production config to agent config.
-func ProductionAgentConfig(config ProductionConfig) MCPAgentConfig {
-	// Convert production config to agent config
-	agentConfig := DefaultMCPAgentConfig()
-
-	// Apply production agent settings
-	agentConfig.EnableCaching = config.Cache.Type != ""
-	agentConfig.ExecutionTimeout = config.HealthCheck.Timeout * 2 // Allow 2x health check timeout
-	agentConfig.MaxRetries = config.RetryPolicy.MaxAttempts
-	agentConfig.MaxToolsPerExecution = 10 // Higher limit for production
-
-	// Enable more sophisticated settings for production
-	agentConfig.ParallelExecution = true
-	agentConfig.RetryFailedTools = true
-	agentConfig.UseToolDescriptions = true
-	agentConfig.ResultInterpretation = true
-
-	return agentConfig
-}
-
-// ==========================================
-// SECTION 13: REAL MCP IMPLEMENTATION (~200 lines)
-// ==========================================
-
-// realMCPManager provides a real MCP implementation that connects to actual servers
-type realMCPManager struct {
-	config           MCPConfig
-	connectedServers map[string]bool
-	tools            []MCPToolInfo
-	metrics          MCPMetrics
-	mu               sync.RWMutex
-}
-
-// createRealMCPManager creates a real MCP manager that can connect to actual servers
-func createRealMCPManager(config MCPConfig) (MCPManager, error) {
-	return &realMCPManager{
-		config:           config,
-		connectedServers: make(map[string]bool),
-		tools:            []MCPToolInfo{},
-	}, nil
-}
-
-func (m *realMCPManager) Connect(ctx context.Context, serverName string) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	// Find the server configuration
-	var serverConfig *MCPServerConfig
-	for _, server := range m.config.Servers {
-		if server.Name == serverName {
-			serverConfig = &server
-			break
-		}
-	}
-
-	if serverConfig == nil {
-		return fmt.Errorf("server %s not found in configuration", serverName)
-	}
-
-	// Actually try to connect to the real MCP server
-	if serverConfig.Type == "tcp" {
-		address := fmt.Sprintf("%s:%d", serverConfig.Host, serverConfig.Port)
-		Logger().Info().Str("server", serverName).Str("address", address).Msg("Connecting to MCP server")
-
-		conn, err := net.DialTimeout("tcp", address, 30*time.Second)
-		if err != nil {
-			Logger().Error().Str("server", serverName).Str("address", address).Err(err).Msg("Failed to connect to MCP server")
-			return fmt.Errorf("connection failed to %s: %w", address, err)
-		}
-
-		// For now, close the connection - a real implementation would keep it open
-		conn.Close()
-		m.connectedServers[serverName] = true
-		Logger().Info().Str("server", serverName).Str("address", address).Msg("Successfully connected to MCP server")
-		return nil
-	}
-
-	return fmt.Errorf("unsupported server type: %s", serverConfig.Type)
-}
-
-func (m *realMCPManager) Disconnect(serverName string) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	if m.connectedServers != nil {
-		delete(m.connectedServers, serverName)
-	}
-	Logger().Info().Str("server", serverName).Msg("Disconnected from MCP server")
-	return nil
-}
-
-func (m *realMCPManager) DisconnectAll() error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	if m.connectedServers != nil {
-		for serverName := range m.connectedServers {
-			delete(m.connectedServers, serverName)
-		}
-	}
-	Logger().Info().Msg("Disconnected from all MCP servers")
-	return nil
-}
-
-func (m *realMCPManager) DiscoverServers(ctx context.Context) ([]MCPServerInfo, error) {
-	var servers []MCPServerInfo
-
-	// Return the configured servers and try to connect to them
-	for _, server := range m.config.Servers {
-		if server.Enabled {
-			serverInfo := MCPServerInfo{
-				Name:    server.Name,
-				Type:    server.Type,
-				Address: server.Host,
-				Port:    server.Port,
-				Status:  "discovered",
-				Version: "1.0.0",
-			}
-
-			// Try to connect to see if it's actually available
-			if err := m.Connect(ctx, server.Name); err != nil {
-				serverInfo.Status = "unavailable"
-				Logger().Warn().Str("server", server.Name).Err(err).Msg("Server discovered but connection failed")
-			} else {
-				serverInfo.Status = "connected"
-				Logger().Info().Str("server", server.Name).Msg("Server discovered and connected successfully")
-			}
-
-			servers = append(servers, serverInfo)
-		}
-	}
-
-	Logger().Info().Int("count", len(servers)).Msg("Discovered MCP servers")
-	return servers, nil
-}
-
-func (m *realMCPManager) ListConnectedServers() []string {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-
-	var servers []string
-	if m.connectedServers != nil {
-		for server := range m.connectedServers {
-			servers = append(servers, server)
-		}
-	}
-	return servers
-}
-
-func (m *realMCPManager) GetServerInfo(serverName string) (*MCPServerInfo, error) {
-	for _, server := range m.config.Servers {
-		if server.Name == serverName {
-			status := "disconnected"
-			m.mu.RLock()
-			if m.connectedServers[serverName] {
-				status = "connected"
-			}
-			m.mu.RUnlock()
-
-			return &MCPServerInfo{
-				Name:    server.Name,
-				Type:    server.Type,
-				Address: server.Host,
-				Port:    server.Port,
-				Status:  status,
-				Version: "1.0.0",
-			}, nil
-		}
-	}
-	return nil, fmt.Errorf("server %s not found", serverName)
-}
-
-func (m *realMCPManager) RefreshTools(ctx context.Context) error {
-	// Clear existing tools
-	m.mu.Lock()
-	m.tools = []MCPToolInfo{}
-	m.mu.Unlock()
-
-	// For each configured server, try to connect and discover tools
-	for _, server := range m.config.Servers {
-		if server.Enabled {
-			Logger().Info().Str("server", server.Name).Msg("Attempting to connect and discover tools")
-
-			// First try to connect (this will handle its own locking)
-			if err := m.Connect(ctx, server.Name); err != nil {
-				Logger().Warn().Str("server", server.Name).Err(err).Msg("Failed to connect to server")
-				continue
-			}
-
-			// Check if connected and discover tools
-			m.mu.RLock()
-			isConnected := m.connectedServers[server.Name]
-			m.mu.RUnlock()
-
-			if isConnected {
-				serverTools, err := m.discoverToolsFromServer(ctx, server.Name)
-				if err != nil {
-					Logger().Warn().Str("server", server.Name).Err(err).Msg("Failed to discover tools from server")
-					continue
-				}
-
-				// Add tools with proper locking
-				m.mu.Lock()
-				m.tools = append(m.tools, serverTools...)
-				m.mu.Unlock()
-
-				Logger().Info().Str("server", server.Name).Int("tools_found", len(serverTools)).Msg("Successfully discovered tools")
-			}
-		}
-	}
-
-	m.mu.RLock()
-	toolCount := len(m.tools)
-	m.mu.RUnlock()
-
-	Logger().Info().Int("count", toolCount).Msg("Refreshed MCP tools from real servers")
-	return nil
-}
-
-// discoverToolsFromServer queries the actual MCP server for available tools
-func (m *realMCPManager) discoverToolsFromServer(ctx context.Context, serverName string) ([]MCPToolInfo, error) {
-	// Find the server config
-	var serverConfig *MCPServerConfig
-	for _, server := range m.config.Servers {
-		if server.Name == serverName {
-			serverConfig = &server
-			break
-		}
-	}
-
-	if serverConfig == nil {
-		return nil, fmt.Errorf("server %s not found", serverName)
-	}
-
-	Logger().Info().Str("server", serverName).Msg("Discovering tools from real MCP server")
-
-	// Connect to the MCP server using the navigator client
-	if serverConfig.Type == "tcp" {
-		address := fmt.Sprintf("%s:%d", serverConfig.Host, serverConfig.Port)
-
-		// Create MCP client using the builder pattern
-		mcpClient := client.NewClientBuilder().
-			WithTCPTransport(serverConfig.Host, serverConfig.Port).
-			WithName("agentflow-mcp-client").
-			WithVersion("1.0.0").
-			WithTimeout(30 * time.Second).
-			Build()
-
-		// Connect to the server
-		err := mcpClient.Connect(ctx)
-		if err != nil {
-			Logger().Error().Str("server", serverName).Str("address", address).Err(err).Msg("Failed to connect to MCP server")
-			return nil, fmt.Errorf("failed to connect to MCP server %s: %w", address, err)
-		}
-		defer mcpClient.Disconnect()
-
-		// Initialize the session
-		clientInfo := mcp.ClientInfo{
-			Name:    "agentflow-mcp-client",
-			Version: "1.0.0",
-		}
-		err = mcpClient.Initialize(ctx, clientInfo)
-		if err != nil {
-			Logger().Error().Str("server", serverName).Str("address", address).Err(err).Msg("Failed to initialize MCP session")
-			return nil, fmt.Errorf("failed to initialize MCP session with %s: %w", address, err)
-		}
-
-		// List available tools
-		tools, err := mcpClient.ListTools(ctx)
-		if err != nil {
-			Logger().Error().Str("server", serverName).Str("address", address).Err(err).Msg("Failed to list tools from MCP server")
-			return nil, fmt.Errorf("failed to list tools from MCP server %s: %w", address, err)
-		}
-
-		// Convert tools to our internal format
-		var mcpTools []MCPToolInfo
-		for _, tool := range tools {
-			mcpTool := MCPToolInfo{
-				Name:        tool.Name,
-				Description: tool.Description,
-				ServerName:  serverName,
-				Schema:      make(map[string]interface{}),
-			}
-
-			// Convert tool schema to our format
-			if tool.InputSchema != nil {
-				mcpTool.Schema = tool.InputSchema
-			}
-
-			mcpTools = append(mcpTools, mcpTool)
-		}
-
-		Logger().Info().Str("server", serverName).Int("tool_count", len(mcpTools)).Msg("Successfully discovered tools from MCP server")
-		return mcpTools, nil
-	}
-
-	return nil, fmt.Errorf("unsupported server type: %s", serverConfig.Type)
-}
-
-func (m *realMCPManager) GetAvailableTools() []MCPToolInfo {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	return m.tools
-}
-
-func (m *realMCPManager) GetToolsFromServer(serverName string) []MCPToolInfo {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-
-	var serverTools []MCPToolInfo
-	for _, tool := range m.tools {
-		if tool.ServerName == serverName {
-			serverTools = append(serverTools, tool)
-		}
-	}
-	return serverTools
-}
-
-func (m *realMCPManager) HealthCheck(ctx context.Context) map[string]MCPHealthStatus {
-	healthMap := make(map[string]MCPHealthStatus)
-
-	for _, server := range m.config.Servers {
-		if server.Enabled {
-			status := MCPHealthStatus{
-				Status:       "unknown",
-				ToolCount:    len(m.GetToolsFromServer(server.Name)),
-				ResponseTime: 0,
-				LastCheck:    time.Now(),
-			}
-
-			// Try to connect to get real health status
-			start := time.Now()
-			if err := m.Connect(ctx, server.Name); err != nil {
-				status.Status = "unhealthy"
-				status.Error = err.Error()
-				status.ResponseTime = 0
-			} else {
-				status.Status = "healthy"
-				status.ResponseTime = time.Since(start)
-			}
-
-			healthMap[server.Name] = status
-		}
-	}
-
-	return healthMap
-}
-
-func (m *realMCPManager) GetMetrics() MCPMetrics {
-	m.mu.RLock()
-	connectedCount := len(m.connectedServers)
-	toolCount := len(m.tools)
-	m.mu.RUnlock()
-
-	return MCPMetrics{
-		ConnectedServers: connectedCount,
-		TotalTools:       toolCount,
-		ToolExecutions:   0,
-		AverageLatency:   0,
-		ErrorRate:        0,
-		ServerMetrics:    make(map[string]MCPServerMetrics),
-	}
-}
-
-// ==========================================
-// SECTION 14: REAL CACHE IMPLEMENTATION (~300 lines)
-// ==========================================
-
-// realMCPCache provides a simple in-memory cache implementation
-type realMCPCache struct {
-	data map[string]*MCPCachedResult
-	mu   sync.RWMutex
-}
-
-func newRealMCPCache() *realMCPCache {
-	return &realMCPCache{
-		data: make(map[string]*MCPCachedResult),
-	}
-}
-
-func (c *realMCPCache) Get(ctx context.Context, key MCPCacheKey) (*MCPCachedResult, error) {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-
-	keyStr := c.keyToString(key)
-	result, exists := c.data[keyStr]
-	if !exists {
-		return nil, fmt.Errorf("cache miss")
-	}
-	// Check if expired
-	if time.Since(result.Timestamp) > result.TTL {
-		delete(c.data, keyStr)
-		return nil, fmt.Errorf("cache expired")
-	}
-
-	return result, nil
-}
-
-func (c *realMCPCache) Set(ctx context.Context, key MCPCacheKey, result MCPToolResult, ttl time.Duration) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	keyStr := c.keyToString(key)
-	cachedResult := &MCPCachedResult{
-		Key:       key,
-		Result:    result,
-		Timestamp: time.Now(),
-		TTL:       ttl,
-		Metadata:  make(map[string]interface{}),
-	}
-
-	c.data[keyStr] = cachedResult
-	return nil
-}
-
-func (c *realMCPCache) Delete(ctx context.Context, key MCPCacheKey) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	keyStr := c.keyToString(key)
-	delete(c.data, keyStr)
-	return nil
-}
-
-func (c *realMCPCache) Clear(ctx context.Context) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	c.data = make(map[string]*MCPCachedResult)
-	return nil
-}
-
-func (c *realMCPCache) Size(ctx context.Context) (int64, error) {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-
-	return int64(len(c.data)), nil
-}
-
-func (c *realMCPCache) Exists(ctx context.Context, key MCPCacheKey) (bool, error) {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-
-	keyStr := c.keyToString(key)
-	_, exists := c.data[keyStr]
-	return exists, nil
-}
-
-func (c *realMCPCache) TTL(ctx context.Context, key MCPCacheKey) (time.Duration, error) {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-
-	keyStr := c.keyToString(key)
-	result, exists := c.data[keyStr]
-	if !exists {
-		return 0, fmt.Errorf("key not found")
-	}
-	elapsed := time.Since(result.Timestamp)
-	remaining := result.TTL - elapsed
-	if remaining < 0 {
-		return 0, nil
-	}
-	return remaining, nil
-}
-
-func (c *realMCPCache) Stats(ctx context.Context) (MCPCacheStats, error) {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-
-	return MCPCacheStats{
-		HitCount:  0, // Would need to track this in real implementation
-		MissCount: 0, // Would need to track this in real implementation
-		HitRate:   0.0,
-		TotalKeys: int(len(c.data)),
-		TotalSize: 0, // Would need to calculate actual memory usage
-	}, nil
-}
-
-func (c *realMCPCache) Cleanup(ctx context.Context) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	// Remove expired entries
-	now := time.Now()
-	for key, result := range c.data {
-		if now.Sub(result.Timestamp) > result.TTL {
-			delete(c.data, key)
-		}
-	}
-
-	return nil
-}
-
-func (c *realMCPCache) Close() error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	// Clear all data
-	c.data = make(map[string]*MCPCachedResult)
-	return nil
-}
-
-// realMCPCacheManager provides a real cache manager implementation
-type realMCPCacheManager struct {
-	config MCPCacheConfig
-	caches map[string]MCPCache
-	mu     sync.RWMutex
-}
-
-func createRealMCPCacheManager(config MCPCacheConfig) (MCPCacheManager, error) {
-	return &realMCPCacheManager{
-		config: config,
-		caches: make(map[string]MCPCache),
-	}, nil
-}
-
-func (cm *realMCPCacheManager) GetCache(toolName, serverName string) MCPCache {
-	cm.mu.Lock()
-	defer cm.mu.Unlock()
-
-	key := fmt.Sprintf("%s:%s", toolName, serverName)
-	cache, exists := cm.caches[key]
-	if !exists {
-		cache = newRealMCPCache()
-		cm.caches[key] = cache
-	}
-
-	return cache
-}
-
-func (cm *realMCPCacheManager) ExecuteWithCache(ctx context.Context, execution MCPToolExecution) (MCPToolResult, error) {
-	// Generate cache key
-	args := make(map[string]string)
-	for k, v := range execution.Arguments {
-		args[k] = fmt.Sprintf("%v", v)
-	}
-
-	cacheKey := GenerateCacheKey(execution.ToolName, execution.ServerName, args)
-	cache := cm.GetCache(execution.ToolName, execution.ServerName)
-	// Try to get from cache first
-	if cm.config.Enabled {
-		if cached, err := cache.Get(ctx, cacheKey); err == nil {
-			Logger().Debug().
-				Str("tool", execution.ToolName).
-				Str("server", execution.ServerName).
-				Msg("Cache hit for tool execution")
-			return cached.Result, nil
-		}
-	}
-
-	// Execute the tool directly
-	manager := GetMCPManager()
-	if manager == nil {
-		return MCPToolResult{}, fmt.Errorf("MCP manager not initialized")
-	}
-
-	realManager, ok := manager.(*realMCPManager)
-	if !ok {
-		return MCPToolResult{}, fmt.Errorf("manager does not support tool execution")
-	}
-
-	result, err := realManager.executeTool(ctx, execution.ToolName, execution.Arguments)
-	if err != nil {
-		return result, err
-	}
-	// Cache the result if successful
-	if cm.config.Enabled && result.Success {
-		ttl := cm.config.DefaultTTL
-		if err := cache.Set(ctx, cacheKey, result, ttl); err != nil {
-			Logger().Warn().
-				Err(err).
-				Str("tool", execution.ToolName).
-				Msg("Failed to cache tool result")
-		} else {
-			Logger().Debug().
-				Str("tool", execution.ToolName).
-				Str("server", execution.ServerName).
-				Msg("Cached tool execution result")
-		}
-	}
-
-	return result, nil
-}
-
-func (cm *realMCPCacheManager) InvalidateByPattern(ctx context.Context, pattern string) error {
-	cm.mu.RLock()
-	defer cm.mu.RUnlock()
-
-	// Simple pattern matching - in production, might use regex
-	for key, cache := range cm.caches {
-		if strings.Contains(key, pattern) {
-			if err := cache.Clear(ctx); err != nil {
-				return fmt.Errorf("failed to clear cache for %s: %w", key, err)
-			}
-		}
-	}
-
-	return nil
-}
-
-func (cm *realMCPCacheManager) GetGlobalStats(ctx context.Context) (MCPCacheStats, error) {
-	cm.mu.RLock()
-	defer cm.mu.RUnlock()
-
-	var totalStats MCPCacheStats
-
-	for _, cache := range cm.caches {
-		stats, err := cache.Stats(ctx)
-		if err != nil {
-			continue
-		}
-
-		totalStats.HitCount += stats.HitCount
-		totalStats.MissCount += stats.MissCount
-		totalStats.TotalKeys += stats.TotalKeys
-		totalStats.TotalSize += stats.TotalSize
-	}
-
-	if totalStats.HitCount+totalStats.MissCount > 0 {
-		totalStats.HitRate = float64(totalStats.HitCount) / float64(totalStats.HitCount+totalStats.MissCount)
-	}
-
-	return totalStats, nil
-}
-
-func (cm *realMCPCacheManager) Shutdown() error {
-	cm.mu.Lock()
-	defer cm.mu.Unlock()
-
-	// Clear all caches
-	for _, cache := range cm.caches {
-		if err := cache.Clear(context.Background()); err != nil {
-			Logger().Warn().Err(err).Msg("Error clearing cache during shutdown")
-		}
-	}
-
-	cm.caches = make(map[string]MCPCache)
-	return nil
-}
-
-func (cm *realMCPCacheManager) Configure(config MCPCacheConfig) error {
-	cm.mu.Lock()
-	defer cm.mu.Unlock()
-
-	cm.config = config
-	return nil
-}
-
-// executeTool executes a tool directly using MCP protocol
-func (m *realMCPManager) executeTool(ctx context.Context, toolName string, args map[string]interface{}) (MCPToolResult, error) {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-
-	// Find which server has this tool
-	var targetServer string
-	for _, tool := range m.tools {
-		if tool.Name == toolName {
-			targetServer = tool.ServerName
-			break
-		}
-	}
-
-	if targetServer == "" {
-		return MCPToolResult{}, fmt.Errorf("tool %s not found in any connected server", toolName)
-	}
-
-	// Find server config
-	var serverConfig *MCPServerConfig
-	for _, server := range m.config.Servers {
-		if server.Name == targetServer {
-			serverConfig = &server
-			break
-		}
-	}
-
-	if serverConfig == nil {
-		return MCPToolResult{}, fmt.Errorf("server config for %s not found", targetServer)
-	}
-
-	// Connect to server if not already connected
-	if !m.connectedServers[targetServer] {
-		if err := m.Connect(ctx, targetServer); err != nil {
-			return MCPToolResult{}, fmt.Errorf("failed to connect to server %s: %w", targetServer, err)
-		}
-	}
-
-	// Execute tool via MCP client
-	mcpClient := client.NewClientBuilder().
-		WithTCPTransport(serverConfig.Host, serverConfig.Port).
-		WithName("agentflow-tool-executor").
-		WithVersion("1.0.0").
-		WithTimeout(30 * time.Second).
-		Build()
-
-	start := time.Now()
-
-	if err := mcpClient.Connect(ctx); err != nil {
-		return MCPToolResult{}, fmt.Errorf("failed to connect to MCP server: %w", err)
-	}
-	defer mcpClient.Disconnect()
-
-	// Initialize the session
-	clientInfo := mcp.ClientInfo{
-		Name:    "agentflow-tool-executor",
-		Version: "1.0.0",
-	}
-	if err := mcpClient.Initialize(ctx, clientInfo); err != nil {
-		return MCPToolResult{}, fmt.Errorf("failed to initialize MCP session: %w", err)
-	}
-
-	// Call the tool
-	result, err := mcpClient.CallTool(ctx, toolName, args)
-	if err != nil {
-		return MCPToolResult{}, fmt.Errorf("tool execution failed: %w", err)
-	}
-
-	duration := time.Since(start)
-
-	// Convert MCP result to our result type
-	mcpResult := MCPToolResult{
-		ToolName:   toolName,
-		ServerName: targetServer,
-		Success:    !result.IsError,
-		Content:    []MCPContent{},
-		Error:      "",
-		Duration:   duration,
-	}
-
-	// Convert content
-	for _, content := range result.Content {
-		mcpContent := MCPContent{
-			Type:     content.Type,
-			Text:     content.Text,
-			MimeType: content.MimeType,
-		}
-		if content.Data != "" {
-			mcpContent.Data = content.Data
-		}
-		mcpResult.Content = append(mcpResult.Content, mcpContent)
-	}
-
-	if result.IsError {
-		mcpResult.Error = "Tool execution returned error"
-		mcpResult.Success = false
-	}
-
-	Logger().Info().
-		Str("tool", toolName).
-		Str("server", targetServer).
-		Bool("success", mcpResult.Success).
-		Dur("duration", duration).
-		Msg("Tool execution completed")
-
-	return mcpResult, nil
-}
-
-// ==========================================
-// SECTION 15: REAL FUNCTION TOOL REGISTRY (~150 lines)
-// ==========================================
-
-// realFunctionToolRegistry provides a simple in-memory function tool registry
-type realFunctionToolRegistry struct {
-	tools map[string]FunctionTool
-	mu    sync.RWMutex
-}
-
-func createRealFunctionToolRegistry() FunctionToolRegistry {
-	return &realFunctionToolRegistry{
-		tools: make(map[string]FunctionTool),
-	}
-}
-
-func (r *realFunctionToolRegistry) Register(tool FunctionTool) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	if tool == nil {
-		return fmt.Errorf("tool cannot be nil")
-	}
-
-	name := tool.Name()
-	if name == "" {
-		return fmt.Errorf("tool name cannot be empty")
-	}
-
-	if _, exists := r.tools[name]; exists {
-		return fmt.Errorf("tool %s already registered", name)
-	}
-
-	r.tools[name] = tool
-	Logger().Info().Str("tool", name).Msg("Registered function tool")
-	return nil
-}
-
-func (r *realFunctionToolRegistry) Get(name string) (FunctionTool, bool) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	tool, exists := r.tools[name]
-	return tool, exists
-}
-
-func (r *realFunctionToolRegistry) List() []string {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	names := make([]string, 0, len(r.tools))
-	for name := range r.tools {
-		names = append(names, name)
-	}
-
-	return names
-}
-
-func (r *realFunctionToolRegistry) CallTool(ctx context.Context, name string, args map[string]any) (map[string]any, error) {
-	r.mu.RLock()
-	tool, exists := r.tools[name]
-	r.mu.RUnlock()
-
-	if !exists {
-		return nil, fmt.Errorf("tool %s not found", name)
-	}
-
-	result, err := tool.Call(ctx, args)
-	if err != nil {
-		Logger().Error().
-			Str("tool", name).
-			Err(err).
-			Msg("Tool execution failed")
-		return nil, fmt.Errorf("tool execution failed: %w", err)
-	}
-
-	Logger().Debug().
-		Str("tool", name).
-		Msg("Tool executed successfully")
-
-	return result, nil
 }
 
 // mcpFunctionTool wraps an MCP tool as a FunctionTool
@@ -2039,13 +1226,13 @@ func (t *mcpFunctionTool) Name() string {
 }
 
 func (t *mcpFunctionTool) Call(ctx context.Context, args map[string]any) (map[string]any, error) {
-	// Execute the MCP tool
-	realManager, ok := t.manager.(*realMCPManager)
+	// Execute the MCP tool using a manager that implements MCPToolExecutor
+	exec, ok := t.manager.(MCPToolExecutor)
 	if !ok {
-		return nil, fmt.Errorf("manager does not support tool execution")
+		return nil, fmt.Errorf("MCP manager does not support direct tool execution. Import a transport plugin (e.g., plugins/mcp/tcp, plugins/mcp/stdio, or plugins/mcp/websocket)")
 	}
 
-	result, err := realManager.executeTool(ctx, t.toolInfo.Name, args)
+	result, err := exec.ExecuteTool(ctx, t.toolInfo.Name, args)
 	if err != nil {
 		return nil, err
 	}
@@ -2076,32 +1263,7 @@ func (t *mcpFunctionTool) Call(ctx context.Context, args map[string]any) (map[st
 	return response, nil
 }
 
-func (c *realMCPCache) keyToString(key MCPCacheKey) string {
-	return fmt.Sprintf("%s:%s:%s", key.ToolName, key.ServerName, key.Hash)
-}
-
-// ==========================================
-// SECTION 16: REAL MCP INITIALIZATION (~50 lines)
-// ==========================================
-
-// InitializeRealMCPServers initializes real MCP implementation that can connect to actual servers
-// This is a public API that applications can call to enable real MCP functionality
-func InitializeRealMCPServers() error {
-	// Set up a factory function that creates real MCP managers
-	SetMCPManagerFactory(func(config MCPConfig) (MCPManager, error) {
-		return createRealMCPManager(config)
-	})
-
-	Logger().Info().Msg("Real MCP server implementation initialized")
-	return nil
-}
-
-// init function to automatically set up real MCP implementation when available
-func init() {
-	// This will be called when the core package is initialized
-	// If the factory package is available, it will register itself
-	//Logger().Debug().Msg("Core MCP package initialized")
-}
+// (Real MCP initialization moved to transport plugins under plugins/mcp/*)
 
 // ==========================================
 // SECTION: MCP UTILITY FUNCTIONS FOR AGENTS
@@ -2120,7 +1282,7 @@ func FormatToolsPromptForLLM(tools []MCPToolInfo) string {
 		prompt += fmt.Sprintf("\n**%s**: %s\n", tool.Name, tool.Description)
 
 		// Include the schema information from MCP discovery
-		if tool.Schema != nil && len(tool.Schema) > 0 {
+		if len(tool.Schema) > 0 {
 			prompt += "Schema: "
 			schemaStr := FormatSchemaForLLM(tool.Schema)
 			prompt += schemaStr + "\n"
@@ -2304,4 +1466,147 @@ func init() {
 	// This will be called when the core package is initialized
 	// If the factory package is available, it will register itself
 	//Logger().Debug().Msg("Core MCP package initialized")
+}
+
+// =============================================================================
+// MCP AGENT TYPES (MINIMAL PUBLIC INTERFACE)
+// =============================================================================
+
+// MCPAgentConfig holds configuration for MCP-aware agents.
+type MCPAgentConfig struct {
+	// Tool selection settings
+	MaxToolsPerExecution int           `toml:"max_tools_per_execution"`
+	ToolSelectionTimeout time.Duration `toml:"tool_selection_timeout"`
+
+	// Execution settings
+	ParallelExecution bool          `toml:"parallel_execution"`
+	ExecutionTimeout  time.Duration `toml:"execution_timeout"`
+	RetryFailedTools  bool          `toml:"retry_failed_tools"`
+	MaxRetries        int           `toml:"max_retries"`
+
+	// LLM integration settings
+	UseToolDescriptions  bool   `toml:"use_tool_descriptions"`
+	ToolSelectionPrompt  string `toml:"tool_selection_prompt"`
+	ResultInterpretation bool   `toml:"result_interpretation"`
+
+	// Cache settings
+	EnableCaching bool           `toml:"enable_caching"`
+	CacheConfig   MCPCacheConfig `toml:"cache"`
+}
+
+// MCPAwareAgent interface for MCP-enabled agents
+type MCPAwareAgent interface {
+	Agent
+	GetMCPManager() MCPManager
+	GetConfig() MCPAgentConfig
+}
+
+// DefaultMCPAgentConfig returns a default configuration for MCP agents.
+func DefaultMCPAgentConfig() MCPAgentConfig {
+	return MCPAgentConfig{
+		MaxToolsPerExecution: 5,
+		ToolSelectionTimeout: 30 * time.Second,
+		ParallelExecution:    false,
+		ExecutionTimeout:     60 * time.Second,
+		RetryFailedTools:     true,
+		MaxRetries:           3,
+		UseToolDescriptions:  true,
+		ResultInterpretation: true,
+		EnableCaching:        true,
+		CacheConfig:          DefaultMCPCacheConfig(),
+	}
+}
+
+// NewMCPAwareAgent creates a new MCP-aware agent
+// Implementation is provided by internal packages
+func NewMCPAwareAgent(name string, llmProvider ModelProvider, mcpManager MCPManager, config MCPAgentConfig) MCPAwareAgent {
+	if mcpAwareAgentFactory != nil {
+		return mcpAwareAgentFactory(name, llmProvider, mcpManager, config)
+	}
+	Logger().Warn().Msg("Using basic MCP agent - import internal/mcp for full functionality")
+	return &basicMCPAwareAgent{name: name, config: config}
+}
+
+// RegisterMCPAwareAgentFactory registers the MCP-aware agent factory function
+func RegisterMCPAwareAgentFactory(factory func(string, ModelProvider, MCPManager, MCPAgentConfig) MCPAwareAgent) {
+	mcpAwareAgentFactory = factory
+}
+
+var mcpAwareAgentFactory func(string, ModelProvider, MCPManager, MCPAgentConfig) MCPAwareAgent
+
+// basicMCPAwareAgent provides a minimal implementation
+type basicMCPAwareAgent struct {
+	name   string
+	config MCPAgentConfig
+}
+
+func (a *basicMCPAwareAgent) Run(ctx context.Context, inputState State) (State, error) {
+	return inputState, nil
+}
+
+func (a *basicMCPAwareAgent) HandleEvent(ctx context.Context, event Event, state State) (AgentResult, error) {
+	startTime := time.Now()
+	outputState, err := a.Run(ctx, state)
+	endTime := time.Now()
+
+	result := AgentResult{
+		OutputState: outputState,
+		StartTime:   startTime,
+		EndTime:     endTime,
+		Duration:    endTime.Sub(startTime),
+	}
+
+	if err != nil {
+		result.Error = err.Error()
+	}
+
+	return result, nil
+}
+
+func (a *basicMCPAwareAgent) Name() string {
+	return a.name
+}
+
+func (a *basicMCPAwareAgent) GetRole() string {
+	return "mcp_basic_agent"
+}
+
+func (a *basicMCPAwareAgent) GetDescription() string {
+	return fmt.Sprintf("Basic MCP-aware agent: %s", a.name)
+}
+
+func (a *basicMCPAwareAgent) GetCapabilities() []string {
+	return []string{"mcp_processing", "basic_processing"}
+}
+
+func (a *basicMCPAwareAgent) GetSystemPrompt() string {
+	return "You are a basic MCP-aware agent."
+}
+
+func (a *basicMCPAwareAgent) GetTimeout() time.Duration {
+	return 30 * time.Second
+}
+
+func (a *basicMCPAwareAgent) IsEnabled() bool {
+	return true
+}
+
+func (a *basicMCPAwareAgent) GetLLMConfig() *ResolvedLLMConfig {
+	return nil
+}
+
+func (a *basicMCPAwareAgent) Initialize(ctx context.Context) error {
+	return nil
+}
+
+func (a *basicMCPAwareAgent) Shutdown(ctx context.Context) error {
+	return nil
+}
+
+func (a *basicMCPAwareAgent) GetMCPManager() MCPManager {
+	return nil
+}
+
+func (a *basicMCPAwareAgent) GetConfig() MCPAgentConfig {
+	return a.config
 }

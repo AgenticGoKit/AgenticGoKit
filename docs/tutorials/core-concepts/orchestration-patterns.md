@@ -2,7 +2,7 @@
 
 ## Overview
 
-AgenticGoKit provides powerful multi-agent orchestration patterns that enable you to build complex workflows with multiple agents working together. The system supports various orchestration modes and includes built-in workflow visualization using Mermaid diagrams.
+AgenticGoKit provides powerful multi-agent orchestration patterns that enable you to build complex workflows with multiple agents working together. The system supports various orchestration modes and includes workflow visualization via the CLI using Mermaid diagrams.
 
 ## Prerequisites
 
@@ -29,7 +29,6 @@ agentcli create research-system \
   --orchestration-mode collaborative \
   --agents 3 \
   --orchestration-timeout 60 \
-  --visualize \
   --mcp-enabled
 
 # Sequential pipeline - agents process one after another
@@ -37,23 +36,21 @@ agentcli create data-pipeline \
   --orchestration-mode sequential \
   --sequential-agents "collector,processor,formatter" \
   --orchestration-timeout 45 \
-  --visualize-output "docs/diagrams"
+  
 
 # Loop-based workflow - single agent repeats with conditions
 agentcli create quality-loop \
   --orchestration-mode loop \
   --loop-agent "quality-checker" \
   --max-iterations 5 \
-  --orchestration-timeout 120 \
-  --visualize
+  --orchestration-timeout 120
 
 # Mixed orchestration - combine collaborative and sequential
 agentcli create complex-workflow \
   --orchestration-mode mixed \
   --collaborative-agents "analyzer,validator" \
   --sequential-agents "processor,reporter" \
-  --orchestration-timeout 90 \
-  --visualize
+  --orchestration-timeout 90
 ```
 
 All generated projects use **configuration-based orchestration** via `agentflow.toml`, making it easy to modify orchestration patterns without changing code.
@@ -66,7 +63,7 @@ AgentFlow supports configuration-driven orchestration through `agentflow.toml` f
 
 ```toml
 [orchestration]
-mode = "sequential"                    # sequential, collaborative, loop, mixed, route
+mode = "sequential"                    # route, collaborative, sequential, loop, mixed
 timeout_seconds = 30                   # Timeout for orchestration operations
 max_iterations = 5                     # Maximum iterations for loop mode
 
@@ -86,49 +83,23 @@ loop_agent = "processor"
 
 ### Using Configuration-Based Runners
 
-Generated projects automatically use configuration-based orchestration:
+Generated projects use configuration-based orchestration:
 
 ```go
-// Load configuration from agentflow.toml
-config, err := core.LoadConfigFromWorkingDir()
-if err != nil {
-    log.Fatal(err)
-}
+// Create runner and orchestrator from agentflow.toml (route/collab/seq/loop/mixed)
+runner, err := core.NewRunnerFromConfig("agentflow.toml")
+if err != nil { log.Fatal(err) }
 
-// Create provider from configuration
-provider, err := config.InitializeProvider()
-if err != nil {
-    log.Fatal(err)
-}
+// Register your agents by name
+_ = runner.RegisterAgent("agent1", agent1)
+_ = runner.RegisterAgent("agent2", agent2)
+_ = runner.RegisterAgent("agent3", agent3)
 
-// Create agents
-agents := map[string]core.AgentHandler{
-    "agent1": core.NewLLMAgent("agent1", provider),
-    "agent2": core.NewLLMAgent("agent2", provider),
-    "agent3": core.NewLLMAgent("agent3", provider),
-}
-
-// Create runner with orchestration from config
-var runner core.Runner
-switch config.Orchestration.Mode {
-case "collaborative":
-    runner = core.CreateCollaborativeRunner(agents, 
-        time.Duration(config.Orchestration.TimeoutSeconds)*time.Second)
-case "sequential":
-    runner = core.NewOrchestrationBuilder(core.OrchestrationSequential).
-        WithAgents(agents).
-        WithTimeout(time.Duration(config.Orchestration.TimeoutSeconds)*time.Second).
-        Build()
-default:
-    runner = core.CreateRouteRunner(agents)
-}
-
-// Start the runner
+// Start/Emit/Stop lifecycle
 ctx := context.Background()
-if err := runner.Start(ctx); err != nil {
-    log.Fatal(err)
-}
+_ = runner.Start(ctx)
 defer runner.Stop()
+_ = runner.Emit(core.NewEvent("agent1", core.EventData{"message": "hello"}, map[string]string{"route":"agent1"}))
 ```
 
 ### Benefits of Configuration-Based Approach
@@ -147,13 +118,15 @@ defer runner.Stop()
 
 ```go
 // Route orchestration (default)
-runner := core.NewRunner()
-runner.RegisterAgent("research", researchAgent)
-runner.RegisterAgent("analysis", analysisAgent)
+runner, _ := core.NewRunnerFromConfig("agentflow.toml")
+_ = runner.RegisterAgent("research", researchAgent)
+_ = runner.RegisterAgent("analysis", analysisAgent)
 
 // Events are routed to specific agents based on routing metadata
-event := core.NewEvent("research", data)
-event.SetMeta(core.RouteMetadataKey, "research") // Routes to research agent
+evt := core.NewEvent("research", data, map[string]string{"route":"research"})
+_ = runner.Start(context.Background())
+defer runner.Stop()
+_ = runner.Emit(evt)
 ```
 
 **Characteristics**:
@@ -170,17 +143,14 @@ Think of collaborative orchestration like a research team where multiple experts
 
 ```go
 // Collaborative orchestration - all agents process the same event
-agents := map[string]core.AgentHandler{
-    "researcher": NewResearchAgent(),
-    "analyzer":   NewAnalysisAgent(),
-    "validator":  NewValidationAgent(),
-}
+runner, _ := core.NewRunnerFromConfig("agentflow.toml") // [orchestration].mode = "collaborative"
+_ = runner.RegisterAgent("researcher", NewResearchAgent())
+_ = runner.RegisterAgent("analyzer", NewAnalysisAgent())
+_ = runner.RegisterAgent("validator", NewValidationAgent())
 
-runner := core.CreateCollaborativeRunner(agents, 30*time.Second)
-
-// All agents process the event in parallel
-event := core.NewEvent("analyze", data)
-result, err := runner.ProcessEvent(ctx, event)
+_ = runner.Start(context.Background())
+defer runner.Stop()
+_ = runner.Emit(core.NewEvent("researcher", data, map[string]string{"route":"researcher"}))
 ```
 
 **Flow Diagram**:
@@ -221,14 +191,10 @@ Think of sequential orchestration like an assembly line where each worker (agent
 
 ```go
 // Sequential orchestration - agents process in order
-runner := core.NewOrchestrationBuilder(core.OrchestrationSequential).
-    WithAgents(map[string]core.AgentHandler{
-        "collector":  NewCollectorAgent(),
-        "processor":  NewProcessorAgent(),
-        "formatter":  NewFormatterAgent(),
-    }).
-    WithSequentialOrder([]string{"collector", "processor", "formatter"}).
-    Build()
+runner, _ := core.NewRunnerFromConfig("agentflow.toml") // [orchestration].mode = "sequential"
+_ = runner.RegisterAgent("collector", NewCollectorAgent())
+_ = runner.RegisterAgent("processor", NewProcessorAgent())
+_ = runner.RegisterAgent("formatter", NewFormatterAgent())
 ```
 
 **Flow Diagram**:
@@ -256,10 +222,8 @@ runner := core.NewOrchestrationBuilder(core.OrchestrationSequential).
 
 ```go
 // Loop orchestration - single agent repeats until conditions are met
-runner := core.NewOrchestrationBuilder(core.OrchestrationLoop).
-    WithAgent("quality-checker", NewQualityCheckerAgent()).
-    WithMaxIterations(10).
-    Build()
+runner, _ := core.NewRunnerFromConfig("agentflow.toml") // [orchestration].mode = "loop"
+_ = runner.RegisterAgent("quality-checker", NewQualityCheckerAgent())
 ```
 
 **Characteristics**:
@@ -274,13 +238,11 @@ runner := core.NewOrchestrationBuilder(core.OrchestrationLoop).
 
 ```go
 // Mixed orchestration - combines collaborative and sequential patterns
-runner := core.NewOrchestrationBuilder(core.OrchestrationMixed).
-    WithCollaborativeAgents(map[string]core.AgentHandler{
-        "analyzer":  NewAnalyzerAgent(),
-        "validator": NewValidatorAgent(),
-    }).
-    WithSequentialAgents([]string{"processor", "reporter"}).
-    Build()
+runner, _ := core.NewRunnerFromConfig("agentflow.toml") // [orchestration].mode = "mixed"
+_ = runner.RegisterAgent("analyzer", NewAnalyzerAgent())
+_ = runner.RegisterAgent("validator", NewValidatorAgent())
+_ = runner.RegisterAgent("processor", NewProcessorAgent())
+_ = runner.RegisterAgent("reporter", NewReporterAgent())
 ```
 
 **Characteristics**:
@@ -294,6 +256,10 @@ runner := core.NewOrchestrationBuilder(core.OrchestrationMixed).
 You can configure orchestration patterns using `agentflow.toml`:
 
 ```toml
+[llm]
+provider = "ollama"
+model = "gemma3:1b"
+
 [orchestration]
 mode = "collaborative"  # route, collaborative, sequential, loop, mixed
 timeout_seconds = 30
@@ -313,18 +279,13 @@ loop_agent = "quality-checker"
 Then load the configuration:
 
 ```go
-runner, err := core.NewRunnerFromConfig("agentflow.toml")
-if err != nil {
-    log.Fatal(err)
-}
-
-// Register your agents
-runner.RegisterAgent("collector", collectorAgent)
-runner.RegisterAgent("processor", processorAgent)
+runner, _ := core.NewRunnerFromConfig("agentflow.toml")
+_ = runner.RegisterAgent("collector", collectorAgent)
+_ = runner.RegisterAgent("processor", processorAgent)
 // ... register other agents
-
-// The orchestration mode is handled automatically
-result, err := runner.ProcessEvent(ctx, event)
+_ = runner.Start(context.Background())
+defer runner.Stop()
+_ = runner.Emit(core.NewEvent("collector", data, nil))
 ```
 
 ## Pattern Selection Guide
@@ -359,23 +320,9 @@ result, err := runner.ProcessEvent(ctx, event)
 Different patterns handle errors differently:
 
 ```go
-// Collaborative: Continues if some agents succeed
-runner := core.CreateCollaborativeRunner(agents, timeout).
-    WithFailureThreshold(0.5) // Continue if 50% succeed
-
-// Sequential: Stops on first failure
-runner := core.NewOrchestrationBuilder(core.OrchestrationSequential).
-    WithRetryPolicy(&core.RetryPolicy{
-        MaxRetries: 3,
-        BackoffFactor: 2.0,
-    }).
-    Build()
-
-// Loop: Can retry iterations
-runner := core.NewOrchestrationBuilder(core.OrchestrationLoop).
-    WithMaxIterations(10).
-    WithRetryPolicy(retryPolicy).
-    Build()
+// Configure failure thresholds, retries, and timeouts in agentflow.toml.
+// Build runner from config and use Start/Emit/Stop lifecycle.
+runner, _ := core.NewRunnerFromConfig("agentflow.toml")
 ```
 
 ## Monitoring and Observability
@@ -410,75 +357,34 @@ runner.RegisterCallback(core.HookAfterOrchestration, func(ctx context.Context, r
 ### Research and Analysis Workflow
 ```go
 // Collaborative for research, sequential for reporting
-runner := core.NewOrchestrationBuilder(core.OrchestrationMixed).
-    WithCollaborativeAgents(map[string]core.AgentHandler{
-        "web-researcher": webResearchAgent,
-        "doc-analyzer":   docAnalysisAgent,
-        "fact-checker":   factCheckAgent,
-    }).
-    WithSequentialAgents([]string{"synthesizer", "formatter"}).
-    Build()
+runner, _ := core.NewRunnerFromConfig("agentflow.toml")
+_ = runner.RegisterAgent("web-researcher", webResearchAgent)
+_ = runner.RegisterAgent("doc-analyzer", docAnalysisAgent)
+_ = runner.RegisterAgent("fact-checker", factCheckAgent)
+_ = runner.RegisterAgent("synthesizer", synthesizer)
+_ = runner.RegisterAgent("formatter", formatter)
 ```
 
 ### Data Processing Pipeline
 ```go
 // Sequential processing with error handling
-runner := core.NewOrchestrationBuilder(core.OrchestrationSequential).
-    WithAgents(map[string]core.AgentHandler{
-        "validator":  dataValidatorAgent,
-        "transformer": dataTransformerAgent,
-        "enricher":   dataEnricherAgent,
-        "publisher":  dataPublisherAgent,
-    }).
-    WithSequentialOrder([]string{"validator", "transformer", "enricher", "publisher"}).
-    WithRetryPolicy(&core.RetryPolicy{MaxRetries: 3}).
-    Build()
+runner, _ := core.NewRunnerFromConfig("agentflow.toml")
+_ = runner.RegisterAgent("validator", dataValidatorAgent)
+_ = runner.RegisterAgent("transformer", dataTransformerAgent)
+_ = runner.RegisterAgent("enricher", dataEnricherAgent)
+_ = runner.RegisterAgent("publisher", dataPublisherAgent)
 ```
 
 ### Quality Assurance Loop
 ```go
 // Loop until quality threshold is met
-runner := core.NewOrchestrationBuilder(core.OrchestrationLoop).
-    WithAgent("quality-checker", qualityAgent).
-    WithMaxIterations(5).
-    WithTerminationCondition(func(result core.AgentResult) bool {
-        quality, _ := result.State.Get("quality_score")
-        return quality.(float64) >= 0.95
-    }).
-    Build()
+runner, _ := core.NewRunnerFromConfig("agentflow.toml")
+_ = runner.RegisterAgent("quality-checker", qualityAgent)
 ```
 
 ## Workflow Visualization
 
-AgentFlow automatically generates Mermaid diagrams for all orchestration patterns:
-
-```bash
-# Generate diagrams in default location (./workflow.mmd)
-agentcli create my-workflow --visualize
-
-# Specify custom output directory
-agentcli create my-workflow --visualize-output "docs/diagrams"
-```
-
-**Generated Mermaid Diagram Example:**
-```mermaid
----
-title: Collaborative Multi-Agent Workflow
----
-flowchart TD
-    INPUT["🎯 Event Input"]
-    AGENT1["🤖 Researcher"]
-    AGENT2["🤖 Analyzer"] 
-    AGENT3["🤖 Validator"]
-    OUTPUT["✅ Aggregated Result"]
-    
-    INPUT --> AGENT1
-    INPUT --> AGENT2
-    INPUT --> AGENT3
-    AGENT1 --> OUTPUT
-    AGENT2 --> OUTPUT
-    AGENT3 --> OUTPUT
-```
+Use the CLI to generate and preview Mermaid diagrams of your orchestration flows.
 
 ## API Reference
 
@@ -557,26 +463,7 @@ type RetryPolicy struct {
 
 ## Convenience Functions
 
-### CreateCollaborativeRunner
-Creates a runner where all agents process events in parallel.
-
-```go
-func CreateCollaborativeRunner(agents map[string]AgentHandler, timeout time.Duration) Runner
-```
-
-### CreateFaultTolerantRunner
-Creates a collaborative runner with aggressive retry policies for environments with transient failures.
-
-```go
-func CreateFaultTolerantRunner(agents map[string]AgentHandler) Runner
-```
-
-### CreateLoadBalancedRunner
-Creates a runner that distributes load across multiple agent instances.
-
-```go
-func CreateLoadBalancedRunner(agents map[string]AgentHandler, maxConcurrency int) Runner
-```
+Some convenience helpers may exist, but the recommended and supported public path is to construct runners from configuration using `core.NewRunnerFromConfig` and control behavior via the `[orchestration]` section.
 
 ## Migration from Internal APIs
 

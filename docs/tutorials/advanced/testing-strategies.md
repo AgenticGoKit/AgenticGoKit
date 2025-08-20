@@ -58,102 +58,27 @@ package agents
 import (
     "context"
     "testing"
-    "time"
     
     "github.com/stretchr/testify/assert"
-    "github.com/stretchr/testify/mock"
     "github.com/kunalkushwaha/agenticgokit/core"
 )
 
-// Mock LLM Provider for testing
-type MockLLMProvider struct {
-    mock.Mock
-}
+// Unit test a simple handler
+func TestAnalyzer_Run_Success(t *testing.T) {
+    handler := core.AgentHandlerFunc(func(ctx context.Context, ev core.Event, st core.State) (core.AgentResult, error) {
+        out := st.Clone()
+        out.Set("analysis", "ok")
+        return core.AgentResult{OutputState: out}, nil
+    })
 
-func (m *MockLLMProvider) GenerateResponse(ctx context.Context, prompt string, options map[string]interface{}) (string, error) {
-    args := m.Called(ctx, prompt, options)
-    return args.String(0), args.Error(1)
-}
+    // Execute directly without runner for unit test
+    st := core.NewState()
+    ev := core.NewEvent("analyzer", core.EventData{"data": "x"}, map[string]string{"session_id": "s"})
+    res, err := handler.Run(context.Background(), ev, st)
 
-func TestAnalyzerAgent_Execute(t *testing.T) {
-    tests := []struct {
-        name           string
-        event          core.Event
-        state          *core.State
-        mockResponse   string
-        mockError      error
-        expectedResult map[string]interface{}
-        expectedError  string
-    }{
-        {
-            name: "successful analysis",
-            event: core.NewEvent("analyze", map[string]interface{}{
-                "data": "Sample data to analyze",
-            }),
-            state: &core.State{
-                SessionID: "test-session",
-                Data: map[string]interface{}{
-                    "context": "test context",
-                },
-            },
-            mockResponse: "Analysis complete: The data shows positive trends",
-            expectedResult: map[string]interface{}{
-                "analysis": "Analysis complete: The data shows positive trends",
-                "agent":    "analyzer",
-                "status":   "completed",
-            },
-        },
-        {
-            name: "empty data handling",
-            event: core.NewEvent("analyze", map[string]interface{}{
-                "data": "",
-            }),
-            state: &core.State{SessionID: "test-session"},
-            expectedError: "no data provided for analysis",
-        },
-        {
-            name: "LLM provider error",
-            event: core.NewEvent("analyze", map[string]interface{}{
-                "data": "Sample data",
-            }),
-            state: &core.State{SessionID: "test-session"},
-            mockError: errors.New("LLM service unavailable"),
-            expectedError: "LLM request failed: LLM service unavailable",
-        },
-    }
-    
-    for _, tt := range tests {
-        t.Run(tt.name, func(t *testing.T) {
-            // Setup mock
-            mockProvider := new(MockLLMProvider)
-            if tt.mockResponse != "" || tt.mockError != nil {
-                mockProvider.On("GenerateResponse", mock.Anything, mock.AnythingOfType("string"), mock.Anything).
-                    Return(tt.mockResponse, tt.mockError)
-            }
-            
-            // Create agent with mock
-            agent := NewAnalyzerAgent("analyzer", mockProvider)
-            
-            // Execute test
-            result, err := agent.Execute(context.Background(), tt.event, tt.state)
-            
-            // Assertions
-            if tt.expectedError != "" {
-                assert.Error(t, err)
-                assert.Contains(t, err.Error(), tt.expectedError)
-                assert.Nil(t, result)
-            } else {
-                assert.NoError(t, err)
-                assert.NotNil(t, result)
-                for key, expectedValue := range tt.expectedResult {
-                    assert.Equal(t, expectedValue, result.Data[key])
-                }
-            }
-            
-            // Verify mock expectations
-            mockProvider.AssertExpectations(t)
-        })
-    }
+    assert.NoError(t, err)
+    v, _ := res.OutputState.Get("analysis")
+    assert.Equal(t, "ok", v)
 }
 ```
 
@@ -294,109 +219,32 @@ func TestErrorHandling(t *testing.T) {
 ### **1. Testing Agent Interactions**
 
 ```go
-func TestAgentOrchestration(t *testing.T) {
-    // Setup test agents
-    mockProvider := new(MockLLMProvider)
-    mockProvider.On("GenerateResponse", mock.Anything, mock.MatchedBy(func(prompt string) bool {
-        return strings.Contains(prompt, "analyze")
-    }), mock.Anything).Return("Analysis: Data processed", nil)
-    
-    mockProvider.On("GenerateResponse", mock.Anything, mock.MatchedBy(func(prompt string) bool {
-        return strings.Contains(prompt, "validate")
-    }), mock.Anything).Return("Validation: Data is valid", nil)
-    
-    analyzer := NewAnalyzerAgent("analyzer", mockProvider)
-    validator := NewValidatorAgent("validator", mockProvider)
-    
-    // Create sequential runner
-    agents := map[string]core.AgentHandler{
-        "analyzer":  analyzer,
-        "validator": validator,
-    }
-    
-    config := core.RunnerConfig{
-        OrchestrationMode: core.OrchestrationSequential,
-        SequentialAgents:  []string{"analyzer", "validator"},
-        Timeout:          30 * time.Second,
-    }
-    
-    runner := core.NewRunnerWithConfig(config)
-    for name, agent := range agents {
-        runner.RegisterAgent(name, agent)
-    }
-    
-    // Test sequential execution
-    event := core.NewEvent("process", map[string]interface{}{
-        "data": "test data for processing",
-    })
-    
-    results, err := runner.ProcessEvent(context.Background(), event)
-    
+func TestAgentOrchestration_Sequential(t *testing.T) {
+    // Build runner from a test config file where [orchestration] mode = "sequential"
+    runner, err := core.NewRunnerFromConfig("testdata/agentflow.sequential.toml")
     assert.NoError(t, err)
-    assert.Len(t, results, 2)
-    
-    // Verify execution order and data flow
-    analyzerResult := results[0]
-    validatorResult := results[1]
-    
-    assert.Equal(t, "analyzer", analyzerResult.Agent)
-    assert.Contains(t, analyzerResult.Data["analysis"], "Data processed")
-    
-    assert.Equal(t, "validator", validatorResult.Agent)
-    assert.Contains(t, validatorResult.Data["validation"], "Data is valid")
+
+    // Register minimal handlers
+    _ = runner.RegisterAgent("analyzer", core.AgentHandlerFunc(func(ctx context.Context, ev core.Event, st core.State) (core.AgentResult, error) {
+        out := st.Clone(); out.Set("analysis", "done"); return core.AgentResult{OutputState: out}, nil
+    }))
+    _ = runner.RegisterAgent("validator", core.AgentHandlerFunc(func(ctx context.Context, ev core.Event, st core.State) (core.AgentResult, error) {
+        out := st.Clone(); out.Set("validation", "ok"); return core.AgentResult{OutputState: out}, nil
+    }))
+
+    // Start and emit
+    _ = runner.Start(context.Background())
+    defer runner.Stop()
+    err = runner.Emit(core.NewEvent("analyzer", core.EventData{"data": "x"}, map[string]string{"session_id": "s"}))
+    assert.NoError(t, err)
 }
 ```
 
 ### **2. Testing Memory System Integration**
 
 ```go
-func TestMemorySystemIntegration(t *testing.T) {
-    // Setup in-memory test database
-    memoryProvider := memory.NewInMemoryProvider()
-    
-    // Create agent with memory
-    agent := NewMemoryEnabledAgent("test-agent", mockLLMProvider, memoryProvider)
-    
-    // Test storing and retrieving memories
-    t.Run("store and retrieve memory", func(t *testing.T) {
-        event := core.NewEvent("remember", map[string]interface{}{
-            "fact": "The sky is blue",
-            "category": "general_knowledge",
-        })
-        
-        state := &core.State{
-            SessionID: "test-session",
-            UserID:    "test-user",
-        }
-        
-        result, err := agent.Execute(context.Background(), event, state)
-        assert.NoError(t, err)
-        assert.Equal(t, "stored", result.Data["status"])
-        
-        // Verify memory was stored
-        memories, err := memoryProvider.Search(context.Background(), "sky blue", 5)
-        assert.NoError(t, err)
-        assert.Len(t, memories, 1)
-        assert.Contains(t, memories[0].Content, "sky is blue")
-    })
-    
-    t.Run("RAG retrieval", func(t *testing.T) {
-        // Setup mock to expect context from memory
-        mockProvider.On("GenerateResponse", mock.Anything, mock.MatchedBy(func(prompt string) bool {
-            return strings.Contains(prompt, "sky is blue")
-        }), mock.Anything).Return("Based on the stored knowledge, the sky appears blue due to light scattering", nil)
-        
-        event := core.NewEvent("query", map[string]interface{}{
-            "question": "What color is the sky?",
-        })
-        
-        state := &core.State{SessionID: "test-session"}
-        
-        result, err := agent.Execute(context.Background(), event, state)
-        assert.NoError(t, err)
-        assert.Contains(t, result.Data["response"], "blue due to light scattering")
-    })
-}
+// For memory/RAG integration, prefer testing via the public core interfaces
+// and plugin-registered memory providers; keep unit tests focused and mock external IO.
 ```
 
 ### **3. Testing MCP Tool Integration**
@@ -512,58 +360,10 @@ func TestSystemPerformance(t *testing.T) {
     defer system.Cleanup()
     
     t.Run("concurrent request handling", func(t *testing.T) {
-        concurrency := 10
-        requestsPerWorker := 5
-        
-        var wg sync.WaitGroup
-        results := make(chan time.Duration, concurrency*requestsPerWorker)
-        errors := make(chan error, concurrency*requestsPerWorker)
-        
-        for i := 0; i < concurrency; i++ {
-            wg.Add(1)
-            go func(workerID int) {
-                defer wg.Done()
-                
-                for j := 0; j < requestsPerWorker; j++ {
-                    start := time.Now()
-                    
-                    request := &api.Request{
-                        Type: "simple_query",
-                        Data: map[string]interface{}{
-                            "question": fmt.Sprintf("Test question %d-%d", workerID, j),
-                        },
-                        UserID:    fmt.Sprintf("user-%d", workerID),
-                        SessionID: fmt.Sprintf("session-%d-%d", workerID, j),
-                    }
-                    
-                    _, err := system.ProcessRequest(context.Background(), request)
-                    duration := time.Since(start)
-                    
-                    if err != nil {
-                        errors <- err
-                    } else {
-                        results <- duration
-                    }
-                }
-            }(i)
-        }
-        
-        wg.Wait()
-        close(results)
-        close(errors)
-        
-        // Collect results
-        var durations []time.Duration
-        for duration := range results {
-            durations = append(durations, duration)
-        }
-        
-        var errorList []error
-        for err := range errors {
-            errorList = append(errorList, err)
-        }
-        
-        // Assertions
+        ```go
+        // Prefer loading test configs rather than programmatic builders for orchestration.
+        // Example: runner, _ := core.NewRunnerFromConfig("testdata/agentflow.sequential.toml")
+        ```
         assert.Empty(t, errorList, "No errors should occur during concurrent processing")
         assert.Len(t, durations, concurrency*requestsPerWorker)
         
@@ -702,7 +502,9 @@ func (ts *TestSystem) ProcessRequest(ctx context.Context, request *api.Request) 
         UserID:    request.UserID,
     }
     
-    results, err := ts.runner.ProcessEvent(ctx, event)
+    _ = ts.runner.Start(ctx)
+    defer ts.runner.Stop()
+    err := ts.runner.Emit(event)
     if err != nil {
         return nil, err
     }
@@ -928,7 +730,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
         with:
-          go-version: '1.21'
+          go-version: '1.22'
       
       - name: Run unit tests
         run: go test -v -race -coverprofile=coverage.out ./...

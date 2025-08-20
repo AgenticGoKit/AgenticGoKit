@@ -264,7 +264,7 @@ import (
     "log"
     "os"
     
-    agentflow "github.com/kunalkushwaha/agentflow/core"
+    agentflow "github.com/kunalkushwaha/agenticgokit/core"
 )
 
 func main() {
@@ -540,7 +540,7 @@ import (
     "log"
     "os"
     
-    agentflow "github.com/kunalkushwaha/agentflow/core"
+    agentflow "github.com/kunalkushwaha/agenticgokit/core"
 )
 
 func main() {

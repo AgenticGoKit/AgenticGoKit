@@ -2,329 +2,204 @@ package core
 
 import (
 	"context"
-	"fmt"
-
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
+	"strings"
+	"time"
 )
 
-// UnifiedAgent represents a production-ready agent that supports all capabilities
-// through a composable, capability-based architecture.
+// UnifiedAgent is a concrete Agent implementation used by internal builders.
+// It provides basic capability plumbing and a simple Run implementation.
 type UnifiedAgent struct {
 	name         string
+	role         string
+	description  string
+	systemPrompt string
+	timeout      time.Duration
+	enabled      bool
+	autoLLM      bool // Controls whether to automatically call LLM when provider is configured
+
+	// Config/LLM
+	llmConfig *ResolvedLLMConfig
+
+	// Capabilities storage
 	capabilities map[CapabilityType]AgentCapability
 	handler      AgentHandler
+
+	// Capability-configured dependencies
+	llmProvider ModelProvider
+	cacheMgr    interface{}
+	metricsCfg  MetricsConfig
+
+	// MCP-specific wiring to satisfy MCP capability
+	mcpManager     MCPManager
+	mcpAgentConfig MCPAgentConfig
+	mcpCacheMgr    MCPCacheManager
 }
 
-// NewUnifiedAgent creates a new unified agent with the given name and capabilities
-func NewUnifiedAgent(name string, capabilities map[CapabilityType]AgentCapability, handler AgentHandler) *UnifiedAgent {
-	if capabilities == nil {
-		capabilities = make(map[CapabilityType]AgentCapability)
+// NewUnifiedAgent constructs a new UnifiedAgent with provided capabilities and optional handler.
+func NewUnifiedAgent(name string, caps map[CapabilityType]AgentCapability, handler AgentHandler) *UnifiedAgent {
+	if caps == nil {
+		caps = map[CapabilityType]AgentCapability{}
 	}
-
 	return &UnifiedAgent{
 		name:         name,
-		capabilities: capabilities,
+		role:         "unified_agent",
+		description:  "Unified composable agent",
+		systemPrompt: "You are a helpful AI agent.",
+		timeout:      30 * time.Second,
+		enabled:      true,
+		autoLLM:      false, // Default to false for safety - user must explicitly enable
+		capabilities: caps,
 		handler:      handler,
 	}
 }
 
-// Name returns the agent's name
-func (u *UnifiedAgent) Name() string {
-	return u.name
+// Agent interface
+func (u *UnifiedAgent) Name() string                     { return u.name }
+func (u *UnifiedAgent) GetRole() string                  { return u.role }
+func (u *UnifiedAgent) GetDescription() string           { return u.description }
+func (u *UnifiedAgent) GetSystemPrompt() string          { return u.systemPrompt }
+func (u *UnifiedAgent) GetTimeout() time.Duration        { return u.timeout }
+func (u *UnifiedAgent) IsEnabled() bool                  { return u.enabled }
+func (u *UnifiedAgent) GetLLMConfig() *ResolvedLLMConfig { return u.llmConfig }
+
+func (u *UnifiedAgent) GetCapabilities() []string {
+	out := make([]string, 0, len(u.capabilities))
+	for ct := range u.capabilities {
+		out = append(out, string(ct))
+	}
+	return out
 }
 
-// Run executes the agent with the given state and context
+func (u *UnifiedAgent) Initialize(ctx context.Context) error { return nil }
+func (u *UnifiedAgent) Shutdown(ctx context.Context) error   { return nil }
+
 func (u *UnifiedAgent) Run(ctx context.Context, state State) (State, error) {
-	log.Debug().
-		Str("agent", u.name).
-		Int("capabilities", len(u.capabilities)).
-		Msg("UnifiedAgent starting execution")
-
-	// Clone the input state to avoid mutations
-	workingState := state.Clone()
-
-	// Pre-execution: Apply capability pre-processing
-	var err error
-	workingState, err = u.applyCapabilityPreProcessing(ctx, workingState)
-	if err != nil {
-		log.Error().
-			Err(err).
-			Str("agent", u.name).
-			Msg("Capability pre-processing failed")
-		return state, fmt.Errorf("capability pre-processing failed: %w", err)
-	}
-	// Execute the core agent logic
-	var result State
+	// Basic pre/post without complex hooks for now
 	if u.handler != nil {
-		// Use custom handler if provided
-		agentResult, err := u.handler.Run(ctx, NewEvent(u.name, nil, nil), workingState)
+		res, err := u.handler.Run(ctx, NewEvent(u.name, map[string]any{}, map[string]string{}), state)
 		if err != nil {
-			log.Error().
-				Err(err).
-				Str("agent", u.name).
-				Msg("Agent handler execution failed")
-			return state, fmt.Errorf("agent handler execution failed: %w", err)
+			return res.OutputState, err
 		}
-		result = agentResult.OutputState
-	} else {
-		// Default behavior: add processed metadata
-		result = workingState.Clone()
-		result.Set("processed_by", u.name)
+		return res.OutputState, nil
+	}
+	out := state.Clone()
 
-		// Add capability metadata
-		capabilityTypes := make([]string, 0, len(u.capabilities))
-		for capType := range u.capabilities {
-			capabilityTypes = append(capabilityTypes, string(capType))
+	// If an LLM provider is configured and auto-LLM is enabled, perform a default completion.
+	// This gives UnifiedAgent a sensible behavior out-of-the-box for
+	// configuration-driven agents created by the factory/builder.
+	if u.llmProvider != nil && u.autoLLM {
+		Logger().Debug().Str("agent", u.name).Msg("UnifiedAgent: LLM provider detected; preparing default completion")
+		// Prefer a system prompt set in state (e.g., by a config-aware wrapper),
+		// otherwise fall back to the agent's configured systemPrompt.
+		system := u.systemPrompt
+		if v, ok := state.Get("system_prompt"); ok {
+			if s, ok2 := v.(string); ok2 && s != "" {
+				system = s
+			}
 		}
-		result.Set("capabilities", capabilityTypes)
+
+		// Extract user input from state. Orchestrators usually merge event data
+		// into state before invoking the agent, so "message" is a common key.
+		var user string
+		if v, ok := state.Get("message"); ok {
+			if s, ok2 := v.(string); ok2 {
+				user = s
+			}
+		}
+
+		// Only call the LLM if we have a non-empty user prompt.
+		if strings.TrimSpace(user) != "" {
+			Logger().Debug().Str("agent", u.name).Msg("UnifiedAgent: calling LLM provider")
+			params := ModelParameters{}
+			if u.llmConfig != nil {
+				if u.llmConfig.Temperature != 0 {
+					// Convert float64 -> float32 pointer
+					t := float32(u.llmConfig.Temperature)
+					params.Temperature = &t
+				}
+				if u.llmConfig.MaxTokens > 0 {
+					mt := int32(u.llmConfig.MaxTokens)
+					params.MaxTokens = &mt
+				}
+			}
+
+			resp, err := u.llmProvider.Call(ctx, Prompt{System: system, User: user, Parameters: params})
+			if err != nil {
+				return out, err
+			}
+
+			if resp.Content != "" {
+				// Standardize keys so downstream result collectors can display output.
+				out.Set("response", resp.Content)
+				out.Set("message", resp.Content)
+			}
+		}
+	} else {
+		Logger().Warn().Str("agent", u.name).Msg("UnifiedAgent: no LLM provider configured; skipping LLM call")
 	}
 
-	// Post-execution: Apply capability post-processing
-	finalState, err := u.applyCapabilityPostProcessing(ctx, result)
+	out.Set("processed_by", u.name)
+	out.Set("agent_type", "unified")
+	out.Set("capabilities", u.GetCapabilities())
+	return out, nil
+}
+
+func (u *UnifiedAgent) HandleEvent(ctx context.Context, event Event, state State) (AgentResult, error) {
+	start := time.Now()
+	out, err := u.Run(ctx, state)
+	end := time.Now()
+	result := AgentResult{OutputState: out, StartTime: start, EndTime: end, Duration: end.Sub(start)}
 	if err != nil {
-		log.Error().
-			Err(err).
-			Str("agent", u.name).
-			Msg("Capability post-processing failed")
-		return state, fmt.Errorf("capability post-processing failed: %w", err)
+		result.Error = err.Error()
 	}
-
-	log.Debug().
-		Str("agent", u.name).
-		Msg("UnifiedAgent execution completed successfully")
-
-	return finalState, nil
+	return result, nil
 }
 
-// GetCapability returns the capability of the specified type, if present
-func (u *UnifiedAgent) GetCapability(capType CapabilityType) (AgentCapability, bool) {
-	cap, exists := u.capabilities[capType]
-	return cap, exists
-}
-
-// HasCapability checks if the agent has a capability of the specified type
-func (u *UnifiedAgent) HasCapability(capType CapabilityType) bool {
-	_, exists := u.capabilities[capType]
-	return exists
-}
-
-// ListCapabilities returns a list of all capability types this agent has
-func (u *UnifiedAgent) ListCapabilities() []CapabilityType {
-	types := make([]CapabilityType, 0, len(u.capabilities))
-	for capType := range u.capabilities {
-		types = append(types, capType)
-	}
-	return types
-}
-
-// Configure implements CapabilityConfigurable for runtime configuration
-func (u *UnifiedAgent) Configure(configs map[CapabilityType]interface{}) error {
-	for capType, config := range configs {
-		if capability, exists := u.capabilities[capType]; exists {
-			// Apply capability-specific configuration based on type
-			switch capType {
-			case CapabilityTypeLLM:
-				if llm, ok := capability.(*LLMCapability); ok {
-					if llmConfig, ok := config.(LLMConfig); ok {
-						llm.Config = llmConfig
-						log.Debug().
-							Str("agent", u.name).
-							Str("capability", string(capType)).
-							Msg("LLM capability configured")
-					}
-				}
-			case CapabilityTypeMetrics:
-				if metrics, ok := capability.(*MetricsCapability); ok {
-					if metricsConfig, ok := config.(MetricsConfig); ok {
-						metrics.Config = metricsConfig
-						log.Debug().
-							Str("agent", u.name).
-							Str("capability", string(capType)).
-							Msg("Metrics capability configured")
-					}
-				}
-			default:
-				log.Debug().
-					Str("agent", u.name).
-					Str("capability", string(capType)).
-					Msg("Configuration not implemented for capability type")
-			}
-		}
-	}
-	return nil
-}
-
-// applyCapabilityPreProcessing applies pre-processing logic from all capabilities
-func (u *UnifiedAgent) applyCapabilityPreProcessing(ctx context.Context, state State) (State, error) {
-	workingState := state
-	// Apply LLM capability pre-processing
-	if llmCap, exists := u.capabilities[CapabilityTypeLLM]; exists {
-		if llm, ok := llmCap.(*LLMCapability); ok && llm.Provider != nil {
-			// Apply LLM-specific pre-processing (e.g., prompt preparation)
-			log.Debug().
-				Str("agent", u.name).
-				Msg("Applying LLM pre-processing")
-		}
-	}
-
-	// Apply Cache capability pre-processing
-	if cacheCap, exists := u.capabilities[CapabilityTypeCache]; exists {
-		if cache, ok := cacheCap.(*CacheCapability); ok && cache.Manager != nil {
-			// Check cache for existing results
-			log.Debug().
-				Str("agent", u.name).
-				Msg("Applying Cache pre-processing")
-		}
-	}
-	// Apply Metrics capability pre-processing
-	if metricsCap, exists := u.capabilities[CapabilityTypeMetrics]; exists {
-		if metrics, ok := metricsCap.(*MetricsCapability); ok {
-			// Start metrics collection
-			log.Debug().
-				Str("agent", u.name).
-				Msg("Applying Metrics pre-processing")
-			workingState.Set("metrics_enabled", metrics.Config.Enabled)
-		}
-	}
-
-	// Apply MCP capability pre-processing
-	if mcpCap, exists := u.capabilities[CapabilityTypeMCP]; exists {
-		if mcp, ok := mcpCap.(*MCPCapability); ok {
-			// Apply MCP-specific pre-processing
-			log.Debug().
-				Str("agent", u.name).
-				Msg("Applying MCP pre-processing")
-			if mcp.Manager != nil {
-				workingState.Set("mcp_enabled", true)
-			}
-		}
-	}
-
-	return workingState, nil
-}
-
-// applyCapabilityPostProcessing applies post-processing logic from all capabilities
-func (u *UnifiedAgent) applyCapabilityPostProcessing(ctx context.Context, state State) (State, error) {
-	workingState := state
-
-	// Apply Metrics capability post-processing
-	if metricsCap, exists := u.capabilities[CapabilityTypeMetrics]; exists {
-		if _, ok := metricsCap.(*MetricsCapability); ok {
-			// Record metrics
-			log.Debug().
-				Str("agent", u.name).
-				Msg("Applying Metrics post-processing")
-			workingState.Set("metrics_collected", true)
-		}
-	}
-
-	// Apply Cache capability post-processing
-	if cacheCap, exists := u.capabilities[CapabilityTypeCache]; exists {
-		if cache, ok := cacheCap.(*CacheCapability); ok && cache.Manager != nil {
-			// Store results in cache
-			log.Debug().
-				Str("agent", u.name).
-				Msg("Applying Cache post-processing")
-			workingState.Set("cache_updated", true)
-		}
-	}
-
-	// Apply LLM capability post-processing
-	if llmCap, exists := u.capabilities[CapabilityTypeLLM]; exists {
-		if llm, ok := llmCap.(*LLMCapability); ok && llm.Provider != nil {
-			// Apply LLM-specific post-processing
-			log.Debug().
-				Str("agent", u.name).
-				Msg("Applying LLM post-processing")
-		}
-	}
-
-	// Apply MCP capability post-processing
-	if mcpCap, exists := u.capabilities[CapabilityTypeMCP]; exists {
-		if mcp, ok := mcpCap.(*MCPCapability); ok && mcp.Manager != nil {
-			// Apply MCP-specific post-processing
-			log.Debug().
-				Str("agent", u.name).
-				Msg("Applying MCP post-processing")
-		}
-	}
-
-	return workingState, nil
-}
-
-// String returns a string representation of the agent
-func (u *UnifiedAgent) String() string {
-	capTypes := make([]string, 0, len(u.capabilities))
-	for capType := range u.capabilities {
-		capTypes = append(capTypes, string(capType))
-	}
-	return fmt.Sprintf("UnifiedAgent{name=%s, capabilities=%v}", u.name, capTypes)
-}
-
-// =============================================================================
-// CAPABILITY CONFIGURABLE INTERFACE IMPLEMENTATION
-// =============================================================================
-
-// SetLLMProvider sets the LLM provider for the agent
+// CapabilityConfigurable bridging (subset used by internal capabilities)
 func (u *UnifiedAgent) SetLLMProvider(provider ModelProvider, config LLMConfig) {
-	if llmCap, exists := u.capabilities[CapabilityTypeLLM]; exists {
-		if llm, ok := llmCap.(*LLMCapability); ok {
-			llm.Provider = provider
-			llm.Config = config
-			log.Debug().
-				Str("agent", u.name).
-				Msg("LLM provider configured")
-		}
-	} else {
-		// Create a new LLM capability if it doesn't exist
-		llmCap := NewLLMCapability(provider, config)
-		u.capabilities[CapabilityTypeLLM] = llmCap
-		log.Debug().
-			Str("agent", u.name).
-			Msg("LLM capability created and configured")
+	u.llmProvider = provider
+	// Map to ResolvedLLMConfig-lite as available
+	u.llmConfig = &ResolvedLLMConfig{
+		Provider:         config.Provider,
+		Model:            config.Model,
+		Temperature:      config.Temperature,
+		MaxTokens:        config.MaxTokens,
+		Timeout:          TimeoutFromSeconds(config.TimeoutSeconds),
+		TopP:             config.TopP,
+		FrequencyPenalty: config.FrequencyPenalty,
+		PresencePenalty:  config.PresencePenalty,
 	}
 }
 
-// SetCacheManager sets the cache manager for the agent
 func (u *UnifiedAgent) SetCacheManager(manager interface{}, config interface{}) {
-	if cacheCap, exists := u.capabilities[CapabilityTypeCache]; exists {
-		if cache, ok := cacheCap.(*CacheCapability); ok {
-			cache.Manager = manager
-			log.Debug().
-				Str("agent", u.name).
-				Msg("Cache manager configured")
-		}
-	} else { // Create a new cache capability if it doesn't exist
-		cacheCap := NewCacheCapability(manager, config)
-		u.capabilities[CapabilityTypeCache] = cacheCap
-		log.Debug().
-			Str("agent", u.name).
-			Msg("Cache capability created and configured")
-	}
+	u.cacheMgr = manager
 }
 
-// SetMetricsConfig sets the metrics configuration for the agent
-func (u *UnifiedAgent) SetMetricsConfig(config MetricsConfig) {
-	if metricsCap, exists := u.capabilities[CapabilityTypeMetrics]; exists {
-		if metrics, ok := metricsCap.(*MetricsCapability); ok {
-			metrics.Config = config
-			log.Debug().
-				Str("agent", u.name).
-				Msg("Metrics configuration updated")
-		}
-	} else {
-		// Create a new metrics capability if it doesn't exist
-		metricsCap := NewMetricsCapability(config)
-		u.capabilities[CapabilityTypeMetrics] = metricsCap
-		log.Debug().
-			Str("agent", u.name).
-			Msg("Metrics capability created and configured")
-	}
+func (u *UnifiedAgent) SetMetricsConfig(config MetricsConfig) { u.metricsCfg = config }
+
+// SetAutoLLM configures whether the agent should automatically call the LLM provider
+// when one is configured. Set to true to enable automatic LLM calls, false to disable.
+func (u *UnifiedAgent) SetAutoLLM(enabled bool) { u.autoLLM = enabled }
+
+// GetAutoLLM returns whether automatic LLM calls are enabled.
+func (u *UnifiedAgent) GetAutoLLM() bool { return u.autoLLM }
+
+// Logger accessor to satisfy internal CapabilityConfigurable usage through core.Logger
+func (u *UnifiedAgent) GetLogger() CoreLogger { return Logger() }
+
+// MCP wiring to satisfy MCP capability Configure calls
+func (u *UnifiedAgent) SetMCPManager(manager MCPManager, config MCPAgentConfig) {
+	u.mcpManager = manager
+	u.mcpAgentConfig = config
 }
 
-// GetLogger returns the agent's logger for capability configuration
-func (u *UnifiedAgent) GetLogger() *zerolog.Logger {
-	logger := log.With().Str("agent", u.name).Logger()
-	return &logger
+func (u *UnifiedAgent) SetMCPCacheManager(manager MCPCacheManager) { u.mcpCacheMgr = manager }
+
+// GetCapability returns a capability by type if present (helper for internal bridges)
+func (u *UnifiedAgent) GetCapability(t CapabilityType) (AgentCapability, bool) {
+	if u.capabilities == nil {
+		return nil, false
+	}
+	cap, ok := u.capabilities[t]
+	return cap, ok
 }

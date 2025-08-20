@@ -346,6 +346,21 @@ export OPENAI_API_KEY=your-key-here
 export OLLAMA_HOST=http://localhost:11434
 ```
 
+### Plugin imports (LLM, logging, orchestrator)
+
+AgenticGoKit uses public plugin packages that self-register via blank imports. Ensure your main package (or your CLI/plugins bundle) includes the imports for the features you use:
+
+```go
+import (
+  _ "github.com/kunalkushwaha/agenticgokit/plugins/llm/ollama"
+  _ "github.com/kunalkushwaha/agenticgokit/plugins/logging/zerolog"
+  _ "github.com/kunalkushwaha/agenticgokit/plugins/orchestrator/default"
+  _ "github.com/kunalkushwaha/agenticgokit/plugins/runner/default"
+)
+```
+
+Troubleshooting: If you see errors like "provider not registered" or "orchestrator factory not registered", add the corresponding blank import above. The scaffolded projects and `agentcli` already include a plugins bundle by default.
+
 ---
 
 ## Community & Support

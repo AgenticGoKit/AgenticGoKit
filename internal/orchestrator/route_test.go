@@ -8,7 +8,7 @@ import (
 	"sync"
 	"testing"
 
-	agenticgokit "github.com/kunalkushwaha/agenticgokit/internal/core"
+	"github.com/kunalkushwaha/agenticgokit/core"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -17,8 +17,8 @@ import (
 // SpyRouteHandler is a mock handler for testing RouteOrchestrator
 type SpyRouteHandler struct {
 	ID               string
-	ReceivedEvents   []agentflow.Event
-	ReceivedStates   []agentflow.State
+	ReceivedEvents   []core.Event
+	ReceivedStates   []core.State
 	ReceivedContexts []context.Context
 	ReturnError      error
 	mu               sync.Mutex
@@ -29,13 +29,13 @@ type SpyRouteHandler struct {
 func NewSpyRouteHandler(id string) *SpyRouteHandler {
 	return &SpyRouteHandler{
 		ID:             id,
-		ReceivedEvents: make([]agentflow.Event, 0),
-		ReceivedStates: make([]agentflow.State, 0),
+		ReceivedEvents: make([]core.Event, 0),
+		ReceivedStates: make([]core.State, 0),
 	}
 }
 
 // Run records the call and returns a predefined error or nil.
-func (h *SpyRouteHandler) Run(ctx context.Context, event agentflow.Event, state agentflow.State) (agentflow.AgentResult, error) {
+func (h *SpyRouteHandler) Run(ctx context.Context, event core.Event, state core.State) (core.AgentResult, error) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.RunCalled = true
@@ -43,34 +43,35 @@ func (h *SpyRouteHandler) Run(ctx context.Context, event agentflow.Event, state 
 	h.ReceivedStates = append(h.ReceivedStates, state)
 	h.ReceivedContexts = append(h.ReceivedContexts, ctx)
 	log.Printf("SpyRouteHandler '%s' received event %s", h.ID, event.GetID())
-	return agentflow.AgentResult{}, h.ReturnError
+	return core.AgentResult{OutputState: state}, h.ReturnError
 }
 
 // --- Tests using SpyRouteHandler ---
 
 func TestRouteOrchestrator_RegisterAgent(t *testing.T) {
-	o := NewRouteOrchestrator(agentflow.NewCallbackRegistry())
+	o := NewRouteOrchestrator(core.NewCallbackRegistry())
 	handler := NewSpyRouteHandler("agent1")
 
-	o.RegisterAgent("agent1", handler)
+	err := o.RegisterAgent("agent1", handler)
+	require.NoError(t, err)
 
 	registeredHandler, exists := o.handlers["agent1"]
 	require.True(t, exists, "Agent 'agent1' was not registered")
 	assert.Equal(t, handler, registeredHandler, "Registered handler mismatch for 'agent1'")
 
 	// Test duplicate registration
-	o.RegisterAgent("agent1", handler)
-	assert.Len(t, o.handlers, 1, "Duplicate registration should not add handler again")
+	err = o.RegisterAgent("agent1", handler)
+	require.NoError(t, err) // Should not error, just overwrite
+	assert.Len(t, o.handlers, 1, "Duplicate registration should overwrite")
 
 	// Test nil handler registration
-	o.RegisterAgent("agent2", nil)
-	_, exists = o.handlers["agent2"]
-	assert.False(t, exists, "Nil handler should not be registered")
+	err = o.RegisterAgent("agent2", nil)
+	assert.Error(t, err, "Nil handler should return error")
 }
 
 func TestRouteOrchestrator_Dispatch_Routing(t *testing.T) {
-	registry := agentflow.NewCallbackRegistry()
-	orch := NewRouteOrchestrator(registry) // pass registry here
+	registry := core.NewCallbackRegistry()
+	orch := NewRouteOrchestrator(registry)
 
 	handler1 := NewSpyRouteHandler("agent1")
 	handler2 := NewSpyRouteHandler("agent2")
@@ -78,13 +79,13 @@ func TestRouteOrchestrator_Dispatch_Routing(t *testing.T) {
 	orch.RegisterAgent("agent1", handler1)
 	orch.RegisterAgent("agent2", handler2)
 
-	event := agentflow.NewEvent("test-event-type", agentflow.EventData{}, nil)
-	// FIX: Use SetMetadataValue and constant
-	event.SetMetadata(agentflow.RouteMetadataKey, "agent2") // Use SetMetadataValue
+	event := core.NewEvent("test-event-type", map[string]interface{}{}, map[string]string{
+		core.RouteMetadataKey: "agent2",
+	})
 
-	// FIX: Pass context and handle two return values
-	_, err := orch.Dispatch(context.Background(), event) // Pass context, ignore result if only error matters
+	result, err := orch.Dispatch(context.Background(), event)
 	assert.NoError(t, err, "Dispatch to agent2 failed")
+	assert.NotNil(t, result.OutputState, "Result should have output state")
 
 	assert.False(t, handler1.RunCalled, "Handler1 should not have been called")
 	assert.True(t, handler2.RunCalled, "Handler2 should have been called")
@@ -93,7 +94,7 @@ func TestRouteOrchestrator_Dispatch_Routing(t *testing.T) {
 }
 
 func TestRouteOrchestrator_Dispatch_HandlerFailure(t *testing.T) {
-	registry := agentflow.NewCallbackRegistry()
+	registry := core.NewCallbackRegistry()
 	orch := NewRouteOrchestrator(registry)
 	handler1 := NewSpyRouteHandler("agent1")
 	handler2 := NewSpyRouteHandler("agent2")
@@ -105,29 +106,26 @@ func TestRouteOrchestrator_Dispatch_HandlerFailure(t *testing.T) {
 	orch.RegisterAgent("agent2", handler2)
 	orch.RegisterAgent("agent3", handler3)
 
-	evt0 := agentflow.NewEvent("type0", agentflow.EventData{"id": 0}, nil)
-	// FIX: Use SetMetadataValue and constant
-	evt0.SetMetadata(agentflow.RouteMetadataKey, "agent1")
-	evt1 := agentflow.NewEvent("type1", agentflow.EventData{"id": 1}, nil)
-	// FIX: Use SetMetadataValue and constant
-	evt1.SetMetadata(agentflow.RouteMetadataKey, "agent2")
-	evt2 := agentflow.NewEvent("type2", agentflow.EventData{"id": 2}, nil)
-	// FIX: Use SetMetadataValue and constant
-	evt2.SetMetadata(agentflow.RouteMetadataKey, "agent3")
+	evt0 := core.NewEvent("type0", map[string]interface{}{"id": 0}, map[string]string{
+		core.RouteMetadataKey: "agent1",
+	})
+	evt1 := core.NewEvent("type1", map[string]interface{}{"id": 1}, map[string]string{
+		core.RouteMetadataKey: "agent2",
+	})
+	evt2 := core.NewEvent("type2", map[string]interface{}{"id": 2}, map[string]string{
+		core.RouteMetadataKey: "agent3",
+	})
 
 	// Dispatch event 0 (success)
-	// FIX: Pass context and handle two return values
 	_, err0 := orch.Dispatch(context.Background(), evt0)
 	assert.NoError(t, err0, "Dispatch for evt-0 should succeed")
 
 	// Dispatch event 1 (failure)
-	// FIX: Pass context and handle two return values
 	_, err1 := orch.Dispatch(context.Background(), evt1)
 	assert.Error(t, err1, "Dispatch for evt-1 should fail")
 	assert.True(t, errors.Is(err1, simulatedError), "Dispatch for evt-1 returned wrong error")
 
 	// Dispatch event 2 (success)
-	// FIX: Pass context and handle two return values
 	_, err2 := orch.Dispatch(context.Background(), evt2)
 	assert.NoError(t, err2, "Dispatch for evt-2 should succeed")
 
@@ -148,64 +146,57 @@ func TestRouteOrchestrator_Dispatch_HandlerFailure(t *testing.T) {
 }
 
 func TestRouteOrchestrator_Dispatch_NoTarget(t *testing.T) {
-	registry := agentflow.NewCallbackRegistry()
+	registry := core.NewCallbackRegistry()
 	o := NewRouteOrchestrator(registry)
 	handler1 := NewSpyRouteHandler("agent1")
 	o.RegisterAgent("agent1", handler1)
 
 	// Create event with NO RouteMetadataKey
-	event := agentflow.NewEvent("no-target-type", agentflow.EventData{}, nil)
+	event := core.NewEvent("no-target-type", map[string]interface{}{}, nil)
 
-	// FIX: Pass context and handle two return values
 	_, err := o.Dispatch(context.Background(), event)
 	assert.Error(t, err, "Dispatch with no target should return an error")
-	// FIX: Check for specific error message if RouteOrchestrator returns one
 	assert.Contains(t, err.Error(), "missing routing key", "Error message should indicate missing target")
 	assert.False(t, handler1.RunCalled, "Handler should not have been called")
 }
 
 func TestRouteOrchestrator_Dispatch_TargetNotFound(t *testing.T) {
-	registry := agentflow.NewCallbackRegistry()
+	registry := core.NewCallbackRegistry()
 	o := NewRouteOrchestrator(registry)
 	handler1 := NewSpyRouteHandler("agent1")
 	o.RegisterAgent("agent1", handler1)
 
-	event := agentflow.NewEvent("wrong-target-type", agentflow.EventData{}, nil)
-	// FIX: Use SetMetadataValue and constant
-	event.SetMetadata(agentflow.RouteMetadataKey, "nonexistent-agent")
+	event := core.NewEvent("wrong-target-type", map[string]interface{}{}, map[string]string{
+		core.RouteMetadataKey: "nonexistent-agent",
+	})
 
-	// FIX: Pass context and handle two return values
 	_, err := o.Dispatch(context.Background(), event)
 	assert.Error(t, err, "Dispatch to non-existent target should return an error")
-	// FIX: Check for specific error message - update expected substring
 	assert.Contains(t, err.Error(), "no agent handler registered for target", "Error message should indicate target not found")
 	assert.False(t, handler1.RunCalled, "Handler should not have been called")
 }
 
 func TestRouteOrchestrator_Dispatch_NilEvent(t *testing.T) {
-	registry := agentflow.NewCallbackRegistry()
+	registry := core.NewCallbackRegistry()
 	o := NewRouteOrchestrator(registry)
-	// FIX: Pass context and handle two return values
-	_, err := o.Dispatch(context.Background(), nil) // Pass context
+	_, err := o.Dispatch(context.Background(), nil)
 	assert.Error(t, err, "Dispatching nil event should return an error")
 }
 
 func TestRouteOrchestrator_NoHandlers(t *testing.T) {
-	registry := agentflow.NewCallbackRegistry()
+	registry := core.NewCallbackRegistry()
 	o := NewRouteOrchestrator(registry) // No handlers registered
-	event := agentflow.NewEvent("test-type", agentflow.EventData{}, nil)
-	// FIX: Use SetMetadataValue and constant
-	event.SetMetadata(agentflow.RouteMetadataKey, "some-agent")
+	event := core.NewEvent("test-type", map[string]interface{}{}, map[string]string{
+		core.RouteMetadataKey: "some-agent",
+	})
 
-	// FIX: Pass context and handle two return values
-	_, err := o.Dispatch(context.Background(), event) // Pass context
+	_, err := o.Dispatch(context.Background(), event)
 	assert.Error(t, err, "Dispatch with no handlers registered should return an error")
-	// FIX: Update expected error substring to match actual message
 	assert.Contains(t, err.Error(), "no agent handler registered for target", "Error message should indicate target not found")
 }
 
 func TestRouteOrchestrator_ConcurrentDispatch(t *testing.T) {
-	registry := agentflow.NewCallbackRegistry()
+	registry := core.NewCallbackRegistry()
 	orch := NewRouteOrchestrator(registry)
 	numHandlers := 5
 	numEvents := 100
@@ -223,12 +214,10 @@ func TestRouteOrchestrator_ConcurrentDispatch(t *testing.T) {
 		go func(eventIndex int) {
 			defer wg.Done()
 			targetAgent := fmt.Sprintf("agent%d", eventIndex%numHandlers) // Distribute events
-			event := agentflow.NewEvent("concurrent-type", agentflow.EventData{"index": eventIndex}, nil)
-			// FIX: Use SetMetadataValue and constant
-			event.SetMetadata(agentflow.RouteMetadataKey, targetAgent)
-			// FIX: Pass context and handle two return values
-			_, err := orch.Dispatch(context.Background(), event) // Pass context
-			// In a real test, might collect errors in a channel
+			event := core.NewEvent("concurrent-type", map[string]interface{}{"index": eventIndex}, map[string]string{
+				core.RouteMetadataKey: targetAgent,
+			})
+			_, err := orch.Dispatch(context.Background(), event)
 			if err != nil {
 				t.Errorf("Concurrent dispatch %d failed: %v", eventIndex, err)
 			}
@@ -244,7 +233,6 @@ func TestRouteOrchestrator_ConcurrentDispatch(t *testing.T) {
 		h.mu.Unlock()
 		totalReceived += count
 		assert.Greater(t, count, 0, "Handler %s should have received some events", h.ID)
-		// Exact distribution isn't guaranteed, but check it's roughly balanced if needed
 	}
 	assert.Equal(t, numEvents, totalReceived, "Total received events should match total dispatched events")
 }

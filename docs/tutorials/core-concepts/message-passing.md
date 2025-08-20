@@ -54,24 +54,28 @@ data := core.EventData{
 
 ### Runners: The Traffic Controllers
 
-The **Runner** is responsible for routing events to the appropriate agents and managing the overall flow of communication.
+The Runner routes events to agents and manages flow. Create it from configuration for reliability and flexibility.
 
 ```go
-// The Runner interface - manages event flow
-type Runner interface {
-    Emit(event Event) error        // Send an event into the system
-    RegisterAgent(name string, handler AgentHandler) error // Register an agent
-    Start(ctx context.Context) error // Start processing
-    Stop()                         // Stop processing
-    // ... other methods
-}
+// Build a runner from config (agentflow.toml)
+runner, err := core.NewRunnerFromConfig("agentflow.toml")
+if err != nil { log.Fatal(err) }
+
+// Register agents referenced in the config
+_ = runner.RegisterAgent("assistant", assistantHandler)
+
+// Start → Emit → Stop
+ctx := context.Background()
+_ = runner.Start(ctx)
+defer runner.Stop()
+_ = runner.Emit(core.NewEvent("assistant", core.EventData{"message": "hi"}, map[string]string{"session_id": "s1"}))
 ```
 
 The Runner:
 1. Receives events via `Emit()`
-2. Determines which agent(s) should handle the event
-3. Delivers the event to the appropriate agent(s)
-4. Collects results and routes them to the next destination
+2. Uses the configured orchestrator (route, sequential, collaborative, loop, mixed)
+3. Delivers events to agent(s)
+4. Collects results and routes follow-up events when applicable
 
 ## How Message Passing Works
 
@@ -96,17 +100,16 @@ event := core.NewEvent(
 
 ### 2. Emitting Events
 
-Events are sent into the system using the Runner's `Emit()` method:
+Events are sent using the Runner's `Emit()` method:
 
 ```go
-// Send the event into the system
-err := runner.Emit(event)
-if err != nil {
-    log.Fatalf("Failed to emit event: %v", err)
+// Send the event into the system (non-blocking)
+if err := runner.Emit(event); err != nil {
+    log.Fatalf("emit failed: %v", err)
 }
 ```
 
-This is an **asynchronous operation** - `Emit()` returns immediately, and processing happens in the background.
+This is an asynchronous operation—processing happens in the background.
 
 ### 3. Event Processing Flow
 
@@ -146,14 +149,13 @@ runner.RegisterCallback(core.HookAfterAgentRun, "my-callback",
 )
 ```
 
-## Under the Hood: The Runner Implementation
+## Under the Hood: The Runner Implementation (Internals)
 
-The Runner implementation uses a combination of channels, goroutines, and queues to manage event flow:
+The Runner uses channels and goroutines to manage event flow. The internal loop processes events and invokes callbacks. Public code should use Start/Emit/Stop; internal helpers like processEvent are not part of the public API.
 
 ```go
-// Simplified version of the internal runner loop
+// Simplified internal sketch (do not call directly)
 func (r *RunnerImpl) loop(ctx context.Context) {
-    defer r.wg.Done()
     for {
         select {
         case <-ctx.Done():
@@ -161,18 +163,9 @@ func (r *RunnerImpl) loop(ctx context.Context) {
         case <-r.stopChan:
             return
         case event := <-r.queue:
-            // Process event in the main goroutine
-            r.processEvent(ctx, event)
+            // route + dispatch via orchestrator; invoke callbacks
         }
     }
-}
-
-func (r *RunnerImpl) processEvent(ctx context.Context, event Event) {
-    // 1. Invoke BeforeEventHandling callbacks
-    // 2. Route to orchestrator for agent dispatch
-    // 3. Handle agent result
-    // 4. Invoke AfterEventHandling callbacks
-    // 5. Emit new events if needed
 }
 ```
 
@@ -186,87 +179,36 @@ package main
 import (
     "context"
     "fmt"
-    "os"
-    "time"
+    "log"
     
     "github.com/kunalkushwaha/agenticgokit/core"
 )
 
 func main() {
-    // Create a provider
-    provider, err := core.NewOpenAIAdapter(
-        os.Getenv("OPENAI_API_KEY"),
-        "gpt-3.5-turbo",
-        500,
-        0.7,
-    )
-    if err != nil {
-        panic(err)
-    }
-    
-    // Create an agent
-    agent, err := core.NewAgent("assistant").
-        WithLLMAndConfig(provider, core.LLMConfig{
-            SystemPrompt: "You are a helpful assistant.",
-        }).
-        Build()
-    if err != nil {
-        panic(err)
-    }
-    
-    // Create a runner with orchestrator
-    runner := core.NewRunner(100)
-    orchestrator := core.NewRouteOrchestrator(runner.GetCallbackRegistry())
-    runner.SetOrchestrator(orchestrator)
-    
-    // Register the agent
-    agentHandler := core.ConvertAgentToHandler(agent)
-    runner.RegisterAgent("assistant", agentHandler)
-    
-    // Start the runner
+    // 1) Build runner from config (route orchestrator)
+    runner, err := core.NewRunnerFromConfig("agentflow.toml")
+    if err != nil { log.Fatal(err) }
+
+    // 2) Register a simple agent handler
+    _ = runner.RegisterAgent("assistant", core.AgentHandlerFunc(func(ctx context.Context, ev core.Event, st core.State) (core.AgentResult, error) {
+        out := st.Clone()
+        out.Set("response", "AgenticGoKit helps you build config-driven multi-agent systems in Go.")
+        return core.AgentResult{OutputState: out}, nil
+    }))
+
+    // 3) Start → Emit → Stop
     ctx := context.Background()
-    if err := runner.Start(ctx); err != nil {
-        panic(err)
-    }
+    if err := runner.Start(ctx); err != nil { log.Fatal(err) }
     defer runner.Stop()
-    
-    // Set up result handling
-    resultReceived := make(chan bool)
-    runner.RegisterCallback(core.HookAfterAgentRun, "result-handler",
-        func(ctx context.Context, args core.CallbackArgs) (core.State, error) {
-            if args.AgentResult.OutputState != nil {
-                if response, ok := args.AgentResult.OutputState.Get("response"); ok {
-                    fmt.Printf("Agent Response: %s\n", response)
-                }
-            }
-            resultReceived <- true
-            return args.State, nil
-        },
-    )
-    
-    // Create and emit an event
-    event := core.NewEvent(
-        "assistant",
-        core.EventData{"message": "Tell me about AgenticGoKit"},
-        map[string]string{
-            "session_id": "user-123",
-            "route": "assistant", // Required for routing
-        },
-    )
-    
-    if err := runner.Emit(event); err != nil {
-        panic(err)
-    }
-    
-    // Wait for result
-    select {
-    case <-resultReceived:
-        fmt.Println("Processing complete!")
-    case <-time.After(30 * time.Second):
-        fmt.Println("Timeout waiting for response")
-    }
+
+    event := core.NewEvent("assistant", core.EventData{"message": "Tell me about AgenticGoKit"}, map[string]string{"session_id": "user-123"})
+    if err := runner.Emit(event); err != nil { log.Fatal(err) }
+
+    fmt.Println("Event emitted; check logs/callbacks for responses")
 }
 ```
+
+Tip: In examples, use a local LLM like Ollama with model gemma3:1b in your `agentflow.toml` under `[llm]` to avoid external API keys.
 
 ## Advanced Message Passing Patterns
 
@@ -477,10 +419,7 @@ runner.RegisterCallback(core.HookBeforeEventHandling, "monitor",
 
 ### 1. Queue Sizing
 
-```go
-// Create runner with appropriate queue size
-runner := core.NewRunner(1000) // Larger queue for high throughput
-```
+Prefer configuring queue size in `agentflow.toml` when supported by your runner plugin. If not available, use the default from `NewRunnerFromConfig`.
 
 ### 2. Event Batching
 
@@ -539,6 +478,13 @@ runner.RegisterCallback(core.HookAfterAgentRun, "state-inspector",
         return args.State, nil
     },
 )
+
+### Troubleshooting
+
+- Error: "orchestrator not configured" or "factory not registered": add a plugins file with blank imports for orchestrators/runner, for example:
+    - _ "github.com/kunalkushwaha/agenticgokit/plugins/orchestrator/route"
+    - _ "github.com/kunalkushwaha/agenticgokit/plugins/runner/default"
+- LLM provider not registered: import the provider plugin, e.g. _ "github.com/kunalkushwaha/agenticgokit/plugins/llm/ollama" and set `[llm] type = "ollama", model = "gemma3:1b"` in `agentflow.toml`.
 ```
 
 ## Best Practices

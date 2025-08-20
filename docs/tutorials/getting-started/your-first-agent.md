@@ -9,7 +9,7 @@ Learn how to build your first AgenticGoKit agent using the powerful `agentcli cr
 ## Prerequisites
 
 - Go 1.21 or later installed
-- OpenAI API key (or other LLM provider)
+- An LLM provider (e.g., local Ollama). Recommended: Ollama with model gemma3:1b
 - Basic understanding of Go programming (helpful but not required)
 
 ## Learning Objectives
@@ -44,11 +44,7 @@ go install github.com/kunalkushwaha/agenticgokit/cmd/agentcli@latest
 agentcli --version
 ```
 
-Set up your environment:
-
-```bash
-export OPENAI_API_KEY=your-api-key-here
-```
+Set up your environment as needed for your chosen provider. For Ollama, ensure the daemon is running and the model is available: `ollama run gemma3:1b` (first run will pull it).
 
 ## Step 2: Generate Your Agent Project (30 seconds)
 
@@ -59,7 +55,7 @@ This is where AgenticGoKit shines! Instead of writing boilerplate code, let's ge
 agentcli create my-first-agent
 
 # Or create with specific options
-agentcli create my-first-agent --template basic --provider openai
+agentcli create my-first-agent --template basic
 
 cd my-first-agent
 ```
@@ -111,17 +107,10 @@ func main() {
         os.Exit(1)
     }
 
-    llmProvider, err := initializeProvider(config.AgentFlow.Provider)
+    llmProvider, err := config.InitializeProvider()
     if err != nil {
         fmt.Printf("Failed to initialize LLM provider '%s': %v\n", config.AgentFlow.Provider, err)
-        fmt.Printf("Make sure you have set the appropriate environment variables:\n")
-        switch config.AgentFlow.Provider {
-        case "openai":
-            fmt.Printf("  OPENAI_API_KEY=your-api-key\n")
-        case "azure":
-            fmt.Printf("  AZURE_OPENAI_API_KEY=your-api-key\n")
-            fmt.Printf("  AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/\n")
-        }
+    fmt.Printf("Make sure your [llm] section is configured in agentflow.toml (e.g., provider=\"ollama\", model=\"gemma3:1b\").\n")
         os.Exit(1)
     }
 
@@ -150,7 +139,7 @@ func main() {
     agents["agent2"] = wrappedAgent2
 
     // Create collaborative runner
-    runner := core.CreateCollaborativeRunner(agents, 30*time.Second)
+    runner, _ := core.NewRunnerFromConfig("agentflow.toml")
 
     var message string
     if *messageFlag != "" {
@@ -194,9 +183,7 @@ func main() {
     fmt.Printf("\n=== Workflow Completed ===\n")
 }
 
-func initializeProvider(providerType string) (core.ModelProvider, error) {
-    return core.NewProviderFromWorkingDir()
-}
+// Provider is initialized from agentflow.toml via config.InitializeProvider()
 ```
 
 **`agent1.go`** - Your first agent implementation:
@@ -370,10 +357,9 @@ Route Mode: Process tasks and route to appropriate next steps in the workflow.`
 ```toml
 # AgenticGoKit Configuration
 
-[agent_flow]
-name = "my-first-agent"
-version = "1.0.0"
-provider = "openai"
+[llm]
+provider = "ollama"
+model = "gemma3:1b"
 
 [logging]
 level = "info"
@@ -382,21 +368,6 @@ format = "json"
 [runtime]
 max_concurrent_agents = 10
 timeout_seconds = 30
-
-[providers.azure]
-# API key will be read from AZURE_OPENAI_API_KEY environment variable
-# Endpoint will be read from AZURE_OPENAI_ENDPOINT environment variable
-# Deployment will be read from AZURE_OPENAI_DEPLOYMENT environment variable
-
-[providers.openai]
-# API key will be read from OPENAI_API_KEY environment variable
-
-[providers.ollama]
-endpoint = "http://localhost:11434"
-model = "llama2"
-
-[providers.mock]
-# Mock provider for testing - no configuration needed
 ```
 
 The generated code also includes a **ResultCollectorHandler** that wraps your agents to capture and display their outputs:

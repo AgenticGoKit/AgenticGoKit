@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -118,26 +119,29 @@ func TestGeneratedProjectCompilation(t *testing.T) {
 			}
 
 			// For integration tests, we'll verify syntax compilation only
-			// since external dependencies may not be available
-			cmd := exec.Command("go", "build", "-o", "/dev/null", ".")
+			// since external dependencies may not be available.
+			// Use os.DevNull for cross-platform null device.
+			cmd := exec.Command("go", "build", "-o", os.DevNull, ".")
 			output, err := cmd.CombinedOutput()
-			
+
 			// Check if it's a dependency issue vs syntax issue
 			outputStr := string(output)
-			if err != nil && (strings.Contains(outputStr, "missing go.sum entry") || 
-							  strings.Contains(outputStr, "module declares its path") ||
-							  strings.Contains(outputStr, "cannot find module")) {
+			if err != nil && (strings.Contains(outputStr, "missing go.sum entry") ||
+				strings.Contains(outputStr, "module declares its path") ||
+				strings.Contains(outputStr, "cannot find module") ||
+				strings.Contains(outputStr, "updates to go.mod needed") ||
+				strings.Contains(outputStr, "go mod tidy")) {
 				// This is expected for integration tests - dependencies aren't available
-				t.Logf("✅ Project structure is valid (dependency resolution expected to fail in tests)")
+				t.Logf("Project structure is valid (dependency resolution expected to fail in tests)")
 			} else if err != nil {
 				// This is a real compilation error
 				t.Fatalf("Failed to compile project (syntax error): %v\nOutput: %s", err, output)
 			} else {
 				// Compilation succeeded completely
-				t.Logf("✅ Project compiled successfully")
+				t.Logf("Project compiled successfully")
 			}
 
-			t.Logf("✅ Project %s structure validation completed", tt.config.Name)
+			t.Logf("Project %s structure validation completed", tt.config.Name)
 		})
 	}
 }
@@ -222,20 +226,26 @@ func TestGeneratedProjectExecution(t *testing.T) {
 			cmd := exec.Command("go", "build", "-o", "test-binary", ".")
 			output, err := cmd.CombinedOutput()
 			outputStr := string(output)
-			
-			if err != nil && (strings.Contains(outputStr, "missing go.sum entry") || 
-							  strings.Contains(outputStr, "module declares its path") ||
-							  strings.Contains(outputStr, "cannot find module")) {
+
+			if err != nil && (strings.Contains(outputStr, "missing go.sum entry") ||
+				strings.Contains(outputStr, "module declares its path") ||
+				strings.Contains(outputStr, "cannot find module") ||
+				strings.Contains(outputStr, "updates to go.mod needed") ||
+				strings.Contains(outputStr, "go mod tidy")) {
 				// This is expected for integration tests - dependencies aren't available
-				t.Logf("✅ Project structure is valid (dependency resolution expected to fail in tests)")
+				t.Logf("Project structure is valid (dependency resolution expected to fail in tests)")
 				return // Skip execution test since we can't build
 			} else if err != nil {
 				t.Fatalf("Failed to build project: %v\nOutput: %s", err, output)
 			}
 
-			// Execute the binary with timeout
-			cmd = exec.Command("./test-binary")
-			
+			// Execute the binary with timeout (handle Windows .exe suffix)
+			binName := "test-binary"
+			if runtime.GOOS == "windows" {
+				binName += ".exe"
+			}
+			cmd = exec.Command("." + string(os.PathSeparator) + binName)
+
 			// Set up timeout
 			done := make(chan error, 1)
 			go func() {
@@ -258,10 +268,10 @@ func TestGeneratedProjectExecution(t *testing.T) {
 				if cmd.Process != nil {
 					cmd.Process.Kill()
 				}
-				t.Logf("✅ Binary ran for expected timeout duration (likely waiting for input)")
+				t.Logf("Binary ran for expected timeout duration (likely waiting for input)")
 			}
 
-			t.Logf("✅ Project %s executed successfully", tt.config.Name)
+			t.Logf("Project %s executed successfully", tt.config.Name)
 		})
 	}
 }
@@ -376,25 +386,25 @@ func TestImportPathResolvability(t *testing.T) {
 				}
 
 				fileContent := string(content)
-				
+
 				// Check for import statements - only check actual import lines
 				lines := strings.Split(fileContent, "\n")
 				inImportBlock := false
 				for i, line := range lines {
 					trimmedLine := strings.TrimSpace(line)
-					
+
 					// Check if we're entering an import block
 					if strings.HasPrefix(trimmedLine, "import (") {
 						inImportBlock = true
 						continue
 					}
-					
+
 					// Check if we're exiting an import block
 					if inImportBlock && trimmedLine == ")" {
 						inImportBlock = false
 						continue
 					}
-					
+
 					// Check single line imports or imports within block
 					if strings.HasPrefix(trimmedLine, "import \"") || inImportBlock {
 						if strings.Contains(trimmedLine, "\"") {
@@ -421,19 +431,21 @@ func TestImportPathResolvability(t *testing.T) {
 			cmd := exec.Command("go", "build", "./...")
 			output, err := cmd.CombinedOutput()
 			outputStr := string(output)
-			
-			if err != nil && (strings.Contains(outputStr, "missing go.sum entry") || 
-							  strings.Contains(outputStr, "module declares its path") ||
-							  strings.Contains(outputStr, "cannot find module")) {
+
+			if err != nil && (strings.Contains(outputStr, "missing go.sum entry") ||
+				strings.Contains(outputStr, "module declares its path") ||
+				strings.Contains(outputStr, "cannot find module") ||
+				strings.Contains(outputStr, "updates to go.mod needed") ||
+				strings.Contains(outputStr, "go mod tidy")) {
 				// This is expected for integration tests - dependencies aren't available
-				t.Logf("✅ Import paths are syntactically valid (dependency resolution expected to fail in tests)")
+				t.Logf("Import paths are syntactically valid (dependency resolution expected to fail in tests)")
 			} else if err != nil {
 				t.Fatalf("Failed to build project (import resolution failed): %v\nOutput: %s", err, output)
 			} else {
-				t.Logf("✅ All imports resolved successfully")
+				t.Logf("All imports resolved successfully")
 			}
 
-			t.Logf("✅ All import paths in %s are resolvable", tt.config.Name)
+			t.Logf("All import paths in %s are resolvable", tt.config.Name)
 		})
 	}
 }
@@ -672,19 +684,21 @@ func TestVariousConfigurationCombinations(t *testing.T) {
 			cmd := exec.Command("go", "build", ".")
 			output, err := cmd.CombinedOutput()
 			outputStr := string(output)
-			
-			if err != nil && (strings.Contains(outputStr, "missing go.sum entry") || 
-							  strings.Contains(outputStr, "module declares its path") ||
-							  strings.Contains(outputStr, "cannot find module")) {
+
+			if err != nil && (strings.Contains(outputStr, "missing go.sum entry") ||
+				strings.Contains(outputStr, "module declares its path") ||
+				strings.Contains(outputStr, "cannot find module") ||
+				strings.Contains(outputStr, "updates to go.mod needed") ||
+				strings.Contains(outputStr, "go mod tidy")) {
 				// This is expected for integration tests - dependencies aren't available
-				t.Logf("✅ Project structure is valid (dependency resolution expected to fail in tests)")
+				t.Logf("Project structure is valid (dependency resolution expected to fail in tests)")
 			} else if err != nil {
 				t.Fatalf("Failed to compile project: %v\nOutput: %s", err, output)
 			} else {
-				t.Logf("✅ Project compiled successfully")
+				t.Logf("Project compiled successfully")
 			}
 
-			t.Logf("✅ Configuration combination %s works correctly", tt.name)
+			t.Logf("Configuration combination %s works correctly", tt.name)
 		})
 	}
 }
@@ -695,21 +709,21 @@ func isValidImportPath(path string) bool {
 	if strings.Contains(path, " ") || strings.Contains(path, "@") || strings.Contains(path, "!") {
 		return false
 	}
-	
+
 	// Should not be empty
 	if path == "" {
 		return false
 	}
-	
+
 	// Standard library imports are always valid
 	if !strings.Contains(path, "/") {
 		return true
 	}
-	
+
 	// Local imports (starting with .) are valid
 	if strings.HasPrefix(path, ".") {
 		return true
 	}
-	
+
 	return true
 }

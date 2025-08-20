@@ -1,30 +1,19 @@
-// Package core provides public factory functions for creating agents and runners in AgentFlow.
+// Package core provides essential factory functions for creating agents and runners in AgentFlow.
 package core
 
 import (
 	"context"
 	"fmt"
-	"os"
 	"sync"
 	"time"
-
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 )
 
-// Example factory function for creating a new agent (expand as needed).
-func NewExampleAgent(name string) Agent {
-	// ...implementation or call to actual agent constructor...
-	return nil // Replace with actual agent
-}
+// Essential factory functions for agents and runners
+// Implementation details are moved to internal packages
 
-// Example factory function for creating a new runner (expand as needed).
-func NewExampleRunner(ctx context.Context) Runner {
-	// ...implementation or call to actual runner constructor...
-	return nil // Replace with actual runner
-}
-
-// TODO: Move and export all relevant factory functions from internal/factory/agent_factory.go here.
+// Essential factory functions are defined in their respective files
+// NewAgent is defined in agent_builder.go
+// NewRunner is defined in runner.go
 
 // RouteMetadataKey defines the metadata key used for routing events to specific agents.
 const RouteMetadataKey = "route"
@@ -117,7 +106,7 @@ func (r *CallbackRegistry) Unregister(hook HookPoint, name string) {
 	for i, reg := range hooks {
 		if reg.ID == name {
 			r.callbacks[hook] = append(hooks[:i], hooks[i+1:]...)
-			Logger().Info().
+			Logger().Debug().
 				Str("callback", name).
 				Str("hook", string(hook)).
 				Msg("Callback unregistered")
@@ -137,10 +126,10 @@ func (r *CallbackRegistry) Invoke(ctx context.Context, args CallbackArgs) (State
 
 	currentState := args.State
 	if currentState == nil {
-		currentState = &SimpleState{data: make(map[string]interface{})}
+		currentState = NewState()
 		Logger().Warn().
 			Str("hook", string(args.Hook)).
-			Msg("Initial state was nil, created new SimpleState")
+			Msg("Initial state was nil, created new State")
 	}
 
 	hookRegistrations := r.callbacks[args.Hook]
@@ -194,6 +183,7 @@ func (r *CallbackRegistry) Invoke(ctx context.Context, args CallbackArgs) (State
 	return currentState, lastErr
 }
 
+// Essential logging interface
 type LogLevel int
 
 const (
@@ -203,45 +193,156 @@ const (
 	ERROR
 )
 
-var (
-	logger   zerolog.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
-	logLevel LogLevel       = INFO
-	mu       sync.RWMutex
-)
+// track current log level even if no provider is active (for tests and defaults)
+var currentLogLevel LogLevel = INFO
 
+// Essential logging functions - implementations moved to internal packages
 func SetLogLevel(level LogLevel) {
-	mu.Lock()
-	defer mu.Unlock()
-	logLevel = level
-	zerolog.SetGlobalLevel(mapLogLevel(level))
+	// Delegate to active logging provider if available
+	p := getActiveLoggingProvider()
+	if p.SetLevel != nil {
+		p.SetLevel(level)
+	}
+	// Always record the desired level locally
+	currentLogLevel = level
 }
 
 func GetLogLevel() LogLevel {
-	mu.RLock()
-	defer mu.RUnlock()
-	return logLevel
+	// Delegate to active logging provider if available
+	p := getActiveLoggingProvider()
+	if p.GetLevel != nil {
+		return p.GetLevel()
+	}
+	// Fallback to locally tracked level
+	return currentLogLevel
 }
 
-func Logger() *zerolog.Logger {
-	return &logger
+func Logger() CoreLogger {
+	// Return logger from the active provider or a safe no-op
+	p := getActiveLoggingProvider()
+	if p.New != nil {
+		return p.New()
+	}
+	return &noopCoreLogger{}
 }
 
-func mapLogLevel(level LogLevel) zerolog.Level {
-	switch level {
-	case DEBUG:
-		return zerolog.DebugLevel
-	case INFO:
-		return zerolog.InfoLevel
-	case WARN:
-		return zerolog.WarnLevel
-	case ERROR:
-		return zerolog.ErrorLevel
-	default:
-		return zerolog.InfoLevel
+// CoreLogger interface for essential logging operations
+type CoreLogger interface {
+	Debug() LogEvent
+	Info() LogEvent
+	Warn() LogEvent
+	Error() LogEvent
+	With() LogEvent
+}
+
+// LogEvent interface for building log messages
+type LogEvent interface {
+	Str(key, val string) LogEvent
+	Strs(key string, val []string) LogEvent
+	Int(key string, val int) LogEvent
+	Bool(key string, val bool) LogEvent
+	Float64(key string, val float64) LogEvent
+	Dur(key string, val time.Duration) LogEvent
+	Time(key string, val time.Time) LogEvent
+	Interface(key string, val interface{}) LogEvent
+	Err(err error) LogEvent
+	Msg(msg string)
+	Msgf(format string, args ...interface{})
+
+	// For chaining - allow LogEvent to also behave like a logger
+	Debug() LogEvent
+	Info() LogEvent
+	Warn() LogEvent
+	Error() LogEvent
+
+	// Logger creation for With() pattern
+	Logger() CoreLogger
+}
+
+// =============================================================================
+// LOGGING PROVIDER REGISTRY (Plugins register here)
+// =============================================================================
+
+// LoggingProvider wires a concrete logger into core.
+type LoggingProvider struct {
+	// New returns a new CoreLogger instance (can share underlying sink).
+	New func() CoreLogger
+	// SetLevel sets global log level (optional).
+	SetLevel func(LogLevel)
+	// GetLevel gets global log level (optional).
+	GetLevel func() LogLevel
+}
+
+var (
+	loggingProvidersMu    sync.RWMutex
+	loggingProviders      = map[string]LoggingProvider{}
+	activeLoggingProvider string
+)
+
+// RegisterLoggingProvider registers a logging provider by name. First registered becomes active by default.
+func RegisterLoggingProvider(name string, provider LoggingProvider) {
+	if name == "" || provider.New == nil {
+		return
+	}
+	loggingProvidersMu.Lock()
+	defer loggingProvidersMu.Unlock()
+	loggingProviders[name] = provider
+	if activeLoggingProvider == "" {
+		activeLoggingProvider = name
 	}
 }
 
-// TraceEntry represents a single logged event during the execution flow.
+// UseLoggingProvider selects an already-registered provider by name. Returns true if switched.
+func UseLoggingProvider(name string) bool {
+	loggingProvidersMu.Lock()
+	defer loggingProvidersMu.Unlock()
+	if _, ok := loggingProviders[name]; ok {
+		activeLoggingProvider = name
+		return true
+	}
+	return false
+}
+
+func getActiveLoggingProvider() LoggingProvider {
+	loggingProvidersMu.RLock()
+	name := activeLoggingProvider
+	provider, ok := loggingProviders[name]
+	loggingProvidersMu.RUnlock()
+	if ok {
+		return provider
+	}
+	return LoggingProvider{New: func() CoreLogger { return &noopCoreLogger{} }}
+}
+
+// Safe no-op implementations to avoid nil panics before a provider is registered
+type noopCoreLogger struct{}
+
+func (l *noopCoreLogger) Debug() LogEvent { return &noopLogEvent{} }
+func (l *noopCoreLogger) Info() LogEvent  { return &noopLogEvent{} }
+func (l *noopCoreLogger) Warn() LogEvent  { return &noopLogEvent{} }
+func (l *noopCoreLogger) Error() LogEvent { return &noopLogEvent{} }
+func (l *noopCoreLogger) With() LogEvent  { return &noopLogEvent{} }
+
+type noopLogEvent struct{}
+
+func (e *noopLogEvent) Str(key, val string) LogEvent                   { return e }
+func (e *noopLogEvent) Strs(key string, val []string) LogEvent         { return e }
+func (e *noopLogEvent) Int(key string, val int) LogEvent               { return e }
+func (e *noopLogEvent) Bool(key string, val bool) LogEvent             { return e }
+func (e *noopLogEvent) Float64(key string, val float64) LogEvent       { return e }
+func (e *noopLogEvent) Dur(key string, val time.Duration) LogEvent     { return e }
+func (e *noopLogEvent) Time(key string, val time.Time) LogEvent        { return e }
+func (e *noopLogEvent) Interface(key string, val interface{}) LogEvent { return e }
+func (e *noopLogEvent) Err(err error) LogEvent                         { return e }
+func (e *noopLogEvent) Msg(msg string)                                 {}
+func (e *noopLogEvent) Msgf(format string, args ...interface{})        {}
+func (e *noopLogEvent) Debug() LogEvent                                { return e }
+func (e *noopLogEvent) Info() LogEvent                                 { return e }
+func (e *noopLogEvent) Warn() LogEvent                                 { return e }
+func (e *noopLogEvent) Error() LogEvent                                { return e }
+func (e *noopLogEvent) Logger() CoreLogger                             { return &noopCoreLogger{} }
+
+// Essential tracing types and interfaces
 type TraceEntry struct {
 	Timestamp     time.Time    `json:"timestamp"`
 	Type          string       `json:"type"`
@@ -262,55 +363,16 @@ type TraceLogger interface {
 	GetTrace(sessionID string) ([]TraceEntry, error)
 }
 
-// InMemoryTraceLogger is a simple in-memory implementation of TraceLogger.
-type InMemoryTraceLogger struct {
-	mu     sync.RWMutex
-	traces map[string][]TraceEntry
-}
-
-// NewInMemoryTraceLogger creates a new in-memory trace logger.
-func NewInMemoryTraceLogger() *InMemoryTraceLogger {
-	return &InMemoryTraceLogger{
+// Essential tracing factory functions - implementations moved to internal packages
+func NewInMemoryTraceLogger() TraceLogger {
+	// For now, return a simple implementation during refactoring
+	return &inMemoryTraceLogger{
 		traces: make(map[string][]TraceEntry),
 	}
 }
 
-// Log adds a trace entry to the logger.
-func (l *InMemoryTraceLogger) Log(entry TraceEntry) error {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
-	sessionID := entry.SessionID
-	if sessionID == "" {
-		sessionID = "default"
-	}
-
-	l.traces[sessionID] = append(l.traces[sessionID], entry)
-	return nil
-}
-
-// GetTrace retrieves all trace entries for a given session ID.
-func (l *InMemoryTraceLogger) GetTrace(sessionID string) ([]TraceEntry, error) {
-	l.mu.RLock()
-	defer l.mu.RUnlock()
-
-	if sessionID == "" {
-		sessionID = "default"
-	}
-
-	entries, exists := l.traces[sessionID]
-	if !exists {
-		return []TraceEntry{}, nil
-	}
-
-	// Return a copy to avoid race conditions
-	result := make([]TraceEntry, len(entries))
-	copy(result, entries)
-	return result, nil
-}
-
-// RegisterTraceHooks registers tracing callbacks with the callback registry.
 func RegisterTraceHooks(registry *CallbackRegistry, logger TraceLogger) error {
+	// Implementation moved to bridge pattern to avoid circular dependencies
 	if registry == nil {
 		return fmt.Errorf("callback registry cannot be nil")
 	}
@@ -359,5 +421,97 @@ func RegisterTraceHooks(registry *CallbackRegistry, logger TraceLogger) error {
 	return nil
 }
 
+// Simple in-memory implementation for core package during refactoring
+type inMemoryTraceLogger struct {
+	mu     sync.RWMutex
+	traces map[string][]TraceEntry
+}
+
+func (l *inMemoryTraceLogger) Log(entry TraceEntry) error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	sessionID := entry.SessionID
+	if sessionID == "" {
+		sessionID = "default"
+	}
+	l.traces[sessionID] = append(l.traces[sessionID], entry)
+	return nil
+}
+
+func (l *inMemoryTraceLogger) GetTrace(sessionID string) ([]TraceEntry, error) {
+	l.mu.RLock()
+	defer l.mu.RUnlock()
+
+	if sessionID == "" {
+		sessionID = "default"
+	}
+	entries, exists := l.traces[sessionID]
+	if !exists {
+		return []TraceEntry{}, nil
+	}
+
+	// Return a copy to avoid race conditions
+	result := make([]TraceEntry, len(entries))
+	copy(result, entries)
+	return result, nil
+}
+
 // TODO: Add MCP-enabled factory functions here once the infrastructure is implemented
 // These will be moved from internal packages to provide a clean public API
+// =============================================================================
+// VISUALIZATION SUPPORT
+// =============================================================================
+
+// MermaidConfig configures diagram generation options
+type MermaidConfig struct {
+	DiagramType    string
+	Title          string
+	Direction      string // TB (top-bottom), LR (left-right), etc.
+	Theme          string // default, dark, forest, etc.
+	ShowMetadata   bool   // Include metadata like timeouts, error strategies
+	ShowAgentTypes bool   // Show agent type information
+	CompactMode    bool   // Generate more compact diagrams
+}
+
+// DefaultMermaidConfig returns sensible defaults for Mermaid diagram generation
+func DefaultMermaidConfig() MermaidConfig {
+	return MermaidConfig{
+		DiagramType:    "flowchart",
+		Direction:      "TD", // Top-Down
+		Theme:          "default",
+		ShowMetadata:   true,
+		ShowAgentTypes: true,
+		CompactMode:    false,
+	}
+}
+
+// MermaidGenerator interface for generating Mermaid diagrams
+type MermaidGenerator interface {
+	GenerateCompositionDiagram(mode, name string, agents []Agent, config MermaidConfig) string
+}
+
+// NewMermaidGenerator creates a new Mermaid generator
+// Implementation is provided by internal packages
+func NewMermaidGenerator() MermaidGenerator {
+	if mermaidGeneratorFactory != nil {
+		return mermaidGeneratorFactory()
+	}
+	// Return a basic implementation
+	return &basicMermaidGenerator{}
+}
+
+// RegisterMermaidGeneratorFactory registers the Mermaid generator factory function
+func RegisterMermaidGeneratorFactory(factory func() MermaidGenerator) {
+	mermaidGeneratorFactory = factory
+}
+
+var mermaidGeneratorFactory func() MermaidGenerator
+
+// basicMermaidGenerator provides a minimal implementation
+type basicMermaidGenerator struct{}
+
+func (g *basicMermaidGenerator) GenerateCompositionDiagram(mode, name string, agents []Agent, config MermaidConfig) string {
+	// Basic implementation - internal packages can provide more sophisticated implementations
+	return fmt.Sprintf("graph %s\n    %s[%s]\n", config.Direction, name, mode)
+}

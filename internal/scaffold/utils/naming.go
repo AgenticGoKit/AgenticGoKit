@@ -80,11 +80,22 @@ func ResolveAgentNames(config ProjectConfig) []AgentInfo {
 		}
 
 	case "loop":
-		if config.LoopAgent != "" {
-			agents = append(agents, CreateAgentInfo(config.LoopAgent, "loop"))
+		// For loop mode, still generate the requested number of agent files
+		if config.NumAgents > 0 {
+			for i := 1; i <= config.NumAgents; i++ {
+				name := fmt.Sprintf("agent%d", i)
+				if i == 1 && config.LoopAgent != "" {
+					name = config.LoopAgent
+				}
+				agents = append(agents, CreateAgentInfo(name, "loop"))
+			}
 		} else {
-			// Fallback
-			agents = append(agents, CreateAgentInfo("agent1", "loop"))
+			// Fallback to at least one agent
+			loopName := config.LoopAgent
+			if loopName == "" {
+				loopName = "agent1"
+			}
+			agents = append(agents, CreateAgentInfo(loopName, "loop"))
 		}
 
 	case "mixed":

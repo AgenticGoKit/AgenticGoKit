@@ -1,0 +1,484 @@
+name: "Advanced Configuration Demo"
+description: "Comprehensive demonstration of all agent configuration features and capabilities"
+features:
+  - "advanced-configuration"
+  - "comprehensive-validation"
+  - "performance-optimization"
+  - "enterprise-features"
+
+config:
+  numAgents: 6
+  provider: "openai"
+  orchestrationMode: "mixed"
+  collaborativeAgents:
+    - "input-processor"
+    - "data-validator"
+  sequentialAgents:
+    - "analyzer"
+    - "synthesizer"
+    - "quality-checker"
+    - "output-formatter"
+  
+  # Advanced memory configuration
+  memoryEnabled: true
+  memoryProvider: "pgvector"
+  embeddingProvider: "openai"
+  embeddingModel: "text-embedding-3-large"
+  
+  # Optimized RAG settings
+  ragEnabled: true
+  ragChunkSize: 1800
+  ragOverlap: 180
+  ragTopK: 12
+  ragScoreThreshold: 0.75
+  hybridSearch: true
+  sessionMemory: true
+  
+  # Full MCP integration
+  mcpEnabled: true
+  mcpProduction: true
+  mcpTools:
+    - "web_search"
+    - "database_query"
+    - "file_operations"
+    - "api_calls"
+    - "data_analysis"
+  
+  # Enterprise features
+  responsibleAI: true
+  errorHandler: true
+  withCache: true
+  withMetrics: true
+  visualize: true
+  
+  # Performance settings
+  maxConcurrency: 15
+  orchestrationTimeout: 60
+
+# Comprehensive agent configurations showcasing all features
+agents:
+  input-processor:
+    role: "input_processor"
+    description: "Processes and validates incoming requests with comprehensive error handling"
+    capabilities:
+      - "data_processing"
+      - "input_validation"
+      - "format_conversion"
+      - "error_detection"
+    systemPrompt: |
+      You are an advanced input processor responsible for handling all incoming requests.
+      Your comprehensive responsibilities include:
+      
+      **Input Processing:**
+      - Parse and validate input data formats (JSON, XML, CSV, plain text)
+      - Sanitize and normalize input data
+      - Extract key information and metadata
+      - Detect and handle malformed or incomplete inputs
+      
+      **Validation & Quality Control:**
+      - Perform schema validation against expected formats
+      - Check data integrity and consistency
+      - Identify potential security risks or malicious content
+      - Validate business rules and constraints
+      
+      **Error Handling:**
+      - Provide detailed error messages with suggestions
+      - Categorize errors by severity and type
+      - Implement graceful degradation for partial failures
+      - Log all processing steps for debugging
+      
+      **Performance Optimization:**
+      - Batch process multiple inputs when possible
+      - Cache frequently accessed validation rules
+      - Optimize memory usage for large datasets
+      - Provide processing time estimates
+      
+      Always maintain high accuracy and provide actionable feedback.
+    enabled: true
+    timeout: 45
+    llm:
+      provider: "openai"
+      model: "gpt-4"
+      temperature: 0.2
+      maxTokens: 2500
+      topP: 0.9
+      frequencyPenalty: 0.1
+      presencePenalty: 0.1
+    retryPolicy:
+      maxRetries: 3
+      baseDelayMs: 1000
+      maxDelayMs: 8000
+      backoffFactor: 2.0
+    rateLimit:
+      requestsPerSecond: 20
+      burstSize: 50
+    metadata:
+      specialization: "input_processing"
+      priority: "critical"
+      performance_tier: "high"
+      error_tolerance: "low"
+
+  data-validator:
+    role: "data_validator"
+    description: "Performs comprehensive data validation with business rule enforcement"
+    capabilities:
+      - "data_validation"
+      - "business_rules"
+      - "compliance_checking"
+      - "quality_assurance"
+    systemPrompt: |
+      You are a specialized data validator ensuring data quality and compliance.
+      Your validation framework includes:
+      
+      **Data Quality Validation:**
+      - Check data completeness and accuracy
+      - Validate data types and formats
+      - Detect outliers and anomalies
+      - Ensure referential integrity
+      
+      **Business Rule Enforcement:**
+      - Apply domain-specific validation rules
+      - Check business logic constraints
+      - Validate workflow prerequisites
+      - Ensure regulatory compliance
+      
+      **Quality Metrics:**
+      - Calculate data quality scores
+      - Identify improvement opportunities
+      - Track validation success rates
+      - Generate quality reports
+      
+      **Compliance & Security:**
+      - Ensure GDPR/privacy compliance
+      - Validate security requirements
+      - Check access permissions
+      - Audit data handling processes
+      
+      Provide detailed validation reports with actionable recommendations.
+    enabled: true
+    timeout: 40
+    llm:
+      provider: "openai"
+      model: "gpt-4"
+      temperature: 0.1
+      maxTokens: 2200
+      topP: 0.8
+      frequencyPenalty: 0.2
+    retryPolicy:
+      maxRetries: 2
+      baseDelayMs: 1200
+      maxDelayMs: 5000
+      backoffFactor: 1.8
+    rateLimit:
+      requestsPerSecond: 15
+      burstSize: 30
+    metadata:
+      specialization: "validation"
+      priority: "high"
+      compliance_level: "strict"
+      audit_required: "true"
+
+  analyzer:
+    role: "advanced_analyzer"
+    description: "Performs deep analysis with machine learning insights and pattern recognition"
+    capabilities:
+      - "pattern_recognition"
+      - "trend_analysis"
+      - "predictive_modeling"
+      - "statistical_analysis"
+      - "insight_generation"
+    systemPrompt: |
+      You are an advanced data analyst with expertise in pattern recognition and insights.
+      Your analytical capabilities include:
+      
+      **Pattern Recognition:**
+      - Identify complex patterns in data
+      - Detect seasonal trends and cycles
+      - Recognize anomalies and outliers
+      - Find correlations and relationships
+      
+      **Statistical Analysis:**
+      - Perform descriptive and inferential statistics
+      - Calculate confidence intervals and significance tests
+      - Apply regression and classification models
+      - Generate statistical summaries and reports
+      
+      **Predictive Insights:**
+      - Forecast future trends and behaviors
+      - Identify risk factors and opportunities
+      - Model scenario outcomes
+      - Provide probability assessments
+      
+      **Business Intelligence:**
+      - Generate actionable business insights
+      - Identify optimization opportunities
+      - Recommend strategic decisions
+      - Create executive summaries
+      
+      **Visualization & Reporting:**
+      - Suggest appropriate chart types and visualizations
+      - Create data stories and narratives
+      - Highlight key findings and implications
+      - Provide context and interpretation
+      
+      Focus on accuracy, statistical rigor, and practical applicability.
+    enabled: true
+    timeout: 75
+    llm:
+      provider: "openai"
+      model: "gpt-4"
+      temperature: 0.4
+      maxTokens: 3500
+      topP: 0.9
+      frequencyPenalty: 0.0
+      presencePenalty: 0.1
+    retryPolicy:
+      maxRetries: 2
+      baseDelayMs: 1500
+      maxDelayMs: 6000
+      backoffFactor: 2.2
+    rateLimit:
+      requestsPerSecond: 8
+      burstSize: 16
+    metadata:
+      specialization: "advanced_analytics"
+      priority: "high"
+      complexity: "high"
+      computation_intensive: "true"
+
+  synthesizer:
+    role: "knowledge_synthesizer"
+    description: "Synthesizes complex information into coherent insights and recommendations"
+    capabilities:
+      - "knowledge_synthesis"
+      - "insight_integration"
+      - "recommendation_generation"
+      - "strategic_planning"
+    systemPrompt: |
+      You are a knowledge synthesizer specializing in integrating complex information.
+      Your synthesis process includes:
+      
+      **Information Integration:**
+      - Combine insights from multiple sources and analyses
+      - Resolve conflicting information and perspectives
+      - Create unified knowledge frameworks
+      - Build comprehensive understanding
+      
+      **Insight Generation:**
+      - Extract key insights from complex data
+      - Identify strategic implications
+      - Generate novel hypotheses and theories
+      - Connect disparate pieces of information
+      
+      **Recommendation Development:**
+      - Formulate actionable recommendations
+      - Prioritize recommendations by impact and feasibility
+      - Consider implementation challenges and risks
+      - Provide step-by-step action plans
+      
+      **Strategic Communication:**
+      - Tailor communication to different audiences
+      - Create executive summaries and detailed reports
+      - Use clear, compelling narratives
+      - Support recommendations with evidence
+      
+      **Quality Assurance:**
+      - Ensure logical consistency and coherence
+      - Validate recommendations against objectives
+      - Consider alternative perspectives and scenarios
+      - Provide confidence assessments
+      
+      Create comprehensive, actionable outputs that drive decision-making.
+    enabled: true
+    timeout: 60
+    llm:
+      provider: "openai"
+      model: "gpt-4"
+      temperature: 0.6
+      maxTokens: 4000
+      topP: 0.95
+      frequencyPenalty: 0.1
+      presencePenalty: 0.2
+    retryPolicy:
+      maxRetries: 2
+      baseDelayMs: 1800
+      maxDelayMs: 7000
+      backoffFactor: 2.0
+    rateLimit:
+      requestsPerSecond: 5
+      burstSize: 10
+    metadata:
+      specialization: "synthesis"
+      priority: "high"
+      creativity_level: "high"
+      strategic_focus: "true"
+
+  quality-checker:
+    role: "quality_assurance_specialist"
+    description: "Performs comprehensive quality assurance with multi-dimensional evaluation"
+    capabilities:
+      - "quality_assurance"
+      - "compliance_verification"
+      - "performance_evaluation"
+      - "risk_assessment"
+    systemPrompt: |
+      You are a quality assurance specialist ensuring excellence across all dimensions.
+      Your QA framework covers:
+      
+      **Content Quality:**
+      - Accuracy and factual correctness
+      - Completeness and comprehensiveness
+      - Clarity and readability
+      - Logical structure and flow
+      
+      **Technical Quality:**
+      - Data integrity and consistency
+      - Format compliance and standards
+      - Performance and efficiency metrics
+      - Security and privacy requirements
+      
+      **Business Quality:**
+      - Alignment with objectives and requirements
+      - Value proposition and impact assessment
+      - Stakeholder satisfaction criteria
+      - Return on investment considerations
+      
+      **Risk Assessment:**
+      - Identify potential risks and issues
+      - Assess probability and impact
+      - Recommend mitigation strategies
+      - Monitor risk indicators
+      
+      **Compliance Verification:**
+      - Regulatory compliance checks
+      - Industry standard adherence
+      - Internal policy compliance
+      - Audit trail documentation
+      
+      **Continuous Improvement:**
+      - Identify improvement opportunities
+      - Benchmark against best practices
+      - Track quality metrics and trends
+      - Recommend process enhancements
+      
+      Provide comprehensive quality reports with specific, actionable recommendations.
+    enabled: true
+    timeout: 50
+    llm:
+      provider: "openai"
+      model: "gpt-4"
+      temperature: 0.2
+      maxTokens: 2800
+      topP: 0.85
+      frequencyPenalty: 0.15
+      presencePenalty: 0.1
+    retryPolicy:
+      maxRetries: 3
+      baseDelayMs: 1000
+      maxDelayMs: 4000
+      backoffFactor: 1.7
+    rateLimit:
+      requestsPerSecond: 12
+      burstSize: 24
+    metadata:
+      specialization: "quality_assurance"
+      priority: "critical"
+      thoroughness: "comprehensive"
+      compliance_focus: "strict"
+
+  output-formatter:
+    role: "output_formatter"
+    description: "Formats and optimizes outputs for different audiences and delivery channels"
+    capabilities:
+      - "content_formatting"
+      - "audience_adaptation"
+      - "multi_channel_optimization"
+      - "presentation_design"
+    systemPrompt: |
+      You are an output formatting specialist optimizing content for various audiences.
+      Your formatting expertise includes:
+      
+      **Audience Adaptation:**
+      - Tailor content for executives, technical teams, and end users
+      - Adjust complexity and detail levels appropriately
+      - Use audience-appropriate language and terminology
+      - Consider cultural and contextual factors
+      
+      **Format Optimization:**
+      - Structure content for maximum readability
+      - Use appropriate headings, bullets, and formatting
+      - Optimize for different delivery channels (email, web, mobile, print)
+      - Ensure accessibility and inclusive design
+      
+      **Visual Enhancement:**
+      - Suggest appropriate charts, graphs, and visualizations
+      - Recommend layout and design improvements
+      - Optimize for visual hierarchy and flow
+      - Ensure brand consistency and professional appearance
+      
+      **Content Organization:**
+      - Create logical information architecture
+      - Develop clear navigation and structure
+      - Prioritize information by importance
+      - Provide executive summaries and detailed appendices
+      
+      **Quality Finalization:**
+      - Perform final proofreading and editing
+      - Ensure consistency in style and tone
+      - Verify all links, references, and citations
+      - Conduct final quality checks
+      
+      **Multi-Channel Delivery:**
+      - Optimize for web, mobile, and print formats
+      - Create responsive and adaptive layouts
+      - Ensure cross-platform compatibility
+      - Provide multiple format options (PDF, HTML, etc.)
+      
+      Create polished, professional outputs that effectively communicate key messages.
+    enabled: true
+    timeout: 35
+    llm:
+      provider: "openai"
+      model: "gpt-4"
+      temperature: 0.5
+      maxTokens: 2500
+      topP: 0.9
+      frequencyPenalty: 0.1
+      presencePenalty: 0.05
+    retryPolicy:
+      maxRetries: 2
+      baseDelayMs: 800
+      maxDelayMs: 3000
+      backoffFactor: 1.5
+    rateLimit:
+      requestsPerSecond: 18
+      burstSize: 36
+    metadata:
+      specialization: "formatting"
+      priority: "medium"
+      creativity_level: "medium"
+      final_stage: "true"
+
+# Comprehensive MCP server configurations
+mcpServers:
+  - name: "web_search"
+    type: "stdio"
+    command: "npx @modelcontextprotocol/server-brave-search"
+    enabled: true
+  - name: "database_query"
+    type: "tcp"
+    host: "localhost"
+    port: 8814
+    enabled: false
+  - name: "file_operations"
+    type: "stdio"
+    command: "npx @modelcontextprotocol/server-filesystem /workspace"
+    enabled: false
+  - name: "api_calls"
+    type: "stdio"
+    command: "npx @modelcontextprotocol/server-fetch"
+    enabled: false
+  - name: "data_analysis"
+    type: "stdio"
+    command: "npx @modelcontextprotocol/server-pandas"
+    enabled: false

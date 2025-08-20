@@ -1,0 +1,233 @@
+name: "Content Creation Pipeline"
+description: "Multi-agent content creation system with research, writing, editing, and optimization"
+features:
+  - "content-creation"
+  - "seo-optimization"
+  - "quality-assurance"
+  - "multi-format"
+
+config:
+  numAgents: 5
+  provider: "openai"
+  orchestrationMode: "sequential"
+  sequentialAgents:
+    - "content-researcher"
+    - "content-writer"
+    - "content-editor"
+    - "seo-optimizer"
+    - "quality-checker"
+  
+  # Memory for content context and style consistency
+  memoryEnabled: true
+  memoryProvider: "weaviate"
+  embeddingProvider: "openai"
+  embeddingModel: "text-embedding-3-small"
+  
+  # RAG for content knowledge base
+  ragEnabled: true
+  ragChunkSize: 1200
+  ragOverlap: 120
+  ragTopK: 6
+  ragScoreThreshold: 0.7
+  hybridSearch: true
+  sessionMemory: true
+  
+  # MCP tools for content creation
+  mcpEnabled: true
+  mcpProduction: true
+  mcpTools:
+    - "web_search"
+    - "image_generator"
+    - "seo_analyzer"
+    - "grammar_checker"
+    - "plagiarism_checker"
+  
+  # Content quality features
+  responsibleAI: true
+  errorHandler: true
+  withCache: true
+  withMetrics: true
+  visualize: true
+
+# Agent-specific configurations
+agents:
+  content-researcher:
+    role: "content_researcher"
+    description: "Researches topics and gathers relevant information for content creation"
+    capabilities:
+      - "information_gathering"
+      - "source_identification"
+      - "trend_analysis"
+      - "data_processing"
+    systemPrompt: |
+      You are a content researcher specializing in gathering information for high-quality content creation.
+      Your responsibilities include:
+      - Researching trending topics and keywords
+      - Finding authoritative sources and recent data
+      - Identifying target audience interests and pain points
+      - Gathering competitive intelligence
+      - Collecting relevant statistics and case studies
+      Focus on accuracy, relevance, and timeliness of information.
+    llm:
+      temperature: 0.3
+      maxTokens: 2000
+    timeout: 45
+    retryPolicy:
+      maxRetries: 3
+      baseDelayMs: 1000
+      maxDelayMs: 5000
+      backoffFactor: 2.0
+    metadata:
+      specialization: "research"
+      content_type: "informational"
+
+  content-writer:
+    role: "content_writer"
+    description: "Creates engaging, well-structured content based on research findings"
+    capabilities:
+      - "content_creation"
+      - "text_analysis"
+      - "summarization"
+      - "documentation"
+    systemPrompt: |
+      You are a skilled content writer who creates engaging, informative content.
+      Your writing should be:
+      - Clear, concise, and well-structured
+      - Engaging and appropriate for the target audience
+      - SEO-friendly with natural keyword integration
+      - Factually accurate and well-researched
+      - Original and plagiarism-free
+      - Formatted for readability (headings, bullets, etc.)
+      Always maintain a consistent tone and style throughout the content.
+    llm:
+      temperature: 0.7
+      maxTokens: 3000
+    timeout: 60
+    retryPolicy:
+      maxRetries: 2
+      baseDelayMs: 1200
+      maxDelayMs: 4000
+      backoffFactor: 1.8
+    metadata:
+      specialization: "writing"
+      content_type: "creative"
+
+  content-editor:
+    role: "content_editor"
+    description: "Reviews and refines content for clarity, accuracy, and engagement"
+    capabilities:
+      - "text_analysis"
+      - "editing"
+      - "fact_checking"
+      - "quality_assurance"
+    systemPrompt: |
+      You are a professional content editor focused on improving content quality.
+      Your editing process should include:
+      - Grammar, spelling, and punctuation corrections
+      - Improving sentence structure and flow
+      - Ensuring logical organization and coherence
+      - Fact-checking and source verification
+      - Enhancing readability and engagement
+      - Maintaining consistent tone and style
+      - Optimizing for target audience comprehension
+      Provide constructive feedback and clear improvements.
+    llm:
+      temperature: 0.4
+      maxTokens: 2500
+    timeout: 50
+    retryPolicy:
+      maxRetries: 2
+      baseDelayMs: 1000
+      maxDelayMs: 3500
+      backoffFactor: 1.7
+    metadata:
+      specialization: "editing"
+      quality_focus: "high"
+
+  seo-optimizer:
+    role: "seo_specialist"
+    description: "Optimizes content for search engines while maintaining readability"
+    capabilities:
+      - "seo_optimization"
+      - "keyword_analysis"
+      - "content_optimization"
+      - "performance_analysis"
+    systemPrompt: |
+      You are an SEO specialist who optimizes content for search engines.
+      Your optimization should include:
+      - Strategic keyword placement and density
+      - Meta descriptions and title optimization
+      - Header structure (H1, H2, H3) optimization
+      - Internal and external linking opportunities
+      - Image alt text and optimization suggestions
+      - Content length and readability improvements
+      - Schema markup recommendations
+      Balance SEO requirements with natural, readable content.
+    llm:
+      temperature: 0.3
+      maxTokens: 2000
+    timeout: 40
+    retryPolicy:
+      maxRetries: 2
+      baseDelayMs: 800
+      maxDelayMs: 3000
+      backoffFactor: 1.5
+    metadata:
+      specialization: "seo"
+      optimization_focus: "search_visibility"
+
+  quality-checker:
+    role: "quality_assurance"
+    description: "Performs final quality checks and ensures content meets all standards"
+    capabilities:
+      - "quality_assurance"
+      - "fact_checking"
+      - "compliance_checking"
+      - "performance_analysis"
+    systemPrompt: |
+      You are a quality assurance specialist for content creation.
+      Your final review should verify:
+      - Content accuracy and fact-checking
+      - Brand voice and style consistency
+      - Legal and compliance requirements
+      - Accessibility and inclusivity standards
+      - Technical formatting and structure
+      - Call-to-action effectiveness
+      - Overall content quality score
+      - Readiness for publication
+      Provide a comprehensive quality report with recommendations.
+    llm:
+      temperature: 0.2
+      maxTokens: 1800
+    timeout: 35
+    retryPolicy:
+      maxRetries: 2
+      baseDelayMs: 1000
+      maxDelayMs: 3000
+      backoffFactor: 1.6
+    metadata:
+      specialization: "quality_assurance"
+      final_check: "true"
+
+# MCP server configurations for content creation tools
+mcpServers:
+  - name: "web_search"
+    type: "stdio"
+    command: "npx @modelcontextprotocol/server-brave-search"
+    enabled: true
+  - name: "image_generator"
+    type: "stdio"
+    command: "npx @modelcontextprotocol/server-dalle"
+    enabled: false
+  - name: "seo_analyzer"
+    type: "stdio"
+    command: "npx @modelcontextprotocol/server-seo"
+    enabled: false
+  - name: "grammar_checker"
+    type: "stdio"
+    command: "npx @modelcontextprotocol/server-grammarly"
+    enabled: false
+  - name: "plagiarism_checker"
+    type: "stdio"
+    command: "npx @modelcontextprotocol/server-plagiarism"
+    enabled: false

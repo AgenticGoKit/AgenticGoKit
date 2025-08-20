@@ -290,7 +290,7 @@ func (p *ToolSpecificRetryPolicy) GetPolicy(toolName, serverID string) RetryPoli
 // RetryExecutor handles retry logic with circuit breaker integration
 type RetryExecutor struct {
 	policy         RetryPolicy
-	circuitBreaker *core.CircuitBreaker
+	circuitBreaker core.CircuitBreaker
 	logger         *zerolog.Logger
 	metrics        *RetryMetrics
 }
@@ -305,7 +305,7 @@ type RetryMetrics struct {
 }
 
 // NewRetryExecutor creates a new retry executor
-func NewRetryExecutor(policy RetryPolicy, circuitBreaker *core.CircuitBreaker, logger *zerolog.Logger) *RetryExecutor {
+func NewRetryExecutor(policy RetryPolicy, circuitBreaker core.CircuitBreaker, logger *zerolog.Logger) *RetryExecutor {
 	return &RetryExecutor{
 		policy:         policy,
 		circuitBreaker: circuitBreaker,

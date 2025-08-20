@@ -124,7 +124,7 @@ func main() {
     }
     
     // Create runner
-    runner := core.CreateRouteRunner(agents)
+    runner, _ := core.NewRunnerFromConfig("agentflow.toml")
     
     // Start runner
     ctx := context.Background()

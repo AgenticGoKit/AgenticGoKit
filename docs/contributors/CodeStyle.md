@@ -231,22 +231,12 @@ Every package should have a package comment:
 
 ```go
 // Package core provides the public API for AgenticGoKit.
-// It defines the primary interfaces and types used to build
-// AI agent systems with dynamic tool integration.
+// Define interfaces in core and keep implementations in internal/ and plugins/.
 //
-// The core package follows a clear separation between interfaces
-// (defined here) and implementations (in internal packages).
-//
-// Example usage:
-//
-//	config := &core.Config{...}
-//	runner, err := core.NewRunner(config)
-//	if err != nil {
-//		log.Fatal(err)
-//	}
-//	
-//	handler := &MyAgent{}
-//	runner.RegisterAgent("my-agent", handler)
+// Example usage (config-driven):
+//	runner, err := core.NewRunnerFromConfig("agentflow.toml")
+//	if err != nil { log.Fatal(err) }
+//	_ = runner.RegisterAgent("my-agent", handler)
 package core
 ```
 
@@ -687,3 +677,5 @@ func processRequest(ctx context.Context, request Request) error {
 - [ ] Follows established patterns
 
 This code style guide ensures consistency and quality across the AgenticGoKit codebase, making it easier for contributors to understand, maintain, and extend the system.
+
+Note: Prefer config-driven orchestration and runner creation in examples. Avoid direct use of internal builders or processEvent in public docs and comments.

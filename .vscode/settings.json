@@ -1,4 +1,5 @@
 {
     "IDX.aI.enableInlineCompletion": true,
-    "IDX.aI.enableCodebaseIndexing": true
+    "IDX.aI.enableCodebaseIndexing": true,
+    "chat.agent.maxRequests": 50
 }

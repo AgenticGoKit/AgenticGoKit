@@ -6,77 +6,73 @@ import (
 	"fmt"
 	"sync"
 
-	agenticgokit "github.com/kunalkushwaha/agenticgokit/internal/core"
+	"github.com/kunalkushwaha/agenticgokit/core"
 )
-
-// RouteMetadataKey is the key used in event metadata to specify a target handler name.
-const RouteMetadataKey = agenticgokit.RouteMetadataKey // Use the agenticgokit constant
 
 // RouteOrchestrator routes events to a single registered handler based on metadata.
 type RouteOrchestrator struct {
-	handlers map[string]agenticgokit.AgentHandler
-	registry *agenticgokit.CallbackRegistry
+	handlers map[string]core.AgentHandler
+	registry *core.CallbackRegistry
 	emitter  EventEmitter // Interface for emitting events
 	mu       sync.RWMutex
 }
 
 // EventEmitter is an interface for components that can emit events
 type EventEmitter interface {
-	Emit(event agenticgokit.Event) error
+	Emit(event core.Event) error
 }
 
 // NewRouteOrchestrator creates a simple routing orchestrator.
-// It requires the CallbackRegistry from the Runner.
-func NewRouteOrchestrator(registry *agenticgokit.CallbackRegistry) *RouteOrchestrator { // Accept registry
+func NewRouteOrchestrator(registry *core.CallbackRegistry) *RouteOrchestrator {
 	if registry == nil {
-		agenticgokit.Logger().Warn().Msg("NewRouteOrchestrator created with a nil CallbackRegistry")
+		core.Logger().Warn().Msg("NewRouteOrchestrator created with a nil CallbackRegistry")
 	}
 	return &RouteOrchestrator{
-		handlers: make(map[string]agenticgokit.AgentHandler),
-		registry: registry, // Store the registry
+		handlers: make(map[string]core.AgentHandler),
+		registry: registry,
 	}
 }
 
 // RegisterAgent adds an agent handler.
-func (o *RouteOrchestrator) RegisterAgent(agentID string, handler agenticgokit.AgentHandler) error {
+func (o *RouteOrchestrator) RegisterAgent(agentID string, handler core.AgentHandler) error {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 	if handler == nil {
-		agenticgokit.Logger().Warn().
+		core.Logger().Warn().
 			Str("agent_id", agentID).
 			Msg("Attempted to register a nil handler")
 		return fmt.Errorf("cannot register a nil handler for agent ID '%s'", agentID)
 	}
 	if _, exists := o.handlers[agentID]; exists {
-		agenticgokit.Logger().Warn().
+		core.Logger().Warn().
 			Str("agent_id", agentID).
 			Msg("Overwriting handler for agent")
 	}
 	o.handlers[agentID] = handler
-	agenticgokit.Logger().Debug().
+	core.Logger().Debug().
 		Str("agent_id", agentID).
 		Msg("RouteOrchestrator: Registered agent")
 	return nil
 }
 
 // Dispatch routes the event based on the RouteMetadataKey and executes the agent.
-func (o *RouteOrchestrator) Dispatch(ctx context.Context, event agenticgokit.Event) (agenticgokit.AgentResult, error) {
+func (o *RouteOrchestrator) Dispatch(ctx context.Context, event core.Event) (core.AgentResult, error) {
 	if event == nil {
 		err := errors.New("cannot dispatch nil event")
-		return agenticgokit.AgentResult{Error: err.Error()}, err
+		return core.AgentResult{Error: err.Error()}, err
 	}
 
 	o.mu.RLock() // Lock for reading handlers map
 
-	targetName, targetNameOK := event.GetMetadataValue(agenticgokit.RouteMetadataKey)
+	targetName, targetNameOK := event.GetMetadataValue(core.RouteMetadataKey)
 	if !targetNameOK {
 		o.mu.RUnlock()
-		err := fmt.Errorf("missing routing key '%s' in event metadata (event %s)", agenticgokit.RouteMetadataKey, event.GetID())
-		agenticgokit.Logger().Error().
+		err := fmt.Errorf("missing routing key '%s' in event metadata (event %s)", core.RouteMetadataKey, event.GetID())
+		core.Logger().Error().
 			Str("event_id", event.GetID()).
-			Str("route_key", agenticgokit.RouteMetadataKey).
+			Str("route_key", core.RouteMetadataKey).
 			Msgf("RouteOrchestrator: Error - %v", err)
-		return agenticgokit.AgentResult{Error: err.Error()}, err
+		return core.AgentResult{Error: err.Error()}, err
 	}
 
 	handler, exists := o.handlers[targetName]
@@ -84,23 +80,23 @@ func (o *RouteOrchestrator) Dispatch(ctx context.Context, event agenticgokit.Eve
 
 	if !exists {
 		err := fmt.Errorf("no agent handler registered for target '%s' (event %s)", targetName, event.GetID())
-		agenticgokit.Logger().Error().
+		core.Logger().Error().
 			Str("event_id", event.GetID()).
 			Str("target", targetName).
 			Msgf("RouteOrchestrator: Error - %v", err)
-		return agenticgokit.AgentResult{Error: err.Error()}, err
+		return core.AgentResult{Error: err.Error()}, err
 	}
 
-	var agentResult agenticgokit.AgentResult
+	var agentResult core.AgentResult
 	var agentErr error
-	var currentState agenticgokit.State = agenticgokit.NewState()
+	var currentState core.State = core.NewState()
 
 	// 1. Invoke BeforeAgentRun hooks
 	if o.registry != nil {
-		beforeArgs := agenticgokit.CallbackArgs{Ctx: ctx, Hook: agenticgokit.HookBeforeAgentRun, Event: event, State: currentState, AgentID: targetName}
+		beforeArgs := core.CallbackArgs{Ctx: ctx, Hook: core.HookBeforeAgentRun, Event: event, State: currentState, AgentID: targetName}
 		newState, hookErr := o.registry.Invoke(ctx, beforeArgs)
 		if hookErr != nil {
-			agenticgokit.Logger().Error().
+			core.Logger().Error().
 				Str("agent_id", targetName).
 				Err(hookErr).
 				Msg("RouteOrchestrator: Error in BeforeAgentRun hooks")
@@ -113,7 +109,7 @@ func (o *RouteOrchestrator) Dispatch(ctx context.Context, event agenticgokit.Eve
 	// Merge event data into the current state
 	eventData := event.GetData()
 	if eventData != nil {
-		agenticgokit.Logger().Debug().
+		core.Logger().Debug().
 			Str("agent_id", targetName).
 			Msg("RouteOrchestrator: Merging event data into state")
 		for key, value := range eventData {
@@ -122,7 +118,7 @@ func (o *RouteOrchestrator) Dispatch(ctx context.Context, event agenticgokit.Eve
 	}
 
 	// 2. Run the agent handler
-	agenticgokit.Logger().Debug().
+	core.Logger().Debug().
 		Str("agent_id", targetName).
 		Str("event_id", event.GetID()).
 		Interface("state_keys", currentState.Keys()).
@@ -131,14 +127,14 @@ func (o *RouteOrchestrator) Dispatch(ctx context.Context, event agenticgokit.Eve
 
 	// 3. Invoke AfterAgentRun hooks (always, even on error)
 	if o.registry != nil {
-		var stateForAfterHook agenticgokit.State = currentState
+		var stateForAfterHook core.State = currentState
 		if agentErr == nil && agentResult.OutputState != nil {
 			stateForAfterHook = agentResult.OutputState
 		}
 
-		afterArgs := agenticgokit.CallbackArgs{
+		afterArgs := core.CallbackArgs{
 			Ctx:         ctx,
-			Hook:        agenticgokit.HookAfterAgentRun,
+			Hook:        core.HookAfterAgentRun,
 			Event:       event,
 			State:       stateForAfterHook,
 			AgentID:     targetName,
@@ -146,12 +142,12 @@ func (o *RouteOrchestrator) Dispatch(ctx context.Context, event agenticgokit.Eve
 			Error:       agentErr,
 		}
 		if agentErr != nil {
-			afterArgs.Hook = agenticgokit.HookAgentError
+			afterArgs.Hook = core.HookAgentError
 		}
 
 		finalStateFromHooks, hookErr := o.registry.Invoke(ctx, afterArgs)
 		if hookErr != nil {
-			agenticgokit.Logger().Error().
+			core.Logger().Error().
 				Str("agent_id", targetName).
 				Str("hook", string(afterArgs.Hook)).
 				Err(hookErr).
@@ -162,33 +158,33 @@ func (o *RouteOrchestrator) Dispatch(ctx context.Context, event agenticgokit.Eve
 
 	// Ensure Routing Metadata Consistency
 	if agentErr == nil && agentResult.OutputState != nil {
-		if newRoute, hasNewRoute := agentResult.OutputState.GetMeta(RouteMetadataKey); hasNewRoute && newRoute != "" {
+		if newRoute, hasNewRoute := agentResult.OutputState.GetMeta(core.RouteMetadataKey); hasNewRoute && newRoute != "" {
 			fixedEvent := o.EnsureProperRouting(event, agentResult)
 			if fixedEvent != event {
-				currentRoute, hasCurrentRoute := event.GetMetadataValue(RouteMetadataKey)
+				currentRoute, hasCurrentRoute := event.GetMetadataValue(core.RouteMetadataKey)
 				routeDisplay := "<none>"
 				if hasCurrentRoute {
 					routeDisplay = currentRoute
 				}
 
-				agenticgokit.Logger().Debug().
+				core.Logger().Debug().
 					Str("from", routeDisplay).
 					Str("to", newRoute).
 					Msg("RouteOrchestrator: Processing route change")
 
 				if o.emitter != nil {
 					if err := o.emitter.Emit(fixedEvent); err != nil {
-						agenticgokit.Logger().Error().
+						core.Logger().Error().
 							Str("to", newRoute).
 							Err(err).
 							Msg("RouteOrchestrator: Failed to emit new event with updated routing")
 					} else {
-						agenticgokit.Logger().Debug().
+						core.Logger().Debug().
 							Str("to", newRoute).
 							Msg("RouteOrchestrator: Successfully queued event with updated routing")
 					}
 				} else {
-					agenticgokit.Logger().Warn().
+					core.Logger().Warn().
 						Str("to", newRoute).
 						Msg("RouteOrchestrator: No emitter available to queue event with updated routing")
 				}
@@ -200,26 +196,26 @@ func (o *RouteOrchestrator) Dispatch(ctx context.Context, event agenticgokit.Eve
 }
 
 // EnsureProperRouting ensures that agent result state metadata is correctly reflected in event routing
-func (o *RouteOrchestrator) EnsureProperRouting(event agenticgokit.Event, result agenticgokit.AgentResult) agenticgokit.Event {
+func (o *RouteOrchestrator) EnsureProperRouting(event core.Event, result core.AgentResult) core.Event {
 	if result.OutputState == nil {
 		return event
 	}
 
-	newRoute, hasNewRoute := result.OutputState.GetMeta(RouteMetadataKey)
+	newRoute, hasNewRoute := result.OutputState.GetMeta(core.RouteMetadataKey)
 	if !hasNewRoute || newRoute == "" {
 		return event
 	}
 
-	currentRoute, hasCurrentRoute := event.GetMetadataValue(RouteMetadataKey)
+	currentRoute, hasCurrentRoute := event.GetMetadataValue(core.RouteMetadataKey)
 	if !hasCurrentRoute {
 		currentRoute = ""
-		agenticgokit.Logger().Warn().
+		core.Logger().Warn().
 			Str("new_route", newRoute).
 			Msg("RouteOrchestrator: No routing metadata in current event, will create new event with route")
 	}
 
 	if currentRoute != newRoute {
-		agenticgokit.Logger().Debug().
+		core.Logger().Debug().
 			Str("from", currentRoute).
 			Str("to", newRoute).
 			Msg("RouteOrchestrator: Detected routing change, creating new event")
@@ -238,9 +234,9 @@ func (o *RouteOrchestrator) EnsureProperRouting(event agenticgokit.Event, result
 			}
 		}
 
-		newMeta[RouteMetadataKey] = newRoute
+		newMeta[core.RouteMetadataKey] = newRoute
 
-		newEvent := agenticgokit.NewEvent(
+		newEvent := core.NewEvent(
 			newRoute,
 			stateData,
 			newMeta,
@@ -255,7 +251,7 @@ func (o *RouteOrchestrator) EnsureProperRouting(event agenticgokit.Event, result
 }
 
 // GetCallbackRegistry returns the associated registry.
-func (o *RouteOrchestrator) GetCallbackRegistry() *agenticgokit.CallbackRegistry {
+func (o *RouteOrchestrator) GetCallbackRegistry() *core.CallbackRegistry {
 	return o.registry
 }
 
@@ -264,34 +260,10 @@ func (o *RouteOrchestrator) SetEmitter(emitter EventEmitter) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 	o.emitter = emitter
-	agenticgokit.Logger().Debug().Msg("RouteOrchestrator: Emitter configured successfully")
+	core.Logger().Debug().Msg("RouteOrchestrator: Emitter configured successfully")
 }
 
 // Stop performs cleanup (currently none needed for RouteOrchestrator).
 func (o *RouteOrchestrator) Stop() {
-	agenticgokit.Logger().Info().Msg("RouteOrchestrator stopping.")
-}
-
-// DispatchAll implements the Orchestrator interface but provides more graceful handling
-// for events without routing information.
-func (o *RouteOrchestrator) DispatchAll(ctx context.Context, event agenticgokit.Event) (agenticgokit.AgentResult, error) {
-	_, hasRouting := event.GetMetadataValue(agenticgokit.RouteMetadataKey)
-
-	if !hasRouting {
-		if errorData, hasError := event.GetData()["error"]; hasError {
-			agenticgokit.Logger().Warn().
-				Str("event_id", event.GetID()).
-				Msg("RouteOrchestrator: Processing error event without routing key")
-
-			return agenticgokit.AgentResult{
-				OutputState: agenticgokit.NewState(),
-				Error:       fmt.Sprintf("Error event processed: %v", errorData),
-			}, nil
-		}
-	}
-
-	agenticgokit.Logger().Debug().
-		Str("event_id", event.GetID()).
-		Msg("RouteOrchestrator: DispatchAll forwarding to Dispatch")
-	return o.Dispatch(ctx, event)
+	core.Logger().Debug().Msg("RouteOrchestrator stopping.")
 }

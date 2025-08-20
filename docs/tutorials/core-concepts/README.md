@@ -77,8 +77,8 @@ agentResult, err := agent.Run(ctx, event, state)
 The Runner manages the event processing loop, routing events to the appropriate agents.
 
 ```go
-// Create and start a runner
-runner := core.NewRunner(100) // queue size
+// Create and start a runner (via config file)
+runner, _ := core.NewRunnerFromConfig("agentflow.toml")
 runner.RegisterAgent("assistant", agentHandler)
 runner.Start(ctx)
 
@@ -91,10 +91,9 @@ Orchestrators determine how events are distributed to agents (single, parallel, 
 
 ```go
 // Different orchestration modes
-collaborativeRunner := core.CreateCollaborativeRunner(agents, 30*time.Second)
-sequentialRunner := core.NewOrchestrationBuilder(core.OrchestrationSequential).
-    WithAgents(agents).
-    Build()
+// Build runners from configuration (supports route/collab/seq/loop/mixed)
+collaborativeRunner, _ := core.NewRunnerFromConfig("agentflow.toml")
+sequentialRunner, _ := core.NewRunnerFromConfig("agentflow.toml")
 ```
 
 ## Data Flow Architecture
@@ -130,7 +129,7 @@ import (
     "fmt"
     "log"
     
-    "github.com/kunalkushwaha/Agenticgokit/core"
+    "github.com/kunalkushwaha/agenticgokit/core"
 )
 
 // Simple agent implementation
@@ -167,7 +166,11 @@ func (a *SimpleAgent) Run(ctx context.Context, event core.Event, state core.Stat
 
 func main() {
     // Create LLM provider from configuration
-    provider, err := core.NewProviderFromWorkingDir()
+    cfg, err := core.LoadConfigFromWorkingDir()
+    if err != nil {
+        log.Fatal(err)
+    }
+    provider, err := cfg.InitializeProvider()
     if err != nil {
         log.Fatal(err)
     }
@@ -210,8 +213,7 @@ func main() {
     }
     
     // Create collaborative runner
-    runner := core.CreateCollaborativeRunner(agents, 30*time.Second)
-    })
+    runner, _ := core.NewRunnerFromConfig("agentflow.toml")
     
     // Start processing
     runner.Start(context.Background())
@@ -233,7 +235,7 @@ func main() {
     }
     
     // All agents work on the same input
-    runner := core.CreateCollaborativeRunner(agents, 60*time.Second)
+    runner, _ := core.NewRunnerFromConfig("agentflow.toml")
     
     ctx := context.Background()
     runner.Start(ctx)

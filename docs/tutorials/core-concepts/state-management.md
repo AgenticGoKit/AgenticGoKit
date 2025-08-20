@@ -75,7 +75,7 @@ States are typically created at the beginning of agent processing:
 // Create empty state
 state := core.NewState()
 
-// Create state with initial data
+// Create state with initial data (returns State interface)
 initialData := map[string]any{
     "user_id": "user-123",
     "session_id": "session-456",
@@ -83,8 +83,9 @@ initialData := map[string]any{
 }
 state := core.NewStateWithData(initialData)
 
-// Alternative creation method
-state := core.NewSimpleState(initialData)
+// Alternative: create state with initial data (returns concrete *SimpleState)
+// Use this when you need the concrete type for specific operations
+concreteState := core.NewSimpleState(initialData)
 ```
 
 ### 2. State Transformation

@@ -207,7 +207,7 @@ func (r *RunnerImpl) Start(ctx context.Context) error {
 	r.wg.Add(1)                      // Increment waitgroup for the loop goroutine
 	r.mu.Unlock()
 
-	Logger().Info().Msg("Runner started.")
+	Logger().Debug().Msg("Runner started.")
 	// Launch the main processing loop
 	go r.loop(ctx) // Pass the main context
 
@@ -220,7 +220,7 @@ func (r *RunnerImpl) Stop() {
 	r.mu.Lock()
 	Logger().Debug().Msg("Runner Stop: Acquired lock")
 	if !r.started {
-		Logger().Info().Msg("Runner Stop: Already stopped, released lock.")
+		Logger().Debug().Msg("Runner Stop: Already stopped, released lock.")
 		r.mu.Unlock()
 		return
 	}
@@ -247,7 +247,7 @@ func (r *RunnerImpl) Stop() {
 		Logger().Debug().Msg("Runner Stop: Stopping orchestrator...")
 	}
 
-	Logger().Info().Msg("Runner Stop: Completed.")
+	Logger().Debug().Msg("Runner Stop: Completed.")
 }
 
 // loop is the main event processing goroutine.

@@ -6,7 +6,7 @@ const ProjectReadmeTemplate = `# {{.Config.Name}}
 
 {{.Config.Name}} is a sophisticated multi-agent workflow system that leverages multiple AI agents working {{if eq .Config.OrchestrationMode "sequential"}}sequentially{{else if eq .Config.OrchestrationMode "collaborative"}}collaboratively{{else if eq .Config.OrchestrationMode "loop"}}iteratively{{else}}in coordination{{end}} to process and respond to user queries.
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -65,6 +65,9 @@ const ProjectReadmeTemplate = `# {{.Config.Name}}
 ### Running the System
 
 ` + "```bash" + `
+# Validate configuration first
+agentcli validate agentflow.toml
+
 # Interactive mode
 go run . 
 
@@ -75,34 +78,97 @@ go run . -m "Your message here"
 LOG_LEVEL=debug go run . -m "Your message"
 ` + "```" + `
 
-## 🏗️ Architecture
+## Configuration-Driven Architecture
+
+This project uses **AgentFlow's configuration-driven architecture**:
+
+- **No hardcoded agents**: All agents defined in ` + "`agentflow.toml`" + `
+- **Flexible configuration**: Change behavior without code changes  
+- **Hot reload support**: Update config without restarting
+- **Environment-specific**: Different settings per environment
+- **Built-in validation**: Comprehensive validation with helpful errors
+
+### Key Configuration Files
+
+- **` + "`agentflow.toml`" + `**: Main configuration (agents, LLM, orchestration)
+- **` + "`agents/`" + `**: Reference implementations (optional)
+- **Environment variables**: Sensitive data (API keys)
+
+### Configuration Management
+
+` + "```bash" + `
+# Validate configuration
+agentcli validate agentflow.toml
+
+# Generate new configuration from template
+agentcli config generate research-assistant my-project
+
+# Get detailed validation report
+agentcli validate --detailed agentflow.toml
+
+# Export configuration schema
+agentcli config schema --generate
+` + "```" + `
+
+### Configuration Example
+
+` + "```toml" + `
+# Global LLM settings
+[llm]
+provider = "{{.Config.Provider}}"
+model = "gpt-4"
+temperature = 0.7
+
+# Agent definitions
+{{range $i, $agent := .Agents}}[agents.{{$agent.Name}}]
+role = "{{$agent.Name}}"
+description = "{{$agent.Purpose}}"
+system_prompt = "You are {{$agent.DisplayName}}, {{$agent.Purpose}}"
+capabilities = ["general_assistance", "processing"]
+enabled = true
+
+# Agent-specific LLM settings
+[agents.{{$agent.Name}}.llm]
+temperature = 0.7
+max_tokens = 2000
+
+{{end}}# Orchestration
+[orchestration]
+mode = "{{.Config.OrchestrationMode}}"
+{{if eq .Config.OrchestrationMode "sequential"}}agents = [{{range $i, $agent := .Agents}}{{if $i}}, {{end}}"{{$agent.Name}}"{{end}}]{{end}}
+` + "```" + `
+
+## Architecture
 
 ### System Overview
 
 {{.Config.Name}} implements a {{.Config.OrchestrationMode}} multi-agent architecture with {{len .Agents}} specialized agents:
 
 ` + "```" + `
-{{if eq .Config.OrchestrationMode "sequential"}}User Input → Agent1 → Agent2 → ... → Final Response{{else if eq .Config.OrchestrationMode "collaborative"}}User Input → [Agent1, Agent2, Agent3] → Aggregated Response{{else if eq .Config.OrchestrationMode "loop"}}User Input → Agent → Agent → ... ({{.Config.MaxIterations}} iterations) → Final Response{{else}}User Input → Router → Appropriate Agent → Response{{end}}
+{{if eq .Config.OrchestrationMode "sequential"}}User Input -> Agent1 -> Agent2 -> ... -> Final Response{{else if eq .Config.OrchestrationMode "collaborative"}}User Input -> [Agent1, Agent2, Agent3] -> Aggregated Response{{else if eq .Config.OrchestrationMode "loop"}}User Input -> Agent -> Agent -> ... ({{.Config.MaxIterations}} iterations) -> Final Response{{else}}User Input -> Router -> Appropriate Agent -> Response{{end}}
 ` + "```" + `
 
 ### Project Structure
 
 ` + "```" + `
 {{.Config.Name}}/
-├── 📁 agents/                 # Agent implementations
-{{range .Agents}}│   ├── {{.FileName}}           # {{.DisplayName}} agent
-{{end}}│   └── README.md           # Agent documentation
-├── 📁 internal/               # Internal packages
-│   ├── config/               # Configuration utilities
-│   └── handlers/             # Shared handler utilities
-├── 📁 docs/                  # Documentation
-│   └── CUSTOMIZATION.md      # Customization guide
-├── 📄 main.go                # Application entry point
-├── 📄 agentflow.toml         # System configuration
-├── 📄 go.mod                 # Go module definition
-{{if .Config.MemoryEnabled}}{{if or (eq .Config.MemoryProvider "pgvector") (eq .Config.MemoryProvider "weaviate")}}├── 📄 docker-compose.yml     # Database services
-├── 📄 setup.sh               # Database setup script
-{{end}}{{end}}└── 📄 README.md              # This file
+|-- agents/                 # Agent implementations
+{{range .Agents}}|   |-- {{.FileName}}           # {{.DisplayName}} agent
+{{end}}|   ` + "`" + `-- README.md           # Agent documentation
+|-- internal/               # Internal packages
+|   |-- config/             # Configuration utilities
+|   ` + "`" + `-- handlers/           # Shared handler utilities
+|-- docs/                   # Documentation
+|   ` + "`" + `-- CUSTOMIZATION.md    # Customization guide
+|-- main.go                 # Application entry point
+|-- agentflow.toml          # Main configuration file
+{{if .Config.MemoryEnabled}}|-- docker-compose.yml        # Database services
+{{if eq .Config.MemoryProvider "pgvector"}}|-- setup.sh                 # Database setup script{{end}}{{end}}
+|-- agentflow.toml          # System configuration
+|-- go.mod                  # Go module definition
+{{if .Config.MemoryEnabled}}{{if or (eq .Config.MemoryProvider "pgvector") (eq .Config.MemoryProvider "weaviate")}}|-- docker-compose.yml        # Database services
+|-- setup.sh                # Database setup script
+{{end}}{{end}}` + "`" + `-- README.md               # This file
 ` + "```" + `
 
 ### Agent Responsibilities
@@ -115,13 +181,13 @@ LOG_LEVEL=debug go run . -m "Your message"
 **Role**: {{if eq $.Config.OrchestrationMode "sequential"}}{{if $agent.IsFirstAgent}}Processes initial user input and prepares data for downstream agents{{else if $agent.IsLastAgent}}Finalizes processing and generates the final response{{else}}Processes input from previous agents and passes refined data forward{{end}}{{else if eq $.Config.OrchestrationMode "collaborative"}}Works in parallel with other agents to process user input from different perspectives{{else if eq $.Config.OrchestrationMode "loop"}}Iteratively processes and refines the input over multiple cycles{{else}}Handles specific types of requests based on routing logic{{end}}
 
 **Key Features**:
-- {{if $.Config.MemoryEnabled}}✅ Memory-enabled for context retention{{else}}❌ Memory not enabled{{end}}
-- {{if $.Config.MCPEnabled}}✅ Tool integration via MCP{{else}}❌ No tool integration{{end}}
-- {{if $.Config.RAGEnabled}}✅ RAG capabilities for knowledge retrieval{{else}}❌ No RAG capabilities{{end}}
+- {{if $.Config.MemoryEnabled}}Memory-enabled for context retention{{else}}Memory not enabled{{end}}
+- {{if $.Config.MCPEnabled}}Tool integration via MCP{{else}}No tool integration{{end}}
+- {{if $.Config.RAGEnabled}}RAG capabilities for knowledge retrieval{{else}}No RAG capabilities{{end}}
 
 {{end}}
 
-## ⚙️ Configuration
+## Configuration
 
 ### Core Settings (` + "`agentflow.toml`" + `)
 
@@ -189,6 +255,7 @@ enabled = true
 {{if .Config.WithMetrics}}enable_metrics = true
 metrics_port = {{.Config.MetricsPort}}{{end}}
 {{if .Config.WithLoadBalancer}}enable_load_balancer = true{{end}}
+transport = "{{if .Config.MCPTransport}}{{.Config.MCPTransport}}{{else}}tcp{{end}}"  # tcp | stdio | websocket
 connection_pool_size = {{.Config.ConnectionPoolSize}}
 retry_policy = "{{.Config.RetryPolicy}}"
 
@@ -209,9 +276,33 @@ enabled = true
 **Available Tools**:
 {{range .Config.MCPTools}}- {{.}}
 {{end}}
+
+{{if .Config.WithCache}}#### MCP Cache Configuration
+
+` + "```toml" + `
+[mcp.cache]
+enabled = true
+default_ttl_ms = 900000      # 15 minutes
+max_size_mb = 100
+max_keys = 10000
+eviction_policy = "lru"     # lru | lfu | ttl
+cleanup_interval_ms = 300000 # 5 minutes
+backend = "memory"          # memory | redis | file
+
+[mcp.cache.backend_config]
+redis_addr = "localhost:6379"
+redis_password = ""
+redis_db = "0"
+file_path = "./cache"
+
+[mcp.cache.tool_ttls_ms]
+# web_search = 300000
+# content_fetch = 1800000
+` + "```" + `
+{{end}}
 {{end}}
 
-## 🎯 Usage Examples
+## Usage Examples
 
 ### Basic Usage
 
@@ -273,7 +364,7 @@ func main() {
 }
 ` + "```" + `
 
-## 🛠️ Customization
+## Customization
 
 ### Quick Customizations
 
@@ -324,7 +415,7 @@ func (a *Agent1Handler) callExternalAPI(ctx context.Context, data interface{}) (
 // In main.go
 func formatResults(results []AgentOutput) {
     for _, result := range results {
-        fmt.Printf("🤖 %s: %s\n", result.AgentName, result.Content)
+    fmt.Printf("%s: %s\n", result.AgentName, result.Content)
     }
 }
 ` + "```" + `
@@ -366,7 +457,7 @@ curl http://localhost:8080/health/memory
 curl http://localhost:8080/health/mcp
 ` + "```" + `
 
-## 🧪 Testing
+## Testing
 
 ### Running Tests
 
@@ -401,7 +492,7 @@ go install github.com/rakyll/hey@latest
 hey -n 100 -c 10 -m POST -d '{"message":"test"}' http://localhost:8080/process
 ` + "```" + `
 
-## 🚀 Deployment
+## Deployment
 
 ### Docker
 
@@ -488,7 +579,7 @@ func main() {
 }
 ` + "```" + `
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -559,7 +650,7 @@ LOG_LEVEL=debug go run . -m "test" 2>&1 | grep -i config
 3. **Test Components**: Test LLM provider, memory, and tools individually
 4. **Community Support**: Create an issue in the [AgenticGoKit repository](https://github.com/kunalkushwaha/agenticgokit)
 
-## 📚 Resources
+## Resources
 
 ### Documentation
 
@@ -580,11 +671,11 @@ LOG_LEVEL=debug go run . -m "test" 2>&1 | grep -i config
 - [Discussions](https://github.com/kunalkushwaha/agenticgokit/discussions)
 - [Contributing Guide](https://github.com/kunalkushwaha/agenticgokit/CONTRIBUTING.md)
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - Built with [AgenticGoKit](https://github.com/kunalkushwaha/agenticgokit)
 - Powered by {{if eq .Config.Provider "openai"}}OpenAI{{else if eq .Config.Provider "azure"}}Azure OpenAI{{else if eq .Config.Provider "ollama"}}Ollama{{else}}{{.Config.Provider}}{{end}}
@@ -595,7 +686,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Happy coding! 🚀**
+**Happy coding!**
 
 For questions or support, please refer to the [documentation](https://github.com/kunalkushwaha/agenticgokit) or create an issue.
 `
