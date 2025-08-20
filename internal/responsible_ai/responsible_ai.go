@@ -197,7 +197,7 @@ func (m *RAIMiddleware) AfterModelCall(ctx context.Context, args core.CallbackAr
 			newState.Set("model_response_modified", true)
 			newState.Set("original_model_response", content)
 			newState.Set("model_response", result.ModifiedContent)
-			core.Logger().Info().
+			core.Logger().Debug().
 				Str("action", "auto_modify").
 				Msg("RAI automatically modified unsafe model output")
 		}

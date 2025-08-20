@@ -90,7 +90,7 @@ func (r *DefaultConfigReloader) StartWatching(configPath string) error {
 	// Start watching in a goroutine
 	go r.watchLoop()
 
-	core.Logger().Info().
+	core.Logger().Debug().
 		Str("config_path", absPath).
 		Msg("Started watching configuration file for changes")
 
@@ -129,7 +129,7 @@ func (r *DefaultConfigReloader) StopWatching() error {
 	r.isWatching = false
 	r.configPath = ""
 
-	core.Logger().Info().Msg("Stopped watching configuration file")
+	core.Logger().Debug().Msg("Stopped watching configuration file")
 	return nil
 }
 
@@ -216,7 +216,7 @@ func (r *DefaultConfigReloader) loadInitialConfig() error {
 		}
 	}
 
-	core.Logger().Info().
+	core.Logger().Debug().
 		Str("config_path", r.configPath).
 		Msg("Initial configuration loaded successfully")
 
@@ -290,7 +290,7 @@ func (r *DefaultConfigReloader) debounceConfigChange() {
 
 // handleConfigChange processes a configuration file change
 func (r *DefaultConfigReloader) handleConfigChange() error {
-	core.Logger().Info().
+	core.Logger().Debug().
 		Str("config_path", r.configPath).
 		Msg("Processing configuration file change")
 
@@ -353,7 +353,7 @@ func (r *DefaultConfigReloader) handleConfigChange() error {
 	r.lastReloadTime = time.Now()
 	r.mutex.Unlock()
 
-	core.Logger().Info().
+	core.Logger().Debug().
 		Str("config_path", r.configPath).
 		Time("reload_time", r.lastReloadTime).
 		Msg("Configuration reloaded successfully")

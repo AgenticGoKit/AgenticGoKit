@@ -204,7 +204,7 @@ func (r *RunnerImpl) Start(ctx context.Context) error {
 	r.wg.Add(1)
 	r.mu.Unlock()
 
-	Logger().Info().Msg("Runner started.")
+	Logger().Debug().Msg("Runner started.")
 	go r.loop(ctx)
 	return nil
 }
@@ -237,7 +237,7 @@ func (r *RunnerImpl) Stop() {
 		Logger().Debug().Msg("Runner Stop: Stopping orchestrator...")
 	}
 
-	Logger().Info().Msg("Runner Stop: Completed.")
+	Logger().Debug().Msg("Runner Stop: Completed.")
 }
 
 // loop is the main event processing goroutine.

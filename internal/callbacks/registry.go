@@ -63,7 +63,7 @@ func (r *DefaultCallbackRegistry) Unregister(hook core.HookPoint, name string) {
 	for i, reg := range hooks {
 		if reg.ID == name {
 			r.callbacks[hook] = append(hooks[:i], hooks[i+1:]...)
-			core.Logger().Info().
+			core.Logger().Debug().
 				Str("callback", name).
 				Str("hook", string(hook)).
 				Msg("Callback unregistered")

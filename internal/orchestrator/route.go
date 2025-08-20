@@ -265,5 +265,5 @@ func (o *RouteOrchestrator) SetEmitter(emitter EventEmitter) {
 
 // Stop performs cleanup (currently none needed for RouteOrchestrator).
 func (o *RouteOrchestrator) Stop() {
-	core.Logger().Info().Msg("RouteOrchestrator stopping.")
+	core.Logger().Debug().Msg("RouteOrchestrator stopping.")
 }

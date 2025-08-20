@@ -191,7 +191,7 @@ func NewAgentManager(config *Config) AgentManager {
 		manager := agentManagerFactory(config)
 		Logger().Debug().
 			Str("implementation", "enhanced").
-			Msg("Created agent manager using registered enhanced implementation")
+			Msg("UNIQUE_MARKER_Created agent manager using registered enhanced implementation")
 		return manager
 	}
 
