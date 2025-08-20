@@ -324,7 +324,7 @@ func NewLLMProvider(config AgentLLMConfig) (ModelProvider, error) {
 		Model:       config.Model,
 		Temperature: config.Temperature,
 		MaxTokens:   config.MaxTokens,
-		HTTPTimeout: time.Duration(config.TimeoutSeconds) * time.Second,
+		HTTPTimeout: TimeoutFromSeconds(config.TimeoutSeconds),
 	}
 
 	return NewModelProviderFromConfig(providerConfig)

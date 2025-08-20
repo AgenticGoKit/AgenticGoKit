@@ -102,10 +102,10 @@ func RegisterOrchestratorFactory(factory OrchestratorFactoryFunc) {
 }
 
 // NewOrchestrator creates an orchestrator from configuration
-// This function requires the internal orchestrator factory to be registered
+// This function requires the orchestrator factory plugin to be registered
 func NewOrchestrator(config OrchestratorConfig, registry *CallbackRegistry) (Orchestrator, error) {
 	if orchestratorFactory == nil {
-		return nil, fmt.Errorf("orchestrator factory not registered - import _ \"github.com/kunalkushwaha/agenticgokit/internal/orchestrator\" to register")
+		return nil, fmt.Errorf("orchestrator factory not registered - import _ \"github.com/kunalkushwaha/agenticgokit/plugins/orchestrator/default\" to register")
 	}
 	return orchestratorFactory(config, registry)
 }

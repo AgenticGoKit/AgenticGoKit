@@ -82,7 +82,7 @@ func (a *Example{{.Agent.DisplayName}}Agent) Run(ctx context.Context, event core
 	// Check if agent is enabled
 	if !a.config.Enabled {
 		return core.AgentResult{
-			OutputState: core.NewState(map[string]interface{}{
+			OutputState: core.NewStateWithData(map[string]interface{}{
 				"response": fmt.Sprintf("Agent %s is disabled", a.config.Role),
 				"skipped":  true,
 			}),
@@ -142,7 +142,7 @@ func (a *Example{{.Agent.DisplayName}}Agent) Run(ctx context.Context, event core
 
 	// Return result with configuration-aware metadata
 	return core.AgentResult{
-		OutputState: core.NewState(map[string]interface{}{
+		OutputState: core.NewStateWithData(map[string]interface{}{
 			"response":     resp.Content,
 			"agent_role":   a.config.Role,
 			"capabilities": a.config.Capabilities,

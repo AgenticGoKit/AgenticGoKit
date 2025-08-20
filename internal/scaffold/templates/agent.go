@@ -122,7 +122,7 @@ func (a *{{.Agent.DisplayName}}Handler) Run(ctx context.Context, event agenticgo
 	if !a.config.Enabled {
 		logger.Debug().Str("agent", a.config.Role).Msg("Agent is disabled in configuration, skipping")
 		return agenticgokit.AgentResult{
-			OutputState: agenticgokit.NewState(map[string]interface{}{
+			OutputState: agenticgokit.NewStateWithData(map[string]interface{}{
 				"response": fmt.Sprintf("Agent %s is disabled in configuration", a.config.Role),
 				"skipped":  true,
 			}),

@@ -39,20 +39,11 @@ type SimpleState struct {
 var _ State = (*SimpleState)(nil)
 
 // NewState creates an empty SimpleState.
-func NewState(initialData ...map[string]any) *SimpleState {
-	s := &SimpleState{
+func NewState() *SimpleState {
+	return &SimpleState{
 		data: make(map[string]any),
 		meta: make(map[string]string),
 	}
-
-	// If initial data is provided, add it to the state
-	if len(initialData) > 0 && initialData[0] != nil {
-		for k, v := range initialData[0] {
-			s.data[k] = v
-		}
-	}
-
-	return s
 }
 
 // stateJSON is a helper struct for JSON marshaling/unmarshaling SimpleState.
@@ -208,7 +199,10 @@ func (s *SimpleState) Merge(source State) {
 
 // NewStateWithData creates a new SimpleState initialized with the provided data map.
 func NewStateWithData(data map[string]any) State {
-	s := NewState()
+	s := &SimpleState{
+		data: make(map[string]any),
+		meta: make(map[string]string),
+	}
 	if data != nil {
 		for k, v := range data {
 			s.data[k] = v
@@ -219,7 +213,10 @@ func NewStateWithData(data map[string]any) State {
 
 // NewSimpleState creates a new state instance with optional initial data.
 func NewSimpleState(initialData map[string]any) *SimpleState {
-	s := NewState()
+	s := &SimpleState{
+		data: make(map[string]any),
+		meta: make(map[string]string),
+	}
 	if initialData != nil {
 		for k, v := range initialData {
 			s.data[k] = v

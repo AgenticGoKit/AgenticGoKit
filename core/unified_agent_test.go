@@ -104,8 +104,9 @@ func TestUnifiedAgent_Capabilities_And_LLMConfig(t *testing.T) {
 	if r.Temperature != cfg.Temperature || r.MaxTokens != cfg.MaxTokens {
 		t.Fatalf("temperature/tokens mismatch: %+v vs %+v", r, cfg)
 	}
-	if r.Timeout != time.Duration(cfg.TimeoutSeconds)*time.Second {
-		t.Fatalf("timeout mismatch: got %v want %v", r.Timeout, time.Duration(cfg.TimeoutSeconds)*time.Second)
+	expectedTimeout := TimeoutFromSeconds(cfg.TimeoutSeconds)
+	if r.Timeout != expectedTimeout {
+		t.Fatalf("timeout mismatch: got %v want %v", r.Timeout, expectedTimeout)
 	}
 }
 

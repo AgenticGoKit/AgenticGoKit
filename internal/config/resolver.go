@@ -44,6 +44,7 @@ func (r *ConfigResolver) ResolveAgentConfigWithEnv(agentName string) (*core.Reso
 		SystemPrompt: resolvedAgent.SystemPrompt,
 		Capabilities: resolvedAgent.Capabilities,
 		Enabled:      resolvedAgent.Enabled,
+		AutoLLM:      r.resolveAutoLLM(agentName, &resolvedAgent),
 		LLMConfig:    llmConfig,
 		RetryPolicy:  resolvedAgent.RetryPolicy,
 		RateLimit:    resolvedAgent.RateLimit,
@@ -62,7 +63,7 @@ func (r *ConfigResolver) applyAgentEnvOverrides(agentName string, agent core.Age
 	// AGENTFLOW_AGENT_{AGENT_NAME}_{FIELD}
 	// AGENTFLOW_AGENTS_{AGENT_NAME}_{FIELD}
 	agentNameUpper := strings.ToUpper(agentName)
-	
+
 	// Override role
 	if envRole := r.getEnvVar(fmt.Sprintf("AGENTFLOW_AGENT_%s_ROLE", agentNameUpper)); envRole != "" {
 		resolved.Role = envRole
@@ -145,6 +146,25 @@ func (r *ConfigResolver) applyAgentEnvOverrides(agentName string, agent core.Age
 		}
 	}
 
+	// Override auto_llm
+	if envAutoLLM := r.getEnvVar(fmt.Sprintf("AGENTFLOW_AGENT_%s_AUTO_LLM", agentNameUpper)); envAutoLLM != "" {
+		if autoLLM, err := strconv.ParseBool(envAutoLLM); err == nil {
+			resolved.AutoLLM = &autoLLM
+			core.Logger().Info().
+				Str("agent", agentName).
+				Str("field", "auto_llm").
+				Bool("value", autoLLM).
+				Msg("Applied environment override")
+		} else {
+			core.Logger().Warn().
+				Str("agent", agentName).
+				Str("field", "auto_llm").
+				Str("value", envAutoLLM).
+				Err(err).
+				Msg("Invalid boolean value for environment override")
+		}
+	}
+
 	return resolved
 }
 
@@ -156,7 +176,7 @@ func (r *ConfigResolver) resolveLLMConfigWithEnv(agentName string, agent *core.A
 		Model:            r.config.LLM.Model,
 		Temperature:      r.config.LLM.Temperature,
 		MaxTokens:        r.config.LLM.MaxTokens,
-		Timeout:          time.Duration(r.config.LLM.TimeoutSeconds) * time.Second,
+		Timeout:          core.TimeoutFromSeconds(r.config.LLM.TimeoutSeconds),
 		TopP:             r.config.LLM.TopP,
 		FrequencyPenalty: r.config.LLM.FrequencyPenalty,
 		PresencePenalty:  r.config.LLM.PresencePenalty,
@@ -217,7 +237,7 @@ func (r *ConfigResolver) resolveLLMConfigWithEnv(agentName string, agent *core.A
 			resolved.MaxTokens = agent.LLM.MaxTokens
 		}
 		if agent.LLM.TimeoutSeconds != 0 {
-			resolved.Timeout = time.Duration(agent.LLM.TimeoutSeconds) * time.Second
+			resolved.Timeout = core.TimeoutFromSeconds(agent.LLM.TimeoutSeconds)
 		}
 		if agent.LLM.TopP != 0 {
 			resolved.TopP = agent.LLM.TopP
@@ -372,6 +392,17 @@ func (r *ConfigResolver) getEnvVar(key string) string {
 	return value
 }
 
+// resolveAutoLLM resolves the AutoLLM configuration with sensible defaults
+func (r *ConfigResolver) resolveAutoLLM(agentName string, agent *core.AgentConfig) bool {
+	// If explicitly set in config, use that value
+	if agent.AutoLLM != nil {
+		return *agent.AutoLLM
+	}
+
+	// Default to false for safety - users must explicitly enable auto-LLM
+	return false
+}
+
 // GetResolvedConfig returns the configuration with all overrides applied
 func (r *ConfigResolver) GetResolvedConfig() *core.Config {
 	return r.config
@@ -380,7 +411,7 @@ func (r *ConfigResolver) GetResolvedConfig() *core.Config {
 // ResolveAllAgents resolves all agent configurations with environment overrides
 func (r *ConfigResolver) ResolveAllAgents() (map[string]*core.ResolvedAgentConfig, error) {
 	resolved := make(map[string]*core.ResolvedAgentConfig)
-	
+
 	for agentName := range r.config.Agents {
 		agentConfig, err := r.ResolveAgentConfigWithEnv(agentName)
 		if err != nil {
@@ -388,7 +419,7 @@ func (r *ConfigResolver) ResolveAllAgents() (map[string]*core.ResolvedAgentConfi
 		}
 		resolved[agentName] = agentConfig
 	}
-	
+
 	return resolved, nil
 }
 

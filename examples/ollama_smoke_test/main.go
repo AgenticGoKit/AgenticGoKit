@@ -47,7 +47,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	defer cancel()
 
-	state := core.NewState(map[string]interface{}{
+	state := core.NewStateWithData(map[string]interface{}{
 		"message":       "What is Docker?",
 		"system_prompt": "You are a concise assistant.",
 	})

@@ -47,20 +47,23 @@ func TestConfigDrivenScaffold(t *testing.T) {
 	require.NoError(t, err)
 
 	configStr := string(configContent)
-	
+
 	// Should contain agent definitions
 	assert.Contains(t, configStr, "[agents.agent1]", "Should contain agent1 definition")
 	assert.Contains(t, configStr, "[agents.agent2]", "Should contain agent2 definition")
 	assert.Contains(t, configStr, "[agents.agent3]", "Should contain agent3 definition")
-	
+
 	// Should contain agent-specific LLM settings
 	assert.Contains(t, configStr, "[agents.agent1.llm]", "Should contain agent1 LLM config")
 	assert.Contains(t, configStr, "temperature =", "Should contain temperature settings")
-	
+
+	// Should contain auto_llm configuration
+	assert.Contains(t, configStr, "auto_llm = true", "Should contain auto_llm configuration")
+
 	// Should contain retry policies
 	assert.Contains(t, configStr, "[agents.agent1.retry_policy]", "Should contain retry policy")
 	assert.Contains(t, configStr, "max_retries = 3", "Should contain retry configuration")
-	
+
 	// Should contain global LLM configuration
 	assert.Contains(t, configStr, "[llm]", "Should contain global LLM config")
 	assert.Contains(t, configStr, "provider = \"openai\"", "Should contain provider config")
@@ -72,16 +75,16 @@ func TestConfigDrivenScaffold(t *testing.T) {
 	require.NoError(t, err)
 
 	mainStr := string(mainContent)
-	
+
 	// Should use configuration-driven approach
 	assert.Contains(t, mainStr, "core.NewConfigurableAgentFactory", "Should use ConfigurableAgentFactory")
 	assert.Contains(t, mainStr, "core.NewAgentManager", "Should use AgentManager")
 	assert.Contains(t, mainStr, "agentManager.GetActiveAgents()", "Should get active agents from manager")
-	
+
 	// Should not contain hardcoded agent creation
 	assert.NotContains(t, mainStr, "agents.NewAgent1", "Should not contain hardcoded agent creation")
 	assert.NotContains(t, mainStr, "agents.NewAgent2", "Should not contain hardcoded agent creation")
-	
+
 	// Should contain configuration loading
 	assert.Contains(t, mainStr, "core.LoadConfig(\"agentflow.toml\")", "Should load configuration")
 	assert.Contains(t, mainStr, "core.NewRunnerFromConfig", "Should create runner from config")
@@ -92,12 +95,12 @@ func TestConfigDrivenScaffold(t *testing.T) {
 	require.NoError(t, err)
 
 	agentStr := string(agentContent)
-	
+
 	// Should mention configuration-driven approach
 	assert.Contains(t, agentStr, "configuration-driven", "Should mention configuration-driven approach")
 	assert.Contains(t, agentStr, "ConfigurableAgentFactory", "Should mention ConfigurableAgentFactory")
 	assert.Contains(t, agentStr, "agentflow.toml", "Should mention configuration file")
-	
+
 	// Should contain configuration-aware methods
 	assert.Contains(t, agentStr, "ResolvedAgentConfig", "Should use ResolvedAgentConfig")
 	assert.Contains(t, agentStr, "GetRole()", "Should have GetRole method")
@@ -109,7 +112,7 @@ func TestConfigDrivenScaffold(t *testing.T) {
 	require.NoError(t, err)
 
 	readmeStr := string(readmeContent)
-	
+
 	// Should mention configuration-driven architecture
 	assert.Contains(t, readmeStr, "Configuration-Driven Architecture", "Should mention config-driven architecture")
 	assert.Contains(t, readmeStr, "agentcli validate", "Should mention validation command")
@@ -127,7 +130,7 @@ func TestConfigDrivenScaffold(t *testing.T) {
 	// Test 6: Verify orchestration configuration
 	assert.Contains(t, configStr, "[orchestration]", "Should contain orchestration config")
 	assert.Contains(t, configStr, "mode = \"sequential\"", "Should contain orchestration mode")
-	
+
 	// Test 7: Verify memory configuration is present
 	assert.Contains(t, configStr, "[agent_memory]", "Should contain memory config")
 	assert.Contains(t, configStr, "provider = \"pgvector\"", "Should contain memory provider")
@@ -149,17 +152,17 @@ func TestAgentConfigGeneration(t *testing.T) {
 
 	// Test agent config generation
 	agentConfig := generateAgentConfig(config)
-	
+
 	// Should contain agent definitions
 	assert.Contains(t, agentConfig, "[agents.agent1]", "Should contain agent1")
 	assert.Contains(t, agentConfig, "[agents.agent2]", "Should contain agent2")
-	
+
 	// Should contain different temperatures for different agents
 	assert.Contains(t, agentConfig, "temperature =", "Should contain temperature settings")
-	
+
 	// Should contain capabilities arrays
 	assert.Contains(t, agentConfig, "capabilities = [", "Should contain capabilities arrays")
-	
+
 	// Should contain retry policies
 	assert.Contains(t, agentConfig, "[agents.agent1.retry_policy]", "Should contain retry policies")
 }
@@ -181,7 +184,7 @@ func TestTemperatureVariation(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.agentName, func(t *testing.T) {
 			temp := getTemperatureForAgent(tt.agentName, 0)
-			assert.Equal(t, tt.expectedTemperature, temp, 
+			assert.Equal(t, tt.expectedTemperature, temp,
 				"Agent %s should have temperature %.1f", tt.agentName, tt.expectedTemperature)
 		})
 	}

@@ -13,6 +13,7 @@ type UnifiedAgentBuilder struct {
 	systemPrompt string
 	timeout      time.Duration
 	enabled      *bool
+	autoLLM      *bool // Controls whether to automatically call LLM when provider is configured
 
 	handler      AgentHandler
 	capabilities map[CapabilityType]AgentCapability
@@ -113,6 +114,14 @@ func (b *UnifiedAgentBuilder) WithMCP(manager MCPManager, cfg MCPAgentConfig) *U
 	return b
 }
 
+// WithAutoLLM configures whether the agent should automatically call the LLM provider
+// when one is configured. Set to true to enable automatic LLM calls, false to disable.
+// If not set, defaults to false for safety (no unexpected API calls).
+func (b *UnifiedAgentBuilder) WithAutoLLM(enabled bool) *UnifiedAgentBuilder {
+	b.autoLLM = &enabled
+	return b
+}
+
 // Build constructs a UnifiedAgent, applying defaults and basic validation.
 func (b *UnifiedAgentBuilder) Build() (Agent, error) {
 	if b.name == "" {
@@ -139,6 +148,9 @@ func (b *UnifiedAgentBuilder) Build() (Agent, error) {
 	}
 	if b.enabled != nil {
 		ua.enabled = *b.enabled
+	}
+	if b.autoLLM != nil {
+		ua.autoLLM = *b.autoLLM
 	}
 
 	// Apply LLM configuration if provided

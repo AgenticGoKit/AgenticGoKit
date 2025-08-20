@@ -571,17 +571,24 @@ func (t *basicTraceLogger) GetTrace(sessionID string) ([]TraceEntry, error) {
 
 // NewRunnerFromConfig creates a new runner by loading configuration from a file path
 func NewRunnerFromConfig(configPath string) (Runner, error) {
-	_, err := LoadConfig(configPath)
+	config, err := LoadConfig(configPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load config from %s: %w", configPath, err)
 	}
 
+	// Map the loaded config values to runnerConfig
 	runnerConfig := RunnerConfig{
-		QueueSize: 1000,                          // Default queue size
+		QueueSize: 1000,                          // Default queue size - could be made configurable
 		Agents:    make(map[string]AgentHandler), // Will be populated when agents are registered
-		Memory:    nil,                           // Can be set later if needed
+		Memory:    nil,                           // Can be set later if needed from config.AgentMemory
 		Callbacks: NewCallbackRegistry(),
 		SessionID: "", // Will be set when starting
+	}
+
+	// Apply runtime configuration if available
+	if config.Runtime.MaxConcurrentAgents > 0 {
+		// Could potentially influence queue size
+		runnerConfig.QueueSize = config.Runtime.MaxConcurrentAgents * 100 // Heuristic
 	}
 
 	return NewRunnerWithConfig(runnerConfig), nil

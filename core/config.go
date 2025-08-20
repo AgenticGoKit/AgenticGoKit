@@ -10,6 +10,13 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
+// TimeoutFromSeconds converts timeout seconds to time.Duration.
+// This utility function helps avoid duplication of the timeout calculation
+// pattern time.Duration(timeoutSeconds) * time.Second across the codebase.
+func TimeoutFromSeconds(timeoutSeconds int) time.Duration {
+	return time.Duration(timeoutSeconds) * time.Second
+}
+
 // ValidationError represents a configuration validation error
 type ValidationError struct {
 	Field      string      `json:"field"`
@@ -74,6 +81,7 @@ type AgentConfig struct {
 	SystemPrompt string            `toml:"system_prompt"`
 	Capabilities []string          `toml:"capabilities"`
 	Enabled      bool              `toml:"enabled"`
+	AutoLLM      *bool             `toml:"auto_llm,omitempty"` // Controls automatic LLM calls
 	LLM          *AgentLLMConfig   `toml:"llm,omitempty"`
 	Metadata     map[string]string `toml:"metadata,omitempty"`
 
@@ -118,6 +126,7 @@ type ResolvedAgentConfig struct {
 	SystemPrompt string
 	Capabilities []string
 	Enabled      bool
+	AutoLLM      bool // Resolved boolean for automatic LLM calls
 	LLMConfig    *ResolvedLLMConfig
 	RetryPolicy  *AgentRetryPolicyConfig
 	RateLimit    *RateLimitConfig
@@ -350,6 +359,7 @@ func (r *noOpResolver) ResolveAgentConfigWithEnv(agentName string) (*ResolvedAge
 		SystemPrompt: agent.SystemPrompt,
 		Capabilities: agent.Capabilities,
 		Enabled:      agent.Enabled,
+		AutoLLM:      r.resolveAutoLLM(&agent),
 		LLMConfig:    r.resolveLLMConfig(&agent),
 		RetryPolicy:  agent.RetryPolicy,
 		RateLimit:    agent.RateLimit,
@@ -388,7 +398,7 @@ func (r *noOpResolver) resolveLLMConfig(agent *AgentConfig) *ResolvedLLMConfig {
 		Model:            r.config.LLM.Model,
 		Temperature:      r.config.LLM.Temperature,
 		MaxTokens:        r.config.LLM.MaxTokens,
-		Timeout:          time.Duration(r.config.LLM.TimeoutSeconds) * time.Second,
+		Timeout:          TimeoutFromSeconds(r.config.LLM.TimeoutSeconds),
 		TopP:             r.config.LLM.TopP,
 		FrequencyPenalty: r.config.LLM.FrequencyPenalty,
 		PresencePenalty:  r.config.LLM.PresencePenalty,
@@ -409,7 +419,7 @@ func (r *noOpResolver) resolveLLMConfig(agent *AgentConfig) *ResolvedLLMConfig {
 			resolved.MaxTokens = agent.LLM.MaxTokens
 		}
 		if agent.LLM.TimeoutSeconds != 0 {
-			resolved.Timeout = time.Duration(agent.LLM.TimeoutSeconds) * time.Second
+			resolved.Timeout = TimeoutFromSeconds(agent.LLM.TimeoutSeconds)
 		}
 		if agent.LLM.TopP != 0 {
 			resolved.TopP = agent.LLM.TopP
@@ -423,6 +433,17 @@ func (r *noOpResolver) resolveLLMConfig(agent *AgentConfig) *ResolvedLLMConfig {
 	}
 
 	return resolved
+}
+
+// resolveAutoLLM resolves the AutoLLM configuration with sensible defaults
+func (r *noOpResolver) resolveAutoLLM(agent *AgentConfig) bool {
+	// If explicitly set in config, use that value
+	if agent.AutoLLM != nil {
+		return *agent.AutoLLM
+	}
+
+	// Default to false for safety - users must explicitly enable auto-LLM
+	return false
 }
 
 type noOpReloader struct {

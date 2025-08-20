@@ -69,6 +69,15 @@ func (f *ConfigurableAgentFactory) CreateAgent(name string, resolvedConfig *core
 		return nil, fmt.Errorf("failed to build agent '%s': %w", name, err)
 	}
 
+	// Apply AutoLLM configuration if the agent supports it
+	if unifiedAgent, ok := agent.(*core.UnifiedAgent); ok {
+		unifiedAgent.SetAutoLLM(resolvedConfig.AutoLLM)
+		core.Logger().Info().
+			Str("agent", name).
+			Bool("auto_llm", resolvedConfig.AutoLLM).
+			Msg("Applied AutoLLM configuration")
+	}
+
 	// Create a wrapper that includes the configuration metadata
 	configuredAgent := &ConfiguredAgent{
 		Agent:          agent,

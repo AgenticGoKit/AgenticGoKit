@@ -15,6 +15,7 @@ type UnifiedAgent struct {
 	systemPrompt string
 	timeout      time.Duration
 	enabled      bool
+	autoLLM      bool // Controls whether to automatically call LLM when provider is configured
 
 	// Config/LLM
 	llmConfig *ResolvedLLMConfig
@@ -46,6 +47,7 @@ func NewUnifiedAgent(name string, caps map[CapabilityType]AgentCapability, handl
 		systemPrompt: "You are a helpful AI agent.",
 		timeout:      30 * time.Second,
 		enabled:      true,
+		autoLLM:      false, // Default to false for safety - user must explicitly enable
 		capabilities: caps,
 		handler:      handler,
 	}
@@ -82,10 +84,10 @@ func (u *UnifiedAgent) Run(ctx context.Context, state State) (State, error) {
 	}
 	out := state.Clone()
 
-	// If an LLM provider is configured, perform a default completion.
+	// If an LLM provider is configured and auto-LLM is enabled, perform a default completion.
 	// This gives UnifiedAgent a sensible behavior out-of-the-box for
 	// configuration-driven agents created by the factory/builder.
-	if u.llmProvider != nil {
+	if u.llmProvider != nil && u.autoLLM {
 		Logger().Debug().Str("agent", u.name).Msg("UnifiedAgent: LLM provider detected; preparing default completion")
 		// Prefer a system prompt set in state (e.g., by a config-aware wrapper),
 		// otherwise fall back to the agent's configured systemPrompt.
@@ -162,7 +164,7 @@ func (u *UnifiedAgent) SetLLMProvider(provider ModelProvider, config LLMConfig) 
 		Model:            config.Model,
 		Temperature:      config.Temperature,
 		MaxTokens:        config.MaxTokens,
-		Timeout:          time.Duration(config.TimeoutSeconds) * time.Second,
+		Timeout:          TimeoutFromSeconds(config.TimeoutSeconds),
 		TopP:             config.TopP,
 		FrequencyPenalty: config.FrequencyPenalty,
 		PresencePenalty:  config.PresencePenalty,
@@ -174,6 +176,13 @@ func (u *UnifiedAgent) SetCacheManager(manager interface{}, config interface{}) 
 }
 
 func (u *UnifiedAgent) SetMetricsConfig(config MetricsConfig) { u.metricsCfg = config }
+
+// SetAutoLLM configures whether the agent should automatically call the LLM provider
+// when one is configured. Set to true to enable automatic LLM calls, false to disable.
+func (u *UnifiedAgent) SetAutoLLM(enabled bool) { u.autoLLM = enabled }
+
+// GetAutoLLM returns whether automatic LLM calls are enabled.
+func (u *UnifiedAgent) GetAutoLLM() bool { return u.autoLLM }
 
 // Logger accessor to satisfy internal CapabilityConfigurable usage through core.Logger
 func (u *UnifiedAgent) GetLogger() CoreLogger { return Logger() }

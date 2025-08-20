@@ -235,18 +235,9 @@ runner, _ := core.NewRunnerFromConfig("agentflow.toml")
 // 2. Then run processor and reporter in sequence (sequential phase)
 ```
 
-## 🏗️ Orchestration Builder
+## 🧩 Config-Driven Orchestration
 
-### Config-Driven Orchestration
-
-Prefer configuration to define orchestration. Use `core.NewRunnerFromConfig("agentflow.toml")` and register your agents by name.
-
-### Advanced Configuration
-
-```go
-// Configure timeouts, failure thresholds, concurrency, and retries in agentflow.toml
-runner, _ := core.NewRunnerFromConfig("agentflow.toml")
-```
+Prefer configuration to define orchestration. Use `core.NewRunnerFromConfig("agentflow.toml")` and register your agents by name. Configure timeouts, failure thresholds, concurrency, and retries in the config where supported by your runner plugin.
 
 ## 📊 Workflow Visualization
 

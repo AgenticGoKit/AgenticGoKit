@@ -48,6 +48,7 @@ description = "Research specialist"
 system_prompt = "You are a research specialist..."
 capabilities = ["web_search", "document_analysis"]
 enabled = true
+auto_llm = true
 
 [agents.researcher.llm]
 model = "gpt-4"
@@ -60,6 +61,7 @@ description = "Content writer"
 system_prompt = "You are a skilled writer..."
 capabilities = ["content_creation", "editing"]
 enabled = true
+auto_llm = true
 
 [agents.writer.llm]
 model = "gpt-4"

@@ -76,6 +76,7 @@ Your role is to find authoritative sources and provide well-researched content.
 """
 capabilities = ["information_gathering", "fact_checking", "source_identification"]
 enabled = true
+auto_llm = true
 timeout_seconds = 45
 
 # Agent-specific LLM overrides

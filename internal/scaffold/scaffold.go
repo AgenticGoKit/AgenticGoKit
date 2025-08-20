@@ -745,6 +745,7 @@ description = "%s"
 system_prompt = "%s"
 capabilities = %s
 enabled = true
+auto_llm = true
 `, agent.Name, agent.Name, agent.Purpose,
 			generateSystemPromptForConfig(agent, i, len(agents), config.OrchestrationMode),
 			formatCapabilitiesArray(generateCapabilitiesForAgent(agent.Name)))
