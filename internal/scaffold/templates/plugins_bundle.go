@@ -34,6 +34,8 @@ import (
     _ "github.com/kunalkushwaha/agenticgokit/plugins/llm/openai"
     {{- else if eq .Config.Provider "azure" }}
     _ "github.com/kunalkushwaha/agenticgokit/plugins/llm/azureopenai"
+    {{- else if eq .Config.Provider "azureopenai" }}
+    _ "github.com/kunalkushwaha/agenticgokit/plugins/llm/azureopenai"
     {{- else if eq .Config.Provider "ollama" }}
     _ "github.com/kunalkushwaha/agenticgokit/plugins/llm/ollama"
     {{- end }}

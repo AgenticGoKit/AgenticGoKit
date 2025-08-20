@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -317,7 +318,7 @@ func (a *directCoreLLMAdapter) Complete(ctx context.Context, systemPrompt string
 	return resp.Content, nil
 }
 
-// NewLLMProvider creates a ModelProvider from AgentLLMConfig
+// NewLLMProvider creates a ModelProvider from AgentLLMConfig with environment variable support
 func NewLLMProvider(config AgentLLMConfig) (ModelProvider, error) {
 	providerConfig := LLMProviderConfig{
 		Type:        config.Provider,
@@ -325,6 +326,32 @@ func NewLLMProvider(config AgentLLMConfig) (ModelProvider, error) {
 		Temperature: config.Temperature,
 		MaxTokens:   config.MaxTokens,
 		HTTPTimeout: TimeoutFromSeconds(config.TimeoutSeconds),
+	}
+
+	// Read environment variables based on provider type
+	switch config.Provider {
+	case "openai":
+		if apiKey := os.Getenv("OPENAI_API_KEY"); apiKey != "" {
+			providerConfig.APIKey = apiKey
+		}
+	case "azure", "azureopenai":
+		if apiKey := os.Getenv("AZURE_OPENAI_API_KEY"); apiKey != "" {
+			providerConfig.APIKey = apiKey
+		}
+		if endpoint := os.Getenv("AZURE_OPENAI_ENDPOINT"); endpoint != "" {
+			providerConfig.Endpoint = endpoint
+		}
+		if deployment := os.Getenv("AZURE_OPENAI_DEPLOYMENT"); deployment != "" {
+			providerConfig.ChatDeployment = deployment
+			providerConfig.EmbeddingDeployment = deployment
+		}
+	case "ollama":
+		// Ollama typically doesn't need API keys, but we could support custom base URL
+		if baseURL := os.Getenv("OLLAMA_BASE_URL"); baseURL != "" {
+			providerConfig.BaseURL = baseURL
+		} else {
+			providerConfig.BaseURL = "http://localhost:11434"
+		}
 	}
 
 	return NewModelProviderFromConfig(providerConfig)

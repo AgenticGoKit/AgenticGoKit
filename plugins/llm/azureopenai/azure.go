@@ -46,4 +46,7 @@ func factory(cfg core.LLMProviderConfig) (core.ModelProvider, error) {
 	return &providerAdapter{adapter: llm.NewPublicProviderAdapter(wrapper)}, nil
 }
 
-func init() { core.RegisterModelProviderFactory("azureopenai", factory) }
+func init() {
+	core.RegisterModelProviderFactory("azureopenai", factory)
+	core.RegisterModelProviderFactory("azure", factory) // Also register as "azure" for compatibility
+}

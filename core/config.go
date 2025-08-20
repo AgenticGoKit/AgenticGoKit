@@ -432,6 +432,21 @@ func (r *noOpResolver) resolveLLMConfig(agent *AgentConfig) *ResolvedLLMConfig {
 		}
 	}
 
+	// Resolve API key from environment variables
+	switch resolved.Provider {
+	case "openai":
+		if apiKey := os.Getenv("OPENAI_API_KEY"); apiKey != "" {
+			resolved.APIKey = apiKey
+		}
+	case "azure", "azureopenai":
+		if apiKey := os.Getenv("AZURE_OPENAI_API_KEY"); apiKey != "" {
+			resolved.APIKey = apiKey
+		}
+	case "ollama":
+		// Ollama typically doesn't need API keys
+		resolved.APIKey = ""
+	}
+
 	return resolved
 }
 

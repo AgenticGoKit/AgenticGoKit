@@ -21,6 +21,22 @@ import (
 var memory core.Memory
 {{end}}
 
+// parseLogLevel converts string log level from config to core.LogLevel
+func parseLogLevel(levelStr string) core.LogLevel {
+	switch strings.ToLower(levelStr) {
+	case "debug":
+		return core.DEBUG
+	case "info":
+		return core.INFO
+	case "warn", "warning":
+		return core.WARN
+	case "error":
+		return core.ERROR
+	default:
+		return core.INFO // Default fallback
+	}
+}
+
 // main is the entry point for the {{.Config.Name}} multi-agent system.
 //
 // This function orchestrates the entire workflow by:
@@ -40,9 +56,25 @@ var memory core.Memory
 // - Add monitoring, metrics, or logging integrations
 func main() {
 	ctx := context.Background()
-	core.SetLogLevel(core.INFO)
+	
+	// Load configuration first to get logging settings
+	config, err := core.LoadConfig("agentflow.toml")
+	if err != nil {
+		// Use default logging for early errors
+		core.SetLogLevel(core.INFO)
+		logger := core.Logger()
+		logger.Error().Err(err).Msg("Failed to load configuration")
+		fmt.Printf("Failed to load configuration: %v\n", err)
+		fmt.Printf("Hint: Make sure agentflow.toml exists and is properly formatted\n")
+		os.Exit(1)
+	}
+
+	// Apply logging configuration from agentflow.toml
+	logLevel := parseLogLevel(config.Logging.Level)
+	core.SetLogLevel(logLevel)
+	
 	logger := core.Logger()
-	logger.Info().Msg("Starting {{.Config.Name}} multi-agent system...")
+	logger.Info().Str("log_level", config.Logging.Level).Str("log_format", config.Logging.Format).Msg("Starting {{.Config.Name}} multi-agent system with configured logging")
 
 	// TODO: Add any custom initialization logic here
 	// Examples:
@@ -64,29 +96,21 @@ func main() {
 	// TODO: Add custom flag validation here
 	// Example: if *messageFlag == "" { fmt.Println("Message is required"); os.Exit(1) }
 
-	// Load configuration from agentflow.toml
+	// Configuration already loaded above for logging setup
 	// This file contains all the settings for your multi-agent system including
 	// LLM provider configuration, orchestration settings, and feature toggles
 	// TODO: Customize configuration loading if you need multiple config files
 	// or environment-specific configurations
-	config, err := core.LoadConfig("agentflow.toml")
-	if err != nil {
-		// TODO: Add custom error handling for configuration loading
-		// You might want to provide more specific error messages or fallback configurations
-	fmt.Printf("Failed to load configuration: %v\n", err)
-	fmt.Printf("Hint: Make sure agentflow.toml exists and is properly formatted\n")
-		os.Exit(1)
-	}
 
 	// Initialize the LLM provider based on configuration
 	// This creates the connection to your chosen AI service (OpenAI, Azure, Ollama, etc.)
 	// TODO: Add custom provider initialization logic if needed
 	// You might want to add connection pooling, rate limiting, or custom authentication
-	llmProvider, err := initializeProvider(config.AgentFlow.Provider)
+	llmProvider, err := initializeProvider(config.LLM.Provider)
 	if err != nil {
-		fmt.Printf("ERROR: Failed to initialize LLM provider '%s': %v\n", config.AgentFlow.Provider, err)
+		fmt.Printf("ERROR: Failed to initialize LLM provider '%s': %v\n", config.LLM.Provider, err)
 		fmt.Printf("\nHint: Make sure you have set the appropriate environment variables:\n")
-		switch config.AgentFlow.Provider {
+		switch config.LLM.Provider {
 		case "azure":
 			fmt.Printf("  AZURE_OPENAI_API_KEY=your-api-key\n")
 			fmt.Printf("  AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/\n")
@@ -96,7 +120,7 @@ func main() {
 		case "ollama":
 			fmt.Printf("  Ollama should be running on localhost:11434\n")
 		default:
-			fmt.Printf("  Check the documentation for provider '%s'\n", config.AgentFlow.Provider)
+			fmt.Printf("  Check the documentation for provider '%s'\n", config.LLM.Provider)
 		}
 		// TODO: Add custom error handling or fallback providers here
 		// Example: Try a fallback provider or provide offline mode
@@ -107,7 +131,7 @@ func main() {
 	
 	// TODO: Add LLM provider validation or health checks here
 	// Example: Test the connection with a simple query
-	logger.Debug().Str("provider", config.AgentFlow.Provider).Msg("LLM provider initialized successfully")
+	logger.Debug().Str("provider", config.LLM.Provider).Msg("LLM provider initialized successfully")
 
 	{{if .Config.MCPEnabled}}
 	// Initialize MCP (Model Context Protocol) manager for tool integration
@@ -835,4 +859,71 @@ func validateMemoryConfig(memoryConfig core.AgentMemoryConfig, expectedModel str
 	return nil
 }
 {{end}}
+
+func initializeProvider(providerType string) (core.ModelProvider, error) {
+	// Load configuration to get provider settings
+	config, err := core.LoadConfig("agentflow.toml")
+	if err != nil {
+		return nil, fmt.Errorf("failed to load configuration: %w", err)
+	}
+
+	// Use the global LLM configuration from agentflow.toml
+	llmConfig := config.LLM
+	if llmConfig.Provider == "" {
+		llmConfig.Provider = providerType // Use parameter as fallback
+	}
+
+	// Create provider configuration with environment variable resolution
+	providerConfig := core.LLMProviderConfig{
+		Type:        llmConfig.Provider,
+		Model:       llmConfig.Model,
+		Temperature: llmConfig.Temperature,
+		MaxTokens:   llmConfig.MaxTokens,
+		HTTPTimeout: core.TimeoutFromSeconds(llmConfig.TimeoutSeconds),
+	}
+
+	// Read API key from environment variables based on provider type
+	switch llmConfig.Provider {
+	case "openai":
+		apiKey := os.Getenv("OPENAI_API_KEY")
+		if apiKey == "" {
+			return nil, fmt.Errorf("OPENAI_API_KEY environment variable is required for OpenAI provider")
+		}
+		providerConfig.APIKey = apiKey
+	case "azure", "azureopenai":
+		apiKey := os.Getenv("AZURE_OPENAI_API_KEY")
+		endpoint := os.Getenv("AZURE_OPENAI_ENDPOINT")
+		deployment := os.Getenv("AZURE_OPENAI_DEPLOYMENT")
+		if apiKey == "" {
+			return nil, fmt.Errorf("AZURE_OPENAI_API_KEY environment variable is required for Azure provider")
+		}
+		if endpoint == "" {
+			return nil, fmt.Errorf("AZURE_OPENAI_ENDPOINT environment variable is required for Azure provider")
+		}
+		if deployment == "" {
+			return nil, fmt.Errorf("AZURE_OPENAI_DEPLOYMENT environment variable is required for Azure provider")
+		}
+		providerConfig.APIKey = apiKey
+		providerConfig.Endpoint = endpoint
+		providerConfig.ChatDeployment = deployment
+		providerConfig.EmbeddingDeployment = deployment
+	case "ollama":
+		// Ollama doesn't require API key, use base URL from config or default
+		baseURL := "http://localhost:11434"
+		if ollamaConfig, exists := config.Providers["ollama"]; exists {
+			if url, ok := ollamaConfig["base_url"].(string); ok && url != "" {
+				baseURL = url
+			}
+		}
+		providerConfig.BaseURL = baseURL
+	}
+
+	// Create provider from configuration
+	provider, err := core.NewModelProviderFromConfig(providerConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create LLM provider '%s': %w", llmConfig.Provider, err)
+	}
+
+	return provider, nil
+}
 `

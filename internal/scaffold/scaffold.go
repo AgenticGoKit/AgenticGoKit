@@ -374,7 +374,7 @@ func createMainGoWithTemplate(config ProjectConfig) error {
 	}{
 		Config:               config,
 		Agents:               agents,
-		ProviderInitFunction: generateProviderInitFunction(config),
+		ProviderInitFunction: "", // Remove generated function - template contains full implementation
 		MCPInitFunction:      generateMCPInitFunction(config),
 		CacheInitFunction:    generateCacheInitFunction(config),
 		ProjectStructure:     CreateProjectStructureInfo(config),
@@ -1166,31 +1166,6 @@ func convertToUtilsConfig(config ProjectConfig) utils.ProjectConfig {
 		Visualize:            config.Visualize,
 		VisualizeOutputDir:   config.VisualizeOutputDir,
 	}
-}
-
-// generateProviderInitFunction generates the provider initialization function code
-func generateProviderInitFunction(config ProjectConfig) string {
-	return `func initializeProvider(providerType string) (core.ModelProvider, error) {
-	// Load configuration to get provider settings
-	config, err := core.LoadConfig("agentflow.toml")
-	if err != nil {
-		return nil, fmt.Errorf("failed to load configuration: %w", err)
-	}
-
-	// Use the global LLM configuration from agentflow.toml
-	llmConfig := config.LLM
-	if llmConfig.Provider == "" {
-		llmConfig.Provider = providerType // Use parameter as fallback
-	}
-
-	// Create provider from configuration
-	provider, err := core.NewLLMProvider(llmConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create LLM provider '%s': %w", llmConfig.Provider, err)
-	}
-
-	return provider, nil
-}`
 }
 
 // generateMCPInitFunction generates the MCP initialization function code
