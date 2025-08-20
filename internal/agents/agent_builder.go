@@ -222,7 +222,7 @@ func (b *AgentBuilder) WithLLMAndConfig(provider core.ModelProvider, config core
 	}
 
 	capability := NewLLMCapability(provider, config)
-	core.Logger().Info().
+	core.Logger().Debug().
 		Str("agent", b.name).
 		Str("adding_capability", capability.Name()).
 		Str("addr", fmt.Sprintf("%p", capability)).
@@ -231,7 +231,7 @@ func (b *AgentBuilder) WithLLMAndConfig(provider core.ModelProvider, config core
 
 	b.capabilities = append(b.capabilities, capability)
 
-	core.Logger().Info().
+	core.Logger().Debug().
 		Str("agent", b.name).
 		Str("added_capability", capability.Name()).
 		Str("addr", fmt.Sprintf("%p", capability)).
@@ -266,7 +266,7 @@ func (b *AgentBuilder) WithMetrics(config core.MetricsConfig) *AgentBuilder {
 // WithDefaultMetrics adds metrics capability with default configuration
 func (b *AgentBuilder) WithDefaultMetrics() *AgentBuilder {
 	capability := NewMetricsCapability(DefaultMetricsConfig())
-	core.Logger().Info().
+	core.Logger().Debug().
 		Str("agent", b.name).
 		Str("adding_capability", capability.Name()).
 		Str("addr", fmt.Sprintf("%p", capability)).
@@ -275,7 +275,7 @@ func (b *AgentBuilder) WithDefaultMetrics() *AgentBuilder {
 
 	b.capabilities = append(b.capabilities, capability)
 
-	core.Logger().Info().
+	core.Logger().Debug().
 		Str("agent", b.name).
 		Str("added_capability", capability.Name()).
 		Str("addr", fmt.Sprintf("%p", capability)).
@@ -373,12 +373,12 @@ func (b *AgentBuilder) ClearErrors() *AgentBuilder {
 // Build creates the final agent with all configured capabilities
 func (b *AgentBuilder) Build() (core.Agent, error) {
 	// IMMEDIATE DEBUG: Check slice at entry to Build()
-	core.Logger().Info().
+	core.Logger().Debug().
 		Str("agent", b.name).
 		Int("count_at_build_entry", len(b.capabilities)).
 		Msg("Builder: Build() method entry")
 	for i, cap := range b.capabilities {
-		core.Logger().Info().
+		core.Logger().Debug().
 			Str("agent", b.name).
 			Int("entry_index", i).
 			Str("entry_cap_name", cap.Name()).
@@ -387,19 +387,19 @@ func (b *AgentBuilder) Build() (core.Agent, error) {
 	}
 
 	// Validate the configuration
-	core.Logger().Info().
+	core.Logger().Debug().
 		Str("agent", b.name).
 		Msg("Builder: About to validate")
 	if err := b.Validate(); err != nil {
 		return nil, fmt.Errorf("agent validation failed: %w", err)
 	}
-	core.Logger().Info().
+	core.Logger().Debug().
 		Str("agent", b.name).
 		Msg("Builder: Validation complete")
 
 	// DEBUG: Check slice after validation
 	for i, cap := range b.capabilities {
-		core.Logger().Info().
+		core.Logger().Debug().
 			Str("agent", b.name).
 			Int("post_validation_index", i).
 			Str("post_validation_name", cap.Name()).
@@ -414,7 +414,7 @@ func (b *AgentBuilder) Build() (core.Agent, error) {
 	}
 
 	// Debug: list capabilities BEFORE sorting
-	core.Logger().Info().
+	core.Logger().Debug().
 		Str("agent", b.name).
 		Int("count", len(b.capabilities)).
 		Msg("Builder: capabilities before sorting - START")
@@ -423,7 +423,7 @@ func (b *AgentBuilder) Build() (core.Agent, error) {
 	actualNames := make([]string, len(b.capabilities))
 	for idx, cap := range b.capabilities {
 		actualNames[idx] = cap.Name()
-		core.Logger().Info().
+		core.Logger().Debug().
 			Str("agent", b.name).
 			Int("index", idx).
 			Str("capability", cap.Name()).
@@ -434,7 +434,7 @@ func (b *AgentBuilder) Build() (core.Agent, error) {
 
 	// Use capabilityNames function and compare
 	fromFunction := capabilityNames(b.capabilities)
-	core.Logger().Info().
+	core.Logger().Debug().
 		Str("agent", b.name).
 		Strs("actual_slice_names", actualNames).
 		Strs("function_names", fromFunction).
@@ -444,19 +444,19 @@ func (b *AgentBuilder) Build() (core.Agent, error) {
 	capabilities := b.capabilities
 	if b.config.SortByPriority {
 		capabilities = SortCapabilitiesByPriority(b.capabilities)
-		core.Logger().Info().
+		core.Logger().Debug().
 			Str("agent", b.name).
 			Msg("Builder: capabilities sorted by priority")
 	}
 
 	// Debug: list capabilities AFTER sorting
-	core.Logger().Info().
+	core.Logger().Debug().
 		Str("agent", b.name).
 		Int("count", len(capabilities)).
 		Strs("capability_types", capabilityNames(capabilities)).
 		Msg("Builder: capabilities after sorting")
 	for idx, cap := range capabilities {
-		core.Logger().Info().
+		core.Logger().Debug().
 			Str("agent", b.name).
 			Int("index", idx).
 			Str("capability", cap.Name()).
@@ -480,7 +480,7 @@ func (b *AgentBuilder) Build() (core.Agent, error) {
 	}
 
 	for _, cap := range capabilities {
-		core.Logger().Info().
+		core.Logger().Debug().
 			Str("agent", b.name).
 			Str("configuring_capability", cap.Name()).
 			Msg("AgentBuilder: configuring capability")
@@ -496,7 +496,7 @@ func (b *AgentBuilder) Build() (core.Agent, error) {
 		}
 	}
 
-	logger.Info().
+	logger.Debug().
 		Int("capabilities", len(capabilities)).
 		Strs("capability_types", capabilityNames(capabilities)).
 		Msg("Agent built successfully")

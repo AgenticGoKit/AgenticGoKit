@@ -60,7 +60,7 @@ func (c *MCPCapability) Configure(agent CapabilityConfigurable) error {
 			fmt.Errorf("agent does not support MCP capability"))
 	}
 
-	core.Logger().Info().
+	core.Logger().Debug().
 		Str("capability", c.Name()).
 		Msg("MCP capability configured")
 

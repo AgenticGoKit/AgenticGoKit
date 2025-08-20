@@ -109,7 +109,7 @@ func (u *UnifiedAgent) Run(ctx context.Context, state State) (State, error) {
 
 		// Only call the LLM if we have a non-empty user prompt.
 		if strings.TrimSpace(user) != "" {
-			Logger().Info().Str("agent", u.name).Msg("UnifiedAgent: calling LLM provider")
+			Logger().Debug().Str("agent", u.name).Msg("UnifiedAgent: calling LLM provider")
 			params := ModelParameters{}
 			if u.llmConfig != nil {
 				if u.llmConfig.Temperature != 0 {

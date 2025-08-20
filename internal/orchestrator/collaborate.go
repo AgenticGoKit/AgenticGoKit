@@ -36,7 +36,7 @@ func (o *CollaborativeOrchestrator) RegisterAgent(name string, handler core.Agen
 	}
 	// Store handler by name
 	o.handlers[name] = handler
-	core.Logger().Info().
+	core.Logger().Debug().
 		Str("agent", name).
 		Msg("CollaborativeOrchestrator: Registered agent")
 	return nil
@@ -140,7 +140,7 @@ func (o *CollaborativeOrchestrator) Dispatch(ctx context.Context, event core.Eve
 		return combinedResult, fmt.Errorf("collaborative dispatch failed: all agents returned errors")
 	}
 
-	core.Logger().Info().
+	core.Logger().Debug().
 		Int("total_agents", len(o.handlers)).
 		Int("successful", len(results)-len(errors)).
 		Int("failed", len(errors)).
@@ -156,5 +156,5 @@ func (o *CollaborativeOrchestrator) GetCallbackRegistry() *core.CallbackRegistry
 
 // Stop halts the orchestrator
 func (o *CollaborativeOrchestrator) Stop() {
-	core.Logger().Info().Msg("CollaborativeOrchestrator: Stopped")
+	core.Logger().Debug().Msg("CollaborativeOrchestrator: Stopped")
 }

@@ -30,7 +30,7 @@ func (am *DefaultAgentManager) UpdateAgentConfigurations(config *core.Config) er
 	am.mutex.Lock()
 	defer am.mutex.Unlock()
 
-	core.Logger().Info().
+	core.Logger().Debug().
 		Int("agent_count", len(config.Agents)).
 		Msg("Updating agent configurations")
 
@@ -80,7 +80,7 @@ func (am *DefaultAgentManager) UpdateAgentConfigurations(config *core.Config) er
 						Str("agent", agentName).
 						Msg("Failed to disable agent")
 				} else {
-					core.Logger().Info().
+					core.Logger().Debug().
 						Str("agent", agentName).
 						Msg("Disabled agent via configuration")
 				}
@@ -109,7 +109,7 @@ func (am *DefaultAgentManager) UpdateAgentConfigurations(config *core.Config) er
 
 				am.agentConfigs[agentName] = resolvedConfig
 
-				core.Logger().Info().
+				core.Logger().Debug().
 					Str("agent", agentName).
 					Str("role", resolvedConfig.Role).
 					Bool("enabled", resolvedConfig.Enabled).
@@ -128,7 +128,7 @@ func (am *DefaultAgentManager) UpdateAgentConfigurations(config *core.Config) er
 				am.agents[agentName] = newAgent
 				am.agentConfigs[agentName] = resolvedConfig
 
-				core.Logger().Info().
+				core.Logger().Debug().
 					Str("agent", agentName).
 					Str("role", resolvedConfig.Role).
 					Bool("enabled", resolvedConfig.Enabled).
@@ -154,7 +154,7 @@ func (am *DefaultAgentManager) UpdateAgentConfigurations(config *core.Config) er
 			am.agents[agentName] = newAgent
 			am.agentConfigs[agentName] = resolvedConfig
 
-			core.Logger().Info().
+			core.Logger().Debug().
 				Str("agent", agentName).
 				Str("role", resolvedConfig.Role).
 				Bool("enabled", resolvedConfig.Enabled).
@@ -173,14 +173,14 @@ func (am *DefaultAgentManager) UpdateAgentConfigurations(config *core.Config) er
 					Str("agent", agentName).
 					Msg("Failed to disable removed agent")
 			} else {
-				core.Logger().Info().
+				core.Logger().Debug().
 					Str("agent", agentName).
 					Msg("Disabled agent (removed from configuration)")
 			}
 		}
 	}
 
-	core.Logger().Info().
+	core.Logger().Debug().
 		Int("total_agents", len(am.agents)).
 		Int("config_agents", len(config.Agents)).
 		Msg("Agent configuration update completed")
@@ -215,7 +215,7 @@ func (am *DefaultAgentManager) CreateAgent(name string, config *core.ResolvedAge
 	am.agents[name] = agent
 	am.agentConfigs[name] = config
 
-	core.Logger().Info().
+	core.Logger().Debug().
 		Str("agent", name).
 		Str("role", config.Role).
 		Bool("enabled", config.Enabled).
@@ -255,7 +255,7 @@ func (am *DefaultAgentManager) disableAgentInternal(name string) error {
 					Msg("Failed to disable agent via configuration")
 			} else {
 				am.agentConfigs[name] = &disabledConfig
-				core.Logger().Info().
+				core.Logger().Debug().
 					Str("agent", name).
 					Msg("Disabled agent via configuration")
 				return nil
@@ -267,7 +267,7 @@ func (am *DefaultAgentManager) disableAgentInternal(name string) error {
 	delete(am.agents, name)
 	delete(am.agentConfigs, name)
 
-	core.Logger().Info().
+	core.Logger().Debug().
 		Str("agent", name).
 		Msg("Removed disabled agent")
 
@@ -381,7 +381,7 @@ func (am *DefaultAgentManager) InitializeAgents() error {
 		}
 		am.agents[name] = agent
 		am.agentConfigs[name] = resolved
-		core.Logger().Info().Str("agent", name).Msg("InitializeAgents: agent created")
+		core.Logger().Debug().Str("agent", name).Msg("InitializeAgents: agent created")
 	}
 	return nil
 }

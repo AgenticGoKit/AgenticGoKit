@@ -68,7 +68,7 @@ func NewSequentialAgentWithConfig(name string, config *core.ResolvedAgentConfig,
 func (s *SequentialAgent) Run(ctx context.Context, initialState agenticgokit.State) (agenticgokit.State, error) {
 	// Check if agent is enabled
 	if !s.IsEnabled() {
-		agenticgokit.Logger().Info().
+		agenticgokit.Logger().Debug().
 			Str("sequential_agent", s.name).
 			Msg("SequentialAgent: Agent is disabled, skipping execution.")
 		return initialState, nil
@@ -227,7 +227,7 @@ func (s *SequentialAgent) UpdateConfiguration(config *core.ResolvedAgentConfig) 
 	}
 	s.config = config
 	
-	agenticgokit.Logger().Info().
+	agenticgokit.Logger().Debug().
 		Str("agent", s.name).
 		Str("role", config.Role).
 		Bool("enabled", config.Enabled).

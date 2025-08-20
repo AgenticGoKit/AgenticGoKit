@@ -183,7 +183,7 @@ func NewLLMCapability(provider core.ModelProvider, config core.LLMConfig) *LLMCa
 		Provider: provider,
 		Config:   config,
 	}
-	core.Logger().Info().
+	core.Logger().Debug().
 		Str("capability_ctor", "llm").
 		Str("type", fmt.Sprintf("%T", c)).
 		Str("addr", fmt.Sprintf("%p", c)).
@@ -208,7 +208,7 @@ func (c *LLMCapability) Configure(agent CapabilityConfigurable) error {
 
 	agent.SetLLMProvider(c.Provider, c.Config)
 
-	logger.Info().Msg("LLM capability configured")
+	logger.Debug().Msg("LLM capability configured")
 	return nil
 }
 
@@ -248,7 +248,7 @@ func (c *CacheCapability) Configure(agent CapabilityConfigurable) error {
 
 	agent.SetCacheManager(c.Manager, c.Config)
 
-	core.Logger().Info().
+	core.Logger().Debug().
 		Str("capability", c.Name()).
 		Msg("Cache capability configured")
 
@@ -274,7 +274,7 @@ func NewMetricsCapability(config core.MetricsConfig) *MetricsCapability {
 		},
 		Config: config,
 	}
-	core.Logger().Info().
+	core.Logger().Debug().
 		Str("capability_ctor", "metrics").
 		Str("type", fmt.Sprintf("%T", c)).
 		Str("addr", fmt.Sprintf("%p", c)).
@@ -287,7 +287,7 @@ func NewMetricsCapability(config core.MetricsConfig) *MetricsCapability {
 func (c *MetricsCapability) Configure(agent CapabilityConfigurable) error {
 	agent.SetMetricsConfig(c.Config)
 
-	core.Logger().Info().
+	core.Logger().Debug().
 		Str("capability", c.Name()).
 		Int("port", c.Config.Port).
 		Msg("Metrics capability configured")

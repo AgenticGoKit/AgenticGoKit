@@ -214,7 +214,7 @@ func (r *RunnerImpl) Stop() {
 	r.mu.Lock()
 	Logger().Debug().Msg("Runner Stop: Acquired lock")
 	if !r.started {
-		Logger().Info().Msg("Runner Stop: Already stopped, released lock.")
+		Logger().Debug().Msg("Runner Stop: Already stopped, released lock.")
 		r.mu.Unlock()
 		return
 	}

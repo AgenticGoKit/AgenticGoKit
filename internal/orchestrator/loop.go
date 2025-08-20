@@ -87,7 +87,7 @@ func (o *LoopOrchestrator) Dispatch(ctx context.Context, event core.Event) (core
 		// Check for completion signal in state
 		if completed, ok := result.OutputState.Get("loop_completed"); ok {
 			if completedBool, isBool := completed.(bool); isBool && completedBool {
-				core.Logger().Info().
+				core.Logger().Debug().
 					Str("agent", o.agentName).
 					Int("iteration", i+1).
 					Msg("LoopOrchestrator: Agent signaled completion, stopping loop")
@@ -99,7 +99,7 @@ func (o *LoopOrchestrator) Dispatch(ctx context.Context, event core.Event) (core
 		state = result.OutputState
 	}
 
-	core.Logger().Info().
+	core.Logger().Debug().
 		Str("agent", o.agentName).
 		Int("iterations", o.maxIterations).
 		Msg("LoopOrchestrator: Completed maximum iterations")

@@ -106,7 +106,7 @@ func (r *CallbackRegistry) Unregister(hook HookPoint, name string) {
 		if reg.ID == name {
 			// Remove the element
 			r.callbacks[hook] = append(hooks[:i], hooks[i+1:]...)
-			Logger().Info().
+			Logger().Debug().
 				Str("callback", name).
 				Str("hook", string(hook)).
 				Msg("Callback unregistered")

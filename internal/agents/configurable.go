@@ -151,7 +151,7 @@ func (ca *ConfigAwareUnifiedAgent) UpdateConfiguration(config *core.ResolvedAgen
 		}
 	}
 
-	core.Logger().Info().
+	core.Logger().Debug().
 		Str("agent", ca.Name()).
 		Str("role", config.Role).
 		Bool("enabled", config.Enabled).
@@ -197,7 +197,7 @@ func NewConfigAwareSequentialAgent(name string, config *core.ResolvedAgentConfig
 		if agent != nil && agent.IsEnabled() {
 			enabledAgents = append(enabledAgents, agent)
 		} else if agent != nil {
-			core.Logger().Info().
+			core.Logger().Debug().
 				Str("sequential_agent", name).
 				Str("disabled_agent", agent.Name()).
 				Msg("Skipping disabled agent in sequential execution")
@@ -363,7 +363,7 @@ func NewConfigAwareParallelAgent(name string, config *core.ResolvedAgentConfig, 
 		if agent != nil && agent.IsEnabled() {
 			enabledAgents = append(enabledAgents, agent)
 		} else if agent != nil {
-			core.Logger().Info().
+			core.Logger().Debug().
 				Str("parallel_agent", name).
 				Str("disabled_agent", agent.Name()).
 				Msg("Skipping disabled agent in parallel execution")

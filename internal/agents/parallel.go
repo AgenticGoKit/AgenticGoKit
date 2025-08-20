@@ -79,7 +79,7 @@ func (a *ParallelAgent) Name() string {
 func (a *ParallelAgent) Run(ctx context.Context, initialState agenticgokit.State) (agenticgokit.State, error) {
 	// Check if agent is enabled
 	if !a.IsEnabled() {
-		agenticgokit.Logger().Info().
+		agenticgokit.Logger().Debug().
 			Str("parallel_agent", a.name).
 			Msg("ParallelAgent: Agent is disabled, skipping execution.")
 		return initialState, nil
@@ -291,7 +291,7 @@ func (a *ParallelAgent) UpdateConfiguration(config *core.ResolvedAgentConfig) er
 	}
 	a.agentConfig = config
 	
-	agenticgokit.Logger().Info().
+	agenticgokit.Logger().Debug().
 		Str("agent", a.name).
 		Str("role", config.Role).
 		Bool("enabled", config.Enabled).

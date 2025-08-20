@@ -489,7 +489,7 @@ func InitializeMCP(config MCPConfig) error {
 	globalMCPManager = manager
 	mcpManagerInitialized = true
 
-	Logger().Info().Msg("MCP manager initialized successfully")
+	Logger().Debug().Msg("MCP manager initialized successfully")
 	return nil
 }
 
@@ -506,7 +506,7 @@ func InitializeMCPWithCache(mcpConfig MCPConfig, cacheConfig MCPCacheConfig) err
 		return fmt.Errorf("failed to initialize MCP cache: %w", err)
 	}
 
-	Logger().Info().Msg("MCP with cache initialized successfully")
+	Logger().Debug().Msg("MCP with cache initialized successfully")
 	return nil
 }
 
@@ -534,7 +534,7 @@ func InitializeProductionMCP(ctx context.Context, config ProductionConfig) error
 		}
 	}
 
-	Logger().Info().Msg("Production MCP initialized successfully")
+	Logger().Debug().Msg("Production MCP initialized successfully")
 	return nil
 }
 
@@ -557,7 +557,7 @@ func InitializeMCPCacheManager(config MCPCacheConfig) error {
 	globalCacheManager = manager
 	cacheManagerInitialized = true
 
-	Logger().Info().Msg("MCP cache manager initialized successfully")
+	Logger().Debug().Msg("MCP cache manager initialized successfully")
 	return nil
 }
 
@@ -578,7 +578,7 @@ func InitializeMCPToolRegistry() error {
 	}
 
 	globalMCPRegistry = registry
-	Logger().Info().Msg("MCP tool registry initialized successfully")
+	Logger().Debug().Msg("MCP tool registry initialized successfully")
 	return nil
 }
 
@@ -750,7 +750,7 @@ func RegisterMCPToolsWithRegistry(ctx context.Context) error {
 	}
 	// Get available tools and register them
 	tools := manager.GetAvailableTools()
-	Logger().Info().Int("tool_count", len(tools)).Msg("Registering MCP tools with registry")
+	Logger().Debug().Int("tool_count", len(tools)).Msg("Registering MCP tools with registry")
 
 	// Register each MCP tool as a FunctionTool
 	for _, toolInfo := range tools {
@@ -769,7 +769,7 @@ func RegisterMCPToolsWithRegistry(ctx context.Context) error {
 		}
 	}
 
-	Logger().Info().Int("registered_tools", len(tools)).Msg("Completed MCP tool registration")
+	Logger().Debug().Int("registered_tools", len(tools)).Msg("Completed MCP tool registration")
 	return nil
 }
 
@@ -1123,7 +1123,7 @@ func ShutdownMCP() error {
 		return fmt.Errorf("shutdown errors: %v", errors)
 	}
 
-	Logger().Info().Msg("MCP shutdown completed successfully")
+	Logger().Debug().Msg("MCP shutdown completed successfully")
 	return nil
 }
 
@@ -1198,7 +1198,7 @@ func initializeProductionMetrics(config MetricsConfig) error {
 	}
 
 	// Initialize basic metrics tracking
-	Logger().Info().
+	Logger().Debug().
 		Int("port", config.Port).
 		Str("path", config.Path).
 		Bool("prometheus", config.PrometheusEnabled).

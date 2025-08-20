@@ -62,7 +62,7 @@ func (o *MixedOrchestrator) RegisterAgent(name string, handler core.AgentHandler
 
 // Dispatch implements hybrid execution: collaborative agents run in parallel, then sequential agents run in order
 func (o *MixedOrchestrator) Dispatch(ctx context.Context, event core.Event) (core.AgentResult, error) {
-	core.Logger().Info().
+	core.Logger().Debug().
 		Str("event_id", event.GetID()).
 		Int("collaborative_agents", len(o.collaborativeAgents)).
 		Int("sequential_agents", len(o.sequentialAgents)).
@@ -78,7 +78,7 @@ func (o *MixedOrchestrator) Dispatch(ctx context.Context, event core.Event) (cor
 
 	// Phase 1: Execute collaborative agents in parallel
 	if len(o.collaborativeAgents) > 0 {
-		core.Logger().Info().
+		core.Logger().Debug().
 			Int("agents", len(o.collaborativeAgents)).
 			Msg("MixedOrchestrator: Phase 1 - Collaborative execution")
 
@@ -102,7 +102,7 @@ func (o *MixedOrchestrator) Dispatch(ctx context.Context, event core.Event) (cor
 
 	// Phase 2: Execute sequential agents in order
 	if len(o.sequentialAgents) > 0 {
-		core.Logger().Info().
+		core.Logger().Debug().
 			Int("agents", len(o.sequentialAgents)).
 			Msg("MixedOrchestrator: Phase 2 - Sequential execution")
 
@@ -124,7 +124,7 @@ func (o *MixedOrchestrator) Dispatch(ctx context.Context, event core.Event) (cor
 		}
 	}
 
-	core.Logger().Info().
+	core.Logger().Debug().
 		Str("event_id", event.GetID()).
 		Msg("MixedOrchestrator: Hybrid dispatch completed successfully")
 

@@ -104,7 +104,7 @@ func (a *LoopAgent) Name() string {
 func (l *LoopAgent) Run(ctx context.Context, initialState agenticgokit.State) (agenticgokit.State, error) {
 	// Check if agent is enabled
 	if !l.IsEnabled() {
-		agenticgokit.Logger().Info().
+		agenticgokit.Logger().Debug().
 			Str("loop_agent", l.name).
 			Msg("LoopAgent: Agent is disabled, skipping execution.")
 		return initialState, nil
@@ -181,7 +181,7 @@ func (l *LoopAgent) Run(ctx context.Context, initialState agenticgokit.State) (a
 		if l.config.Condition != nil {
 			stop := l.config.Condition(currentState)
 			if stop {
-				agenticgokit.Logger().Info().
+				agenticgokit.Logger().Debug().
 					Str("agent", l.name).
 					Int("iteration", iteration).
 					Msg("LoopAgent: Condition met, stopping loop.")
@@ -297,7 +297,7 @@ func (l *LoopAgent) UpdateConfiguration(config *core.ResolvedAgentConfig) error 
 	}
 	l.agentConfig = config
 	
-	agenticgokit.Logger().Info().
+	agenticgokit.Logger().Debug().
 		Str("agent", l.name).
 		Str("role", config.Role).
 		Bool("enabled", config.Enabled).

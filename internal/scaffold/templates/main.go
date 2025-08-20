@@ -107,7 +107,7 @@ func main() {
 	
 	// TODO: Add LLM provider validation or health checks here
 	// Example: Test the connection with a simple query
-	logger.Info().Str("provider", config.AgentFlow.Provider).Msg("LLM provider initialized successfully")
+	logger.Debug().Str("provider", config.AgentFlow.Provider).Msg("LLM provider initialized successfully")
 
 	{{if .Config.MCPEnabled}}
 	// Initialize MCP (Model Context Protocol) manager for tool integration
@@ -115,7 +115,7 @@ func main() {
 	// databases, APIs, and other integrations defined in your agentflow.toml
 	// TODO: Customize MCP initialization for your specific tool requirements
 	// You might want to add custom tool validation, authentication, or configuration
-	logger.Info().Msg("Initializing MCP with timeout handling...")
+	logger.Debug().Msg("Initializing MCP with timeout handling...")
 	mcpInitCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 
@@ -143,7 +143,7 @@ func main() {
 	}
 
 	if mcpManager != nil {
-		logger.Info().Msg("MCP manager initialized successfully - agents can access tools via core.GetMCPManager()")
+		logger.Debug().Msg("MCP manager initialized successfully - agents can access tools via core.GetMCPManager()")
 
 		// Initialize MCP tool registry with timeout
 		registryCtx, registryCancel := context.WithTimeout(ctx, 10*time.Second)
@@ -159,7 +159,7 @@ func main() {
 			if err != nil {
 				logger.Warn().Err(err).Msg("Failed to initialize MCP tool registry")
 			} else {
-				logger.Info().Msg("MCP tool registry initialized successfully")
+				logger.Debug().Msg("MCP tool registry initialized successfully")
 			}
 		case <-registryCtx.Done():
 			logger.Warn().Msg("MCP tool registry initialization timed out")
@@ -179,7 +179,7 @@ func main() {
 			if err != nil {
 				logger.Warn().Err(err).Msg("Failed to register MCP tools with registry")
 			} else {
-				logger.Info().Msg("MCP tools registered with registry successfully")
+				logger.Debug().Msg("MCP tools registered with registry successfully")
 			}
 		case <-toolsCtx.Done():
 			logger.Warn().Msg("MCP tools registration timed out")
@@ -191,7 +191,7 @@ func main() {
 	if err := initializeCache(); err != nil {
 		logger.Warn().Err(err).Msg("MCP cache initialization failed; continuing without cache")
 	} else {
-		logger.Info().Msg("MCP cache manager initialized successfully")
+		logger.Debug().Msg("MCP cache manager initialized successfully")
 	}
 	{{end}}
 	{{end}}
@@ -217,7 +217,7 @@ func main() {
 		os.Exit(1)
 	}
 	
-	logger.Info().Msg("Memory configuration validation passed")
+	logger.Debug().Msg("Memory configuration validation passed")
 	fmt.Println("Configuration validated.")
 	
 	memory, err := core.NewMemory(memoryConfig)
@@ -266,7 +266,7 @@ func main() {
 	fmt.Printf("Warning: Memory connection test failed: %v\n", err)
 	fmt.Printf("Agents will still work, but memory features may be limited\n")
 	} else {
-		logger.Info().Msg("Memory system initialized successfully")
+		logger.Debug().Msg("Memory system initialized successfully")
 	fmt.Printf("Memory system ready.\n")
 	}
 	{{end}}
@@ -276,7 +276,7 @@ func main() {
 	// instead of hardcoded agent constructors, providing much more flexibility
 	// TODO: Customize agent factory initialization if needed
 	// You might want to add custom agent types or initialization logic
-	logger.Info().Msg("Initializing configuration-driven agent factory...")
+	logger.Debug().Msg("Initializing configuration-driven agent factory...")
 	
 	factory := core.NewConfigurableAgentFactory(config)
 	if factory == nil {
@@ -299,7 +299,7 @@ func main() {
 	// Get all active agents from the manager
 	// This automatically excludes disabled agents and handles configuration-based filtering
 	activeAgents := agentManager.GetActiveAgents()
-	logger.Info().Int("active_agents", len(activeAgents)).Msg("Active agents loaded from configuration")
+	logger.Debug().Int("active_agents", len(activeAgents)).Msg("Active agents loaded from configuration")
 
 	// Create agent handlers map for the workflow orchestrator
 	// We wrap each agent with result collection for output tracking
@@ -412,7 +412,7 @@ func main() {
 	// Attach the orchestrator to the runner (type assert to concrete implementation)
 	if runnerImpl, ok := runner.(*core.RunnerImpl); ok {
 		runnerImpl.SetOrchestrator(orchestrator)
-		logger.Info().Str("mode", config.Orchestration.Mode).Msg("Orchestrator configured successfully")
+		logger.Debug().Str("mode", config.Orchestration.Mode).Msg("Orchestrator configured successfully")
 	} else {
 		logger.Error().Msg("Failed to cast runner to RunnerImpl for orchestrator setup")
 		fmt.Printf("ERROR: Failed to configure orchestrator - runner type assertion failed\n")
@@ -448,7 +448,7 @@ func main() {
 		logger.Debug().Str("agent", name).Msg("Agent registered successfully")
 	}
 	
-	logger.Info().Int("agent_count", len(agentHandlers)).Msg("All agents registered with orchestrator")
+	logger.Debug().Int("agent_count", len(agentHandlers)).Msg("All agents registered with orchestrator")
 
 
 
@@ -552,7 +552,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	logger.Info().Msg("Workflow execution started")
+	logger.Debug().Msg("Workflow execution started")
 
 	// Wait for processing to complete BEFORE printing results.
 	// We call runner.Stop() explicitly here (instead of using defer runner.Stop()).
@@ -561,7 +561,7 @@ func main() {
 	// agents are still working.  Calling Stop() now closes the queue and blocks
 	// until the event-processing goroutine has finished handling all queued events,
 	// guaranteeing the results slice is fully populated.
-	logger.Info().Msg("Waiting for agents to complete processing...")
+	logger.Debug().Msg("Waiting for agents to complete processing...")
 	runner.Stop()
 
 	// Process and display the collected results from all agents

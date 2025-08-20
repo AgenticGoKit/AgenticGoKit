@@ -479,7 +479,7 @@ func (a *{{.Agent.DisplayName}}Handler) Run(ctx context.Context, event agenticgo
 	// - Clean up resources
 	// - Log completion status
 	
-	logger.Info().Str("agent", "{{.Agent.Name}}").Msg("Agent processing completed successfully")
+	logger.Debug().Str("agent", "{{.Agent.Name}}").Msg("Agent processing completed successfully")
 	
 	// TODO: Customize the AgentResult if needed
 	// You can add additional fields or modify the output state

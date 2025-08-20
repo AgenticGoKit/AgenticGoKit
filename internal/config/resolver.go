@@ -67,7 +67,7 @@ func (r *ConfigResolver) applyAgentEnvOverrides(agentName string, agent core.Age
 	// Override role
 	if envRole := r.getEnvVar(fmt.Sprintf("AGENTFLOW_AGENT_%s_ROLE", agentNameUpper)); envRole != "" {
 		resolved.Role = envRole
-		core.Logger().Info().
+		core.Logger().Debug().
 			Str("agent", agentName).
 			Str("field", "role").
 			Str("value", envRole).
@@ -77,7 +77,7 @@ func (r *ConfigResolver) applyAgentEnvOverrides(agentName string, agent core.Age
 	// Override description
 	if envDesc := r.getEnvVar(fmt.Sprintf("AGENTFLOW_AGENT_%s_DESCRIPTION", agentNameUpper)); envDesc != "" {
 		resolved.Description = envDesc
-		core.Logger().Info().
+		core.Logger().Debug().
 			Str("agent", agentName).
 			Str("field", "description").
 			Str("value", envDesc).
@@ -87,7 +87,7 @@ func (r *ConfigResolver) applyAgentEnvOverrides(agentName string, agent core.Age
 	// Override system prompt
 	if envPrompt := r.getEnvVar(fmt.Sprintf("AGENTFLOW_AGENT_%s_SYSTEM_PROMPT", agentNameUpper)); envPrompt != "" {
 		resolved.SystemPrompt = envPrompt
-		core.Logger().Info().
+		core.Logger().Debug().
 			Str("agent", agentName).
 			Str("field", "system_prompt").
 			Str("value", envPrompt).
@@ -101,7 +101,7 @@ func (r *ConfigResolver) applyAgentEnvOverrides(agentName string, agent core.Age
 			capabilities[i] = strings.TrimSpace(cap)
 		}
 		resolved.Capabilities = capabilities
-		core.Logger().Info().
+		core.Logger().Debug().
 			Str("agent", agentName).
 			Str("field", "capabilities").
 			Strs("value", capabilities).
@@ -112,7 +112,7 @@ func (r *ConfigResolver) applyAgentEnvOverrides(agentName string, agent core.Age
 	if envEnabled := r.getEnvVar(fmt.Sprintf("AGENTFLOW_AGENT_%s_ENABLED", agentNameUpper)); envEnabled != "" {
 		if enabled, err := strconv.ParseBool(envEnabled); err == nil {
 			resolved.Enabled = enabled
-			core.Logger().Info().
+			core.Logger().Debug().
 				Str("agent", agentName).
 				Str("field", "enabled").
 				Bool("value", enabled).
@@ -131,7 +131,7 @@ func (r *ConfigResolver) applyAgentEnvOverrides(agentName string, agent core.Age
 	if envTimeout := r.getEnvVar(fmt.Sprintf("AGENTFLOW_AGENT_%s_TIMEOUT_SECONDS", agentNameUpper)); envTimeout != "" {
 		if timeout, err := strconv.Atoi(envTimeout); err == nil {
 			resolved.Timeout = timeout
-			core.Logger().Info().
+			core.Logger().Debug().
 				Str("agent", agentName).
 				Str("field", "timeout_seconds").
 				Int("value", timeout).
@@ -150,7 +150,7 @@ func (r *ConfigResolver) applyAgentEnvOverrides(agentName string, agent core.Age
 	if envAutoLLM := r.getEnvVar(fmt.Sprintf("AGENTFLOW_AGENT_%s_AUTO_LLM", agentNameUpper)); envAutoLLM != "" {
 		if autoLLM, err := strconv.ParseBool(envAutoLLM); err == nil {
 			resolved.AutoLLM = &autoLLM
-			core.Logger().Info().
+			core.Logger().Debug().
 				Str("agent", agentName).
 				Str("field", "auto_llm").
 				Bool("value", autoLLM).
@@ -188,7 +188,7 @@ func (r *ConfigResolver) resolveLLMConfigWithEnv(agentName string, agent *core.A
 	// Global LLM environment overrides
 	if envProvider := r.getEnvVar("AGENTFLOW_LLM_PROVIDER"); envProvider != "" {
 		resolved.Provider = envProvider
-		core.Logger().Info().
+		core.Logger().Debug().
 			Str("field", "llm.provider").
 			Str("value", envProvider).
 			Msg("Applied global LLM environment override")
@@ -196,7 +196,7 @@ func (r *ConfigResolver) resolveLLMConfigWithEnv(agentName string, agent *core.A
 
 	if envModel := r.getEnvVar("AGENTFLOW_LLM_MODEL"); envModel != "" {
 		resolved.Model = envModel
-		core.Logger().Info().
+		core.Logger().Debug().
 			Str("field", "llm.model").
 			Str("value", envModel).
 			Msg("Applied global LLM environment override")
@@ -205,7 +205,7 @@ func (r *ConfigResolver) resolveLLMConfigWithEnv(agentName string, agent *core.A
 	if envTemp := r.getEnvVar("AGENTFLOW_LLM_TEMPERATURE"); envTemp != "" {
 		if temp, err := strconv.ParseFloat(envTemp, 64); err == nil {
 			resolved.Temperature = temp
-			core.Logger().Info().
+			core.Logger().Debug().
 				Str("field", "llm.temperature").
 				Float64("value", temp).
 				Msg("Applied global LLM environment override")
@@ -215,7 +215,7 @@ func (r *ConfigResolver) resolveLLMConfigWithEnv(agentName string, agent *core.A
 	if envTokens := r.getEnvVar("AGENTFLOW_LLM_MAX_TOKENS"); envTokens != "" {
 		if tokens, err := strconv.Atoi(envTokens); err == nil {
 			resolved.MaxTokens = tokens
-			core.Logger().Info().
+			core.Logger().Debug().
 				Str("field", "llm.max_tokens").
 				Int("value", tokens).
 				Msg("Applied global LLM environment override")
@@ -253,7 +253,7 @@ func (r *ConfigResolver) resolveLLMConfigWithEnv(agentName string, agent *core.A
 	// Agent-specific LLM environment overrides (highest priority)
 	if envProvider := r.getEnvVar(fmt.Sprintf("AGENTFLOW_AGENT_%s_LLM_PROVIDER", agentNameUpper)); envProvider != "" {
 		resolved.Provider = envProvider
-		core.Logger().Info().
+		core.Logger().Debug().
 			Str("agent", agentName).
 			Str("field", "llm.provider").
 			Str("value", envProvider).
@@ -262,7 +262,7 @@ func (r *ConfigResolver) resolveLLMConfigWithEnv(agentName string, agent *core.A
 
 	if envModel := r.getEnvVar(fmt.Sprintf("AGENTFLOW_AGENT_%s_LLM_MODEL", agentNameUpper)); envModel != "" {
 		resolved.Model = envModel
-		core.Logger().Info().
+		core.Logger().Debug().
 			Str("agent", agentName).
 			Str("field", "llm.model").
 			Str("value", envModel).
@@ -272,7 +272,7 @@ func (r *ConfigResolver) resolveLLMConfigWithEnv(agentName string, agent *core.A
 	if envTemp := r.getEnvVar(fmt.Sprintf("AGENTFLOW_AGENT_%s_LLM_TEMPERATURE", agentNameUpper)); envTemp != "" {
 		if temp, err := strconv.ParseFloat(envTemp, 64); err == nil {
 			resolved.Temperature = temp
-			core.Logger().Info().
+			core.Logger().Debug().
 				Str("agent", agentName).
 				Str("field", "llm.temperature").
 				Float64("value", temp).
@@ -283,7 +283,7 @@ func (r *ConfigResolver) resolveLLMConfigWithEnv(agentName string, agent *core.A
 	if envTokens := r.getEnvVar(fmt.Sprintf("AGENTFLOW_AGENT_%s_LLM_MAX_TOKENS", agentNameUpper)); envTokens != "" {
 		if tokens, err := strconv.Atoi(envTokens); err == nil {
 			resolved.MaxTokens = tokens
-			core.Logger().Info().
+			core.Logger().Debug().
 				Str("agent", agentName).
 				Str("field", "llm.max_tokens").
 				Int("value", tokens).
@@ -294,7 +294,7 @@ func (r *ConfigResolver) resolveLLMConfigWithEnv(agentName string, agent *core.A
 	if envTimeout := r.getEnvVar(fmt.Sprintf("AGENTFLOW_AGENT_%s_LLM_TIMEOUT_SECONDS", agentNameUpper)); envTimeout != "" {
 		if timeout, err := strconv.Atoi(envTimeout); err == nil {
 			resolved.Timeout = time.Duration(timeout) * time.Second
-			core.Logger().Info().
+			core.Logger().Debug().
 				Str("agent", agentName).
 				Str("field", "llm.timeout_seconds").
 				Int("value", timeout).
@@ -327,7 +327,7 @@ func (r *ConfigResolver) applyGlobalEnvOverrides() error {
 	// Override global LLM configuration
 	if envProvider := r.getEnvVar("AGENTFLOW_LLM_PROVIDER"); envProvider != "" {
 		r.config.LLM.Provider = envProvider
-		core.Logger().Info().
+		core.Logger().Debug().
 			Str("field", "llm.provider").
 			Str("value", envProvider).
 			Msg("Applied global environment override")
@@ -335,7 +335,7 @@ func (r *ConfigResolver) applyGlobalEnvOverrides() error {
 
 	if envModel := r.getEnvVar("AGENTFLOW_LLM_MODEL"); envModel != "" {
 		r.config.LLM.Model = envModel
-		core.Logger().Info().
+		core.Logger().Debug().
 			Str("field", "llm.model").
 			Str("value", envModel).
 			Msg("Applied global environment override")
@@ -344,7 +344,7 @@ func (r *ConfigResolver) applyGlobalEnvOverrides() error {
 	if envTemp := r.getEnvVar("AGENTFLOW_LLM_TEMPERATURE"); envTemp != "" {
 		if temp, err := strconv.ParseFloat(envTemp, 64); err == nil {
 			r.config.LLM.Temperature = temp
-			core.Logger().Info().
+			core.Logger().Debug().
 				Str("field", "llm.temperature").
 				Float64("value", temp).
 				Msg("Applied global environment override")
@@ -356,7 +356,7 @@ func (r *ConfigResolver) applyGlobalEnvOverrides() error {
 	if envTokens := r.getEnvVar("AGENTFLOW_LLM_MAX_TOKENS"); envTokens != "" {
 		if tokens, err := strconv.Atoi(envTokens); err == nil {
 			r.config.LLM.MaxTokens = tokens
-			core.Logger().Info().
+			core.Logger().Debug().
 				Str("field", "llm.max_tokens").
 				Int("value", tokens).
 				Msg("Applied global environment override")
@@ -368,7 +368,7 @@ func (r *ConfigResolver) applyGlobalEnvOverrides() error {
 	if envTimeout := r.getEnvVar("AGENTFLOW_LLM_TIMEOUT_SECONDS"); envTimeout != "" {
 		if timeout, err := strconv.Atoi(envTimeout); err == nil {
 			r.config.LLM.TimeoutSeconds = timeout
-			core.Logger().Info().
+			core.Logger().Debug().
 				Str("field", "llm.timeout_seconds").
 				Int("value", timeout).
 				Msg("Applied global environment override")
