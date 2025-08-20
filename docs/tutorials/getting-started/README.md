@@ -1,81 +1,33 @@
-# Getting Started Tutorials
+# Getting Started
 
-Beginner-friendly tutorials to get you up and running with AgenticGoKit quickly.
+Welcome to the CLI-first, config-first onboarding for AgenticGoKit. Follow this flow:
 
-## Tutorial Series
+1) [Install prerequisites and CLI](install.md)
 
-Follow these tutorials in order for the best learning experience:
+2) [Quickstart (CLI)](quickstart-cli.md) — Fastest path with scaffolding
 
-### 0. [5-Minute Quickstart](quickstart.md)
-**Time: 5 minutes**
+3) Core building blocks
+- [Your first scaffold](first-agent.md)
+- [Orchestration basics](orchestration-basics.md)
+- [Memory basics](memory-basics.md)
+- [Tools basics (MCP)](tools-basics.md)
+- [Deploy basics](deploy-basics.md)
 
-Get a multi-agent system running immediately with minimal setup.
+AgentCLI Command Palette
+- `agentcli create my-project`
+- `agentcli validate`
+- `agentcli config generate`
+- `agentcli config template <name> > agentflow.toml`
+- `agentcli mcp servers | agentcli mcp tools | agentcli mcp health`
+- `agentcli trace --help`
 
-**You'll learn:**
-- Fastest way to create agents
-- Basic orchestration patterns
-- CLI vs code-first approaches
+Verification notes
+- All commands and flags in these docs were validated against the current CLI. Use `agentcli --help` to confirm on your system.
 
-### 1. [Your First Agent](your-first-agent.md)
-**Time: 10 minutes**
+Prerequisites
+- Go 1.21+ installed
+- Optional: Docker for deploy basics
+- Local LLM recommended: Ollama with model gemma3:1b (or use OpenAI/Azure OpenAI)
 
-Create your first AgenticGoKit agent and understand the basic concepts.
-
-**You'll learn:**
-- How to set up a basic agent
-- Understanding the Agent interface
-- Running your first agent interaction
-
-### 2. [Multi-Agent Collaboration](multi-agent-collaboration.md)
-**Time: 15 minutes**
-
-Learn how multiple agents can work together using orchestration patterns.
-
-**You'll learn:**
-- Sequential and collaborative orchestration
-- Agent communication patterns
-- State management between agents
-
-### 3. [Memory and RAG](memory-and-rag.md)
-**Time: 20 minutes**
-
-Add memory capabilities and implement Retrieval-Augmented Generation (RAG).
-
-**You'll learn:**
-- Setting up vector databases
-- Document ingestion and retrieval
-- Building knowledge-aware agents
-
-### 4. [Tool Integration](tool-integration.md)
-**Time: 15 minutes**
-
-Connect your agents to external tools using the Model Context Protocol (MCP).
-
-**You'll learn:**
-- MCP tool integration
-- Custom tool development
-- Tool caching and optimization
-
-### 5. [Production Deployment](production-deployment.md)
-**Time: 25 minutes**
-
-Deploy your agents to production with proper monitoring and scaling.
-
-**You'll learn:**
-- Docker containerization
-- Configuration management
-- Monitoring and logging
-- Basic scaling patterns
-
-## Prerequisites
-
-- Go 1.21 or later installed
-- Basic familiarity with Go programming
-- Docker installed (for later tutorials)
-
-## Next Steps
-
-After completing these tutorials, explore:
-- [Core Concepts](../core-concepts/README.md) for deeper understanding
-- [How-To Guides](../../guides/README.md) for specific tasks
-- [Advanced Tutorials](../advanced/README.md) for complex scenarios
+Next
+- Dive into [install.md](install.md) to set up your environment.

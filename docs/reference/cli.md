@@ -169,7 +169,7 @@ agentcli create help-templates
 **Consolidated Flags:**
 - `--template, -t` - Project template name
 - `--agents, -a` - Number of agents to create
-- `--provider, -p` - LLM provider (openai, azure, ollama, mock)
+- `--provider, -p` - LLM provider (openai, azure, ollama)
 - `--memory` - Memory system provider (memory, pgvector, weaviate)
 - `--embedding` - Embedding provider and model (openai, ollama:model, dummy)
 - `--mcp` - MCP integration level (basic, production, full)
