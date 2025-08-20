@@ -93,7 +93,9 @@ func TestMultiAgentWorkflow(t *testing.T) {
         "data": "test data",
     })
     
-    results, err := runner.ProcessEvent(context.Background(), event)
+    _ = runner.Start(context.Background())
+    defer runner.Stop()
+    err := runner.Emit(event)
     
     require.NoError(t, err)
     assert.Len(t, results, 2)
@@ -248,7 +250,9 @@ func TestSequentialOrchestration(t *testing.T) {
         "input": "test",
     })
     
-    results, err := runner.ProcessEvent(context.Background(), event)
+    _ = runner.Start(context.Background())
+    defer runner.Stop()
+    err := runner.Emit(event)
     
     require.NoError(t, err)
     assert.Equal(t, "test_processed_finalized", results["step2"].Data["final_output"])
@@ -274,13 +278,15 @@ func TestCollaborativeOrchestration(t *testing.T) {
         }),
     }
     
-    runner := core.CreateCollaborativeRunner(agents, 30*time.Second)
+    runner, _ := core.NewRunnerFromConfig("agentflow.toml")
     
     event := core.NewEvent("analyze", map[string]interface{}{
         "text": "This is great!",
     })
     
-    results, err := runner.ProcessEvent(context.Background(), event)
+    _ = runner.Start(context.Background())
+    defer runner.Stop()
+    err := runner.Emit(event)
     
     require.NoError(t, err)
     assert.Len(t, results, 2)
@@ -541,7 +547,9 @@ func TestCompleteWorkflow(t *testing.T) {
         "user_id": "test_user",
     })
     
-    results, err := runner.ProcessEvent(ctx, event)
+    _ = runner.Start(ctx)
+    defer runner.Stop()
+    err := runner.Emit(event)
     
     require.NoError(t, err)
     assert.Len(t, results, 3)

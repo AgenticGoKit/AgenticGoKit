@@ -26,51 +26,31 @@ type AgentHandler interface {
 AgenticGoKit supports multiple orchestration patterns for coordinating agents:
 
 #### Collaborative Orchestration
-All agents process the same event in parallel:
+All agents process the same event in parallel (config-driven):
 
 ```go
-// Create collaborative orchestration
-agents := map[string]core.AgentHandler{
-    "researcher": NewResearchAgent(),
-    "analyzer":   NewAnalysisAgent(),
-    "validator":  NewValidationAgent(),
-}
-
-runner := core.NewOrchestrationBuilder(core.OrchestrationCollaborate).
-    WithAgents(agents).
-    WithTimeout(2 * time.Minute).
-    Build()
+runner, _ := core.NewRunnerFromConfig("agentflow.toml")
+_ = runner.RegisterAgent("researcher", NewResearchAgent())
+_ = runner.RegisterAgent("analyzer", NewAnalysisAgent())
+_ = runner.RegisterAgent("validator", NewValidationAgent())
 ```
 
 #### Sequential Orchestration
 Agents process events in pipeline order:
 
 ```go
-// Create sequential orchestration
-agents := map[string]core.AgentHandler{
-    "collector":  NewCollectorAgent(),
-    "processor":  NewProcessorAgent(),
-    "formatter":  NewFormatterAgent(),
-}
-
-runner := core.NewOrchestrationBuilder(core.OrchestrationSequential).
-    WithAgents(agents).
-    Build()
+runner, _ := core.NewRunnerFromConfig("agentflow.toml")
+_ = runner.RegisterAgent("collector", NewCollectorAgent())
+_ = runner.RegisterAgent("processor", NewProcessorAgent())
+_ = runner.RegisterAgent("formatter", NewFormatterAgent())
 ```
 
 #### Loop Orchestration
 Single agent repeats until conditions are met:
 
 ```go
-// Create loop orchestration
-agents := map[string]core.AgentHandler{
-    "quality-checker": NewQualityCheckerAgent(),
-}
-
-runner := core.NewOrchestrationBuilder(core.OrchestrationLoop).
-    WithAgents(agents).
-    WithMaxIterations(10).
-    Build()
+runner, _ := core.NewRunnerFromConfig("agentflow.toml")
+_ = runner.RegisterAgent("quality-checker", NewQualityCheckerAgent())
 ```
 
 ### Basic Agent Structure

@@ -234,7 +234,10 @@ func NewStateWithData(data map[string]any) State {
 
 // NewSimpleState creates a new state instance with optional initial data.
 func NewSimpleState(initialData map[string]any) *SimpleState {
-	s := NewState()
+	s := &SimpleState{
+		data: make(map[string]any),
+		meta: make(map[string]string),
+	}
 	if initialData != nil {
 		for k, v := range initialData {
 			s.data[k] = v

@@ -20,7 +20,7 @@ type CacheManager struct {
 
 // MCPToolExecutor defines the interface for executing MCP tools.
 type MCPToolExecutor interface {
-	ExecuteTool(ctx context.Context, execution core.MCPToolExecution) (core.MCPToolResult, error)
+	ExecuteTool(ctx context.Context, toolName string, args map[string]interface{}) (core.MCPToolResult, error)
 }
 
 // NewCacheManager creates a new cache manager instance.
@@ -68,7 +68,7 @@ func (cm *CacheManager) GetCache(toolName, serverName string) core.MCPCache {
 // ExecuteWithCache executes a tool with caching support.
 func (cm *CacheManager) ExecuteWithCache(ctx context.Context, execution core.MCPToolExecution) (core.MCPToolResult, error) {
 	if !cm.config.Enabled {
-		return cm.executor.ExecuteTool(ctx, execution)
+		return cm.executor.ExecuteTool(ctx, execution.ToolName, execution.Arguments)
 	}
 
 	// Convert arguments to string map for cache key
@@ -94,7 +94,7 @@ func (cm *CacheManager) ExecuteWithCache(ctx context.Context, execution core.MCP
 
 	// Execute the tool
 	start := time.Now()
-	result, err := cm.executor.ExecuteTool(ctx, execution)
+	result, err := cm.executor.ExecuteTool(ctx, execution.ToolName, execution.Arguments)
 	executionTime := time.Since(start)
 
 	if err != nil {
@@ -257,16 +257,7 @@ func (c *NoOpCache) Close() error {
 }
 
 // init registers the cache manager factory with the core package.
-func init() {
-	// Register our cache manager factory with the core package
-	core.SetCacheManagerFactory(func(config core.MCPCacheConfig, executor core.MCPToolExecutor) (core.MCPCacheManager, error) {
-		// Wrap the core.MCPToolExecutor to match our internal interface
-		internalExecutor := &executorWrapper{executor: executor}
-
-		// Create the cache manager using our internal implementation
-		return NewCacheManager(config, internalExecutor)
-	})
-}
+func init() {}
 
 // executorWrapper wraps core.MCPToolExecutor to match our internal interface.
 type executorWrapper struct {
@@ -274,6 +265,6 @@ type executorWrapper struct {
 }
 
 // ExecuteTool implements the internal MCPToolExecutor interface.
-func (w *executorWrapper) ExecuteTool(ctx context.Context, execution core.MCPToolExecution) (core.MCPToolResult, error) {
-	return w.executor.ExecuteTool(ctx, execution)
+func (w *executorWrapper) ExecuteTool(ctx context.Context, toolName string, args map[string]interface{}) (core.MCPToolResult, error) {
+	return w.executor.ExecuteTool(ctx, toolName, args)
 }

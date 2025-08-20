@@ -14,7 +14,7 @@ All working together automatically!
 ## Prerequisites
 
 - **Go 1.21+** ([install here](https://golang.org/dl/))
-- **OpenAI API Key** ([get one here](https://platform.openai.com/api-keys))
+- An LLM provider. Recommended for local dev: [Ollama](https://ollama.com) with model gemma3:1b
 
 *That's it! No Docker, no databases, no complex setup.*
 
@@ -36,16 +36,13 @@ go install github.com/kunalkushwaha/agenticgokit/cmd/agentcli@latest
 # Zsh: agentcli completion zsh > "${fpath[1]}/_agentcli"
 # PowerShell: agentcli completion powershell | Out-String | Invoke-Expression
 
-# Create a collaborative multi-agent project
+// Create a collaborative multi-agent project
 agentcli create my-agents --template research-assistant
 cd my-agents
 ```
 
 #### Step 2: Configure and Run
 ```bash
-# Set your OpenAI API key
-export OPENAI_API_KEY=your-api-key-here
-
 # Run your multi-agent system
 go run main.go
 ```
@@ -66,17 +63,13 @@ go get github.com/kunalkushwaha/agenticgokit
 Create `agentflow.toml`:
 
 ```toml
-[agent_flow]
-name = "my-agents"
-version = "1.0.0"
-provider = "openai"
+[llm]
+provider = "ollama"
+model = "gemma3:1b"
 
 [logging]
 level = "info"
 format = "json"
-
-[providers.openai]
-# API key will be read from OPENAI_API_KEY environment variable
 ```
 
 #### Step 3: Write Your Multi-Agent System
@@ -97,8 +90,12 @@ import (
 )
 
 func main() {
-    // 🔑 Set up your LLM provider from environment
-    provider, err := core.NewProviderFromWorkingDir()
+    // 🔑 Set up your LLM provider from configuration in working directory
+    cfg, err := core.LoadConfigFromWorkingDir()
+    if err != nil {
+        log.Fatalf("Failed to load config: %v", err)
+    }
+    provider, err := cfg.InitializeProvider()
     if err != nil {
         log.Fatalf("Failed to create LLM provider: %v", err)
     }
@@ -110,8 +107,9 @@ func main() {
         "formatter": &FormatterAgent{llm: provider},
     }
     
-    // 🚀 Create a collaborative runner (agents work together)
-    runner := core.CreateCollaborativeRunner(agents, 30*time.Second)
+    // 🚀 Prefer config-driven runner (supports route/collab/seq/loop/mixed)
+    runner, err := core.NewRunnerFromConfig("agentflow.toml")
+    if err != nil { log.Fatalf("runner: %v", err) }
     
     // 💬 Process a message - watch the magic happen!
     fmt.Println("🤖 Starting multi-agent collaboration...")
@@ -256,7 +254,6 @@ func (a *FormatterAgent) Run(ctx context.Context, event core.Event, state core.S
 
 #### Step 4: Run It!
 ```bash
-export OPENAI_API_KEY=your-api-key-here
 go mod tidy
 go run main.go
 ```
@@ -298,7 +295,7 @@ You just created a **multi-agent system** that:
 ### The Magic Behind the Scenes
 
 1. **🏗️ Agent Creation**: Each agent has a specialized role and system prompt
-2. **🤝 Collaborative Orchestration**: `CreateCollaborativeRunner` makes agents work together
+2. **🤝 Collaborative Orchestration**: Config-driven runner makes agents work together in parallel when [orchestration].mode = "collaborative"
 3. **⚡ Parallel Processing**: All agents process your message simultaneously
 4. **🧠 Intelligent Combination**: Results are automatically merged and enhanced
 5. **📊 Built-in Monitoring**: You get metrics and error handling for free
@@ -307,7 +304,7 @@ You just created a **multi-agent system** that:
 
 - **`core.AgentHandler`**: The interface for all agents with `Run()` method
 - **`core.ModelProvider`**: Interface for LLM providers with `Call()` method
-- **`core.CreateCollaborativeRunner`**: Orchestrates multiple agents in parallel
+- Runner from config: `core.NewRunnerFromConfig("agentflow.toml")` orchestrates based on [orchestration] section
 - **`runner.Start()` and `runner.Emit()`**: Start runner and emit events for processing
 - **`core.NewEvent()`**: Creates events with data and metadata
 - **`core.State`**: Thread-safe state management between agents
@@ -405,11 +402,12 @@ agentcli create knowledge-base --template rag-system
 
 ### Common Issues
 
-**❌ "OpenAI API key not found"**
+**❌ "Provider not initialized"**
 ```bash
-# Make sure your API key is set
-export OPENAI_API_KEY=sk-your-key-here
-echo $OPENAI_API_KEY  # Should show your key
+# Ensure your `agentflow.toml` has an LLM provider configured, e.g.:
+[llm]
+provider = "ollama"
+model = "gemma3:1b"
 ```
 
 **❌ "Module not found"**
@@ -420,8 +418,9 @@ go mod tidy
 
 **❌ "Context deadline exceeded"**
 ```bash
-# Increase the timeout if agents are taking too long
-runner := core.CreateCollaborativeRunner(agents, 60*time.Second) // Increased to 60s
+# Increase the timeout in configuration (agentflow.toml)
+[orchestration]
+timeout_seconds = 60
 ```
 
 ### Get Support

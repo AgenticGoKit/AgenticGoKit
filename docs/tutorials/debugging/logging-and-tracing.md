@@ -156,19 +156,15 @@ func main() {
     }
     defer fileTraceLogger.Close() // Important: Close to finalize JSON files
     
-    // Create runner configuration with custom trace logger
-    config := core.RunnerConfig{
-        Memory:      memory,
-        SessionID:   "my-session",
-        TraceLogger: fileTraceLogger, // or traceLogger for in-memory
-        ConfigPath:  "agentflow.toml",
-    }
-    
-    // Create runner with tracing
-    runner, err := core.NewRunnerFromConfig(config)
+    // Create runner from config (plugins set default trace logger)
+    runner, err := core.NewRunnerFromConfig("agentflow.toml")
     if err != nil {
         log.Fatal(err)
     }
+    // Optionally override trace logger via callbacks
+    runner.RegisterCallback(core.HookBeforeEventHandling, "traceDir", func(ctx context.Context, args core.CallbackArgs) (core.State, error) {
+        return args.State, nil
+    })
     
     // Start the runner
     ctx := context.Background()
@@ -371,19 +367,8 @@ func (f *FileTraceLogger) GetTrace(sessionID string) ([]core.TraceEntry, error) 
 
 ```go
 func main() {
-    // Create custom trace logger
-    traceLogger := NewFileTraceLogger("traces.jsonl")
-    
-    // Create runner configuration
-    config := core.RunnerConfig{
-        Memory:      memory,
-        SessionID:   "custom-session",
-        TraceLogger: traceLogger,
-        ConfigPath:  "agentflow.toml",
-    }
-    
-    // Create runner with custom trace logger
-    runner, err := core.NewRunnerFromConfig(config)
+    // Create runner with default tracing from plugins
+    runner, err := core.NewRunnerFromConfig("agentflow.toml")
     if err != nil {
         log.Fatal(err)
     }

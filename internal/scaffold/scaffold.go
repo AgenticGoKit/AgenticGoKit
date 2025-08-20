@@ -1,18 +1,32 @@
 package scaffold
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"text/template"
 
 	"github.com/kunalkushwaha/agenticgokit/internal/scaffold/templates"
 	"github.com/kunalkushwaha/agenticgokit/internal/scaffold/utils"
 )
 
-// CreateAgentProject creates a new AgentFlow project (alias for CreateAgentProjectModular)
 func CreateAgentProject(config ProjectConfig) error {
 	return CreateAgentProjectModular(config)
+}
+
+// CreateAgentProjectFromTemplate creates a new AgentFlow project from a template
+func CreateAgentProjectFromTemplate(templateName, projectName string) error {
+	templatePath := filepath.Join("examples/templates", templateName+".yaml")
+
+	generator, err := NewTemplateGenerator(templatePath)
+	if err != nil {
+		return fmt.Errorf("failed to create template generator: %w", err)
+	}
+
+	return generator.GenerateProject(projectName)
 }
 
 // CreateAgentProjectFromConfig creates a new AgentFlow project using ProjectConfig (alias)
@@ -50,6 +64,11 @@ func CreateAgentProjectModular(config ProjectConfig) error {
 
 	// Create agent files using the new template-based approach
 	if err := createAgentFilesWithTemplates(config); err != nil {
+		return err
+	}
+
+	// Create plugins bundle (blank imports) to activate selected providers
+	if err := createPluginsBundle(config); err != nil {
 		return err
 	}
 
@@ -91,9 +110,9 @@ func CreateAgentProjectModular(config ProjectConfig) error {
 		}
 	}
 
-	fmt.Printf("\n✅ Project '%s' created successfully using modular templates!\n", config.Name)
-	fmt.Printf("📁 Directory: %s\n", config.Name)
-	fmt.Printf("🚀 Run: cd %s && go mod tidy && go run . -m \"Your message\"\n", config.Name)
+	fmt.Printf("\nProject '%s' created successfully using modular templates.\n", config.Name)
+	fmt.Printf("Directory: %s\n", config.Name)
+	fmt.Printf("Run: cd %s && go mod tidy && go run . -m \"Your message\"\n", config.Name)
 
 	return nil
 }
@@ -108,12 +127,50 @@ go 1.21
 require github.com/kunalkushwaha/agenticgokit %s
 `, config.Name, AgenticGoKitVersion)
 
+	// If running from a local source checkout, add a replace to the repo root so
+	// generated projects can resolve in-repo packages (e.g., plugins/*) during tests/dev.
+	if repoRoot := findLocalRepoRoot(); repoRoot != "" {
+		goModContent += fmt.Sprintf("\nreplace github.com/kunalkushwaha/agenticgokit => %s\n", repoRoot)
+	}
+
 	goModPath := filepath.Join(config.Name, "go.mod")
 	if err := os.WriteFile(goModPath, []byte(goModContent), 0644); err != nil {
 		return fmt.Errorf("failed to create go.mod: %w", err)
 	}
 	fmt.Printf("Created file: %s\n", goModPath)
 	return nil
+}
+
+// findLocalRepoRoot walks up from this file to locate the repo root containing go.mod
+// that declares module github.com/kunalkushwaha/agenticgokit. Returns "" if not found.
+func findLocalRepoRoot() string {
+	// This file lives under internal/scaffold. Start from there.
+	_, file, _, ok := runtime.Caller(0)
+	if !ok {
+		return ""
+	}
+	dir := filepath.Dir(file)
+	const modDecl = "module github.com/kunalkushwaha/agenticgokit"
+
+	for {
+		gm := filepath.Join(dir, "go.mod")
+		if f, err := os.Open(gm); err == nil {
+			scanner := bufio.NewScanner(f)
+			for scanner.Scan() {
+				if strings.HasPrefix(strings.TrimSpace(scanner.Text()), modDecl) {
+					f.Close()
+					return dir
+				}
+			}
+			f.Close()
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			break
+		}
+		dir = parent
+	}
+	return ""
 }
 
 // createReadme creates the README.md file using the enhanced template
@@ -288,6 +345,11 @@ func createAgentFilesWithTemplates(config ProjectConfig) error {
 
 // createMainGoWithTemplate creates main.go using templates
 func createMainGoWithTemplate(config ProjectConfig) error {
+	// Ensure embedding dimensions are available for templates
+	if config.EmbeddingDimensions == 0 {
+		config.EmbeddingDimensions = GetModelDimensions(config.EmbeddingProvider, config.EmbeddingModel)
+	}
+
 	utilsConfig := convertToUtilsConfig(config)
 	agents := utils.ResolveAgentNames(utilsConfig)
 
@@ -312,7 +374,7 @@ func createMainGoWithTemplate(config ProjectConfig) error {
 	}{
 		Config:               config,
 		Agents:               agents,
-		ProviderInitFunction: generateProviderInitFunction(config),
+		ProviderInitFunction: "", // Remove generated function - template contains full implementation
 		MCPInitFunction:      generateMCPInitFunction(config),
 		CacheInitFunction:    generateCacheInitFunction(config),
 		ProjectStructure:     CreateProjectStructureInfo(config),
@@ -344,7 +406,15 @@ func createConfig(config ProjectConfig) error {
 [agent_flow]
 name = "%s"
 version = "1.0.0"
+description = "Configuration-driven multi-agent system"
+
+# Global LLM configuration - can be overridden per agent
+[llm]
 provider = "%s"
+model = "%s"
+temperature = 0.7
+max_tokens = 2000
+timeout_seconds = 30
 
 [logging]
 level = "info"
@@ -368,13 +438,20 @@ model = "llama2"
 
 [providers.mock]
 # Mock provider for testing - no configuration needed
-`, config.Name, config.Provider)
+`, config.Name, config.Provider, getDefaultModelForProvider(config.Provider))
 
 	// Add MCP configuration if enabled
 	if config.MCPEnabled {
+		// Determine transport string (default to tcp)
+		transport := config.MCPTransport
+		if transport == "" {
+			transport = "tcp"
+		}
+
 		mcpConfig := `
 [mcp]
 enabled = true
+transport = "` + transport + `"
 enable_discovery = true
 connection_timeout = 5000
 max_retries = 3
@@ -404,13 +481,45 @@ command = "npx @modelcontextprotocol/server-brave-search"
 enabled = false
 `
 		configContent += mcpConfig
+
+		// Include cache configuration section if caching is requested
+		if config.WithCache {
+			mcpCache := `
+[mcp.cache]
+enabled = true
+# Default TTL for cached tool results (milliseconds)
+default_ttl_ms = 900000
+# Maximum cache size (MB) and max number of keys
+max_size_mb = 100
+max_keys = 10000
+# Eviction policy: lru | lfu | ttl
+eviction_policy = "lru"
+# Cleanup interval for expired entries (milliseconds)
+cleanup_interval_ms = 300000
+# Backend: memory | redis | file
+backend = "memory"
+
+# Backend-specific configuration (keys depend on selected backend)
+[mcp.cache.backend_config]
+redis_addr = "localhost:6379"
+redis_password = ""
+redis_db = "0"
+file_path = "./cache"
+
+# Optional per-tool TTL overrides (milliseconds)
+[mcp.cache.tool_ttls_ms]
+# web_search = 300000
+# content_fetch = 1800000
+`
+			configContent += mcpCache
+		}
 	}
 
 	// Add memory configuration if enabled
 	if config.MemoryEnabled {
 		// Get embedding dimensions from intelligence system
 		dimensions := GetModelDimensions(config.EmbeddingProvider, config.EmbeddingModel)
-		
+
 		memoryConfig := fmt.Sprintf(`
 [agent_memory]
 provider = "%s"
@@ -449,7 +558,7 @@ model = "%s"`,
 			memoryConfig += `
 base_url = "http://localhost:11434"`
 		}
-		
+
 		memoryConfig += `
 cache_embeddings = true
 max_batch_size = 100
@@ -472,6 +581,10 @@ enable_query_expansion = false
 
 		configContent += memoryConfig
 	}
+
+	// Add agent definitions based on project configuration
+	agentConfig := generateAgentConfig(config)
+	configContent += agentConfig
 
 	// Add orchestration configuration
 	orchestrationConfig := generateOrchestrationConfig(config)
@@ -554,14 +667,14 @@ func generateCollaborativeDiagram(config ProjectConfig) (string, string) {
 
 	diagram := "```mermaid\n---\ntitle: Collaborative Orchestration\n---\nflowchart TD\n"
 	diagram += "    EVENT[\"📨 Input Event\"]\n"
-	diagram += "    ORCHESTRATOR[\"🎯 Collaborative Orchestrator\"]\n"
-	diagram += "    AGGREGATOR[\"📊 Result Aggregator\"]\n"
+	diagram += "    ORCHESTRATOR[\"Collaborative Orchestrator\"]\n"
+	diagram += "    AGGREGATOR[\"Result Aggregator\"]\n"
 	diagram += "    RESULT[\"📤 Final Result\"]\n\n"
 	diagram += "    EVENT --> ORCHESTRATOR\n"
 
 	for i, agent := range agents {
 		agentId := fmt.Sprintf("AGENT%d", i+1)
-		diagram += fmt.Sprintf("    %s[\"🤖 %s\"]\n", agentId, agent)
+		diagram += fmt.Sprintf("    %s[\"%s\"]\n", agentId, agent)
 		diagram += fmt.Sprintf("    ORCHESTRATOR --> %s\n", agentId)
 		diagram += fmt.Sprintf("    %s --> AGGREGATOR\n", agentId)
 	}
@@ -589,7 +702,7 @@ func generateSequentialDiagram(config ProjectConfig) (string, string) {
 	var prevNode = "INPUT"
 	for i, agent := range agents {
 		agentId := fmt.Sprintf("AGENT%d", i+1)
-		diagram += fmt.Sprintf("    %s[\"🤖 %s\"]\n", agentId, agent)
+		diagram += fmt.Sprintf("    %s[\"%s\"]\n", agentId, agent)
 		diagram += fmt.Sprintf("    %s --> %s\n", prevNode, agentId)
 		prevNode = agentId
 	}
@@ -613,6 +726,191 @@ func getConnectionString(memoryProvider string) string {
 	}
 }
 
+// generateAgentConfig generates agent definitions for the configuration file
+func generateAgentConfig(config ProjectConfig) string {
+	utilsConfig := convertToUtilsConfig(config)
+	agents := utils.ResolveAgentNames(utilsConfig)
+
+	if len(agents) == 0 {
+		agents = append(agents, utils.CreateAgentInfo("agent1", config.OrchestrationMode))
+	}
+
+	agentConfig := "\n# Agent Definitions\n# Each agent has its own configuration including role, capabilities, and LLM settings\n"
+
+	for i, agent := range agents {
+		agentConfig += fmt.Sprintf(`
+[agents.%s]
+role = "%s"
+description = "%s"
+system_prompt = "%s"
+capabilities = %s
+enabled = true
+auto_llm = true
+`, agent.Name, agent.Name, agent.Purpose,
+			generateSystemPromptForConfig(agent, i, len(agents), config.OrchestrationMode),
+			formatCapabilitiesArray(generateCapabilitiesForAgent(agent.Name)))
+
+		// Add agent-specific LLM configuration with variations
+		agentConfig += fmt.Sprintf(`
+# Agent-specific LLM settings (overrides global settings)
+[agents.%s.llm]`, agent.Name)
+
+		// Vary temperature based on agent role for better results
+		temperature := getTemperatureForAgent(agent.Name, i)
+		agentConfig += fmt.Sprintf(`
+temperature = %.1f`, temperature)
+
+		// Vary max_tokens based on agent purpose
+		maxTokens := getMaxTokensForAgent(agent.Name, i)
+		agentConfig += fmt.Sprintf(`
+max_tokens = %d`, maxTokens)
+
+		// Add retry policy for production agents
+		if config.Provider != "mock" {
+			agentConfig += fmt.Sprintf(`
+
+# Retry policy for %s
+[agents.%s.retry_policy]
+max_retries = 3
+base_delay_ms = 1000
+max_delay_ms = 10000
+backoff_factor = 2.0`, agent.DisplayName, agent.Name)
+		}
+
+		agentConfig += "\n"
+	}
+
+	return agentConfig
+}
+
+// generateSystemPromptForConfig creates a system prompt suitable for configuration files
+func generateSystemPromptForConfig(agent utils.AgentInfo, index, total int, orchestrationMode string) string {
+	basePrompt := fmt.Sprintf("You are %s, %s", agent.DisplayName, agent.Purpose)
+
+	// Add orchestration context
+	switch orchestrationMode {
+	case "sequential":
+		if index == 0 {
+			basePrompt += " You are the first agent in a sequential workflow."
+		} else if index == total-1 {
+			basePrompt += " You are the final agent in a sequential workflow."
+		} else {
+			basePrompt += fmt.Sprintf(" You are agent %d of %d in a sequential workflow.", index+1, total)
+		}
+	case "collaborative":
+		basePrompt += " You work collaboratively with other agents to achieve the best results."
+	case "loop":
+		basePrompt += " You process requests iteratively, improving results with each iteration."
+	}
+
+	// Add capability context
+	capabilities := generateCapabilitiesForAgent(agent.Name)
+	if len(capabilities) > 0 {
+		basePrompt += fmt.Sprintf(" Your capabilities include: %s.", strings.Join(capabilities, ", "))
+	}
+
+	basePrompt += " Always provide helpful, accurate, and relevant responses."
+
+	return basePrompt
+}
+
+// generateCapabilitiesForAgent creates appropriate capabilities based on agent name
+func generateCapabilitiesForAgent(agentName string) []string {
+	// Generate capabilities based on agent name patterns using known capabilities
+	switch {
+	case strings.Contains(agentName, "research"):
+		return []string{"research", "information_gathering", "fact_checking", "source_identification"}
+	case strings.Contains(agentName, "writer") || strings.Contains(agentName, "content"):
+		return []string{"content_creation", "writing", "editing", "documentation"}
+	case strings.Contains(agentName, "review") || strings.Contains(agentName, "validator"):
+		return []string{"fact_checking", "editing", "analysis", "testing"}
+	case strings.Contains(agentName, "analyst") || strings.Contains(agentName, "analyzer"):
+		return []string{"data_analysis", "pattern_recognition", "insight_generation", "trend_analysis"}
+	case strings.Contains(agentName, "processor"):
+		return []string{"data_processing", "text_analysis", "pattern_recognition", "analysis"}
+	case strings.Contains(agentName, "summary") || strings.Contains(agentName, "summarizer"):
+		return []string{"summarization", "text_analysis", "content_creation", "editing"}
+	case strings.Contains(agentName, "creative"):
+		return []string{"content_creation", "writing", "editing", "analysis"}
+	case strings.Contains(agentName, "coordinator") || strings.Contains(agentName, "manager"):
+		return []string{"analysis", "data_processing", "documentation", "research"}
+	case strings.Contains(agentName, "collector"):
+		return []string{"information_gathering", "data_processing", "source_identification", "research"}
+	case strings.Contains(agentName, "synthesizer"):
+		return []string{"analysis", "summarization", "insight_generation", "content_creation"}
+	default:
+		// Default capabilities for generic agents using known capabilities
+		return []string{"analysis", "text_analysis", "data_processing"}
+	}
+}
+
+// formatCapabilitiesArray formats capabilities as a TOML array
+func formatCapabilitiesArray(capabilities []string) string {
+	if len(capabilities) == 0 {
+		return `["general_assistance"]`
+	}
+
+	quotedCapabilities := make([]string, len(capabilities))
+	for i, cap := range capabilities {
+		quotedCapabilities[i] = fmt.Sprintf(`"%s"`, cap)
+	}
+
+	return fmt.Sprintf("[%s]", strings.Join(quotedCapabilities, ", "))
+}
+
+// getTemperatureForAgent returns appropriate temperature based on agent role
+func getTemperatureForAgent(agentName string, index int) float64 {
+	// Vary temperature based on agent name/role for better results
+	switch {
+	case strings.Contains(agentName, "research") || strings.Contains(agentName, "fact"):
+		return 0.3 // Lower temperature for factual tasks
+	case strings.Contains(agentName, "creative") || strings.Contains(agentName, "writer"):
+		return 0.8 // Higher temperature for creative tasks
+	case strings.Contains(agentName, "review") || strings.Contains(agentName, "validator"):
+		return 0.2 // Very low temperature for review tasks
+	case strings.Contains(agentName, "analyst") || strings.Contains(agentName, "processor"):
+		return 0.5 // Medium temperature for analytical tasks
+	default:
+		// Vary by position: first agent more creative, last agent more precise
+		if index == 0 {
+			return 0.7
+		}
+		return 0.6 - float64(index)*0.1 // Gradually decrease temperature
+	}
+}
+
+// getMaxTokensForAgent returns appropriate max_tokens based on agent role
+func getMaxTokensForAgent(agentName string, index int) int {
+	switch {
+	case strings.Contains(agentName, "writer") || strings.Contains(agentName, "content"):
+		return 3000 // More tokens for content creation
+	case strings.Contains(agentName, "research") || strings.Contains(agentName, "analyst"):
+		return 2500 // More tokens for detailed analysis
+	case strings.Contains(agentName, "review") || strings.Contains(agentName, "validator"):
+		return 1500 // Fewer tokens for review tasks
+	case strings.Contains(agentName, "summary") || strings.Contains(agentName, "brief"):
+		return 1000 // Fewer tokens for summaries
+	default:
+		return 2000 // Default from global config
+	}
+}
+
+// getDefaultModelForProvider returns the default model for each provider
+func getDefaultModelForProvider(provider string) string {
+	switch provider {
+	case "openai":
+		return "gpt-4"
+	case "azure":
+		return "gpt-4"
+	case "ollama":
+		return "llama2"
+	case "mock":
+		return "mock-model"
+	default:
+		return "gpt-4"
+	}
+}
+
 // generateOrchestrationConfig generates the orchestration configuration section for TOML
 func generateOrchestrationConfig(config ProjectConfig) string {
 	orchestrationConfig := fmt.Sprintf(`
@@ -622,6 +920,18 @@ timeout_seconds = %d`, config.OrchestrationMode, config.OrchestrationTimeout)
 
 	// Add mode-specific configuration
 	switch config.OrchestrationMode {
+	case "collaborative":
+		if len(config.CollaborativeAgents) > 0 {
+			orchestrationConfig += "\ncollaborative_agents = ["
+			for i, agent := range config.CollaborativeAgents {
+				if i > 0 {
+					orchestrationConfig += ", "
+				}
+				orchestrationConfig += fmt.Sprintf("\"%s\"", agent)
+			}
+			orchestrationConfig += "]"
+		}
+
 	case "sequential":
 		if len(config.SequentialAgents) > 0 {
 			orchestrationConfig += "\nsequential_agents = ["
@@ -707,8 +1017,8 @@ func generateLoopDiagram(config ProjectConfig) (string, string) {
 
 	diagram := "```mermaid\n---\ntitle: Loop Processing\n---\nflowchart TD\n"
 	diagram += "    INPUT[\"📨 Input Event\"]\n"
-	diagram += "    AGENT[\"🤖 " + agentName + "\"]\n"
-	diagram += "    CONDITION{\"🔄 Continue Loop?\"}\n"
+	diagram += "    AGENT[\"" + agentName + "\"]\n"
+	diagram += "    CONDITION{\"Continue Loop?\"}\n"
 	diagram += "    OUTPUT[\"📤 Final Result\"]\n\n"
 	diagram += "    INPUT --> AGENT\n"
 	diagram += "    AGENT --> CONDITION\n"
@@ -733,7 +1043,7 @@ func generateMixedDiagram(config ProjectConfig) (string, string) {
 	if len(config.CollaborativeAgents) > 0 {
 		for i, agent := range config.CollaborativeAgents {
 			agentId := fmt.Sprintf("COLLAB%d", i+1)
-			diagram += fmt.Sprintf("    %s[\"🤖 %s\"]\n", agentId, agent)
+			diagram += fmt.Sprintf("    %s[\"%s\"]\n", agentId, agent)
 			diagram += fmt.Sprintf("    PHASE1 --> %s\n", agentId)
 			diagram += fmt.Sprintf("    %s --> PHASE2\n", agentId)
 		}
@@ -744,7 +1054,7 @@ func generateMixedDiagram(config ProjectConfig) (string, string) {
 		var prevNode = "PHASE2"
 		for i, agent := range config.SequentialAgents {
 			agentId := fmt.Sprintf("SEQ%d", i+1)
-			diagram += fmt.Sprintf("    %s[\"🤖 %s\"]\n", agentId, agent)
+			diagram += fmt.Sprintf("    %s[\"%s\"]\n", agentId, agent)
 			diagram += fmt.Sprintf("    %s --> %s\n", prevNode, agentId)
 			prevNode = agentId
 		}
@@ -762,14 +1072,14 @@ func generateMixedDiagram(config ProjectConfig) (string, string) {
 func generateRouteDiagram(config ProjectConfig) (string, string) {
 	diagram := "```mermaid\n---\ntitle: Route Orchestration\n---\nflowchart TD\n"
 	diagram += "    INPUT[\"📨 Input Event\"]\n"
-	diagram += "    ROUTER[\"🎯 Event Router\"]\n"
+	diagram += "    ROUTER[\"Event Router\"]\n"
 	diagram += "    OUTPUT[\"📤 Result\"]\n\n"
 	diagram += "    INPUT --> ROUTER\n"
 
 	for i := 0; i < config.NumAgents; i++ {
 		agentId := fmt.Sprintf("AGENT%d", i+1)
 		agentName := fmt.Sprintf("agent%d", i+1)
-		diagram += fmt.Sprintf("    %s[\"🤖 %s\"]\n", agentId, agentName)
+		diagram += fmt.Sprintf("    %s[\"%s\"]\n", agentId, agentName)
 		diagram += fmt.Sprintf("    ROUTER -.->|Route| %s\n", agentId)
 		diagram += fmt.Sprintf("    %s --> OUTPUT\n", agentId)
 	}
@@ -858,14 +1168,6 @@ func convertToUtilsConfig(config ProjectConfig) utils.ProjectConfig {
 	}
 }
 
-// generateProviderInitFunction generates the provider initialization function code
-func generateProviderInitFunction(config ProjectConfig) string {
-	return `func initializeProvider(providerType string) (core.ModelProvider, error) {
-	// Use the config-based provider initialization
-	return core.NewProviderFromWorkingDir()
-}`
-}
-
 // generateMCPInitFunction generates the MCP initialization function code
 func generateMCPInitFunction(config ProjectConfig) string {
 	return `func initializeMCP() (core.MCPManager, error) {
@@ -923,10 +1225,81 @@ func generateMCPInitFunction(config ProjectConfig) string {
 // generateCacheInitFunction generates the cache initialization function code
 func generateCacheInitFunction(config ProjectConfig) string {
 	return `func initializeCache() error {
-	// Cache initialization placeholder
+	// Initialize MCP cache manager if MCP caching is enabled
+	cfg, err := core.LoadConfig("agentflow.toml")
+	if err != nil {
+		return fmt.Errorf("failed to load config for cache: %w", err)
+	}
+	if !cfg.MCP.Enabled {
+		return nil
+	}
+
+	// Only proceed if caching is enabled globally or via [mcp.cache]
+	if !(cfg.MCP.EnableCaching || cfg.MCP.Cache.Enabled) {
+		return nil
+	}
+
+	// Start from defaults and override using TOML values
+	cacheCfg := core.DefaultMCPCacheConfig()
+
+	// Global toggle
+	cacheCfg.Enabled = cfg.MCP.EnableCaching || cfg.MCP.Cache.Enabled
+
+	// TTL and cleanup
+	if cfg.MCP.Cache.DefaultTTLMS > 0 {
+		cacheCfg.DefaultTTL = time.Duration(cfg.MCP.Cache.DefaultTTLMS) * time.Millisecond
+	} else if cfg.MCP.CacheTimeout > 0 {
+		// Back-compat global cache_timeout_ms
+		cacheCfg.DefaultTTL = time.Duration(cfg.MCP.CacheTimeout) * time.Millisecond
+	}
+	if cfg.MCP.Cache.CleanupIntervalMS > 0 {
+		cacheCfg.CleanupInterval = time.Duration(cfg.MCP.Cache.CleanupIntervalMS) * time.Millisecond
+	}
+
+	// Size & keys
+	if cfg.MCP.Cache.MaxSizeMB > 0 {
+		cacheCfg.MaxSize = cfg.MCP.Cache.MaxSizeMB
+	}
+	if cfg.MCP.Cache.MaxKeys > 0 {
+		cacheCfg.MaxKeys = cfg.MCP.Cache.MaxKeys
+	}
+
+	// Policy
+	if cfg.MCP.Cache.EvictionPolicy != "" {
+		cacheCfg.EvictionPolicy = cfg.MCP.Cache.EvictionPolicy
+	}
+
+	// Backend
+	if cfg.MCP.Cache.Backend != "" {
+		cacheCfg.Backend = cfg.MCP.Cache.Backend
+	}
+	if cfg.MCP.Cache.BackendConfig != nil {
+		// Ensure map exists then copy entries
+		if cacheCfg.BackendConfig == nil {
+			cacheCfg.BackendConfig = map[string]string{}
+		}
+		for k, v := range cfg.MCP.Cache.BackendConfig {
+			cacheCfg.BackendConfig[k] = v
+		}
+	}
+
+	// Per-tool TTLs
+	if len(cfg.MCP.Cache.ToolTTLsMS) > 0 {
+		cacheCfg.ToolTTLs = map[string]time.Duration{}
+		for tool, ms := range cfg.MCP.Cache.ToolTTLsMS {
+			if ms > 0 {
+				cacheCfg.ToolTTLs[tool] = time.Duration(ms) * time.Millisecond
+			}
+		}
+	}
+
+	if err := core.InitializeMCPCacheManager(cacheCfg); err != nil {
+		return fmt.Errorf("failed to initialize MCP cache manager: %w", err)
+	}
 	return nil
 }`
 }
+
 // createProjectDirectories creates the main project subdirectories
 func createProjectDirectories(config ProjectConfig) error {
 	// Create agents directory
@@ -964,7 +1337,7 @@ func createInternalDirectory(config ProjectConfig) error {
 		return fmt.Errorf("failed to create internal directory %s: %w", internalDir, err)
 	}
 	fmt.Printf("Created directory: %s\n", internalDir)
-	
+
 	// Create subdirectories within internal
 	configDir := filepath.Join(internalDir, "config")
 	if err := os.MkdirAll(configDir, 0755); err != nil {
@@ -1120,5 +1493,27 @@ func createCustomizationGuide(config ProjectConfig) error {
 	}
 
 	fmt.Printf("Created file: %s\n", guidePath)
+	return nil
+}
+
+// createPluginsBundle generates a plugins.go file that blank-imports selected plugins
+func createPluginsBundle(config ProjectConfig) error {
+	tmpl, err := template.New("plugins").Parse(templates.PluginsBundleTemplate)
+	if err != nil {
+		return fmt.Errorf("failed to parse plugins bundle template: %w", err)
+	}
+
+	pluginsPath := filepath.Join(config.Name, "plugins.go")
+	f, err := os.Create(pluginsPath)
+	if err != nil {
+		return fmt.Errorf("failed to create plugins.go: %w", err)
+	}
+	defer f.Close()
+
+	if err := tmpl.Execute(f, struct{ Config ProjectConfig }{Config: config}); err != nil {
+		return fmt.Errorf("failed to execute plugins bundle template: %w", err)
+	}
+
+	fmt.Printf("Created file: %s\n", pluginsPath)
 	return nil
 }

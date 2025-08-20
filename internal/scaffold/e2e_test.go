@@ -20,10 +20,10 @@ func TestEndToEndProjectGeneration(t *testing.T) {
 	os.Chdir(tempDir)
 
 	tests := []struct {
-		name           string
-		config         ProjectConfig
-		shouldCompile  bool
-		skipGoModTidy  bool
+		name          string
+		config        ProjectConfig
+		shouldCompile bool
+		skipGoModTidy bool
 	}{
 		{
 			name: "Basic project compilation",
@@ -167,33 +167,33 @@ func TestGeneratedProjectStructure(t *testing.T) {
 
 	projectPath := filepath.Join(tempDir, config.Name)
 
-	// Define expected project structure
+	// Define expected project structure (agents live under agents/ in the new scaffold)
 	expectedStructure := map[string]bool{
-		"go.mod":                    false, // file
-		"README.md":                 false, // file
-		"main.go":                   false, // file
-		"agentflow.toml":            false, // file
-		"agent1.go":                 false, // file
-		"agent2.go":                 false, // file
-		"agent3.go":                 false, // file
-		"docker-compose.yml":        false, // file (for pgvector)
-		"init-db.sql":               false, // file (for pgvector)
-		"setup.sh":                  false, // file (for pgvector)
-		"setup.bat":                 false, // file (for pgvector)
-		".env.example":              false, // file (for pgvector)
-		"docs/workflows":            true,  // directory (for visualization)
+		"go.mod":             false, // file
+		"README.md":          false, // file
+		"main.go":            false, // file
+		"agentflow.toml":     false, // file
+		"agents/agent1.go":   false, // file
+		"agents/agent2.go":   false, // file
+		"agents/agent3.go":   false, // file
+		"docker-compose.yml": false, // file (for pgvector)
+		"init-db.sql":        false, // file (for pgvector)
+		"setup.sh":           false, // file (for pgvector)
+		"setup.bat":          false, // file (for pgvector)
+		".env.example":       false, // file (for pgvector)
+		"docs/workflows":     true,  // directory (for visualization)
 	}
 
 	// Check each expected item
 	for item, isDir := range expectedStructure {
 		itemPath := filepath.Join(projectPath, item)
 		stat, err := os.Stat(itemPath)
-		
+
 		if os.IsNotExist(err) {
 			t.Errorf("Expected %s not found: %s", map[bool]string{true: "directory", false: "file"}[isDir], item)
 			continue
 		}
-		
+
 		if err != nil {
 			t.Errorf("Error checking %s: %v", item, err)
 			continue
@@ -206,7 +206,7 @@ func TestGeneratedProjectStructure(t *testing.T) {
 		}
 	}
 
-	// Verify README contains expected sections
+	// Verify README contains expected sections from the new template
 	readmePath := filepath.Join(projectPath, "README.md")
 	readmeContent, err := os.ReadFile(readmePath)
 	if err != nil {
@@ -215,13 +215,12 @@ func TestGeneratedProjectStructure(t *testing.T) {
 		readmeStr := string(readmeContent)
 		expectedSections := []string{
 			"Quick Start",
-			"Project Configuration",
-			"Agents",
-			"Memory System",
+			"Configuration",          // Covers both Configuration-Driven and Core Settings
+			"Agent Responsibilities", // New section name for agents
+			"Project Structure",
 			"Troubleshooting",
-			"Next Steps",
 		}
-		
+
 		for _, section := range expectedSections {
 			if !strings.Contains(readmeStr, section) {
 				t.Errorf("README.md missing expected section: %s", section)

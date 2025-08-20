@@ -3,253 +3,152 @@ package core
 import (
 	"context"
 	"testing"
+	"time"
 )
 
-func TestUnifiedAgent_BasicFunctionality(t *testing.T) {
-	// Test creating a unified agent directly
-	capabilities := map[CapabilityType]AgentCapability{
-		CapabilityTypeMetrics: NewMetricsCapability(DefaultMetricsConfig()),
-	}
+// dummyCapability implements AgentCapability for testing capability listing
+type dummyCapability struct{ name string }
 
-	agent := NewUnifiedAgent("test-unified", capabilities, nil)
+func (d *dummyCapability) Name() string                                 { return d.name }
+func (d *dummyCapability) Configure(agent CapabilityConfigurable) error { return nil }
+func (d *dummyCapability) Validate(_ []AgentCapability) error           { return nil }
+func (d *dummyCapability) Priority() int                                { return 10 }
 
-	if agent.Name() != "test-unified" {
-		t.Errorf("Expected agent name 'test-unified', got '%s'", agent.Name())
-	}
+// handler that marks state and returns it
+type testHandler struct{}
 
-	if !agent.HasCapability(CapabilityTypeMetrics) {
-		t.Error("Expected agent to have metrics capability")
-	}
-
-	if agent.HasCapability(CapabilityTypeLLM) {
-		t.Error("Expected agent to not have LLM capability")
-	}
+func (h testHandler) Run(ctx context.Context, event Event, state State) (AgentResult, error) {
+	state.Set("ran_with_handler", true)
+	return AgentResult{OutputState: state}, nil
 }
 
-func TestUnifiedAgent_CapabilityManagement(t *testing.T) {
-	// Start with empty capabilities
-	agent := NewUnifiedAgent("capability-test", nil, nil)
-
-	// Check initial state
-	if len(agent.ListCapabilities()) != 0 {
-		t.Errorf("Expected 0 capabilities, got %d", len(agent.ListCapabilities()))
+func TestUnifiedAgent_Run_Default(t *testing.T) {
+	ua := NewUnifiedAgent("ua", nil, nil)
+	if ua == nil {
+		t.Fatalf("expected non-nil UnifiedAgent")
 	}
 
-	// Test getting non-existent capability
-	_, exists := agent.GetCapability(CapabilityTypeMetrics)
-	if exists {
-		t.Error("Expected metrics capability to not exist")
+	if ua.GetTimeout() <= 0 {
+		t.Fatalf("expected default timeout > 0, got %v", ua.GetTimeout())
+	}
+	if !ua.IsEnabled() {
+		t.Fatalf("expected agent to be enabled by default")
 	}
 
-	// Add a capability through CapabilityConfigurable interface
-	metricsConfig := DefaultMetricsConfig()
-	agent.SetMetricsConfig(metricsConfig)
-
-	// Verify it was added
-	if !agent.HasCapability(CapabilityTypeMetrics) {
-		t.Error("Expected agent to have metrics capability after SetMetricsConfig")
-	}
-
-	metricsCap, exists := agent.GetCapability(CapabilityTypeMetrics)
-	if !exists {
-		t.Error("Expected to retrieve metrics capability")
-	}
-
-	if metrics, ok := metricsCap.(*MetricsCapability); ok {
-		if metrics.Config.Port != metricsConfig.Port {
-			t.Errorf("Expected metrics port %d, got %d", metricsConfig.Port, metrics.Config.Port)
-		}
-	} else {
-		t.Error("Expected metrics capability to be of type *MetricsCapability")
-	}
-}
-
-func TestUnifiedAgent_Run(t *testing.T) {
-	// Create agent with metrics capability
-	capabilities := map[CapabilityType]AgentCapability{
-		CapabilityTypeMetrics: NewMetricsCapability(DefaultMetricsConfig()),
-	}
-
-	agent := NewUnifiedAgent("run-test", capabilities, nil)
-
-	// Create test state
-	inputState := NewState()
-	inputState.Set("test_input", "value")
-
-	// Run the agent
-	outputState, err := agent.Run(context.Background(), inputState)
+	st := NewState()
+	out, err := ua.Run(context.Background(), st)
 	if err != nil {
-		t.Fatalf("Agent run failed: %v", err)
+		t.Fatalf("Run returned error: %v", err)
+	}
+	if out == nil {
+		t.Fatalf("expected non-nil output state")
+	}
+	if v, ok := out.Get("processed_by"); !ok || v != "ua" {
+		t.Fatalf("expected processed_by to be 'ua', got %v (ok=%v)", v, ok)
+	}
+	if v, ok := out.Get("agent_type"); !ok || v != "unified" {
+		t.Fatalf("expected agent_type to be 'unified', got %v (ok=%v)", v, ok)
+	}
+}
+
+func TestUnifiedAgent_HandleEvent_WithHandler(t *testing.T) {
+	ua := NewUnifiedAgent("ua", nil, testHandler{})
+
+	st := NewState()
+	res, err := ua.HandleEvent(context.Background(), NewEvent("ua", nil, nil), st)
+	if err != nil {
+		t.Fatalf("HandleEvent returned error: %v", err)
 	}
 
-	// Check that the agent processed the state
-	processedBy, exists := outputState.Get("processed_by")
-	if !exists {
-		t.Error("Expected 'processed_by' field in output state")
+	if res.OutputState == nil {
+		t.Fatalf("expected non-nil OutputState")
+	}
+	if v, ok := res.OutputState.Get("ran_with_handler"); !ok || v != true {
+		t.Fatalf("expected ran_with_handler=true, got %v (ok=%v)", v, ok)
+	}
+	if res.Duration < 0 || res.EndTime.Before(res.StartTime) {
+		t.Fatalf("invalid timing in AgentResult: start=%v end=%v dur=%v", res.StartTime, res.EndTime, res.Duration)
+	}
+}
+
+func TestUnifiedAgent_Capabilities_And_LLMConfig(t *testing.T) {
+	caps := map[CapabilityType]AgentCapability{
+		CapabilityTypeLLM: &dummyCapability{name: "llm"},
+		CapabilityTypeMCP: &dummyCapability{name: "mcp"},
+	}
+	ua := NewUnifiedAgent("ua", caps, nil)
+
+	// Capabilities list contains our keys (string values)
+	gotCaps := ua.GetCapabilities()
+	if len(gotCaps) != 2 {
+		t.Fatalf("expected 2 capabilities, got %d: %v", len(gotCaps), gotCaps)
 	}
 
-	if processedBy != "run-test" {
-		t.Errorf("Expected processed_by='run-test', got '%v'", processedBy)
+	// Map LLM config via SetLLMProvider
+	cfg := AgentLLMConfig{
+		Provider:       "openai",
+		Model:          "gpt-4o-mini",
+		Temperature:    0.5,
+		MaxTokens:      1024,
+		TimeoutSeconds: 15,
+		TopP:           0.9,
 	}
-
-	// Check that capability metadata was added
-	capabilities_field, exists := outputState.Get("capabilities")
-	if !exists {
-		t.Error("Expected 'capabilities' field in output state")
+	ua.SetLLMProvider(nil, cfg)
+	r := ua.GetLLMConfig()
+	if r == nil {
+		t.Fatalf("expected resolved LLM config, got nil")
 	}
+	if r.Provider != cfg.Provider || r.Model != cfg.Model {
+		t.Fatalf("provider/model mismatch: %+v vs %+v", r, cfg)
+	}
+	if r.Temperature != cfg.Temperature || r.MaxTokens != cfg.MaxTokens {
+		t.Fatalf("temperature/tokens mismatch: %+v vs %+v", r, cfg)
+	}
+	expectedTimeout := TimeoutFromSeconds(cfg.TimeoutSeconds)
+	if r.Timeout != expectedTimeout {
+		t.Fatalf("timeout mismatch: got %v want %v", r.Timeout, expectedTimeout)
+	}
+}
 
-	capSlice, ok := capabilities_field.([]string)
+func TestUnifiedAgentBuilder_DefaultsAndCustomizations(t *testing.T) {
+	// Defaults when only name is set
+	a, err := NewUnifiedAgentBuilder("builder-agent").Build()
+	if err != nil {
+		t.Fatalf("unexpected error building agent: %v", err)
+	}
+	ua, ok := a.(*UnifiedAgent)
 	if !ok {
-		t.Errorf("Expected capabilities to be []string, got %T", capabilities_field)
+		t.Fatalf("expected UnifiedAgent type")
+	}
+	if ua.Name() != "builder-agent" {
+		t.Fatalf("name mismatch: %s", ua.Name())
+	}
+	if ua.GetTimeout() <= 0 || !ua.IsEnabled() {
+		t.Fatalf("expected sensible defaults for timeout and enabled")
 	}
 
-	if len(capSlice) != 1 || capSlice[0] != "metrics" {
-		t.Errorf("Expected capabilities=['metrics'], got %v", capSlice)
-	}
-
-	// Check that metrics pre-processing was applied
-	metricsEnabled, exists := outputState.Get("metrics_enabled")
-	if !exists {
-		t.Error("Expected 'metrics_enabled' field in output state")
-	}
-
-	if metricsEnabled != true {
-		t.Errorf("Expected metrics_enabled=true, got %v", metricsEnabled)
-	}
-
-	// Check that metrics post-processing was applied
-	metricsCollected, exists := outputState.Get("metrics_collected")
-	if !exists {
-		t.Error("Expected 'metrics_collected' field in output state")
-	}
-
-	if metricsCollected != true {
-		t.Errorf("Expected metrics_collected=true, got %v", metricsCollected)
-	}
-
-	// Verify original input is preserved
-	testInput, exists := outputState.Get("test_input")
-	if !exists {
-		t.Error("Expected original 'test_input' field to be preserved")
-	}
-
-	if testInput != "value" {
-		t.Errorf("Expected test_input='value', got '%v'", testInput)
-	}
-}
-
-func TestUnifiedAgent_WithCustomHandler(t *testing.T) {
-	// Create a custom handler
-	customHandler := AgentHandlerFunc(func(ctx context.Context, event Event, state State) (AgentResult, error) {
-		outputState := state.Clone()
-		outputState.Set("custom_processing", true)
-		outputState.Set("handler_used", "custom")
-		return AgentResult{OutputState: outputState}, nil
-	})
-
-	// Create agent with custom handler and metrics capability
-	capabilities := map[CapabilityType]AgentCapability{
-		CapabilityTypeMetrics: NewMetricsCapability(DefaultMetricsConfig()),
-	}
-
-	agent := NewUnifiedAgent("custom-handler-test", capabilities, customHandler)
-
-	// Run the agent
-	inputState := NewState()
-	inputState.Set("input", "test")
-
-	outputState, err := agent.Run(context.Background(), inputState)
+	// Customizations
+	cfg := AgentLLMConfig{Provider: "openai", Model: "gpt-4o-mini", MaxTokens: 777, Temperature: 0.2, TimeoutSeconds: 5}
+	enabled := false
+	a2, err := NewUnifiedAgentBuilder("custom").
+		WithRole("research").
+		WithDescription("desc").
+		WithSystemPrompt("sys").
+		WithTimeout(42 * time.Second).
+		Enabled(enabled).
+		WithLLMConfig(cfg).
+		Build()
 	if err != nil {
-		t.Fatalf("Agent run failed: %v", err)
+		t.Fatalf("unexpected error: %v", err)
 	}
-
-	// Check that custom handler was used
-	handlerUsed, exists := outputState.Get("handler_used")
-	if !exists {
-		t.Error("Expected 'handler_used' field in output state")
+	ua2 := a2.(*UnifiedAgent)
+	if ua2.GetRole() != "research" || ua2.GetDescription() != "desc" || ua2.GetSystemPrompt() != "sys" {
+		t.Fatalf("role/description/systemPrompt not applied")
 	}
-
-	if handlerUsed != "custom" {
-		t.Errorf("Expected handler_used='custom', got '%v'", handlerUsed)
+	if ua2.GetTimeout() != 42*time.Second || ua2.IsEnabled() != false {
+		t.Fatalf("timeout/enabled not applied: %v %v", ua2.GetTimeout(), ua2.IsEnabled())
 	}
-
-	// Check that custom processing was applied
-	customProcessing, exists := outputState.Get("custom_processing")
-	if !exists {
-		t.Error("Expected 'custom_processing' field in output state")
-	}
-
-	if customProcessing != true {
-		t.Errorf("Expected custom_processing=true, got %v", customProcessing)
-	}
-
-	// Check that capability pre/post-processing still happened
-	metricsEnabled, exists := outputState.Get("metrics_enabled")
-	if !exists {
-		t.Error("Expected 'metrics_enabled' field in output state (capability pre-processing)")
-	}
-
-	metricsCollected, exists := outputState.Get("metrics_collected")
-	if !exists {
-		t.Error("Expected 'metrics_collected' field in output state (capability post-processing)")
-	}
-
-	if metricsEnabled != true || metricsCollected != true {
-		t.Error("Expected capability pre/post-processing to occur even with custom handler")
-	}
-}
-
-func TestUnifiedAgent_Configuration(t *testing.T) {
-	// Create agent
-	agent := NewUnifiedAgent("config-test", nil, nil)
-	// Test LLM configuration
-	mockProvider := &MockProvider{}
-	llmConfig := LLMConfig{
-		Temperature: 0.5,
-		MaxTokens:   500,
-	}
-
-	agent.SetLLMProvider(mockProvider, llmConfig)
-
-	// Verify LLM capability was created and configured
-	if !agent.HasCapability(CapabilityTypeLLM) {
-		t.Error("Expected agent to have LLM capability after SetLLMProvider")
-	}
-
-	llmCap, exists := agent.GetCapability(CapabilityTypeLLM)
-	if !exists {
-		t.Error("Expected to retrieve LLM capability")
-	}
-
-	if llm, ok := llmCap.(*LLMCapability); ok {
-		if llm.Provider != mockProvider {
-			t.Error("Expected LLM provider to be set correctly")
-		}
-		if llm.Config.Temperature != 0.5 {
-			t.Errorf("Expected LLM temperature 0.5, got %f", llm.Config.Temperature)
-		}
-		if llm.Config.MaxTokens != 500 {
-			t.Errorf("Expected LLM max tokens 500, got %d", llm.Config.MaxTokens)
-		}
-	} else {
-		t.Error("Expected LLM capability to be of type *LLMCapability")
-	}
-}
-
-func TestUnifiedAgent_String(t *testing.T) {
-	capabilities := map[CapabilityType]AgentCapability{
-		CapabilityTypeMetrics: NewMetricsCapability(DefaultMetricsConfig()),
-		CapabilityTypeLLM:     NewLLMCapability(&MockProvider{}, LLMConfig{}),
-	}
-
-	agent := NewUnifiedAgent("string-test", capabilities, nil)
-
-	str := agent.String()
-	expected := "UnifiedAgent{name=string-test, capabilities=[metrics llm]}"
-
-	// Since map iteration order is not guaranteed, we need to check if both expected variations are valid
-	alternative := "UnifiedAgent{name=string-test, capabilities=[llm metrics]}"
-	if str != expected && str != alternative {
-		t.Errorf("Expected string representation to be '%s' or '%s', got '%s'", expected, alternative, str)
+	if llm := ua2.GetLLMConfig(); llm == nil || llm.Model != "gpt-4o-mini" || llm.MaxTokens != 777 {
+		t.Fatalf("llm config not applied: %+v", llm)
 	}
 }

@@ -451,7 +451,8 @@ func main() {
     }
     
     // Initialize MCP manager
-    mcpManager, err := core.QuickStartMCP()
+    // Optional: Initialize MCP tools if needed
+    _ = core.QuickStartMCP()
     if err != nil {
         log.Fatal(\"Failed to initialize MCP:\", err)
     }
@@ -465,7 +466,7 @@ func main() {
     }
     
     // Create collaborative runner
-    runner := core.CreateCollaborativeRunner(agentHandlers, 120*time.Second)
+    runner, _ := core.NewRunnerFromConfig("agentflow.toml")
     
     // Get query from command line
     if len(os.Args) < 3 || os.Args[1] != \"-m\" {
@@ -479,7 +480,9 @@ func main() {
     }, nil)
     
     // Process research request
-    results, err := runner.ProcessEvent(ctx, event)
+    _ = runner.Start(ctx)
+    defer runner.Stop()
+    err := runner.Emit(event)
     if err != nil {
         log.Fatal(\"Research failed:\", err)
     }

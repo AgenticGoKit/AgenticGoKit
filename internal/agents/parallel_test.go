@@ -11,6 +11,24 @@ import (
 	agenticgokit "github.com/kunalkushwaha/agenticgokit/internal/core"
 )
 
+// Helper: filter out execution metadata keys added by agents
+func filterExecutionDataKeys(keys []string) []string {
+	skip := map[string]bool{
+		"executed_by":                    true,
+		"execution_timestamp":            true,
+		"execution_role":                 true,
+		"parallel_execution_completed":   true,
+		"sequential_execution_completed": true,
+	}
+	out := make([]string, 0, len(keys))
+	for _, k := range keys {
+		if !skip[k] {
+			out = append(out, k)
+		}
+	}
+	return out
+}
+
 // --- Test Helper Agents ---
 // Definitions for DelayAgent and NoOpAgent are REMOVED from here.
 // They reside in agents_test_helpers.go
@@ -19,7 +37,7 @@ import (
 
 func TestParallelAgent_Run_AllSuccess(t *testing.T) {
 	ctx := context.Background()
-	initialState := agentflow.NewState()
+	initialState := agenticgokit.NewState()
 	initialState.Set("initial", "value")
 	initialState.SetMeta("initial_meta", "meta_value")
 
@@ -46,7 +64,7 @@ func TestParallelAgent_Run_AllSuccess(t *testing.T) {
 		"agent2":  "processed_by_agent2",
 		"agent3":  "processed_by_agent3",
 	}
-	finalKeys := finalState.Keys()
+	finalKeys := filterExecutionDataKeys(finalState.Keys())
 	if len(finalKeys) != len(expectedData) {
 		t.Errorf("Final state data key count mismatch: got %d (%v), want %d (%v)", len(finalKeys), finalKeys, len(expectedData), keysFromMap(expectedData))
 	}
@@ -80,7 +98,7 @@ func TestParallelAgent_Run_AllSuccess(t *testing.T) {
 
 func TestParallelAgent_Run_PartialFailure(t *testing.T) {
 	ctx := context.Background()
-	initialState := agentflow.NewState()
+	initialState := agenticgokit.NewState()
 	initialState.Set("initial", "value")
 	initialState.SetMeta("initial_meta", "meta_value")
 
@@ -97,7 +115,7 @@ func TestParallelAgent_Run_PartialFailure(t *testing.T) {
 		t.Fatalf("ParallelAgent.Run() did not return an error when expected.")
 	}
 
-	multiErr, ok := err.(*agentflow.MultiError)
+	multiErr, ok := err.(*agenticgokit.MultiError)
 	if !ok {
 		t.Fatalf("Expected a *MultiError, but got type %T: %v", err, err)
 	}
@@ -128,7 +146,7 @@ func TestParallelAgent_Run_PartialFailure(t *testing.T) {
 		"agent1":  "processed_by_agent1",
 		"agent3":  "processed_by_agent3",
 	}
-	finalKeys := finalState.Keys()
+	finalKeys := filterExecutionDataKeys(finalState.Keys())
 	if len(finalKeys) != len(expectedData) {
 		t.Errorf("Final state data key count mismatch on partial failure: got %d (%v), want %d (%v)", len(finalKeys), finalKeys, len(expectedData), keysFromMap(expectedData))
 	}
@@ -161,7 +179,7 @@ func TestParallelAgent_Run_PartialFailure(t *testing.T) {
 
 func TestParallelAgent_Run_Timeout(t *testing.T) {
 	ctx := context.Background()
-	initialState := agentflow.NewState()
+	initialState := agenticgokit.NewState()
 	initialState.Set("initial", "value")
 	initialState.SetMeta("initial_meta", "meta_value")
 
@@ -180,7 +198,7 @@ func TestParallelAgent_Run_Timeout(t *testing.T) {
 		t.Fatalf("ParallelAgent.Run() did not return an error when timeout expected.")
 	}
 
-	multiErr, ok := err.(*agentflow.MultiError)
+	multiErr, ok := err.(*agenticgokit.MultiError)
 	if !ok {
 		t.Fatalf("Expected a *MultiError on timeout, but got type %T: %v", err, err)
 	}
@@ -215,7 +233,7 @@ func TestParallelAgent_Run_Timeout(t *testing.T) {
 		"agent1":  "processed_by_agent1",
 		"agent3":  "processed_by_agent3",
 	}
-	finalKeys := finalState.Keys()
+	finalKeys := filterExecutionDataKeys(finalState.Keys())
 	if len(finalKeys) != len(expectedData) {
 		t.Errorf("Final state data key count mismatch on timeout: got %d (%v), want %d (%v)", len(finalKeys), finalKeys, len(expectedData), keysFromMap(expectedData))
 	}
@@ -251,7 +269,7 @@ func TestParallelAgent_Run_Timeout(t *testing.T) {
 
 func TestParallelAgent_Run_ExternalContextCancellation(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
-	initialState := agentflow.NewState()
+	initialState := agenticgokit.NewState()
 	initialState.Set("initial", "value")
 	initialState.SetMeta("initial_meta", "meta_value")
 
@@ -274,7 +292,7 @@ func TestParallelAgent_Run_ExternalContextCancellation(t *testing.T) {
 		t.Fatalf("ParallelAgent.Run() did not return an error when cancellation expected.")
 	}
 
-	multiErr, ok := err.(*agentflow.MultiError)
+	multiErr, ok := err.(*agenticgokit.MultiError)
 	if !ok {
 		t.Fatalf("Expected a *MultiError on cancellation, but got type %T: %v", err, err)
 	}
@@ -307,7 +325,7 @@ func TestParallelAgent_Run_ExternalContextCancellation(t *testing.T) {
 		"initial": "value",
 		"agent3":  "processed_by_agent3",
 	}
-	finalKeys := finalState.Keys()
+	finalKeys := filterExecutionDataKeys(finalState.Keys())
 	if len(finalKeys) != len(expectedData) {
 		t.Errorf("Final state data key count mismatch on cancellation: got %d (%v), want %d (%v)", len(finalKeys), finalKeys, len(expectedData), keysFromMap(expectedData))
 	}
@@ -345,7 +363,7 @@ func TestParallelAgent_Run_ExternalContextCancellation(t *testing.T) {
 
 func TestParallelAgent_Run_ZeroAgents(t *testing.T) {
 	ctx := context.Background()
-	initialState := agentflow.NewState()
+	initialState := agenticgokit.NewState()
 	initialState.Set("initial", "value")
 	initialState.SetMeta("initial_meta", "meta_value")
 
@@ -385,7 +403,7 @@ func TestParallelAgent_Run_ZeroAgents(t *testing.T) {
 
 func TestParallelAgent_Run_NilAgentsFiltered(t *testing.T) {
 	ctx := context.Background()
-	initialState := agentflow.NewState()
+	initialState := agenticgokit.NewState()
 	initialState.Set("initial", "value")
 	initialState.SetMeta("initial_meta", "meta_value")
 
@@ -413,7 +431,7 @@ func TestParallelAgent_Run_NilAgentsFiltered(t *testing.T) {
 		"agent1":  "processed_by_agent1",
 		"agent3":  "processed_by_agent3",
 	}
-	finalKeys := finalState.Keys()
+	finalKeys := filterExecutionDataKeys(finalState.Keys())
 	if len(finalKeys) != len(expectedData) {
 		t.Errorf("Final state data key count mismatch after filtering nil: got %d (%v), want %d (%v)", len(finalKeys), finalKeys, len(expectedData), keysFromMap(expectedData))
 	}
@@ -448,9 +466,9 @@ func TestParallelAgent_Run_NilAgentsFiltered(t *testing.T) {
 
 func BenchmarkParallelAgent_Run(b *testing.B) {
 	ctx := context.Background()
-	initialState := agentflow.NewState()
+	initialState := agenticgokit.NewState()
 	numAgents := 50
-	agents := make([]agentflow.Agent, numAgents)
+	agents := make([]agenticgokit.Agent, numAgents)
 	for i := 0; i < numAgents; i++ {
 		agents[i] = &NoOpAgent{} // Assumes NoOpAgent is in agents_test_helpers.go
 	}

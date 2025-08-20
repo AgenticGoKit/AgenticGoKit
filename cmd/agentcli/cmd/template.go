@@ -160,11 +160,17 @@ func init() {
 	templateCmd.AddCommand(templateValidateCmd)
 	templateCmd.AddCommand(templatePathsCmd)
 	
+	// Flags for template list command
+	templateListCmd.Flags().BoolP("detailed", "d", false, "Show detailed template information")
+	templateListCmd.Flags().StringP("format", "f", "text", "Output format: text, json, yaml")
+	
 	// Flags for template create command
 	templateCreateCmd.Flags().StringVarP(&templateFormat, "format", "f", "yaml", 
 		"Template format (yaml, json)")
 	templateCreateCmd.Flags().StringVarP(&templateOutput, "output", "o", "", 
 		"Output file path (default: .agenticgokit/templates/[name].[format])")
+	
+	// TODO: Add template info command in the future if needed
 	
 	// Add completion functions
 	templateCreateCmd.RegisterFlagCompletionFunc("format", completeTemplateFormats)

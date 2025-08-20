@@ -153,7 +153,15 @@ timeout_seconds = 30
 
 [providers.ollama]
 endpoint = "http://localhost:11434"
-model = "llama2"
+model = "gemma3:1b"
+
+# Ensure you import the LLM plugin so the provider registers:
+# import (
+#   _ "github.com/kunalkushwaha/agenticgokit/plugins/llm/ollama"
+#   _ "github.com/kunalkushwaha/agenticgokit/plugins/logging/zerolog"
+#   _ "github.com/kunalkushwaha/agenticgokit/plugins/orchestrator/default"
+#   _ "github.com/kunalkushwaha/agenticgokit/plugins/runner/default"
+# )
 
 [providers.mock]
 # Mock provider for testing - no configuration needed

@@ -204,7 +204,7 @@ func (r *RunnerImpl) Start(ctx context.Context) error {
 	r.wg.Add(1)
 	r.mu.Unlock()
 
-	Logger().Info().Msg("Runner started.")
+	Logger().Debug().Msg("Runner started.")
 	go r.loop(ctx)
 	return nil
 }
@@ -214,7 +214,7 @@ func (r *RunnerImpl) Stop() {
 	r.mu.Lock()
 	Logger().Debug().Msg("Runner Stop: Acquired lock")
 	if !r.started {
-		Logger().Info().Msg("Runner Stop: Already stopped, released lock.")
+		Logger().Debug().Msg("Runner Stop: Already stopped, released lock.")
 		r.mu.Unlock()
 		return
 	}
@@ -237,7 +237,7 @@ func (r *RunnerImpl) Stop() {
 		Logger().Debug().Msg("Runner Stop: Stopping orchestrator...")
 	}
 
-	Logger().Info().Msg("Runner Stop: Completed.")
+	Logger().Debug().Msg("Runner Stop: Completed.")
 }
 
 // loop is the main event processing goroutine.
@@ -470,3 +470,126 @@ const (
 	callbackStateKeyAgentResult = "__agentResult"
 	callbackStateKeyAgentError  = "__agentError"
 )
+
+// =============================================================================
+// RUNNER CONFIGURATION
+// =============================================================================
+
+// RunnerConfig holds configuration for creating runners
+type RunnerConfig struct {
+	QueueSize int                     `json:"queue_size"`
+	Agents    map[string]AgentHandler `json:"agents"`
+	Memory    Memory                  `json:"memory"`
+	Callbacks *CallbackRegistry       `json:"callbacks"`
+	SessionID string                  `json:"session_id"`
+}
+
+// DefaultRunnerConfig returns sensible defaults for runner configuration
+func DefaultRunnerConfig() RunnerConfig {
+	return RunnerConfig{
+		QueueSize: 100,
+		Agents:    make(map[string]AgentHandler),
+		Memory:    nil,
+		Callbacks: NewCallbackRegistry(),
+	}
+}
+
+// NewRunnerWithConfig creates a new runner with the specified configuration
+func NewRunnerWithConfig(config RunnerConfig) Runner {
+	if runnerFactory != nil {
+		return runnerFactory(config)
+	}
+	// Return a basic implementation
+	return &basicRunner{config: config}
+}
+
+// RegisterRunnerFactory registers the runner factory function
+func RegisterRunnerFactory(factory func(RunnerConfig) Runner) {
+	runnerFactory = factory
+}
+
+var runnerFactory func(RunnerConfig) Runner
+
+// basicRunner provides a minimal implementation
+type basicRunner struct {
+	config RunnerConfig
+}
+
+func (r *basicRunner) Emit(event Event) error {
+	Logger().Warn().Msg("Using basic runner - import internal/factory for full functionality")
+	return nil
+}
+
+func (r *basicRunner) RegisterAgent(name string, handler AgentHandler) error {
+	Logger().Warn().Msg("Using basic runner - import internal/factory for full functionality")
+	return nil
+}
+
+func (r *basicRunner) RegisterCallback(hook HookPoint, name string, cb CallbackFunc) error {
+	Logger().Warn().Msg("Using basic runner - import internal/factory for full functionality")
+	return nil
+}
+
+func (r *basicRunner) UnregisterCallback(hook HookPoint, name string) {
+	Logger().Warn().Msg("Using basic runner - import internal/factory for full functionality")
+}
+
+func (r *basicRunner) Start(ctx context.Context) error {
+	Logger().Warn().Msg("Using basic runner - import internal/factory for full functionality")
+	return nil
+}
+
+func (r *basicRunner) Stop() {
+	Logger().Warn().Msg("Using basic runner - import internal/factory for full functionality")
+}
+
+func (r *basicRunner) GetCallbackRegistry() *CallbackRegistry {
+	return r.config.Callbacks
+}
+
+func (r *basicRunner) GetTraceLogger() TraceLogger {
+	Logger().Warn().Msg("Using basic runner - import internal/factory for full functionality")
+	return &basicTraceLogger{}
+}
+
+func (r *basicRunner) DumpTrace(sessionID string) ([]TraceEntry, error) {
+	Logger().Warn().Msg("Using basic runner - import internal/factory for full functionality")
+	return []TraceEntry{}, nil
+}
+
+// basicTraceLogger provides a minimal implementation
+type basicTraceLogger struct{}
+
+func (t *basicTraceLogger) Log(entry TraceEntry) error {
+	// Basic implementation - do nothing
+	return nil
+}
+
+func (t *basicTraceLogger) GetTrace(sessionID string) ([]TraceEntry, error) {
+	return []TraceEntry{}, nil
+}
+
+// NewRunnerFromConfig creates a new runner by loading configuration from a file path
+func NewRunnerFromConfig(configPath string) (Runner, error) {
+	config, err := LoadConfig(configPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load config from %s: %w", configPath, err)
+	}
+
+	// Map the loaded config values to runnerConfig
+	runnerConfig := RunnerConfig{
+		QueueSize: 1000,                          // Default queue size - could be made configurable
+		Agents:    make(map[string]AgentHandler), // Will be populated when agents are registered
+		Memory:    nil,                           // Can be set later if needed from config.AgentMemory
+		Callbacks: NewCallbackRegistry(),
+		SessionID: "", // Will be set when starting
+	}
+
+	// Apply runtime configuration if available
+	if config.Runtime.MaxConcurrentAgents > 0 {
+		// Could potentially influence queue size
+		runnerConfig.QueueSize = config.Runtime.MaxConcurrentAgents * 100 // Heuristic
+	}
+
+	return NewRunnerWithConfig(runnerConfig), nil
+}

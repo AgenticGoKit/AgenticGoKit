@@ -5,25 +5,28 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"time"
 
-	agenticgokit "github.com/kunalkushwaha/agenticgokit/internal/core"
+	"github.com/kunalkushwaha/agenticgokit/core"
 )
 
 // CollaborativeOrchestrator dispatches events to all registered handlers concurrently.
 type CollaborativeOrchestrator struct {
-	handlers map[string]agenticgokit.AgentHandler // Use AgentHandler interface and map by name
-	mu       sync.RWMutex
+	handlers         map[string]core.AgentHandler
+	callbackRegistry *core.CallbackRegistry
+	mu               sync.RWMutex
 }
 
 // NewCollaborativeOrchestrator creates a new CollaborativeOrchestrator.
-func NewCollaborativeOrchestrator() *CollaborativeOrchestrator {
+func NewCollaborativeOrchestrator(registry *core.CallbackRegistry) *CollaborativeOrchestrator {
 	return &CollaborativeOrchestrator{
-		handlers: make(map[string]agenticgokit.AgentHandler), // Initialize map
+		handlers:         make(map[string]core.AgentHandler),
+		callbackRegistry: registry,
 	}
 }
 
 // RegisterAgent adds an agent handler to the orchestrator.
-func (o *CollaborativeOrchestrator) RegisterAgent(name string, handler agenticgokit.AgentHandler) error {
+func (o *CollaborativeOrchestrator) RegisterAgent(name string, handler core.AgentHandler) error {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
@@ -33,155 +36,125 @@ func (o *CollaborativeOrchestrator) RegisterAgent(name string, handler agenticgo
 	}
 	// Store handler by name
 	o.handlers[name] = handler
-	agenticgokit.Logger().Info().
+	core.Logger().Debug().
 		Str("agent", name).
 		Msg("CollaborativeOrchestrator: Registered agent")
 	return nil
 }
 
 // Dispatch sends the event to all registered handlers concurrently.
-func (o *CollaborativeOrchestrator) Dispatch(ctx context.Context, event agenticgokit.Event) (agenticgokit.AgentResult, error) {
+func (o *CollaborativeOrchestrator) Dispatch(ctx context.Context, event core.Event) (core.AgentResult, error) {
 	if event == nil {
-		agenticgokit.Logger().Warn().Msg("CollaborativeOrchestrator: Received nil event, skipping dispatch.")
+		core.Logger().Warn().Msg("CollaborativeOrchestrator: Received nil event, skipping dispatch.")
 		err := errors.New("cannot dispatch nil event")
-		return agenticgokit.AgentResult{Error: err.Error()}, err
+		return core.AgentResult{Error: err.Error()}, err
 	}
 
 	o.mu.RLock()
-	// Create a slice of handlers to run from the map values
-	handlersToRun := make([]agenticgokit.AgentHandler, 0, len(o.handlers))
-	for _, handler := range o.handlers {
-		handlersToRun = append(handlersToRun, handler)
-	}
-	o.mu.RUnlock()
+	defer o.mu.RUnlock()
 
-	if len(handlersToRun) == 0 {
-		agenticgokit.Logger().Warn().
-			Str("event_id", event.GetID()).
-			Msg("CollaborativeOrchestrator: No handlers registered, skipping dispatch")
-		return agenticgokit.AgentResult{}, nil
+	if len(o.handlers) == 0 {
+		core.Logger().Warn().Msg("CollaborativeOrchestrator: No agents registered")
+		err := errors.New("no agents registered")
+		return core.AgentResult{Error: err.Error()}, err
 	}
 
+	// Create a channel to collect results from all agents
+	resultChan := make(chan core.AgentResult, len(o.handlers))
 	var wg sync.WaitGroup
-	errsChan := make(chan error, len(handlersToRun))
-	resultsChan := make(chan agenticgokit.AgentResult, len(handlersToRun))
 
-	wg.Add(len(handlersToRun))
-	agenticgokit.Logger().Info().
-		Str("event_id", event.GetID()).
-		Int("handler_count", len(handlersToRun)).
-		Msg("CollaborativeOrchestrator: Dispatching event to handlers")
-
-	// Create initial state from event
-	initialState := agenticgokit.NewState()
-	if eventData := event.GetData(); eventData != nil {
-		for k, v := range eventData {
-			initialState.Set(k, v)
+	// Extract the current state from the event data
+	currentState := core.NewState()
+	if event != nil {
+		// Create state from event data - using event metadata and data
+		for k, v := range event.GetMetadata() {
+			currentState.SetMeta(k, v)
 		}
-	}
-	// Copy metadata too
-	if eventMeta := event.GetMetadata(); eventMeta != nil {
-		for k, v := range eventMeta {
-			initialState.SetMeta(k, v)
+		// Add event data to state
+		eventData := event.GetData()
+		for key, value := range eventData {
+			currentState.Set(key, value)
 		}
 	}
 
-	for _, handler := range handlersToRun {
-		go func(h agenticgokit.AgentHandler) {
+	// Launch goroutines for each agent handler
+	for name, handler := range o.handlers {
+		wg.Add(1)
+		go func(agentName string, h core.AgentHandler) {
 			defer wg.Done()
-			if h == nil {
-				err := fmt.Errorf("encountered nil handler during dispatch for event ID %s", event.GetID())
-				agenticgokit.Logger().Error().
-					Str("event_id", event.GetID()).
-					Msg(err.Error())
-				errsChan <- err
-				return
-			}
+			core.Logger().Debug().
+				Str("agent", agentName).
+				Msg("CollaborativeOrchestrator: Dispatching to agent")
 
-			stateForHandler := initialState.Clone()
-			result, err := h.Run(ctx, event, stateForHandler)
-
+			result, err := h.Run(ctx, event, currentState)
 			if err != nil {
-				agenticgokit.Logger().Error().
-					Str("event_id", event.GetID()).
-					Err(err).
-					Msg("CollaborativeOrchestrator: Handler error")
-				errsChan <- err
-			} else {
-				agenticgokit.Logger().Info().
-					Str("event_id", event.GetID()).
-					Msg("CollaborativeOrchestrator: Handler finished successfully")
-				resultsChan <- result
+				result.Error = err.Error()
 			}
-
-		}(handler)
+			resultChan <- result
+		}(name, handler)
 	}
 
-	wg.Wait()
-	close(resultsChan)
-	close(errsChan)
+	// Wait for all agents to complete
+	go func() {
+		wg.Wait()
+		close(resultChan)
+	}()
 
-	var collectedErrors []error
-	for err := range errsChan {
-		collectedErrors = append(collectedErrors, err)
-	}
+	// Collect all results
+	var results []core.AgentResult
+	var errors []string
+	hasSuccess := false
+	combinedState := core.NewState()
 
-	finalState := agenticgokit.NewState()
-	if sessionID, ok := initialState.GetMeta(agenticgokit.SessionIDKey); ok {
-		finalState.SetMeta(agenticgokit.SessionIDKey, sessionID)
-	}
-	for _, key := range initialState.Keys() {
-		if val, ok := initialState.Get(key); ok {
-			finalState.Set(key, val)
-		}
-	}
-
-	for result := range resultsChan {
-		if result.OutputState != nil {
+	for result := range resultChan {
+		results = append(results, result)
+		if result.Error != "" {
+			errors = append(errors, result.Error)
+		} else {
+			hasSuccess = true
+			// Merge output states (iterate through keys since State is an interface)
 			for _, key := range result.OutputState.Keys() {
-				if val, ok := result.OutputState.Get(key); ok {
-					finalState.Set(key, val)
+				if value, ok := result.OutputState.Get(key); ok {
+					combinedState.Set(key, value)
 				}
 			}
+			// Also merge metadata
 			for _, key := range result.OutputState.MetaKeys() {
-				if key != agenticgokit.SessionIDKey && key != agenticgokit.RouteMetadataKey {
-					if val, ok := result.OutputState.GetMeta(key); ok {
-						finalState.SetMeta(key, val)
-					}
+				if value, ok := result.OutputState.GetMeta(key); ok {
+					combinedState.SetMeta(key, value)
 				}
 			}
 		}
 	}
 
-	if len(collectedErrors) > 0 {
-		agenticgokit.Logger().Warn().
-			Str("event_id", event.GetID()).
-			Int("error_count", len(collectedErrors)).
-			Msg("CollaborativeOrchestrator: Finished dispatch with errors")
-		aggErr := errors.Join(collectedErrors...)
-		return agenticgokit.AgentResult{OutputState: finalState, Error: aggErr.Error()}, aggErr
+	// Create combined result
+	combinedResult := core.AgentResult{
+		OutputState: combinedState,
+		StartTime:   time.Now(),
+		EndTime:     time.Now(),
 	}
 
-	agenticgokit.Logger().Info().
-		Str("event_id", event.GetID()).
-		Msg("CollaborativeOrchestrator: Finished dispatch successfully")
-	return agenticgokit.AgentResult{OutputState: finalState}, nil
+	// If all agents failed, return error
+	if !hasSuccess {
+		combinedResult.Error = fmt.Sprintf("all agents failed: %v", errors)
+		return combinedResult, fmt.Errorf("collaborative dispatch failed: all agents returned errors")
+	}
+
+	core.Logger().Debug().
+		Int("total_agents", len(o.handlers)).
+		Int("successful", len(results)-len(errors)).
+		Int("failed", len(errors)).
+		Msg("CollaborativeOrchestrator: Dispatch completed")
+
+	return combinedResult, nil
 }
 
-// DispatchAll needs the same signature update and logic adjustment
-func (o *CollaborativeOrchestrator) DispatchAll(ctx context.Context, event agenticgokit.Event) (agenticgokit.AgentResult, error) {
-	return o.Dispatch(ctx, event)
+// GetCallbackRegistry returns the callback registry
+func (o *CollaborativeOrchestrator) GetCallbackRegistry() *core.CallbackRegistry {
+	return o.callbackRegistry
 }
 
-// Stop is a placeholder for potential cleanup tasks.
+// Stop halts the orchestrator
 func (o *CollaborativeOrchestrator) Stop() {
-	agenticgokit.Logger().Info().Msg("CollaborativeOrchestrator stopping...")
+	core.Logger().Debug().Msg("CollaborativeOrchestrator: Stopped")
 }
-
-// GetCallbackRegistry returns nil as CollaborativeOrchestrator doesn't manage callbacks directly.
-func (o *CollaborativeOrchestrator) GetCallbackRegistry() *agenticgokit.CallbackRegistry {
-	return nil
-}
-
-// Compile-time check to ensure CollaborativeOrchestrator implements Orchestrator
-var _ agenticgokit.Orchestrator = (*CollaborativeOrchestrator)(nil)

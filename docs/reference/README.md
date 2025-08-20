@@ -69,30 +69,19 @@ import (
 func main() {
     // Create a simple agent
     agent := core.AgentHandlerFunc(func(ctx context.Context, event core.Event, state core.State) (core.AgentResult, error) {
-        message := event.Data["message"].(string)
-        
-        return core.AgentResult{
-            Data: map[string]interface{}{
-                "response": fmt.Sprintf("Processed: %s", message),
-            },
-        }, nil
+        msg, _ := event.GetData()["message"].(string)
+        return core.AgentResult{Data: map[string]any{"response": fmt.Sprintf("Processed: %s", msg)}}, nil
     })
-    
-    // Create a runner and register the agent
-    runner := core.NewRunner()
-    runner.RegisterAgent("processor", agent)
-    
-    // Process an event
-    event := core.NewEvent("process", map[string]interface{}{
-        "message": "Hello, AgenticGoKit!",
-    })
-    
-    results, err := runner.ProcessEvent(context.Background(), event)
-    if err != nil {
-        panic(err)
-    }
-    
-    fmt.Printf("Response: %s\n", results["processor"].Data["response"])
+
+    // Create a runner from config and register the agent
+    runner, _ := core.NewRunnerFromConfig("agentflow.toml")
+    _ = runner.RegisterAgent("processor", agent)
+
+    // Start, emit, stop
+    _ = runner.Start(context.Background())
+    defer runner.Stop()
+
+    _ = runner.Emit(core.NewEvent("processor", map[string]any{"message": "Hello, AgenticGoKit!"}, nil))
 }
 ```
 
@@ -100,45 +89,21 @@ func main() {
 
 ```go
 func collaborativeExample() {
-    // Create multiple agents
     agents := map[string]core.AgentHandler{
-        "analyzer": core.AgentHandlerFunc(func(ctx context.Context, event core.Event, state core.State) (core.AgentResult, error) {
-            text := event.Data["text"].(string)
-            analysis := analyzeText(text) // Your analysis logic
-            
-            return core.AgentResult{
-                Data: map[string]interface{}{
-                    "analysis": analysis,
-                    "word_count": len(strings.Fields(text)),
-                },
-            }, nil
+        "analyzer": core.AgentHandlerFunc(func(ctx context.Context, e core.Event, s core.State) (core.AgentResult, error) {
+            text, _ := e.GetData()["text"].(string)
+            return core.AgentResult{Data: map[string]any{"analysis": analyzeText(text)}}, nil
         }),
-        
-        "summarizer": core.AgentHandlerFunc(func(ctx context.Context, event core.Event, state core.State) (core.AgentResult, error) {
-            text := event.Data["text"].(string)
-            summary := summarizeText(text) // Your summarization logic
-            
-            return core.AgentResult{
-                Data: map[string]interface{}{
-                    "summary": summary,
-                },
-            }, nil
+        "summarizer": core.AgentHandlerFunc(func(ctx context.Context, e core.Event, s core.State) (core.AgentResult, error) {
+            text, _ := e.GetData()["text"].(string)
+            return core.AgentResult{Data: map[string]any{"summary": summarizeText(text)}}, nil
         }),
     }
-    
-    // Create collaborative runner
-    runner := core.CreateCollaborativeRunner(agents, 30*time.Second)
-    
-    // Process with multiple agents
-    event := core.NewEvent("analyze", map[string]interface{}{
-        "text": "Long document text here...",
-    })
-    
-    results, _ := runner.ProcessEvent(context.Background(), event)
-    
-    // Both agents processed the event in parallel
-    fmt.Printf("Analysis: %v\n", results["analyzer"].Data["analysis"])
-    fmt.Printf("Summary: %s\n", results["summarizer"].Data["summary"])
+
+    runner, _ := core.NewRunnerFromConfig("agentflow.toml")
+    _ = runner.Start(context.Background())
+    defer runner.Stop()
+    _ = runner.Emit(core.NewEvent("all", map[string]any{"text": "Long document text here..."}, nil))
 }
 ```
 

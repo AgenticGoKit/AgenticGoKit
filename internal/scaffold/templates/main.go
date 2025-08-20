@@ -7,20 +7,35 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	{{if or (eq .Config.OrchestrationMode "collaborative") .Config.MemoryEnabled}}
 	"strings"
-	{{end}}
 	"sync"
 	"time"
 
 	"github.com/kunalkushwaha/agenticgokit/core"
-	"{{.Config.Name}}/agents"
+	_ "github.com/kunalkushwaha/agenticgokit/plugins/orchestrator/default"
+	_ "{{.Config.Name}}/agents"
 )
 
 {{if .Config.MemoryEnabled}}
 // Global memory instance for access by agents
 var memory core.Memory
 {{end}}
+
+// parseLogLevel converts string log level from config to core.LogLevel
+func parseLogLevel(levelStr string) core.LogLevel {
+	switch strings.ToLower(levelStr) {
+	case "debug":
+		return core.DEBUG
+	case "info":
+		return core.INFO
+	case "warn", "warning":
+		return core.WARN
+	case "error":
+		return core.ERROR
+	default:
+		return core.INFO // Default fallback
+	}
+}
 
 // main is the entry point for the {{.Config.Name}} multi-agent system.
 //
@@ -41,9 +56,25 @@ var memory core.Memory
 // - Add monitoring, metrics, or logging integrations
 func main() {
 	ctx := context.Background()
-	core.SetLogLevel(core.INFO)
+	
+	// Load configuration first to get logging settings
+	config, err := core.LoadConfig("agentflow.toml")
+	if err != nil {
+		// Use default logging for early errors
+		core.SetLogLevel(core.INFO)
+		logger := core.Logger()
+		logger.Error().Err(err).Msg("Failed to load configuration")
+		fmt.Printf("Failed to load configuration: %v\n", err)
+		fmt.Printf("Hint: Make sure agentflow.toml exists and is properly formatted\n")
+		os.Exit(1)
+	}
+
+	// Apply logging configuration from agentflow.toml
+	logLevel := parseLogLevel(config.Logging.Level)
+	core.SetLogLevel(logLevel)
+	
 	logger := core.Logger()
-	logger.Info().Msg("Starting {{.Config.Name}} multi-agent system...")
+	logger.Info().Str("log_level", config.Logging.Level).Str("log_format", config.Logging.Format).Msg("Starting {{.Config.Name}} multi-agent system with configured logging")
 
 	// TODO: Add any custom initialization logic here
 	// Examples:
@@ -65,29 +96,21 @@ func main() {
 	// TODO: Add custom flag validation here
 	// Example: if *messageFlag == "" { fmt.Println("Message is required"); os.Exit(1) }
 
-	// Load configuration from agentflow.toml
+	// Configuration already loaded above for logging setup
 	// This file contains all the settings for your multi-agent system including
 	// LLM provider configuration, orchestration settings, and feature toggles
 	// TODO: Customize configuration loading if you need multiple config files
 	// or environment-specific configurations
-	config, err := core.LoadConfig("agentflow.toml")
-	if err != nil {
-		// TODO: Add custom error handling for configuration loading
-		// You might want to provide more specific error messages or fallback configurations
-		fmt.Printf("Failed to load configuration: %v\n", err)
-		fmt.Printf("💡 Make sure agentflow.toml exists and is properly formatted\n")
-		os.Exit(1)
-	}
 
 	// Initialize the LLM provider based on configuration
 	// This creates the connection to your chosen AI service (OpenAI, Azure, Ollama, etc.)
 	// TODO: Add custom provider initialization logic if needed
 	// You might want to add connection pooling, rate limiting, or custom authentication
-	llmProvider, err := initializeProvider(config.AgentFlow.Provider)
+	llmProvider, err := initializeProvider(config.LLM.Provider)
 	if err != nil {
-		fmt.Printf("❌ Failed to initialize LLM provider '%s': %v\n", config.AgentFlow.Provider, err)
-		fmt.Printf("\n💡 Make sure you have set the appropriate environment variables:\n")
-		switch config.AgentFlow.Provider {
+		fmt.Printf("ERROR: Failed to initialize LLM provider '%s': %v\n", config.LLM.Provider, err)
+		fmt.Printf("\nHint: Make sure you have set the appropriate environment variables:\n")
+		switch config.LLM.Provider {
 		case "azure":
 			fmt.Printf("  AZURE_OPENAI_API_KEY=your-api-key\n")
 			fmt.Printf("  AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/\n")
@@ -97,16 +120,18 @@ func main() {
 		case "ollama":
 			fmt.Printf("  Ollama should be running on localhost:11434\n")
 		default:
-			fmt.Printf("  Check the documentation for provider '%s'\n", config.AgentFlow.Provider)
+			fmt.Printf("  Check the documentation for provider '%s'\n", config.LLM.Provider)
 		}
 		// TODO: Add custom error handling or fallback providers here
 		// Example: Try a fallback provider or provide offline mode
 		os.Exit(1)
 	}
+	// Currently not used directly; agents created via configuration
+	_ = llmProvider
 	
 	// TODO: Add LLM provider validation or health checks here
 	// Example: Test the connection with a simple query
-	logger.Info().Str("provider", config.AgentFlow.Provider).Msg("LLM provider initialized successfully")
+	logger.Debug().Str("provider", config.LLM.Provider).Msg("LLM provider initialized successfully")
 
 	{{if .Config.MCPEnabled}}
 	// Initialize MCP (Model Context Protocol) manager for tool integration
@@ -114,7 +139,7 @@ func main() {
 	// databases, APIs, and other integrations defined in your agentflow.toml
 	// TODO: Customize MCP initialization for your specific tool requirements
 	// You might want to add custom tool validation, authentication, or configuration
-	logger.Info().Msg("🔧 Initializing MCP with timeout handling...")
+	logger.Debug().Msg("Initializing MCP with timeout handling...")
 	mcpInitCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 
@@ -142,7 +167,7 @@ func main() {
 	}
 
 	if mcpManager != nil {
-		logger.Info().Msg("MCP manager initialized successfully - agents can access tools via core.GetMCPManager()")
+		logger.Debug().Msg("MCP manager initialized successfully - agents can access tools via core.GetMCPManager()")
 
 		// Initialize MCP tool registry with timeout
 		registryCtx, registryCancel := context.WithTimeout(ctx, 10*time.Second)
@@ -158,7 +183,7 @@ func main() {
 			if err != nil {
 				logger.Warn().Err(err).Msg("Failed to initialize MCP tool registry")
 			} else {
-				logger.Info().Msg("MCP tool registry initialized successfully")
+				logger.Debug().Msg("MCP tool registry initialized successfully")
 			}
 		case <-registryCtx.Done():
 			logger.Warn().Msg("MCP tool registry initialization timed out")
@@ -178,12 +203,21 @@ func main() {
 			if err != nil {
 				logger.Warn().Err(err).Msg("Failed to register MCP tools with registry")
 			} else {
-				logger.Info().Msg("MCP tools registered with registry successfully")
+				logger.Debug().Msg("MCP tools registered with registry successfully")
 			}
 		case <-toolsCtx.Done():
 			logger.Warn().Msg("MCP tools registration timed out")
 		}
 	}
+
+	{{if and .Config.MCPEnabled .Config.WithCache}}
+	// Initialize MCP cache manager from agentflow.toml
+	if err := initializeCache(); err != nil {
+		logger.Warn().Err(err).Msg("MCP cache initialization failed; continuing without cache")
+	} else {
+		logger.Debug().Msg("MCP cache manager initialized successfully")
+	}
+	{{end}}
 	{{end}}
 
 	{{if .Config.MemoryEnabled}}
@@ -192,7 +226,7 @@ func main() {
 	// and perform RAG (Retrieval-Augmented Generation) operations
 	// TODO: Customize memory initialization for your specific use case
 	// You might want to add custom indexing, data preprocessing, or storage optimization
-	fmt.Println("🧠 Initializing memory system...")
+	fmt.Println("Initializing memory system...")
 	
 	// Create memory configuration from agentflow.toml settings
 	// This includes database connections, embedding models, and RAG parameters
@@ -200,15 +234,15 @@ func main() {
 	memoryConfig := config.AgentMemory
 	
 	// Validate configuration before initializing memory
-	fmt.Println("🔍 Validating memory configuration...")
+	fmt.Println("Validating memory configuration...")
 	if err := validateMemoryConfig(memoryConfig, "{{.Config.EmbeddingModel}}"); err != nil {
 		logger.Error().Err(err).Msg("Memory configuration validation failed")
-		fmt.Printf("❌ Configuration Error: %v\n", err)
+	fmt.Printf("Configuration error: %v\n", err)
 		os.Exit(1)
 	}
 	
-	logger.Info().Msg("Memory configuration validation passed")
-	fmt.Println("✅ Configuration validated!")
+	logger.Debug().Msg("Memory configuration validation passed")
+	fmt.Println("Configuration validated.")
 	
 	memory, err := core.NewMemory(memoryConfig)
 	if err != nil {
@@ -218,29 +252,29 @@ func main() {
 		// Provide specific troubleshooting based on provider
 		switch memoryConfig.Provider {
 		case "pgvector":
-			fmt.Printf("\n💡 PostgreSQL/PgVector Troubleshooting:\n")
+		fmt.Printf("\nTip: PostgreSQL/PgVector Troubleshooting:\n")
 			fmt.Printf("   1. Start database: docker compose up -d\n")
 			fmt.Printf("   2. Run setup script: ./setup.sh (or setup.bat on Windows)\n")
 			fmt.Printf("   3. Check connection string in agentflow.toml\n")
 			fmt.Printf("   4. Verify database exists: psql -h localhost -U user -d agentflow\n")
 		case "weaviate":
-			fmt.Printf("\n💡 Weaviate Troubleshooting:\n")
+		fmt.Printf("\nTip: Weaviate Troubleshooting:\n")
 			fmt.Printf("   1. Start Weaviate: docker compose up -d\n")
 			fmt.Printf("   2. Check Weaviate is running: curl http://localhost:8080/v1/meta\n")
 			fmt.Printf("   3. Verify connection string in agentflow.toml\n")
 		case "memory":
-			fmt.Printf("\n💡 In-Memory Provider Issue:\n")
+			fmt.Printf("\nTip: In-Memory Provider Issue:\n")
 			fmt.Printf("   This shouldn't fail - check your configuration\n")
 		}
 		
 		// Check embedding provider availability
 		if memoryConfig.Embedding.Provider == "ollama" {
-			fmt.Printf("\n💡 Ollama Troubleshooting:\n")
+			fmt.Printf("\nTip: Ollama Troubleshooting:\n")
 			fmt.Printf("   1. Start Ollama: ollama serve\n")
 			fmt.Printf("   2. Pull model: ollama pull %s\n", memoryConfig.Embedding.Model)
 			fmt.Printf("   3. Test connection: curl http://localhost:11434/api/tags\n")
 		} else if memoryConfig.Embedding.Provider == "openai" {
-			fmt.Printf("\n💡 OpenAI Troubleshooting:\n")
+			fmt.Printf("\nTip: OpenAI Troubleshooting:\n")
 			fmt.Printf("   1. Set API key: export OPENAI_API_KEY=\"your-key\"\n")
 			fmt.Printf("   2. Verify key is valid and has credits\n")
 		}
@@ -253,56 +287,101 @@ func main() {
 	testContent := fmt.Sprintf("System initialized at %s", time.Now().Format("2006-01-02 15:04:05"))
 	if err := memory.Store(ctx, testContent, "system-init"); err != nil {
 		logger.Warn().Err(err).Msg("Memory connection test failed, continuing anyway")
-		fmt.Printf("⚠️  Memory connection test failed: %v\n", err)
-		fmt.Printf("Your agents will still work, but memory features may be limited\n")
+	fmt.Printf("Warning: Memory connection test failed: %v\n", err)
+	fmt.Printf("Agents will still work, but memory features may be limited\n")
 	} else {
-		logger.Info().Msg("Memory system initialized successfully")
-		fmt.Printf("✅ Memory system ready!\n")
+		logger.Debug().Msg("Memory system initialized successfully")
+	fmt.Printf("Memory system ready.\n")
 	}
 	{{end}}
 
-	// Create agent handlers from the agents package
-	// Each agent is responsible for a specific part of your workflow
-	// TODO: Customize agent creation and configuration here
-	// You might want to add:
-	// - Custom initialization parameters for each agent
-	// - Agent-specific configuration or dependencies
-	// - Custom middleware or decorators for agents
-	// - Agent health checks or validation
+	// Create configuration-driven agent factory
+	// This factory creates agents based on the configuration in agentflow.toml
+	// instead of hardcoded agent constructors, providing much more flexibility
+	// TODO: Customize agent factory initialization if needed
+	// You might want to add custom agent types or initialization logic
+	logger.Debug().Msg("Initializing configuration-driven agent factory...")
+	
+	factory := core.NewConfigurableAgentFactory(config)
+	if factory == nil {
+		logger.Error().Msg("Failed to create agent factory")
+	fmt.Printf("ERROR: Error creating agent factory\n")
+		os.Exit(1)
+	}
+
+	// Create agent manager for centralized agent lifecycle management
+	// The agent manager handles agent creation, initialization, and state management
+	// TODO: Customize agent manager configuration if needed
+	agentManager := core.NewAgentManager(config)
+	if err := agentManager.InitializeAgents(); err != nil {
+		logger.Error().Err(err).Msg("Failed to initialize agents from configuration")
+	fmt.Printf("ERROR: Error initializing agents: %v\n", err)
+	fmt.Printf("Hint: Check your agentflow.toml [agents] configuration\n")
+		os.Exit(1)
+	}
+
+	// Get all active agents from the manager
+	// This automatically excludes disabled agents and handles configuration-based filtering
+	activeAgents := agentManager.GetActiveAgents()
+	logger.Debug().Int("active_agents", len(activeAgents)).Msg("Active agents loaded from configuration")
+
+	// Create agent handlers map for the workflow orchestrator
+	// We wrap each agent with result collection for output tracking
 	agentHandlers := make(map[string]core.AgentHandler)
 	results := make([]AgentOutput, 0)
 	var resultsMutex sync.Mutex
 
-	{{range .Agents}}
-	// Create {{.DisplayName}} handler with result collection
-	// TODO: Customize {{.DisplayName}} initialization if needed
-	// You can pass additional dependencies or configuration to the agent constructor
-	{{if $.Config.MemoryEnabled}}
-	{{.Name}} := agents.New{{.DisplayName}}(llmProvider, memory)
-	{{else}}
-	{{.Name}} := agents.New{{.DisplayName}}(llmProvider)
-	{{end}}
-	
-	// Wrap the agent with result collection for output tracking
-	// TODO: Add custom agent middleware here if needed
-	// Examples: logging, metrics, rate limiting, caching
-	wrapped{{.DisplayName}} := &ResultCollectorHandler{
-		originalHandler: {{.Name}},
-		agentName:       "{{.Name}}",
-		outputs:         &results,
-		mutex:           &resultsMutex,
+	// Register all active agents with result collection wrappers
+	for _, agent := range activeAgents {
+		agentName := agent.GetRole()
+        
+		// Adapt core.Agent to core.AgentHandler by delegating to HandleEvent
+		baseHandler := core.AgentHandlerFunc(func(ctx context.Context, event core.Event, state core.State) (core.AgentResult, error) {
+			return agent.HandleEvent(ctx, event, state)
+		})
+
+		// Wrap the adapted handler with result collection for output tracking
+		wrappedAgent := &ResultCollectorHandler{
+			originalHandler: baseHandler,
+			agentName:       agentName,
+			outputs:         &results,
+			mutex:           &resultsMutex,
+		}
+
+		agentHandlers[agentName] = wrappedAgent
+		logger.Debug().Str("agent", agentName).Msg("Agent registered with result collection")
 	}
-	agentHandlers["{{.Name}}"] = wrapped{{.DisplayName}}
-	{{end}}
+
+	// Validate that we have at least one active agent
+	if len(agentHandlers) == 0 {
+		logger.Error().Msg("No active agents found in configuration")
+	fmt.Printf("ERROR: No active agents configured\n")
+	fmt.Printf("Hint: Check your agentflow.toml [agents] section and ensure at least one agent is enabled\n")
+	fmt.Printf("Example agent configuration:\n")
+		fmt.Printf("   [agents.my_agent]\n")
+		fmt.Printf("   role = \"processor\"\n")
+		fmt.Printf("   description = \"My processing agent\"\n")
+		fmt.Printf("   system_prompt = \"You are a helpful assistant.\"\n")
+		fmt.Printf("   capabilities = [\"processing\"]\n")
+		fmt.Printf("   enabled = true\n")
+		os.Exit(1)
+	}
 
 	// TODO: Add custom agent registration logic here
 	// Example: Register agents conditionally based on configuration or environment
 
 	// Create basic error handlers to prevent routing errors
-	// These use the first agent as a fallback handler for simplicity
-	{{if .Agents}}
-	firstAgent := agentHandlers["{{(index .Agents 0).Name}}"]
+	// These use the first active agent as a fallback handler for simplicity
+	// TODO: Customize error handling agents for different error types
+	var firstAgent core.AgentHandler
+	for _, handler := range agentHandlers {
+		firstAgent = handler
+		break // Get the first agent
+	}
+	
 	if firstAgent != nil {
+		// Register error handlers using the first active agent as fallback
+		// TODO: Create dedicated error handling agents for better error management
 		agentHandlers["error-handler"] = firstAgent
 		agentHandlers["validation-error-handler"] = firstAgent
 		agentHandlers["timeout-error-handler"] = firstAgent
@@ -311,21 +390,74 @@ func main() {
 		agentHandlers["network-error-handler"] = firstAgent
 		agentHandlers["llm-error-handler"] = firstAgent
 		agentHandlers["auth-error-handler"] = firstAgent
+		
+		logger.Debug().Msg("Error handlers registered using first active agent as fallback")
 	}
-	{{end}}
 
-	// Create the workflow orchestrator (runner) using configuration-based setup
-	// The runner manages the execution flow between agents based on your orchestration mode
-	// (sequential, collaborative, loop, or mixed)
-	// TODO: Customize runner creation for advanced orchestration needs
-	// You might want to add custom routing logic, middleware, or execution policies
+	// Create the workflow orchestrator (runner) from configuration
+	// This honors the orchestration mode from agentflow.toml and uses the plugin-registered orchestrator
 	runner, err := core.NewRunnerFromConfig("agentflow.toml")
 	if err != nil {
-		logger.Error().Err(err).Msg("Failed to create runner from config")
-		fmt.Printf("❌ Error creating runner: %v\n", err)
-		fmt.Printf("💡 Check your agentflow.toml orchestration configuration\n")
+		logger.Error().Err(err).Msg("Failed to create runner from configuration")
+		fmt.Printf("ERROR: Failed to create runner from configuration: %v\n", err)
 		os.Exit(1)
 	}
+
+	// Create and configure the orchestrator based on the configuration
+	orchestratorConfig := core.OrchestratorConfig{
+		Type: config.Orchestration.Mode,
+	}
+	
+	// Set up agent names based on orchestration mode
+	switch config.Orchestration.Mode {
+	case "sequential":
+		orchestratorConfig.SequentialAgentNames = config.Orchestration.SequentialAgents
+		orchestratorConfig.AgentNames = config.Orchestration.SequentialAgents
+	case "collaborative", "parallel":
+		orchestratorConfig.CollaborativeAgentNames = config.Orchestration.CollaborativeAgents
+		orchestratorConfig.AgentNames = config.Orchestration.CollaborativeAgents
+	case "loop":
+		orchestratorConfig.AgentNames = []string{config.Orchestration.LoopAgent}
+		orchestratorConfig.MaxIterations = config.Orchestration.MaxIterations
+	case "mixed":
+		orchestratorConfig.CollaborativeAgentNames = config.Orchestration.CollaborativeAgents
+		orchestratorConfig.SequentialAgentNames = config.Orchestration.SequentialAgents
+	}
+	
+	// Create the orchestrator using the registered factory
+	orchestrator, err := core.NewOrchestrator(orchestratorConfig, runner.GetCallbackRegistry())
+	if err != nil {
+		logger.Error().Err(err).Str("mode", config.Orchestration.Mode).Msg("Failed to create orchestrator")
+		fmt.Printf("ERROR: Failed to create orchestrator for mode '%s': %v\n", config.Orchestration.Mode, err)
+		fmt.Printf("Hint: Make sure the orchestration mode is valid (sequential, collaborative, parallel, loop, mixed, route)\n")
+		os.Exit(1)
+	}
+	
+	// Attach the orchestrator to the runner (type assert to concrete implementation)
+	if runnerImpl, ok := runner.(*core.RunnerImpl); ok {
+		runnerImpl.SetOrchestrator(orchestrator)
+		logger.Debug().Str("mode", config.Orchestration.Mode).Msg("Orchestrator configured successfully")
+	} else {
+		logger.Error().Msg("Failed to cast runner to RunnerImpl for orchestrator setup")
+		fmt.Printf("ERROR: Failed to configure orchestrator - runner type assertion failed\n")
+		os.Exit(1)
+	}
+
+	// --- Hooks & Callbacks (Observability/Policies) ---
+	// You can register before/after hooks and error hooks for traceability, metrics, or policy checks.
+	// Hook points include:
+	// - core.HookBeforeEventHandling / core.HookAfterEventHandling
+	// - core.HookBeforeAgentRun / core.HookAgentError
+	// Example:
+	// cb := func(hookCtx context.Context, args core.CallbackArgs) (core.State, error) {
+	//   // Inspect args.Event, args.State, args.AgentID, args.Error
+	//   // Return a new state to replace args.State, or nil to keep it unchanged
+	//   return nil, nil
+	// }
+	// if reg := runner.GetCallbackRegistry(); reg != nil {
+	//   _ = reg.Register(core.HookBeforeAgentRun, "example-before-agent", cb)
+	//   _ = reg.Register(core.HookAfterEventHandling, "example-after-event", cb)
+	// }
 	
 	// Register all agents with the workflow orchestrator
 	// This makes the agents available for routing and execution
@@ -334,13 +466,13 @@ func main() {
 	for name, handler := range agentHandlers {
 		if err := runner.RegisterAgent(name, handler); err != nil {
 			logger.Error().Err(err).Str("agent", name).Msg("Failed to register agent")
-			fmt.Printf("❌ Error registering agent %s: %v\n", name, err)
+			fmt.Printf("ERROR: Error registering agent %s: %v\n", name, err)
 			os.Exit(1)
 		}
 		logger.Debug().Str("agent", name).Msg("Agent registered successfully")
 	}
 	
-	logger.Info().Int("agent_count", len(agentHandlers)).Msg("All agents registered with orchestrator")
+	logger.Debug().Int("agent_count", len(agentHandlers)).Msg("All agents registered with orchestrator")
 
 
 
@@ -360,7 +492,7 @@ func main() {
 		// Interactive mode: prompt user for input
 		// TODO: Enhance interactive input with better UX
 		// Examples: multi-line input, input history, auto-completion
-		fmt.Print("💬 Enter your message: ")
+	fmt.Print("Enter your message: ")
 		fmt.Scanln(&message)
 	}
 
@@ -394,8 +526,29 @@ func main() {
 	// - Custom event types for different workflows
 	// - Event validation or preprocessing
 	// - Multiple initial events for parallel processing
-	{{if .Agents}}
-	event := core.NewEvent("{{(index .Agents 0).Name}}", core.EventData{
+	
+	// Determine the first agent to route to based on orchestration configuration
+	var firstAgentName string
+	if config.Orchestration.Mode == "sequential" && len(config.Orchestration.SequentialAgents) > 0 {
+		firstAgentName = config.Orchestration.SequentialAgents[0]
+	} else if config.Orchestration.Mode == "collaborative" && len(config.Orchestration.CollaborativeAgents) > 0 {
+		firstAgentName = config.Orchestration.CollaborativeAgents[0]
+	} else {
+		// Use the first active agent as fallback
+		for agentName := range agentHandlers {
+			if agentName != "error-handler" && !strings.Contains(agentName, "-error-handler") {
+				firstAgentName = agentName
+				break
+			}
+		}
+	}
+	
+	// Fallback if no agent found
+	if firstAgentName == "" {
+		firstAgentName = "user_request"
+	}
+	
+	event := core.NewEvent(firstAgentName, core.EventData{
 		"message": message,
 		// TODO: Add custom event data here
 		// Examples:
@@ -404,31 +557,26 @@ func main() {
 		// "session_id": sessionID,
 		// "priority": "normal",
 	}, map[string]string{
-		"route": "{{(index .Agents 0).Name}}",
+		"route": firstAgentName,
 		// TODO: Add custom routing metadata here
 		// Examples:
 		// "workflow_type": "standard",
 		// "execution_mode": "async",
 	})
-	{{else}}
-	event := core.NewEvent("user_request", core.EventData{
-		"message": message,
-	}, map[string]string{
-		"route": "user_request",
-	})
-	{{end}}
+	
+	logger.Debug().Str("first_agent", firstAgentName).Msg("Initial event created for workflow start")
 
 	// Emit the event to start workflow execution
 	// TODO: Add custom event emission logic if needed
 	// Examples: event batching, priority queuing, or conditional routing
 	if err := runner.Emit(event); err != nil {
 		logger.Error().Err(err).Msg("Workflow execution failed")
-		fmt.Printf("❌ Workflow execution error: %v\n", err)
+	fmt.Printf("Workflow execution error: %v\n", err)
 		// TODO: Add custom error recovery or fallback logic here
 		os.Exit(1)
 	}
 
-	logger.Info().Msg("🚀 Workflow execution started")
+	logger.Debug().Msg("Workflow execution started")
 
 	// Wait for processing to complete BEFORE printing results.
 	// We call runner.Stop() explicitly here (instead of using defer runner.Stop()).
@@ -437,7 +585,7 @@ func main() {
 	// agents are still working.  Calling Stop() now closes the queue and blocks
 	// until the event-processing goroutine has finished handling all queued events,
 	// guaranteeing the results slice is fully populated.
-	logger.Info().Msg("Waiting for agents to complete processing...")
+	logger.Debug().Msg("Waiting for agents to complete processing...")
 	runner.Stop()
 
 	// Process and display the collected results from all agents
@@ -454,9 +602,9 @@ func main() {
 		// TODO: Customize result display format
 		// Examples: structured output, color coding, progress indicators
 		for i, result := range results {
-			fmt.Printf("\n🤖 %s (Step %d):\n", result.AgentName, i+1)
+			fmt.Printf("\nAgent %s (Step %d):\n", result.AgentName, i+1)
 			fmt.Printf("%s\n", result.Content)
-			fmt.Printf("⏰ Completed at: %s\n", result.Timestamp.Format("15:04:05"))
+			fmt.Printf("Completed at: %s\n", result.Timestamp.Format("15:04:05"))
 			
 			// TODO: Add custom result metadata display here
 			// Examples: processing time, confidence scores, source information
@@ -464,19 +612,19 @@ func main() {
 		
 		// TODO: Add result summary or analytics here
 		// Examples: total processing time, success rate, performance metrics
-		fmt.Printf("\n📊 Summary: %d agents completed successfully\n", len(results))
+	fmt.Printf("\nSummary: %d agents completed successfully\n", len(results))
 	} else {
-		fmt.Printf("❌ No agent responses captured. This might indicate:\n")
-		fmt.Printf("   • LLM provider credentials are not configured\n")
-		fmt.Printf("   • An agent encountered an error during processing\n")
-		fmt.Printf("   • The LLM provider is not responding\n")
-		fmt.Printf("   • Network connectivity issues\n")
+	fmt.Printf("ERROR: No agent responses captured. This might indicate:\n")
+	fmt.Printf("   - LLM provider credentials are not configured\n")
+	fmt.Printf("   - An agent encountered an error during processing\n")
+	fmt.Printf("   - The LLM provider is not responding\n")
+	fmt.Printf("   - Network connectivity issues\n")
 		
 		// TODO: Add custom troubleshooting guidance for your specific setup
-		fmt.Printf("\n💡 Troubleshooting tips:\n")
-		fmt.Printf("   • Check your environment variables\n")
-		fmt.Printf("   • Verify agentflow.toml configuration\n")
-		fmt.Printf("   • Review the logs above for detailed error information\n")
+	fmt.Printf("\nTroubleshooting tips:\n")
+	fmt.Printf("   - Check your environment variables\n")
+	fmt.Printf("   - Verify agentflow.toml configuration\n")
+	fmt.Printf("   - Review the logs above for detailed error information\n")
 	}
 	resultsMutex.Unlock()
 
@@ -488,12 +636,12 @@ func main() {
 	// - Trigger follow-up workflows
 
 	fmt.Printf("\n=== Workflow Completed ===\n")
-	fmt.Printf("✅ Check the logs above for detailed agent execution results.\n")
+	fmt.Printf("Check the logs above for detailed agent execution results.\n")
 	
 	// TODO: Add custom completion logic here
 	// Examples: cleanup resources, send completion notifications, update status
 
-	logger.Info().Msg("🎉 Workflow completed successfully")
+	logger.Info().Msg("Workflow completed successfully")
 }
 
 {{.ProviderInitFunction}}
@@ -631,8 +779,9 @@ func validateMemoryConfig(memoryConfig core.AgentMemoryConfig, expectedModel str
 	// Validate embedding dimensions
 	expectedDimensions := {{.Config.EmbeddingDimensions}}
 	if memoryConfig.Dimensions != expectedDimensions {
-		return fmt.Errorf("%s requires %d dimensions, but %d configured in agentflow.toml\n💡 Solution: Update [agent_memory] dimensions = %d", 
-			expectedModel, expectedDimensions, memoryConfig.Dimensions, expectedDimensions)
+		// Use literal template values so template tests can verify expected guidance text
+		return fmt.Errorf("{{.Config.EmbeddingModel}} requires {{.Config.EmbeddingDimensions}} dimensions, but %d configured in agentflow.toml\nSolution: Update [agent_memory] dimensions = %d", 
+			memoryConfig.Dimensions, expectedDimensions)
 	}
 	
 	// Validate embedding provider and model
@@ -640,12 +789,12 @@ func validateMemoryConfig(memoryConfig core.AgentMemoryConfig, expectedModel str
 	expectedModelName := "{{.Config.EmbeddingModel}}"
 	
 	if memoryConfig.Embedding.Provider != expectedProvider {
-		return fmt.Errorf("embedding provider mismatch: expected '%s', got '%s'\n💡 Solution: Update [agent_memory.embedding] provider = \"%s\"", 
+	return fmt.Errorf("embedding provider mismatch: expected '%s', got '%s'\nSolution: Update [agent_memory.embedding] provider = \"%s\"", 
 			expectedProvider, memoryConfig.Embedding.Provider, expectedProvider)
 	}
 	
 	if memoryConfig.Embedding.Model != expectedModelName {
-		return fmt.Errorf("embedding model mismatch: expected '%s', got '%s'\n💡 Solution: Update [agent_memory.embedding] model = \"%s\"", 
+	return fmt.Errorf("embedding model mismatch: expected '%s', got '%s'\nSolution: Update [agent_memory.embedding] model = \"%s\"", 
 			expectedModelName, memoryConfig.Embedding.Model, expectedModelName)
 	}
 	
@@ -653,36 +802,36 @@ func validateMemoryConfig(memoryConfig core.AgentMemoryConfig, expectedModel str
 	switch memoryConfig.Provider {
 	case "pgvector":
 		if memoryConfig.Connection == "" {
-			return fmt.Errorf("pgvector provider requires a connection string\n💡 Solution: Set [agent_memory] connection = \"postgres://user:password@localhost:15432/agentflow?sslmode=disable\"")
+			return fmt.Errorf("pgvector provider requires a connection string\nSolution: Set [agent_memory] connection = \"postgres://user:password@localhost:15432/agentflow?sslmode=disable\"")
 		}
 		if !strings.Contains(memoryConfig.Connection, "postgres://") {
-			return fmt.Errorf("pgvector connection string should start with 'postgres://'\n💡 Current: %s", memoryConfig.Connection)
+			return fmt.Errorf("pgvector connection string should start with 'postgres://'. Current: %s", memoryConfig.Connection)
 		}
 	case "weaviate":
 		if memoryConfig.Connection == "" {
-			return fmt.Errorf("weaviate provider requires a connection string\n💡 Solution: Set [agent_memory] connection = \"http://localhost:8080\"")
+			return fmt.Errorf("weaviate provider requires a connection string\nSolution: Set [agent_memory] connection = \"http://localhost:8080\"")
 		}
 		if !strings.Contains(memoryConfig.Connection, "http") {
-			return fmt.Errorf("weaviate connection string should be an HTTP URL\n💡 Current: %s", memoryConfig.Connection)
+			return fmt.Errorf("weaviate connection string should be an HTTP URL. Current: %s", memoryConfig.Connection)
 		}
 	case "memory":
 		// In-memory provider doesn't need connection validation
 	default:
-		return fmt.Errorf("unknown memory provider: %s\n💡 Valid options: memory, pgvector, weaviate", memoryConfig.Provider)
+	return fmt.Errorf("unknown memory provider: %s\nValid options: memory, pgvector, weaviate", memoryConfig.Provider)
 	}
 	
 	// Validate RAG configuration if enabled
 	{{if .Config.RAGEnabled}}
 	if memoryConfig.EnableRAG {
 		if memoryConfig.ChunkSize <= 0 {
-			return fmt.Errorf("RAG chunk size must be positive, got %d\n💡 Solution: Set [agent_memory] chunk_size = 1000", memoryConfig.ChunkSize)
+			return fmt.Errorf("RAG chunk size must be positive, got %d\nSolution: Set [agent_memory] chunk_size = 1000", memoryConfig.ChunkSize)
 		}
 		if memoryConfig.ChunkOverlap < 0 || memoryConfig.ChunkOverlap >= memoryConfig.ChunkSize {
-			return fmt.Errorf("RAG chunk overlap must be between 0 and chunk_size (%d), got %d\n💡 Solution: Set [agent_memory] chunk_overlap = 100", 
+			return fmt.Errorf("RAG chunk overlap must be between 0 and chunk_size (%d), got %d\nSolution: Set [agent_memory] chunk_overlap = 100", 
 				memoryConfig.ChunkSize, memoryConfig.ChunkOverlap)
 		}
 		if memoryConfig.KnowledgeScoreThreshold < 0.0 || memoryConfig.KnowledgeScoreThreshold > 1.0 {
-			return fmt.Errorf("RAG score threshold must be between 0.0 and 1.0, got %.2f\n💡 Solution: Set [agent_memory] knowledge_score_threshold = 0.7", 
+			return fmt.Errorf("RAG score threshold must be between 0.0 and 1.0, got %.2f\nSolution: Set [agent_memory] knowledge_score_threshold = 0.7", 
 				memoryConfig.KnowledgeScoreThreshold)
 		}
 	}
@@ -692,22 +841,89 @@ func validateMemoryConfig(memoryConfig core.AgentMemoryConfig, expectedModel str
 	switch memoryConfig.Embedding.Provider {
 	case "ollama":
 		if memoryConfig.Embedding.BaseURL == "" {
-			return fmt.Errorf("ollama embedding provider requires base_url\n💡 Solution: Set [agent_memory.embedding] base_url = \"http://localhost:11434\"")
+			return fmt.Errorf("ollama embedding provider requires base_url\nSolution: Set [agent_memory.embedding] base_url = \"http://localhost:11434\"")
 		}
 	case "openai":
 		// OpenAI uses environment variables, so we can't validate API key here
 		// But we can check if the model name looks reasonable
 		if !strings.Contains(memoryConfig.Embedding.Model, "embedding") {
-			return fmt.Errorf("OpenAI model '%s' doesn't look like an embedding model\n💡 Recommended: text-embedding-3-small or text-embedding-3-large", 
+			return fmt.Errorf("OpenAI model '%s' doesn't look like an embedding model\nRecommended: text-embedding-3-small or text-embedding-3-large", 
 				memoryConfig.Embedding.Model)
 		}
 	case "dummy":
 		// Dummy provider doesn't need validation
 	default:
-		return fmt.Errorf("unknown embedding provider: %s\n💡 Valid options: openai, ollama, dummy", memoryConfig.Embedding.Provider)
+	return fmt.Errorf("unknown embedding provider: %s\nValid options: openai, ollama, dummy", memoryConfig.Embedding.Provider)
 	}
 	
 	return nil
 }
 {{end}}
+
+func initializeProvider(providerType string) (core.ModelProvider, error) {
+	// Load configuration to get provider settings
+	config, err := core.LoadConfig("agentflow.toml")
+	if err != nil {
+		return nil, fmt.Errorf("failed to load configuration: %w", err)
+	}
+
+	// Use the global LLM configuration from agentflow.toml
+	llmConfig := config.LLM
+	if llmConfig.Provider == "" {
+		llmConfig.Provider = providerType // Use parameter as fallback
+	}
+
+	// Create provider configuration with environment variable resolution
+	providerConfig := core.LLMProviderConfig{
+		Type:        llmConfig.Provider,
+		Model:       llmConfig.Model,
+		Temperature: llmConfig.Temperature,
+		MaxTokens:   llmConfig.MaxTokens,
+		HTTPTimeout: core.TimeoutFromSeconds(llmConfig.TimeoutSeconds),
+	}
+
+	// Read API key from environment variables based on provider type
+	switch llmConfig.Provider {
+	case "openai":
+		apiKey := os.Getenv("OPENAI_API_KEY")
+		if apiKey == "" {
+			return nil, fmt.Errorf("OPENAI_API_KEY environment variable is required for OpenAI provider")
+		}
+		providerConfig.APIKey = apiKey
+	case "azure", "azureopenai":
+		apiKey := os.Getenv("AZURE_OPENAI_API_KEY")
+		endpoint := os.Getenv("AZURE_OPENAI_ENDPOINT")
+		deployment := os.Getenv("AZURE_OPENAI_DEPLOYMENT")
+		if apiKey == "" {
+			return nil, fmt.Errorf("AZURE_OPENAI_API_KEY environment variable is required for Azure provider")
+		}
+		if endpoint == "" {
+			return nil, fmt.Errorf("AZURE_OPENAI_ENDPOINT environment variable is required for Azure provider")
+		}
+		if deployment == "" {
+			return nil, fmt.Errorf("AZURE_OPENAI_DEPLOYMENT environment variable is required for Azure provider")
+		}
+		providerConfig.APIKey = apiKey
+		providerConfig.Endpoint = endpoint
+		providerConfig.ChatDeployment = deployment
+		providerConfig.EmbeddingDeployment = deployment
+	case "ollama":
+		// Ollama doesn't require API key, use base URL from config or default
+		baseURL := "http://localhost:11434"
+		if ollamaConfig, exists := config.Providers["ollama"]; exists {
+			if url, ok := ollamaConfig["base_url"].(string); ok && url != "" {
+				baseURL = url
+			}
+		}
+		providerConfig.BaseURL = baseURL
+	}
+
+	// Create provider from configuration
+	provider, err := core.NewModelProviderFromConfig(providerConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create LLM provider '%s': %w", llmConfig.Provider, err)
+	}
+
+	return provider, nil
+}
 `

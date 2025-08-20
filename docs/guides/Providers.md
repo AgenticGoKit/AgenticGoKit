@@ -163,29 +163,30 @@ provider := agentflow.NewMockProvider(config)
 
 ## Provider Factory
 
-AgentFlow provides factory functions for easy provider creation:
+AgenticGoKit provides a configuration-first provider initialization:
 
 ### From Configuration File
 
 ```go
-// Automatically load from agentflow.toml
-provider, err := agentflow.NewProviderFromWorkingDir()
+// Load config from working directory and initialize provider
+cfg, err := core.LoadConfigFromWorkingDir()
 if err != nil {
     log.Fatal(err)
 }
-
-// Or from specific directory
-provider, err := agentflow.NewProviderFromDir("/path/to/config")
+provider, err := cfg.InitializeProvider()
+if err != nil {
+    log.Fatal(err)
+}
 ```
 
-### From Environment
-
+Note: Ensure the LLM plugin is imported in your main package for registration, for example:
 ```go
-// Auto-detect provider from environment variables
-provider, err := agentflow.NewProviderFromEnv()
-if err != nil {
-    log.Fatal(err)
-}
+import (
+    _ "github.com/kunalkushwaha/agenticgokit/plugins/llm/ollama"
+    _ "github.com/kunalkushwaha/agenticgokit/plugins/logging/zerolog"
+    _ "github.com/kunalkushwaha/agenticgokit/plugins/orchestrator/default"
+    _ "github.com/kunalkushwaha/agenticgokit/plugins/runner/default"
+)
 ```
 
 ### Explicit Configuration
@@ -207,12 +208,16 @@ package main
 import (
     "context"
     "fmt"
-    agentflow "github.com/kunalkushwaha/agentflow/core"
+    "github.com/kunalkushwaha/agenticgokit/core"
 )
 
 func main() {
     // Load provider from configuration
-    provider, err := agentflow.NewProviderFromWorkingDir()
+    cfg, err := core.LoadConfigFromWorkingDir()
+    if err != nil {
+        panic(err)
+    }
+    provider, err := cfg.InitializeProvider()
     if err != nil {
         panic(err)
     }
@@ -233,7 +238,7 @@ func main() {
 ### Conversation History
 
 ```go
-func handleConversation(provider agentflow.ModelProvider) {
+func handleConversation(provider core.ModelProvider) {
     ctx := context.Background()
     
     // Build conversation history
@@ -258,18 +263,18 @@ func handleConversation(provider agentflow.ModelProvider) {
 
 ```go
 type MyAgent struct {
-    provider agentflow.ModelProvider
+    provider core.ModelProvider
     name     string
 }
 
-func NewMyAgent(name string, provider agentflow.ModelProvider) *MyAgent {
+func NewMyAgent(name string, provider core.ModelProvider) *MyAgent {
     return &MyAgent{
         name:     name,
         provider: provider,
     }
 }
 
-func (a *MyAgent) Run(ctx context.Context, event agentflow.Event, state agentflow.State) (agentflow.AgentResult, error) {
+func (a *MyAgent) Run(ctx context.Context, event core.Event, state core.State) (core.AgentResult, error) {
     message := event.GetData()["message"]
     
     systemPrompt := fmt.Sprintf("You are %s, a specialized assistant.", a.name)
@@ -277,13 +282,13 @@ func (a *MyAgent) Run(ctx context.Context, event agentflow.Event, state agentflo
     
     response, err := a.provider.Generate(ctx, fullPrompt)
     if err != nil {
-        return agentflow.AgentResult{}, fmt.Errorf("provider error: %w", err)
+    return core.AgentResult{}, fmt.Errorf("provider error: %w", err)
     }
     
     state.Set("response", response)
     state.Set("provider", a.provider.Name())
     
-    return agentflow.AgentResult{
+    return core.AgentResult{
         Result: response,
         State:  state,
     }, nil

@@ -5,7 +5,7 @@
 
 set -e
 
-echo "🚀 Setting up RAG Knowledge Base..."
+echo "Setting up RAG Knowledge Base..."
 
 # Colors for output
 RED='\033[0;31m'
@@ -16,13 +16,13 @@ NC='\033[0m' # No Color
 
 # Check if Docker is running
 if ! docker info > /dev/null 2>&1; then
-    echo -e "${RED}❌ Docker is not running. Please start Docker and try again.${NC}"
+    echo -e "${RED}Docker is not running. Please start Docker and try again.${NC}"
     exit 1
 fi
 
 # Check if Docker Compose is available
 if ! command -v docker-compose > /dev/null 2>&1 && ! docker compose version > /dev/null 2>&1; then
-    echo -e "${RED}❌ Docker Compose is not available. Please install Docker Compose.${NC}"
+    echo -e "${RED}Docker Compose is not available. Please install Docker Compose.${NC}"
     exit 1
 fi
 
@@ -32,7 +32,7 @@ if ! docker compose version > /dev/null 2>&1; then
     DOCKER_COMPOSE_CMD="docker-compose"
 fi
 
-echo -e "${BLUE}📦 Starting PostgreSQL with pgvector...${NC}"
+echo -e "${BLUE}Starting PostgreSQL with pgvector...${NC}"
 
 # Start PostgreSQL container
 $DOCKER_COMPOSE_CMD up -d postgres
@@ -45,13 +45,13 @@ attempt=1
 
 while [ $attempt -le $max_attempts ]; do
     if docker exec rag-postgres pg_isready -U agentflow -d agentflow > /dev/null 2>&1; then
-        echo -e "${GREEN}✅ PostgreSQL is ready!${NC}"
+    echo -e "${GREEN}PostgreSQL is ready!${NC}"
         break
     fi
     
     if [ $attempt -eq $max_attempts ]; then
-        echo -e "${RED}❌ PostgreSQL failed to start after $max_attempts attempts${NC}"
-        echo -e "${YELLOW}💡 Try running: $DOCKER_COMPOSE_CMD logs postgres${NC}"
+    echo -e "${RED}PostgreSQL failed to start after $max_attempts attempts${NC}"
+    echo -e "${YELLOW}Try running: $DOCKER_COMPOSE_CMD logs postgres${NC}"
         exit 1
     fi
     
@@ -60,52 +60,52 @@ while [ $attempt -le $max_attempts ]; do
     ((attempt++))
 done
 
-echo -e "${BLUE}🔧 Verifying database setup...${NC}"
+echo -e "${BLUE}Verifying database setup...${NC}"
 
 # Verify pgvector extension
 if docker exec rag-postgres psql -U agentflow -d agentflow -c "SELECT extname FROM pg_extension WHERE extname = 'vector';" | grep -q vector; then
-    echo -e "${GREEN}✅ pgvector extension is installed${NC}"
+    echo -e "${GREEN}pgvector extension is installed${NC}"
 else
-    echo -e "${RED}❌ pgvector extension not found${NC}"
+    echo -e "${RED}pgvector extension not found${NC}"
     exit 1
 fi
 
 # Verify tables exist
 if docker exec rag-postgres psql -U agentflow -d agentflow -c "\dt" | grep -q documents; then
-    echo -e "${GREEN}✅ Documents table created${NC}"
+    echo -e "${GREEN}Documents table created${NC}"
 else
-    echo -e "${RED}❌ Documents table not found${NC}"
+    echo -e "${RED}Documents table not found${NC}"
     exit 1
 fi
 
 # Check sample data
 sample_count=$(docker exec rag-postgres psql -U agentflow -d agentflow -t -c "SELECT COUNT(*) FROM documents;" | tr -d ' ')
 if [ "$sample_count" -gt 0 ]; then
-    echo -e "${GREEN}✅ Sample data loaded ($sample_count documents)${NC}"
+    echo -e "${GREEN}Sample data loaded ($sample_count documents)${NC}"
 else
     echo -e "${YELLOW}⚠️  No sample data found${NC}"
 fi
 
-echo -e "${BLUE}🔍 Testing vector search functionality...${NC}"
+echo -e "${BLUE}Testing vector search functionality...${NC}"
 
 # Test vector search
 if docker exec rag-postgres psql -U agentflow -d agentflow -c "SELECT content FROM documents WHERE embedding IS NOT NULL LIMIT 1;" > /dev/null 2>&1; then
-    echo -e "${GREEN}✅ Vector search functionality verified${NC}"
+    echo -e "${GREEN}Vector search functionality verified${NC}"
 else
     echo -e "${YELLOW}⚠️  Vector search test skipped (no embeddings yet)${NC}"
 fi
 
-echo -e "${BLUE}📊 Database connection info:${NC}"
+echo -e "${BLUE}Database connection info:${NC}"
 echo -e "   Host: localhost"
 echo -e "   Port: 5432"
 echo -e "   Database: agentflow"
 echo -e "   Username: agentflow"
 echo -e "   Password: password"
 
-echo -e "${BLUE}🔗 Connection string:${NC}"
+echo -e "${BLUE}Connection string:${NC}"
 echo -e "   postgres://agentflow:password@localhost:5432/agentflow?sslmode=disable"
 
-echo -e "${GREEN}🎉 Setup complete!${NC}"
+echo -e "${GREEN}Setup complete!${NC}"
 echo ""
 echo -e "${BLUE}Next steps:${NC}"
 echo -e "1. Set your API keys:"
@@ -130,7 +130,7 @@ echo -e "   ${YELLOW}$DOCKER_COMPOSE_CMD down${NC}"
 
 # Create .env.example if it doesn't exist
 if [ ! -f .env.example ]; then
-    echo -e "${BLUE}📝 Creating .env.example file...${NC}"
+    echo -e "${BLUE}Creating .env.example file...${NC}"
     cat > .env.example << 'EOF'
 # LLM Provider Configuration
 OPENAI_API_KEY=your-openai-api-key-here
@@ -151,7 +151,7 @@ LLM_PROVIDER=openai
 # Database Configuration
 DATABASE_URL=postgres://agentflow:password@localhost:5432/agentflow?sslmode=disable
 EOF
-    echo -e "${GREEN}✅ Created .env.example${NC}"
+    echo -e "${GREEN}Created .env.example${NC}"
 fi
 
-echo -e "${BLUE}💡 Tip: Copy .env.example to .env and update with your API keys${NC}"
+echo -e "${BLUE}Tip: Copy .env.example to .env and update with your API keys${NC}"

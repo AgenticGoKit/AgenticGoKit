@@ -5,12 +5,43 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/kunalkushwaha/agenticgokit/core"
 	"github.com/kunalkushwaha/agenticgokit/internal/llm"
 	"github.com/kunalkushwaha/agenticgokit/internal/mcp" // Import the MCP package
 	"github.com/kunalkushwaha/agenticgokit/internal/tools"
 )
+
+// convertTomlToMCPConfig converts MCPConfigToml to MCPConfig
+func convertTomlToMCPConfig(tomlConfig core.MCPConfigToml) core.MCPConfig {
+	config := core.MCPConfig{
+		EnableDiscovery:   tomlConfig.EnableDiscovery,
+		DiscoveryTimeout:  time.Duration(tomlConfig.DiscoveryTimeout) * time.Millisecond,
+		ScanPorts:         tomlConfig.ScanPorts,
+		ConnectionTimeout: time.Duration(tomlConfig.ConnectionTimeout) * time.Millisecond,
+		MaxRetries:        tomlConfig.MaxRetries,
+		RetryDelay:        time.Duration(tomlConfig.RetryDelay) * time.Millisecond,
+		EnableCaching:     tomlConfig.EnableCaching,
+		CacheTimeout:      time.Duration(tomlConfig.CacheTimeout) * time.Millisecond,
+		MaxConnections:    tomlConfig.MaxConnections,
+	}
+
+	// Convert servers
+	for _, serverToml := range tomlConfig.Servers {
+		server := core.MCPServerConfig{
+			Name:    serverToml.Name,
+			Type:    serverToml.Type,
+			Host:    serverToml.Host,
+			Port:    serverToml.Port,
+			Command: serverToml.Command,
+			Enabled: serverToml.Enabled,
+		}
+		config.Servers = append(config.Servers, server)
+	}
+
+	return config
+}
 
 // RunnerConfig allows customization but provides sensible defaults.
 type RunnerConfig = core.RunnerConfig
@@ -78,7 +109,6 @@ func NewMCPEnabledRunnerFromConfig(config *core.Config, agents map[string]core.A
 	if !config.MCP.Enabled {
 		// If MCP is disabled, create a standard runner
 		runnerConfig := core.RunnerConfig{
-			Config: config,
 			Agents: agents,
 		}
 		runner := core.NewRunnerWithConfig(runnerConfig)
@@ -86,7 +116,7 @@ func NewMCPEnabledRunnerFromConfig(config *core.Config, agents map[string]core.A
 	}
 
 	// MCP is enabled, create MCP-enabled runner
-	mcpConfig := config.GetMCPConfig()
+	mcpConfig := convertTomlToMCPConfig(config.MCP)
 
 	// Create MCP-enabled tool registry and store globally
 	registry, mcpManager, err := NewMCPEnabledToolRegistry(mcpConfig)
@@ -99,7 +129,6 @@ func NewMCPEnabledRunnerFromConfig(config *core.Config, agents map[string]core.A
 	globalMCPManager = mcpManager
 
 	runnerConfig := core.RunnerConfig{
-		Config: config,
 		Agents: agents,
 	}
 
@@ -337,17 +366,7 @@ func (t *SimpleMCPToolAdapter) Call(ctx context.Context, args map[string]any) (m
 
 // InitRealMCPFactory sets up the core package to use the real MCP implementation
 // This should be called during application initialization to enable real MCP functionality
-func InitRealMCPFactory() {
-	// Set the factory function in core to use our real implementation
-	core.SetMCPManagerFactory(func(config core.MCPConfig) (core.MCPManager, error) {
-		return NewMCPManagerOnly(config)
-	})
-}
+func InitRealMCPFactory() {}
 
 // init automatically registers the real MCP factory when this package is imported
-func init() {
-	// Register the real MCP implementation factory with the core package
-	core.SetMCPManagerFactory(func(config core.MCPConfig) (core.MCPManager, error) {
-		return NewMCPManagerOnly(config)
-	})
-}
+func init() {}

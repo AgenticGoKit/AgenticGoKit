@@ -256,7 +256,7 @@ func (a *MyAgent) Execute(ctx context.Context, event core.Event, state *core.Sta
 agents := []string{"input", "process", "output"} // Clear sequence
 
 // For collaborative, ensure agents don't interfere
-runner := core.CreateCollaborativeRunner(agentMap, 30*time.Second)
+runner, _ := core.NewRunnerFromConfig("agentflow.toml")
 ```
 
 ## 🔌 LLM Provider Issues

@@ -78,21 +78,21 @@ AgenticGoKit is a production-ready Go framework for building intelligent agent w
 # Install the CLI
 go install github.com/kunalkushwaha/agenticgokit/cmd/agentcli@latest
 
-# Create a collaborative multi-agent system
+# Prereq: have Ollama running with the gemma3:1b model (recommended for examples)
+# On Windows/macOS/Linux: https://ollama.com — then pull the model:
+#   ollama pull gemma3:1b
+
+# Create a collaborative multi-agent system (config-driven)
 agentcli create research-system \
-  --orchestration-mode collaborative \
-  --agents 3 \
-  --visualize \
-  --mcp-enabled
+    --orchestration-mode collaborative \
+    --agents 3 \
+    --visualize \
+    --mcp-enabled
 
 cd research-system
 
-# Set your API key
-export AZURE_OPENAI_API_KEY=your-key-here
-export AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
-export AZURE_OPENAI_DEPLOYMENT=your-deployment-name
-
-# Run with any message - agents work together intelligently
+# Configure LLM provider via agentflow.toml (defaults are fine for Ollama gemma3:1b)
+# Then run with any message — agents work together in parallel
 go run . -m "research AI trends and provide comprehensive analysis"
 ```
 
@@ -115,10 +115,10 @@ agentcli create quality-loop \
 
 # Mixed collaborative + sequential workflow
 agentcli create complex-workflow \
-  --orchestration-mode collaborative \
-  --agents 4 \
-  --orchestration-timeout 90 \
-  --visualize-output "docs/workflows"
+    --orchestration-mode mixed \
+    --agents 4 \
+    --orchestration-timeout 90 \
+    --visualize-output "docs/workflows"
 ```
 
 ### Configuration-Based Orchestration
@@ -137,52 +137,35 @@ package main
 import (
     "context"
     "log"
-    "time"
     
     "github.com/kunalkushwaha/agenticgokit/core"
 )
 
+// Example showing config-driven orchestration with Start/Emit/Stop.
 func main() {
-    // Load configuration from agentflow.toml
-    config, err := core.LoadConfigFromWorkingDir()
+    // Build runner from agentflow.toml
+    runner, err := core.NewRunnerFromConfig("agentflow.toml")
     if err != nil {
         log.Fatal(err)
     }
 
-    // Create provider from configuration
-    provider, err := config.InitializeProvider()
-    if err != nil {
-        log.Fatal(err)
-    }
+    // Register your agents (names must match those referenced in config)
+    _ = runner.RegisterAgent("agent1", NewAgent1())
+    _ = runner.RegisterAgent("agent2", NewAgent2())
+    _ = runner.RegisterAgent("agent3", NewAgent3())
 
-    // Create agents
-    agents := map[string]core.AgentHandler{
-        "agent1": core.NewLLMAgent("agent1", provider),
-        "agent2": core.NewLLMAgent("agent2", provider),
-        "agent3": core.NewLLMAgent("agent3", provider),
-    }
-
-    // Create runner based on configuration
-    var runner core.Runner
-    switch config.Orchestration.Mode {
-    case "sequential":
-        runner = core.NewOrchestrationBuilder(core.OrchestrationSequential).
-            WithAgents(agents).
-            WithTimeout(time.Duration(config.Orchestration.TimeoutSeconds)*time.Second).
-            Build()
-    case "collaborative":
-        runner = core.CreateCollaborativeRunner(agents, 
-            time.Duration(config.Orchestration.TimeoutSeconds)*time.Second)
-    default:
-        runner = core.CreateRouteRunner(agents)
-    }
-
-    // Start the runner
+    // Start the runner and emit an event
     ctx := context.Background()
     if err := runner.Start(ctx); err != nil {
         log.Fatal(err)
     }
     defer runner.Stop()
+
+    // Target a specific agent or broadcast (e.g., "all") depending on mode
+    evt := core.NewEvent("agent1", map[string]interface{}{"message": "hello"}, nil)
+    if err := runner.Emit(evt); err != nil {
+        log.Fatal(err)
+    }
 }
 ```
 
@@ -257,7 +240,7 @@ agentcli create research-system \
 # - workflow.mmd (Mermaid diagram)
 ```
 
-**Collaborative Orchestration Code:**
+**Collaborative Orchestration Code (config-driven):**
 ```go
 package main
 
@@ -265,39 +248,39 @@ import (
     "context"
     "fmt"
     "log"
-    "time"
     
     "github.com/kunalkushwaha/agenticgokit/core"
 )
 
 func main() {
-    // Initialize agents
-    agents := map[string]core.AgentHandler{
-        "researcher": NewResearcher(),
-        "analyzer":   NewAnalyzer(),
-        "validator":  NewValidator(),
-    }
-    
-    // Create collaborative orchestration
-    runner := core.NewOrchestrationBuilder(core.OrchestrationCollaborate).
-        WithAgents(agents).
-        WithTimeout(2 * time.Minute).
-        WithFailureThreshold(0.8).
-        WithMaxConcurrency(10).
-        Build()
-    
-    // Create event
-    event := core.NewEvent("all", map[string]interface{}{
-        "task": "research AI trends and provide comprehensive analysis",
-    }, nil)
-    
-    // All agents process the event in parallel
-    result, err := runner.Run(context.Background(), event)
+    // Build runner from configuration (mode: collaborative)
+    runner, err := core.NewRunnerFromConfig("agentflow.toml")
     if err != nil {
         log.Fatal(err)
     }
-    
-    fmt.Printf("Collaborative Result: %s\n", result.GetResult())
+
+    // Register agents used by the orchestration
+    _ = runner.RegisterAgent("researcher", NewResearcher())
+    _ = runner.RegisterAgent("analyzer", NewAnalyzer())
+    _ = runner.RegisterAgent("validator", NewValidator())
+
+    // Create event and broadcast to all agents
+    event := core.NewEvent("all", map[string]interface{}{
+        "task": "research AI trends and provide comprehensive analysis",
+    }, nil)
+
+    // Start runner and emit event. Agents process in parallel.
+    ctx := context.Background()
+    if err := runner.Start(ctx); err != nil {
+        log.Fatal(err)
+    }
+    defer runner.Stop()
+
+    if err := runner.Emit(event); err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Println("Collaborative workflow started; check logs for agent outputs.")
 }
 ```
 
@@ -336,7 +319,7 @@ Task-oriented guides for specific scenarios:
 
 ### **[📋 Reference](reference/README.md)**
 Information-oriented documentation:
-- **[API Reference](tutorials\getting-started\README.md)** - Complete API documentation
+- **[API Reference](reference/README.md)** - Complete API documentation
 - **[CLI Reference](reference/cli.md)** - Command-line interface documentation
 - **[Configuration Reference](reference/api/configuration.md)** - Configuration options
 

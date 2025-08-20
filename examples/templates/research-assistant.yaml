@@ -1,0 +1,180 @@
+name: "Research Assistant"
+description: "Multi-agent research system with information gathering, analysis, and synthesis capabilities"
+features:
+  - "research"
+  - "analysis"
+  - "synthesis"
+  - "fact-checking"
+
+config:
+  numAgents: 4
+  provider: "openai"
+  orchestrationMode: "sequential"
+  sequentialAgents:
+    - "information-gatherer"
+    - "fact-checker"
+    - "analyzer"
+    - "synthesizer"
+  
+  # Memory configuration for research context
+  memoryEnabled: true
+  memoryProvider: "pgvector"
+  embeddingProvider: "openai"
+  embeddingModel: "text-embedding-3-small"
+  
+  # RAG configuration for knowledge base
+  ragEnabled: true
+  ragChunkSize: 1500
+  ragOverlap: 150
+  ragTopK: 8
+  ragScoreThreshold: 0.75
+  hybridSearch: true
+  sessionMemory: true
+  
+  # MCP tools for research
+  mcpEnabled: true
+  mcpProduction: true
+  mcpTools:
+    - "web_search"
+    - "academic_search"
+    - "fact_check"
+    - "citation_formatter"
+  
+  # Quality and reliability features
+  responsibleAI: true
+  errorHandler: true
+  withCache: true
+  withMetrics: true
+  visualize: true
+
+# Agent-specific configurations
+agents:
+  information-gatherer:
+    role: "information_researcher"
+    description: "Gathers comprehensive information from multiple sources on research topics"
+    capabilities:
+      - "information_gathering"
+      - "source_identification"
+      - "data_processing"
+    systemPrompt: |
+      You are an expert information researcher. Your role is to gather comprehensive, 
+      accurate information from multiple reliable sources. Focus on:
+      - Finding authoritative and recent sources
+      - Identifying key facts and data points
+      - Noting source credibility and publication dates
+      - Organizing information logically
+      Always cite your sources and indicate confidence levels.
+    llm:
+      temperature: 0.3
+      maxTokens: 2000
+    retryPolicy:
+      maxRetries: 3
+      baseDelayMs: 1000
+      maxDelayMs: 5000
+      backoffFactor: 2.0
+    metadata:
+      specialization: "information_gathering"
+      priority: "high"
+
+  fact-checker:
+    role: "fact_validator"
+    description: "Validates information accuracy and identifies potential misinformation"
+    capabilities:
+      - "fact_checking"
+      - "source_identification"
+      - "pattern_recognition"
+    systemPrompt: |
+      You are a meticulous fact-checker. Your role is to validate information accuracy by:
+      - Cross-referencing claims with authoritative sources
+      - Identifying potential biases or misinformation
+      - Checking dates, statistics, and factual claims
+      - Rating confidence levels for each fact
+      - Flagging contradictory information
+      Be thorough and objective in your analysis.
+    llm:
+      temperature: 0.2
+      maxTokens: 1800
+    retryPolicy:
+      maxRetries: 2
+      baseDelayMs: 800
+      maxDelayMs: 3000
+      backoffFactor: 1.5
+    metadata:
+      specialization: "fact_checking"
+      priority: "critical"
+
+  analyzer:
+    role: "research_analyst"
+    description: "Analyzes gathered information to identify patterns, trends, and insights"
+    capabilities:
+      - "pattern_recognition"
+      - "trend_analysis"
+      - "insight_generation"
+      - "data_analysis"
+    systemPrompt: |
+      You are a skilled research analyst. Your role is to analyze information and identify:
+      - Key patterns and trends in the data
+      - Relationships between different pieces of information
+      - Gaps in knowledge or contradictions
+      - Emerging insights and implications
+      - Statistical significance and correlations
+      Provide clear, evidence-based analysis with supporting data.
+    llm:
+      temperature: 0.4
+      maxTokens: 2200
+    retryPolicy:
+      maxRetries: 2
+      baseDelayMs: 1200
+      maxDelayMs: 4000
+      backoffFactor: 2.0
+    metadata:
+      specialization: "analysis"
+      priority: "high"
+
+  synthesizer:
+    role: "research_synthesizer"
+    description: "Synthesizes analyzed information into comprehensive, coherent research outputs"
+    capabilities:
+      - "summarization"
+      - "documentation"
+      - "insight_generation"
+      - "content_creation"
+    systemPrompt: |
+      You are an expert research synthesizer. Your role is to create comprehensive research outputs by:
+      - Integrating information from multiple sources
+      - Creating coherent narratives from complex data
+      - Highlighting key findings and insights
+      - Providing balanced perspectives on controversial topics
+      - Formatting results for different audiences
+      - Including proper citations and references
+      Create clear, well-structured research reports.
+    llm:
+      temperature: 0.6
+      maxTokens: 3000
+    retryPolicy:
+      maxRetries: 2
+      baseDelayMs: 1000
+      maxDelayMs: 4000
+      backoffFactor: 1.8
+    metadata:
+      specialization: "synthesis"
+      priority: "high"
+
+# MCP server configurations
+mcpServers:
+  - name: "web_search"
+    type: "stdio"
+    command: "npx @modelcontextprotocol/server-brave-search"
+    enabled: true
+  - name: "academic_search"
+    type: "stdio"
+    command: "npx @modelcontextprotocol/server-arxiv"
+    enabled: true
+  - name: "fact_check"
+    type: "stdio"
+    command: "npx @modelcontextprotocol/server-factcheck"
+    enabled: false
+  - name: "citation_formatter"
+    type: "stdio"
+    command: "npx @modelcontextprotocol/server-citations"
+    enabled: false
