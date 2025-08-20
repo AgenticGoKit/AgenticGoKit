@@ -89,6 +89,15 @@ func getRoleSpecificInstructions(agent AgentInfo, agentIndex, totalAgents int) s
 		instructions.WriteString("- Fact-check information and verify source credibility\n")
 		instructions.WriteString("- Present research with proper context and citations\n")
 
+	case "summarizer":
+		instructions.WriteString("Core Responsibilities:\n")
+		instructions.WriteString("- Summarize detailed information from previous agents into concise, clear statements\n")
+		instructions.WriteString("- Extract key points and essential information\n")
+		instructions.WriteString("- Focus on brevity while maintaining accuracy\n")
+		instructions.WriteString("- Start responses with 'SUMMARY:' followed by 1-2 sentence summaries\n")
+		instructions.WriteString("- Avoid adding new information not provided by previous agents\n")
+		instructions.WriteString("- Maintain professional, direct communication style\n")
+
 	case "data_collector":
 		instructions.WriteString("Core Responsibilities:\n")
 		instructions.WriteString("- Collect comprehensive data from specified sources\n")

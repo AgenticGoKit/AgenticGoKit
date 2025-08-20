@@ -4,6 +4,7 @@ package agents
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/kunalkushwaha/agenticgokit/core"
@@ -221,7 +222,11 @@ func (f *ConfigurableAgentFactory) createLLMProviderFromConfig(llmConfig *core.R
 func (f *ConfigurableAgentFactory) createOpenAIProvider(providerConfig map[string]interface{}, llmConfig *core.ResolvedLLMConfig) (core.ModelProvider, error) {
 	apiKey := f.getStringValue(providerConfig, "api_key")
 	if apiKey == "" {
-		return nil, fmt.Errorf("OpenAI API key not found in provider configuration")
+		// Fallback to environment variable
+		apiKey = os.Getenv("OPENAI_API_KEY")
+		if apiKey == "" {
+			return nil, fmt.Errorf("OpenAI API key not found in provider configuration or OPENAI_API_KEY environment variable")
+		}
 	}
 
 	return core.NewOpenAIAdapter(
@@ -236,22 +241,38 @@ func (f *ConfigurableAgentFactory) createOpenAIProvider(providerConfig map[strin
 func (f *ConfigurableAgentFactory) createAzureProvider(providerConfig map[string]interface{}, llmConfig *core.ResolvedLLMConfig) (core.ModelProvider, error) {
 	endpoint := f.getStringValue(providerConfig, "endpoint")
 	if endpoint == "" {
-		return nil, fmt.Errorf("Azure OpenAI endpoint not found in provider configuration")
+		// Fallback to environment variable
+		endpoint = os.Getenv("AZURE_OPENAI_ENDPOINT")
+		if endpoint == "" {
+			return nil, fmt.Errorf("Azure OpenAI endpoint not found in provider configuration or AZURE_OPENAI_ENDPOINT environment variable")
+		}
 	}
 
 	apiKey := f.getStringValue(providerConfig, "api_key")
 	if apiKey == "" {
-		return nil, fmt.Errorf("Azure OpenAI API key not found in provider configuration")
+		// Fallback to environment variable
+		apiKey = os.Getenv("AZURE_OPENAI_API_KEY")
+		if apiKey == "" {
+			return nil, fmt.Errorf("Azure OpenAI API key not found in provider configuration or AZURE_OPENAI_API_KEY environment variable")
+		}
 	}
 
 	chatDeployment := f.getStringValue(providerConfig, "chat_deployment")
 	if chatDeployment == "" {
-		return nil, fmt.Errorf("Azure OpenAI chat deployment not found in provider configuration")
+		// Fallback to environment variable
+		chatDeployment = os.Getenv("AZURE_OPENAI_DEPLOYMENT")
+		if chatDeployment == "" {
+			return nil, fmt.Errorf("Azure OpenAI chat deployment not found in provider configuration or AZURE_OPENAI_DEPLOYMENT environment variable")
+		}
 	}
 
 	embeddingDeployment := f.getStringValue(providerConfig, "embedding_deployment")
 	if embeddingDeployment == "" {
-		embeddingDeployment = "text-embedding-ada-002" // default
+		// Fallback to environment variable, then default
+		embeddingDeployment = os.Getenv("AZURE_OPENAI_EMBEDDING_DEPLOYMENT")
+		if embeddingDeployment == "" {
+			embeddingDeployment = "text-embedding-ada-002" // default
+		}
 	}
 
 	return core.NewAzureOpenAIAdapter(core.AzureOpenAIAdapterOptions{
@@ -312,6 +333,8 @@ func (ca *ConfiguredAgent) Run(ctx context.Context, inputState core.State) (core
 	inputState.Set("agent_role", ca.Config.Role)
 	inputState.Set("agent_capabilities", ca.Config.Capabilities)
 	inputState.Set("agent_system_prompt", ca.Config.SystemPrompt)
+	// Set system_prompt for UnifiedAgent compatibility
+	inputState.Set("system_prompt", ca.Config.SystemPrompt)
 
 	// Log agent execution
 	core.Logger().Debug().

@@ -163,9 +163,11 @@ func (a *{{.Agent.DisplayName}}Handler) Run(ctx context.Context, event agenticgo
 		// TODO: Consider if this default is appropriate for your use case
 	}
 	
-	// TODO: Customize the system prompt for your specific use case
-	// This prompt defines the agent's role and behavior
-	systemPrompt = ` + "`{{.SystemPrompt}}`" + `
+	// Use system prompt from configuration instead of hardcoded prompt
+	// The system prompt is already set from the resolved configuration in the agent initialization
+	// This ensures consistency with the TOML configuration and allows dynamic prompt updates
+	// TODO: You can customize this if you need additional prompt processing beyond configuration
+	// systemPrompt is already set from a.config.SystemPrompt in the initialization above
 	logger.Debug().Str("agent", "{{.Agent.Name}}").Interface("input", inputToProcess).Msg("Processing original message")
 	{{else}}
 	// Sequential processing: Use previous agent's output, with fallback chain
@@ -206,8 +208,11 @@ func (a *{{.Agent.DisplayName}}Handler) Run(ctx context.Context, event agenticgo
 		logger.Debug().Str("agent", "{{.Agent.Name}}").Interface("input", inputToProcess).Msg("Processing original message (final fallback)")
 	}
 	
-	// TODO: Customize the system prompt for your specific use case
-	systemPrompt = ` + "`{{.SystemPrompt}}`" + `
+	// Use system prompt from configuration instead of hardcoded prompt
+	// The system prompt is already set from the resolved configuration in the agent initialization
+	// This ensures consistency with the TOML configuration and allows dynamic prompt updates
+	// TODO: You can customize this if you need additional prompt processing beyond configuration
+	// systemPrompt is already set from a.config.SystemPrompt in the initialization above
 	{{end}}
 	
 	// Get available MCP tools to include in prompt

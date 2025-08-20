@@ -214,6 +214,8 @@ func (f *ConsolidatedCreateFlags) ToProjectConfig(projectName string) (scaffold.
 		if f.Provider != "" {
 			config.Provider = f.Provider
 		}
+		// Always override visualization setting from flag
+		config.Visualize = f.Visualize
 	}
 
 	// Parse memory flag
@@ -350,6 +352,9 @@ func (f *ConsolidatedCreateFlags) ToProjectConfig(projectName string) (scaffold.
 	// Set output directory
 	if f.OutputDir != "" {
 		config.VisualizeOutputDir = f.OutputDir
+	} else if config.Visualize {
+		// Set default visualization output directory when visualize is enabled
+		config.VisualizeOutputDir = "docs/workflows"
 	}
 
 	return config, nil
