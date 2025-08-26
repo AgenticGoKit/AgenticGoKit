@@ -237,7 +237,7 @@ func main() {
 	fmt.Println("Validating memory configuration...")
 	if err := validateMemoryConfig(memoryConfig, "{{.Config.EmbeddingModel}}"); err != nil {
 		logger.Error().Err(err).Msg("Memory configuration validation failed")
-	fmt.Printf("Configuration error: %v\n", err)
+	fmt.Printf("Configuration Error: %v\n", err)
 		os.Exit(1)
 	}
 	
