@@ -242,10 +242,10 @@ func (f *ConsolidatedCreateFlags) ToProjectConfig(projectName string) (scaffold.
 
 	// Parse embedding flag (provider:model format)
 	if f.Embedding != "" {
-		parts := strings.Split(f.Embedding, ":")
+		parts := strings.SplitN(f.Embedding, ":", 2) // Use SplitN to only split on first colon
 		config.EmbeddingProvider = parts[0]
 		if len(parts) > 1 {
-			config.EmbeddingModel = parts[1]
+			config.EmbeddingModel = parts[1] // This preserves any colons in the model name
 		} else {
 			// Set default model based on provider
 			switch parts[0] {

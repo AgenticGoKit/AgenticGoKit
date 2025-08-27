@@ -11,7 +11,13 @@ func init() {
 		var embed core.EmbeddingService
 		switch cfg.Embedding.Provider {
 		case "openai":
-			embed = core.NewOpenAIEmbeddingService(cfg.Embedding.APIKey, cfg.Embedding.Model)
+			// Pass empty string for API key to allow environment variable fallback
+			apiKey := cfg.Embedding.APIKey
+			embed = core.NewOpenAIEmbeddingService(apiKey, cfg.Embedding.Model)
+		case "azure":
+			// Pass empty string for API key to allow environment variable fallback
+			apiKey := cfg.Embedding.APIKey
+			embed = core.NewOpenAIEmbeddingService(apiKey, cfg.Embedding.Model)
 		case "ollama":
 			embed = core.NewOllamaEmbeddingService(cfg.Embedding.Model, cfg.Embedding.BaseURL)
 		case "dummy", "":

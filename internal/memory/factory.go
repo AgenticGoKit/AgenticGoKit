@@ -90,7 +90,7 @@ func NewMemory(config core.AgentMemoryConfig) (core.Memory, error) {
 	embeddingService, err := embedding.NewEmbeddingService(
 		config.Embedding.Provider,
 		config.Embedding.Model,
-		config.Embedding.APIKey,
+		config.Embedding.APIKey, // Will fallback to environment variables if empty
 		config.Embedding.BaseURL,
 		config.Dimensions,
 	)

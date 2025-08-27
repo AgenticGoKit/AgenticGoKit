@@ -113,13 +113,21 @@ func (ei *EmbeddingIntelligence) GetProviderDefaults(provider string) map[string
 		defaults["base_url"] = "http://localhost:11434"
 		defaults["cache_embeddings"] = true
 		defaults["timeout_seconds"] = 30
+		// Note: No API key needed for Ollama
 	case "openai":
 		defaults["cache_embeddings"] = true
 		defaults["max_batch_size"] = 100
 		defaults["timeout_seconds"] = 30
+		// Note: API key will be read from OPENAI_API_KEY environment variable
+	case "azure":
+		defaults["cache_embeddings"] = true
+		defaults["max_batch_size"] = 100
+		defaults["timeout_seconds"] = 30
+		// Note: API key will be read from AZURE_OPENAI_API_KEY environment variable
 	case "dummy":
 		defaults["cache_embeddings"] = false
 		defaults["timeout_seconds"] = 5
+		// Note: No API key needed for dummy provider
 	}
 
 	return defaults

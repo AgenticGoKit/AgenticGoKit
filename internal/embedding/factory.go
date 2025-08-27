@@ -3,6 +3,7 @@ package embedding
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/kunalkushwaha/agenticgokit/core"
 	"github.com/kunalkushwaha/agenticgokit/internal/embedding/providers"
@@ -15,8 +16,21 @@ type EmbeddingFactory struct{}
 func NewEmbeddingService(provider, model, apiKey, baseURL string, dimensions int) (core.EmbeddingService, error) {
 	switch provider {
 	case "openai":
+		// If no API key provided, try environment variable
 		if apiKey == "" {
-			return nil, fmt.Errorf("OpenAI API key is required for embedding service")
+			apiKey = os.Getenv("OPENAI_API_KEY")
+		}
+		if apiKey == "" {
+			return nil, fmt.Errorf("OpenAI API key is required for embedding service. Set OPENAI_API_KEY environment variable or provide api_key in configuration")
+		}
+		return providers.NewOpenAIEmbeddingService(apiKey, model), nil
+	case "azure":
+		// If no API key provided, try environment variable
+		if apiKey == "" {
+			apiKey = os.Getenv("AZURE_OPENAI_API_KEY")
+		}
+		if apiKey == "" {
+			return nil, fmt.Errorf("Azure OpenAI API key is required for embedding service. Set AZURE_OPENAI_API_KEY environment variable or provide api_key in configuration")
 		}
 		return providers.NewOpenAIEmbeddingService(apiKey, model), nil
 	case "ollama":
@@ -71,7 +85,7 @@ func init() {
 	core.RegisterOpenAIEmbeddingFactory(providers.NewOpenAIEmbeddingService)
 	core.RegisterOllamaEmbeddingFactory(providers.NewOllamaEmbeddingService)
 	core.RegisterDummyEmbeddingFactory(providers.NewDummyEmbeddingService)
-	
+
 	// Also register locally for internal use
 	RegisterOpenAIFactory(providers.NewOpenAIEmbeddingService)
 	RegisterOllamaFactory(providers.NewOllamaEmbeddingService)
