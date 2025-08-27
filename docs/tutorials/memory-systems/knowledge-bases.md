@@ -43,6 +43,8 @@ Knowledge bases transform raw information into accessible, searchable knowledge 
 4. **Retrieval Layer**: Advanced filtering and ranking
 5. **Management Layer**: Updates, versioning, and maintenance
 
+> Note: While the documentation references multiple document types (PDF, Markdown, HTML), native PDF processing is coming soon. The current CLI/document processors natively support text and Markdown; PDF processor integration will be added in a future release.
+
 ## Advanced Search Patterns
 
 ### 1. Comprehensive Search with All Options

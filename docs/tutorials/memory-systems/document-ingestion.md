@@ -18,6 +18,8 @@ Effective document ingestion enables agents to access and reason over large coll
 - Knowledge of document formats (PDF, Markdown, HTML, etc.)
 - Basic understanding of text processing and NLP concepts
 
+> Note: PDF processing is planned and coming soon. The current CLI and document processors provide first-class support for text and Markdown files; PDF and other formats require additional processor integration.
+
 ## Document Ingestion Pipeline
 
 ### Architecture Overview
