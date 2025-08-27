@@ -43,6 +43,8 @@ func NewProcessorRegistry() *ProcessorRegistry {
 	// Register default processors
 	registry.Register(&TextProcessor{})
 	registry.Register(&MarkdownProcessor{})
+	// PDF support (MVP)
+	registry.Register(&PDFProcessor{})
 
 	return registry
 }

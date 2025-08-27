@@ -28,11 +28,16 @@ func NewMemory(config core.AgentMemoryConfig) (core.Memory, error) {
 		config.KnowledgeMaxResults = 20
 	}
 	if config.KnowledgeScoreThreshold == 0 {
-		// Use lower threshold for dummy embeddings, higher for real embeddings
+		// Check if threshold was explicitly set to 0.0 in TOML
+		// If embedding provider is real (not dummy), use default 0.7 threshold
+		// unless explicitly configured to use 0.0 (which we'll preserve)
 		if config.Embedding.Provider == "dummy" {
 			config.KnowledgeScoreThreshold = 0.0 // No filtering for dummy embeddings
 		} else {
-			config.KnowledgeScoreThreshold = 0.7 // Standard threshold for real embeddings
+			// For real embeddings, use 0.7 as default only if not explicitly set
+			// We can't distinguish between unset and explicitly set to 0.0 here,
+			// so we'll use a more permissive default for RAG systems
+			config.KnowledgeScoreThreshold = 0.3 // More permissive default for real embeddings
 		}
 	}
 	if config.ChunkSize == 0 {

@@ -553,11 +553,17 @@ func (p *PgVectorProvider) SearchKnowledge(ctx context.Context, query string, op
 		opt(config)
 	}
 
+	// Debug: Log search configuration
+	core.Logger().Debug().Float64("threshold", float64(config.ScoreThreshold)).Int("limit", config.Limit).Str("query", query).Msg("SearchKnowledge called")
+
 	// Generate query embedding
 	queryEmbedding, err := p.embeddingService.GenerateEmbedding(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate query embedding: %w", err)
 	}
+
+	// Debug: Log embedding generation success
+	core.Logger().Debug().Int("embedding_dims", len(queryEmbedding)).Msg("Generated query embedding successfully")
 
 	// Build base SQL query
 	baseQuery := `
@@ -615,6 +621,9 @@ func (p *PgVectorProvider) SearchKnowledge(ctx context.Context, query string, op
 	baseQuery += " ORDER BY kb.embedding <=> $1 LIMIT $" + fmt.Sprintf("%d", argIndex)
 	args = append(args, config.Limit)
 
+	// Debug: Log the final SQL query and parameters
+	core.Logger().Debug().Str("sql_query", baseQuery).Int("args_count", len(args)).Msg("Executing SQL query")
+
 	// Execute query
 	rows, err := p.pool.Query(ctx, baseQuery, args...)
 	if err != nil {
@@ -657,6 +666,9 @@ func (p *PgVectorProvider) SearchKnowledge(ctx context.Context, query string, op
 			ChunkIndex: chunkIndex,
 		})
 	}
+
+	// Debug: Log the results found
+	core.Logger().Debug().Int("results_count", len(results)).Msg("SearchKnowledge completed")
 
 	return results, nil
 }
@@ -719,15 +731,22 @@ func (p *PgVectorProvider) BuildContext(ctx context.Context, query string, optio
 		opt(config)
 	}
 
+	// Debug: Log BuildContext configuration
+	core.Logger().Debug().Str("query", query).Int("max_tokens", config.MaxTokens).Float64("personal_weight", float64(config.PersonalWeight)).Float64("knowledge_weight", float64(config.KnowledgeWeight)).Int("calculated_limit", config.MaxTokens/100).Msg("BuildContext called with config")
+
 	// Get hybrid search results
 	searchResults, err := p.SearchAll(ctx, query,
 		core.WithLimit(config.MaxTokens/100), // Rough estimate: 100 tokens per result
 		core.WithIncludePersonal(config.PersonalWeight > 0),
 		core.WithIncludeKnowledge(config.KnowledgeWeight > 0),
+		core.WithScoreThreshold(0.0), // Use very low threshold for RAG context to get relevant results
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to search for context: %w", err)
 	}
+
+	// Debug: Log SearchAll results
+	core.Logger().Debug().Int("personal_results", len(searchResults.PersonalMemory)).Int("knowledge_results", len(searchResults.Knowledge)).Msg("BuildContext SearchAll completed")
 
 	// Get chat history
 	history, err := p.GetHistory(ctx, config.HistoryLimit)
@@ -1038,4 +1057,3 @@ func (p *PgVectorProvider) batchIngestChunk(ctx context.Context, docs []core.Doc
 		return tx.Commit(ctx)
 	})
 }
-

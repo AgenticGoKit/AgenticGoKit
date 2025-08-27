@@ -346,6 +346,7 @@ func main() {
 			agentName:       agentName,
 			outputs:         &results,
 			mutex:           &resultsMutex,
+{{if .Config.MemoryEnabled}}			memory:          memory, // Pass memory instance to handler{{end}}
 		}
 
 		agentHandlers[agentName] = wrappedAgent
@@ -673,6 +674,7 @@ type ResultCollectorHandler struct {
 	agentName       string
 	outputs         *[]AgentOutput
 	mutex           *sync.Mutex
+{{if .Config.MemoryEnabled}}	memory          core.Memory // Capture memory instance instead of using global{{end}}
 }
 
 // AgentOutput holds the output from an agent along with metadata.
@@ -712,7 +714,19 @@ type AgentOutput struct {
 // You might want to modify how content is extracted, add custom
 // metadata collection, or implement different storage strategies.
 func (r *ResultCollectorHandler) Run(ctx context.Context, event core.Event, state core.State) (core.AgentResult, error) {
-	// TODO: Add pre-execution logic here if needed
+{{if .Config.MemoryEnabled}}	// Inject memory into context so agents can access it
+	if r.memory != nil {
+		sessionID := core.GetSessionID(ctx)
+		if sessionID == "default" {
+			sessionID = core.GenerateSessionID()
+		}
+		core.Logger().Debug().Str("injecting_memory_type", fmt.Sprintf("%T", r.memory)).Str("session_id", sessionID).Msg("ResultCollector: Injecting memory into context")
+		ctx = core.WithMemory(ctx, r.memory, sessionID)
+	} else {
+		core.Logger().Warn().Msg("ResultCollector: Handler memory is nil, agents will get NoOpMemory")
+	}
+	
+{{end}}	// TODO: Add pre-execution logic here if needed
 	// Examples: start timing, log execution start, validate input
 	startTime := time.Now()
 	

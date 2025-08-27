@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 )
@@ -110,34 +111,140 @@ func (u *UnifiedAgent) Run(ctx context.Context, state State) (State, error) {
 		// Only call the LLM if we have a non-empty user prompt.
 		if strings.TrimSpace(user) != "" {
 			Logger().Debug().Str("agent", u.name).Msg("UnifiedAgent: calling LLM provider")
-			params := ModelParameters{}
-			if u.llmConfig != nil {
-				if u.llmConfig.Temperature != 0 {
-					// Convert float64 -> float32 pointer
-					t := float32(u.llmConfig.Temperature)
-					params.Temperature = &t
+
+			// Add memory integration for RAG support
+			var memoryContext string
+			mem := GetMemory(ctx)
+			if mem != nil {
+				Logger().Debug().Str("agent", u.name).Str("memory_type", fmt.Sprintf("%T", mem)).Msg("UnifiedAgent: Building memory context for RAG")
+
+				// Build RAG context from knowledge base
+				Logger().Debug().Str("agent", u.name).Str("query", user).Msg("UnifiedAgent: Calling BuildContext with query")
+				ragContext, err := mem.BuildContext(ctx, user,
+					WithMaxTokens(1000),
+					WithIncludeSources(true))
+				if err != nil {
+					Logger().Warn().Str("agent", u.name).Err(err).Msg("Failed to build RAG context - continuing without knowledge base context")
+				} else if ragContext != nil {
+					Logger().Debug().Str("agent", u.name).
+						Int("personal_count", len(ragContext.PersonalMemory)).
+						Int("knowledge_count", len(ragContext.Knowledge)).
+						Int("history_count", len(ragContext.ChatHistory)).
+						Str("context_text_snippet", func() string {
+							if len(ragContext.ContextText) > 100 {
+								return ragContext.ContextText[:100] + "..."
+							}
+							return ragContext.ContextText
+						}()).
+						Msg("BuildContext result details")
+
+					if ragContext.ContextText != "" {
+						memoryContext = "\n\nRelevant Context from Knowledge Base:\n" + ragContext.ContextText
+						Logger().Debug().Str("agent", u.name).Int("context_tokens", ragContext.TokenCount).Msg("RAG context built successfully")
+					} else {
+						Logger().Debug().Str("agent", u.name).Msg("No relevant knowledge base context found")
+					}
+				} else {
+					Logger().Debug().Str("agent", u.name).Msg("BuildContext returned nil ragContext")
 				}
-				if u.llmConfig.MaxTokens > 0 {
-					mt := int32(u.llmConfig.MaxTokens)
-					params.MaxTokens = &mt
+
+				// Query relevant memories
+				memoryResults, err := mem.Query(ctx, user, 5)
+				if err != nil {
+					Logger().Warn().Str("agent", u.name).Err(err).Msg("Failed to query memories - continuing without memory context")
+				} else if len(memoryResults) > 0 {
+					memoryContext += "\n\nRelevant Memories:\n"
+					for _, result := range memoryResults {
+						if result.Score >= 0 {
+							memoryContext += strings.TrimSpace(result.Content) + "\n"
+						}
+					}
+					Logger().Debug().Str("agent", u.name).Int("memory_count", len(memoryResults)).Msg("Memory context retrieved")
 				}
+
+				// Get chat history
+				chatHistory, err := mem.GetHistory(ctx, 3)
+				if err != nil {
+					Logger().Warn().Str("agent", u.name).Err(err).Msg("Failed to get chat history - continuing without history context")
+				} else if len(chatHistory) > 0 {
+					memoryContext += "\n\nRecent Chat History:\n"
+					for _, msg := range chatHistory {
+						memoryContext += strings.TrimSpace(msg.Content) + "\n"
+					}
+					Logger().Debug().Str("agent", u.name).Int("history_count", len(chatHistory)).Msg("Chat history retrieved")
+				}
+
+				// Log memory context for debugging
+				snippet := memoryContext
+				if len(snippet) > 1000 {
+					snippet = snippet[:1000] + "...(truncated)"
+				}
+				Logger().Info().Str("agent", u.name).Int("memory_length", len(memoryContext)).Str("memory_context_snippet", snippet).Msg("UnifiedAgent: RAG context appended to prompt")
+			} else {
+				Logger().Warn().Str("agent", u.name).Msg("Memory system not available - continuing without memory context")
 			}
 
-			resp, err := u.llmProvider.Call(ctx, Prompt{System: system, User: user, Parameters: params})
-			if err != nil {
-				return out, err
-			}
+			// Append memory context to user prompt
+			finalUserPrompt := user + memoryContext
 
-			if resp.Content != "" {
-				// Standardize keys so downstream result collectors can display output.
-				out.Set("response", resp.Content)
-				out.Set("message", resp.Content)
+			// Only make LLM call if provider is configured
+			if u.llmProvider != nil {
+				params := ModelParameters{}
+				if u.llmConfig != nil {
+					if u.llmConfig.Temperature != 0 {
+						// Convert float64 -> float32 pointer
+						t := float32(u.llmConfig.Temperature)
+						params.Temperature = &t
+					}
+					if u.llmConfig.MaxTokens > 0 {
+						mt := int32(u.llmConfig.MaxTokens)
+						params.MaxTokens = &mt
+					}
+				}
+
+				resp, err := u.llmProvider.Call(ctx, Prompt{System: system, User: finalUserPrompt, Parameters: params})
+				if err != nil {
+					return out, err
+				}
+
+				if resp.Content != "" {
+					// Store interaction in memory
+					if mem != nil {
+						if err := mem.Store(ctx, user, "user-query", u.name); err != nil {
+							Logger().Warn().Str("agent", u.name).Err(err).Msg("Failed to store user query in memory")
+						}
+						if err := mem.Store(ctx, resp.Content, "agent-response", u.name); err != nil {
+							Logger().Warn().Str("agent", u.name).Err(err).Msg("Failed to store agent response in memory")
+						}
+						if err := mem.AddMessage(ctx, "user", user); err != nil {
+							Logger().Warn().Str("agent", u.name).Err(err).Msg("Failed to add user message to chat history")
+						}
+						if err := mem.AddMessage(ctx, "assistant", resp.Content); err != nil {
+							Logger().Warn().Str("agent", u.name).Err(err).Msg("Failed to add assistant message to chat history")
+						}
+					}
+
+					// Standardize keys so downstream result collectors can display output.
+					out.Set("response", resp.Content)
+					out.Set("message", resp.Content)
+				}
+			} else {
+				// Debug mode: output memory context details without LLM call
+				Logger().Info().Str("agent", u.name).Msg("DEBUG MODE: No LLM provider, outputting memory analysis instead")
+				debugResponse := fmt.Sprintf("DEBUG: Memory Analysis for query '%s'\n", user)
+				if memoryContext != "" {
+					debugResponse += fmt.Sprintf("Memory context found (%d chars):\n%s", len(memoryContext), memoryContext)
+				} else {
+					debugResponse += "No memory context found"
+				}
+
+				out.Set("response", debugResponse)
+				out.Set("message", debugResponse)
+				Logger().Info().Str("agent", u.name).Str("debug_response", debugResponse).Msg("DEBUG: Memory analysis completed")
 			}
 		}
-	} else {
-		Logger().Warn().Str("agent", u.name).Msg("UnifiedAgent: no LLM provider configured; skipping LLM call")
-	}
 
+	}
 	out.Set("processed_by", u.name)
 	out.Set("agent_type", "unified")
 	out.Set("capabilities", u.GetCapabilities())
