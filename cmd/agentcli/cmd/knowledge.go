@@ -55,8 +55,8 @@ BASIC USAGE:
   agentcli knowledge clear
 
 DOCUMENT MANAGEMENT:
-  # Upload single file
-  agentcli knowledge upload document.pdf
+	# Upload single file
+	agentcli knowledge upload document.pdf
 
   # Upload directory recursively with tags
   agentcli knowledge upload ./docs/ --recursive --tags "docs,reference"
@@ -115,7 +115,7 @@ var knowledgeUploadCmd = &cobra.Command{
 Supports multiple file formats including:
 - Text files (.txt)
 - Markdown files (.md, .markdown)
-- PDF files (.pdf) - requires PDF processing library
+- PDF files (.pdf) - support coming soon (requires PDF processor integration)
 - Code files (.go, .py, .js, .java, etc.)
 - HTML files (.html, .htm)
 

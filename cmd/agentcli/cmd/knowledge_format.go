@@ -63,7 +63,26 @@ func (tf *TableFormatter) FormatDocuments(docs []core.KnowledgeResult) string {
 		// Format chunks info
 		chunksInfo := ""
 		if doc.ChunkIndex > 0 {
-			chunksInfo = fmt.Sprintf("%d/%d", doc.ChunkIndex, doc.Metadata["chunk_total"])
+			// metadata values can come in as float64 (e.g., from JSON decoding), so
+			// coerce to an int safely before formatting to avoid fmt artifacts.
+			total := 1
+			if doc.Metadata != nil {
+				if v, ok := doc.Metadata["chunk_total"]; ok {
+					switch t := v.(type) {
+					case int:
+						total = t
+					case int32:
+						total = int(t)
+					case int64:
+						total = int(t)
+					case float32:
+						total = int(t)
+					case float64:
+						total = int(t)
+					}
+				}
+			}
+			chunksInfo = fmt.Sprintf("%d/%d", doc.ChunkIndex, total)
 		} else {
 			chunksInfo = "1/1"
 		}
