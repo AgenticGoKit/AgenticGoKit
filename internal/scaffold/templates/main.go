@@ -790,26 +790,37 @@ func (r *ResultCollectorHandler) Run(ctx context.Context, event core.Event, stat
 {{if .Config.MemoryEnabled}}
 // validateMemoryConfig validates the memory configuration against expected values
 func validateMemoryConfig(memoryConfig core.AgentMemoryConfig, expectedModel string) error {
+	// Determine expected dimensions and model based on embedding provider
+	var expectedDimensions int
+	var expectedModelName string
+	
+	switch memoryConfig.Embedding.Provider {
+	case "openai":
+		expectedDimensions = 1536
+		expectedModelName = "text-embedding-3-small" // Default OpenAI embedding model
+	case "ollama":
+		expectedDimensions = 768
+		expectedModelName = "nomic-embed-text:latest" // Default Ollama embedding model
+	case "dummy":
+		expectedDimensions = 1536 // Default for dummy provider
+		expectedModelName = "dummy-model"
+	default:
+		return fmt.Errorf("unknown embedding provider: %s\nValid options: openai, ollama, dummy", memoryConfig.Embedding.Provider)
+	}
+	
 	// Validate embedding dimensions
-	expectedDimensions := {{.Config.EmbeddingDimensions}}
 	if memoryConfig.Dimensions != expectedDimensions {
-		// Use literal template values so template tests can verify expected guidance text
-		return fmt.Errorf("{{.Config.EmbeddingModel}} requires {{.Config.EmbeddingDimensions}} dimensions, but %d configured in agentflow.toml\nSolution: Update [agent_memory] dimensions = %d", 
-			memoryConfig.Dimensions, expectedDimensions)
+		return fmt.Errorf("%s provider requires %d dimensions, but %d configured in agentflow.toml\nSolution: Update [agent_memory] dimensions = %d", 
+			memoryConfig.Embedding.Provider, expectedDimensions, memoryConfig.Dimensions, expectedDimensions)
 	}
 	
-	// Validate embedding provider and model
-	expectedProvider := "{{.Config.EmbeddingProvider}}"
-	expectedModelName := "{{.Config.EmbeddingModel}}"
-	
-	if memoryConfig.Embedding.Provider != expectedProvider {
-	return fmt.Errorf("embedding provider mismatch: expected '%s', got '%s'\nSolution: Update [agent_memory.embedding] provider = \"%s\"", 
-			expectedProvider, memoryConfig.Embedding.Provider, expectedProvider)
-	}
-	
-	if memoryConfig.Embedding.Model != expectedModelName {
-	return fmt.Errorf("embedding model mismatch: expected '%s', got '%s'\nSolution: Update [agent_memory.embedding] model = \"%s\"", 
-			expectedModelName, memoryConfig.Embedding.Model, expectedModelName)
+	// Flexible model validation - allow if model contains core model name or is empty (will use default)
+	if memoryConfig.Embedding.Model != "" {
+		coreModelName := strings.Split(expectedModelName, ":")[0] // Handle version tags like ":latest"
+		if !strings.Contains(memoryConfig.Embedding.Model, coreModelName) {
+			return fmt.Errorf("embedding model mismatch: expected '%s' or similar, got '%s'\nSolution: Update [agent_memory.embedding] model = \"%s\"", 
+				expectedModelName, memoryConfig.Embedding.Model, expectedModelName)
+		}
 	}
 	
 	// Validate memory provider configuration
@@ -831,7 +842,7 @@ func validateMemoryConfig(memoryConfig core.AgentMemoryConfig, expectedModel str
 	case "memory":
 		// In-memory provider doesn't need connection validation
 	default:
-	return fmt.Errorf("unknown memory provider: %s\nValid options: memory, pgvector, weaviate", memoryConfig.Provider)
+		return fmt.Errorf("unknown memory provider: %s\nValid options: memory, pgvector, weaviate", memoryConfig.Provider)
 	}
 	
 	// Validate RAG configuration if enabled
@@ -845,7 +856,7 @@ func validateMemoryConfig(memoryConfig core.AgentMemoryConfig, expectedModel str
 				memoryConfig.ChunkSize, memoryConfig.ChunkOverlap)
 		}
 		if memoryConfig.KnowledgeScoreThreshold < 0.0 || memoryConfig.KnowledgeScoreThreshold > 1.0 {
-			return fmt.Errorf("RAG score threshold must be between 0.0 and 1.0, got %.2f\nSolution: Set [agent_memory] knowledge_score_threshold = 0.7", 
+			return fmt.Errorf("RAG score threshold must be between 0.0 and 1.0, got %.2f\nSolution: Set [agent_memory] knowledge_score_threshold = 0.1", 
 				memoryConfig.KnowledgeScoreThreshold)
 		}
 	}
@@ -860,14 +871,14 @@ func validateMemoryConfig(memoryConfig core.AgentMemoryConfig, expectedModel str
 	case "openai":
 		// OpenAI uses environment variables, so we can't validate API key here
 		// But we can check if the model name looks reasonable
-		if !strings.Contains(memoryConfig.Embedding.Model, "embedding") {
+		if memoryConfig.Embedding.Model != "" && !strings.Contains(memoryConfig.Embedding.Model, "embedding") {
 			return fmt.Errorf("OpenAI model '%s' doesn't look like an embedding model\nRecommended: text-embedding-3-small or text-embedding-3-large", 
 				memoryConfig.Embedding.Model)
 		}
 	case "dummy":
 		// Dummy provider doesn't need validation
 	default:
-	return fmt.Errorf("unknown embedding provider: %s\nValid options: openai, ollama, dummy", memoryConfig.Embedding.Provider)
+		return fmt.Errorf("unknown embedding provider: %s\nValid options: openai, ollama, dummy", memoryConfig.Embedding.Provider)
 	}
 	
 	return nil

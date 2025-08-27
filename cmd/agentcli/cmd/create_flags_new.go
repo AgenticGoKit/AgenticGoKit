@@ -250,11 +250,13 @@ func (f *ConsolidatedCreateFlags) ToProjectConfig(projectName string) (scaffold.
 			// Set default model based on provider
 			switch parts[0] {
 			case "openai":
-				config.EmbeddingModel = "text-embedding-ada-002"
+				config.EmbeddingModel = "text-embedding-3-small" // Modern OpenAI embedding model
 			case "ollama":
-				config.EmbeddingModel = "nomic-embed-text:latest"
+				config.EmbeddingModel = "nomic-embed-text:latest" // Default Ollama embedding model
 			case "dummy":
 				config.EmbeddingModel = "dummy"
+			default:
+				config.EmbeddingModel = "text-embedding-3-small" // Default to modern OpenAI model
 			}
 		}
 
@@ -356,6 +358,9 @@ func (f *ConsolidatedCreateFlags) ToProjectConfig(projectName string) (scaffold.
 		// Set default visualization output directory when visualize is enabled
 		config.VisualizeOutputDir = "docs/workflows"
 	}
+
+	// Apply intelligent defaults for embedding models and dimensions
+	scaffold.ApplyIntelligentDefaults(&config)
 
 	return config, nil
 }

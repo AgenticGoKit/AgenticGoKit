@@ -36,6 +36,9 @@ func CreateAgentProjectFromConfig(config ProjectConfig) error {
 
 // CreateAgentProjectModular creates a new AgentFlow project using the modular template system
 func CreateAgentProjectModular(config ProjectConfig) error {
+	// Apply intelligent defaults for embedding models and configurations
+	ApplyIntelligentDefaults(&config)
+
 	// Validate import paths before creating the project
 	if err := ValidateImportPaths(config); err != nil {
 		return fmt.Errorf("import path validation failed: %w", err)

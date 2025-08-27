@@ -30,12 +30,12 @@ func NewEmbeddingIntelligence() *EmbeddingIntelligence {
 // GetModelInfo returns information about a specific embedding model
 func (ei *EmbeddingIntelligence) GetModelInfo(provider, model string) (*EmbeddingModelInfo, error) {
 	provider = strings.ToLower(provider)
-	
+
 	if providerModels, exists := ei.knownModels[provider]; exists {
 		if modelInfo, exists := providerModels[model]; exists {
 			return &modelInfo, nil
 		}
-		
+
 		// Try partial matching for common variations
 		for knownModel, info := range providerModels {
 			if strings.Contains(model, knownModel) || strings.Contains(knownModel, model) {
@@ -43,7 +43,7 @@ func (ei *EmbeddingIntelligence) GetModelInfo(provider, model string) (*Embeddin
 			}
 		}
 	}
-	
+
 	return nil, fmt.Errorf("unknown embedding model: %s/%s", provider, model)
 }
 
@@ -51,7 +51,7 @@ func (ei *EmbeddingIntelligence) GetModelInfo(provider, model string) (*Embeddin
 func (ei *EmbeddingIntelligence) GetRecommendedModels(provider string) []EmbeddingModelInfo {
 	provider = strings.ToLower(provider)
 	var recommended []EmbeddingModelInfo
-	
+
 	if providerModels, exists := ei.knownModels[provider]; exists {
 		for _, info := range providerModels {
 			if info.Recommended {
@@ -59,7 +59,7 @@ func (ei *EmbeddingIntelligence) GetRecommendedModels(provider string) []Embeddi
 			}
 		}
 	}
-	
+
 	return recommended
 }
 
@@ -69,17 +69,17 @@ func (ei *EmbeddingIntelligence) ValidateCompatibility(provider, model, memoryPr
 	if err != nil {
 		return fmt.Errorf("validation failed: %w", err)
 	}
-	
+
 	// Check for known incompatibilities
 	if memoryProvider == "weaviate" && provider == "dummy" {
 		return fmt.Errorf("dummy embeddings are not recommended with Weaviate - consider using 'openai' or 'ollama' for better search results")
 	}
-	
+
 	// Validate dimensions are reasonable
 	if modelInfo.Dimensions <= 0 || modelInfo.Dimensions > 4096 {
 		return fmt.Errorf("embedding model %s has unusual dimensions (%d) - please verify this is correct", model, modelInfo.Dimensions)
 	}
-	
+
 	return nil
 }
 
@@ -98,7 +98,7 @@ func (ei *EmbeddingIntelligence) SuggestModel(provider string, requirements stri
 	if len(recommended) == 0 {
 		return nil, fmt.Errorf("no recommended models found for provider: %s", provider)
 	}
-	
+
 	// For now, return the first recommended model
 	// In the future, this could be more sophisticated based on requirements
 	return &recommended[0], nil
@@ -107,7 +107,7 @@ func (ei *EmbeddingIntelligence) SuggestModel(provider string, requirements stri
 // GetProviderDefaults returns default configuration for a provider
 func (ei *EmbeddingIntelligence) GetProviderDefaults(provider string) map[string]interface{} {
 	defaults := make(map[string]interface{})
-	
+
 	switch strings.ToLower(provider) {
 	case "ollama":
 		defaults["base_url"] = "http://localhost:11434"
@@ -121,7 +121,7 @@ func (ei *EmbeddingIntelligence) GetProviderDefaults(provider string) map[string
 		defaults["cache_embeddings"] = false
 		defaults["timeout_seconds"] = 5
 	}
-	
+
 	return defaults
 }
 
@@ -202,6 +202,67 @@ var EmbeddingIntel = NewEmbeddingIntelligence()
 
 // Helper functions for backward compatibility and ease of use
 
+// GetDefaultEmbeddingModel returns the recommended default embedding model for a provider
+func GetDefaultEmbeddingModel(provider string) string {
+	switch strings.ToLower(provider) {
+	case "openai":
+		return "text-embedding-3-small" // Modern, cost-effective OpenAI model
+	case "ollama":
+		return "nomic-embed-text:latest" // Excellent general-purpose Ollama model
+	case "dummy":
+		return "dummy"
+	default:
+		return "text-embedding-3-small" // Default to OpenAI for unknown providers
+	}
+}
+
+// ApplyIntelligentDefaults ensures a ProjectConfig has intelligent embedding defaults
+func ApplyIntelligentDefaults(config *ProjectConfig) {
+	// If embedding provider is set but model is empty, apply intelligent default
+	if config.EmbeddingProvider != "" && config.EmbeddingModel == "" {
+		config.EmbeddingModel = GetDefaultEmbeddingModel(config.EmbeddingProvider)
+	}
+
+	// If memory is enabled but embedding provider is not set, set intelligent defaults
+	if config.MemoryEnabled && config.EmbeddingProvider == "" {
+		switch config.MemoryProvider {
+		case "pgvector", "weaviate":
+			// For persistent storage, default to OpenAI for reliability
+			config.EmbeddingProvider = "openai"
+			config.EmbeddingModel = "text-embedding-3-small"
+		case "memory":
+			// For in-memory storage, dummy is fine for testing
+			config.EmbeddingProvider = "dummy"
+			config.EmbeddingModel = "dummy"
+		default:
+			// Default case
+			config.EmbeddingProvider = "openai"
+			config.EmbeddingModel = "text-embedding-3-small"
+		}
+	}
+
+	// Set embedding dimensions based on the final model choice
+	if config.EmbeddingDimensions == 0 {
+		config.EmbeddingDimensions = GetModelDimensions(config.EmbeddingProvider, config.EmbeddingModel)
+	}
+
+	// Set RAG defaults if RAG is enabled
+	if config.RAGEnabled {
+		if config.RAGChunkSize == 0 {
+			config.RAGChunkSize = 1000
+		}
+		if config.RAGOverlap == 0 {
+			config.RAGOverlap = 100
+		}
+		if config.RAGTopK == 0 {
+			config.RAGTopK = 5
+		}
+		if config.RAGScoreThreshold == 0 {
+			config.RAGScoreThreshold = 0.7
+		}
+	}
+}
+
 // GetModelDimensions is a convenience function to get dimensions for a model
 func GetModelDimensions(provider, model string) int {
 	dimensions, err := EmbeddingIntel.GetDimensionsForModel(provider, model)
@@ -231,18 +292,18 @@ func GetModelDimensions(provider, model string) int {
 // ValidateEmbeddingConfig validates an embedding configuration
 func ValidateEmbeddingConfig(provider, model, memoryProvider string) []string {
 	var warnings []string
-	
+
 	// Check if model is known
 	_, err := EmbeddingIntel.GetModelInfo(provider, model)
 	if err != nil {
 		warnings = append(warnings, fmt.Sprintf("Unknown embedding model: %s/%s - using default dimensions", provider, model))
 	}
-	
+
 	// Check compatibility
 	if err := EmbeddingIntel.ValidateCompatibility(provider, model, memoryProvider); err != nil {
 		warnings = append(warnings, fmt.Sprintf("Compatibility issue: %v", err))
 	}
-	
+
 	// Provider-specific warnings
 	switch strings.ToLower(provider) {
 	case "ollama":
@@ -253,7 +314,7 @@ func ValidateEmbeddingConfig(provider, model, memoryProvider string) []string {
 	case "dummy":
 		warnings = append(warnings, "Dummy embeddings are for testing only - not suitable for production")
 	}
-	
+
 	return warnings
 }
 
@@ -261,11 +322,11 @@ func ValidateEmbeddingConfig(provider, model, memoryProvider string) []string {
 func GetEmbeddingModelSuggestions(provider string) []string {
 	recommended := EmbeddingIntel.GetRecommendedModels(provider)
 	var suggestions []string
-	
+
 	for _, model := range recommended {
 		suggestion := fmt.Sprintf("%s (%d dimensions) - %s", model.Model, model.Dimensions, model.Notes)
 		suggestions = append(suggestions, suggestion)
 	}
-	
+
 	return suggestions
 }
