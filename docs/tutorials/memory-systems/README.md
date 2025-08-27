@@ -1,69 +1,103 @@
+---
+title: Memory Systems Overview
+description: Comprehensive guide to AgenticGoKit's memory systems, including personal memory, chat history, knowledge bases, and RAG implementations.
+---
+
 # Memory Systems in AgenticGoKit
 
-> **Navigation:** [Documentation Home](../../README.md) → [Tutorials](../README.md) → **Memory Systems**
+::: tip Navigation
+[Documentation Home](../../README.md) → [Tutorials](../README.md) → **Memory Systems**
+:::
 
 ## Overview
 
-Memory systems are crucial for building intelligent agents that can learn, remember, and build upon previous interactions. This tutorial series explores AgenticGoKit's memory capabilities, from basic in-memory storage to advanced RAG (Retrieval-Augmented Generation) systems with vector databases.
+Memory systems are fundamental to building intelligent agents that can learn, remember, and build upon previous interactions. AgenticGoKit provides a comprehensive memory architecture that supports everything from simple in-memory storage to advanced RAG (Retrieval-Augmented Generation) systems with vector databases.
 
-Memory systems enable agents to maintain context across conversations, store knowledge, and retrieve relevant information to enhance their responses.
+The memory system enables agents to maintain conversational context, store and retrieve knowledge, implement learning patterns, and provide contextually relevant responses through sophisticated retrieval mechanisms.
 
 ## Prerequisites
 
 - Understanding of [Core Concepts](../core-concepts/README.md)
-- Basic knowledge of databases and data storage
+- Basic knowledge of Go programming and interfaces
 - Familiarity with vector embeddings and similarity search
+- Understanding of database concepts and storage systems
 
 ## Memory System Architecture
 
-AgenticGoKit's memory system is built on a flexible architecture that supports multiple storage backends and retrieval strategies:
+AgenticGoKit's memory system is built on a unified Memory interface that supports multiple storage backends, embedding providers, and retrieval strategies:
 
+```mermaid
+graph TB
+    A[Agent] --> B[Memory Interface]
+    B --> C[Storage Backend]
+    B --> D[Embedding Service]
+    B --> E[RAG Engine]
+    
+    C --> F[In-Memory]
+    C --> G[pgvector]
+    C --> H[Weaviate]
+    
+    D --> I[OpenAI]
+    D --> J[Ollama]
+    D --> K[Dummy]
+    
+    E --> L[Document Ingestion]
+    E --> M[Knowledge Search]
+    E --> N[Context Assembly]
+    
+    subgraph "Memory Operations"
+        O[Personal Memory]
+        P[Chat History]
+        Q[Knowledge Base]
+        R[Hybrid Search]
+    end
+    
+    B --> O
+    B --> P
+    B --> Q
+    B --> R
 ```
-┌─────────────┐    ┌──────────────┐    ┌─────────────────┐
-│   Agent     │───▶│    Memory    │───▶│ Storage Backend │
-│             │    │   Interface  │    │                 │
-└─────────────┘    └──────────────┘    └─────────────────┘
-                           │
-                           ▼
-                   ┌──────────────┐
-                   │   Embedding  │
-                   │   Provider   │
-                   └──────────────┘
-```
 
-## Memory Types
+## Memory Capabilities
 
-### 1. Conversational Memory
-Stores chat history and conversation context:
-- Message history
-- User preferences
-- Session context
-- Conversation metadata
+### 1. Personal Memory Operations
+Store and retrieve personal information and preferences:
+- Key-value storage with `Remember` and `Recall`
+- Content storage with tags using `Store` and `Query`
+- Flexible metadata and tagging system
+- Session-based organization
 
-### 2. Knowledge Memory
-Stores factual information and documents:
-- Document chunks
-- Factual knowledge
-- Reference materials
-- Structured data
+### 2. Conversational Memory
+Manage chat history and conversation context:
+- Message storage with `AddMessage`
+- History retrieval with `GetHistory`
+- Session management with `NewSession` and `SetSession`
+- Conversation context preservation
 
-### 3. Episodic Memory
-Stores experiences and events:
-- Past interactions
-- Learning experiences
-- Feedback and corrections
-- Temporal sequences
+### 3. Knowledge Base Operations
+Advanced document storage and retrieval:
+- Document ingestion with `IngestDocument` and `IngestDocuments`
+- Semantic search with `SearchKnowledge`
+- Metadata-rich document management
+- Chunking and processing pipeline
 
-### 4. Working Memory
-Temporary storage during processing:
-- Intermediate results
-- Processing context
-- Temporary variables
-- Computation state
+### 4. RAG (Retrieval-Augmented Generation)
+Sophisticated context assembly for LLM enhancement:
+- Hybrid search with `SearchAll`
+- Context building with `BuildContext`
+- Source attribution and citation
+- Token-aware context management
+
+### 5. Hybrid Search Capabilities
+Combine multiple memory types for comprehensive retrieval:
+- Personal memory + knowledge base search
+- Configurable weighting and scoring
+- Multi-modal content support
+- Advanced filtering and ranking
 
 ## Memory Interface
 
-The core memory interface provides a unified API for all memory operations including RAG:
+The unified Memory interface provides a comprehensive API for all memory operations, from basic storage to advanced RAG implementations:
 
 ```go
 type Memory interface {
@@ -96,10 +130,58 @@ type Memory interface {
 }
 ```
 
+### Key Result Types
+
+```go
+// Basic memory result
+type Result struct {
+    Content   string    `json:"content"`
+    Score     float32   `json:"score"`
+    Tags      []string  `json:"tags,omitempty"`
+    CreatedAt time.Time `json:"created_at"`
+}
+
+// Knowledge base result with rich metadata
+type KnowledgeResult struct {
+    Content    string         `json:"content"`
+    Score      float32        `json:"score"`
+    Source     string         `json:"source"`
+    Title      string         `json:"title,omitempty"`
+    DocumentID string         `json:"document_id"`
+    Metadata   map[string]any `json:"metadata,omitempty"`
+    Tags       []string       `json:"tags,omitempty"`
+    CreatedAt  time.Time      `json:"created_at"`
+    ChunkIndex int            `json:"chunk_index,omitempty"`
+}
+
+// Hybrid search combining personal memory and knowledge
+type HybridResult struct {
+    PersonalMemory []Result          `json:"personal_memory"`
+    Knowledge      []KnowledgeResult `json:"knowledge"`
+    Query          string            `json:"query"`
+    TotalResults   int               `json:"total_results"`
+    SearchTime     time.Duration     `json:"search_time"`
+}
+
+// RAG context ready for LLM consumption
+type RAGContext struct {
+    Query          string            `json:"query"`
+    PersonalMemory []Result          `json:"personal_memory"`
+    Knowledge      []KnowledgeResult `json:"knowledge"`
+    ChatHistory    []Message         `json:"chat_history"`
+    ContextText    string            `json:"context_text"` // Formatted for LLM
+    Sources        []string          `json:"sources"`      // Source attribution
+    TokenCount     int               `json:"token_count"`  // Estimated tokens
+    Timestamp      time.Time         `json:"timestamp"`
+}
+```
+
 ## Memory Providers
 
+AgenticGoKit supports multiple memory providers, each optimized for different use cases and deployment scenarios.
+
 ### 1. In-Memory Provider
-Fast, non-persistent storage for development and testing:
+Fast, non-persistent storage ideal for development and testing:
 
 ```go
 // Create in-memory storage
@@ -110,49 +192,74 @@ memory, err := core.NewMemory(core.AgentMemoryConfig{
     Dimensions: 1536,
     AutoEmbed:  true,
 })
+if err != nil {
+    log.Fatalf("Failed to create memory: %v", err)
+}
 ```
 
-**Use Cases:**
-- Development and testing
-- Temporary storage
+**Characteristics:**
+- Zero setup required
 - High-speed access
+- No persistence (data lost on restart)
+- Perfect for development and testing
+
+**Use Cases:**
+- Development and prototyping
+- Unit testing
+- Temporary storage needs
 - Stateless applications
 
 ### 2. PostgreSQL with pgvector
-Production-ready vector storage with SQL capabilities:
+Production-ready vector storage with full SQL capabilities:
 
 ```go
-// Create pgvector storage
+// Create pgvector storage with full RAG support
 memory, err := core.NewMemory(core.AgentMemoryConfig{
     Provider:                "pgvector",
     Connection:              "postgres://user:pass@localhost:5432/agentdb",
     EnableRAG:               true,
     EnableKnowledgeBase:     true,
-    Dimensions:              1536, // OpenAI embedding dimensions
+    Dimensions:              1536,
     KnowledgeMaxResults:     20,
     KnowledgeScoreThreshold: 0.7,
+    ChunkSize:               1000,
+    ChunkOverlap:            200,
+    
     Embedding: core.EmbeddingConfig{
         Provider:        "openai",
         Model:           "text-embedding-3-small",
         APIKey:          os.Getenv("OPENAI_API_KEY"),
+        CacheEmbeddings: true,
         MaxBatchSize:    100,
         TimeoutSeconds:  30,
-        CacheEmbeddings: true,
+    },
+    
+    Documents: core.DocumentConfig{
+        AutoChunk:                true,
+        SupportedTypes:           []string{"pdf", "txt", "md", "web", "code"},
+        MaxFileSize:              "10MB",
+        EnableMetadataExtraction: true,
     },
 })
 ```
 
+**Characteristics:**
+- ACID compliance and transactions
+- SQL query capabilities
+- Excellent performance with proper indexing
+- Mature ecosystem and tooling
+
 **Use Cases:**
 - Production applications
-- Complex queries
-- ACID compliance
-- Structured and unstructured data
+- Complex relational queries
+- High-availability requirements
+- Enterprise deployments
 
 ### 3. Weaviate Vector Database
-Specialized vector database with advanced features:
+Specialized vector database with advanced ML capabilities:
 
 ```go
-// Create Weaviate storage
+// Create Weaviate storage with advanced features
 memory, err := core.NewMemory(core.AgentMemoryConfig{
     Provider:                "weaviate",
     Connection:              "http://localhost:8080",
@@ -161,479 +268,1077 @@ memory, err := core.NewMemory(core.AgentMemoryConfig{
     Dimensions:              1536,
     KnowledgeMaxResults:     20,
     KnowledgeScoreThreshold: 0.7,
+    
     Embedding: core.EmbeddingConfig{
         Provider:        "openai",
         Model:           "text-embedding-3-small",
         APIKey:          os.Getenv("OPENAI_API_KEY"),
+        CacheEmbeddings: true,
         MaxBatchSize:    100,
         TimeoutSeconds:  30,
-        CacheEmbeddings: true,
+    },
+    
+    Search: core.SearchConfigToml{
+        HybridSearch:    true,
+        KeywordWeight:   0.3,
+        SemanticWeight:  0.7,
+        EnableReranking: true,
     },
 })
 ```
 
+**Characteristics:**
+- Native vector operations
+- Built-in ML capabilities
+- GraphQL API
+- Multi-modal support
+
 **Use Cases:**
 - Large-scale vector search
-- Multi-modal data
-- Advanced filtering
-- Real-time updates
+- Multi-modal data (text, images, audio)
+- Advanced filtering and faceting
+- Real-time vector operations
 
-## Basic Memory Operations
+### Provider Comparison
 
-### 1. Storing Information
+| Feature | In-Memory | pgvector | Weaviate |
+|---------|-----------|----------|----------|
+| **Persistence** | No | Yes | Yes |
+| **Setup Complexity** | None | Medium | Medium |
+| **Performance** | Highest | High | High |
+| **Scalability** | Limited | High | Very High |
+| **SQL Support** | No | Yes | No |
+| **Multi-modal** | No | Limited | Yes |
+| **Production Ready** | No | Yes | Yes |
+| **Cost** | Free | Low | Medium |
 
-```go
-// Store simple text
-err := memory.Store(ctx, "Paris is the capital of France", "fact")
+## Quick Start Example
 
-// Store with metadata
-err = memory.Store(ctx, 
-    "The user prefers technical explanations", 
-    "preference",
-    core.WithSession("user-123"),
-    core.WithMetadata(map[string]string{
-        "category": "user-preference",
-        "priority": "high",
-    }),
-)
-
-// Store conversation message
-err = memory.Store(ctx,
-    "How do I implement a binary search?",
-    "user-message",
-    core.WithSession("user-123"),
-    core.WithTimestamp(time.Now()),
-)
-```
-
-### 2. Searching Memory
+Here's a complete example showing the key memory operations:
 
 ```go
-// Basic search
-results, err := memory.Search(ctx, "capital of France")
+package main
 
-// Search with options
-results, err = memory.Search(ctx, 
-    "user preferences",
-    core.WithLimit(5),
-    core.WithScoreThreshold(0.7),
-    core.WithSession("user-123"),
-    core.WithContentType("preference"),
+import (
+    "context"
+    "fmt"
+    "log"
+    "os"
+    "time"
+    
+    "github.com/kunalkushwaha/agenticgokit/core"
 )
 
-// Process results
-for _, result := range results {
-    fmt.Printf("Content: %s (Score: %.3f)\n", result.Content, result.Score)
-}
-```
-
-### 3. Conversation History
-
-```go
-// Get recent conversation history
-messages, err := memory.GetHistory(ctx, 10, 
-    core.WithSession("user-123"),
-    core.WithTimeRange(time.Now().Add(-24*time.Hour), time.Now()),
-)
-
-// Process conversation history
-for _, msg := range messages {
-    fmt.Printf("[%s] %s: %s\n", 
-        msg.Timestamp.Format("15:04"), 
-        msg.Role, 
-        msg.Content)
+func main() {
+    // Create memory instance
+    memory, err := core.NewMemory(core.AgentMemoryConfig{
+        Provider:   "memory", // Use "pgvector" or "weaviate" for production
+        Connection: "memory",
+        MaxResults: 10,
+        Dimensions: 1536,
+        EnableRAG:  true,
+        
+        Embedding: core.EmbeddingConfig{
+            Provider: "dummy", // Use "openai" for production
+            Model:    "text-embedding-3-small",
+        },
+    })
+    if err != nil {
+        log.Fatalf("Failed to create memory: %v", err)
+    }
+    defer memory.Close()
+    
+    ctx := context.Background()
+    
+    // 1. Personal Memory Operations
+    err = memory.Remember(ctx, "user_name", "Alice")
+    err = memory.Store(ctx, "User prefers detailed explanations", "preference")
+    
+    name, _ := memory.Recall(ctx, "user_name")
+    fmt.Printf("User name: %v\n", name)
+    
+    results, _ := memory.Query(ctx, "detailed explanations", 5)
+    fmt.Printf("Found %d preferences\n", len(results))
+    
+    // 2. Chat History Management
+    sessionID := memory.NewSession()
+    ctx = memory.SetSession(ctx, sessionID)
+    
+    memory.AddMessage(ctx, "user", "What is AgenticGoKit?")
+    memory.AddMessage(ctx, "assistant", "AgenticGoKit is a Go framework for building multi-agent systems...")
+    
+    history, _ := memory.GetHistory(ctx, 10)
+    fmt.Printf("Chat history: %d messages\n", len(history))
+    
+    // 3. Knowledge Base Operations
+    doc := core.Document{
+        ID:      "doc-1",
+        Title:   "AgenticGoKit Overview",
+        Content: "AgenticGoKit provides memory systems, orchestration, and LLM integration...",
+        Source:  "documentation",
+        Type:    core.DocumentTypeMarkdown,
+        Tags:    []string{"framework", "go", "agents"},
+    }
+    
+    err = memory.IngestDocument(ctx, doc)
+    if err != nil {
+        log.Printf("Failed to ingest document: %v", err)
+    }
+    
+    // 4. RAG Operations
+    knowledge, err := memory.SearchKnowledge(ctx, "AgenticGoKit framework",
+        core.WithLimit(3),
+        core.WithScoreThreshold(0.7),
+    )
+    if err == nil {
+        fmt.Printf("Found %d knowledge results\n", len(knowledge))
+    }
+    
+    // 5. Hybrid Search
+    hybridResult, err := memory.SearchAll(ctx, "framework capabilities",
+        core.WithLimit(5),
+        core.WithIncludePersonal(true),
+        core.WithIncludeKnowledge(true),
+    )
+    if err == nil {
+        fmt.Printf("Hybrid search: %d personal + %d knowledge results\n", 
+            len(hybridResult.PersonalMemory), len(hybridResult.Knowledge))
+    }
+    
+    // 6. RAG Context Assembly
+    ragContext, err := memory.BuildContext(ctx, "How do I use memory systems?",
+        core.WithMaxTokens(2000),
+        core.WithPersonalWeight(0.3),
+        core.WithKnowledgeWeight(0.7),
+        core.WithHistoryLimit(5),
+        core.WithIncludeSources(true),
+    )
+    if err == nil {
+        fmt.Printf("RAG context: %d tokens, %d sources\n", 
+            ragContext.TokenCount, len(ragContext.Sources))
+        fmt.Printf("Context text: %s\n", ragContext.ContextText[:100] + "...")
+    }
 }
 ```
 
 ## RAG (Retrieval-Augmented Generation)
 
-RAG enhances agent responses by retrieving relevant information from memory:
+AgenticGoKit provides built-in RAG capabilities through the Memory interface, making it easy to build knowledge-enhanced agents:
 
-### 1. Basic RAG Implementation
+### RAG Architecture Flow
+
+```mermaid
+sequenceDiagram
+    participant A as Agent
+    participant M as Memory
+    participant K as Knowledge Base
+    participant E as Embedding Service
+    participant L as LLM
+    
+    A->>M: SearchKnowledge(query)
+    M->>E: Generate embedding
+    M->>K: Vector search
+    K-->>M: Relevant documents
+    M-->>A: KnowledgeResult[]
+    
+    A->>M: BuildContext(query, options)
+    M->>M: Assemble context
+    M-->>A: RAGContext
+    
+    A->>L: Generate(context + query)
+    L-->>A: Enhanced response
+```
+
+### Simple RAG Agent Implementation
 
 ```go
 type RAGAgent struct {
     name   string
-    llm    LLMProvider
-    memory Memory
+    memory core.Memory
+    llm    core.LLMProvider
 }
 
-func (r *RAGAgent) Run(ctx context.Context, event Event, state State) (AgentResult, error) {
+func (r *RAGAgent) Run(ctx context.Context, event core.Event, state core.State) (core.AgentResult, error) {
     query, _ := state.Get("message")
     queryStr := query.(string)
     
-    // Retrieve relevant context
-    results, err := r.memory.Search(ctx, queryStr,
-        core.WithLimit(3),
-        core.WithScoreThreshold(0.7),
+    // Use built-in RAG context assembly
+    ragContext, err := r.memory.BuildContext(ctx, queryStr,
+        core.WithMaxTokens(3000),
+        core.WithPersonalWeight(0.2),
+        core.WithKnowledgeWeight(0.8),
+        core.WithHistoryLimit(5),
+        core.WithIncludeSources(true),
     )
     if err != nil {
-        return AgentResult{}, err
+        return core.AgentResult{}, fmt.Errorf("failed to build context: %w", err)
     }
     
-    // Build context from retrieved results
-    var context strings.Builder
-    for _, result := range results {
-        context.WriteString(fmt.Sprintf("- %s\n", result.Content))
-    }
-    
-    // Create enhanced prompt
-    prompt := fmt.Sprintf(`Context:
-%s
-
-Question: %s
-
-Please answer the question using the provided context.`, 
-        context.String(), queryStr)
-    
-    // Generate response with context
-    response, err := r.llm.Generate(ctx, prompt)
+    // Generate response with assembled context
+    response, err := r.llm.Generate(ctx, ragContext.ContextText)
     if err != nil {
-        return AgentResult{}, err
+        return core.AgentResult{}, fmt.Errorf("failed to generate response: %w", err)
     }
     
     // Store the interaction
-    r.memory.Store(ctx, queryStr, "user-message")
-    r.memory.Store(ctx, response, "assistant-response")
+    sessionID := event.GetSessionID()
+    ctx = r.memory.SetSession(ctx, sessionID)
+    r.memory.AddMessage(ctx, "user", queryStr)
+    r.memory.AddMessage(ctx, "assistant", response)
     
+    // Return result with metadata
     outputState := state.Clone()
     outputState.Set("response", response)
-    outputState.Set("context_used", len(results))
+    outputState.Set("sources", ragContext.Sources)
+    outputState.Set("token_count", ragContext.TokenCount)
+    outputState.Set("knowledge_used", len(ragContext.Knowledge))
     
-    return AgentResult{OutputState: outputState}, nil
+    return core.AgentResult{OutputState: outputState}, nil
 }
 ```
 
-### 2. Advanced RAG with Reranking
+### Advanced RAG with Custom Search
 
 ```go
 type AdvancedRAGAgent struct {
-    name     string
-    llm      LLMProvider
-    memory   Memory
-    reranker Reranker
+    name   string
+    memory core.Memory
+    llm    core.LLMProvider
 }
 
-func (r *AdvancedRAGAgent) Run(ctx context.Context, event Event, state State) (AgentResult, error) {
+func (a *AdvancedRAGAgent) Run(ctx context.Context, event core.Event, state core.State) (core.AgentResult, error) {
     query, _ := state.Get("message")
     queryStr := query.(string)
+    sessionID := event.GetSessionID()
+    ctx = a.memory.SetSession(ctx, sessionID)
     
-    // Initial retrieval with higher limit
-    results, err := r.memory.Search(ctx, queryStr,
+    // Perform hybrid search for comprehensive results
+    hybridResult, err := a.memory.SearchAll(ctx, queryStr,
         core.WithLimit(10),
-        core.WithScoreThreshold(0.5),
+        core.WithScoreThreshold(0.7),
+        core.WithIncludePersonal(true),
+        core.WithIncludeKnowledge(true),
     )
     if err != nil {
-        return AgentResult{}, err
+        return core.AgentResult{}, fmt.Errorf("hybrid search failed: %w", err)
     }
     
-    // Rerank results for better relevance
-    rerankedResults, err := r.reranker.Rerank(ctx, queryStr, results)
-    if err != nil {
-        return AgentResult{}, err
-    }
-    
-    // Take top results after reranking
-    topResults := rerankedResults[:min(3, len(rerankedResults))]
-    
-    // Build enhanced context
-    context := r.buildContext(topResults)
+    // Build custom context with both personal and knowledge results
+    context := a.buildCustomContext(queryStr, hybridResult)
     
     // Generate response
-    response, err := r.generateWithContext(ctx, queryStr, context)
+    response, err := a.llm.Generate(ctx, context)
     if err != nil {
-        return AgentResult{}, err
+        return core.AgentResult{}, fmt.Errorf("generation failed: %w", err)
     }
     
-    // Store interaction with metadata
-    r.storeInteraction(ctx, queryStr, response, topResults)
+    // Store interaction
+    a.memory.AddMessage(ctx, "user", queryStr)
+    a.memory.AddMessage(ctx, "assistant", response)
     
     outputState := state.Clone()
     outputState.Set("response", response)
-    outputState.Set("sources", r.extractSources(topResults))
+    outputState.Set("personal_results", len(hybridResult.PersonalMemory))
+    outputState.Set("knowledge_results", len(hybridResult.Knowledge))
+    outputState.Set("search_time", hybridResult.SearchTime.String())
     
-    return AgentResult{OutputState: outputState}, nil
+    return core.AgentResult{OutputState: outputState}, nil
+}
+
+func (a *AdvancedRAGAgent) buildCustomContext(query string, result *core.HybridResult) string {
+    var builder strings.Builder
+    
+    builder.WriteString("Based on the following information:\n\n")
+    
+    // Add personal memory context
+    if len(result.PersonalMemory) > 0 {
+        builder.WriteString("Personal Context:\n")
+        for i, item := range result.PersonalMemory {
+            builder.WriteString(fmt.Sprintf("%d. %s\n", i+1, item.Content))
+        }
+        builder.WriteString("\n")
+    }
+    
+    // Add knowledge base context
+    if len(result.Knowledge) > 0 {
+        builder.WriteString("Knowledge Base:\n")
+        for i, item := range result.Knowledge {
+            builder.WriteString(fmt.Sprintf("%d. %s", i+1, item.Content))
+            if item.Source != "" {
+                builder.WriteString(fmt.Sprintf(" (Source: %s)", item.Source))
+            }
+            builder.WriteString("\n")
+        }
+        builder.WriteString("\n")
+    }
+    
+    builder.WriteString(fmt.Sprintf("Question: %s\n\n", query))
+    builder.WriteString("Please provide a comprehensive answer based on the context above.")
+    
+    return builder.String()
 }
 ```
 
 ## Memory Configuration
 
-### 1. Embedding Configuration
+AgenticGoKit provides comprehensive configuration options for memory systems, embedding services, and RAG capabilities.
 
-```go
-type EmbeddingConfig struct {
-    Provider   string            `yaml:"provider"`   // "openai", "huggingface", "local"
-    Model      string            `yaml:"model"`      // Model name
-    APIKey     string            `yaml:"api_key"`    // API key if needed
-    Dimensions int               `yaml:"dimensions"` // Embedding dimensions
-    BatchSize  int               `yaml:"batch_size"` // Batch size for processing
-    Options    map[string]string `yaml:"options"`    // Provider-specific options
-}
-
-// OpenAI embeddings
-embeddingConfig := core.EmbeddingConfig{
-    Provider:   "openai",
-    Model:      "text-embedding-3-small",
-    APIKey:     os.Getenv("OPENAI_API_KEY"),
-    Dimensions: 1536,
-    BatchSize:  100,
-}
-
-// Hugging Face embeddings
-embeddingConfig := core.EmbeddingConfig{
-    Provider:   "huggingface",
-    Model:      "sentence-transformers/all-MiniLM-L6-v2",
-    Dimensions: 384,
-    BatchSize:  32,
-}
-```
-
-### 2. Memory Configuration
+### Complete Configuration Structure
 
 ```go
 type AgentMemoryConfig struct {
     // Core memory settings
     Provider   string `toml:"provider"`    // pgvector, weaviate, memory
-    Connection string `toml:"connection"`  // postgres://..., http://..., or "memory"
-    MaxResults int    `toml:"max_results"` // default: 10
-    Dimensions int    `toml:"dimensions"`  // default: 1536
-    AutoEmbed  bool   `toml:"auto_embed"`  // default: true
+    Connection string `toml:"connection"`  // Connection string
+    MaxResults int    `toml:"max_results"` // Default: 10
+    Dimensions int    `toml:"dimensions"`  // Default: 1536
+    AutoEmbed  bool   `toml:"auto_embed"`  // Default: true
 
     // RAG-enhanced settings
-    EnableKnowledgeBase     bool    `toml:"enable_knowledge_base"`     // default: true
-    KnowledgeMaxResults     int     `toml:"knowledge_max_results"`     // default: 20
-    KnowledgeScoreThreshold float32 `toml:"knowledge_score_threshold"` // default: 0.7
-    ChunkSize               int     `toml:"chunk_size"`                // default: 1000
-    ChunkOverlap            int     `toml:"chunk_overlap"`             // default: 200
+    EnableKnowledgeBase     bool    `toml:"enable_knowledge_base"`     // Default: true
+    KnowledgeMaxResults     int     `toml:"knowledge_max_results"`     // Default: 20
+    KnowledgeScoreThreshold float32 `toml:"knowledge_score_threshold"` // Default: 0.7
+    ChunkSize               int     `toml:"chunk_size"`                // Default: 1000
+    ChunkOverlap            int     `toml:"chunk_overlap"`             // Default: 200
 
     // RAG context assembly settings
-    EnableRAG           bool    `toml:"enable_rag"`             // default: true
-    RAGMaxContextTokens int     `toml:"rag_max_context_tokens"` // default: 4000
-    RAGPersonalWeight   float32 `toml:"rag_personal_weight"`    // default: 0.3
-    RAGKnowledgeWeight  float32 `toml:"rag_knowledge_weight"`   // default: 0.7
-    RAGIncludeSources   bool    `toml:"rag_include_sources"`    // default: true
+    EnableRAG           bool    `toml:"enable_rag"`             // Default: true
+    RAGMaxContextTokens int     `toml:"rag_max_context_tokens"` // Default: 4000
+    RAGPersonalWeight   float32 `toml:"rag_personal_weight"`    // Default: 0.3
+    RAGKnowledgeWeight  float32 `toml:"rag_knowledge_weight"`   // Default: 0.7
+    RAGIncludeSources   bool    `toml:"rag_include_sources"`    // Default: true
 
-    // Document processing settings
-    Documents DocumentConfig `toml:"documents"`
+    // Nested configurations
+    Documents core.DocumentConfig     `toml:"documents"`
+    Embedding core.EmbeddingConfig    `toml:"embedding"`
+    Search    core.SearchConfigToml   `toml:"search"`
+}
+```
 
-    // Embedding service settings
-    Embedding EmbeddingConfig `toml:"embedding"`
+### Embedding Provider Configuration
 
-    // Search settings
-    Search SearchConfigToml `toml:"search"`
+```go
+// OpenAI Embeddings (Production)
+embeddingConfig := core.EmbeddingConfig{
+    Provider:        "openai",
+    Model:           "text-embedding-3-small", // or "text-embedding-3-large"
+    APIKey:          os.Getenv("OPENAI_API_KEY"),
+    CacheEmbeddings: true,
+    MaxBatchSize:    100,
+    TimeoutSeconds:  30,
 }
 
-// Complete memory configuration
+// Ollama Embeddings (Local)
+embeddingConfig := core.EmbeddingConfig{
+    Provider:        "ollama",
+    Model:           "mxbai-embed-large",
+    BaseURL:         "http://localhost:11434",
+    CacheEmbeddings: true,
+    MaxBatchSize:    32,
+    TimeoutSeconds:  60,
+}
+
+// Dummy Embeddings (Development/Testing)
+embeddingConfig := core.EmbeddingConfig{
+    Provider: "dummy",
+    Model:    "dummy-model",
+}
+```
+
+### Document Processing Configuration
+
+```go
+documentConfig := core.DocumentConfig{
+    AutoChunk:                true,
+    SupportedTypes:           []string{"pdf", "txt", "md", "web", "code", "json"},
+    MaxFileSize:              "10MB",
+    EnableMetadataExtraction: true,
+    EnableURLScraping:        true,
+}
+```
+
+### Search Configuration
+
+```go
+searchConfig := core.SearchConfigToml{
+    HybridSearch:         true,
+    KeywordWeight:        0.3,
+    SemanticWeight:       0.7,
+    EnableReranking:      false,
+    RerankingModel:       "",
+    EnableQueryExpansion: false,
+}
+```
+
+### Production Configuration Example
+
+```go
+// Production-ready configuration with pgvector
 config := core.AgentMemoryConfig{
-    Provider:                "pgvector",
-    Connection:              "postgres://user:pass@localhost:5432/agentdb",
+    // Core settings
+    Provider:   "pgvector",
+    Connection: "postgres://agent_user:secure_pass@localhost:5432/agentdb?sslmode=require",
+    MaxResults: 10,
+    Dimensions: 1536,
+    AutoEmbed:  true,
+
+    // RAG settings
     EnableRAG:               true,
     EnableKnowledgeBase:     true,
+    KnowledgeMaxResults:     20,
+    KnowledgeScoreThreshold: 0.75,
     ChunkSize:               1000,
     ChunkOverlap:            200,
-    Dimensions:              1536,
-    KnowledgeMaxResults:     20,
-    KnowledgeScoreThreshold: 0.7,
     RAGMaxContextTokens:     4000,
     RAGPersonalWeight:       0.3,
     RAGKnowledgeWeight:      0.7,
     RAGIncludeSources:       true,
+
+    // Embedding configuration
     Embedding: core.EmbeddingConfig{
         Provider:        "openai",
         Model:           "text-embedding-3-small",
         APIKey:          os.Getenv("OPENAI_API_KEY"),
+        CacheEmbeddings: true,
         MaxBatchSize:    100,
         TimeoutSeconds:  30,
-        CacheEmbeddings: true,
     },
+
+    // Document processing
     Documents: core.DocumentConfig{
         AutoChunk:                true,
         SupportedTypes:           []string{"pdf", "txt", "md", "web", "code"},
-        MaxFileSize:              "10MB",
+        MaxFileSize:              "50MB",
         EnableMetadataExtraction: true,
         EnableURLScraping:        true,
     },
+
+    // Search optimization
     Search: core.SearchConfigToml{
         HybridSearch:         true,
         KeywordWeight:        0.3,
         SemanticWeight:       0.7,
-        EnableReranking:      false,
+        EnableReranking:      true,
+        RerankingModel:       "cross-encoder/ms-marco-MiniLM-L-6-v2",
         EnableQueryExpansion: false,
     },
 }
+
+memory, err := core.NewMemory(config)
+if err != nil {
+    log.Fatalf("Failed to create memory: %v", err)
+}
 ```
 
-## Memory Integration with Agents
-
-### 1. Agent Builder Integration
+### Development Configuration Example
 
 ```go
-// Create agent with memory
-agent, err := core.NewAgent("knowledge-agent").
-    WithLLMAndConfig(llmProvider, llmConfig).
-    WithMemory(memory).
-    WithMCPAndConfig(mcpManager, mcpConfig).
-    Build()
+// Simple development configuration
+config := core.AgentMemoryConfig{
+    Provider:   "memory",
+    Connection: "memory",
+    MaxResults: 10,
+    Dimensions: 1536,
+    EnableRAG:  true,
+    
+    Embedding: core.EmbeddingConfig{
+        Provider: "dummy",
+        Model:    "dummy-model",
+    },
+    
+    Documents: core.DocumentConfig{
+        AutoChunk:      true,
+        SupportedTypes: []string{"txt", "md"},
+        MaxFileSize:    "1MB",
+    },
+}
+
+memory, err := core.NewMemory(config)
 ```
 
-### 2. Custom Memory Integration
+## Memory Integration Patterns
+
+### 1. Memory-Enabled Agent Implementation
 
 ```go
 type MemoryEnabledAgent struct {
     name   string
-    llm    LLMProvider
-    memory Memory
-    config MemoryConfig
+    memory core.Memory
+    llm    core.LLMProvider
 }
 
-func (m *MemoryEnabledAgent) Run(ctx context.Context, event Event, state State) (AgentResult, error) {
-    // Extract user message
+func NewMemoryEnabledAgent(name string, memory core.Memory, llm core.LLMProvider) *MemoryEnabledAgent {
+    return &MemoryEnabledAgent{
+        name:   name,
+        memory: memory,
+        llm:    llm,
+    }
+}
+
+func (m *MemoryEnabledAgent) Run(ctx context.Context, event core.Event, state core.State) (core.AgentResult, error) {
     message, _ := state.Get("message")
     messageStr := message.(string)
+    sessionID := event.GetSessionID()
     
-    // Get conversation history for context
-    history, err := m.memory.GetHistory(ctx, 5,
-        core.WithSession(event.GetSessionID()),
+    // Set session context
+    ctx = m.memory.SetSession(ctx, sessionID)
+    
+    // Use built-in RAG context assembly
+    ragContext, err := m.memory.BuildContext(ctx, messageStr,
+        core.WithMaxTokens(3000),
+        core.WithPersonalWeight(0.3),
+        core.WithKnowledgeWeight(0.7),
+        core.WithHistoryLimit(5),
+        core.WithIncludeSources(true),
     )
     if err != nil {
-        return AgentResult{}, err
+        return core.AgentResult{}, fmt.Errorf("failed to build context: %w", err)
     }
     
-    // Search for relevant knowledge
-    knowledge, err := m.memory.Search(ctx, messageStr,
-        core.WithLimit(3),
-        core.WithScoreThreshold(0.7),
-        core.WithContentType("knowledge"),
-    )
+    // Generate response with context
+    response, err := m.llm.Generate(ctx, ragContext.ContextText)
     if err != nil {
-        return AgentResult{}, err
-    }
-    
-    // Build enhanced prompt with history and knowledge
-    prompt := m.buildEnhancedPrompt(messageStr, history, knowledge)
-    
-    // Generate response
-    response, err := m.llm.Generate(ctx, prompt)
-    if err != nil {
-        return AgentResult{}, err
+        return core.AgentResult{}, fmt.Errorf("failed to generate response: %w", err)
     }
     
     // Store the interaction
-    m.storeInteraction(ctx, event.GetSessionID(), messageStr, response)
+    m.memory.AddMessage(ctx, "user", messageStr)
+    m.memory.AddMessage(ctx, "assistant", response)
+    
+    // Return enhanced result
+    outputState := state.Clone()
+    outputState.Set("response", response)
+    outputState.Set("sources", ragContext.Sources)
+    outputState.Set("context_tokens", ragContext.TokenCount)
+    outputState.Set("knowledge_count", len(ragContext.Knowledge))
+    outputState.Set("personal_count", len(ragContext.PersonalMemory))
+    
+    return core.AgentResult{OutputState: outputState}, nil
+}
+```
+
+### 2. Learning Agent with Memory
+
+```go
+type LearningAgent struct {
+    name   string
+    memory core.Memory
+    llm    core.LLMProvider
+}
+
+func (l *LearningAgent) Run(ctx context.Context, event core.Event, state core.State) (core.AgentResult, error) {
+    message, _ := state.Get("message")
+    messageStr := message.(string)
+    sessionID := event.GetSessionID()
+    ctx = l.memory.SetSession(ctx, sessionID)
+    
+    // Check for user feedback on previous responses
+    if feedback, ok := state.Get("feedback"); ok {
+        l.processFeedback(ctx, feedback.(string))
+    }
+    
+    // Get personalized context based on user history
+    personalResults, err := l.memory.Query(ctx, messageStr, 3)
+    if err != nil {
+        log.Printf("Failed to query personal memory: %v", err)
+    }
+    
+    // Search knowledge base
+    knowledgeResults, err := l.memory.SearchKnowledge(ctx, messageStr,
+        core.WithLimit(5),
+        core.WithScoreThreshold(0.7),
+    )
+    if err != nil {
+        log.Printf("Failed to search knowledge: %v", err)
+    }
+    
+    // Build personalized prompt
+    prompt := l.buildPersonalizedPrompt(messageStr, personalResults, knowledgeResults)
+    
+    // Generate response
+    response, err := l.llm.Generate(ctx, prompt)
+    if err != nil {
+        return core.AgentResult{}, err
+    }
+    
+    // Store interaction with learning metadata
+    l.memory.Store(ctx, messageStr, "user-query", "learning")
+    l.memory.Store(ctx, response, "agent-response", "learning")
+    l.memory.AddMessage(ctx, "user", messageStr)
+    l.memory.AddMessage(ctx, "assistant", response)
     
     outputState := state.Clone()
     outputState.Set("response", response)
-    outputState.Set("knowledge_used", len(knowledge))
-    outputState.Set("history_length", len(history))
+    outputState.Set("learning_active", true)
     
-    return AgentResult{OutputState: outputState}, nil
+    return core.AgentResult{OutputState: outputState}, nil
+}
+
+func (l *LearningAgent) processFeedback(ctx context.Context, feedback string) {
+    // Store feedback for learning
+    l.memory.Store(ctx, feedback, "user-feedback", "learning")
+    
+    // Analyze feedback and adjust preferences
+    if strings.Contains(strings.ToLower(feedback), "too technical") {
+        l.memory.Remember(ctx, "communication_style", "simple")
+    } else if strings.Contains(strings.ToLower(feedback), "more detail") {
+        l.memory.Remember(ctx, "communication_style", "detailed")
+    }
+}
+
+func (l *LearningAgent) buildPersonalizedPrompt(query string, personal []core.Result, knowledge []core.KnowledgeResult) string {
+    var builder strings.Builder
+    
+    builder.WriteString("You are a helpful assistant that learns from user interactions.\n\n")
+    
+    // Add personal context
+    if len(personal) > 0 {
+        builder.WriteString("User Context:\n")
+        for _, item := range personal {
+            builder.WriteString(fmt.Sprintf("- %s\n", item.Content))
+        }
+        builder.WriteString("\n")
+    }
+    
+    // Add knowledge context
+    if len(knowledge) > 0 {
+        builder.WriteString("Relevant Knowledge:\n")
+        for _, item := range knowledge {
+            builder.WriteString(fmt.Sprintf("- %s\n", item.Content))
+        }
+        builder.WriteString("\n")
+    }
+    
+    builder.WriteString(fmt.Sprintf("User Question: %s\n\n", query))
+    builder.WriteString("Please provide a helpful response based on the context above.")
+    
+    return builder.String()
+}
+```
+
+### 3. Multi-Agent Memory Sharing
+
+```go
+type SharedMemorySystem struct {
+    sharedMemory core.Memory
+    agents       map[string]*MemoryAgent
+}
+
+type MemoryAgent struct {
+    name         string
+    personalMem  core.Memory
+    sharedMem    core.Memory
+    llm          core.LLMProvider
+}
+
+func NewSharedMemorySystem(sharedMemory core.Memory) *SharedMemorySystem {
+    return &SharedMemorySystem{
+        sharedMemory: sharedMemory,
+        agents:       make(map[string]*MemoryAgent),
+    }
+}
+
+func (s *SharedMemorySystem) AddAgent(name string, personalMemory core.Memory, llm core.LLMProvider) {
+    agent := &MemoryAgent{
+        name:        name,
+        personalMem: personalMemory,
+        sharedMem:   s.sharedMemory,
+        llm:         llm,
+    }
+    s.agents[name] = agent
+}
+
+func (m *MemoryAgent) Run(ctx context.Context, event core.Event, state core.State) (core.AgentResult, error) {
+    message, _ := state.Get("message")
+    messageStr := message.(string)
+    
+    // Search personal memory first
+    personalResults, err := m.personalMem.Query(ctx, messageStr, 3)
+    if err != nil {
+        log.Printf("Personal memory search failed: %v", err)
+    }
+    
+    // Search shared knowledge base
+    sharedResults, err := m.sharedMem.SearchKnowledge(ctx, messageStr,
+        core.WithLimit(5),
+        core.WithScoreThreshold(0.7),
+    )
+    if err != nil {
+        log.Printf("Shared memory search failed: %v", err)
+    }
+    
+    // Build context from both sources
+    context := m.buildHybridContext(messageStr, personalResults, sharedResults)
+    
+    // Generate response
+    response, err := m.llm.Generate(ctx, context)
+    if err != nil {
+        return core.AgentResult{}, err
+    }
+    
+    // Store in personal memory
+    sessionID := event.GetSessionID()
+    ctx = m.personalMem.SetSession(ctx, sessionID)
+    m.personalMem.AddMessage(ctx, "user", messageStr)
+    m.personalMem.AddMessage(ctx, "assistant", response)
+    
+    // Share valuable insights to shared memory
+    if m.isValuableInsight(response) {
+        doc := core.Document{
+            ID:      fmt.Sprintf("%s-%d", m.name, time.Now().Unix()),
+            Content: response,
+            Source:  m.name,
+            Type:    core.DocumentTypeText,
+            Metadata: map[string]any{
+                "agent":     m.name,
+                "query":     messageStr,
+                "timestamp": time.Now(),
+            },
+            Tags: []string{"agent-insight", m.name},
+        }
+        m.sharedMem.IngestDocument(ctx, doc)
+    }
+    
+    outputState := state.Clone()
+    outputState.Set("response", response)
+    outputState.Set("personal_results", len(personalResults))
+    outputState.Set("shared_results", len(sharedResults))
+    
+    return core.AgentResult{OutputState: outputState}, nil
+}
+
+func (m *MemoryAgent) buildHybridContext(query string, personal []core.Result, shared []core.KnowledgeResult) string {
+    var builder strings.Builder
+    
+    builder.WriteString(fmt.Sprintf("Agent: %s\n\n", m.name))
+    
+    if len(personal) > 0 {
+        builder.WriteString("Personal Context:\n")
+        for _, item := range personal {
+            builder.WriteString(fmt.Sprintf("- %s\n", item.Content))
+        }
+        builder.WriteString("\n")
+    }
+    
+    if len(shared) > 0 {
+        builder.WriteString("Shared Knowledge:\n")
+        for _, item := range shared {
+            builder.WriteString(fmt.Sprintf("- %s (from %s)\n", item.Content, item.Source))
+        }
+        builder.WriteString("\n")
+    }
+    
+    builder.WriteString(fmt.Sprintf("Query: %s\n\n", query))
+    builder.WriteString("Provide a helpful response based on the available context.")
+    
+    return builder.String()
+}
+
+func (m *MemoryAgent) isValuableInsight(response string) bool {
+    // Simple heuristic - in practice, use more sophisticated analysis
+    return len(response) > 100 && 
+           (strings.Contains(response, "solution") || 
+            strings.Contains(response, "approach") ||
+            strings.Contains(response, "pattern"))
 }
 ```
 
 ## Tutorial Series Structure
 
-This memory systems tutorial series covers:
+This comprehensive tutorial series guides you through AgenticGoKit's memory systems from basic concepts to advanced production deployments:
 
-### 1. [Basic Memory](basic-memory.md)
-- In-memory storage
-- Simple operations
-- Session management
-- Basic retrieval
+### 1. [Basic Memory Operations](basic-memory.md)
+Learn the fundamentals of the Memory interface and core operations:
+- Memory interface methods (Store, Query, Remember, Recall)
+- Session management and chat history
+- In-memory provider setup and usage
+- Basic memory-enabled agent patterns
 
 ### 2. [Vector Databases](vector-databases.md)
-- pgvector setup and usage
-- Weaviate integration
-- Embedding strategies
-- Performance optimization
+Set up production-ready vector storage with pgvector and Weaviate:
+- pgvector configuration and optimization
+- Weaviate setup and advanced features
+- Embedding service integration (OpenAI, Ollama)
+- Performance tuning and scaling strategies
 
 ### 3. [Document Ingestion](document-ingestion.md)
-- Document processing pipeline
-- Text chunking strategies
-- Metadata extraction
-- Batch processing optimization
+Master document processing and knowledge base creation:
+- Document structure and processing pipeline
+- Chunking strategies and metadata extraction
+- Batch ingestion and processing optimization
+- Multi-format document support
 
 ### 4. [RAG Implementation](rag-implementation.md)
-- Retrieval-Augmented Generation
-- Context building
-- Prompt engineering
-- Response enhancement
+Build sophisticated retrieval-augmented generation systems:
+- SearchKnowledge and BuildContext methods
+- Hybrid search with SearchAll
+- Advanced RAG patterns and optimization
+- Context assembly and prompt engineering
 
 ### 5. [Knowledge Bases](knowledge-bases.md)
-- Knowledge base architecture
-- Advanced search patterns
-- Multi-modal content
-- Production deployment
+Create and manage comprehensive knowledge systems:
+- Knowledge base architecture and design
+- Advanced search patterns and filtering
+- Multi-modal content management
+- Production deployment strategies
 
 ### 6. [Memory Optimization](memory-optimization.md)
-- Performance tuning
-- Scaling strategies
-- Caching mechanisms
-- Resource management
+Optimize performance and scale memory systems:
+- Configuration optimization and tuning
+- Caching strategies and resource management
+- Monitoring and observability patterns
+- Scaling and production considerations
 
 ## Best Practices
 
-### 1. Memory Design Principles
+### 1. Memory System Design
 
-- **Separate concerns**: Use different memory types for different purposes
-- **Optimize for retrieval**: Design storage for efficient search
-- **Manage lifecycle**: Clean up old or irrelevant memories
-- **Monitor performance**: Track memory usage and search performance
+**Separation of Concerns**
+- Use personal memory for user-specific data
+- Use knowledge base for shared, factual information
+- Implement proper session management
+- Design clear data lifecycle policies
 
-### 2. RAG Best Practices
+**Performance Optimization**
+- Choose appropriate embedding dimensions
+- Configure proper chunk sizes and overlap
+- Implement caching for frequent queries
+- Monitor memory usage and search performance
 
-- **Chunk appropriately**: Balance context size and relevance
-- **Use metadata**: Enhance retrieval with structured metadata
-- **Implement reranking**: Improve relevance with secondary ranking
-- **Handle failures**: Gracefully degrade when memory is unavailable
+**Data Quality**
+- Validate document quality before ingestion
+- Use consistent metadata schemas
+- Implement proper error handling
+- Regular cleanup of outdated information
 
-### 3. Production Considerations
+### 2. RAG Implementation Best Practices
 
-- **Scale horizontally**: Use distributed storage for large datasets
-- **Implement caching**: Cache frequent queries and embeddings
-- **Monitor costs**: Track embedding API usage and storage costs
-- **Backup data**: Ensure memory data is backed up and recoverable
+**Context Management**
+- Balance context size with relevance
+- Use appropriate token limits
+- Implement source attribution
+- Handle context overflow gracefully
+
+**Search Optimization**
+- Use hybrid search for better results
+- Implement proper score thresholds
+- Consider query enhancement techniques
+- Use metadata filtering effectively
+
+**Response Quality**
+- Validate retrieved context relevance
+- Implement fallback strategies
+- Monitor response quality metrics
+- Collect user feedback for improvement
+
+### 3. Production Deployment
+
+**Scalability**
+- Use production-ready providers (pgvector, Weaviate)
+- Implement horizontal scaling strategies
+- Monitor resource usage and costs
+- Plan for data growth and retention
+
+**Reliability**
+- Implement proper error handling and retries
+- Use connection pooling and timeouts
+- Monitor system health and performance
+- Implement backup and recovery procedures
+
+**Security**
+- Secure database connections
+- Implement proper access controls
+- Protect API keys and credentials
+- Consider data privacy and compliance requirements
 
 ## Common Use Cases
 
-### 1. Conversational AI
-- Chat history maintenance
-- User preference learning
-- Context-aware responses
-- Personalization
+### 1. Conversational AI Systems
+Build intelligent chatbots and virtual assistants:
+- **Chat History**: Maintain conversation context across sessions
+- **User Preferences**: Learn and remember user communication styles
+- **Personalization**: Adapt responses based on user history
+- **Context Awareness**: Provide relevant responses using conversation context
 
-### 2. Knowledge Management
-- Document Q&A systems
-- Technical support bots
-- Research assistants
-- Information retrieval
+```go
+// Example: Conversational AI with memory
+memory, _ := core.NewMemory(core.AgentMemoryConfig{
+    Provider: "pgvector",
+    Connection: "postgres://...",
+    EnableRAG: true,
+})
 
-### 3. Learning Systems
-- Adaptive agents
-- Feedback incorporation
-- Experience replay
-- Continuous improvement
+// Store user preferences
+memory.Remember(ctx, "communication_style", "technical")
+memory.Store(ctx, "User prefers code examples", "preference")
 
-### 4. Multi-Agent Coordination
-- Shared knowledge bases
-- Inter-agent communication
-- Collaborative learning
-- Distributed memory
+// Use in conversation
+ragContext, _ := memory.BuildContext(ctx, userQuery,
+    core.WithPersonalWeight(0.4), // Higher weight for personalization
+    core.WithKnowledgeWeight(0.6),
+)
+```
 
-## Conclusion
+### 2. Knowledge Management Systems
+Create intelligent document Q&A and research assistants:
+- **Document Ingestion**: Process and index large document collections
+- **Semantic Search**: Find relevant information across documents
+- **Source Attribution**: Track and cite information sources
+- **Multi-format Support**: Handle PDFs, markdown, web content, and code
 
-Memory systems are fundamental to building intelligent agents that can learn, remember, and improve over time. AgenticGoKit provides flexible memory abstractions that support various storage backends and retrieval strategies.
+```go
+// Example: Document Q&A system
+docs := []core.Document{
+    {
+        Title: "API Documentation",
+        Content: "AgenticGoKit provides...",
+        Source: "docs/api.md",
+        Type: core.DocumentTypeMarkdown,
+    },
+}
 
-The key to effective memory systems is choosing the right combination of storage backend, embedding strategy, and retrieval approach for your specific use case.
+memory.IngestDocuments(ctx, docs)
+
+// Search with source filtering
+results, _ := memory.SearchKnowledge(ctx, "How to create agents?",
+    core.WithSources([]string{"docs/"}),
+    core.WithLimit(5),
+)
+```
+
+### 3. Learning and Adaptive Systems
+Build agents that improve through experience:
+- **Feedback Processing**: Learn from user corrections and feedback
+- **Pattern Recognition**: Identify successful interaction patterns
+- **Continuous Improvement**: Adapt behavior based on outcomes
+- **Experience Replay**: Use past experiences to improve future responses
+
+```go
+// Example: Learning agent
+type LearningAgent struct {
+    memory core.Memory
+    llm    core.LLMProvider
+}
+
+func (a *LearningAgent) processFeedback(ctx context.Context, feedback string) {
+    // Store feedback for learning
+    a.memory.Store(ctx, feedback, "feedback", "learning")
+    
+    // Adjust behavior based on feedback
+    if strings.Contains(feedback, "too verbose") {
+        a.memory.Remember(ctx, "response_style", "concise")
+    }
+}
+```
+
+### 4. Multi-Agent Collaboration
+Enable agents to share knowledge and coordinate:
+- **Shared Knowledge**: Common knowledge base across agents
+- **Inter-agent Communication**: Share insights and learnings
+- **Collaborative Learning**: Agents learn from each other's experiences
+- **Distributed Memory**: Scale memory across multiple agents
+
+```go
+// Example: Multi-agent knowledge sharing
+sharedMemory, _ := core.NewMemory(core.AgentMemoryConfig{
+    Provider: "weaviate",
+    Connection: "http://weaviate:8080",
+})
+
+// Agents share valuable insights
+if isValuableInsight(response) {
+    doc := core.Document{
+        Content: response,
+        Source: agentName,
+        Metadata: map[string]any{
+            "agent": agentName,
+            "confidence": 0.9,
+        },
+    }
+    sharedMemory.IngestDocument(ctx, doc)
+}
+```
+
+## Getting Started
+
+### Quick Setup for Development
+
+```go
+// 1. Create a simple memory system
+memory, err := core.NewMemory(core.AgentMemoryConfig{
+    Provider: "memory",
+    Connection: "memory",
+    EnableRAG: true,
+    Embedding: core.EmbeddingConfig{
+        Provider: "dummy",
+    },
+})
+
+// 2. Add some knowledge
+doc := core.Document{
+    Content: "AgenticGoKit is a Go framework for multi-agent systems",
+    Type: core.DocumentTypeText,
+}
+memory.IngestDocument(ctx, doc)
+
+// 3. Use RAG in your agent
+ragContext, _ := memory.BuildContext(ctx, "What is AgenticGoKit?")
+response, _ := llm.Generate(ctx, ragContext.ContextText)
+```
+
+### Production Setup
+
+```go
+// Production configuration with pgvector
+memory, err := core.NewMemory(core.AgentMemoryConfig{
+    Provider: "pgvector",
+    Connection: "postgres://user:pass@localhost:5432/agentdb",
+    EnableRAG: true,
+    Dimensions: 1536,
+    
+    Embedding: core.EmbeddingConfig{
+        Provider: "openai",
+        Model: "text-embedding-3-small",
+        APIKey: os.Getenv("OPENAI_API_KEY"),
+    },
+    
+    Documents: core.DocumentConfig{
+        AutoChunk: true,
+        SupportedTypes: []string{"pdf", "txt", "md", "web"},
+        MaxFileSize: "10MB",
+    },
+})
+```
 
 ## Next Steps
 
-- [Basic Memory](basic-memory.md) - Start with simple memory operations
-- [Vector Databases](vector-databases.md) - Learn about production storage
-- [RAG Implementation](rag-implementation.md) - Build retrieval-augmented systems
-- [Knowledge Bases](knowledge-bases.md) - Create comprehensive knowledge systems
+Ready to dive deeper? Follow our progressive tutorial series:
 
-## Further Reading
+### 🚀 **Start Here**: [Basic Memory Operations](basic-memory.md)
+Learn the Memory interface fundamentals and core operations
 
-- [API Reference: Memory Interface](../../reference/api/agent.md#memory)
-- [Examples: Memory Systems](../../examples/)
-- [Configuration Guide: Memory Settings](../../reference/api/configuration.md)
+### 🗄️ **Production Storage**: [Vector Databases](vector-databases.md)
+Set up pgvector or Weaviate for production deployments
+
+### 📄 **Knowledge Processing**: [Document Ingestion](document-ingestion.md)
+Master document processing and knowledge base creation
+
+### 🧠 **Advanced AI**: [RAG Implementation](rag-implementation.md)
+Build sophisticated retrieval-augmented generation systems
+
+### 🏗️ **Enterprise Scale**: [Knowledge Bases](knowledge-bases.md)
+Create and manage large-scale knowledge systems
+
+### ⚡ **Performance**: [Memory Optimization](memory-optimization.md)
+Optimize and scale your memory systems
+
+## Additional Resources
+
+- **[Core Concepts](../core-concepts/README.md)** - Understanding AgenticGoKit fundamentals
+- **[API Reference](../../reference/api/)** - Complete API documentation
+- **[Examples Repository](../../examples/)** - Working code examples
+- **[Configuration Guide](../../reference/configuration.md)** - Detailed configuration options
+
+---
+
+*Memory systems are the foundation of intelligent agents. Start with the basics and progressively build more sophisticated systems as your needs grow.*
