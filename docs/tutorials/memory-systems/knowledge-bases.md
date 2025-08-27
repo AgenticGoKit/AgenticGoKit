@@ -45,6 +45,23 @@ Knowledge bases transform raw information into accessible, searchable knowledge 
 
 > Note: While the documentation references multiple document types (PDF, Markdown, HTML), native PDF processing is coming soon. The current CLI/document processors natively support text and Markdown; PDF processor integration will be added in a future release.
 
+### Current PDF reader — limitations and recommended fallbacks
+
+The repository includes a minimal PDF extraction implementation intended as an MVP to enable basic PDF ingestion. Please be aware of these limitations when including PDFs in your knowledge base today:
+
+- No OCR support: The current reader extracts only embedded text. Scanned documents (image-only pages) will not yield usable text unless OCR is applied prior to ingestion.
+- Layout fidelity: Multi-column documents, tables, and complex layouts may produce reordered or jumbled text when converted to plain text. This affects retrieval quality for content heavily reliant on structure.
+- Basic metadata only: The MVP provides page counts and simple file stats; it does not extract detailed embedded metadata or images/figures.
+- Encrypted PDFs: Password-protected PDFs are not currently supported and will fail with an error.
+
+Recommended approaches if you rely on PDFs:
+
+- Preprocess scanned PDFs with an OCR step (e.g., Tesseract) and ingest the resulting text files.
+- Use `pdftotext` (Poppler) for more robust text extraction when available on your platform.
+- For production-quality extraction (tables, images, layout), consider using a commercial parser such as UniDoc or an external preprocessing pipeline that extracts and normalizes content into plain text or per-page files before ingestion.
+
+We plan to enhance the PDF processor with optional OCR, page-aware chunking, and image extraction in future releases; these changes will be documented in the migration notes when ready.
+
 ## Advanced Search Patterns
 
 ### 1. Comprehensive Search with All Options

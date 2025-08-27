@@ -18,7 +18,23 @@ Effective document ingestion enables agents to access and reason over large coll
 - Knowledge of document formats (PDF, Markdown, HTML, etc.)
 - Basic understanding of text processing and NLP concepts
 
-> Note: PDF processing is planned and coming soon. The current CLI and document processors provide first-class support for text and Markdown files; PDF and other formats require additional processor integration.
+> Current PDF reader (MVP) — limitations and notes
+>
+> The project includes a minimal PDF processor intended as an MVP to enable basic PDF-to-text extraction for ingestion. Please note the following limitations and recommendations when working with PDF documents today:
+>
+> - No OCR: The built-in PDF reader extracts embedded text only. Scanned PDFs (image-only pages) will not be OCR'd and will return little or no text. If you need scanned PDF support, enable an OCR fallback (for example, Tesseract via `gosseract`) or pre-convert PDFs to text.
+> - Layout and ordering: Complex layouts (multi-column text, tables, sidebars) may produce poorly ordered plain text. Expect imperfect sentence order for academic papers or magazines with multi-column formatting.
+> - Metadata depth: The MVP extracts basic metadata (file size, modified time, page count). Rich metadata such as embedded title/author or structured attachments/images may not be available.
+> - Performance and large files: Very large PDFs (hundreds of pages) are read into memory for extraction in the MVP. For production workloads, use streaming/external tooling or per-page processing to reduce memory usage.
+> - Encrypted PDFs: Password-protected PDFs are not currently handled; they will fail with a readable error explaining the encryption.
+>
+> Recommended fallbacks and best practices:
+>
+> - For scanned/image PDFs use an OCR step (Tesseract) before ingestion or enable an OCR fallback in the processor.
+> - For high-fidelity extraction (layout/tables/figures) prefer an external tool like `pdftotext` (Poppler) or a commercial parser (UniDoc) and feed the cleaned text into ingestion.
+> - For very large collections, pre-process PDFs into plain text files split by page or section and ingest those files to avoid memory spikes.
+>
+> The documentation and CLI will be updated as we expand the PDF processor (page-aware chunking, OCR fallback, image extraction). If you rely heavily on PDF ingestion today, consider adding a small preprocessing step in your pipeline that runs `pdftotext` or OCR before using `agentcli knowledge upload`.
 
 ## Document Ingestion Pipeline
 
