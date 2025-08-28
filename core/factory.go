@@ -90,10 +90,10 @@ func (r *CallbackRegistry) Register(hook HookPoint, name string, cb CallbackFunc
 	}
 
 	r.callbacks[hook] = append(r.callbacks[hook], registration)
-	Logger().Debug().
-		Str("callback", name).
-		Str("hook", string(hook)).
-		Msg("Callback registered")
+	// Only log callback registration in debug mode
+	if GetLogLevel() == DEBUG {
+		Logger().Debug().Str("callback", name).Str("hook", string(hook)).Msg("Callback registered")
+	}
 	return nil
 }
 
@@ -106,10 +106,9 @@ func (r *CallbackRegistry) Unregister(hook HookPoint, name string) {
 	for i, reg := range hooks {
 		if reg.ID == name {
 			r.callbacks[hook] = append(hooks[:i], hooks[i+1:]...)
-			Logger().Debug().
-				Str("callback", name).
-				Str("hook", string(hook)).
-				Msg("Callback unregistered")
+			if GetLogLevel() == DEBUG {
+				Logger().Debug().Str("callback", name).Str("hook", string(hook)).Msg("Callback unregistered")
+			}
 			return
 		}
 	}
@@ -152,9 +151,10 @@ func (r *CallbackRegistry) Invoke(ctx context.Context, args CallbackArgs) (State
 		currentArgs := args
 		currentArgs.State = currentState
 
-		Logger().Debug().
-			Str("hook", string(args.Hook)).
-			Msg("Executing callback")
+		// Reduce per-callback execution logging
+		if GetLogLevel() == DEBUG {
+			Logger().Debug().Str("hook", string(args.Hook)).Msg("Executing callback")
+		}
 
 		returnedState, err := callback(ctx, currentArgs)
 		if err != nil {
@@ -166,20 +166,21 @@ func (r *CallbackRegistry) Invoke(ctx context.Context, args CallbackArgs) (State
 		}
 
 		if returnedState != nil {
-			Logger().Debug().
-				Str("hook", string(args.Hook)).
-				Msg("Callback returned updated state")
+			if GetLogLevel() == DEBUG {
+				Logger().Debug().Str("hook", string(args.Hook)).Msg("Callback updated state")
+			}
 			currentState = returnedState
 		} else {
-			Logger().Debug().
-				Str("hook", string(args.Hook)).
-				Msg("Callback returned nil state, state remains unchanged")
+			if GetLogLevel() == DEBUG {
+				Logger().Debug().Str("hook", string(args.Hook)).Msg("Callback state unchanged")
+			}
 		}
 	}
 
-	Logger().Debug().
-		Str("hook", string(args.Hook)).
-		Msg("Finished invoking callbacks, returning final state")
+	// Only log callback completion in debug mode
+	if GetLogLevel() == DEBUG {
+		Logger().Debug().Str("hook", string(args.Hook)).Msg("Callbacks complete")
+	}
 	return currentState, lastErr
 }
 

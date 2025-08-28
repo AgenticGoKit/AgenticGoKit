@@ -131,7 +131,7 @@ func main() {
 	
 	// TODO: Add LLM provider validation or health checks here
 	// Example: Test the connection with a simple query
-	logger.Debug().Str("provider", config.LLM.Provider).Msg("LLM provider initialized successfully")
+	// LLM provider initialized - debug logging reduced for cleaner output
 
 	{{if .Config.MCPEnabled}}
 	// Initialize MCP (Model Context Protocol) manager for tool integration
@@ -139,7 +139,7 @@ func main() {
 	// databases, APIs, and other integrations defined in your agentflow.toml
 	// TODO: Customize MCP initialization for your specific tool requirements
 	// You might want to add custom tool validation, authentication, or configuration
-	logger.Debug().Msg("Initializing MCP with timeout handling...")
+	// MCP initialization - debug logging reduced for cleaner output
 	mcpInitCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 
@@ -167,7 +167,7 @@ func main() {
 	}
 
 	if mcpManager != nil {
-		logger.Debug().Msg("MCP manager initialized successfully - agents can access tools via core.GetMCPManager()")
+		// MCP manager initialized successfully - debug logging reduced
 
 		// Initialize MCP tool registry with timeout
 		registryCtx, registryCancel := context.WithTimeout(ctx, 10*time.Second)
@@ -183,7 +183,7 @@ func main() {
 			if err != nil {
 				logger.Warn().Err(err).Msg("Failed to initialize MCP tool registry")
 			} else {
-				logger.Debug().Msg("MCP tool registry initialized successfully")
+				// MCP tool registry initialized successfully - debug logging reduced
 			}
 		case <-registryCtx.Done():
 			logger.Warn().Msg("MCP tool registry initialization timed out")
@@ -203,7 +203,7 @@ func main() {
 			if err != nil {
 				logger.Warn().Err(err).Msg("Failed to register MCP tools with registry")
 			} else {
-				logger.Debug().Msg("MCP tools registered with registry successfully")
+				// MCP tools registered with registry successfully - debug logging reduced
 			}
 		case <-toolsCtx.Done():
 			logger.Warn().Msg("MCP tools registration timed out")
@@ -215,7 +215,7 @@ func main() {
 	if err := initializeCache(); err != nil {
 		logger.Warn().Err(err).Msg("MCP cache initialization failed; continuing without cache")
 	} else {
-		logger.Debug().Msg("MCP cache manager initialized successfully")
+		// MCP cache manager initialized successfully - debug logging reduced
 	}
 	{{end}}
 	{{end}}
@@ -234,14 +234,13 @@ func main() {
 	memoryConfig := config.AgentMemory
 	
 	// Validate configuration before initializing memory
-	logger.Debug().Msg("Validating memory configuration...")
 	if err := validateMemoryConfig(memoryConfig, "{{.Config.EmbeddingModel}}"); err != nil {
 		logger.Error().Err(err).Msg("Memory configuration validation failed")
 	fmt.Printf("Configuration Error: %v\n", err)
 		os.Exit(1)
 	}
 	
-	logger.Debug().Msg("Memory configuration validation passed")
+	// Memory configuration validation passed - debug logging reduced
 	
 	memory, err := core.NewMemory(memoryConfig)
 	if err != nil {
@@ -298,7 +297,7 @@ func main() {
 	// instead of hardcoded agent constructors, providing much more flexibility
 	// TODO: Customize agent factory initialization if needed
 	// You might want to add custom agent types or initialization logic
-	logger.Debug().Msg("Initializing configuration-driven agent factory...")
+	// Configuration-driven agent factory initialization - debug logging reduced
 	
 	factory := core.NewConfigurableAgentFactory(config)
 	if factory == nil {
@@ -321,7 +320,7 @@ func main() {
 	// Get all active agents from the manager
 	// This automatically excludes disabled agents and handles configuration-based filtering
 	activeAgents := agentManager.GetActiveAgents()
-	logger.Debug().Int("active_agents", len(activeAgents)).Msg("Active agents loaded from configuration")
+	// Active agents loaded from configuration - debug logging reduced
 
 	// Create agent handlers map for the workflow orchestrator
 	// We wrap each agent with result collection for output tracking
@@ -348,7 +347,7 @@ func main() {
 		}
 
 		agentHandlers[agentName] = wrappedAgent
-		logger.Debug().Str("agent", agentName).Msg("Agent registered with result collection")
+		// Agent registered with result collection - debug logging reduced
 	}
 
 	// Validate that we have at least one active agent
@@ -390,7 +389,7 @@ func main() {
 		agentHandlers["llm-error-handler"] = firstAgent
 		agentHandlers["auth-error-handler"] = firstAgent
 		
-		logger.Debug().Msg("Error handlers registered using first active agent as fallback")
+		// Error handlers registered using first active agent as fallback - debug logging reduced
 	}
 
 	// Create the workflow orchestrator (runner) from configuration
@@ -435,7 +434,7 @@ func main() {
 	// Attach the orchestrator to the runner (type assert to concrete implementation)
 	if runnerImpl, ok := runner.(*core.RunnerImpl); ok {
 		runnerImpl.SetOrchestrator(orchestrator)
-		logger.Debug().Str("mode", config.Orchestration.Mode).Msg("Orchestrator configured successfully")
+		// Orchestrator configured successfully - debug logging reduced
 	} else {
 		logger.Error().Msg("Failed to cast runner to RunnerImpl for orchestrator setup")
 		fmt.Printf("ERROR: Failed to configure orchestrator - runner type assertion failed\n")
@@ -468,10 +467,10 @@ func main() {
 			fmt.Printf("ERROR: Error registering agent %s: %v\n", name, err)
 			os.Exit(1)
 		}
-		logger.Debug().Str("agent", name).Msg("Agent registered successfully")
+		// Agent registered successfully - debug logging reduced
 	}
 	
-	logger.Debug().Int("agent_count", len(agentHandlers)).Msg("All agents registered with orchestrator")
+	// All agents registered with orchestrator - debug logging reduced
 
 
 
@@ -486,7 +485,7 @@ func main() {
 	var message string
 	if *messageFlag != "" {
 		message = *messageFlag
-		logger.Debug().Msg("Using message from command line flag")
+		// Using message from command line flag - debug logging reduced
 	} else {
 		// Interactive mode: prompt user for input
 		// TODO: Enhance interactive input with better UX
@@ -499,7 +498,7 @@ func main() {
 	// TODO: Customize the default message for your use case
 	if message == "" {
 		message = "Hello! Please provide information about current topics."
-		logger.Debug().Msg("Using default message")
+		// Using default message - debug logging reduced
 	}
 
 	// TODO: Add input validation and preprocessing here

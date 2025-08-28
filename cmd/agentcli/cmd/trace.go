@@ -252,7 +252,7 @@ func displayTrace(sessionID, filter string) {
 		printVerboseTable(filteredEntries)
 	}
 
-	// Add debug output in displayTrace if needed
+	// Show sample JSON structure only when explicitly requested with debug flag
 	if debugFlag && len(jsonEntries) > 0 {
 		fmt.Println("\nSample entry JSON structure:")
 		sampleBytes, _ := json.MarshalIndent(jsonEntries[0], "", "  ")
@@ -261,10 +261,15 @@ func displayTrace(sessionID, filter string) {
 
 	// Add this after converting JSONTraceEntry to TraceEntry in displayTrace
 
-	// Debug state extraction
-	if debugFlag {
-		fmt.Println("\nState Data Debug:")
-		for i, je := range jsonEntries[:3] { // Just the first 3 for brevity
+	// Show detailed state information only when debug flag is explicitly set
+	if debugFlag && len(jsonEntries) > 0 {
+		fmt.Println("\nState Data Debug (first 3 entries):")
+		maxEntries := 3
+		if len(jsonEntries) < maxEntries {
+			maxEntries = len(jsonEntries)
+		}
+		for i := 0; i < maxEntries; i++ {
+			je := jsonEntries[i]
 			fmt.Printf("Entry %d (%s - %s):\n", i, je.Hook, je.AgentID)
 
 			// Check direct state

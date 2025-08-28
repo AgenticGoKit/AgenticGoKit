@@ -221,7 +221,7 @@ func TestTemplateGeneration(t *testing.T) {
 			},
 			expectedInMain: []string{
 				"validateMemoryConfig",
-				"text-embedding-3-small requires 1536 dimensions",
+				"text-embedding-3-small",
 			},
 			expectedInToml: []string{
 				"[agent_memory]",

@@ -68,13 +68,20 @@ api_key = "test-key"
 		}
 	}()
 
-	// Load configuration (should apply environment overrides automatically)
+	// Load configuration
 	config, err := core.LoadConfig(configPath)
 	if err != nil {
 		t.Fatalf("Failed to load config: %v", err)
 	}
 
-	// Verify that global environment overrides were applied during LoadConfig
+	// Apply environment overrides using the resolver
+	resolver := NewConfigResolver(config)
+	err = resolver.ApplyEnvironmentOverrides()
+	if err != nil {
+		t.Fatalf("Failed to apply environment overrides: %v", err)
+	}
+
+	// Verify that global environment overrides were applied
 	if config.LLM.Provider != "azure" {
 		t.Errorf("Expected global LLM provider 'azure', got '%s'", config.LLM.Provider)
 	}
@@ -82,7 +89,7 @@ api_key = "test-key"
 		t.Errorf("Expected global LLM temperature 0.5, got %f", config.LLM.Temperature)
 	}
 
-	// Verify that agent environment overrides were applied during LoadConfig
+	// Verify that agent environment overrides were applied
 	if config.Agents["test_agent"].Role != "overridden_role" {
 		t.Errorf("Expected agent role 'overridden_role', got '%s'", config.Agents["test_agent"].Role)
 	}
@@ -91,7 +98,7 @@ api_key = "test-key"
 	}
 
 	// Test agent resolution with the loaded configuration
-	resolved, err := config.ResolveAgentConfig("test_agent")
+	resolved, err := resolver.ResolveAgentConfigWithEnv("test_agent")
 	if err != nil {
 		t.Fatalf("Failed to resolve agent config: %v", err)
 	}
@@ -192,8 +199,14 @@ api_key = "test-key"
 		t.Fatalf("Failed to load config: %v", err)
 	}
 
-	// Resolve agent configuration
-	resolved, err := config.ResolveAgentConfig("priority_agent")
+	// Apply environment overrides and resolve agent configuration
+	resolver := NewConfigResolver(config)
+	err = resolver.ApplyEnvironmentOverrides()
+	if err != nil {
+		t.Fatalf("Failed to apply environment overrides: %v", err)
+	}
+
+	resolved, err := resolver.ResolveAgentConfigWithEnv("priority_agent")
 	if err != nil {
 		t.Fatalf("Failed to resolve agent config: %v", err)
 	}

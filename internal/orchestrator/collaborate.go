@@ -134,10 +134,17 @@ func (o *CollaborativeOrchestrator) Dispatch(ctx context.Context, event core.Eve
 		EndTime:     time.Now(),
 	}
 
-	// If all agents failed, return error
-	if !hasSuccess {
-		combinedResult.Error = fmt.Sprintf("all agents failed: %v", errors)
-		return combinedResult, fmt.Errorf("collaborative dispatch failed: all agents returned errors")
+	// If there are any errors, return aggregated error
+	if len(errors) > 0 {
+		if !hasSuccess {
+			// All agents failed
+			combinedResult.Error = fmt.Sprintf("all agents failed: %v", errors)
+			return combinedResult, fmt.Errorf("collaborative dispatch failed: all agents returned errors")
+		} else {
+			// Partial failure - some agents succeeded, some failed
+			combinedResult.Error = fmt.Sprintf("partial failure: %v", errors)
+			return combinedResult, fmt.Errorf("collaborative dispatch partial failure: %v", errors)
+		}
 	}
 
 	core.Logger().Debug().

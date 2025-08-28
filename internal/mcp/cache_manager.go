@@ -4,7 +4,6 @@ package mcp
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -57,7 +56,7 @@ func (cm *CacheManager) GetCache(toolName, serverName string) core.MCPCache {
 	// Create new cache instance for this tool/server combination
 	cache, err := NewMemoryCache(cm.config)
 	if err != nil {
-		log.Printf("Failed to create cache for %s: %v", cacheKey, err)
+		core.Logger().Error().Err(err).Str("cache_key", cacheKey).Msg("Failed to create cache")
 		return &NoOpCache{}
 	}
 
@@ -84,13 +83,13 @@ func (cm *CacheManager) ExecuteWithCache(ctx context.Context, execution core.MCP
 	// Try to get from cache first
 	cached, err := cache.Get(ctx, cacheKey)
 	if err != nil {
-		log.Printf("Cache get error for %s: %v", execution.ToolName, err)
+		core.Logger().Warn().Err(err).Str("tool", execution.ToolName).Msg("Cache get error")
 	} else if cached != nil {
-		log.Printf("📦 Cache HIT for %s:%s", execution.ServerName, execution.ToolName)
+		// Cache hit - reduced logging for performance
 		return cached.Result, nil
 	}
 
-	log.Printf("📦 Cache MISS for %s:%s", execution.ServerName, execution.ToolName)
+	// Cache miss - no logging needed for routine operation
 
 	// Execute the tool
 	start := time.Now()
@@ -116,10 +115,9 @@ func (cm *CacheManager) ExecuteWithCache(ctx context.Context, execution core.MCP
 
 		err = cache.Set(ctx, cacheKey, result, ttl)
 		if err != nil {
-			log.Printf("Cache set error for %s: %v", execution.ToolName, err)
-		} else {
-			log.Printf("📦 Cached result for %s:%s (TTL: %v)", execution.ServerName, execution.ToolName, ttl)
+			core.Logger().Warn().Err(err).Str("tool", execution.ToolName).Msg("Cache set error")
 		}
+		// Successful cache operations don't need verbose logging
 	}
 
 	return result, nil
@@ -136,14 +134,14 @@ func (cm *CacheManager) InvalidateByPattern(ctx context.Context, pattern string)
 		if strings.Contains(cacheKey, pattern) {
 			err := cache.Clear(ctx)
 			if err != nil {
-				log.Printf("Failed to clear cache %s: %v", cacheKey, err)
+				core.Logger().Warn().Err(err).Str("cache_key", cacheKey).Msg("Failed to clear cache")
 			} else {
 				invalidated++
 			}
 		}
 	}
 
-	log.Printf("📦 Invalidated %d cache instances matching pattern: %s", invalidated, pattern)
+	// Cache invalidation completed - reduced logging for performance
 	return nil
 }
 
