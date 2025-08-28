@@ -50,20 +50,20 @@ Build on these fundamentals to master logging and tracing techniques.
 
 ### Configuration
 
-AgenticGoKit uses structured logging with configurable levels, formats, and output destinations. Configure logging in your `agentflow.toml`:
+AgenticGoKit uses structured logging with configurable levels, formats, and output destinations. The logging system supports both console and file output with automatic log rotation. Configure logging in your `agentflow.toml`:
 
 ::: code-group
 
 ```toml [Development Config]
 [logging]
-level = "debug"
+level = "debug"                 # Show detailed debugging information
 format = "console"              # Human-readable console output
-file = "logs/debug.log"         # Optional file logging
-file_only = false               # Keep console output
-max_size = 50                   # 50MB per file
+file = "logs/debug.log"         # Optional file logging with JSON format
+file_only = false               # Keep both console and file output
+max_size = 50                   # 50MB per file before rotation
 max_backups = 5                 # Keep 5 backup files
 max_age = 7                     # Keep logs for 7 days
-compress = true                 # Compress rotated files
+compress = true                 # Compress rotated files (.gz)
 
 [agent_flow]
 name = "my-agent-system-dev"
@@ -78,14 +78,14 @@ max_tokens = 800
 
 ```toml [Production Config]
 [logging]
-level = "info"
-format = "console"              # Console for monitoring
+level = "info"                  # Production-appropriate log level
+format = "console"              # Human-readable console for monitoring
 file = "logs/production.log"    # Structured JSON file logging
-file_only = false               # Both console and file
-max_size = 100                  # 100MB per file
+file_only = false               # Both console and file output
+max_size = 100                  # 100MB per file before rotation
 max_backups = 10                # Keep 10 backup files
 max_age = 30                    # Keep logs for 30 days
-compress = true                 # Compress rotated files
+compress = true                 # Compress rotated files to save space
 
 [agent_flow]
 name = "my-agent-system"
@@ -100,11 +100,11 @@ max_tokens = 1000
 
 ```toml [File-Only Config]
 [logging]
-level = "info"
-format = "json"                 # Format doesn't affect file (always JSON)
-file = "logs/agent.log"         # File path for logging
-file_only = true                # No console output
-max_size = 200                  # 200MB per file
+level = "info"                  # Standard production log level
+format = "console"              # Console format (doesn't affect file output)
+file = "logs/agent.log"         # File path for structured JSON logging
+file_only = true                # No console output - file only
+max_size = 200                  # 200MB per file before rotation
 max_backups = 15                # Keep 15 backup files
 max_age = 90                    # Keep logs for 90 days
 compress = true                 # Compress rotated files
@@ -112,6 +112,24 @@ compress = true                 # Compress rotated files
 [agent_flow]
 name = "my-agent-system-prod"
 version = "1.0.0"
+```
+
+```toml [Console-Only Config]
+[logging]
+level = "debug"                 # Debug level for development
+format = "console"              # Human-readable console format
+# No file specified = console output only
+# No rotation settings needed for console-only
+
+[agent_flow]
+name = "my-agent-system-dev"
+version = "1.0.0"
+
+[llm]
+provider = "ollama"
+model = "llama3.2:1b"
+temperature = 0.7
+max_tokens = 500
 ```
 
 :::
