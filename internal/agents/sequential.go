@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	agenticgokit "github.com/kunalkushwaha/agenticgokit/internal/core"
 	"github.com/kunalkushwaha/agenticgokit/core"
+	agenticgokit "github.com/kunalkushwaha/agenticgokit/internal/core"
 )
 
 // SequentialAgent runs a series of sub-agents one after another.
@@ -68,9 +68,7 @@ func NewSequentialAgentWithConfig(name string, config *core.ResolvedAgentConfig,
 func (s *SequentialAgent) Run(ctx context.Context, initialState agenticgokit.State) (agenticgokit.State, error) {
 	// Check if agent is enabled
 	if !s.IsEnabled() {
-		agenticgokit.Logger().Debug().
-			Str("sequential_agent", s.name).
-			Msg("SequentialAgent: Agent is disabled, skipping execution.")
+
 		return initialState, nil
 	}
 
@@ -96,7 +94,7 @@ func (s *SequentialAgent) Run(ctx context.Context, initialState agenticgokit.Sta
 		nextState.Set("sequential_agent_role", s.config.Role)
 		nextState.Set("sequential_agent_description", s.config.Description)
 		nextState.Set("sequential_agent_capabilities", s.config.Capabilities)
-		
+
 		// Apply system prompt if configured
 		if s.config.SystemPrompt != "" {
 			nextState.Set("sequential_system_prompt", s.config.SystemPrompt)
@@ -226,14 +224,14 @@ func (s *SequentialAgent) UpdateConfiguration(config *core.ResolvedAgentConfig) 
 		return fmt.Errorf("configuration cannot be nil")
 	}
 	s.config = config
-	
+
 	agenticgokit.Logger().Debug().
 		Str("agent", s.name).
 		Str("role", config.Role).
 		Bool("enabled", config.Enabled).
 		Strs("capabilities", config.Capabilities).
 		Msg("SequentialAgent configuration updated")
-	
+
 	return nil
 }
 

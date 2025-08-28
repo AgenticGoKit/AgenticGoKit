@@ -90,10 +90,10 @@ func (r *CallbackRegistry) Register(hook HookPoint, name string, cb CallbackFunc
 	}
 
 	r.callbacks[hook] = append(r.callbacks[hook], registration)
-	Logger().Debug().
-		Str("callback", name).
-		Str("hook", string(hook)).
-		Msg("Callback registered")
+	// Only log callback registration in debug mode
+	if GetLogLevel() == DEBUG {
+		Logger().Debug().Str("callback", name).Str("hook", string(hook)).Msg("Callback registered")
+	}
 	return nil
 }
 
@@ -106,10 +106,9 @@ func (r *CallbackRegistry) Unregister(hook HookPoint, name string) {
 	for i, reg := range hooks {
 		if reg.ID == name {
 			r.callbacks[hook] = append(hooks[:i], hooks[i+1:]...)
-			Logger().Debug().
-				Str("callback", name).
-				Str("hook", string(hook)).
-				Msg("Callback unregistered")
+			if GetLogLevel() == DEBUG {
+				Logger().Debug().Str("callback", name).Str("hook", string(hook)).Msg("Callback unregistered")
+			}
 			return
 		}
 	}
@@ -152,9 +151,10 @@ func (r *CallbackRegistry) Invoke(ctx context.Context, args CallbackArgs) (State
 		currentArgs := args
 		currentArgs.State = currentState
 
-		Logger().Debug().
-			Str("hook", string(args.Hook)).
-			Msg("Executing callback")
+		// Reduce per-callback execution logging
+		if GetLogLevel() == DEBUG {
+			Logger().Debug().Str("hook", string(args.Hook)).Msg("Executing callback")
+		}
 
 		returnedState, err := callback(ctx, currentArgs)
 		if err != nil {
@@ -166,20 +166,21 @@ func (r *CallbackRegistry) Invoke(ctx context.Context, args CallbackArgs) (State
 		}
 
 		if returnedState != nil {
-			Logger().Debug().
-				Str("hook", string(args.Hook)).
-				Msg("Callback returned updated state")
+			if GetLogLevel() == DEBUG {
+				Logger().Debug().Str("hook", string(args.Hook)).Msg("Callback updated state")
+			}
 			currentState = returnedState
 		} else {
-			Logger().Debug().
-				Str("hook", string(args.Hook)).
-				Msg("Callback returned nil state, state remains unchanged")
+			if GetLogLevel() == DEBUG {
+				Logger().Debug().Str("hook", string(args.Hook)).Msg("Callback state unchanged")
+			}
 		}
 	}
 
-	Logger().Debug().
-		Str("hook", string(args.Hook)).
-		Msg("Finished invoking callbacks, returning final state")
+	// Only log callback completion in debug mode
+	if GetLogLevel() == DEBUG {
+		Logger().Debug().Str("hook", string(args.Hook)).Msg("Callbacks complete")
+	}
 	return currentState, lastErr
 }
 
@@ -215,6 +216,64 @@ func GetLogLevel() LogLevel {
 	}
 	// Fallback to locally tracked level
 	return currentLogLevel
+}
+
+func SetLogFormat(format string) {
+	// Delegate to active logging provider if available
+	p := getActiveLoggingProvider()
+	if p.SetFormat != nil {
+		p.SetFormat(format)
+	}
+}
+
+func SetLogFile(filePath string) {
+	// Delegate to active logging provider if available
+	p := getActiveLoggingProvider()
+	if p.SetFile != nil {
+		p.SetFile(filePath)
+	}
+}
+
+func SetLoggingConfig(config interface{}) {
+	// Convert the config struct to LoggingConfig
+	var logConfig LoggingConfig
+	
+	// Use type assertion or reflection to convert
+	if cfg, ok := config.(struct {
+		Level      string `toml:"level"`
+		Format     string `toml:"format"`
+		File       string `toml:"file"`
+		FileOnly   bool   `toml:"file_only"`
+		MaxSize    int    `toml:"max_size"`
+		MaxBackups int    `toml:"max_backups"`
+		MaxAge     int    `toml:"max_age"`
+		Compress   bool   `toml:"compress"`
+	}); ok {
+		logConfig = LoggingConfig{
+			Level:      cfg.Level,
+			Format:     cfg.Format,
+			File:       cfg.File,
+			FileOnly:   cfg.FileOnly,
+			MaxSize:    cfg.MaxSize,
+			MaxBackups: cfg.MaxBackups,
+			MaxAge:     cfg.MaxAge,
+			Compress:   cfg.Compress,
+		}
+	}
+	
+	// Delegate to active logging provider if available
+	p := getActiveLoggingProvider()
+	if p.SetConfig != nil {
+		p.SetConfig(logConfig)
+	} else {
+		// Fallback to individual setters
+		if p.SetFormat != nil {
+			p.SetFormat(logConfig.Format)
+		}
+		if p.SetFile != nil && logConfig.File != "" {
+			p.SetFile(logConfig.File)
+		}
+	}
 }
 
 func Logger() CoreLogger {
@@ -264,6 +323,18 @@ type LogEvent interface {
 // =============================================================================
 
 // LoggingProvider wires a concrete logger into core.
+// LoggingConfig represents logging configuration
+type LoggingConfig struct {
+	Level      string
+	Format     string
+	File       string
+	FileOnly   bool
+	MaxSize    int
+	MaxBackups int
+	MaxAge     int
+	Compress   bool
+}
+
 type LoggingProvider struct {
 	// New returns a new CoreLogger instance (can share underlying sink).
 	New func() CoreLogger
@@ -271,6 +342,12 @@ type LoggingProvider struct {
 	SetLevel func(LogLevel)
 	// GetLevel gets global log level (optional).
 	GetLevel func() LogLevel
+	// SetFormat sets log output format (optional).
+	SetFormat func(string)
+	// SetFile sets log file path for additional JSON logging (optional).
+	SetFile func(string)
+	// SetConfig sets complete logging configuration (optional).
+	SetConfig func(LoggingConfig)
 }
 
 var (

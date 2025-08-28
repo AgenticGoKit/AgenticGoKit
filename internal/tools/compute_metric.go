@@ -3,7 +3,6 @@ package tools
 import (
 	"context"
 	"fmt"
-	"log"
 )
 
 // ComputeMetricTool performs simple calculations.
@@ -55,7 +54,7 @@ func (t *ComputeMetricTool) Call(ctx context.Context, args map[string]any) (map[
 		return nil, err
 	}
 
-	log.Printf("ComputeMetricTool: Performing operation '%s' on a=%.2f, b=%.2f", operation, a, b)
+	// Removed verbose parameter logging - operation details are not needed for routine calculations
 
 	var result float64
 	switch operation {

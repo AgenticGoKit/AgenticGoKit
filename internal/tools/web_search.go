@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -64,7 +63,7 @@ func (t *WebSearchTool) Call(ctx context.Context, args map[string]any) (map[stri
 		return nil, fmt.Errorf("argument 'query' must be a non-empty string")
 	}
 
-	log.Printf("WebSearchTool: Performing Brave API search for query: %q", query)
+	// Removed verbose logging - query details are not needed for routine operations
 
 	apiURL := "https://api.search.brave.com/res/v1/web/search?q=" + url.QueryEscape(query)
 	req, err := http.NewRequestWithContext(ctx, "GET", apiURL, nil)

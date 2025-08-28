@@ -189,9 +189,6 @@ func NewAgentManager(config *Config) AgentManager {
 
 	if agentManagerFactory != nil {
 		manager := agentManagerFactory(config)
-		Logger().Debug().
-			Str("implementation", "enhanced").
-			Msg("UNIQUE_MARKER_Created agent manager using registered enhanced implementation")
 		return manager
 	}
 
@@ -247,29 +244,12 @@ var (
 // This allows internal packages to provide full implementations
 func RegisterAgentManagerFactory(factory func(*Config) AgentManager) {
 	agentManagerFactory = factory
-	Logger().Debug().Msg("Registered full-featured agent manager implementation")
 }
 
 // RegisterConfigurableAgentFactory registers a configurable agent factory function
 // This allows internal packages to provide full implementations
 func RegisterConfigurableAgentFactory(factory func(*Config) ConfigurableAgentFactory) {
 	configurableAgentFactoryFunc = factory
-	Logger().Debug().Msg("Registered full-featured configurable agent factory implementation")
-}
-
-// validateRegistrations logs information about which implementations are available
-func validateRegistrations() {
-	if agentManagerFactory == nil {
-		Logger().Debug().Msg("No agent manager factory registered - using basic implementation")
-	} else {
-		Logger().Debug().Msg("Full agent manager factory is registered")
-	}
-
-	if configurableAgentFactoryFunc == nil {
-		Logger().Debug().Msg("No configurable agent factory registered - using basic implementation")
-	} else {
-		Logger().Debug().Msg("Full configurable agent factory is registered")
-	}
 }
 
 // =============================================================================

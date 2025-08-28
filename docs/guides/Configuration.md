@@ -161,15 +161,10 @@ ollama pull mistral:7b
 ollama serve
 ```
 
-### Mock Provider (Testing)
+## Recommended Provider Setup
 
-```toml
-[provider]
-type = "mock"
-response = "This is a mock response for testing"
-delay = "100ms"
-error_rate = 0.0  # 0.0 = no errors, 0.1 = 10% error rate
-```
+**For Production:** Use OpenAI or Azure OpenAI for reliable performance
+**For Development:** Use Ollama with `gemma3:1b` for cost-free local testing
 
 ## MCP Configuration
 

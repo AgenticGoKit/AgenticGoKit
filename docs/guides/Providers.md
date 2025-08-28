@@ -141,22 +141,17 @@ config := agentflow.OllamaConfig{
 provider, err := agentflow.NewOllamaProvider(config)
 ```
 
-### Mock Provider (Testing)
+## Choosing Your Provider
 
-**agentflow.toml:**
-```toml
-[provider]
-type = "mock"
-response = "This is a mock response"
-delay = "100ms"  # Simulate network delay
-```
+**For Production:**
+- Use **OpenAI** for most reliable performance and latest models
+- Use **Azure OpenAI** for enterprise compliance and data residency requirements
 
-**Programmatic configuration:**
-```go
-config := agentflow.MockConfig{
-    Response: "This is a mock response",
-    Delay:    100 * time.Millisecond,
-}
+**For Development:**
+- Use **Ollama** for local development without API costs
+- Recommended model: `gemma3:1b` for fast local testing
+
+**Provider Configuration:**
 
 provider := agentflow.NewMockProvider(config)
 ```
@@ -454,18 +449,22 @@ func generateWithRetry(ctx context.Context, provider agentflow.ModelProvider, pr
 
 ## Testing with Providers
 
-### Mock Provider for Testing
+### Local Testing with Ollama
+
+For development and testing without API costs, use Ollama:
 
 ```go
-func TestAgentWithMockProvider(t *testing.T) {
-    // Create mock provider
-    mockProvider := agentflow.NewMockProvider(agentflow.MockConfig{
-        Response: "This is a test response",
-        Delay:    10 * time.Millisecond,
-    })
+func TestAgentWithOllama(t *testing.T) {
+    // Create Ollama provider
+    config := agentflow.OllamaConfig{
+        BaseURL: "http://localhost:11434",
+        Model:   "gemma3:1b",
+    }
+    provider, err := agentflow.NewOllamaProvider(config)
+    require.NoError(t, err)
     
-    // Create agent with mock
-    agent := NewMyAgent("test-agent", mockProvider)
+    // Create agent
+    agent := NewMyAgent("test-agent", provider)
     
     // Test
     eventData := agentflow.EventData{"message": "test message"}

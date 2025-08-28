@@ -169,7 +169,10 @@ func (r *RunnerImpl) Emit(event Event) error {
 	}
 	r.mu.RUnlock()
 
-	Logger().Debug().Str("event_id", event.GetID()).Msg("Emit attempting to queue event")
+	// Reduce emit logging verbosity - only log in debug mode
+	if GetLogLevel() == DEBUG {
+		Logger().Debug().Str("event_id", event.GetID()).Msg("Emit queuing event")
+	}
 
 	timeout := 1 * time.Second
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
@@ -177,13 +180,19 @@ func (r *RunnerImpl) Emit(event Event) error {
 
 	select {
 	case r.queue <- event:
-		Logger().Debug().Str("event_id", event.GetID()).Msg("Emit successfully queued event")
+		if GetLogLevel() == DEBUG {
+			Logger().Debug().Str("event_id", event.GetID()).Msg("Event queued")
+		}
 		return nil
 	case <-ctx.Done():
-		Logger().Debug().Str("event_id", event.GetID()).Msg("Emit timed out")
+		if GetLogLevel() == DEBUG {
+			Logger().Debug().Str("event_id", event.GetID()).Msg("Emit timed out")
+		}
 		return fmt.Errorf("failed to emit event: queue full or blocked")
 	case <-r.stopChan:
-		Logger().Debug().Str("event_id", event.GetID()).Msg("Emit failed: runner stopped while waiting to queue")
+		if GetLogLevel() == DEBUG {
+			Logger().Debug().Str("event_id", event.GetID()).Msg("Emit failed: runner stopped")
+		}
 		return errors.New("runner stopped while emitting")
 	}
 }
@@ -261,12 +270,17 @@ func (r *RunnerImpl) loop(ctx context.Context) {
 				Logger().Warn().Str("event_id", event.GetID()).Msg("Runner loop: Warning - event missing session ID, using event ID as fallback.")
 				event.SetMetadata(SessionIDKey, sessionID)
 			}
-			Logger().Debug().Str("event_id", event.GetID()).Str("session_id", sessionID).Msg("Runner loop: Processing event")
+			// Reduce per-event processing logs
+			if GetLogLevel() == DEBUG {
+				Logger().Debug().Str("event_id", event.GetID()).Msg("Processing event")
+			}
 
 			var currentState State = NewState()
 
 			if r.registry != nil {
-				Logger().Debug().Msg("Runner: Invoking BeforeEventHandling callbacks")
+				if GetLogLevel() == DEBUG {
+					Logger().Debug().Msg("Invoking BeforeEventHandling callbacks")
+				}
 				callbackArgs := CallbackArgs{
 					Hook:    HookBeforeEventHandling,
 					Event:   event,
@@ -302,7 +316,9 @@ func (r *RunnerImpl) loop(ctx context.Context) {
 				invokedAgentID = targetAgentID
 
 				if r.registry != nil {
-					Logger().Debug().Str("agent_id", invokedAgentID).Msgf("Runner: Invoking %s callbacks", HookBeforeAgentRun)
+					if GetLogLevel() == DEBUG {
+						Logger().Debug().Str("agent_id", invokedAgentID).Msg("Invoking BeforeAgentRun callbacks")
+					}
 					callbackArgs := CallbackArgs{
 						Hook:    HookBeforeAgentRun,
 						Event:   event,
@@ -322,7 +338,9 @@ func (r *RunnerImpl) loop(ctx context.Context) {
 				}
 
 				if agentErr == nil {
-					Logger().Debug().Str("event_id", event.GetID()).Msg("Runner loop: Dispatching event to orchestrator")
+					if GetLogLevel() == DEBUG {
+					Logger().Debug().Str("event_id", event.GetID()).Msg("Dispatching to orchestrator")
+				}
 					agentResult, agentErr = orchestrator.Dispatch(eventCtx, event)
 				}
 
@@ -375,7 +393,10 @@ func (r *RunnerImpl) loop(ctx context.Context) {
 				Logger().Debug().Msg("CallbackRegistry.Invoke: Finished invoking callbacks for hook AfterEventHandling.")
 			}
 
-			Logger().Debug().Str("event_id", event.GetID()).Msg("Runner loop finished processing event")
+			// Only log event completion in debug mode
+			if GetLogLevel() == DEBUG {
+				Logger().Debug().Str("event_id", event.GetID()).Msg("Event processing complete")
+			}
 		}
 	}
 }

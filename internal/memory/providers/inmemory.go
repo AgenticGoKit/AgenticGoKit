@@ -403,6 +403,7 @@ func (m *InMemoryProvider) BuildContext(ctx context.Context, query string, optio
 		core.WithLimit(config.MaxTokens/100), // Rough estimate: 100 tokens per result
 		core.WithIncludePersonal(config.PersonalWeight > 0),
 		core.WithIncludeKnowledge(config.KnowledgeWeight > 0),
+		core.WithScoreThreshold(0.0), // Use very low threshold for RAG context to get relevant results
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to search for context: %w", err)
@@ -484,4 +485,3 @@ func (m *InMemoryProvider) formatContextText(query string, results *core.HybridR
 
 	return builder.String()
 }
-

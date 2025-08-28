@@ -230,6 +230,9 @@ func (tg *TemplateGenerator) convertToProjectConfig(projectName string) ProjectC
 	// Set embedding dimensions based on model
 	config.EmbeddingDimensions = GetModelDimensions(tc.EmbeddingProvider, tc.EmbeddingModel)
 
+	// Apply intelligent defaults to ensure proper configuration
+	ApplyIntelligentDefaults(&config)
+
 	return config
 }
 

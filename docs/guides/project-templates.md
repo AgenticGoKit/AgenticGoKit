@@ -199,7 +199,7 @@ config:
 
 #### Basic Configuration
 - `numAgents` (int): Number of agents to create
-- `provider` (string): LLM provider ("openai", "azure", "ollama", "mock")
+- `provider` (string): LLM provider ("openai", "azure", "ollama")
 - `orchestrationMode` (string): Agent coordination ("sequential", "collaborative", "loop", "route")
 
 #### Agent Configuration

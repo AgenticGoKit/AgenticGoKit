@@ -107,7 +107,7 @@ func (a *MCPAwareAgent) Name() string {
 // Run implements the Agent interface. It intelligently selects and executes MCP tools
 // based on the input state and LLM guidance.
 func (a *MCPAwareAgent) Run(ctx context.Context, inputState core.State) (core.State, error) {
-	a.logger.Info().Msg("MCPAwareAgent starting execution")
+	a.logger.Debug().Msg("MCPAwareAgent starting execution")
 
 	// Extract the query/task from state
 	query, err := a.extractQuery(inputState)
@@ -141,7 +141,7 @@ func (a *MCPAwareAgent) Run(ctx context.Context, inputState core.State) (core.St
 	// Update state with results
 	outputState := a.updateStateWithResults(inputState, results)
 
-	a.logger.Info().
+	a.logger.Debug().
 		Int("tools_executed", len(results)).
 		Msg("MCPAwareAgent execution completed")
 

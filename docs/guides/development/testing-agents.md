@@ -74,9 +74,12 @@ func (m *MockLLMProvider) Name() string {
 
 ```go
 func TestMultiAgentWorkflow(t *testing.T) {
-    // Create mock providers
-    mockLLM := &MockLLMProvider{
-        response: "Processed successfully",
+    // Create Ollama provider for testing
+    ollamaProvider := &OllamaProvider{
+        config: OllamaConfig{
+            BaseURL: "http://localhost:11434",
+            Model:   "gemma3:1b",
+        },
     }
     
     // Create agents

@@ -1375,15 +1375,10 @@ func FormatSchemaForLLM(schema map[string]interface{}) string {
 func ParseLLMToolCalls(content string) []map[string]interface{} {
 	var toolCalls []map[string]interface{}
 
-	// Debug: Log what we're trying to parse
-	logger := Logger()
-	logger.Debug().Str("content", content).Msg("Parsing tool calls from LLM response")
-
 	// Parse TOOL_CALL{...} patterns from LLM response
 	parts := strings.Split(content, "TOOL_CALL")
 	for i := 1; i < len(parts); i++ {
 		part := parts[i]
-		logger.Debug().Str("part", part).Msg("Processing TOOL_CALL part")
 
 		if strings.HasPrefix(part, "{") {
 			// Find the closing brace
@@ -1403,11 +1398,9 @@ func ParseLLMToolCalls(content string) []map[string]interface{} {
 
 			if endIndex > 0 {
 				jsonStr := part[:endIndex+1]
-				logger.Debug().Str("json_str", jsonStr).Msg("Extracted JSON string")
 
 				// Parse the JSON string
 				toolCall := ParseToolCallJSON(jsonStr)
-				logger.Debug().Interface("parsed_tool_call", toolCall).Msg("Parsed tool call")
 
 				if len(toolCall) > 0 {
 					toolCalls = append(toolCalls, toolCall)
@@ -1418,7 +1411,6 @@ func ParseLLMToolCalls(content string) []map[string]interface{} {
 
 	// NO AUTO-DETECTION: The LLM should decide when to use tools based on the provided schemas
 	// Trust the LLM to make proper tool calls when needed according to the MCP tool schemas
-	logger.Debug().Interface("final_tool_calls", toolCalls).Msg("Final parsed tool calls")
 	return toolCalls
 }
 

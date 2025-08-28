@@ -360,7 +360,7 @@ func main() {
         panic(err)
     }
     
-    fmt.Println("Result:", result)
+    // Process result as needed for your application
 }
 ` + "```" + `
 
@@ -387,7 +387,7 @@ For comprehensive customization guidance, see:
 // In main.go
 db, err := sql.Open("postgres", "your-connection-string")
 if err != nil {
-    log.Fatal(err)
+    return fmt.Errorf("failed to connect to database: %w", err)
 }
 
 // Pass to agents
@@ -415,7 +415,8 @@ func (a *Agent1Handler) callExternalAPI(ctx context.Context, data interface{}) (
 // In main.go
 func formatResults(results []AgentOutput) {
     for _, result := range results {
-    fmt.Printf("%s: %s\n", result.AgentName, result.Content)
+        // Format and process result as needed
+        logger.Info().Str("agent", result.AgentName).Str("content", result.Content).Msg("Agent result")
     }
 }
 ` + "```" + `

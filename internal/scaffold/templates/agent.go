@@ -368,7 +368,7 @@ func (a *{{.Agent.DisplayName}}Handler) Run(ctx context.Context, event agenticgo
 					mcpResults = append(mcpResults, fmt.Sprintf("Tool '%s' failed: %v", toolName, err))
 				} else {
 					if result.Success {
-						logger.Info().Str("agent", "{{.Agent.Name}}").Str("tool_name", toolName).Msg("Tool execution successful")
+						logger.Debug().Str("agent", "{{.Agent.Name}}").Str("tool_name", toolName).Msg("Tool execution successful")
 						
 						// Format the result content
 						var resultContent string
