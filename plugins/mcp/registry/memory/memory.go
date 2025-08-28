@@ -82,10 +82,6 @@ func (r *inMemoryFunctionToolRegistry) CallTool(ctx context.Context, name string
 		return nil, fmt.Errorf("tool execution failed: %w", err)
 	}
 
-	core.Logger().Debug().
-		Str("tool", name).
-		Msg("Tool executed successfully")
-
 	return result, nil
 }
 

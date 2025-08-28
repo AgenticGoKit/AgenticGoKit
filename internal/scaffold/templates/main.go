@@ -226,7 +226,7 @@ func main() {
 	// and perform RAG (Retrieval-Augmented Generation) operations
 	// TODO: Customize memory initialization for your specific use case
 	// You might want to add custom indexing, data preprocessing, or storage optimization
-	fmt.Println("Initializing memory system...")
+	logger.Info().Msg("Initializing memory system...")
 	
 	// Create memory configuration from agentflow.toml settings
 	// This includes database connections, embedding models, and RAG parameters
@@ -234,7 +234,7 @@ func main() {
 	memoryConfig := config.AgentMemory
 	
 	// Validate configuration before initializing memory
-	fmt.Println("Validating memory configuration...")
+	logger.Debug().Msg("Validating memory configuration...")
 	if err := validateMemoryConfig(memoryConfig, "{{.Config.EmbeddingModel}}"); err != nil {
 		logger.Error().Err(err).Msg("Memory configuration validation failed")
 	fmt.Printf("Configuration Error: %v\n", err)
@@ -242,7 +242,6 @@ func main() {
 	}
 	
 	logger.Debug().Msg("Memory configuration validation passed")
-	fmt.Println("Configuration validated.")
 	
 	memory, err := core.NewMemory(memoryConfig)
 	if err != nil {
@@ -290,8 +289,7 @@ func main() {
 	fmt.Printf("Warning: Memory connection test failed: %v\n", err)
 	fmt.Printf("Agents will still work, but memory features may be limited\n")
 	} else {
-		logger.Debug().Msg("Memory system initialized successfully")
-	fmt.Printf("Memory system ready.\n")
+		logger.Info().Msg("Memory system ready")
 	}
 	{{end}}
 
