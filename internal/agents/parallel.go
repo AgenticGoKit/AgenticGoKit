@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	agenticgokit "github.com/kunalkushwaha/agenticgokit/internal/core"
 	"github.com/kunalkushwaha/agenticgokit/core"
+	agenticgokit "github.com/kunalkushwaha/agenticgokit/internal/core"
 )
 
 // ParallelAgentConfig holds configuration for ParallelAgent.
@@ -19,10 +19,10 @@ type ParallelAgentConfig struct {
 // It merges the results from successful agents.
 // If any agent errors, it collects the errors but allows others to complete (unless cancelled).
 type ParallelAgent struct {
-	name         string
-	agents       []agenticgokit.Agent
-	config       ParallelAgentConfig
-	agentConfig  *core.ResolvedAgentConfig // Add agent configuration support
+	name        string
+	agents      []agenticgokit.Agent
+	config      ParallelAgentConfig
+	agentConfig *core.ResolvedAgentConfig // Add agent configuration support
 }
 
 // NewParallelAgent creates a new ParallelAgent.
@@ -79,9 +79,7 @@ func (a *ParallelAgent) Name() string {
 func (a *ParallelAgent) Run(ctx context.Context, initialState agenticgokit.State) (agenticgokit.State, error) {
 	// Check if agent is enabled
 	if !a.IsEnabled() {
-		agenticgokit.Logger().Debug().
-			Str("parallel_agent", a.name).
-			Msg("ParallelAgent: Agent is disabled, skipping execution.")
+
 		return initialState, nil
 	}
 
@@ -104,7 +102,7 @@ func (a *ParallelAgent) Run(ctx context.Context, initialState agenticgokit.State
 		mergedState.Set("parallel_agent_role", a.agentConfig.Role)
 		mergedState.Set("parallel_agent_description", a.agentConfig.Description)
 		mergedState.Set("parallel_agent_capabilities", a.agentConfig.Capabilities)
-		
+
 		// Apply system prompt if configured
 		if a.agentConfig.SystemPrompt != "" {
 			mergedState.Set("parallel_system_prompt", a.agentConfig.SystemPrompt)
@@ -113,7 +111,7 @@ func (a *ParallelAgent) Run(ctx context.Context, initialState agenticgokit.State
 	}
 
 	runCtx, cancel := context.WithCancel(ctx)
-	
+
 	// Apply timeout from agent configuration first, then from parallel config
 	if a.agentConfig != nil && a.agentConfig.Timeout > 0 {
 		runCtx, cancel = context.WithTimeout(ctx, a.agentConfig.Timeout)
@@ -290,14 +288,14 @@ func (a *ParallelAgent) UpdateConfiguration(config *core.ResolvedAgentConfig) er
 		return fmt.Errorf("configuration cannot be nil")
 	}
 	a.agentConfig = config
-	
+
 	agenticgokit.Logger().Debug().
 		Str("agent", a.name).
 		Str("role", config.Role).
 		Bool("enabled", config.Enabled).
 		Strs("capabilities", config.Capabilities).
 		Msg("ParallelAgent configuration updated")
-	
+
 	return nil
 }
 
