@@ -81,8 +81,14 @@ func GetDummyFactory() func(int) core.EmbeddingService {
 
 // Register all embedding service factories with core to avoid circular imports
 func init() {
-	// Register internal factories with core
-	core.RegisterOpenAIEmbeddingFactory(providers.NewOpenAIEmbeddingService)
+	// Register internal factories with core - wrap with environment variable support
+	core.RegisterOpenAIEmbeddingFactory(func(apiKey, model string) core.EmbeddingService {
+		// If no API key provided, try environment variable
+		if apiKey == "" {
+			apiKey = os.Getenv("OPENAI_API_KEY")
+		}
+		return providers.NewOpenAIEmbeddingService(apiKey, model)
+	})
 	core.RegisterOllamaEmbeddingFactory(providers.NewOllamaEmbeddingService)
 	core.RegisterDummyEmbeddingFactory(providers.NewDummyEmbeddingService)
 
