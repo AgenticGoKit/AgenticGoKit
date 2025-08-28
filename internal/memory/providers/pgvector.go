@@ -615,8 +615,11 @@ func (p *PgVectorProvider) SearchKnowledge(ctx context.Context, query string, op
 	baseQuery += " ORDER BY kb.embedding <=> $1 LIMIT $" + fmt.Sprintf("%d", argIndex)
 	args = append(args, config.Limit)
 
-	// Debug: Log the final SQL query and parameters
-	core.Logger().Debug().Str("sql_query", baseQuery).Int("args_count", len(args)).Msg("Executing SQL query")
+	// Debug: Log the final SQL query and parameters (only in DEBUG mode)
+	core.DebugLogWithFields(core.Logger(), "Executing SQL query", map[string]interface{}{
+		"sql_query":  baseQuery,
+		"args_count": len(args),
+	})
 
 	// Execute query
 	rows, err := p.pool.Query(ctx, baseQuery, args...)

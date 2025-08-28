@@ -475,11 +475,11 @@ func (a *YourAgentHandler) Run(ctx context.Context, event core.Event, state core
         Str("event_id", event.GetID()).
         Logger()
     
-    logger.Info().Msg("Agent execution started")
+    logger.Debug().Msg("Agent execution started")
     
     // Your logic here
     
-    logger.Info().
+    logger.Debug().
         Dur("duration", time.Since(start)).
         Msg("Agent execution completed")
     

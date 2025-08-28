@@ -50,14 +50,20 @@ Build on these fundamentals to master logging and tracing techniques.
 
 ### Configuration
 
-AgenticGoKit uses structured logging with configurable levels and formats. Configure logging in your `agentflow.toml`:
+AgenticGoKit uses structured logging with configurable levels, formats, and output destinations. Configure logging in your `agentflow.toml`:
 
 ::: code-group
 
 ```toml [Development Config]
 [logging]
 level = "debug"
-format = "text"
+format = "console"              # Human-readable console output
+file = "logs/debug.log"         # Optional file logging
+file_only = false               # Keep console output
+max_size = 50                   # 50MB per file
+max_backups = 5                 # Keep 5 backup files
+max_age = 7                     # Keep logs for 7 days
+compress = true                 # Compress rotated files
 
 [agent_flow]
 name = "my-agent-system-dev"
@@ -73,7 +79,13 @@ max_tokens = 800
 ```toml [Production Config]
 [logging]
 level = "info"
-format = "json"
+format = "console"              # Console for monitoring
+file = "logs/production.log"    # Structured JSON file logging
+file_only = false               # Both console and file
+max_size = 100                  # 100MB per file
+max_backups = 10                # Keep 10 backup files
+max_age = 30                    # Keep logs for 30 days
+compress = true                 # Compress rotated files
 
 [agent_flow]
 name = "my-agent-system"
@@ -86,7 +98,93 @@ temperature = 0.3
 max_tokens = 1000
 ```
 
+```toml [File-Only Config]
+[logging]
+level = "info"
+format = "json"                 # Format doesn't affect file (always JSON)
+file = "logs/agent.log"         # File path for logging
+file_only = true                # No console output
+max_size = 200                  # 200MB per file
+max_backups = 15                # Keep 15 backup files
+max_age = 90                    # Keep logs for 90 days
+compress = true                 # Compress rotated files
+
+[agent_flow]
+name = "my-agent-system-prod"
+version = "1.0.0"
+```
+
 :::
+
+### Logging Output Modes
+
+AgenticGoKit supports flexible logging output configurations:
+
+#### Console + File (Recommended for Development)
+```toml
+[logging]
+level = "info"
+format = "console"              # Human-readable console
+file = "logs/agent.log"         # JSON file logging
+file_only = false               # Both outputs active
+```
+
+**Result:**
+- **Console**: Human-readable format with colors and timestamps
+- **File**: Structured JSON format for log analysis tools
+
+#### File-Only (Recommended for Production)
+```toml
+[logging]
+level = "info"
+file = "logs/production.log"
+file_only = true                # Only file logging
+max_size = 100                  # Automatic rotation
+```
+
+**Result:**
+- **Console**: No output (clean for production)
+- **File**: Structured JSON with automatic rotation
+
+#### Console-Only (Development/Testing)
+```toml
+[logging]
+level = "debug"
+format = "console"
+# No file specified = console only
+```
+
+**Result:**
+- **Console**: Human-readable format
+- **File**: No file logging
+
+### Log Rotation and Management
+
+AgenticGoKit includes automatic log rotation using lumberjack:
+
+```toml
+[logging]
+file = "logs/agent.log"
+max_size = 100          # Max size in MB before rotation
+max_backups = 10        # Number of backup files to keep
+max_age = 30            # Max age in days to keep files
+compress = true         # Compress rotated files (.gz)
+```
+
+**File Structure:**
+```
+logs/
+├── agent.log           # Current log file
+├── agent.log.1         # Previous rotation
+├── agent.log.2.gz      # Compressed backup
+├── agent.log.3.gz      # Older compressed backup
+└── ...
+```
+
+**Rotation Triggers:**
+- **Size**: When file exceeds `max_size` MB
+- **Age**: Files older than `max_age` days are removed
+- **Count**: Only `max_backups` files are kept
 
 ### Log Levels
 

@@ -36,9 +36,9 @@ func (o *CollaborativeOrchestrator) RegisterAgent(name string, handler core.Agen
 	}
 	// Store handler by name
 	o.handlers[name] = handler
-	core.Logger().Debug().
-		Str("agent", name).
-		Msg("CollaborativeOrchestrator: Registered agent")
+	core.DebugLogWithFields(core.Logger(), "CollaborativeOrchestrator: Registered agent", map[string]interface{}{
+		"agent": name,
+	})
 	return nil
 }
 
@@ -82,9 +82,9 @@ func (o *CollaborativeOrchestrator) Dispatch(ctx context.Context, event core.Eve
 		wg.Add(1)
 		go func(agentName string, h core.AgentHandler) {
 			defer wg.Done()
-			core.Logger().Debug().
-				Str("agent", agentName).
-				Msg("CollaborativeOrchestrator: Dispatching to agent")
+			core.DebugLogWithFields(core.Logger(), "CollaborativeOrchestrator: Dispatching to agent", map[string]interface{}{
+				"agent": agentName,
+			})
 
 			result, err := h.Run(ctx, event, currentState)
 			if err != nil {
@@ -147,11 +147,11 @@ func (o *CollaborativeOrchestrator) Dispatch(ctx context.Context, event core.Eve
 		}
 	}
 
-	core.Logger().Debug().
-		Int("total_agents", len(o.handlers)).
-		Int("successful", len(results)-len(errors)).
-		Int("failed", len(errors)).
-		Msg("CollaborativeOrchestrator: Dispatch completed")
+	core.DebugLogWithFields(core.Logger(), "CollaborativeOrchestrator: Dispatch completed", map[string]interface{}{
+		"total_agents": len(o.handlers),
+		"successful":   len(results) - len(errors),
+		"failed":       len(errors),
+	})
 
 	return combinedResult, nil
 }
@@ -163,5 +163,5 @@ func (o *CollaborativeOrchestrator) GetCallbackRegistry() *core.CallbackRegistry
 
 // Stop halts the orchestrator
 func (o *CollaborativeOrchestrator) Stop() {
-	core.Logger().Debug().Msg("CollaborativeOrchestrator: Stopped")
+	core.DebugLog(core.Logger(), "CollaborativeOrchestrator: Stopped")
 }

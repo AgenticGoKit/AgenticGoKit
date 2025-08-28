@@ -89,7 +89,9 @@ func (u *UnifiedAgent) Run(ctx context.Context, state State) (State, error) {
 	// This gives UnifiedAgent a sensible behavior out-of-the-box for
 	// configuration-driven agents created by the factory/builder.
 	if u.llmProvider != nil && u.autoLLM {
-		Logger().Debug().Str("agent", u.name).Msg("UnifiedAgent: LLM provider detected; preparing default completion")
+		DebugLogWithFields(Logger(), "UnifiedAgent: LLM provider detected; preparing default completion", map[string]interface{}{
+			"agent": u.name,
+		})
 		// Prefer a system prompt set in state (e.g., by a config-aware wrapper),
 		// otherwise fall back to the agent's configured systemPrompt.
 		system := u.systemPrompt
@@ -110,39 +112,59 @@ func (u *UnifiedAgent) Run(ctx context.Context, state State) (State, error) {
 
 		// Only call the LLM if we have a non-empty user prompt.
 		if strings.TrimSpace(user) != "" {
-			Logger().Debug().Str("agent", u.name).Msg("UnifiedAgent: calling LLM provider")
+			DebugLogWithFields(Logger(), "UnifiedAgent: calling LLM provider", map[string]interface{}{
+				"agent": u.name,
+			})
 
 			// Add memory integration for RAG support
 			var memoryContext string
 			mem := GetMemory(ctx)
 			if mem != nil {
-				Logger().Debug().Str("agent", u.name).Str("memory_type", fmt.Sprintf("%T", mem)).Msg("UnifiedAgent: Building memory context for RAG")
+				DebugLogWithFields(Logger(), "UnifiedAgent: Building memory context for RAG", map[string]interface{}{
+					"agent":       u.name,
+					"memory_type": fmt.Sprintf("%T", mem),
+				})
 
 				// Build RAG context from knowledge base
-				Logger().Debug().Str("agent", u.name).Str("query", user).Msg("UnifiedAgent: Calling BuildContext with query")
+				DebugLogWithFields(Logger(), "UnifiedAgent: Calling BuildContext with query", map[string]interface{}{
+					"agent": u.name,
+					"query": user,
+				})
 				ragContext, err := mem.BuildContext(ctx, user,
 					WithMaxTokens(1000),
 					WithIncludeSources(true))
 				if err != nil {
 					Logger().Warn().Str("agent", u.name).Err(err).Msg("Failed to build RAG context - continuing without knowledge base context")
 				} else if ragContext != nil {
-					Logger().Debug().Str("agent", u.name).
-						Int("personal_count", len(ragContext.PersonalMemory)).
-						Int("knowledge_count", len(ragContext.Knowledge)).
-						Int("history_count", len(ragContext.ChatHistory)).
-						Str("context_text_snippet", func() string {
-							if len(ragContext.ContextText) > 100 {
-								return ragContext.ContextText[:100] + "..."
-							}
-							return ragContext.ContextText
-						}()).
-						Msg("BuildContext result details")
+					// Only log detailed context in debug mode to reduce verbosity
+					if GetLogLevel() == DEBUG {
+						DebugLogWithFields(Logger(), "BuildContext result details", map[string]interface{}{
+							"agent":                u.name,
+							"personal_count":       len(ragContext.PersonalMemory),
+							"knowledge_count":      len(ragContext.Knowledge),
+							"history_count":        len(ragContext.ChatHistory),
+							"context_text_snippet": func() string {
+								if len(ragContext.ContextText) > 100 {
+									return ragContext.ContextText[:100] + "..."
+								}
+								return ragContext.ContextText
+							}(),
+						})
+					}
 
 					if ragContext.ContextText != "" {
 						memoryContext = "\n\nRelevant Context from Knowledge Base:\n" + ragContext.ContextText
-						Logger().Debug().Str("agent", u.name).Int("context_tokens", ragContext.TokenCount).Msg("RAG context built successfully")
+						// Only log RAG context success in debug mode to reduce verbosity
+						if GetLogLevel() == DEBUG {
+							DebugLogWithFields(Logger(), "RAG context built successfully", map[string]interface{}{
+								"agent":          u.name,
+								"context_tokens": ragContext.TokenCount,
+							})
+						}
 					} else {
-						Logger().Debug().Str("agent", u.name).Msg("No relevant knowledge base context found")
+						DebugLogWithFields(Logger(), "No relevant knowledge base context found", map[string]interface{}{
+							"agent": u.name,
+						})
 					}
 				} else {
 					Logger().Debug().Str("agent", u.name).Msg("BuildContext returned nil ragContext")
@@ -179,7 +201,14 @@ func (u *UnifiedAgent) Run(ctx context.Context, state State) (State, error) {
 				if len(snippet) > 1000 {
 					snippet = snippet[:1000] + "...(truncated)"
 				}
-				Logger().Info().Str("agent", u.name).Int("memory_length", len(memoryContext)).Str("memory_context_snippet", snippet).Msg("UnifiedAgent: RAG context appended to prompt")
+				// Only log memory context details in debug mode to reduce verbosity
+				if GetLogLevel() == DEBUG {
+					DebugLogWithFields(Logger(), "UnifiedAgent: RAG context appended to prompt", map[string]interface{}{
+						"agent":                  u.name,
+						"memory_length":          len(memoryContext),
+						"memory_context_snippet": snippet,
+					})
+				}
 			} else {
 				Logger().Warn().Str("agent", u.name).Msg("Memory system not available - continuing without memory context")
 			}
@@ -230,7 +259,7 @@ func (u *UnifiedAgent) Run(ctx context.Context, state State) (State, error) {
 				}
 			} else {
 				// Debug mode: output memory context details without LLM call
-				Logger().Info().Str("agent", u.name).Msg("DEBUG MODE: No LLM provider, outputting memory analysis instead")
+				Logger().Debug().Str("agent", u.name).Msg("DEBUG MODE: No LLM provider, outputting memory analysis instead")
 				debugResponse := fmt.Sprintf("DEBUG: Memory Analysis for query '%s'\n", user)
 				if memoryContext != "" {
 					debugResponse += fmt.Sprintf("Memory context found (%d chars):\n%s", len(memoryContext), memoryContext)
@@ -240,7 +269,7 @@ func (u *UnifiedAgent) Run(ctx context.Context, state State) (State, error) {
 
 				out.Set("response", debugResponse)
 				out.Set("message", debugResponse)
-				Logger().Info().Str("agent", u.name).Str("debug_response", debugResponse).Msg("DEBUG: Memory analysis completed")
+				Logger().Debug().Str("agent", u.name).Str("debug_response", debugResponse).Msg("DEBUG: Memory analysis completed")
 			}
 		}
 

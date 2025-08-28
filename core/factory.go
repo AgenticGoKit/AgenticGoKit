@@ -218,6 +218,64 @@ func GetLogLevel() LogLevel {
 	return currentLogLevel
 }
 
+func SetLogFormat(format string) {
+	// Delegate to active logging provider if available
+	p := getActiveLoggingProvider()
+	if p.SetFormat != nil {
+		p.SetFormat(format)
+	}
+}
+
+func SetLogFile(filePath string) {
+	// Delegate to active logging provider if available
+	p := getActiveLoggingProvider()
+	if p.SetFile != nil {
+		p.SetFile(filePath)
+	}
+}
+
+func SetLoggingConfig(config interface{}) {
+	// Convert the config struct to LoggingConfig
+	var logConfig LoggingConfig
+	
+	// Use type assertion or reflection to convert
+	if cfg, ok := config.(struct {
+		Level      string `toml:"level"`
+		Format     string `toml:"format"`
+		File       string `toml:"file"`
+		FileOnly   bool   `toml:"file_only"`
+		MaxSize    int    `toml:"max_size"`
+		MaxBackups int    `toml:"max_backups"`
+		MaxAge     int    `toml:"max_age"`
+		Compress   bool   `toml:"compress"`
+	}); ok {
+		logConfig = LoggingConfig{
+			Level:      cfg.Level,
+			Format:     cfg.Format,
+			File:       cfg.File,
+			FileOnly:   cfg.FileOnly,
+			MaxSize:    cfg.MaxSize,
+			MaxBackups: cfg.MaxBackups,
+			MaxAge:     cfg.MaxAge,
+			Compress:   cfg.Compress,
+		}
+	}
+	
+	// Delegate to active logging provider if available
+	p := getActiveLoggingProvider()
+	if p.SetConfig != nil {
+		p.SetConfig(logConfig)
+	} else {
+		// Fallback to individual setters
+		if p.SetFormat != nil {
+			p.SetFormat(logConfig.Format)
+		}
+		if p.SetFile != nil && logConfig.File != "" {
+			p.SetFile(logConfig.File)
+		}
+	}
+}
+
 func Logger() CoreLogger {
 	// Return logger from the active provider or a safe no-op
 	p := getActiveLoggingProvider()
@@ -265,6 +323,18 @@ type LogEvent interface {
 // =============================================================================
 
 // LoggingProvider wires a concrete logger into core.
+// LoggingConfig represents logging configuration
+type LoggingConfig struct {
+	Level      string
+	Format     string
+	File       string
+	FileOnly   bool
+	MaxSize    int
+	MaxBackups int
+	MaxAge     int
+	Compress   bool
+}
+
 type LoggingProvider struct {
 	// New returns a new CoreLogger instance (can share underlying sink).
 	New func() CoreLogger
@@ -272,6 +342,12 @@ type LoggingProvider struct {
 	SetLevel func(LogLevel)
 	// GetLevel gets global log level (optional).
 	GetLevel func() LogLevel
+	// SetFormat sets log output format (optional).
+	SetFormat func(string)
+	// SetFile sets log file path for additional JSON logging (optional).
+	SetFile func(string)
+	// SetConfig sets complete logging configuration (optional).
+	SetConfig func(LoggingConfig)
 }
 
 var (

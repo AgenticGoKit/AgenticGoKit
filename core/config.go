@@ -142,8 +142,14 @@ type Config struct {
 	} `toml:"agent_flow"`
 
 	Logging struct {
-		Level  string `toml:"level"`
-		Format string `toml:"format"`
+		Level      string `toml:"level"`
+		Format     string `toml:"format"`
+		File       string `toml:"file"`        // Optional file path for logging
+		FileOnly   bool   `toml:"file_only"`   // If true, only log to file (no console)
+		MaxSize    int    `toml:"max_size"`    // Max size in MB before rotation
+		MaxBackups int    `toml:"max_backups"` // Max number of backup files
+		MaxAge     int    `toml:"max_age"`     // Max age in days
+		Compress   bool   `toml:"compress"`    // Compress rotated files
 	} `toml:"logging"`
 
 	Runtime struct {
@@ -523,9 +529,30 @@ func (c *Config) GetEnabledAgents() []string {
 	return enabled
 }
 
-// ApplyLoggingConfig applies logging configuration (no-op for now)
+// ApplyLoggingConfig applies logging configuration
 func (c *Config) ApplyLoggingConfig() {
-	// TODO: This will be replaced with internal implementation after refactoring is complete
+	// Apply log level
+	logLevel := parseLogLevel(c.Logging.Level)
+	SetLogLevel(logLevel)
+	
+	// Apply logging configuration
+	SetLoggingConfig(c.Logging)
+}
+
+// parseLogLevel converts string to LogLevel
+func parseLogLevel(level string) LogLevel {
+	switch level {
+	case "debug":
+		return DEBUG
+	case "info":
+		return INFO
+	case "warn":
+		return WARN
+	case "error":
+		return ERROR
+	default:
+		return INFO
+	}
 }
 
 // ValidateOrchestrationConfig validates orchestration configuration

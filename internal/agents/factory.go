@@ -315,11 +315,11 @@ func (ca *ConfiguredAgent) Run(ctx context.Context, inputState core.State) (core
 	inputState.Set("system_prompt", ca.Config.SystemPrompt)
 
 	// Log agent execution
-	core.Logger().Debug().
-		Str("agent", ca.AgentName).
-		Str("role", ca.Config.Role).
-		Strs("capabilities", ca.Config.Capabilities).
-		Msg("Executing configured agent")
+	core.DebugLogWithFields(core.Logger(), "Executing configured agent", map[string]interface{}{
+		"agent":        ca.AgentName,
+		"role":         ca.Config.Role,
+		"capabilities": ca.Config.Capabilities,
+	})
 
 	// Execute the underlying agent
 	outputState, err := ca.Agent.Run(ctx, inputState)

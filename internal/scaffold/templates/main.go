@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/kunalkushwaha/agenticgokit/core"
+	_ "github.com/kunalkushwaha/agenticgokit/plugins/logging/zerolog"
 	_ "github.com/kunalkushwaha/agenticgokit/plugins/orchestrator/default"
 	_ "{{.Config.Name}}/agents"
 )
@@ -21,21 +22,7 @@ import (
 var memory core.Memory
 {{end}}
 
-// parseLogLevel converts string log level from config to core.LogLevel
-func parseLogLevel(levelStr string) core.LogLevel {
-	switch strings.ToLower(levelStr) {
-	case "debug":
-		return core.DEBUG
-	case "info":
-		return core.INFO
-	case "warn", "warning":
-		return core.WARN
-	case "error":
-		return core.ERROR
-	default:
-		return core.INFO // Default fallback
-	}
-}
+
 
 // main is the entry point for the {{.Config.Name}} multi-agent system.
 //
@@ -70,8 +57,7 @@ func main() {
 	}
 
 	// Apply logging configuration from agentflow.toml
-	logLevel := parseLogLevel(config.Logging.Level)
-	core.SetLogLevel(logLevel)
+	config.ApplyLoggingConfig()
 	
 	logger := core.Logger()
 	logger.Info().Str("log_level", config.Logging.Level).Str("log_format", config.Logging.Format).Msg("Starting {{.Config.Name}} multi-agent system with configured logging")
@@ -574,7 +560,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	logger.Debug().Msg("Workflow execution started")
+	logger.Info().Msg("Workflow execution started")
 
 	// Wait for processing to complete BEFORE printing results.
 	// We call runner.Stop() explicitly here (instead of using defer runner.Stop()).
@@ -717,7 +703,10 @@ func (r *ResultCollectorHandler) Run(ctx context.Context, event core.Event, stat
 		if sessionID == "default" {
 			sessionID = core.GenerateSessionID()
 		}
-		core.Logger().Debug().Str("injecting_memory_type", fmt.Sprintf("%T", r.memory)).Str("session_id", sessionID).Msg("ResultCollector: Injecting memory into context")
+		core.DebugLogWithFields(core.Logger(), "ResultCollector: Injecting memory into context", map[string]interface{}{
+			"injecting_memory_type": fmt.Sprintf("%T", r.memory),
+			"session_id":            sessionID,
+		})
 		ctx = core.WithMemory(ctx, r.memory, sessionID)
 	} else {
 		core.Logger().Warn().Msg("ResultCollector: Handler memory is nil, agents will get NoOpMemory")
