@@ -1,562 +1,591 @@
-# Tool Integration Tutorial (15 minutes)
+---
+title: "Tool Integration"
+description: "Extend your agents with external tools and services using MCP"
+prev:
+  text: "Adding Memory"
+  link: "./adding-memory"
+next:
+  text: "Building Workflows"
+  link: "./building-workflows"
+---
 
-## Overview
+# Tool Integration
 
-Learn how to connect your agents to external tools and APIs using MCP (Model Context Protocol). You'll set up built-in tools, create custom tools, and optimize tool performance with caching.
-
-## Prerequisites
-
-- Complete the [Memory and RAG](memory-and-rag.md) tutorial
-- Basic understanding of APIs and external services
-- Optional: Docker for advanced tool setups
+Your agents now have memory and can work together effectively. Let's take them to the next level by integrating external tools and services. This will transform your agents from conversational assistants into powerful systems that can take real actions in the world.
 
 ## Learning Objectives
 
-By the end of this tutorial, you'll understand:
-- How to enable MCP tool integration
-- Using built-in tools (web search, file operations)
-- Creating custom tools for your specific needs
-- Tool caching and performance optimization
+By the end of this section, you'll be able to:
+- Understand the Model Context Protocol (MCP) and its benefits
+- Configure and integrate various MCP tools and servers
+- Create agents that can perform web searches, file operations, and API calls
+- Build custom tools for specific use cases
+- Troubleshoot tool integration issues
+- Design secure and efficient tool-enabled workflows
 
-## What You'll Build
+## Prerequisites
 
-A tool-enabled agent system that can:
-1. **Search the web** for real-time information
-2. **Process files** and documents
-3. **Call custom APIs** for specialized tasks
-4. **Cache results** for better performance
+Before starting, make sure you've completed:
+- ✅ [Adding Memory](./adding-memory.md) - Understanding of memory-enabled agents
 
----
+## What Are Tools and Why Do Agents Need Them?
 
-## Part 1: Basic Tool Integration (5 minutes)
+Without tools, agents can only generate text responses. With tools, agents can:
 
-Start with built-in tools to understand MCP concepts.
+- **Search the web** for current information
+- **Read and write files** on the local system
+- **Make API calls** to external services
+- **Perform calculations** and data processing
+- **Interact with databases** and other systems
+- **Send emails** and notifications
+- **Control external devices** and services
 
-### Create a Tool-Enabled Project
+Tools transform agents from conversational interfaces into capable digital assistants that can actually accomplish tasks.
 
-```bash
-# Create project with MCP tools
-agentcli create tool-agent --template research-assistant
-cd tool-agent
+## Introduction to MCP (Model Context Protocol)
+
+MCP is a standardized protocol that allows AI agents to securely access external tools and data sources. Think of it as a universal adapter that lets your agents connect to almost any service or tool.
+
+### Benefits of MCP
+
+- **Standardized Interface**: One protocol for all tools
+- **Security**: Built-in permission and sandboxing systems
+- **Discoverability**: Tools can describe their capabilities automatically
+- **Extensibility**: Easy to add new tools and services
+- **Community**: Growing ecosystem of available tools
+
+### How MCP Works
+
+```mermaid
+graph LR
+    Agent[AI Agent] --> MCP[MCP Client]
+    MCP --> Server1[Web Search Server]
+    MCP --> Server2[File System Server]
+    MCP --> Server3[API Server]
+    MCP --> Server4[Custom Tool Server]
 ```
 
-### Understanding MCP Configuration
+1. **MCP Servers** provide tools and capabilities
+2. **MCP Client** (built into AgenticGoKit) manages connections
+3. **Agents** request tool usage through natural language
+4. **Tools** perform actions and return results
 
-The generated `agentflow.toml` includes MCP settings:
+## Available MCP Tools
+
+AgenticGoKit supports a wide range of MCP tools:
+
+### Web and Search Tools
+- **Web Search**: Search engines (Google, Bing, DuckDuckGo)
+- **Web Scraping**: Extract content from web pages
+- **RSS Feeds**: Monitor and read RSS/Atom feeds
+- **Social Media**: Interact with Twitter, LinkedIn, etc.
+
+### File and System Tools
+- **File Operations**: Read, write, create, delete files
+- **Directory Management**: Navigate and manage directories
+- **System Information**: Get system stats and information
+- **Process Management**: Monitor and control processes
+
+### Data and Database Tools
+- **SQL Databases**: Query PostgreSQL, MySQL, SQLite
+- **NoSQL Databases**: Work with MongoDB, Redis
+- **Spreadsheets**: Read and write Excel, CSV files
+- **Data Processing**: Transform and analyze data
+
+### Communication Tools
+- **Email**: Send and receive emails
+- **Slack**: Post messages and interact with Slack
+- **Discord**: Bot functionality for Discord servers
+- **SMS**: Send text messages
+
+### Development Tools
+- **Git**: Repository management and operations
+- **Docker**: Container management
+- **Kubernetes**: Cluster operations
+- **CI/CD**: Integration with build systems
+
+## Setting Up Tool Integration
+
+Let's create an agent system with web search and file operation capabilities.
+
+### Step 1: Create a Tool-Enabled Project
+
+```bash
+agentcli create research-assistant --template tools-enabled
+cd research-assistant
+```
+
+### Step 2: Configure MCP Tools
+
+Edit `agentflow.toml` to add tool capabilities:
 
 ```toml
+[agent_flow]
+name = "research-assistant"
+version = "1.0.0"
+description = "A research assistant with web search and file capabilities"
+
+[llm]
+provider = "openai"
+model = "gpt-4"
+temperature = 0.7
+max_tokens = 2000
+
+# MCP Configuration
 [mcp]
 enabled = true
-enable_discovery = true
-connection_timeout = 5000
-max_retries = 3
-retry_delay = 1000
-enable_caching = true
-cache_timeout = 300000
-max_connections = 10
+timeout_seconds = 30
 
-# Example MCP servers - configure as needed
+# Web Search Tool
 [[mcp.servers]]
-name = "docker"
-type = "tcp"
-host = "localhost"
-port = 8811
-enabled = false
+name = "web-search"
+command = "uvx"
+args = ["mcp-server-web-search"]
+env = { "SEARCH_ENGINE" = "duckduckgo" }
 
+# File System Tool
 [[mcp.servers]]
 name = "filesystem"
-type = "stdio"
-command = "npx @modelcontextprotocol/server-filesystem /path/to/allowed/files"
-enabled = false
+command = "uvx"
+args = ["mcp-server-filesystem"]
+env = { "ALLOWED_DIRECTORIES" = "/tmp,./workspace" }
 
+# HTTP Client Tool
 [[mcp.servers]]
-name = "brave-search"
-type = "stdio"
-command = "npx @modelcontextprotocol/server-brave-search"
-enabled = false
+name = "http-client"
+command = "uvx"
+args = ["mcp-server-fetch"]
+
+[orchestration]
+mode = "collaborative"
+collaborative_agents = ["researcher", "analyst", "writer"]
+
+[agents.researcher]
+role = "web_researcher"
+description = "Researches topics using web search and external sources"
+system_prompt = """
+You are a research specialist with access to web search and file operations.
+
+Your capabilities include:
+- Searching the web for current information
+- Reading and analyzing web content
+- Saving research findings to files
+- Organizing information systematically
+
+When conducting research:
+1. Use web search to find current, relevant information
+2. Verify information from multiple sources
+3. Save important findings to organized files
+4. Provide clear summaries with source citations
+5. Identify areas needing further investigation
+
+Always be thorough, accurate, and well-organized in your research.
+"""
+enabled = true
+tools_enabled = true
+
+[agents.analyst]
+role = "data_analyst"
+description = "Analyzes research data and identifies patterns"
+system_prompt = """
+You are a data analyst who processes research information to extract insights.
+
+Your capabilities include:
+- Reading and analyzing research files
+- Identifying patterns and trends
+- Creating structured analysis reports
+- Generating data visualizations descriptions
+
+When analyzing data:
+1. Read research files systematically
+2. Look for patterns, trends, and relationships
+3. Validate findings against multiple sources
+4. Create clear, structured analysis reports
+5. Suggest actionable insights and recommendations
+
+Focus on accuracy, objectivity, and clear communication.
+"""
+enabled = true
+tools_enabled = true
+
+[agents.writer]
+role = "report_writer"
+description = "Creates comprehensive reports from research and analysis"
+system_prompt = """
+You are a report writer who synthesizes research and analysis into clear reports.
+
+Your capabilities include:
+- Reading research and analysis files
+- Creating well-structured reports
+- Writing in clear, professional language
+- Organizing information logically
+
+When writing reports:
+1. Read all available research and analysis
+2. Structure information with clear headings
+3. Include executive summaries
+4. Cite sources appropriately
+5. Save final reports to files
+
+Ensure reports are comprehensive, accurate, and professionally formatted.
+"""
+enabled = true
+tools_enabled = true
 ```
 
-**Important Note**: The `--mcp-tools` flag specifies which tools you want to use, but tools are discovered at runtime from MCP servers, not configured individually in the TOML file. The servers above are examples and are disabled by default - you'll need to enable and configure the servers that provide the tools you want to use.
+### Step 3: Install MCP Dependencies
 
-### Test Basic Tools
+MCP tools use `uvx` (part of the `uv` Python package manager):
+
+**Install uv:**
 
 ```bash
-# Set your API key
-export OPENAI_API_KEY=your-api-key-here
+# macOS/Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Run the tool-enabled system
-go run main.go
+# Windows (PowerShell)
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+# Or using pip
+pip install uv
 ```
 
-The agents can now use web search and summarization tools automatically when needed.
-
-### View Tool Usage
+### Step 4: Test Tool Integration
 
 ```bash
-# Check tool calls in traces
-agentcli trace --verbose <session-id>
+# Test web search capability
+go run . -m "Search for the latest developments in renewable energy technology and save the findings to a file"
 
-# Check MCP server status (run from project directory)
-agentcli mcp servers
+# Test file operations
+go run . -m "Read the research file you just created and provide a summary"
 
-# List available tools (run from project directory)
-agentcli mcp tools
-
-# Note: MCP commands require an active MCP configuration and may need
-# the agent system to be running to show live server connections
+# Test combined capabilities
+go run . -m "Research the top 5 programming languages in 2024, analyze the trends, and create a comprehensive report"
 ```
 
----
+## Advanced Tool Configuration
 
-## Part 2: Production Tool Setup (5 minutes)
-
-Set up production-ready tools with caching, metrics, and load balancing.
-
-### Create a Production Tool System
-
-```bash
-# Create production MCP setup
-agentcli create production-tools --mcp production --agents 3
-cd production-tools
-```
-
-### Understanding Production Configuration
-
-The production MCP setup generates the same basic TOML configuration as the standard setup:
+### Custom Tool Permissions
 
 ```toml
-[mcp]
-enabled = true
-enable_discovery = true
-connection_timeout = 5000
-max_retries = 3
-retry_delay = 1000
-enable_caching = true
-cache_timeout = 300000
-max_connections = 10
-
-# Example MCP servers - configure as needed
-[[mcp.servers]]
-name = "docker"
-type = "tcp"
-host = "localhost"
-port = 8811
-enabled = false
-
 [[mcp.servers]]
 name = "filesystem"
-type = "stdio"
-command = "npx @modelcontextprotocol/server-filesystem /path/to/allowed/files"
-enabled = false
+command = "uvx"
+args = ["mcp-server-filesystem"]
+env = { 
+    "ALLOWED_DIRECTORIES" = "./workspace,./reports,./data",
+    "READONLY_DIRECTORIES" = "./config",
+    "MAX_FILE_SIZE" = "10MB"
+}
+```
 
+### Tool-Specific Agent Configuration
+
+```toml
+[agents.web_specialist]
+role = "web_specialist"
+tools_enabled = true
+allowed_tools = ["web-search", "http-client"]  # Restrict to specific tools
+tool_timeout = 60                              # Tool-specific timeout
+system_prompt = """
+You specialize in web-based research and can:
+- Search the web for information
+- Fetch content from specific URLs
+- Analyze web content for relevance
+
+You cannot access file systems or other tools.
+"""
+```
+
+### Environment-Specific Tool Configuration
+
+```toml
+# Development environment
 [[mcp.servers]]
-name = "brave-search"
-type = "stdio"
-command = "npx @modelcontextprotocol/server-brave-search"
-enabled = false
+name = "dev-filesystem"
+command = "uvx"
+args = ["mcp-server-filesystem"]
+env = { 
+    "ALLOWED_DIRECTORIES" = "./dev-workspace",
+    "DEBUG_MODE" = "true"
+}
+
+# Production environment
+[[mcp.servers]]
+name = "prod-filesystem"
+command = "uvx"
+args = ["mcp-server-filesystem"]
+env = { 
+    "ALLOWED_DIRECTORIES" = "/app/data",
+    "READONLY_MODE" = "true",
+    "AUDIT_LOG" = "true"
+}
 ```
 
-**Production Features**: The `--mcp-production`, `--with-cache`, and `--with-metrics` flags enable additional runtime features and optimizations, but the core TOML configuration remains the same. Production features are handled at the application level rather than through additional TOML sections.
+## Hands-On Exercises
 
-### Start Production Services
+### Exercise 1: Build a News Research Assistant
 
-```bash
-# Start with Docker Compose (if generated)
-docker-compose up -d
+Create an assistant that can research current news and create summaries:
 
-# Or run directly
-export OPENAI_API_KEY=your-api-key-here
-go run main.go
+1. Configure web search tools
+2. Add file operations for saving articles
+3. Create an agent that searches for news on specific topics
+4. Test with current events and trending topics
+5. Have the agent save summaries to organized files
+
+### Exercise 2: Create a Development Helper
+
+Build an assistant that helps with development tasks:
+
+1. Configure Git tools for repository operations
+2. Add file system tools for code management
+3. Configure web search for documentation lookup
+4. Create agents specialized in different development tasks
+5. Test with real development scenarios
+
+### Exercise 3: Build a Data Processing Pipeline
+
+Create a system that can fetch, process, and analyze data:
+
+1. Configure HTTP client tools for API access
+2. Add database tools for data storage
+3. Configure file tools for data processing
+4. Create agents for each stage of the pipeline
+5. Test with real data sources and processing tasks
+
+## Creating Custom Tools
+
+Sometimes you need tools that don't exist in the MCP ecosystem. Here's how to create custom tools:
+
+### Simple Custom Tool Server
+
+Create a custom MCP server for specific business logic:
+
+**`custom-tool-server.py`:**
+```python
+#!/usr/bin/env python3
+import asyncio
+import json
+from mcp.server import Server
+from mcp.types import Tool, TextContent
+
+app = Server("custom-business-tools")
+
+@app.list_tools()
+async def list_tools():
+    return [
+        Tool(
+            name="calculate_roi",
+            description="Calculate return on investment",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "initial_investment": {"type": "number"},
+                    "final_value": {"type": "number"},
+                    "time_period": {"type": "number"}
+                },
+                "required": ["initial_investment", "final_value", "time_period"]
+            }
+        ),
+        Tool(
+            name="format_currency",
+            description="Format numbers as currency",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "amount": {"type": "number"},
+                    "currency": {"type": "string", "default": "USD"}
+                },
+                "required": ["amount"]
+            }
+        )
+    ]
+
+@app.call_tool()
+async def call_tool(name: str, arguments: dict):
+    if name == "calculate_roi":
+        initial = arguments["initial_investment"]
+        final = arguments["final_value"]
+        time = arguments["time_period"]
+        roi = ((final - initial) / initial) * 100
+        return [TextContent(
+            type="text",
+            text=f"ROI: {roi:.2f}% over {time} years"
+        )]
+    
+    elif name == "format_currency":
+        amount = arguments["amount"]
+        currency = arguments.get("currency", "USD")
+        formatted = f"${amount:,.2f} {currency}"
+        return [TextContent(
+            type="text",
+            text=formatted
+        )]
+
+if __name__ == "__main__":
+    asyncio.run(app.run())
 ```
 
-### Monitor Tool Performance
+### Configure Custom Tool in AgenticGoKit
+
+```toml
+[[mcp.servers]]
+name = "business-tools"
+command = "python3"
+args = ["./custom-tool-server.py"]
+env = { "PYTHONPATH" = "." }
+```
+
+### Test Custom Tool
 
 ```bash
-# Check cache statistics (run from project directory)
-agentcli cache stats
+go run . -m "Calculate the ROI for an investment of $10,000 that became $15,000 over 3 years, and format the result as currency"
+```
 
-# View metrics (if enabled and running)
-curl http://localhost:8080/metrics
+## Tool Security and Best Practices
 
-# Monitor MCP servers (run from project directory)
+### Security Considerations
+
+**File System Access:**
+```toml
+[[mcp.servers]]
+name = "secure-filesystem"
+command = "uvx"
+args = ["mcp-server-filesystem"]
+env = { 
+    "ALLOWED_DIRECTORIES" = "./safe-workspace",
+    "DENIED_EXTENSIONS" = ".exe,.bat,.sh",
+    "MAX_FILE_SIZE" = "1MB",
+    "READONLY_MODE" = "false"
+}
+```
+
+**Network Access:**
+```toml
+[[mcp.servers]]
+name = "secure-http"
+command = "uvx"
+args = ["mcp-server-fetch"]
+env = { 
+    "ALLOWED_DOMAINS" = "api.example.com,docs.example.com",
+    "TIMEOUT_SECONDS" = "30",
+    "MAX_RESPONSE_SIZE" = "1MB"
+}
+```
+
+### Best Practices
+
+**1. Principle of Least Privilege**
+Only give agents access to tools they actually need:
+
+```toml
+[agents.web_researcher]
+tools_enabled = true
+allowed_tools = ["web-search"]  # Only web search, no file access
+
+[agents.file_manager]
+tools_enabled = true
+allowed_tools = ["filesystem"]  # Only file operations, no web access
+```
+
+**2. Validate Tool Outputs**
+```toml
+[agents.cautious_agent]
+system_prompt = """
+When using tools:
+1. Validate tool outputs before using them
+2. Handle tool errors gracefully
+3. Never execute dangerous operations without confirmation
+4. Log all tool usage for audit purposes
+"""
+```
+
+**3. Monitor Tool Usage**
+```bash
+# Enable tool usage logging
+export AGENTICGOKIT_TOOL_LOGGING=true
+go run . -m "Your message"
+
+# Review tool usage logs
+agentcli tools usage --last 24h
+```
+
+## Troubleshooting Tool Integration
+
+### Common Issues and Solutions
+
+**Tools Not Available:**
+```bash
+# Check MCP server status
 agentcli mcp health
 
-# Note: These commands require the agent system to be running
-# and may need active MCP connections to show meaningful data
-```
-
----
-
-## Part 3: Custom Tool Development (5 minutes)
-
-Create custom tools for your specific use cases.
-
-### Create a Custom Tool Project
-
-```bash
-# Create project with custom tool setup
-agentcli create custom-tools --mcp basic --agents 2
-cd custom-tools
-```
-
-### Add a Custom Weather Tool
-
-Create `tools/weather.go`:
-
-```go
-package tools
-
-import (
-    "context"
-    "encoding/json"
-    "fmt"
-    "net/http"
-    "net/url"
-    "time"
-)
-
-// WeatherTool provides weather information
-type WeatherTool struct {
-    apiKey     string
-    httpClient *http.Client
-}
-
-func NewWeatherTool(apiKey string) *WeatherTool {
-    return &WeatherTool{
-        apiKey: apiKey,
-        httpClient: &http.Client{
-            Timeout: 10 * time.Second,
-        },
-    }
-}
-
-func (w *WeatherTool) Name() string {
-    return "weather"
-}
-
-func (w *WeatherTool) Description() string {
-    return "Gets current weather information for a specified location"
-}
-
-func (w *WeatherTool) ParameterSchema() map[string]interface{} {
-    return map[string]interface{}{
-        "type": "object",
-        "properties": map[string]interface{}{
-            "location": map[string]interface{}{
-                "type":        "string",
-                "description": "The city, zip code, or coordinates",
-            },
-        },
-        "required": []string{"location"},
-    }
-}
-
-func (w *WeatherTool) Execute(ctx context.Context, params map[string]interface{}) (interface{}, error) {
-    location, ok := params["location"].(string)
-    if !ok || location == "" {
-        return nil, fmt.Errorf("location parameter is required")
-    }
-    
-    // Build API URL (using a free weather API)
-    apiURL := fmt.Sprintf("https://api.weatherapi.com/v1/current.json?key=%s&q=%s", 
-        w.apiKey, url.QueryEscape(location))
-    
-    req, err := http.NewRequestWithContext(ctx, "GET", apiURL, nil)
-    if err != nil {
-        return nil, fmt.Errorf("failed to create request: %w", err)
-    }
-    
-    resp, err := w.httpClient.Do(req)
-    if err != nil {
-        return nil, fmt.Errorf("weather API request failed: %w", err)
-    }
-    defer resp.Body.Close()
-    
-    if resp.StatusCode != http.StatusOK {
-        return nil, fmt.Errorf("weather API returned status %d", resp.StatusCode)
-    }
-    
-    var weatherData map[string]interface{}
-    if err := json.NewDecoder(resp.Body).Decode(&weatherData); err != nil {
-        return nil, fmt.Errorf("failed to parse weather data: %w", err)
-    }
-    
-    return weatherData, nil
-}
-```
-
-### Register the Custom Tool
-
-Update `main.go` to include your custom tool:
-
-```go
-// Add to your main.go
-import "your-project/tools"
-
-func main() {
-    // ... existing code ...
-    
-    // Create tool manager
-    toolManager := core.NewToolManager()
-    
-    // Register custom weather tool
-    weatherTool := tools.NewWeatherTool(os.Getenv("WEATHER_API_KEY"))
-    toolManager.RegisterTool(weatherTool)
-    
-    // Register with agents
-    for _, agent := range agents {
-        agent.SetToolManager(toolManager)
-    }
-    
-    // ... rest of code ...
-}
-```
-
-### Test Custom Tools
-
-```bash
-# Set API keys
-export OPENAI_API_KEY=your-openai-key
-export WEATHER_API_KEY=your-weather-api-key
-
-# Run with custom tools
-go run main.go
-```
-
-Your agents can now use the custom weather tool alongside built-in tools.
-
----
-
-## Tool Categories and Use Cases
-
-### Built-in Tools
-
-| Tool | Description | Use Case |
-|------|-------------|----------|
-| **web_search** | Search the internet | Real-time information, research |
-| **summarize** | Summarize text content | Document processing, content analysis |
-| **translate** | Translate between languages | Multi-language support |
-| **file_operations** | Read/write files | Document processing, data import |
-
-### Custom Tool Examples
-
-| Tool Type | Example | Implementation |
-|-----------|---------|----------------|
-| **API Integration** | Weather, Stock prices | HTTP client with JSON parsing |
-| **Database Access** | User lookup, Data queries | SQL client with connection pooling |
-| **File Processing** | PDF parsing, Image analysis | Specialized libraries |
-| **External Services** | Email sending, SMS | Service-specific SDKs |
-
-## Tool Performance Optimization
-
-### Caching Configuration
-
-Caching is configured in the main MCP section:
-
-```toml
-[mcp]
-enabled = true
-enable_discovery = true
-connection_timeout = 5000
-max_retries = 3
-retry_delay = 1000
-enable_caching = true
-cache_timeout = 300000          # 5 minutes default cache timeout
-max_connections = 10
-```
-
-**Note**: Individual tool cache settings are handled at runtime through the MCP manager, not through separate TOML sections. The `cache_timeout` setting applies to all tools by default, and specific tool caching behavior is managed programmatically.
-
-### Load Balancing and Circuit Breaker Protection
-
-**Note**: Load balancing and circuit breaker features are handled at the application runtime level when using `--mcp-production` flag. The TOML configuration remains the same:
-
-```toml
-[mcp]
-enabled = true
-enable_discovery = true
-connection_timeout = 5000       # Connection timeout in milliseconds
-max_retries = 3                 # Maximum retry attempts
-retry_delay = 1000              # Delay between retries in milliseconds
-enable_caching = true
-cache_timeout = 300000
-max_connections = 10            # Maximum concurrent connections
-```
-
-Production features like load balancing, circuit breakers, and advanced retry policies are configured programmatically when you use the `--mcp-production` flag during project creation.
-
-## Advanced Tool Patterns
-
-### Tool Composition
-
-```go
-// Combine multiple tools for complex operations
-type ResearchTool struct {
-    webSearch   Tool
-    summarizer  Tool
-    translator  Tool
-}
-
-func (r *ResearchTool) Execute(ctx context.Context, params map[string]interface{}) (interface{}, error) {
-    // 1. Search for information
-    searchResults, err := r.webSearch.Execute(ctx, params)
-    if err != nil {
-        return nil, err
-    }
-    
-    // 2. Summarize results
-    summaryParams := map[string]interface{}{
-        "text": searchResults,
-    }
-    summary, err := r.summarizer.Execute(ctx, summaryParams)
-    if err != nil {
-        return nil, err
-    }
-    
-    // 3. Translate if needed
-    if targetLang, ok := params["language"]; ok {
-        translateParams := map[string]interface{}{
-            "text":        summary,
-            "target_lang": targetLang,
-        }
-        return r.translator.Execute(ctx, translateParams)
-    }
-    
-    return summary, nil
-}
-```
-
-### Async Tool Execution
-
-```go
-// Execute multiple tools concurrently
-func (a *Agent) executeToolsConcurrently(ctx context.Context, tools []ToolCall) (map[string]interface{}, error) {
-    results := make(map[string]interface{})
-    var wg sync.WaitGroup
-    var mu sync.Mutex
-    
-    for _, toolCall := range tools {
-        wg.Add(1)
-        go func(tc ToolCall) {
-            defer wg.Done()
-            
-            result, err := a.toolManager.ExecuteTool(ctx, tc.Name, tc.Params)
-            
-            mu.Lock()
-            if err != nil {
-                results[tc.Name] = fmt.Sprintf("Error: %v", err)
-            } else {
-                results[tc.Name] = result
-            }
-            mu.Unlock()
-        }(toolCall)
-    }
-    
-    wg.Wait()
-    return results, nil
-}
-```
-
-## Troubleshooting
-
-### Common Issues
-
-**Tool not found:**
-```bash
-# Check tool registration
+# List available tools
 agentcli mcp tools
 
-# Verify MCP server status
-agentcli mcp servers
-
-# Check configuration
-cat agentflow.toml | grep -A 10 "\[mcp\]"
+# Test specific server
+agentcli mcp test web-search
 ```
 
-**Tool execution timeout:**
-```toml
-# Increase timeout in configuration
-[mcp]
-connection_timeout = 60000  # Increase to 60 seconds (in milliseconds)
-```
+**Permission Errors:**
+- Check file/directory permissions
+- Verify environment variables
+- Review security restrictions
 
-**Cache not working:**
+**Tool Timeouts:**
+- Increase timeout settings
+- Check network connectivity
+- Optimize tool operations
+
+**Performance Issues:**
+- Limit concurrent tool usage
+- Cache tool results when appropriate
+- Use appropriate tool timeouts
+
+### Debugging Tool Operations
+
 ```bash
-# Check cache statistics
-agentcli cache stats
+# Enable detailed tool debugging
+export AGENTICGOKIT_MCP_DEBUG=true
+export AGENTICGOKIT_TOOL_DEBUG=true
+go run . -m "Test message with tools"
 
-# Clear cache if needed
-agentcli cache clear --all
+# Check tool server logs
+agentcli mcp logs web-search
+
+# Validate tool configurations
+agentcli mcp validate
 ```
 
-### Performance Issues
+## What You've Learned
 
-**Slow tool execution:**
-- Enable caching for frequently used tools
-- Use connection pooling for database tools
-- Implement circuit breakers for unreliable services
+✅ **Understanding of MCP protocol** and its benefits for agent systems  
+✅ **Configuration of various MCP tools** including web search, file operations, and APIs  
+✅ **Creation of tool-enabled agents** that can perform real-world actions  
+✅ **Development of custom tools** for specific business requirements  
+✅ **Implementation of security best practices** for tool integration  
+✅ **Troubleshooting and debugging** tool-related issues  
+✅ **Design of secure, efficient workflows** using external tools  
 
-**High resource usage:**
-- Limit concurrent tool executions
-- Use tool result caching
-- Monitor with metrics
+## Understanding Check
 
-## Tool Security Best Practices
-
-### Input Validation
-
-```go
-func (t *CustomTool) Execute(ctx context.Context, params map[string]interface{}) (interface{}, error) {
-    // Always validate inputs
-    input, ok := params["input"].(string)
-    if !ok {
-        return nil, fmt.Errorf("input parameter must be a string")
-    }
-    
-    // Sanitize inputs
-    input = sanitizeInput(input)
-    
-    // Validate against schema
-    if err := validateInput(input); err != nil {
-        return nil, fmt.Errorf("invalid input: %w", err)
-    }
-    
-    // ... tool logic ...
-}
-```
-
-### API Key Management
-
-```go
-// Use environment variables for sensitive data
-func NewAPITool() *APITool {
-    return &APITool{
-        apiKey: os.Getenv("API_KEY"),  // Never hardcode keys
-        client: &http.Client{
-            Timeout: 30 * time.Second,
-        },
-    }
-}
-```
+Before moving on, make sure you can:
+- [ ] Configure and integrate various MCP tools and servers
+- [ ] Create agents that can perform web searches and file operations
+- [ ] Build custom tools for specific use cases
+- [ ] Implement appropriate security measures for tool access
+- [ ] Troubleshoot common tool integration issues
+- [ ] Design workflows that effectively combine multiple tools
+- [ ] Monitor and audit tool usage for security and performance
 
 ## Next Steps
 
-Now that your agents can use tools:
+Your agents now have access to external tools and can perform real actions in the world! In the final tutorial section, we'll bring everything together to build sophisticated, real-world workflows that combine multi-agent orchestration, memory, and tool integration.
 
-1. **Go Production**: Learn [Production Deployment](production-deployment.md) for scaling
-2. **Advanced Patterns**: Explore [Advanced Patterns](../advanced/README.md) for complex workflows
-3. **Custom MCP Servers**: Learn [MCP Tool Development](../mcp/tool-development.md)
+**[→ Continue to Building Workflows](./building-workflows.md)**
 
-## Key Takeaways
+---
 
-- **MCP Integration**: Standardized way to connect agents with external tools
-- **Built-in Tools**: Ready-to-use tools for common tasks
-- **Custom Tools**: Easy to create for specific needs
-- **Performance**: Caching and load balancing for production use
-- **Security**: Always validate inputs and manage credentials properly
-
-## Further Reading
-
-- [MCP Fundamentals](../mcp/README.md) - Deep dive into MCP concepts
-- [Creating Custom Tools](../mcp/tool-development.md) - Advanced tool development
-- [Tool Integration Patterns](../mcp/advanced-tool-patterns.md) - Advanced patterns
+::: tip Tool-Powered Agents
+You've just transformed your agents from text generators into capable digital assistants that can search the web, manage files, make API calls, and perform real-world tasks. This is where AI agents become truly powerful and practical.
+:::

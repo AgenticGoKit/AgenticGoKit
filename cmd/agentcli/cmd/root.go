@@ -24,6 +24,7 @@ PROJECT MANAGEMENT
 DEVELOPMENT & DEBUG  
   trace       View execution traces and agent interactions
   memory      Debug memory system and RAG functionality
+  knowledge   Manage knowledge base documents and content
 
 MCP & TOOLS
   mcp         Manage Model Context Protocol servers and tools
@@ -91,7 +92,7 @@ func getCommandCategory(cmdName string) string {
 	switch cmdName {
 	case "create", "template", "validate", "config":
 		return "project"
-	case "trace", "memory":
+	case "trace", "memory", "knowledge":
 		return "debug"
 	case "mcp", "cache":
 		return "mcp"
@@ -110,17 +111,17 @@ const customHelpTemplate = `{{with (or .Long .Short)}}{{. | trimTrailingWhitespa
 func init() {
 	// Set custom help template
 	rootCmd.SetHelpTemplate(customHelpTemplate)
-	
+
 	// Add --version flag to root command
 	rootCmd.Flags().BoolP("version", "v", false, "Show version information")
-	
+
 	// Handle --version flag and default behavior
 	rootCmd.Run = func(cmd *cobra.Command, args []string) {
 		if versionFlag, _ := cmd.Flags().GetBool("version"); versionFlag {
 			fmt.Println(version.GetVersionString())
 			return
 		}
-		
+
 		// Show enhanced help when no command is provided
 		showEnhancedHelp(cmd)
 	}
@@ -130,7 +131,7 @@ func init() {
 func showEnhancedHelp(cmd *cobra.Command) {
 	fmt.Print(cmd.Long)
 	fmt.Println()
-	
+
 	// Group commands by category
 	categoryCommands := make(map[string][]*cobra.Command)
 	for _, subCmd := range cmd.Commands() {
@@ -139,23 +140,23 @@ func showEnhancedHelp(cmd *cobra.Command) {
 			categoryCommands[category] = append(categoryCommands[category], subCmd)
 		}
 	}
-	
+
 	// Display commands by category
 	categoryOrder := []string{"project", "debug", "mcp", "utility"}
 	for _, categoryKey := range categoryOrder {
 		if commands, exists := categoryCommands[categoryKey]; exists && len(commands) > 0 {
 			category := commandCategories[categoryKey]
 			fmt.Printf("\n%s %s:\n", category.Icon, category.Name)
-			
+
 			for _, subCmd := range commands {
 				fmt.Printf("  %-12s %s\n", subCmd.Name(), subCmd.Short)
 			}
 		}
 	}
-	
+
 	fmt.Printf("\nFlags:\n")
 	fmt.Printf("  -h, --help      Show help information\n")
 	fmt.Printf("  -v, --version   Show version information\n")
-	
+
 	fmt.Printf("\nUse \"agentcli <command> --help\" for detailed information about a command.\n")
 }

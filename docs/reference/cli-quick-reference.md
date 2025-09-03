@@ -115,7 +115,7 @@ agentcli completion powershell > agentcli.ps1
 ### Development Setup
 ```bash
 # Quick development project
-agentcli create dev-project --template basic --provider mock
+agentcli create dev-project --template basic --provider openai
 ```
 
 ### Production Setup

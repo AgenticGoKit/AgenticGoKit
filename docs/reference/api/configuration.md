@@ -163,8 +163,9 @@ model = "gemma3:1b"
 #   _ "github.com/kunalkushwaha/agenticgokit/plugins/runner/default"
 # )
 
-[providers.mock]
-# Mock provider for testing - no configuration needed
+[providers.ollama]
+base_url = "http://localhost:11434"
+model = "gemma3:1b"
 ```
 
 **With Memory and RAG Configuration:**
@@ -370,7 +371,7 @@ These environment variables are automatically used when not specified in the TOM
 [agent_flow]
 name = "my-dev-agent"
 version = "1.0.0"
-provider = "mock"  # Use mock provider for development
+provider = "openai"  # Use OpenAI provider
 
 [logging]
 level = "debug"
@@ -380,8 +381,8 @@ format = "text"
 max_concurrent_agents = 2
 timeout_seconds = 10
 
-[providers.mock]
-# Mock provider for testing - no configuration needed
+[providers.openai]
+# API key will be read from OPENAI_API_KEY environment variable
 
 [agent_memory]
 provider = "memory"  # In-memory for fast development

@@ -51,6 +51,12 @@ import (
         {{- end }}
     {{- end }}
 
+    {{- /* Embedding provider based on config */}}
+    {{- if .Config.MemoryEnabled }}
+    // Embedding services (bridge to internal factories)
+    _ "github.com/kunalkushwaha/agenticgokit/plugins/embedding"
+    {{- end }}
+
     {{- /* MCP transport/registry/cache based on config */}}
     {{- if .Config.MCPEnabled }}
     // MCP: transport, registry, and optional cache backend

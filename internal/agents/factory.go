@@ -48,20 +48,14 @@ func (f *ConfigurableAgentFactory) CreateAgent(name string, resolvedConfig *core
 	if resolvedConfig.RetryPolicy != nil {
 		// Note: This would require implementing a retry capability
 		// For now, we'll log that retry policy is configured
-		core.Logger().Debug().
-			Str("agent", name).
-			Int("max_retries", resolvedConfig.RetryPolicy.MaxRetries).
-			Msg("Agent configured with retry policy")
+
 	}
 
 	// Add rate limiting if configured
 	if resolvedConfig.RateLimit != nil {
 		// Note: This would require implementing a rate limiting capability
 		// For now, we'll log that rate limiting is configured
-		core.Logger().Debug().
-			Str("agent", name).
-			Int("requests_per_second", resolvedConfig.RateLimit.RequestsPerSecond).
-			Msg("Agent configured with rate limiting")
+
 	}
 
 	// Build the agent
@@ -73,10 +67,7 @@ func (f *ConfigurableAgentFactory) CreateAgent(name string, resolvedConfig *core
 	// Apply AutoLLM configuration if the agent supports it
 	if unifiedAgent, ok := agent.(*core.UnifiedAgent); ok {
 		unifiedAgent.SetAutoLLM(resolvedConfig.AutoLLM)
-		core.Logger().Debug().
-			Str("agent", name).
-			Bool("auto_llm", resolvedConfig.AutoLLM).
-			Msg("Applied AutoLLM configuration")
+
 	}
 
 	// Create a wrapper that includes the configuration metadata
@@ -86,14 +77,6 @@ func (f *ConfigurableAgentFactory) CreateAgent(name string, resolvedConfig *core
 		Config:         resolvedConfig,
 		OriginalConfig: f.config,
 	}
-
-	core.Logger().Debug().
-		Str("agent", name).
-		Str("role", resolvedConfig.Role).
-		Strs("capabilities", resolvedConfig.Capabilities).
-		Bool("enabled", resolvedConfig.Enabled).
-		Dur("timeout", resolvedConfig.Timeout).
-		Msg("Agent created from configuration")
 
 	return configuredAgent, nil
 }
@@ -138,11 +121,6 @@ func (f *ConfigurableAgentFactory) CreateAllEnabledAgents() (map[string]core.Age
 		}
 		agents[agentName] = agent
 	}
-
-	core.Logger().Debug().
-		Int("agent_count", len(agents)).
-		Strs("agent_names", enabledAgentNames).
-		Msg("Created all enabled agents from configuration")
 
 	return agents, nil
 }
@@ -337,11 +315,11 @@ func (ca *ConfiguredAgent) Run(ctx context.Context, inputState core.State) (core
 	inputState.Set("system_prompt", ca.Config.SystemPrompt)
 
 	// Log agent execution
-	core.Logger().Debug().
-		Str("agent", ca.AgentName).
-		Str("role", ca.Config.Role).
-		Strs("capabilities", ca.Config.Capabilities).
-		Msg("Executing configured agent")
+	core.DebugLogWithFields(core.Logger(), "Executing configured agent", map[string]interface{}{
+		"agent":        ca.AgentName,
+		"role":         ca.Config.Role,
+		"capabilities": ca.Config.Capabilities,
+	})
 
 	// Execute the underlying agent
 	outputState, err := ca.Agent.Run(ctx, inputState)

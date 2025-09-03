@@ -1,164 +1,273 @@
+---
+title: Agent Lifecycle in AgenticGoKit
+description: Complete guide to agent creation, configuration, execution, and management using the unified Agent interface
+sidebar: true
+prev: ./README
+next: ./message-passing
+outline: deep
+tags:
+  - agent-lifecycle
+  - agent-management
+  - configuration
+  - execution
+  - core-concepts
+---
+
 # Agent Lifecycle in AgenticGoKit
 
-## Overview
+Understanding the agent lifecycle is fundamental to building effective multi-agent systems. This tutorial explores how agents are created, configured, executed, and managed using AgenticGoKit's unified Agent interface and modern patterns.
 
-Understanding the agent lifecycle is fundamental to building effective multi-agent systems. This tutorial explores how agents are created, initialized, executed, and cleaned up in AgenticGoKit, along with best practices for managing agent resources and state.
-
-The agent lifecycle encompasses everything from agent creation and configuration to execution patterns and resource cleanup.
+The agent lifecycle encompasses configuration-driven creation, capability composition, execution patterns, and resource management.
 
 ## Prerequisites
 
-- Basic understanding of Go programming
-- Familiarity with [Message Passing and Event Flow](message-passing.md)
-- Knowledge of [State Management](state-management.md)
+- Basic understanding of Go programming and interfaces
+- Familiarity with [Message Passing and Event Flow](./message-passing.md)
+- Knowledge of [State Management](./state-management.md)
+- Understanding of [Core Concepts Overview](./README.md)
+
+## Learning Objectives
+
+By the end of this tutorial, you'll understand:
+- The unified Agent interface and its capabilities
+- Configuration-driven agent creation patterns
+- Agent lifecycle management and best practices
+- Capability composition and advanced agent patterns
+- Resource management and cleanup strategies
+
+## The Unified Agent Interface
+
+AgenticGoKit uses a comprehensive, unified Agent interface that supports both state processing and event handling patterns:
+
+```go
+type Agent interface {
+    // Core identification
+    Name() string
+    GetRole() string
+    GetDescription() string
+    
+    // Dual execution patterns
+    Run(ctx context.Context, inputState State) (State, error)
+    HandleEvent(ctx context.Context, event Event, state State) (AgentResult, error)
+    
+    // Configuration and capabilities
+    GetCapabilities() []string
+    GetSystemPrompt() string
+    GetTimeout() time.Duration
+    IsEnabled() bool
+    GetLLMConfig() *ResolvedLLMConfig
+    
+    // Lifecycle management
+    Initialize(ctx context.Context) error
+    Shutdown(ctx context.Context) error
+}
+```
+
+::: info Dual Execution Patterns
+- **`Run()`**: Direct state transformation for simple processing
+- **`HandleEvent()`**: Full event-driven processing with metadata and routing
+:::
 
 ## Agent Lifecycle Phases
 
-### 1. Creation and Configuration
+Agents follow a well-defined lifecycle with clear phases:
 
-Agents go through several phases during their lifecycle:
-
-```
-┌─────────────┐    ┌──────────────┐    ┌─────────────┐    ┌─────────────┐
-│   Creation  │───▶│Configuration │───▶│Initialization│───▶│   Ready     │
-└─────────────┘    └──────────────┘    └─────────────┘    └─────────────┘
-                                                                  │
-┌─────────────┐    ┌──────────────┐    ┌─────────────┐           │
-│   Cleanup   │◀───│   Shutdown   │◀───│  Execution  │◀──────────┘
-└─────────────┘    └──────────────┘    └─────────────┘
+```mermaid
+stateDiagram-v2
+    [*] --> Configuration
+    Configuration --> Creation
+    Creation --> Registration
+    Registration --> Initialization
+    Initialization --> Ready
+    Ready --> Execution
+    Execution --> Ready : Continue Processing
+    Execution --> Shutdown : Stop Signal
+    Ready --> Shutdown : Stop Signal
+    Shutdown --> Cleanup
+    Cleanup --> [*]
+    
+    note right of Configuration
+        agentflow.toml
+        ResolvedAgentConfig
+    end note
+    
+    note right of Execution
+        Run() or HandleEvent()
+        State transformation
+        Resource management
+    end note
 ```
 
 ## Agent Creation Patterns
 
-### 1. Builder Pattern
+### 1. Configuration-Driven Creation (Recommended)
 
-AgenticGoKit uses the builder pattern for agent creation:
+The primary way to create agents is through configuration files and factories:
 
-```go
-// Create an agent using the builder pattern
-agent, err := core.NewAgent("my-agent").
-    WithLLMAndConfig(provider, core.LLMConfig{
-        SystemPrompt: "You are a helpful assistant.",
-        Temperature:  0.7,
-        MaxTokens:    1000,
-    }).
-    WithMemory(memorySystem).
-    WithMCP(mcpManager).
-    WithMetrics().
-    Build()
+::: code-group
 
+```toml [agentflow.toml]
+[agents.research_agent]
+role = "research_specialist"
+description = "Specialized agent for research tasks"
+system_prompt = "You are a research specialist with access to web search and document analysis."
+enabled = true
+capabilities = ["research", "analysis", "web_search"]
+timeout_seconds = 60
+
+[agents.research_agent.llm]
+provider = "ollama"
+model = "gemma3:1b"
+temperature = 0.3
+max_tokens = 1000
+```
+
+```go [agent_creation.go]
+// Create agent factory from configuration
+config, err := core.LoadConfigFromWorkingDir()
 if err != nil {
-    log.Fatalf("Failed to create agent: %v", err)
+    log.Fatal(err)
 }
+
+factory := core.NewConfigurableAgentFactory(config)
+
+// Create agent from configuration
+agent, err := factory.CreateAgentFromConfig("research_agent", config)
+if err != nil {
+    log.Fatal(err)
+}
+
+fmt.Printf("Created agent: %s with role: %s\n", agent.Name(), agent.GetRole())
 ```
 
-### 2. Factory Pattern
+:::
 
-For complex agent creation scenarios:
+### 2. Composable Agent Pattern
+
+For advanced scenarios requiring custom capabilities:
 
 ```go
-type AgentFactory struct {
-    defaultConfig AgentConfig
-    providers     map[string]LLMProvider
-    memory        Memory
+// Define capabilities for the agent
+capabilities := map[core.CapabilityType]core.AgentCapability{
+    core.CapabilityTypeLLM:     llmCapability,
+    core.CapabilityTypeMemory:  memoryCapability,
+    core.CapabilityTypeMetrics: metricsCapability,
 }
 
-func (f *AgentFactory) CreateAgent(agentType string, config AgentConfig) (Agent, error) {
-    switch agentType {
-    case "research":
-        return f.createResearchAgent(config)
-    case "analysis":
-        return f.createAnalysisAgent(config)
-    case "writing":
-        return f.createWritingAgent(config)
-    default:
-        return nil, fmt.Errorf("unknown agent type: %s", agentType)
-    }
-}
+// Create custom handler
+handler := core.AgentHandlerFunc(func(ctx context.Context, event core.Event, state core.State) (core.AgentResult, error) {
+    // Custom processing logic
+    outputState := state.Clone()
+    outputState.Set("processed_by", "custom_agent")
+    outputState.Set("timestamp", time.Now().Unix())
+    
+    return core.AgentResult{
+        OutputState: outputState,
+        StartTime:   time.Now(),
+        EndTime:     time.Now(),
+    }, nil
+})
 
-func (f *AgentFactory) createResearchAgent(config AgentConfig) (Agent, error) {
-    return core.NewAgent("research-agent").
-        WithLLMAndConfig(f.providers["research"], core.LLMConfig{
-            SystemPrompt: "You are a research specialist...",
-            Temperature:  0.3,
-        }).
-        WithMemory(f.memory).
-        WithMCP(f.getMCPForResearch()).
-        Build()
-}
+// Create composable agent
+agent := core.NewComposableAgent("custom-agent", capabilities, handler)
 ```
 
-### 3. Configuration-Based Creation
+### 3. Configuration with Capabilities
 
-Create agents from configuration files:
+Combine configuration with capability composition:
 
 ```go
-type AgentSpec struct {
-    Name     string            `yaml:"name"`
-    Type     string            `yaml:"type"`
-    LLM      LLMConfig         `yaml:"llm"`
-    Memory   MemoryConfig      `yaml:"memory"`
-    MCP      MCPConfig         `yaml:"mcp"`
-    Metadata map[string]string `yaml:"metadata"`
+// Load resolved configuration
+config, err := core.LoadConfigFromWorkingDir()
+if err != nil {
+    log.Fatal(err)
 }
 
-func CreateAgentFromSpec(spec AgentSpec) (Agent, error) {
-    builder := core.NewAgent(spec.Name)
-    
-    // Configure LLM
-    if spec.LLM.Provider != "" {
-        provider, err := createLLMProvider(spec.LLM)
-        if err != nil {
-            return nil, err
-        }
-        builder = builder.WithLLMAndConfig(provider, spec.LLM)
-    }
-    
-    // Configure memory
-    if spec.Memory.Enabled {
-        memory, err := createMemorySystem(spec.Memory)
-        if err != nil {
-            return nil, err
-        }
-        builder = builder.WithMemory(memory)
-    }
-    
-    // Configure MCP
-    if len(spec.MCP.Tools) > 0 {
-        mcpManager, err := createMCPManager(spec.MCP)
-        if err != nil {
-            return nil, err
-        }
-        builder = builder.WithMCP(mcpManager)
-    }
-    
-    return builder.Build()
+resolver := core.NewConfigResolver(config)
+resolvedConfig, err := resolver.ResolveAgentConfigWithEnv("advanced_agent")
+if err != nil {
+    log.Fatal(err)
+}
+
+// Create agent with full configuration and capabilities
+agent := core.NewComposableAgentWithConfig(
+    "advanced_agent",
+    resolvedConfig,
+    capabilities,
+    handler,
+)
+
+// Agent is now fully configured with:
+// - Configuration from agentflow.toml
+// - Environment variable overrides
+// - Custom capabilities
+// - Custom handler logic
+```
+
+### 4. Agent Manager Integration
+
+Use the agent manager for centralized lifecycle management:
+
+```go
+// Create agent manager from configuration
+manager := core.NewAgentManager(config)
+
+// Initialize all agents from configuration
+err := manager.InitializeAgents()
+if err != nil {
+    log.Fatal(err)
+}
+
+// Get active agents
+activeAgents := manager.GetActiveAgents()
+for _, agent := range activeAgents {
+    fmt.Printf("Agent: %s, Role: %s, Enabled: %v\n", 
+        agent.Name(), agent.GetRole(), agent.IsEnabled())
+}
+
+// Create specific agent
+agent, err := manager.CreateAgent("new_agent", resolvedConfig)
+if err != nil {
+    log.Fatal(err)
 }
 ```
 
 ## Agent Initialization
 
-### 1. Initialization Hooks
+### 1. Standard Initialization
 
-Agents can implement initialization logic:
+All agents implement the `Initialize()` method from the unified Agent interface:
 
 ```go
-type InitializableAgent interface {
-    Agent
-    Initialize(ctx context.Context) error
-    IsInitialized() bool
+// Example agent implementation
+type CustomAgent struct {
+    name         string
+    role         string
+    config       *core.ResolvedAgentConfig
+    initialized  bool
+    resources    []Resource
+    capabilities map[core.CapabilityType]core.AgentCapability
 }
 
-type MyAgent struct {
-    name        string
-    llm         LLMProvider
-    initialized bool
-    resources   []Resource
-}
-
-func (a *MyAgent) Initialize(ctx context.Context) error {
+func (a *CustomAgent) Initialize(ctx context.Context) error {
     if a.initialized {
-        return nil
+        return nil // Already initialized
+    }
+    
+    core.Logger().Info().
+        Str("agent", a.name).
+        Str("role", a.role).
+        Msg("Initializing agent")
+    
+    // Initialize capabilities in priority order
+    for capType, capability := range a.capabilities {
+        if initializer, ok := capability.(interface {
+            Initialize(context.Context) error
+        }); ok {
+            if err := initializer.Initialize(ctx); err != nil {
+                return fmt.Errorf("failed to initialize capability %s: %w", capType, err)
+            }
+        }
     }
     
     // Initialize resources
@@ -168,217 +277,500 @@ func (a *MyAgent) Initialize(ctx context.Context) error {
         }
     }
     
-    // Perform any setup tasks
-    if err := a.setupTasks(ctx); err != nil {
-        return fmt.Errorf("setup tasks failed: %w", err)
+    a.initialized = true
+    
+    core.Logger().Info().
+        Str("agent", a.name).
+        Msg("Agent initialization completed")
+    
+    return nil
+}
+```
+
+### 2. Capability-Based Initialization
+
+Capabilities handle their own initialization:
+
+```go
+// Example LLM capability initialization
+type LLMCapability struct {
+    provider core.ModelProvider
+    config   *core.ResolvedLLMConfig
+}
+
+func (c *LLMCapability) Initialize(ctx context.Context) error {
+    // Validate configuration
+    if c.config.Provider == "" {
+        return fmt.Errorf("LLM provider not configured")
+    }
+    
+    // Test connection
+    testPrompt := core.Prompt{
+        System: "Test initialization",
+        User:   "Hello",
+    }
+    
+    _, err := c.provider.Call(ctx, testPrompt)
+    if err != nil {
+        return fmt.Errorf("LLM provider test failed: %w", err)
+    }
+    
+    core.Logger().Debug().
+        Str("provider", c.config.Provider).
+        Str("model", c.config.Model).
+        Msg("LLM capability initialized")
+    
+    return nil
+}
+```
+
+### 3. Lazy Initialization Pattern
+
+For expensive resources that may not always be needed:
+
+```go
+type LazyInitAgent struct {
+    name         string
+    config       *core.ResolvedAgentConfig
+    initOnce     sync.Once
+    initError    error
+    expensiveResource *ExpensiveResource
+}
+
+func (a *LazyInitAgent) ensureInitialized(ctx context.Context) error {
+    a.initOnce.Do(func() {
+        a.initError = a.initializeExpensiveResource(ctx)
+    })
+    return a.initError
+}
+
+func (a *LazyInitAgent) Run(ctx context.Context, inputState core.State) (core.State, error) {
+    // Only initialize when actually needed
+    if err := a.ensureInitialized(ctx); err != nil {
+        return inputState, fmt.Errorf("lazy initialization failed: %w", err)
+    }
+    
+    // Use the expensive resource
+    return a.processWithResource(ctx, inputState)
+}
+
+func (a *LazyInitAgent) HandleEvent(ctx context.Context, event core.Event, state core.State) (core.AgentResult, error) {
+    outputState, err := a.Run(ctx, state)
+    return core.AgentResult{
+        OutputState: outputState,
+        StartTime:   time.Now(),
+        EndTime:     time.Now(),
+    }, err
+}
+```
+
+### 4. Initialization with Validation
+
+Comprehensive initialization with validation:
+
+```go
+func (a *CustomAgent) Initialize(ctx context.Context) error {
+    if a.initialized {
+        return nil
+    }
+    
+    // Validate configuration
+    if err := a.validateConfiguration(); err != nil {
+        return fmt.Errorf("configuration validation failed: %w", err)
+    }
+    
+    // Initialize with timeout
+    initCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+    defer cancel()
+    
+    // Initialize components in dependency order
+    if err := a.initializeComponents(initCtx); err != nil {
+        return fmt.Errorf("component initialization failed: %w", err)
+    }
+    
+    // Perform health check
+    if err := a.performHealthCheck(initCtx); err != nil {
+        return fmt.Errorf("post-initialization health check failed: %w", err)
     }
     
     a.initialized = true
     return nil
 }
 
-func (a *MyAgent) IsInitialized() bool {
-    return a.initialized
-}
-```
-
-### 2. Lazy Initialization
-
-Initialize resources only when needed:
-
-```go
-type LazyAgent struct {
-    name         string
-    config       AgentConfig
-    llm          LLMProvider
-    initOnce     sync.Once
-    initError    error
-}
-
-func (a *LazyAgent) ensureInitialized(ctx context.Context) error {
-    a.initOnce.Do(func() {
-        a.initError = a.initialize(ctx)
-    })
-    return a.initError
-}
-
-func (a *LazyAgent) Run(ctx context.Context, event Event, state State) (AgentResult, error) {
-    if err := a.ensureInitialized(ctx); err != nil {
-        return AgentResult{}, fmt.Errorf("initialization failed: %w", err)
+func (a *CustomAgent) validateConfiguration() error {
+    if a.config == nil {
+        return fmt.Errorf("agent configuration is nil")
     }
     
-    // Normal execution
-    return a.execute(ctx, event, state)
+    if a.config.Name == "" {
+        return fmt.Errorf("agent name is required")
+    }
+    
+    if !a.config.Enabled {
+        return fmt.Errorf("agent is disabled in configuration")
+    }
+    
+    return nil
 }
 ```
 
-## Agent Execution Lifecycle
+## Agent Execution Patterns
 
-### 1. Pre-Execution Phase
+### 1. Dual Execution Methods
 
-Before each agent execution:
+Agents support both direct state processing and event-driven execution:
 
 ```go
-func (a *MyAgent) Run(ctx context.Context, event Event, state State) (AgentResult, error) {
-    // Pre-execution setup
-    executionID := generateExecutionID()
+// Direct state processing - simple and efficient
+func (a *CustomAgent) Run(ctx context.Context, inputState core.State) (core.State, error) {
+    // Validate input
+    if inputState == nil {
+        return core.NewState(), fmt.Errorf("input state cannot be nil")
+    }
+    
+    // Apply timeout from configuration
+    if a.config != nil && a.config.Timeout > 0 {
+        var cancel context.CancelFunc
+        ctx, cancel = context.WithTimeout(ctx, a.config.Timeout)
+        defer cancel()
+    }
+    
+    // Process state
+    outputState := inputState.Clone()
+    
+    // Add processing metadata
+    outputState.Set("processed_by", a.name)
+    outputState.Set("processed_at", time.Now().Unix())
+    outputState.SetMeta("agent_role", a.role)
+    
+    // Apply capabilities (if any)
+    for capType, capability := range a.capabilities {
+        if processor, ok := capability.(interface {
+            Process(context.Context, core.State) (core.State, error)
+        }); ok {
+            var err error
+            outputState, err = processor.Process(ctx, outputState)
+            if err != nil {
+                return inputState, fmt.Errorf("capability %s processing failed: %w", capType, err)
+            }
+        }
+    }
+    
+    return outputState, nil
+}
+
+// Event-driven processing - full featured with metadata
+func (a *CustomAgent) HandleEvent(ctx context.Context, event core.Event, state core.State) (core.AgentResult, error) {
     startTime := time.Now()
     
-    // Log execution start
-    a.logger.Info("Agent execution started", 
-        "agent", a.name,
-        "execution_id", executionID,
-        "event_id", event.GetID())
+    core.Logger().Debug().
+        Str("agent", a.name).
+        Str("event_id", event.GetID()).
+        Str("session_id", event.GetSessionID()).
+        Msg("Processing event")
     
-    // Validate inputs
-    if err := a.validateInputs(event, state); err != nil {
-        return AgentResult{}, fmt.Errorf("input validation failed: %w", err)
+    // Process using Run method
+    outputState, err := a.Run(ctx, state)
+    endTime := time.Now()
+    
+    // Create comprehensive result
+    result := core.AgentResult{
+        OutputState: outputState,
+        StartTime:   startTime,
+        EndTime:     endTime,
+        Duration:    endTime.Sub(startTime),
     }
     
-    // Setup execution context
-    execCtx := a.setupExecutionContext(ctx, executionID)
-    
-    // Execute main logic
-    result, err := a.execute(execCtx, event, state)
-    
-    // Post-execution cleanup
-    duration := time.Since(startTime)
-    a.recordMetrics(executionID, duration, err)
+    if err != nil {
+        result.Error = err.Error()
+        core.Logger().Error().
+            Str("agent", a.name).
+            Str("event_id", event.GetID()).
+            Err(err).
+            Msg("Agent execution failed")
+    } else {
+        core.Logger().Debug().
+            Str("agent", a.name).
+            Str("event_id", event.GetID()).
+            Dur("duration", result.Duration).
+            Msg("Agent execution completed")
+    }
     
     return result, err
 }
 ```
 
-### 2. Execution Context Management
+### 2. Execution Context and Tracing
 
-Manage execution-specific context:
+Comprehensive execution context management:
 
 ```go
 type ExecutionContext struct {
     ExecutionID string
+    AgentName   string
     StartTime   time.Time
+    EventID     string
+    SessionID   string
     Metadata    map[string]interface{}
-    Resources   map[string]interface{}
     Cleanup     []func()
 }
 
-func (a *MyAgent) setupExecutionContext(ctx context.Context, executionID string) context.Context {
+func (a *CustomAgent) createExecutionContext(ctx context.Context, event core.Event) context.Context {
     execCtx := &ExecutionContext{
-        ExecutionID: executionID,
+        ExecutionID: generateExecutionID(),
+        AgentName:   a.name,
         StartTime:   time.Now(),
+        EventID:     event.GetID(),
+        SessionID:   event.GetSessionID(),
         Metadata:    make(map[string]interface{}),
-        Resources:   make(map[string]interface{}),
         Cleanup:     make([]func(), 0),
     }
     
     return context.WithValue(ctx, "execution_context", execCtx)
 }
 
-func (a *MyAgent) execute(ctx context.Context, event Event, state State) (AgentResult, error) {
-    execCtx := ctx.Value("execution_context").(*ExecutionContext)
-    defer a.cleanup(execCtx)
+func (a *CustomAgent) HandleEvent(ctx context.Context, event core.Event, state core.State) (core.AgentResult, error) {
+    // Create execution context
+    execCtx := a.createExecutionContext(ctx, event)
     
-    // Main execution logic
-    // Implementation detail elided; public orchestration should use runner.Emit
-    return a.execute(ctx, event, state)
+    // Ensure cleanup
+    defer a.performCleanup(execCtx)
+    
+    // Execute with context
+    return a.executeWithContext(execCtx, event, state)
 }
 
-func (a *MyAgent) cleanup(execCtx *ExecutionContext) {
-    for _, cleanupFunc := range execCtx.Cleanup {
-        cleanupFunc()
+func (a *CustomAgent) performCleanup(ctx context.Context) {
+    if execCtx := ctx.Value("execution_context"); execCtx != nil {
+        if ec, ok := execCtx.(*ExecutionContext); ok {
+            for _, cleanup := range ec.Cleanup {
+                cleanup()
+            }
+        }
     }
 }
 ```
 
 ### 3. Resource Management During Execution
 
-Manage resources throughout execution:
+Safe resource acquisition and release:
 
 ```go
 type ResourceManager struct {
     resources map[string]Resource
     mu        sync.RWMutex
+    timeout   time.Duration
 }
 
-func (rm *ResourceManager) AcquireResource(ctx context.Context, name string) (Resource, error) {
-    rm.mu.Lock()
-    defer rm.mu.Unlock()
-    
-    resource, exists := rm.resources[name]
-    if !exists {
-        return nil, fmt.Errorf("resource not found: %s", name)
+func (rm *ResourceManager) WithResource(ctx context.Context, name string, fn func(Resource) error) error {
+    // Acquire resource with timeout
+    resource, err := rm.acquireResource(ctx, name)
+    if err != nil {
+        return err
     }
     
-    if err := resource.Acquire(ctx); err != nil {
-        return nil, fmt.Errorf("failed to acquire resource %s: %w", name, err)
-    }
+    // Ensure release
+    defer func() {
+        if releaseErr := rm.releaseResource(name); releaseErr != nil {
+            core.Logger().Error().
+                Str("resource", name).
+                Err(releaseErr).
+                Msg("Failed to release resource")
+        }
+    }()
     
-    return resource, nil
+    // Use resource
+    return fn(resource)
 }
 
-func (rm *ResourceManager) ReleaseResource(name string) error {
-    rm.mu.RLock()
-    resource, exists := rm.resources[name]
-    rm.mu.RUnlock()
+func (a *CustomAgent) Run(ctx context.Context, inputState core.State) (core.State, error) {
+    var outputState core.State
     
-    if !exists {
-        return fmt.Errorf("resource not found: %s", name)
+    // Use resource manager for safe resource handling
+    err := a.resourceManager.WithResource(ctx, "llm", func(resource Resource) error {
+        llmProvider := resource.(core.ModelProvider)
+        
+        // Process with LLM
+        var err error
+        outputState, err = a.processWithLLM(ctx, inputState, llmProvider)
+        return err
+    })
+    
+    if err != nil {
+        return inputState, err
     }
     
-    return resource.Release()
+    return outputState, nil
 }
 ```
 
-## Agent State Management
+### 4. Timeout and Cancellation Handling
 
-### 1. Agent Internal State
+Proper timeout and cancellation support:
 
-Manage agent's internal state across executions:
+```go
+func (a *CustomAgent) Run(ctx context.Context, inputState core.State) (core.State, error) {
+    // Apply agent-specific timeout
+    timeout := a.GetTimeout()
+    if timeout > 0 {
+        var cancel context.CancelFunc
+        ctx, cancel = context.WithTimeout(ctx, timeout)
+        defer cancel()
+    }
+    
+    // Create result channel for async processing
+    resultChan := make(chan struct {
+        state core.State
+        err   error
+    }, 1)
+    
+    // Process asynchronously
+    go func() {
+        state, err := a.processAsync(ctx, inputState)
+        resultChan <- struct {
+            state core.State
+            err   error
+        }{state, err}
+    }()
+    
+    // Wait for completion or cancellation
+    select {
+    case result := <-resultChan:
+        return result.state, result.err
+    case <-ctx.Done():
+        return inputState, fmt.Errorf("agent execution cancelled: %w", ctx.Err())
+    }
+}
+```
+
+## Agent Configuration and State
+
+### 1. Configuration Resolution
+
+Agents use resolved configuration with environment overrides:
+
+```go
+// Configuration resolution example
+func createConfiguredAgent(agentName string) (core.Agent, error) {
+    // Load base configuration
+    config, err := core.LoadConfigFromWorkingDir()
+    if err != nil {
+        return nil, err
+    }
+    
+    // Resolve with environment variables
+    resolver := core.NewConfigResolver(config)
+    resolvedConfig, err := resolver.ResolveAgentConfigWithEnv(agentName)
+    if err != nil {
+        return nil, err
+    }
+    
+    // Create agent with resolved configuration
+    factory := core.NewConfigurableAgentFactory(config)
+    agent, err := factory.CreateAgent(agentName, resolvedConfig, nil)
+    if err != nil {
+        return nil, err
+    }
+    
+    return agent, nil
+}
+```
+
+### 2. Agent Metadata and Capabilities
+
+Access agent configuration and capabilities:
+
+```go
+func inspectAgent(agent core.Agent) {
+    fmt.Printf("Agent Name: %s\n", agent.Name())
+    fmt.Printf("Role: %s\n", agent.GetRole())
+    fmt.Printf("Description: %s\n", agent.GetDescription())
+    fmt.Printf("Enabled: %v\n", agent.IsEnabled())
+    fmt.Printf("Timeout: %v\n", agent.GetTimeout())
+    fmt.Printf("Capabilities: %v\n", agent.GetCapabilities())
+    fmt.Printf("System Prompt: %s\n", agent.GetSystemPrompt())
+    
+    // Check LLM configuration
+    if llmConfig := agent.GetLLMConfig(); llmConfig != nil {
+        fmt.Printf("LLM Provider: %s\n", llmConfig.Provider)
+        fmt.Printf("LLM Model: %s\n", llmConfig.Model)
+        fmt.Printf("Temperature: %f\n", llmConfig.Temperature)
+    }
+}
+```
+
+### 3. Stateful Agent Pattern
+
+For agents that need to maintain state across executions:
 
 ```go
 type StatefulAgent struct {
-    name          string
+    core.Agent // Embed the base agent
+    
     internalState map[string]interface{}
     stateMutex    sync.RWMutex
     persistence   StatePersistence
 }
 
-func (a *StatefulAgent) GetInternalState(key string) (interface{}, bool) {
-    a.stateMutex.RLock()
-    defer a.stateMutex.RUnlock()
-    
-    value, exists := a.internalState[key]
-    return value, exists
+func NewStatefulAgent(baseAgent core.Agent, persistence StatePersistence) *StatefulAgent {
+    return &StatefulAgent{
+        Agent:         baseAgent,
+        internalState: make(map[string]interface{}),
+        persistence:   persistence,
+    }
 }
 
-func (a *StatefulAgent) SetInternalState(key string, value interface{}) {
+func (a *StatefulAgent) Run(ctx context.Context, inputState core.State) (core.State, error) {
+    // Load persisted state on first access
+    a.loadPersistedState()
+    
+    // Add internal state to processing context
+    enrichedState := inputState.Clone()
+    a.addInternalStateToContext(enrichedState)
+    
+    // Process with base agent
+    outputState, err := a.Agent.Run(ctx, enrichedState)
+    if err != nil {
+        return inputState, err
+    }
+    
+    // Update internal state from output
+    a.updateInternalState(outputState)
+    
+    // Persist state
+    a.persistState()
+    
+    return outputState, nil
+}
+
+func (a *StatefulAgent) loadPersistedState() {
     a.stateMutex.Lock()
     defer a.stateMutex.Unlock()
     
-    a.internalState[key] = value
-    
-    // Persist state if configured
-    if a.persistence != nil {
-        a.persistence.SaveState(a.name, a.internalState)
+    if len(a.internalState) == 0 && a.persistence != nil {
+        if state, err := a.persistence.LoadState(a.Name()); err == nil {
+            a.internalState = state
+        }
     }
 }
 
-func (a *StatefulAgent) Run(ctx context.Context, event Event, state State) (AgentResult, error) {
-    // Load persisted state on first run
-    if len(a.internalState) == 0 && a.persistence != nil {
-        if persistedState, err := a.persistence.LoadState(a.name); err == nil {
-            a.internalState = persistedState
-        }
+func (a *StatefulAgent) persistState() {
+    a.stateMutex.RLock()
+    state := make(map[string]interface{})
+    for k, v := range a.internalState {
+        state[k] = v
     }
+    a.stateMutex.RUnlock()
     
-    // Use internal state in processing
-    return a.processWithInternalState(ctx, event, state)
+    if a.persistence != nil {
+        a.persistence.SaveState(a.Name(), state)
+    }
 }
 ```
 
-### 2. State Persistence
+### 4. State Persistence Interface
 
-Persist agent state across restarts:
+Flexible state persistence for different backends:
 
 ```go
 type StatePersistence interface {
@@ -387,16 +779,22 @@ type StatePersistence interface {
     DeleteState(agentName string) error
 }
 
+// File-based persistence
 type FileStatePersistence struct {
     baseDir string
+}
+
+func NewFileStatePersistence(baseDir string) *FileStatePersistence {
+    os.MkdirAll(baseDir, 0755)
+    return &FileStatePersistence{baseDir: baseDir}
 }
 
 func (fsp *FileStatePersistence) SaveState(agentName string, state map[string]interface{}) error {
     filename := filepath.Join(fsp.baseDir, agentName+".json")
     
-    data, err := json.Marshal(state)
+    data, err := json.MarshalIndent(state, "", "  ")
     if err != nil {
-        return err
+        return fmt.Errorf("failed to marshal state: %w", err)
     }
     
     return os.WriteFile(filename, data, 0644)
@@ -407,20 +805,65 @@ func (fsp *FileStatePersistence) LoadState(agentName string) (map[string]interfa
     
     data, err := os.ReadFile(filename)
     if err != nil {
-        return nil, err
+        if os.IsNotExist(err) {
+            return make(map[string]interface{}), nil // Return empty state if file doesn't exist
+        }
+        return nil, fmt.Errorf("failed to read state file: %w", err)
     }
     
     var state map[string]interface{}
-    err = json.Unmarshal(data, &state)
-    return state, err
+    if err := json.Unmarshal(data, &state); err != nil {
+        return nil, fmt.Errorf("failed to unmarshal state: %w", err)
+    }
+    
+    return state, nil
+}
+
+func (fsp *FileStatePersistence) DeleteState(agentName string) error {
+    filename := filepath.Join(fsp.baseDir, agentName+".json")
+    return os.Remove(filename)
 }
 ```
 
-## Agent Health and Monitoring
+## Agent Monitoring and Health
 
-### 1. Health Checks
+### 1. Built-in Monitoring
 
-Implement health monitoring for agents:
+AgenticGoKit provides built-in monitoring through the tracing system:
+
+```go
+// Enable tracing for agent monitoring
+func setupAgentMonitoring(runner core.Runner) error {
+    // Create trace logger
+    traceLogger := core.NewInMemoryTraceLogger()
+    runner.SetTraceLogger(traceLogger)
+    
+    // Register trace hooks
+    err := core.RegisterTraceHooks(runner.GetCallbackRegistry(), traceLogger)
+    if err != nil {
+        return fmt.Errorf("failed to register trace hooks: %w", err)
+    }
+    
+    // Add performance monitoring callback
+    err = runner.RegisterCallback(core.HookAfterAgentRun, "performance-monitor",
+        func(ctx context.Context, args core.CallbackArgs) (core.State, error) {
+            // Record execution metrics
+            core.Logger().Info().
+                Str("agent", args.AgentID).
+                Dur("duration", args.AgentResult.Duration).
+                Bool("success", args.Error == nil).
+                Msg("Agent execution completed")
+            
+            return args.State, nil
+        })
+    
+    return err
+}
+```
+
+### 2. Agent Health Monitoring
+
+Implement health checks for agents:
 
 ```go
 type HealthStatus int
@@ -431,29 +874,45 @@ const (
     HealthStatusUnhealthy
 )
 
-type HealthCheckable interface {
-    HealthCheck(ctx context.Context) HealthStatus
-    GetHealthDetails() map[string]interface{}
-}
-
-type MyAgent struct {
-    name           string
+type HealthMonitor struct {
+    agentName      string
     lastExecution  time.Time
     errorCount     int64
     successCount   int64
-    resources      []HealthCheckable
+    mu             sync.RWMutex
 }
 
-func (a *MyAgent) HealthCheck(ctx context.Context) HealthStatus {
+func NewHealthMonitor(agentName string) *HealthMonitor {
+    return &HealthMonitor{
+        agentName: agentName,
+    }
+}
+
+func (hm *HealthMonitor) RecordExecution(success bool) {
+    hm.mu.Lock()
+    defer hm.mu.Unlock()
+    
+    hm.lastExecution = time.Now()
+    if success {
+        hm.successCount++
+    } else {
+        hm.errorCount++
+    }
+}
+
+func (hm *HealthMonitor) GetHealthStatus() HealthStatus {
+    hm.mu.RLock()
+    defer hm.mu.RUnlock()
+    
     // Check if agent has been executing recently
-    if time.Since(a.lastExecution) > 5*time.Minute {
+    if time.Since(hm.lastExecution) > 5*time.Minute {
         return HealthStatusDegraded
     }
     
     // Check error rate
-    totalExecutions := a.errorCount + a.successCount
+    totalExecutions := hm.errorCount + hm.successCount
     if totalExecutions > 0 {
-        errorRate := float64(a.errorCount) / float64(totalExecutions)
+        errorRate := float64(hm.errorCount) / float64(totalExecutions)
         if errorRate > 0.5 {
             return HealthStatusUnhealthy
         } else if errorRate > 0.2 {
@@ -461,55 +920,64 @@ func (a *MyAgent) HealthCheck(ctx context.Context) HealthStatus {
         }
     }
     
-    // Check resource health
-    for _, resource := range a.resources {
-        if resource.HealthCheck(ctx) == HealthStatusUnhealthy {
-            return HealthStatusDegraded
-        }
-    }
-    
     return HealthStatusHealthy
 }
 
-func (a *MyAgent) GetHealthDetails() map[string]interface{} {
+func (hm *HealthMonitor) GetHealthDetails() map[string]interface{} {
+    hm.mu.RLock()
+    defer hm.mu.RUnlock()
+    
+    totalExecutions := hm.errorCount + hm.successCount
+    var errorRate float64
+    if totalExecutions > 0 {
+        errorRate = float64(hm.errorCount) / float64(totalExecutions)
+    }
+    
     return map[string]interface{}{
-        "name":            a.name,
-        "last_execution":  a.lastExecution,
-        "error_count":     a.errorCount,
-        "success_count":   a.successCount,
-        "error_rate":      float64(a.errorCount) / float64(a.errorCount + a.successCount),
+        "agent_name":      hm.agentName,
+        "last_execution":  hm.lastExecution,
+        "error_count":     hm.errorCount,
+        "success_count":   hm.successCount,
+        "total_executions": totalExecutions,
+        "error_rate":      errorRate,
+        "health_status":   hm.GetHealthStatus(),
     }
 }
 ```
 
-### 2. Performance Monitoring
+### 3. Performance Metrics
 
-Monitor agent performance metrics:
+Track agent performance over time:
 
 ```go
-type PerformanceMonitor struct {
+type PerformanceMetrics struct {
     agentName       string
     executionTimes  []time.Duration
-    memoryUsage     []int64
     maxHistorySize  int
     mu              sync.RWMutex
 }
 
-func (pm *PerformanceMonitor) RecordExecution(duration time.Duration, memoryUsed int64) {
+func NewPerformanceMetrics(agentName string, maxHistory int) *PerformanceMetrics {
+    return &PerformanceMetrics{
+        agentName:      agentName,
+        maxHistorySize: maxHistory,
+        executionTimes: make([]time.Duration, 0, maxHistory),
+    }
+}
+
+func (pm *PerformanceMetrics) RecordExecution(duration time.Duration) {
     pm.mu.Lock()
     defer pm.mu.Unlock()
     
     pm.executionTimes = append(pm.executionTimes, duration)
-    pm.memoryUsage = append(pm.memoryUsage, memoryUsed)
     
     // Keep only recent history
     if len(pm.executionTimes) > pm.maxHistorySize {
         pm.executionTimes = pm.executionTimes[1:]
-        pm.memoryUsage = pm.memoryUsage[1:]
     }
 }
 
-func (pm *PerformanceMonitor) GetAverageExecutionTime() time.Duration {
+func (pm *PerformanceMetrics) GetAverageExecutionTime() time.Duration {
     pm.mu.RLock()
     defer pm.mu.RUnlock()
     
@@ -524,65 +992,202 @@ func (pm *PerformanceMonitor) GetAverageExecutionTime() time.Duration {
     
     return total / time.Duration(len(pm.executionTimes))
 }
+
+func (pm *PerformanceMetrics) GetPercentile(percentile float64) time.Duration {
+    pm.mu.RLock()
+    defer pm.mu.RUnlock()
+    
+    if len(pm.executionTimes) == 0 {
+        return 0
+    }
+    
+    // Sort durations
+    sorted := make([]time.Duration, len(pm.executionTimes))
+    copy(sorted, pm.executionTimes)
+    
+    // Simple sort for demonstration
+    for i := 0; i < len(sorted); i++ {
+        for j := i + 1; j < len(sorted); j++ {
+            if sorted[i] > sorted[j] {
+                sorted[i], sorted[j] = sorted[j], sorted[i]
+            }
+        }
+    }
+    
+    index := int(float64(len(sorted)) * percentile / 100.0)
+    if index >= len(sorted) {
+        index = len(sorted) - 1
+    }
+    
+    return sorted[index]
+}
 ```
 
-## Agent Cleanup and Shutdown
+### 4. Monitoring Integration
+
+Integrate monitoring into agent implementations:
+
+```go
+type MonitoredAgent struct {
+    core.Agent
+    healthMonitor     *HealthMonitor
+    performanceMetrics *PerformanceMetrics
+}
+
+func NewMonitoredAgent(baseAgent core.Agent) *MonitoredAgent {
+    return &MonitoredAgent{
+        Agent:              baseAgent,
+        healthMonitor:      NewHealthMonitor(baseAgent.Name()),
+        performanceMetrics: NewPerformanceMetrics(baseAgent.Name(), 100),
+    }
+}
+
+func (ma *MonitoredAgent) HandleEvent(ctx context.Context, event core.Event, state core.State) (core.AgentResult, error) {
+    startTime := time.Now()
+    
+    // Execute base agent
+    result, err := ma.Agent.HandleEvent(ctx, event, state)
+    
+    // Record metrics
+    duration := time.Since(startTime)
+    ma.performanceMetrics.RecordExecution(duration)
+    ma.healthMonitor.RecordExecution(err == nil)
+    
+    // Log performance
+    core.Logger().Debug().
+        Str("agent", ma.Name()).
+        Dur("duration", duration).
+        Bool("success", err == nil).
+        Msg("Agent execution monitored")
+    
+    return result, err
+}
+
+func (ma *MonitoredAgent) GetHealthStatus() HealthStatus {
+    return ma.healthMonitor.GetHealthStatus()
+}
+
+func (ma *MonitoredAgent) GetPerformanceMetrics() map[string]interface{} {
+    return map[string]interface{}{
+        "average_execution_time": ma.performanceMetrics.GetAverageExecutionTime(),
+        "p50_execution_time":     ma.performanceMetrics.GetPercentile(50),
+        "p95_execution_time":     ma.performanceMetrics.GetPercentile(95),
+        "p99_execution_time":     ma.performanceMetrics.GetPercentile(99),
+    }
+}
+```
+
+## Agent Shutdown and Cleanup
 
 ### 1. Graceful Shutdown
 
-Implement graceful shutdown for agents:
+All agents implement the `Shutdown()` method for graceful termination:
 
 ```go
-type GracefulAgent interface {
-    Agent
-    Shutdown(ctx context.Context) error
+// Example agent with proper shutdown handling
+type GracefulAgent struct {
+    name         string
+    config       *core.ResolvedAgentConfig
+    capabilities map[core.CapabilityType]core.AgentCapability
+    resources    []Resource
+    shutdown     chan struct{}
+    wg           sync.WaitGroup
+    shutdownOnce sync.Once
 }
 
-type MyAgent struct {
-    name      string
-    resources []Resource
-    shutdown  chan struct{}
-    wg        sync.WaitGroup
+func (a *GracefulAgent) Shutdown(ctx context.Context) error {
+    var shutdownErr error
+    
+    a.shutdownOnce.Do(func() {
+        core.Logger().Info().
+            Str("agent", a.name).
+            Msg("Starting graceful shutdown")
+        
+        // Signal shutdown to all operations
+        close(a.shutdown)
+        
+        // Wait for ongoing operations with timeout
+        done := make(chan struct{})
+        go func() {
+            a.wg.Wait()
+            close(done)
+        }()
+        
+        select {
+        case <-done:
+            core.Logger().Debug().
+                Str("agent", a.name).
+                Msg("All operations completed")
+        case <-ctx.Done():
+            shutdownErr = fmt.Errorf("shutdown timeout: %w", ctx.Err())
+            return
+        }
+        
+        // Shutdown capabilities in reverse order
+        shutdownErr = a.shutdownCapabilities(ctx)
+        if shutdownErr != nil {
+            return
+        }
+        
+        // Cleanup resources
+        shutdownErr = a.cleanupResources()
+        
+        core.Logger().Info().
+            Str("agent", a.name).
+            Msg("Graceful shutdown completed")
+    })
+    
+    return shutdownErr
 }
 
-func (a *MyAgent) Shutdown(ctx context.Context) error {
-    // Signal shutdown
-    close(a.shutdown)
-    
-    // Wait for ongoing operations with timeout
-    done := make(chan struct{})
-    go func() {
-        a.wg.Wait()
-        close(done)
-    }()
-    
-    select {
-    case <-done:
-        // All operations completed
-    case <-ctx.Done():
-        return ctx.Err()
-    }
-    
-    // Cleanup resources
+func (a *GracefulAgent) shutdownCapabilities(ctx context.Context) error {
     var errors []error
-    for _, resource := range a.resources {
-        if err := resource.Close(); err != nil {
-            errors = append(errors, err)
+    
+    for capType, capability := range a.capabilities {
+        if shutdowner, ok := capability.(interface {
+            Shutdown(context.Context) error
+        }); ok {
+            if err := shutdowner.Shutdown(ctx); err != nil {
+                errors = append(errors, fmt.Errorf("capability %s shutdown failed: %w", capType, err))
+            }
         }
     }
     
     if len(errors) > 0 {
-        return fmt.Errorf("cleanup errors: %v", errors)
+        return fmt.Errorf("capability shutdown errors: %v", errors)
     }
     
     return nil
 }
 
-func (a *MyAgent) Run(ctx context.Context, event Event, state State) (AgentResult, error) {
+func (a *GracefulAgent) cleanupResources() error {
+    var errors []error
+    
+    // Cleanup in reverse order
+    for i := len(a.resources) - 1; i >= 0; i-- {
+        if err := a.resources[i].Close(); err != nil {
+            errors = append(errors, fmt.Errorf("resource %d cleanup failed: %w", i, err))
+        }
+    }
+    
+    if len(errors) > 0 {
+        return fmt.Errorf("resource cleanup errors: %v", errors)
+    }
+    
+    return nil
+}
+```
+
+### 2. Shutdown-Aware Execution
+
+Agents should check for shutdown signals during execution:
+
+```go
+func (a *GracefulAgent) Run(ctx context.Context, inputState core.State) (core.State, error) {
     // Check if shutting down
     select {
     case <-a.shutdown:
-        return AgentResult{}, errors.New("agent is shutting down")
+        return inputState, fmt.Errorf("agent %s is shutting down", a.name)
     default:
     }
     
@@ -590,38 +1195,114 @@ func (a *MyAgent) Run(ctx context.Context, event Event, state State) (AgentResul
     a.wg.Add(1)
     defer a.wg.Done()
     
-    // Execute normally
-    return a.execute(ctx, event, state)
+    // Create cancellable context for this execution
+    execCtx, cancel := context.WithCancel(ctx)
+    defer cancel()
+    
+    // Monitor for shutdown during execution
+    go func() {
+        select {
+        case <-a.shutdown:
+            cancel() // Cancel execution if shutdown is requested
+        case <-execCtx.Done():
+            // Execution completed normally
+        }
+    }()
+    
+    // Execute with shutdown monitoring
+    return a.executeWithShutdownMonitoring(execCtx, inputState)
+}
+
+func (a *GracefulAgent) executeWithShutdownMonitoring(ctx context.Context, inputState core.State) (core.State, error) {
+    // Process in chunks, checking for cancellation
+    outputState := inputState.Clone()
+    
+    // Simulate processing with cancellation checks
+    for i := 0; i < 10; i++ {
+        select {
+        case <-ctx.Done():
+            return inputState, fmt.Errorf("execution cancelled: %w", ctx.Err())
+        default:
+        }
+        
+        // Simulate work
+        time.Sleep(100 * time.Millisecond)
+        outputState.Set(fmt.Sprintf("step_%d", i), fmt.Sprintf("completed at %v", time.Now()))
+    }
+    
+    return outputState, nil
 }
 ```
 
-### 2. Resource Cleanup
+### 3. Resource Management with Cleanup
 
-Ensure proper resource cleanup:
+Proper resource lifecycle management:
 
 ```go
-type ResourceCleanup struct {
-    resources []CleanupFunc
-    mu        sync.Mutex
+type ResourceManager struct {
+    resources map[string]Resource
+    cleanup   []CleanupFunc
+    mu        sync.RWMutex
 }
 
 type CleanupFunc func() error
 
-func (rc *ResourceCleanup) AddCleanup(cleanup CleanupFunc) {
-    rc.mu.Lock()
-    defer rc.mu.Unlock()
-    rc.resources = append(rc.resources, cleanup)
+type Resource interface {
+    Initialize(ctx context.Context) error
+    Close() error
+    IsHealthy() bool
 }
 
-func (rc *ResourceCleanup) Cleanup() error {
-    rc.mu.Lock()
-    defer rc.mu.Unlock()
+func NewResourceManager() *ResourceManager {
+    return &ResourceManager{
+        resources: make(map[string]Resource),
+        cleanup:   make([]CleanupFunc, 0),
+    }
+}
+
+func (rm *ResourceManager) AddResource(name string, resource Resource) error {
+    rm.mu.Lock()
+    defer rm.mu.Unlock()
+    
+    if _, exists := rm.resources[name]; exists {
+        return fmt.Errorf("resource %s already exists", name)
+    }
+    
+    rm.resources[name] = resource
+    
+    // Add cleanup function
+    rm.cleanup = append(rm.cleanup, func() error {
+        return resource.Close()
+    })
+    
+    return nil
+}
+
+func (rm *ResourceManager) GetResource(name string) (Resource, error) {
+    rm.mu.RLock()
+    defer rm.mu.RUnlock()
+    
+    resource, exists := rm.resources[name]
+    if !exists {
+        return nil, fmt.Errorf("resource %s not found", name)
+    }
+    
+    if !resource.IsHealthy() {
+        return nil, fmt.Errorf("resource %s is not healthy", name)
+    }
+    
+    return resource, nil
+}
+
+func (rm *ResourceManager) Cleanup() error {
+    rm.mu.Lock()
+    defer rm.mu.Unlock()
     
     var errors []error
     
-    // Cleanup in reverse order
-    for i := len(rc.resources) - 1; i >= 0; i-- {
-        if err := rc.resources[i](); err != nil {
+    // Cleanup in reverse order (LIFO)
+    for i := len(rm.cleanup) - 1; i >= 0; i-- {
+        if err := rm.cleanup[i](); err != nil {
             errors = append(errors, err)
         }
     }
@@ -634,185 +1315,385 @@ func (rc *ResourceCleanup) Cleanup() error {
 }
 ```
 
-## Agent Lifecycle Management
+### 4. Agent Manager Shutdown
 
-### 1. Agent Manager
-
-Centralized agent lifecycle management:
+Coordinate shutdown across multiple agents:
 
 ```go
-type AgentManager struct {
-    agents    map[string]Agent
-    lifecycle map[string]*AgentLifecycle
-    mu        sync.RWMutex
-}
-
-type AgentLifecycle struct {
-    Agent       Agent
-    Status      AgentStatus
-    CreatedAt   time.Time
-    StartedAt   *time.Time
-    StoppedAt   *time.Time
-    HealthCheck HealthCheckable
-    Monitor     *PerformanceMonitor
-}
-
-type AgentStatus int
-
-const (
-    AgentStatusCreated AgentStatus = iota
-    AgentStatusStarted
-    AgentStatusStopped
-    AgentStatusError
-)
-
-func (am *AgentManager) RegisterAgent(name string, agent Agent) error {
-    am.mu.Lock()
-    defer am.mu.Unlock()
+func shutdownAgentSystem(manager core.AgentManager) error {
+    ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+    defer cancel()
     
-    if _, exists := am.agents[name]; exists {
-        return fmt.Errorf("agent already registered: %s", name)
+    // Get all active agents
+    agents := manager.GetCurrentAgents()
+    
+    core.Logger().Info().
+        Int("agent_count", len(agents)).
+        Msg("Starting system shutdown")
+    
+    // Shutdown agents concurrently
+    var wg sync.WaitGroup
+    errorChan := make(chan error, len(agents))
+    
+    for name, agent := range agents {
+        wg.Add(1)
+        go func(agentName string, a core.Agent) {
+            defer wg.Done()
+            
+            if err := a.Shutdown(ctx); err != nil {
+                errorChan <- fmt.Errorf("agent %s shutdown failed: %w", agentName, err)
+            } else {
+                core.Logger().Debug().
+                    Str("agent", agentName).
+                    Msg("Agent shutdown completed")
+            }
+        }(name, agent)
     }
     
-    am.agents[name] = agent
-    am.lifecycle[name] = &AgentLifecycle{
-        Agent:     agent,
-        Status:    AgentStatusCreated,
-        CreatedAt: time.Now(),
-        Monitor:   &PerformanceMonitor{agentName: name, maxHistorySize: 100},
+    // Wait for all shutdowns to complete
+    wg.Wait()
+    close(errorChan)
+    
+    // Collect any errors
+    var errors []error
+    for err := range errorChan {
+        errors = append(errors, err)
     }
     
+    if len(errors) > 0 {
+        return fmt.Errorf("shutdown errors: %v", errors)
+    }
+    
+    core.Logger().Info().Msg("System shutdown completed successfully")
     return nil
 }
+```
 
-func (am *AgentManager) StartAgent(ctx context.Context, name string) error {
-    am.mu.Lock()
-    lifecycle, exists := am.lifecycle[name]
-    am.mu.Unlock()
-    
-    if !exists {
-        return fmt.Errorf("agent not found: %s", name)
+## Complete Lifecycle Management
+
+### 1. Using the Agent Manager
+
+The built-in AgentManager provides comprehensive lifecycle management:
+
+```go
+func demonstrateAgentManager() {
+    // Load configuration
+    config, err := core.LoadConfigFromWorkingDir()
+    if err != nil {
+        log.Fatal(err)
     }
     
-    // Initialize if needed
-    if initializable, ok := lifecycle.Agent.(InitializableAgent); ok {
-        if err := initializable.Initialize(ctx); err != nil {
-            lifecycle.Status = AgentStatusError
-            return fmt.Errorf("agent initialization failed: %w", err)
+    // Create agent manager
+    manager := core.NewAgentManager(config)
+    
+    // Initialize all agents from configuration
+    err = manager.InitializeAgents()
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    // Get all active agents
+    activeAgents := manager.GetActiveAgents()
+    fmt.Printf("Active agents: %d\n", len(activeAgents))
+    
+    for _, agent := range activeAgents {
+        fmt.Printf("- %s (%s): %v\n", agent.Name(), agent.GetRole(), agent.IsEnabled())
+    }
+    
+    // Create additional agent at runtime
+    resolver := core.NewConfigResolver(config)
+    resolvedConfig, err := resolver.ResolveAgentConfigWithEnv("dynamic_agent")
+    if err == nil {
+        dynamicAgent, err := manager.CreateAgent("dynamic_agent", resolvedConfig)
+        if err == nil {
+            fmt.Printf("Created dynamic agent: %s\n", dynamicAgent.Name())
         }
     }
     
-    now := time.Now()
-    lifecycle.StartedAt = &now
-    lifecycle.Status = AgentStatusStarted
-    
-    return nil
+    // Disable an agent
+    err = manager.DisableAgent("some_agent")
+    if err != nil {
+        fmt.Printf("Failed to disable agent: %v\n", err)
+    }
 }
+```
 
-func (am *AgentManager) StopAgent(ctx context.Context, name string) error {
-    am.mu.Lock()
-    lifecycle, exists := am.lifecycle[name]
-    am.mu.Unlock()
-    
-    if !exists {
-        return fmt.Errorf("agent not found: %s", name)
+### 2. Integration with Runner
+
+Agents work seamlessly with the Runner system:
+
+```go
+func setupCompleteSystem() error {
+    // Create runner from configuration
+    runner, err := core.NewRunnerFromConfig("agentflow.toml")
+    if err != nil {
+        return err
     }
     
-    // Graceful shutdown if supported
-    if graceful, ok := lifecycle.Agent.(GracefulAgent); ok {
-        if err := graceful.Shutdown(ctx); err != nil {
-            return fmt.Errorf("graceful shutdown failed: %w", err)
+    // Create agent manager
+    config, err := core.LoadConfigFromWorkingDir()
+    if err != nil {
+        return err
+    }
+    
+    manager := core.NewAgentManager(config)
+    err = manager.InitializeAgents()
+    if err != nil {
+        return err
+    }
+    
+    // Register all active agents with runner
+    activeAgents := manager.GetActiveAgents()
+    for _, agent := range activeAgents {
+        // Create handler from agent
+        handler := core.AgentHandlerFunc(func(ctx context.Context, event core.Event, state core.State) (core.AgentResult, error) {
+            return agent.HandleEvent(ctx, event, state)
+        })
+        
+        err = runner.RegisterAgent(agent.Name(), handler)
+        if err != nil {
+            return fmt.Errorf("failed to register agent %s: %w", agent.Name(), err)
         }
     }
     
-    now := time.Now()
-    lifecycle.StoppedAt = &now
-    lifecycle.Status = AgentStatusStopped
+    // Setup monitoring
+    setupAgentMonitoring(runner)
+    
+    // Start system
+    ctx := context.Background()
+    err = runner.Start(ctx)
+    if err != nil {
+        return err
+    }
+    
+    // Graceful shutdown on signal
+    go func() {
+        // Wait for shutdown signal (simplified)
+        time.Sleep(30 * time.Second)
+        
+        core.Logger().Info().Msg("Shutting down system")
+        
+        // Stop runner
+        runner.Stop()
+        
+        // Shutdown all agents
+        shutdownAgentSystem(manager)
+    }()
     
     return nil
 }
 ```
 
-### 2. Lifecycle Events
+### 3. Lifecycle Event Monitoring
 
-Emit events during lifecycle transitions:
+Monitor agent lifecycle events:
 
 ```go
-type LifecycleEvent struct {
-    AgentName string
-    Event     LifecycleEventType
-    Timestamp time.Time
-    Data      map[string]interface{}
-}
-
-type LifecycleEventType string
-
-const (
-    LifecycleEventCreated     LifecycleEventType = "created"
-    LifecycleEventInitialized LifecycleEventType = "initialized"
-    LifecycleEventStarted     LifecycleEventType = "started"
-    LifecycleEventStopped     LifecycleEventType = "stopped"
-    LifecycleEventError       LifecycleEventType = "error"
-)
-
-type LifecycleEventEmitter struct {
-    listeners []LifecycleEventListener
-    mu        sync.RWMutex
-}
-
-type LifecycleEventListener func(event LifecycleEvent)
-
-func (lee *LifecycleEventEmitter) AddListener(listener LifecycleEventListener) {
-    lee.mu.Lock()
-    defer lee.mu.Unlock()
-    lee.listeners = append(lee.listeners, listener)
-}
-
-func (lee *LifecycleEventEmitter) EmitEvent(event LifecycleEvent) {
-    lee.mu.RLock()
-    listeners := make([]LifecycleEventListener, len(lee.listeners))
-    copy(listeners, lee.listeners)
-    lee.mu.RUnlock()
+func setupLifecycleMonitoring(runner core.Runner) {
+    // Monitor agent lifecycle through callbacks
+    runner.RegisterCallback(core.HookBeforeAgentRun, "lifecycle-monitor",
+        func(ctx context.Context, args core.CallbackArgs) (core.State, error) {
+            core.Logger().Info().
+                Str("agent", args.AgentID).
+                Str("event_id", args.Event.GetID()).
+                Msg("Agent execution starting")
+            
+            return args.State, nil
+        })
     
-    for _, listener := range listeners {
-        go listener(event)
+    runner.RegisterCallback(core.HookAfterAgentRun, "lifecycle-monitor",
+        func(ctx context.Context, args core.CallbackArgs) (core.State, error) {
+            core.Logger().Info().
+                Str("agent", args.AgentID).
+                Str("event_id", args.Event.GetID()).
+                Dur("duration", args.AgentResult.Duration).
+                Msg("Agent execution completed")
+            
+            return args.State, nil
+        })
+    
+    runner.RegisterCallback(core.HookAgentError, "lifecycle-monitor",
+        func(ctx context.Context, args core.CallbackArgs) (core.State, error) {
+            core.Logger().Error().
+                Str("agent", args.AgentID).
+                Str("event_id", args.Event.GetID()).
+                Err(args.Error).
+                Msg("Agent execution failed")
+            
+            return args.State, nil
+        })
+}
+```
+
+### 4. Advanced Lifecycle Patterns
+
+Implement sophisticated lifecycle management:
+
+```go
+type AdvancedLifecycleManager struct {
+    agents          map[string]core.Agent
+    healthMonitors  map[string]*HealthMonitor
+    performanceMetrics map[string]*PerformanceMetrics
+    mu              sync.RWMutex
+}
+
+func NewAdvancedLifecycleManager() *AdvancedLifecycleManager {
+    return &AdvancedLifecycleManager{
+        agents:             make(map[string]core.Agent),
+        healthMonitors:     make(map[string]*HealthMonitor),
+        performanceMetrics: make(map[string]*PerformanceMetrics),
     }
+}
+
+func (alm *AdvancedLifecycleManager) RegisterAgent(agent core.Agent) error {
+    alm.mu.Lock()
+    defer alm.mu.Unlock()
+    
+    name := agent.Name()
+    
+    // Initialize agent
+    ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+    defer cancel()
+    
+    err := agent.Initialize(ctx)
+    if err != nil {
+        return fmt.Errorf("failed to initialize agent %s: %w", name, err)
+    }
+    
+    // Store agent and create monitors
+    alm.agents[name] = agent
+    alm.healthMonitors[name] = NewHealthMonitor(name)
+    alm.performanceMetrics[name] = NewPerformanceMetrics(name, 1000)
+    
+    core.Logger().Info().
+        Str("agent", name).
+        Str("role", agent.GetRole()).
+        Msg("Agent registered and initialized")
+    
+    return nil
+}
+
+func (alm *AdvancedLifecycleManager) ExecuteAgent(ctx context.Context, agentName string, event core.Event, state core.State) (core.AgentResult, error) {
+    alm.mu.RLock()
+    agent, exists := alm.agents[agentName]
+    healthMonitor := alm.healthMonitors[agentName]
+    perfMetrics := alm.performanceMetrics[agentName]
+    alm.mu.RUnlock()
+    
+    if !exists {
+        return core.AgentResult{}, fmt.Errorf("agent %s not found", agentName)
+    }
+    
+    // Check health before execution
+    if healthMonitor.GetHealthStatus() == HealthStatusUnhealthy {
+        return core.AgentResult{}, fmt.Errorf("agent %s is unhealthy", agentName)
+    }
+    
+    // Execute with monitoring
+    startTime := time.Now()
+    result, err := agent.HandleEvent(ctx, event, state)
+    duration := time.Since(startTime)
+    
+    // Record metrics
+    perfMetrics.RecordExecution(duration)
+    healthMonitor.RecordExecution(err == nil)
+    
+    return result, err
+}
+
+func (alm *AdvancedLifecycleManager) GetSystemHealth() map[string]interface{} {
+    alm.mu.RLock()
+    defer alm.mu.RUnlock()
+    
+    health := make(map[string]interface{})
+    
+    for name, monitor := range alm.healthMonitors {
+        health[name] = monitor.GetHealthDetails()
+    }
+    
+    return health
+}
+
+func (alm *AdvancedLifecycleManager) ShutdownAll(ctx context.Context) error {
+    alm.mu.Lock()
+    defer alm.mu.Unlock()
+    
+    var errors []error
+    
+    for name, agent := range alm.agents {
+        if err := agent.Shutdown(ctx); err != nil {
+            errors = append(errors, fmt.Errorf("agent %s shutdown failed: %w", name, err))
+        }
+    }
+    
+    if len(errors) > 0 {
+        return fmt.Errorf("shutdown errors: %v", errors)
+    }
+    
+    return nil
 }
 ```
 
 ## Best Practices
 
-### 1. Resource Management
+### 1. Configuration-First Development
+
+Always start with configuration, then implement:
+
+::: tip Configuration Best Practice
+Define agents in `agentflow.toml` first, then create implementations. This ensures consistency and makes testing easier.
+:::
 
 ```go
-// Always use defer for cleanup
-func (a *MyAgent) Run(ctx context.Context, event Event, state State) (AgentResult, error) {
-    resource, err := a.acquireResource(ctx)
-    if err != nil {
-        return AgentResult{}, err
-    }
-    defer resource.Release()
-    
-    // Use resource...
-    return a.processWithResource(ctx, event, state, resource)
-}
+// Good: Configuration-driven approach
+config, err := core.LoadConfigFromWorkingDir()
+factory := core.NewConfigurableAgentFactory(config)
+agent, err := factory.CreateAgentFromConfig("my_agent", config)
+
+// Avoid: Hard-coded agent creation
+// agent := &MyAgent{name: "hardcoded", ...}
 ```
 
-### 2. Error Handling in Lifecycle
+### 2. Resource Management
+
+Always use proper resource lifecycle management:
 
 ```go
-// Handle initialization errors gracefully
+// Good: Use defer for cleanup
+func (a *MyAgent) Run(ctx context.Context, inputState core.State) (core.State, error) {
+    resource, err := a.acquireResource(ctx)
+    if err != nil {
+        return inputState, err
+    }
+    defer resource.Release() // Always cleanup
+    
+    return a.processWithResource(ctx, inputState, resource)
+}
+
+// Good: Use resource managers
+err := a.resourceManager.WithResource(ctx, "database", func(db Resource) error {
+    return a.processWithDatabase(ctx, inputState, db)
+})
+```
+
+### 3. Error Handling and Resilience
+
+Implement comprehensive error handling:
+
+```go
+// Good: Graceful error handling with context
 func (a *MyAgent) Initialize(ctx context.Context) error {
     var errors []error
     
-    for _, initializer := range a.initializers {
-        if err := initializer.Initialize(ctx); err != nil {
-            errors = append(errors, err)
+    // Initialize components with individual error handling
+    for name, component := range a.components {
+        if err := component.Initialize(ctx); err != nil {
+            errors = append(errors, fmt.Errorf("component %s: %w", name, err))
         }
     }
     
     if len(errors) > 0 {
-        // Cleanup any successful initializations
+        // Cleanup successful initializations
         a.cleanup()
         return fmt.Errorf("initialization failed: %v", errors)
     }
@@ -821,42 +1702,136 @@ func (a *MyAgent) Initialize(ctx context.Context) error {
 }
 ```
 
-### 3. Monitoring Integration
+### 4. Monitoring and Observability
+
+Integrate monitoring throughout the lifecycle:
 
 ```go
-// Integrate monitoring throughout lifecycle
-func (a *MyAgent) Run(ctx context.Context, event Event, state State) (AgentResult, error) {
+// Good: Comprehensive monitoring
+func (a *MyAgent) HandleEvent(ctx context.Context, event core.Event, state core.State) (core.AgentResult, error) {
     start := time.Now()
+    
+    // Log execution start
+    core.Logger().Debug().
+        Str("agent", a.Name()).
+        Str("event_id", event.GetID()).
+        Msg("Starting execution")
+    
     defer func() {
         duration := time.Since(start)
-        a.monitor.RecordExecution(duration, getCurrentMemoryUsage())
+        core.Logger().Debug().
+            Str("agent", a.Name()).
+            Dur("duration", duration).
+            Msg("Execution completed")
     }()
     
     return a.execute(ctx, event, state)
 }
 ```
 
+### 5. Testing Agent Lifecycle
+
+Test all lifecycle phases:
+
+```go
+func TestAgentLifecycle(t *testing.T) {
+    // Test configuration loading
+    config, err := core.LoadConfig("testdata/agentflow.toml")
+    assert.NoError(t, err)
+    
+    // Test agent creation
+    factory := core.NewConfigurableAgentFactory(config)
+    agent, err := factory.CreateAgentFromConfig("test_agent", config)
+    assert.NoError(t, err)
+    assert.Equal(t, "test_agent", agent.Name())
+    
+    // Test initialization
+    ctx := context.Background()
+    err = agent.Initialize(ctx)
+    assert.NoError(t, err)
+    
+    // Test execution
+    inputState := core.NewState()
+    inputState.Set("test_input", "hello")
+    
+    outputState, err := agent.Run(ctx, inputState)
+    assert.NoError(t, err)
+    assert.NotNil(t, outputState)
+    
+    // Test shutdown
+    err = agent.Shutdown(ctx)
+    assert.NoError(t, err)
+}
+```
+
+## Common Pitfalls and Solutions
+
+### 1. Resource Leaks
+
+::: warning Common Pitfall
+Forgetting to release resources or clean up after agent execution.
+:::
+
+**Solution**: Always use defer statements and resource managers.
+
+### 2. Initialization Order Dependencies
+
+::: warning Common Pitfall
+Components depending on each other during initialization without proper ordering.
+:::
+
+**Solution**: Use capability priorities and dependency injection.
+
+### 3. Blocking Shutdown
+
+::: warning Common Pitfall
+Agents that don't respond to shutdown signals, causing system hangs.
+:::
+
+**Solution**: Always check context cancellation and use timeouts.
+
+### 4. Configuration Drift
+
+::: warning Common Pitfall
+Agent behavior diverging from configuration over time.
+:::
+
+**Solution**: Use configuration validation and regular audits.
+
 ## Conclusion
 
-Understanding the agent lifecycle is crucial for building robust multi-agent systems. Proper lifecycle management ensures agents are created correctly, execute reliably, and clean up resources appropriately.
+The agent lifecycle in AgenticGoKit is designed for robustness, flexibility, and observability. By following the unified Agent interface and best practices, you can build reliable multi-agent systems that are easy to manage and monitor.
 
-Key takeaways:
-- **Use builder patterns** for flexible agent creation
-- **Implement proper initialization** and cleanup
-- **Monitor agent health** and performance
-- **Handle lifecycle transitions** gracefully
-- **Manage resources** carefully throughout the lifecycle
-- **Emit lifecycle events** for observability
+::: info Key Takeaways
+- **Configuration-Driven**: Use `agentflow.toml` for all agent definitions
+- **Unified Interface**: All agents implement the same comprehensive interface
+- **Proper Lifecycle**: Initialize → Execute → Shutdown with proper resource management
+- **Monitoring**: Built-in tracing and metrics for observability
+- **Graceful Shutdown**: Always implement proper cleanup and shutdown handling
+- **Capability Composition**: Build complex agents from reusable capabilities
+:::
+
+### Architecture Benefits
+
+- **Consistency**: All agents follow the same patterns
+- **Testability**: Clear lifecycle phases make testing straightforward
+- **Observability**: Built-in monitoring and tracing
+- **Flexibility**: Configuration-driven behavior changes
+- **Reliability**: Proper resource management and error handling
+- **Scalability**: Efficient resource usage and cleanup
 
 ## Next Steps
 
-- [Error Handling](error-handling.md) - Learn robust error management
-- [Memory Systems](../memory-systems/README.md) - Understand persistent storage
-- [Debugging Guide](../debugging/README.md) - Debug agent issues
-- [Production Deployment](../../guides/deployment/README.md) - Deploy agents in production
+Continue your learning journey with these related topics:
+
+- **[Message Passing](./message-passing.md)** - Learn event-driven communication
+- **[Orchestration Patterns](./orchestration-patterns.md)** - Coordinate multiple agents
+- **[Error Handling](./error-handling.md)** - Build resilient systems
+- **[State Management](./state-management.md)** - Master data flow patterns
 
 ## Further Reading
 
-- [API Reference: Agent Interfaces](../../reference/api/agent.md#agents)
-- [Examples: Agent Lifecycle Patterns](../../examples/)
-- [Configuration Guide: Agent Settings](../../reference/api/configuration.md)
+- [Agent Configuration Guide](../../guides/agent-configuration-system.md)
+- [Production Deployment](../../guides/deployment/)
+- [API Reference](../../reference/)
+- [Examples Repository](../../examples/)

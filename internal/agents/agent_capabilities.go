@@ -183,13 +183,6 @@ func NewLLMCapability(provider core.ModelProvider, config core.LLMConfig) *LLMCa
 		Provider: provider,
 		Config:   config,
 	}
-	core.Logger().Debug().
-		Str("capability_ctor", "llm").
-		Str("type", fmt.Sprintf("%T", c)).
-		Str("addr", fmt.Sprintf("%p", c)).
-		Str("name", c.Name()).
-		Int("priority", c.Priority()).
-		Msg("Constructed capability")
 	return c
 }
 
@@ -201,14 +194,8 @@ func (c *LLMCapability) Configure(agent CapabilityConfigurable) error {
 			fmt.Errorf("LLM provider is required"))
 	}
 
-	// Trace provider name, if available
-	if c.Provider != nil {
-		logger.Debug().Msg("LLM capability: provider non-nil; setting on agent")
-	}
-
 	agent.SetLLMProvider(c.Provider, c.Config)
 
-	logger.Debug().Msg("LLM capability configured")
 	return nil
 }
 
@@ -248,10 +235,6 @@ func (c *CacheCapability) Configure(agent CapabilityConfigurable) error {
 
 	agent.SetCacheManager(c.Manager, c.Config)
 
-	core.Logger().Debug().
-		Str("capability", c.Name()).
-		Msg("Cache capability configured")
-
 	return nil
 }
 
@@ -274,23 +257,11 @@ func NewMetricsCapability(config core.MetricsConfig) *MetricsCapability {
 		},
 		Config: config,
 	}
-	core.Logger().Debug().
-		Str("capability_ctor", "metrics").
-		Str("type", fmt.Sprintf("%T", c)).
-		Str("addr", fmt.Sprintf("%p", c)).
-		Str("name", c.Name()).
-		Int("priority", c.Priority()).
-		Msg("Constructed capability")
 	return c
 }
 
 func (c *MetricsCapability) Configure(agent CapabilityConfigurable) error {
 	agent.SetMetricsConfig(c.Config)
-
-	core.Logger().Debug().
-		Str("capability", c.Name()).
-		Int("port", c.Config.Port).
-		Msg("Metrics capability configured")
 
 	return nil
 }

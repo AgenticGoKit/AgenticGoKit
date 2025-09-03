@@ -3,6 +3,7 @@ package embedding
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/kunalkushwaha/agenticgokit/core"
 	"github.com/kunalkushwaha/agenticgokit/internal/embedding/providers"
@@ -15,8 +16,21 @@ type EmbeddingFactory struct{}
 func NewEmbeddingService(provider, model, apiKey, baseURL string, dimensions int) (core.EmbeddingService, error) {
 	switch provider {
 	case "openai":
+		// If no API key provided, try environment variable
 		if apiKey == "" {
-			return nil, fmt.Errorf("OpenAI API key is required for embedding service")
+			apiKey = os.Getenv("OPENAI_API_KEY")
+		}
+		if apiKey == "" {
+			return nil, fmt.Errorf("OpenAI API key is required for embedding service. Set OPENAI_API_KEY environment variable or provide api_key in configuration")
+		}
+		return providers.NewOpenAIEmbeddingService(apiKey, model), nil
+	case "azure":
+		// If no API key provided, try environment variable
+		if apiKey == "" {
+			apiKey = os.Getenv("AZURE_OPENAI_API_KEY")
+		}
+		if apiKey == "" {
+			return nil, fmt.Errorf("Azure OpenAI API key is required for embedding service. Set AZURE_OPENAI_API_KEY environment variable or provide api_key in configuration")
 		}
 		return providers.NewOpenAIEmbeddingService(apiKey, model), nil
 	case "ollama":
@@ -67,11 +81,17 @@ func GetDummyFactory() func(int) core.EmbeddingService {
 
 // Register all embedding service factories with core to avoid circular imports
 func init() {
-	// Register internal factories with core
-	core.RegisterOpenAIEmbeddingFactory(providers.NewOpenAIEmbeddingService)
+	// Register internal factories with core - wrap with environment variable support
+	core.RegisterOpenAIEmbeddingFactory(func(apiKey, model string) core.EmbeddingService {
+		// If no API key provided, try environment variable
+		if apiKey == "" {
+			apiKey = os.Getenv("OPENAI_API_KEY")
+		}
+		return providers.NewOpenAIEmbeddingService(apiKey, model)
+	})
 	core.RegisterOllamaEmbeddingFactory(providers.NewOllamaEmbeddingService)
 	core.RegisterDummyEmbeddingFactory(providers.NewDummyEmbeddingService)
-	
+
 	// Also register locally for internal use
 	RegisterOpenAIFactory(providers.NewOpenAIEmbeddingService)
 	RegisterOllamaFactory(providers.NewOllamaEmbeddingService)

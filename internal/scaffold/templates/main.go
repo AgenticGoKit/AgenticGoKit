@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/kunalkushwaha/agenticgokit/core"
+	_ "github.com/kunalkushwaha/agenticgokit/plugins/logging/zerolog"
 	_ "github.com/kunalkushwaha/agenticgokit/plugins/orchestrator/default"
 	_ "{{.Config.Name}}/agents"
 )
@@ -21,21 +22,7 @@ import (
 var memory core.Memory
 {{end}}
 
-// parseLogLevel converts string log level from config to core.LogLevel
-func parseLogLevel(levelStr string) core.LogLevel {
-	switch strings.ToLower(levelStr) {
-	case "debug":
-		return core.DEBUG
-	case "info":
-		return core.INFO
-	case "warn", "warning":
-		return core.WARN
-	case "error":
-		return core.ERROR
-	default:
-		return core.INFO // Default fallback
-	}
-}
+
 
 // main is the entry point for the {{.Config.Name}} multi-agent system.
 //
@@ -70,8 +57,7 @@ func main() {
 	}
 
 	// Apply logging configuration from agentflow.toml
-	logLevel := parseLogLevel(config.Logging.Level)
-	core.SetLogLevel(logLevel)
+	config.ApplyLoggingConfig()
 	
 	logger := core.Logger()
 	logger.Info().Str("log_level", config.Logging.Level).Str("log_format", config.Logging.Format).Msg("Starting {{.Config.Name}} multi-agent system with configured logging")
@@ -131,7 +117,7 @@ func main() {
 	
 	// TODO: Add LLM provider validation or health checks here
 	// Example: Test the connection with a simple query
-	logger.Debug().Str("provider", config.LLM.Provider).Msg("LLM provider initialized successfully")
+	// LLM provider initialized - debug logging reduced for cleaner output
 
 	{{if .Config.MCPEnabled}}
 	// Initialize MCP (Model Context Protocol) manager for tool integration
@@ -139,7 +125,7 @@ func main() {
 	// databases, APIs, and other integrations defined in your agentflow.toml
 	// TODO: Customize MCP initialization for your specific tool requirements
 	// You might want to add custom tool validation, authentication, or configuration
-	logger.Debug().Msg("Initializing MCP with timeout handling...")
+	// MCP initialization - debug logging reduced for cleaner output
 	mcpInitCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 
@@ -167,7 +153,7 @@ func main() {
 	}
 
 	if mcpManager != nil {
-		logger.Debug().Msg("MCP manager initialized successfully - agents can access tools via core.GetMCPManager()")
+		// MCP manager initialized successfully - debug logging reduced
 
 		// Initialize MCP tool registry with timeout
 		registryCtx, registryCancel := context.WithTimeout(ctx, 10*time.Second)
@@ -183,7 +169,7 @@ func main() {
 			if err != nil {
 				logger.Warn().Err(err).Msg("Failed to initialize MCP tool registry")
 			} else {
-				logger.Debug().Msg("MCP tool registry initialized successfully")
+				// MCP tool registry initialized successfully - debug logging reduced
 			}
 		case <-registryCtx.Done():
 			logger.Warn().Msg("MCP tool registry initialization timed out")
@@ -203,7 +189,7 @@ func main() {
 			if err != nil {
 				logger.Warn().Err(err).Msg("Failed to register MCP tools with registry")
 			} else {
-				logger.Debug().Msg("MCP tools registered with registry successfully")
+				// MCP tools registered with registry successfully - debug logging reduced
 			}
 		case <-toolsCtx.Done():
 			logger.Warn().Msg("MCP tools registration timed out")
@@ -215,7 +201,7 @@ func main() {
 	if err := initializeCache(); err != nil {
 		logger.Warn().Err(err).Msg("MCP cache initialization failed; continuing without cache")
 	} else {
-		logger.Debug().Msg("MCP cache manager initialized successfully")
+		// MCP cache manager initialized successfully - debug logging reduced
 	}
 	{{end}}
 	{{end}}
@@ -226,7 +212,7 @@ func main() {
 	// and perform RAG (Retrieval-Augmented Generation) operations
 	// TODO: Customize memory initialization for your specific use case
 	// You might want to add custom indexing, data preprocessing, or storage optimization
-	fmt.Println("Initializing memory system...")
+	logger.Info().Msg("Initializing memory system...")
 	
 	// Create memory configuration from agentflow.toml settings
 	// This includes database connections, embedding models, and RAG parameters
@@ -234,15 +220,13 @@ func main() {
 	memoryConfig := config.AgentMemory
 	
 	// Validate configuration before initializing memory
-	fmt.Println("Validating memory configuration...")
 	if err := validateMemoryConfig(memoryConfig, "{{.Config.EmbeddingModel}}"); err != nil {
 		logger.Error().Err(err).Msg("Memory configuration validation failed")
-	fmt.Printf("Configuration error: %v\n", err)
+	fmt.Printf("Configuration Error: %v\n", err)
 		os.Exit(1)
 	}
 	
-	logger.Debug().Msg("Memory configuration validation passed")
-	fmt.Println("Configuration validated.")
+	// Memory configuration validation passed - debug logging reduced
 	
 	memory, err := core.NewMemory(memoryConfig)
 	if err != nil {
@@ -290,8 +274,7 @@ func main() {
 	fmt.Printf("Warning: Memory connection test failed: %v\n", err)
 	fmt.Printf("Agents will still work, but memory features may be limited\n")
 	} else {
-		logger.Debug().Msg("Memory system initialized successfully")
-	fmt.Printf("Memory system ready.\n")
+		logger.Info().Msg("Memory system ready")
 	}
 	{{end}}
 
@@ -300,7 +283,7 @@ func main() {
 	// instead of hardcoded agent constructors, providing much more flexibility
 	// TODO: Customize agent factory initialization if needed
 	// You might want to add custom agent types or initialization logic
-	logger.Debug().Msg("Initializing configuration-driven agent factory...")
+	// Configuration-driven agent factory initialization - debug logging reduced
 	
 	factory := core.NewConfigurableAgentFactory(config)
 	if factory == nil {
@@ -323,7 +306,7 @@ func main() {
 	// Get all active agents from the manager
 	// This automatically excludes disabled agents and handles configuration-based filtering
 	activeAgents := agentManager.GetActiveAgents()
-	logger.Debug().Int("active_agents", len(activeAgents)).Msg("Active agents loaded from configuration")
+	// Active agents loaded from configuration - debug logging reduced
 
 	// Create agent handlers map for the workflow orchestrator
 	// We wrap each agent with result collection for output tracking
@@ -346,10 +329,11 @@ func main() {
 			agentName:       agentName,
 			outputs:         &results,
 			mutex:           &resultsMutex,
+{{if .Config.MemoryEnabled}}			memory:          memory, // Pass memory instance to handler{{end}}
 		}
 
 		agentHandlers[agentName] = wrappedAgent
-		logger.Debug().Str("agent", agentName).Msg("Agent registered with result collection")
+		// Agent registered with result collection - debug logging reduced
 	}
 
 	// Validate that we have at least one active agent
@@ -391,7 +375,7 @@ func main() {
 		agentHandlers["llm-error-handler"] = firstAgent
 		agentHandlers["auth-error-handler"] = firstAgent
 		
-		logger.Debug().Msg("Error handlers registered using first active agent as fallback")
+		// Error handlers registered using first active agent as fallback - debug logging reduced
 	}
 
 	// Create the workflow orchestrator (runner) from configuration
@@ -436,7 +420,7 @@ func main() {
 	// Attach the orchestrator to the runner (type assert to concrete implementation)
 	if runnerImpl, ok := runner.(*core.RunnerImpl); ok {
 		runnerImpl.SetOrchestrator(orchestrator)
-		logger.Debug().Str("mode", config.Orchestration.Mode).Msg("Orchestrator configured successfully")
+		// Orchestrator configured successfully - debug logging reduced
 	} else {
 		logger.Error().Msg("Failed to cast runner to RunnerImpl for orchestrator setup")
 		fmt.Printf("ERROR: Failed to configure orchestrator - runner type assertion failed\n")
@@ -469,10 +453,10 @@ func main() {
 			fmt.Printf("ERROR: Error registering agent %s: %v\n", name, err)
 			os.Exit(1)
 		}
-		logger.Debug().Str("agent", name).Msg("Agent registered successfully")
+		// Agent registered successfully - debug logging reduced
 	}
 	
-	logger.Debug().Int("agent_count", len(agentHandlers)).Msg("All agents registered with orchestrator")
+	// All agents registered with orchestrator - debug logging reduced
 
 
 
@@ -487,7 +471,7 @@ func main() {
 	var message string
 	if *messageFlag != "" {
 		message = *messageFlag
-		logger.Debug().Msg("Using message from command line flag")
+		// Using message from command line flag - debug logging reduced
 	} else {
 		// Interactive mode: prompt user for input
 		// TODO: Enhance interactive input with better UX
@@ -500,7 +484,7 @@ func main() {
 	// TODO: Customize the default message for your use case
 	if message == "" {
 		message = "Hello! Please provide information about current topics."
-		logger.Debug().Msg("Using default message")
+		// Using default message - debug logging reduced
 	}
 
 	// TODO: Add input validation and preprocessing here
@@ -576,7 +560,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	logger.Debug().Msg("Workflow execution started")
+	logger.Info().Msg("Workflow execution started")
 
 	// Wait for processing to complete BEFORE printing results.
 	// We call runner.Stop() explicitly here (instead of using defer runner.Stop()).
@@ -673,6 +657,7 @@ type ResultCollectorHandler struct {
 	agentName       string
 	outputs         *[]AgentOutput
 	mutex           *sync.Mutex
+{{if .Config.MemoryEnabled}}	memory          core.Memory // Capture memory instance instead of using global{{end}}
 }
 
 // AgentOutput holds the output from an agent along with metadata.
@@ -712,7 +697,22 @@ type AgentOutput struct {
 // You might want to modify how content is extracted, add custom
 // metadata collection, or implement different storage strategies.
 func (r *ResultCollectorHandler) Run(ctx context.Context, event core.Event, state core.State) (core.AgentResult, error) {
-	// TODO: Add pre-execution logic here if needed
+{{if .Config.MemoryEnabled}}	// Inject memory into context so agents can access it
+	if r.memory != nil {
+		sessionID := core.GetSessionID(ctx)
+		if sessionID == "default" {
+			sessionID = core.GenerateSessionID()
+		}
+		core.DebugLogWithFields(core.Logger(), "ResultCollector: Injecting memory into context", map[string]interface{}{
+			"injecting_memory_type": fmt.Sprintf("%T", r.memory),
+			"session_id":            sessionID,
+		})
+		ctx = core.WithMemory(ctx, r.memory, sessionID)
+	} else {
+		core.Logger().Warn().Msg("ResultCollector: Handler memory is nil, agents will get NoOpMemory")
+	}
+	
+{{end}}	// TODO: Add pre-execution logic here if needed
 	// Examples: start timing, log execution start, validate input
 	startTime := time.Now()
 	
@@ -776,26 +776,37 @@ func (r *ResultCollectorHandler) Run(ctx context.Context, event core.Event, stat
 {{if .Config.MemoryEnabled}}
 // validateMemoryConfig validates the memory configuration against expected values
 func validateMemoryConfig(memoryConfig core.AgentMemoryConfig, expectedModel string) error {
+	// Determine expected dimensions and model based on embedding provider
+	var expectedDimensions int
+	var expectedModelName string
+	
+	switch memoryConfig.Embedding.Provider {
+	case "openai":
+		expectedDimensions = 1536
+		expectedModelName = "text-embedding-3-small" // Default OpenAI embedding model
+	case "ollama":
+		expectedDimensions = 768
+		expectedModelName = "nomic-embed-text:latest" // Default Ollama embedding model
+	case "dummy":
+		expectedDimensions = 1536 // Default for dummy provider
+		expectedModelName = "dummy-model"
+	default:
+		return fmt.Errorf("unknown embedding provider: %s\nValid options: openai, ollama, dummy", memoryConfig.Embedding.Provider)
+	}
+	
 	// Validate embedding dimensions
-	expectedDimensions := {{.Config.EmbeddingDimensions}}
 	if memoryConfig.Dimensions != expectedDimensions {
-		// Use literal template values so template tests can verify expected guidance text
-		return fmt.Errorf("{{.Config.EmbeddingModel}} requires {{.Config.EmbeddingDimensions}} dimensions, but %d configured in agentflow.toml\nSolution: Update [agent_memory] dimensions = %d", 
-			memoryConfig.Dimensions, expectedDimensions)
+		return fmt.Errorf("%s provider requires %d dimensions, but %d configured in agentflow.toml\nSolution: Update [agent_memory] dimensions = %d", 
+			memoryConfig.Embedding.Provider, expectedDimensions, memoryConfig.Dimensions, expectedDimensions)
 	}
 	
-	// Validate embedding provider and model
-	expectedProvider := "{{.Config.EmbeddingProvider}}"
-	expectedModelName := "{{.Config.EmbeddingModel}}"
-	
-	if memoryConfig.Embedding.Provider != expectedProvider {
-	return fmt.Errorf("embedding provider mismatch: expected '%s', got '%s'\nSolution: Update [agent_memory.embedding] provider = \"%s\"", 
-			expectedProvider, memoryConfig.Embedding.Provider, expectedProvider)
-	}
-	
-	if memoryConfig.Embedding.Model != expectedModelName {
-	return fmt.Errorf("embedding model mismatch: expected '%s', got '%s'\nSolution: Update [agent_memory.embedding] model = \"%s\"", 
-			expectedModelName, memoryConfig.Embedding.Model, expectedModelName)
+	// Flexible model validation - allow if model contains core model name or is empty (will use default)
+	if memoryConfig.Embedding.Model != "" {
+		coreModelName := strings.Split(expectedModelName, ":")[0] // Handle version tags like ":latest"
+		if !strings.Contains(memoryConfig.Embedding.Model, coreModelName) {
+			return fmt.Errorf("embedding model mismatch: expected '%s' or similar, got '%s'\nSolution: Update [agent_memory.embedding] model = \"%s\"", 
+				expectedModelName, memoryConfig.Embedding.Model, expectedModelName)
+		}
 	}
 	
 	// Validate memory provider configuration
@@ -817,7 +828,7 @@ func validateMemoryConfig(memoryConfig core.AgentMemoryConfig, expectedModel str
 	case "memory":
 		// In-memory provider doesn't need connection validation
 	default:
-	return fmt.Errorf("unknown memory provider: %s\nValid options: memory, pgvector, weaviate", memoryConfig.Provider)
+		return fmt.Errorf("unknown memory provider: %s\nValid options: memory, pgvector, weaviate", memoryConfig.Provider)
 	}
 	
 	// Validate RAG configuration if enabled
@@ -831,7 +842,7 @@ func validateMemoryConfig(memoryConfig core.AgentMemoryConfig, expectedModel str
 				memoryConfig.ChunkSize, memoryConfig.ChunkOverlap)
 		}
 		if memoryConfig.KnowledgeScoreThreshold < 0.0 || memoryConfig.KnowledgeScoreThreshold > 1.0 {
-			return fmt.Errorf("RAG score threshold must be between 0.0 and 1.0, got %.2f\nSolution: Set [agent_memory] knowledge_score_threshold = 0.7", 
+			return fmt.Errorf("RAG score threshold must be between 0.0 and 1.0, got %.2f\nSolution: Set [agent_memory] knowledge_score_threshold = 0.1", 
 				memoryConfig.KnowledgeScoreThreshold)
 		}
 	}
@@ -846,14 +857,14 @@ func validateMemoryConfig(memoryConfig core.AgentMemoryConfig, expectedModel str
 	case "openai":
 		// OpenAI uses environment variables, so we can't validate API key here
 		// But we can check if the model name looks reasonable
-		if !strings.Contains(memoryConfig.Embedding.Model, "embedding") {
+		if memoryConfig.Embedding.Model != "" && !strings.Contains(memoryConfig.Embedding.Model, "embedding") {
 			return fmt.Errorf("OpenAI model '%s' doesn't look like an embedding model\nRecommended: text-embedding-3-small or text-embedding-3-large", 
 				memoryConfig.Embedding.Model)
 		}
 	case "dummy":
 		// Dummy provider doesn't need validation
 	default:
-	return fmt.Errorf("unknown embedding provider: %s\nValid options: openai, ollama, dummy", memoryConfig.Embedding.Provider)
+		return fmt.Errorf("unknown embedding provider: %s\nValid options: openai, ollama, dummy", memoryConfig.Embedding.Provider)
 	}
 	
 	return nil

@@ -585,24 +585,25 @@ func monitoredWorkflow() {
 
 Enable MCP caching through config and plugins. Prefer configuring cache in `agentflow.toml` or production config; avoid ad-hoc builders in code.
 
-## Custom Provider Examples
+## Testing Examples
 
-### Mock Provider for Testing
+### Local Testing with Ollama
 
-Create mock providers for unit tests:
+Use Ollama for cost-free local testing:
 
 ```go
-type TestMockLLM struct {
-    responses map[string]string
+type TestLLMProvider struct {
+    config core.OllamaConfig
 }
 
-func (t *TestMockLLM) Generate(ctx context.Context, prompt string) (*core.LLMResponse, error) {
-    if response, exists := t.responses[prompt]; exists {
-        return &core.LLMResponse{
-            Content: response,
-            TokensUsed: 100,
-        }, nil
+func (t *TestLLMProvider) Generate(ctx context.Context, prompt string) (*core.LLMResponse, error) {
+    // Use actual Ollama for realistic testing
+    provider, err := core.NewOllamaProvider(t.config)
+    if err != nil {
+        return nil, err
     }
+    return provider.Generate(ctx, prompt)
+}
     
     return &core.LLMResponse{
         Content: "Mock response for: " + prompt,

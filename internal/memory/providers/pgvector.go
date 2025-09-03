@@ -615,6 +615,12 @@ func (p *PgVectorProvider) SearchKnowledge(ctx context.Context, query string, op
 	baseQuery += " ORDER BY kb.embedding <=> $1 LIMIT $" + fmt.Sprintf("%d", argIndex)
 	args = append(args, config.Limit)
 
+	// Debug: Log the final SQL query and parameters (only in DEBUG mode)
+	core.DebugLogWithFields(core.Logger(), "Executing SQL query", map[string]interface{}{
+		"sql_query":  baseQuery,
+		"args_count": len(args),
+	})
+
 	// Execute query
 	rows, err := p.pool.Query(ctx, baseQuery, args...)
 	if err != nil {
@@ -724,6 +730,7 @@ func (p *PgVectorProvider) BuildContext(ctx context.Context, query string, optio
 		core.WithLimit(config.MaxTokens/100), // Rough estimate: 100 tokens per result
 		core.WithIncludePersonal(config.PersonalWeight > 0),
 		core.WithIncludeKnowledge(config.KnowledgeWeight > 0),
+		core.WithScoreThreshold(0.0), // Use very low threshold for RAG context to get relevant results
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to search for context: %w", err)
@@ -1038,4 +1045,3 @@ func (p *PgVectorProvider) batchIngestChunk(ctx context.Context, docs []core.Doc
 		return tx.Commit(ctx)
 	})
 }
-
