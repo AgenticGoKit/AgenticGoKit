@@ -421,7 +421,7 @@ timeout_seconds = 30
 
 [logging]
 level = "info"
-format = "json"
+format = "console"
 
 [runtime]
 max_concurrent_agents = 10
