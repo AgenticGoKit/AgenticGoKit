@@ -237,7 +237,7 @@ func SetLogFile(filePath string) {
 func SetLoggingConfig(config interface{}) {
 	// Convert the config struct to LoggingConfig
 	var logConfig LoggingConfig
-	
+
 	// Use type assertion or reflection to convert
 	if cfg, ok := config.(struct {
 		Level      string `toml:"level"`
@@ -260,7 +260,7 @@ func SetLoggingConfig(config interface{}) {
 			Compress:   cfg.Compress,
 		}
 	}
-	
+
 	// Delegate to active logging provider if available
 	p := getActiveLoggingProvider()
 	if p.SetConfig != nil {
@@ -285,7 +285,49 @@ func Logger() CoreLogger {
 	return &noopCoreLogger{}
 }
 
-// CoreLogger interface for essential logging operations
+// DebugLogWithFields is a utility function that logs debug messages with structured fields
+// It converts a map[string]interface{} to the chained method calls expected by CoreLogger
+func DebugLogWithFields(logger CoreLogger, message string, fields map[string]interface{}) {
+	if logger == nil {
+		return
+	}
+
+	event := logger.Debug()
+
+	// Add all fields to the log event
+	for key, value := range fields {
+		switch v := value.(type) {
+		case string:
+			event = event.Str(key, v)
+		case int:
+			event = event.Int(key, v)
+		case bool:
+			event = event.Bool(key, v)
+		case float64:
+			event = event.Float64(key, v)
+		case time.Duration:
+			event = event.Dur(key, v)
+		case time.Time:
+			event = event.Time(key, v)
+		case []string:
+			event = event.Strs(key, v)
+		default:
+			// For any other type, use Interface
+			event = event.Interface(key, v)
+		}
+	}
+
+	// Finally add the message
+	event.Msg(message)
+}
+
+// DebugLog is a utility function that logs simple debug messages
+func DebugLog(logger CoreLogger, message string) {
+	if logger == nil {
+		return
+	}
+	logger.Debug().Msg(message)
+} // CoreLogger interface for essential logging operations
 type CoreLogger interface {
 	Debug() LogEvent
 	Info() LogEvent
