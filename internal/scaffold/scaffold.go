@@ -465,10 +465,24 @@ max_connections = 10
 
 # Example MCP servers - configure as needed
 [[mcp.servers]]
-name = "docker"
+name = "docker-tcp"
 type = "tcp"
 host = "localhost"
 port = 8811
+enabled = false
+
+[[mcp.servers]]
+name = "docker-http-sse"
+type = "http_sse"
+host = "localhost"
+port = 8812
+enabled = false
+
+[[mcp.servers]]
+name = "docker-http-streaming"
+type = "http_streaming"
+host = "localhost"
+port = 8813
 enabled = false
 
 [[mcp.servers]]

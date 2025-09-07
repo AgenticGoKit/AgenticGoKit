@@ -210,12 +210,13 @@ type ProductionConfig struct {
 
 // MCPServerConfig defines configuration for individual MCP servers.
 type MCPServerConfig struct {
-	Name    string `toml:"name"`
-	Type    string `toml:"type"` // tcp, stdio, docker, websocket
-	Host    string `toml:"host,omitempty"`
-	Port    int    `toml:"port,omitempty"`
-	Command string `toml:"command,omitempty"` // for stdio transport
-	Enabled bool   `toml:"enabled"`
+	Name     string `toml:"name"`
+	Type     string `toml:"type"` // tcp, stdio, docker, websocket, http_sse, http_streaming
+	Host     string `toml:"host,omitempty"`
+	Port     int    `toml:"port,omitempty"`
+	Endpoint string `toml:"endpoint,omitempty"` // for HTTP-based transports
+	Command  string `toml:"command,omitempty"`  // for stdio transport
+	Enabled  bool   `toml:"enabled"`
 }
 
 // ConnectionPoolConfig contains connection pooling settings.
@@ -969,6 +970,14 @@ func NewMCPServerConfig(name, serverType, host string, port int) (MCPServerConfi
 		if port <= 0 || port > 65535 {
 			return config, fmt.Errorf("%s server must specify valid port (1-65535)", serverType)
 		}
+	case "http_sse", "http_streaming":
+		if host == "" && config.Endpoint == "" {
+			return config, fmt.Errorf("%s server must specify either host or endpoint", serverType)
+		}
+		if config.Endpoint == "" && port > 0 {
+			// Build endpoint from host and port
+			config.Endpoint = fmt.Sprintf("http://%s:%d", host, port)
+		}
 	case "stdio":
 		// For STDIO, we use the host field as the command
 		if host == "" {
@@ -1014,6 +1023,46 @@ func NewSTDIOServerConfig(name, command string) (MCPServerConfig, error) {
 // NewWebSocketServerConfig creates a WebSocket server configuration.
 func NewWebSocketServerConfig(name, host string, port int) (MCPServerConfig, error) {
 	return NewMCPServerConfig(name, "websocket", host, port)
+}
+
+// NewHTTPSSEServerConfig creates an HTTP SSE server configuration.
+func NewHTTPSSEServerConfig(name, endpoint string) (MCPServerConfig, error) {
+	config := MCPServerConfig{
+		Name:     name,
+		Type:     "http_sse",
+		Endpoint: endpoint,
+		Enabled:  true,
+	}
+
+	if name == "" {
+		return config, fmt.Errorf("server name cannot be empty")
+	}
+
+	if endpoint == "" {
+		return config, fmt.Errorf("HTTP SSE server must specify endpoint")
+	}
+
+	return config, nil
+}
+
+// NewHTTPStreamingServerConfig creates an HTTP Streaming server configuration.
+func NewHTTPStreamingServerConfig(name, endpoint string) (MCPServerConfig, error) {
+	config := MCPServerConfig{
+		Name:     name,
+		Type:     "http_streaming",
+		Endpoint: endpoint,
+		Enabled:  true,
+	}
+
+	if name == "" {
+		return config, fmt.Errorf("server name cannot be empty")
+	}
+
+	if endpoint == "" {
+		return config, fmt.Errorf("HTTP Streaming server must specify endpoint")
+	}
+
+	return config, nil
 }
 
 // LoadMCPConfigFromTOML loads MCP configuration from a TOML file.
