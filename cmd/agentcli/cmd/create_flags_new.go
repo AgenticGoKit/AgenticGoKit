@@ -285,7 +285,7 @@ func (f *ConsolidatedCreateFlags) ToProjectConfig(projectName string) (scaffold.
 		case "":
 			// Just --enable-mcp flag, minimal configuration
 		default:
-			return config, fmt.Errorf("invalid MCP level '%s'. Valid options: minimal, standard, advanced", f.MCP)
+			return config, fmt.Errorf("invalid MCP level '%s'. Valid options: minimal, standard, advanced, or empty (for --enable-mcp flag)", f.MCP)
 		}
 	}
 

@@ -144,7 +144,10 @@ func (m *unifiedMCPManager) RefreshTools(ctx context.Context) error {
 		}
 		tools, err := m.discoverToolsFromServer(ctx, s.Name)
 		if err != nil {
-			fmt.Printf("Warning: Failed to discover tools from server %s: %v\n", s.Name, err)
+			core.Logger().Warn().
+				Str("server_name", s.Name).
+				Err(err).
+				Msg("Failed to discover tools from server")
 			continue
 		}
 		all = append(all, tools...)

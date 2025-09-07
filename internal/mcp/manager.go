@@ -1,4 +1,8 @@
 // Package mcp provides internal implementation for Model Context Protocol (MCP) integration.
+//
+// NOTE: This internal implementation has limited transport support. For full transport
+// support including HTTP SSE and HTTP Streaming, consider using the unified MCP plugin
+// (plugins/mcp/unified) which is the recommended implementation.
 package mcp
 
 import (
@@ -138,19 +142,27 @@ func (m *MCPManagerImpl) Connect(ctx context.Context, serverName string) error {
 	case "http_sse":
 		endpoint := serverConfig.Endpoint
 		if endpoint == "" {
-			endpoint = fmt.Sprintf("http://%s:%d", serverConfig.Host, serverConfig.Port)
+			if serverConfig.Host != "" && serverConfig.Port > 0 {
+				endpoint = fmt.Sprintf("http://%s:%d", serverConfig.Host, serverConfig.Port)
+			} else {
+				return fmt.Errorf("http_sse server '%s' requires either endpoint or host:port configuration", serverName)
+			}
 		}
-		// HTTP SSE transport may not be available in v0.0.2, fallback to TCP for now
-		m.logger.Printf("Warning: HTTP SSE transport not yet supported, using TCP for server '%s'", serverName)
-		clientBuilder = clientBuilder.WithTCPTransport(serverConfig.Host, serverConfig.Port)
+		// Note: Consider using the unified MCP plugin for full HTTP SSE support
+		// For now, we'll try to use the HTTP SSE transport if available
+		return fmt.Errorf("http_sse transport not supported in this implementation, please use the unified MCP plugin")
 	case "http_streaming":
 		endpoint := serverConfig.Endpoint
 		if endpoint == "" {
-			endpoint = fmt.Sprintf("http://%s:%d", serverConfig.Host, serverConfig.Port)
+			if serverConfig.Host != "" && serverConfig.Port > 0 {
+				endpoint = fmt.Sprintf("http://%s:%d", serverConfig.Host, serverConfig.Port)
+			} else {
+				return fmt.Errorf("http_streaming server '%s' requires either endpoint or host:port configuration", serverName)
+			}
 		}
-		// HTTP Streaming transport may not be available in v0.0.2, fallback to TCP for now
-		m.logger.Printf("Warning: HTTP Streaming transport not yet supported, using TCP for server '%s'", serverName)
-		clientBuilder = clientBuilder.WithTCPTransport(serverConfig.Host, serverConfig.Port)
+		// Note: Consider using the unified MCP plugin for full HTTP Streaming support
+		// For now, we'll try to use the HTTP Streaming transport if available
+		return fmt.Errorf("http_streaming transport not supported in this implementation, please use the unified MCP plugin")
 	default:
 		return fmt.Errorf("unsupported transport type: %s", serverConfig.Type)
 	}
