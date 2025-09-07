@@ -11,6 +11,7 @@ Task-oriented guides for specific development scenarios and common tasks.
 - [LLM Providers](setup/llm-providers.md) - Configure different LLM providers
 - [Vector Databases](setup/vector-databases.md) - Set up vector storage for RAG
 - [MCP Tools](setup/mcp-tools.md) - Integrate Model Context Protocol tools
+- [MCP CLI Integration](MCP-CLI-Guide.md) - Complete guide to using MCP with AgentCLI
 
 ### Development
 - [Testing Agents](development/testing-agents.md) - Test multi-agent systems

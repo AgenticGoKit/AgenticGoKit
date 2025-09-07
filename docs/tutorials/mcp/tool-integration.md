@@ -6,6 +6,8 @@ Integrating tools with agents is a key capability in AgenticGoKit that enables a
 
 Effective tool integration allows agents to interact with external systems, access specialized information, and perform complex tasks while maintaining a natural conversation flow.
 
+> **Quick Start:** For the fastest way to set up MCP tools, see the [MCP CLI Guide](../../guides/MCP-CLI-Guide.md) which shows how to create projects with `agentcli create --enable-mcp`.
+
 ## Prerequisites
 
 - Understanding of [MCP Overview](README.md)
