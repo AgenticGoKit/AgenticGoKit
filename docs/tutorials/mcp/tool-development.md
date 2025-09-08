@@ -6,6 +6,8 @@ Tools are the building blocks that extend agent capabilities beyond text generat
 
 By creating custom tools, you can enable your agents to perform specific tasks, access specialized information, and interact with external systems in a controlled manner.
 
+> **Quick Start:** For projects with pre-configured MCP tool examples, use `agentcli create my-project --enable-mcp` to generate comprehensive tool configurations. See the [MCP CLI Guide](../../guides/MCP-CLI-Guide.md) for details.
+
 ## Prerequisites
 
 - Understanding of [MCP Overview](README.md)

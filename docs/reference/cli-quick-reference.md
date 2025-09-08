@@ -30,7 +30,7 @@ agentcli create my-project --template basic
 agentcli create my-kb --memory pgvector --embedding openai --rag 1500
 
 # Production MCP setup
-agentcli create my-bot --mcp production --visualize
+agentcli create my-bot --mcp standard --visualize
 
 # Interactive setup
 agentcli create --interactive
@@ -39,7 +39,7 @@ agentcli create --interactive
 ### Template Overrides
 ```bash
 # Use template but customize
-agentcli create my-research --template research-assistant --agents 5 --mcp production
+agentcli create my-research --template research-assistant --agents 5 --mcp advanced
 ```
 
 ## Template Management
@@ -65,7 +65,8 @@ agentcli template paths
 | `--template, -t` | Project template | `basic`, `research-assistant`, `rag-system` |
 | `--memory` | Memory provider | `memory`, `pgvector`, `weaviate` |
 | `--embedding` | Embedding provider | `openai`, `ollama:nomic-embed-text` |
-| `--mcp` | MCP integration | `basic`, `production`, `full` |
+| `--enable-mcp` | Enable MCP minimal | (boolean flag) |
+| `--mcp` | MCP integration | `minimal`, `standard`, `advanced` |
 | `--rag` | RAG chunk size | `default`, `1000`, `2000` |
 | `--orchestration` | Agent coordination | `sequential`, `collaborative`, `loop` |
 | `--agents, -a` | Number of agents | `2`, `3`, `5` |
@@ -121,7 +122,7 @@ agentcli create dev-project --template basic --provider openai
 ### Production Setup
 ```bash
 # Production-ready RAG system
-agentcli create prod-kb --template rag-system --mcp production --visualize
+agentcli create prod-kb --template rag-system --mcp advanced --visualize
 ```
 
 ### Research Workflow

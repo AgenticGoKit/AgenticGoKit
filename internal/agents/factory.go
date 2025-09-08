@@ -41,6 +41,20 @@ func (f *ConfigurableAgentFactory) CreateAgent(name string, resolvedConfig *core
 		builder = builder.WithLLMAndConfig(llmProvider, llmConfig)
 	}
 
+	// Add MCP capability if MCP is enabled
+	if f.config.MCP.Enabled {
+		mcpManager := core.GetMCPManager()
+		if mcpManager != nil {
+			mcpCapability := NewMCPCapability(mcpManager, core.MCPAgentConfig{
+				MaxToolsPerExecution: 5,
+				ParallelExecution:    false,
+				RetryFailedTools:     true,
+				MaxRetries:           3,
+			})
+			builder = builder.WithCapability(mcpCapability)
+		}
+	}
+
 	// Add metrics capability if enabled (default for all agents)
 	builder = builder.WithDefaultMetrics()
 

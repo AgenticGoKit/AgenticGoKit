@@ -19,7 +19,8 @@ type ConsolidatedCreateFlags struct {
 	// Feature flags
 	Memory    string // "", "memory", "pgvector", "weaviate"
 	Embedding string // "provider:model" format
-	MCP       string // "", "basic", "production", "full"
+	MCP       string // "", "minimal", "standard", "advanced"
+	EnableMCP bool   // Simple MCP enable flag
 	RAG       string // "", "default", or chunk size
 
 	// Orchestration flags
@@ -267,26 +268,24 @@ func (f *ConsolidatedCreateFlags) ToProjectConfig(projectName string) (scaffold.
 		}
 	}
 
-	// Parse MCP flag
-	if f.MCP != "" {
+	// Parse MCP flags
+	if f.EnableMCP || f.MCP != "" {
 		config.MCPEnabled = true
+
+		// Set level-based configuration
 		switch f.MCP {
-		case "basic":
-			config.MCPTools = []string{"web_search"}
-		case "production":
-			config.MCPProduction = true
+		case "minimal":
+			// Just MCP enabled, no extras
+		case "standard":
 			config.WithCache = true
-			config.WithMetrics = true
-			config.MCPTools = []string{"web_search", "summarize"}
-		case "full":
-			config.MCPProduction = true
+		case "advanced":
 			config.WithCache = true
 			config.WithMetrics = true
 			config.WithLoadBalancer = true
-			config.MCPTools = []string{"web_search", "summarize", "translate"}
+		case "":
+			// Just --enable-mcp flag, minimal configuration
 		default:
-			// Treat as custom tool list
-			config.MCPTools = strings.Split(f.MCP, ",")
+			return config, fmt.Errorf("invalid MCP level '%s'. Valid options: minimal, standard, advanced, or empty (for --enable-mcp flag)", f.MCP)
 		}
 	}
 
@@ -403,9 +402,9 @@ func (f *ConsolidatedCreateFlags) Validate() error {
 
 	// Validate MCP level
 	if f.MCP != "" {
-		validMCPLevels := []string{"basic", "production", "full"}
-		if !containsString(validMCPLevels, f.MCP) && !strings.Contains(f.MCP, ",") {
-			return fmt.Errorf("invalid MCP level: %s. Valid options: %s or comma-separated tool list",
+		validMCPLevels := []string{"minimal", "standard", "advanced"}
+		if !containsString(validMCPLevels, f.MCP) {
+			return fmt.Errorf("invalid MCP level: %s. Valid options: %s",
 				f.MCP, strings.Join(validMCPLevels, ", "))
 		}
 	}

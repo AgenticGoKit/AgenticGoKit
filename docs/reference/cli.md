@@ -143,7 +143,7 @@ agentcli create my-project
 agentcli create my-project --template research-assistant
 
 # Custom configuration with consolidated flags
-agentcli create my-project --memory pgvector --embedding openai --rag 1500 --mcp production
+agentcli create my-project --memory pgvector --embedding openai --rag 1500 --mcp standard
 
 # Interactive mode for guided setup
 agentcli create --interactive
@@ -172,7 +172,8 @@ agentcli create help-templates
 - `--provider, -p` - LLM provider (openai, azure, ollama)
 - `--memory` - Memory system provider (memory, pgvector, weaviate)
 - `--embedding` - Embedding provider and model (openai, ollama:model, dummy)
-- `--mcp` - MCP integration level (basic, production, full)
+- `--enable-mcp` - Enable MCP with minimal configuration
+- `--mcp` - MCP integration level (minimal, standard, advanced)
 - `--rag` - Enable RAG with optional chunk size
 - `--orchestration` - Orchestration mode (sequential, collaborative, loop, route)
 - `--visualize` - Generate Mermaid workflow diagrams
@@ -271,13 +272,13 @@ agentcli create knowledge-base --template rag-system
 agentcli create data-flow --template data-pipeline
 
 # Custom configuration with consolidated flags
-agentcli create custom-bot --memory pgvector --embedding openai --rag 1500 --mcp production
+agentcli create custom-bot --memory pgvector --embedding openai --rag 1500 --mcp standard
 
 # Interactive mode for guided setup
 agentcli create --interactive
 
 # Override template defaults
-agentcli create my-research --template research-assistant --agents 5 --mcp production
+agentcli create my-research --template research-assistant --agents 5 --mcp advanced
 ```
 
 ### Template Management

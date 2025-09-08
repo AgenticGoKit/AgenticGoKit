@@ -139,10 +139,10 @@ func (u *UnifiedAgent) Run(ctx context.Context, state State) (State, error) {
 					// Only log detailed context in debug mode to reduce verbosity
 					if GetLogLevel() == DEBUG {
 						DebugLogWithFields(Logger(), "BuildContext result details", map[string]interface{}{
-							"agent":                u.name,
-							"personal_count":       len(ragContext.PersonalMemory),
-							"knowledge_count":      len(ragContext.Knowledge),
-							"history_count":        len(ragContext.ChatHistory),
+							"agent":           u.name,
+							"personal_count":  len(ragContext.PersonalMemory),
+							"knowledge_count": len(ragContext.Knowledge),
+							"history_count":   len(ragContext.ChatHistory),
 							"context_text_snippet": func() string {
 								if len(ragContext.ContextText) > 100 {
 									return ragContext.ContextText[:100] + "..."
@@ -213,8 +213,25 @@ func (u *UnifiedAgent) Run(ctx context.Context, state State) (State, error) {
 				Logger().Warn().Str("agent", u.name).Msg("Memory system not available - continuing without memory context")
 			}
 
-			// Append memory context to user prompt
-			finalUserPrompt := user + memoryContext
+			// Get available MCP tools if manager is configured
+			var toolsPrompt string
+			if u.mcpManager != nil {
+				availableTools := u.mcpManager.GetAvailableTools()
+				if len(availableTools) > 0 {
+					DebugLogWithFields(Logger(), "UnifiedAgent: MCP tools discovered", map[string]interface{}{
+						"agent":      u.name,
+						"tool_count": len(availableTools),
+					})
+					toolsPrompt = FormatToolsPromptForLLM(availableTools)
+				} else {
+					DebugLogWithFields(Logger(), "UnifiedAgent: No MCP tools available", map[string]interface{}{
+						"agent": u.name,
+					})
+				}
+			}
+
+			// Append memory context and tools prompt to user prompt
+			finalUserPrompt := user + memoryContext + toolsPrompt
 
 			// Only make LLM call if provider is configured
 			if u.llmProvider != nil {
@@ -234,6 +251,74 @@ func (u *UnifiedAgent) Run(ctx context.Context, state State) (State, error) {
 				resp, err := u.llmProvider.Call(ctx, Prompt{System: system, User: finalUserPrompt, Parameters: params})
 				if err != nil {
 					return out, err
+				}
+
+				// Parse LLM response for tool calls and execute them if MCP is available
+				if u.mcpManager != nil && len(toolsPrompt) > 0 {
+					toolCalls := ParseLLMToolCalls(resp.Content)
+					if len(toolCalls) > 0 {
+						DebugLogWithFields(Logger(), "UnifiedAgent: Tool calls detected, executing", map[string]interface{}{
+							"agent":      u.name,
+							"tool_calls": len(toolCalls),
+						})
+
+						var toolResults []string
+						for _, toolCall := range toolCalls {
+							if toolName, ok := toolCall["name"].(string); ok {
+								var args map[string]interface{}
+								if toolArgs, exists := toolCall["args"]; exists {
+									if argsMap, ok := toolArgs.(map[string]interface{}); ok {
+										args = argsMap
+									} else {
+										args = make(map[string]interface{})
+									}
+								} else {
+									args = make(map[string]interface{})
+								}
+
+								DebugLogWithFields(Logger(), "UnifiedAgent: Executing tool", map[string]interface{}{
+									"agent":     u.name,
+									"tool_name": toolName,
+									"args":      args,
+								})
+
+								result, err := ExecuteMCPTool(ctx, toolName, args)
+								if err != nil {
+									Logger().Error().Str("agent", u.name).Str("tool_name", toolName).Err(err).Msg("Tool execution failed")
+									toolResults = append(toolResults, fmt.Sprintf("Tool '%s' failed: %v", toolName, err))
+								} else if result.Success {
+									var resultContent string
+									if len(result.Content) > 0 {
+										resultContent = result.Content[0].Text
+									} else {
+										resultContent = "Tool executed successfully but returned no content"
+									}
+									toolResults = append(toolResults, fmt.Sprintf("Tool '%s' result: %s", toolName, resultContent))
+								} else {
+									toolResults = append(toolResults, fmt.Sprintf("Tool '%s' was not successful", toolName))
+								}
+							}
+						}
+
+						// If we got tool results, send them back to LLM for final response
+						if len(toolResults) > 0 {
+							toolResultsText := strings.Join(toolResults, "\n")
+							DebugLogWithFields(Logger(), "UnifiedAgent: Sending tool results to LLM", map[string]interface{}{
+								"agent":        u.name,
+								"result_count": len(toolResults),
+							})
+
+							followUpPrompt := finalUserPrompt + "\n\nTool Results:\n" + toolResultsText + "\n\nPlease provide a final response based on the tool results above."
+
+							finalResp, err := u.llmProvider.Call(ctx, Prompt{System: system, User: followUpPrompt, Parameters: params})
+							if err != nil {
+								Logger().Warn().Str("agent", u.name).Err(err).Msg("Failed to get final response after tools, using tool results")
+								resp.Content = "Tool execution completed:\n" + toolResultsText
+							} else {
+								resp = finalResp
+							}
+						}
+					}
 				}
 
 				if resp.Content != "" {

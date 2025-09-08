@@ -463,25 +463,65 @@ enable_caching = true
 cache_timeout = 300000
 max_connections = 10
 
-# Example MCP servers - configure as needed
+# MCP Server Examples - Uncomment and configure as needed
+#
+# For Docker AI Gateway (provides web search, content fetching, etc.)
+# Start with: docker run -p 8812:8812 -p 8813:8813 your-docker-image
+
 [[mcp.servers]]
-name = "docker"
-type = "tcp"
+name = "docker-http-sse"
+type = "http_sse"
 host = "localhost"
-port = 8811
+port = 8812
 enabled = false
 
 [[mcp.servers]]
-name = "filesystem"
-type = "stdio"
-command = "npx @modelcontextprotocol/server-filesystem /path/to/allowed/files"
+name = "docker-http-streaming"
+type = "http_streaming"
+host = "localhost"
+port = 8813
 enabled = false
 
-[[mcp.servers]]
-name = "brave-search"
-type = "stdio"
-command = "npx @modelcontextprotocol/server-brave-search"
-enabled = false
+# For file system access
+# Install with: npm install -g @modelcontextprotocol/server-filesystem
+# [[mcp.servers]]
+# name = "filesystem"
+# type = "stdio"
+# command = "npx @modelcontextprotocol/server-filesystem /path/to/allowed/files"
+# enabled = true
+
+# For web search capabilities
+# Install with: npm install -g @modelcontextprotocol/server-brave-search
+# [[mcp.servers]]
+# name = "brave-search"
+# type = "stdio"
+# command = "npx @modelcontextprotocol/server-brave-search"
+# enabled = true
+
+# For SQLite database access
+# Install with: npm install -g @modelcontextprotocol/server-sqlite
+# [[mcp.servers]]
+# name = "sqlite"
+# type = "stdio"
+# command = "npx @modelcontextprotocol/server-sqlite /path/to/database.db"
+# enabled = true
+
+# For GitHub integration
+# Install with: npm install -g @modelcontextprotocol/server-github
+# Set GITHUB_PERSONAL_ACCESS_TOKEN environment variable
+# [[mcp.servers]]
+# name = "github"
+# type = "stdio"
+# command = "npx @modelcontextprotocol/server-github"
+# enabled = true
+
+# For custom TCP server
+# [[mcp.servers]]
+# name = "custom-tcp"
+# type = "tcp"
+# host = "localhost"
+# port = 8811
+# enabled = false
 `
 		configContent += mcpConfig
 

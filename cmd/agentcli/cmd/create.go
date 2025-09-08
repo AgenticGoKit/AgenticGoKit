@@ -41,7 +41,8 @@ TEMPLATES:
 FEATURE FLAGS:
   --memory [provider]        Enable memory system (memory, pgvector, weaviate)
   --embedding [provider]     Embedding provider (openai, ollama:model, dummy)
-  --mcp [level]             MCP integration (basic, production, full)
+  --mcp [level]             MCP integration (minimal, standard, advanced)
+  --enable-mcp              Enable MCP with minimal configuration
   --rag [chunk-size]        Enable RAG with optional chunk size
 
 EXAMPLES:
@@ -55,7 +56,7 @@ EXAMPLES:
   agentcli create data-flow --template data-pipeline --visualize
 
   # Custom configuration
-  agentcli create custom-bot --agents 3 --memory pgvector --mcp production
+  agentcli create custom-bot --agents 3 --memory pgvector --mcp standard
 
   # Chat system with session memory
   agentcli create chat-bot --template chat-system --memory pgvector
@@ -80,7 +81,7 @@ var createHelpTemplatesCmd = &cobra.Command{
 	Long:  "Display comprehensive information about all available project templates including features and use cases.",
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Print(GetTemplateHelp())
-		
+
 		fmt.Println("TEMPLATE USAGE EXAMPLES:")
 		fmt.Println("  agentcli create my-research --template research-assistant")
 		fmt.Println("  agentcli create my-kb --template rag-system --memory pgvector")
@@ -88,52 +89,54 @@ var createHelpTemplatesCmd = &cobra.Command{
 		fmt.Println("  agentcli create my-chat --template chat-system")
 		fmt.Println()
 		fmt.Println("You can override template defaults with additional flags:")
-		fmt.Println("  agentcli create my-project --template basic --agents 4 --mcp basic")
+		fmt.Println("  agentcli create my-project --template basic --agents 4 --enable-mcp")
 	},
 }
 
 func init() {
 	// Add the consolidated create command
 	rootCmd.AddCommand(createCmd)
-	
+
 	// Add help subcommand
 	createCmd.AddCommand(createHelpTemplatesCmd)
 
 	// Basic flags
-	createCmd.Flags().IntVarP(&consolidatedFlags.Agents, "agents", "a", 0, 
+	createCmd.Flags().IntVarP(&consolidatedFlags.Agents, "agents", "a", 0,
 		"Number of agents to create (0 = use template default)")
-	createCmd.Flags().StringVarP(&consolidatedFlags.Provider, "provider", "p", "", 
+	createCmd.Flags().StringVarP(&consolidatedFlags.Provider, "provider", "p", "",
 		"LLM provider (openai, azure, ollama, mock)")
-	createCmd.Flags().StringVarP(&consolidatedFlags.Template, "template", "t", "", 
+	createCmd.Flags().StringVarP(&consolidatedFlags.Template, "template", "t", "",
 		"Project template (basic, research-assistant, rag-system, data-pipeline, chat-system)")
-	createCmd.Flags().BoolVarP(&consolidatedFlags.Interactive, "interactive", "i", false, 
+	createCmd.Flags().BoolVarP(&consolidatedFlags.Interactive, "interactive", "i", false,
 		"Interactive mode for guided setup")
 
 	// Feature flags
-	createCmd.Flags().StringVar(&consolidatedFlags.Memory, "memory", "", 
+	createCmd.Flags().StringVar(&consolidatedFlags.Memory, "memory", "",
 		"Enable memory system with provider (memory, pgvector, weaviate)")
-	createCmd.Flags().StringVar(&consolidatedFlags.Embedding, "embedding", "", 
+	createCmd.Flags().StringVar(&consolidatedFlags.Embedding, "embedding", "",
 		"Embedding provider and model (openai, ollama:nomic-embed-text, dummy)")
-	createCmd.Flags().StringVar(&consolidatedFlags.MCP, "mcp", "", 
-		"MCP integration level (basic, production, full) or tool list")
-	createCmd.Flags().StringVar(&consolidatedFlags.RAG, "rag", "", 
+	createCmd.Flags().BoolVar(&consolidatedFlags.EnableMCP, "enable-mcp", false,
+		"Enable MCP (Model Context Protocol) integration")
+	createCmd.Flags().StringVar(&consolidatedFlags.MCP, "mcp", "",
+		"MCP integration level (minimal, standard, advanced)")
+	createCmd.Flags().StringVar(&consolidatedFlags.RAG, "rag", "",
 		"Enable RAG with optional chunk size (default, 1000, 2000)")
 
 	// Orchestration flags
-	createCmd.Flags().StringVar(&consolidatedFlags.Orchestration, "orchestration", "", 
+	createCmd.Flags().StringVar(&consolidatedFlags.Orchestration, "orchestration", "",
 		"Orchestration mode (sequential, collaborative, loop, route)")
-	createCmd.Flags().StringVar(&consolidatedFlags.AgentsConfig, "agents-config", "", 
+	createCmd.Flags().StringVar(&consolidatedFlags.AgentsConfig, "agents-config", "",
 		"Agent configuration (comma-separated names or JSON)")
 
 	// Output flags
-	createCmd.Flags().BoolVar(&consolidatedFlags.Visualize, "visualize", false, 
+	createCmd.Flags().BoolVar(&consolidatedFlags.Visualize, "visualize", false,
 		"Generate Mermaid workflow diagrams")
-	createCmd.Flags().StringVar(&consolidatedFlags.OutputDir, "output-dir", "", 
+	createCmd.Flags().StringVar(&consolidatedFlags.OutputDir, "output-dir", "",
 		"Output directory for generated files")
 
 	// Add flag groups for better help organization
 	createCmd.Flags().SortFlags = false
-	
+
 	// Add completion functions
 	createCmd.RegisterFlagCompletionFunc("template", completeTemplateNames)
 	createCmd.RegisterFlagCompletionFunc("provider", completeProviderNames)
@@ -163,7 +166,7 @@ func runCreateCommand(cmd *cobra.Command, args []string) error {
 
 	// Show what we're creating
 	fmt.Printf("Creating AgenticGoKit project '%s'...\n", projectName)
-	
+
 	if consolidatedFlags.Template != "" {
 		template := ProjectTemplates[consolidatedFlags.Template]
 		fmt.Printf("[INFO] Using template: %s\n", template.Name)
@@ -214,10 +217,10 @@ func runInteractiveCreateMode() error {
 		fmt.Printf("%d. %s - %s\n", i+1, tmpl.Name, tmpl.Description)
 	}
 	fmt.Print("Choice (1-5, or 0 for custom): ")
-	
+
 	var choice int
 	fmt.Scanln(&choice)
-	
+
 	if choice > 0 && choice <= len(templates) {
 		consolidatedFlags.Template = templates[choice-1]
 	}
@@ -229,10 +232,10 @@ func runInteractiveCreateMode() error {
 	fmt.Println("3. Ollama (local)")
 	fmt.Println("4. Mock (testing)")
 	fmt.Print("Choice (1-4): ")
-	
+
 	var providerChoice int
 	fmt.Scanln(&providerChoice)
-	
+
 	providers := []string{"openai", "azure", "ollama", "mock"}
 	if providerChoice > 0 && providerChoice <= len(providers) {
 		consolidatedFlags.Provider = providers[providerChoice-1]
@@ -242,17 +245,17 @@ func runInteractiveCreateMode() error {
 	fmt.Print("\nEnable memory system? (y/N): ")
 	var memoryChoice string
 	fmt.Scanln(&memoryChoice)
-	
+
 	if strings.ToLower(memoryChoice) == "y" || strings.ToLower(memoryChoice) == "yes" {
 		fmt.Println("Select memory provider:")
 		fmt.Println("1. In-memory (development)")
 		fmt.Println("2. PostgreSQL with pgvector (production)")
 		fmt.Println("3. Weaviate (vector database)")
 		fmt.Print("Choice (1-3): ")
-		
+
 		var memProviderChoice int
 		fmt.Scanln(&memProviderChoice)
-		
+
 		memProviders := []string{"memory", "pgvector", "weaviate"}
 		if memProviderChoice > 0 && memProviderChoice <= len(memProviders) {
 			consolidatedFlags.Memory = memProviders[memProviderChoice-1]
@@ -262,7 +265,7 @@ func runInteractiveCreateMode() error {
 		fmt.Print("Enable RAG (Retrieval-Augmented Generation)? (y/N): ")
 		var ragChoice string
 		fmt.Scanln(&ragChoice)
-		
+
 		if strings.ToLower(ragChoice) == "y" || strings.ToLower(ragChoice) == "yes" {
 			consolidatedFlags.RAG = "default"
 		}
@@ -272,18 +275,18 @@ func runInteractiveCreateMode() error {
 	fmt.Print("\nEnable MCP tool integration? (y/N): ")
 	var mcpChoice string
 	fmt.Scanln(&mcpChoice)
-	
+
 	if strings.ToLower(mcpChoice) == "y" || strings.ToLower(mcpChoice) == "yes" {
 		fmt.Println("Select MCP level:")
 		fmt.Println("1. Basic (web search)")
 		fmt.Println("2. Production (caching, metrics)")
 		fmt.Println("3. Full (load balancing, all features)")
 		fmt.Print("Choice (1-3): ")
-		
+
 		var mcpLevelChoice int
 		fmt.Scanln(&mcpLevelChoice)
-		
-		mcpLevels := []string{"basic", "production", "full"}
+
+		mcpLevels := []string{"minimal", "standard", "advanced"}
 		if mcpLevelChoice > 0 && mcpLevelChoice <= len(mcpLevels) {
 			consolidatedFlags.MCP = mcpLevels[mcpLevelChoice-1]
 		}
@@ -293,7 +296,7 @@ func runInteractiveCreateMode() error {
 	fmt.Print("\nGenerate workflow diagrams? (y/N): ")
 	var vizChoice string
 	fmt.Scanln(&vizChoice)
-	
+
 	if strings.ToLower(vizChoice) == "y" || strings.ToLower(vizChoice) == "yes" {
 		consolidatedFlags.Visualize = true
 	}
@@ -313,16 +316,16 @@ func ShowFlagComparison() {
 	fmt.Println("FLAG CONSOLIDATION COMPARISON")
 	fmt.Println("=============================")
 	fmt.Println()
-	
+
 	fmt.Println("OLD FLAGS (32 flags):")
 	fmt.Println("  --memory-enabled --memory-provider pgvector --embedding-provider openai --rag-enabled --rag-chunk-size 1000")
 	fmt.Println("  --mcp-enabled --with-cache --with-metrics --mcp-tools web_search,summarize")
 	fmt.Println()
-	
+
 	fmt.Println("NEW FLAGS (4 flags for same functionality):")
-	fmt.Println("  --memory pgvector --embedding openai --rag 1000 --mcp production")
+	fmt.Println("  --memory pgvector --embedding openai --rag 1000 --mcp advanced")
 	fmt.Println()
-	
+
 	fmt.Println("TEMPLATE APPROACH:")
 	fmt.Println("  --template rag-system  (automatically configures memory, embedding, and RAG)")
 	fmt.Println()
