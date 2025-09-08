@@ -4,6 +4,8 @@
 
 This tutorial explores advanced patterns for tool usage in AgenticGoKit, including tool composition, conditional execution, parallel tool usage, and sophisticated error handling strategies. These patterns enable you to build complex, production-ready agent systems that can handle sophisticated workflows and edge cases.
 
+> **Quick Start:** For enterprise-grade MCP setups with advanced features like caching, metrics, and load balancing, use `agentcli create my-project --mcp advanced`. See the [MCP CLI Guide](../../guides/MCP-CLI-Guide.md) for complete documentation.
+
 ## Prerequisites
 
 - Understanding of [MCP Overview](README.md)

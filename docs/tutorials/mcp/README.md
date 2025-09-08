@@ -70,7 +70,23 @@ MCP is similar to function calling in LLMs but provides additional capabilities:
 
 ## Getting Started with MCP
 
-To start using MCP in AgenticGoKit, you'll need to:
+### Quick Start with AgentCLI
+
+The fastest way to get started with MCP is using AgentCLI:
+
+```bash
+# Create a project with MCP enabled
+agentcli create my-project --enable-mcp
+
+# Or create with specific MCP level
+agentcli create my-project --mcp standard
+```
+
+For detailed CLI usage, see the [MCP CLI Guide](../../guides/MCP-CLI-Guide.md).
+
+### Manual Setup
+
+To manually set up MCP in AgenticGoKit, you'll need to:
 
 1. **Create Tools**: Define the tools your agents will use
 2. **Register Tools**: Make tools available to the MCP manager

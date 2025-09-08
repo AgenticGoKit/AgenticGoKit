@@ -57,18 +57,11 @@ import (
     _ "github.com/kunalkushwaha/agenticgokit/plugins/embedding"
     {{- end }}
 
-    {{- /* MCP transport/registry/cache based on config */}}
+    {{- /* MCP unified transport and supporting plugins */}}
     {{- if .Config.MCPEnabled }}
-    // MCP: transport, registry, and optional cache backend
+    // MCP: unified transport plugin supporting all transport types
+    _ "github.com/kunalkushwaha/agenticgokit/plugins/mcp/unified"
     _ "github.com/kunalkushwaha/agenticgokit/plugins/mcp/registry/memory"
-    {{- if or (eq .Config.MCPTransport "") (eq .Config.MCPTransport "tcp") }}
-    _ "github.com/kunalkushwaha/agenticgokit/plugins/mcp/tcp"
-    {{- else if eq .Config.MCPTransport "stdio" }}
-    _ "github.com/kunalkushwaha/agenticgokit/plugins/mcp/stdio"
-    {{- else }}
-    // Unknown transport - include default manager only
-    _ "github.com/kunalkushwaha/agenticgokit/plugins/mcp/default"
-    {{- end }}
     {{- if .Config.WithCache }}
         {{- if or (eq .Config.CacheBackend "") (eq .Config.CacheBackend "memory") }}
     _ "github.com/kunalkushwaha/agenticgokit/plugins/mcp/cache/memory"

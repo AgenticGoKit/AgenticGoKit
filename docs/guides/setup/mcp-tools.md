@@ -14,6 +14,25 @@ The MCP integration in AgenticGoKit provides:
 
 ## Quick Start (5 minutes)
 
+### Option 1: Using AgentCLI (Recommended)
+
+The fastest way to set up MCP is using AgentCLI:
+
+```bash
+# Create project with MCP enabled and example configurations
+agentcli create my-project --enable-mcp
+
+# Or create with specific MCP features
+agentcli create my-project --mcp standard  # Includes caching
+agentcli create my-project --mcp advanced  # Includes caching + metrics + load balancing
+```
+
+This automatically generates an `agentflow.toml` with comprehensive MCP examples and proper configurations.
+
+For complete CLI documentation, see the [MCP CLI Guide](../MCP-CLI-Guide.md).
+
+### Option 2: Manual Configuration
+
 ### 1. Basic MCP Configuration
 
 **agentflow.toml:**

@@ -226,12 +226,13 @@ type MCPConfigToml struct {
 
 // MCPServerConfigToml represents individual MCP server configuration in TOML
 type MCPServerConfigToml struct {
-	Name    string `toml:"name"`
-	Type    string `toml:"type"` // tcp, stdio, docker, websocket
-	Host    string `toml:"host,omitempty"`
-	Port    int    `toml:"port,omitempty"`
-	Command string `toml:"command,omitempty"` // for stdio transport
-	Enabled bool   `toml:"enabled"`
+	Name     string `toml:"name"`
+	Type     string `toml:"type"` // tcp, stdio, docker, websocket, http_sse, http_streaming
+	Host     string `toml:"host,omitempty"`
+	Port     int    `toml:"port,omitempty"`
+	Endpoint string `toml:"endpoint,omitempty"` // for HTTP-based transports
+	Command  string `toml:"command,omitempty"`  // for stdio transport
+	Enabled  bool   `toml:"enabled"`
 }
 
 // MCPCacheConfigToml represents MCP cache configuration in TOML format
@@ -534,7 +535,7 @@ func (c *Config) ApplyLoggingConfig() {
 	// Apply log level
 	logLevel := parseLogLevel(c.Logging.Level)
 	SetLogLevel(logLevel)
-	
+
 	// Apply logging configuration
 	SetLoggingConfig(c.Logging)
 }

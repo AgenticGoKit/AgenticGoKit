@@ -1,4 +1,8 @@
 // Package mcp provides internal implementation for Model Context Protocol (MCP) integration.
+//
+// NOTE: This internal implementation has limited transport support. For full transport
+// support including HTTP SSE and HTTP Streaming, consider using the unified MCP plugin
+// (plugins/mcp/unified) which is the recommended implementation.
 package mcp
 
 import (
@@ -13,7 +17,6 @@ import (
 	"github.com/kunalkushwaha/mcp-navigator-go/pkg/client"
 	"github.com/kunalkushwaha/mcp-navigator-go/pkg/discovery"
 	"github.com/kunalkushwaha/mcp-navigator-go/pkg/mcp"
-	"github.com/kunalkushwaha/mcp-navigator-go/pkg/transport"
 )
 
 // MCPManagerImpl provides the concrete implementation of core.MCPManager.
@@ -23,8 +26,7 @@ type MCPManagerImpl struct {
 	logger       *log.Logger
 
 	// Connection management
-	clients    map[string]*client.Client
-	transports map[string]transport.Transport
+	clients map[string]*client.Client
 
 	// Discovery
 	discovery *discovery.Discovery
@@ -79,7 +81,6 @@ func createMCPManager(config core.MCPConfig, registry *tools.ToolRegistry, logge
 		toolRegistry: registry,
 		logger:       logger,
 		clients:      make(map[string]*client.Client),
-		transports:   make(map[string]transport.Transport),
 		discovery:    discovery.NewDiscovery(logger),
 		mcpTools:     make(map[string]*MCPTool),
 		serverTools:  make(map[string][]string),
@@ -122,20 +123,52 @@ func (m *MCPManagerImpl) Connect(ctx context.Context, serverName string) error {
 		return fmt.Errorf("server '%s' is disabled", serverName)
 	}
 
-	// Create transport based on server type
-	transport, err := m.createTransport(*serverConfig)
-	if err != nil {
-		return fmt.Errorf("failed to create transport for server '%s': %w", serverName, err)
+	// Create client using the ClientBuilder pattern (v0.0.2)
+	clientBuilder := client.NewClientBuilder().
+		WithName("AgentFlow").
+		WithVersion("1.0.0").
+		WithTimeout(m.config.ConnectionTimeout)
+
+	// Configure transport based on server type
+	switch serverConfig.Type {
+	case "tcp":
+		clientBuilder = clientBuilder.WithTCPTransport(serverConfig.Host, serverConfig.Port)
+	case "stdio":
+		// Parse command into command and args (simple approach)
+		clientBuilder = clientBuilder.WithSTDIOTransport(serverConfig.Command, []string{})
+	case "websocket":
+		url := fmt.Sprintf("ws://%s:%d", serverConfig.Host, serverConfig.Port)
+		clientBuilder = clientBuilder.WithWebSocketTransport(url)
+	case "http_sse":
+		endpoint := serverConfig.Endpoint
+		if endpoint == "" {
+			if serverConfig.Host != "" && serverConfig.Port > 0 {
+				endpoint = fmt.Sprintf("http://%s:%d", serverConfig.Host, serverConfig.Port)
+			} else {
+				return fmt.Errorf("http_sse server '%s' requires either endpoint or host:port configuration", serverName)
+			}
+		}
+		// Note: Consider using the unified MCP plugin for full HTTP SSE support
+		// For now, we'll try to use the HTTP SSE transport if available
+		return fmt.Errorf("http_sse transport not supported in this implementation, please use the unified MCP plugin")
+	case "http_streaming":
+		endpoint := serverConfig.Endpoint
+		if endpoint == "" {
+			if serverConfig.Host != "" && serverConfig.Port > 0 {
+				endpoint = fmt.Sprintf("http://%s:%d", serverConfig.Host, serverConfig.Port)
+			} else {
+				return fmt.Errorf("http_streaming server '%s' requires either endpoint or host:port configuration", serverName)
+			}
+		}
+		// Note: Consider using the unified MCP plugin for full HTTP Streaming support
+		// For now, we'll try to use the HTTP Streaming transport if available
+		return fmt.Errorf("http_streaming transport not supported in this implementation, please use the unified MCP plugin")
+	default:
+		return fmt.Errorf("unsupported transport type: %s", serverConfig.Type)
 	}
 
-	// Create client
-	clientConfig := client.ClientConfig{
-		Name:    "AgentFlow",
-		Version: "1.0.0",
-		Logger:  m.logger,
-		Timeout: m.config.ConnectionTimeout,
-	}
-	mcpClient := client.NewClient(transport, clientConfig)
+	// Build the client
+	mcpClient := clientBuilder.Build()
 
 	// Connect with timeout
 	connectCtx, cancel := context.WithTimeout(ctx, m.config.ConnectionTimeout)
@@ -158,7 +191,6 @@ func (m *MCPManagerImpl) Connect(ctx context.Context, serverName string) error {
 
 	// Store connection
 	m.clients[serverName] = mcpClient
-	m.transports[serverName] = transport
 	m.serverStats[serverName] = &ServerStats{
 		ConnectedAt:  time.Now(),
 		LastActivity: time.Now(),
@@ -195,7 +227,6 @@ func (m *MCPManagerImpl) Disconnect(serverName string) error {
 
 	// Clean up
 	delete(m.clients, serverName)
-	delete(m.transports, serverName)
 	delete(m.serverStats, serverName)
 
 	m.logger.Printf("Disconnected from MCP server: %s", serverName)
@@ -488,24 +519,6 @@ func validateServerConfig(config core.MCPServerConfig) error {
 		return fmt.Errorf("unsupported server type: %s", config.Type)
 	}
 	return nil
-}
-
-// createTransport creates a transport based on the server configuration.
-func (m *MCPManagerImpl) createTransport(config core.MCPServerConfig) (transport.Transport, error) {
-	switch config.Type {
-	case "tcp":
-		return transport.NewTCPTransport(config.Host, config.Port), nil
-	case "stdio":
-		// Parse command into command and args
-		// For simplicity, we'll assume command is just the executable name
-		// In a real implementation, you'd want to parse shell commands properly
-		return transport.NewStdioTransport(config.Command, []string{}), nil
-	case "websocket":
-		url := fmt.Sprintf("ws://%s:%d", config.Host, config.Port)
-		return transport.NewWebSocketTransport(url), nil
-	default:
-		return nil, fmt.Errorf("unsupported transport type: %s", config.Type)
-	}
 }
 
 // registerServerTools registers all tools from a specific server.
