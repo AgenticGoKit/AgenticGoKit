@@ -4,6 +4,8 @@ class AgenticChatApp {
     constructor() {
         this.websocket = null;
         this.currentSessionId = null;
+        this.currentAgent = null;
+        this.agents = [];
         this.isConnected = false;
         this.messageQueue = [];
         this.sessions = new Map();
@@ -17,6 +19,7 @@ class AgenticChatApp {
         this.reconnectAttempts = 0;
         this.isTyping = false;
         this.typingTimeout = null;
+        this.sendingMessage = false; // Add debouncing flag
         
         this.init();
     }
@@ -25,6 +28,7 @@ class AgenticChatApp {
         this.setupEventListeners();
         this.loadSettings();
         this.connect();
+        this.loadAgents();
         this.loadSessions();
     }
 
@@ -81,6 +85,13 @@ class AgenticChatApp {
     }
 
     connect() {
+        // For now, skip WebSocket connection and work in HTTP-only mode
+        console.log('Running in HTTP-only mode (WebSocket disabled for demo)');
+        this.isConnected = false; // Keep false since we're using HTTP API
+        this.updateConnectionStatus(false);
+        return;
+        
+        /* WebSocket connection code - disabled for demo
         if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
             return;
         }
@@ -95,6 +106,7 @@ class AgenticChatApp {
             console.error('Failed to create WebSocket connection:', error);
             this.handleConnectionError();
         }
+        */
     }
 
     setupWebSocketHandlers() {
@@ -240,6 +252,18 @@ class AgenticChatApp {
         const statusIndicator = document.querySelector('.status-indicator');
         const statusText = document.querySelector('.status-text');
         
+        if (!statusIndicator || !statusText) {
+            return; // Elements not found, skip update
+        }
+        
+        // In HTTP-only mode, show "Ready" instead of connection status
+        if (!this.websocket) {
+            statusIndicator.classList.remove('disconnected');
+            statusText.textContent = 'Ready';
+            this.hideConnectionLostBanner();
+            return;
+        }
+        
         if (connected) {
             statusIndicator.classList.remove('disconnected');
             statusText.textContent = 'Connected';
@@ -252,6 +276,11 @@ class AgenticChatApp {
     }
 
     showConnectionLostBanner() {
+        // Don't show connection lost banner in HTTP-only mode
+        if (!this.websocket) {
+            return;
+        }
+        
         let banner = document.querySelector('.connection-lost');
         if (!banner) {
             banner = document.createElement('div');
@@ -276,11 +305,29 @@ class AgenticChatApp {
     }
 
     sendMessage() {
+        // Prevent double-sending
+        if (this.sendingMessage) {
+            console.log('Already sending a message, ignoring duplicate call');
+            return;
+        }
+        
         const input = document.getElementById('chat-input');
         const message = input.value.trim();
         
-        if (!message || !this.currentSessionId) {
+        if (!message) {
             return;
+        }
+
+        if (!this.currentAgent) {
+            this.showError('Please select an agent first');
+            return;
+        }
+
+        // Set the sending flag
+        this.sendingMessage = true;
+
+        if (!this.currentSessionId) {
+            this.createNewSession(this.currentAgent);
         }
 
         // Add user message to UI immediately
@@ -293,25 +340,57 @@ class AgenticChatApp {
         // Update session
         this.updateSessionLastMessage(this.currentSessionId, message);
 
-        // Send to server
-        const chatMessage = {
-            type: 'chat_message',
-            session_id: this.currentSessionId,
-            message: message,
-            timestamp: new Date().toISOString()
-        };
-
-        if (this.isConnected) {
-            this.websocket.send(JSON.stringify(chatMessage));
-        } else {
-            this.messageQueue.push(chatMessage);
-            this.showError('Message queued. Will send when connected.');
-        }
-
         // Clear input and show typing indicator
         input.value = '';
         input.style.height = 'auto';
         this.showTypingIndicator();
+
+        // Send message via HTTP API (since WebSocket might not be implemented for chat yet)
+        this.sendMessageToAgent(message);
+    }
+
+    async sendMessageToAgent(message) {
+        try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    agent_name: this.currentAgent,
+                    message: message,
+                    session_id: this.currentSessionId
+                })
+            });
+
+            const data = await response.json();
+            this.hideTypingIndicator();
+
+            if (data.status === 'success' && data.data && data.data.response) {
+                // Add agent response to UI
+                this.addMessage({
+                    type: 'agent',
+                    content: data.data.response,
+                    agent: this.currentAgent,
+                    timestamp: new Date().toISOString()
+                });
+            } else {
+                console.error('API response validation failed:', {
+                    status: data.status,
+                    hasData: !!data.data,
+                    hasResponse: !!(data.data && data.data.response),
+                    fullData: data
+                });
+                this.showError('Failed to get response from agent');
+            }
+        } catch (error) {
+            this.hideTypingIndicator();
+            console.error('Error sending message:', error);
+            this.showError('Failed to send message. Please try again.');
+        } finally {
+            // Reset the sending flag regardless of success or failure
+            this.sendingMessage = false;
+        }
     }
 
     addMessage(messageData) {
@@ -326,12 +405,42 @@ class AgenticChatApp {
         }
     }
 
+    clearChatMessages() {
+        const messagesContainer = document.getElementById('chat-messages');
+        messagesContainer.innerHTML = `
+            <div class="welcome-message">
+                <div class="welcome-content">
+                    <h2>Welcome to AgenticGoKit Chat! 🤖</h2>
+                    <p>Start a conversation with your AI agents. They're ready to help you with any task.</p>
+                    <div class="welcome-features">
+                        <div class="feature-item">
+                            <span class="feature-icon">💬</span>
+                            <span>Real-time chat with AI agents</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-icon">🔄</span>
+                            <span>Multi-agent collaboration</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-icon">💾</span>
+                            <span>Persistent chat sessions</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-icon">🔧</span>
+                            <span>Tool integration & execution</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
     createMessageElement(messageData) {
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${messageData.type}`;
 
-        const avatarText = messageData.type === 'user' ? 'U' : (messageData.agent_name ? messageData.agent_name[0].toUpperCase() : 'A');
-        const senderName = messageData.type === 'user' ? 'You' : (messageData.agent_name || 'Agent');
+        const avatarText = messageData.type === 'user' ? 'U' : (messageData.agent ? messageData.agent[0].toUpperCase() : 'A');
+        const senderName = messageData.type === 'user' ? 'You' : (messageData.agent || messageData.agent_name || 'Agent');
         const timestamp = new Date(messageData.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
         messageDiv.innerHTML = `
@@ -390,18 +499,36 @@ class AgenticChatApp {
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
-    createNewSession() {
-        if (!this.isConnected) {
-            this.showError('Cannot create session while disconnected');
-            return;
-        }
-
-        const createMessage = {
-            type: 'session_create',
-            timestamp: new Date().toISOString()
+    createNewSession(agentName = null) {
+        const sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        const agent = agentName || this.currentAgent;
+        
+        const session = {
+            id: sessionId,
+            agent: agent,
+            title: agent ? `Chat with ${agent}` : 'New Chat',
+            messages: [],
+            createdAt: new Date().toISOString(),
+            lastMessage: null
         };
 
-        this.websocket.send(JSON.stringify(createMessage));
+        this.sessions.set(sessionId, session);
+        this.currentSessionId = sessionId;
+        
+        if (agent && !this.currentAgent) {
+            this.currentAgent = agent;
+        }
+        
+        // Clear chat messages and show welcome
+        this.clearChatMessages();
+        this.updateSessionsList();
+        this.updateActiveSession(sessionId);
+        this.saveSessions();
+        
+        // If creating session with specific agent, select that agent
+        if (agent) {
+            this.selectAgent(agent);
+        }
     }
 
     switchToSession(sessionId) {
@@ -487,6 +614,95 @@ class AgenticChatApp {
             }
             this.updateSessionsList();
         }
+        
+        this.saveSessions();
+    }
+
+    getCurrentSession() {
+        return this.currentSessionId ? this.sessions.get(this.currentSessionId) : null;
+    }
+
+    async loadAgents() {
+        try {
+            const response = await fetch('/api/agents');
+            const data = await response.json();
+            
+            if (data.status === 'success' && data.data && data.data.available) {
+                this.agents = data.data.available;
+                this.updateAgentsList();
+            } else {
+                console.error('Failed to load agents:', data);
+                this.showAgentsError();
+            }
+        } catch (error) {
+            console.error('Error loading agents:', error);
+            this.showAgentsError();
+        }
+    }
+
+    updateAgentsList() {
+        const agentDropdown = document.getElementById('agent-dropdown');
+        const agentInfo = document.getElementById('agent-info');
+        
+        if (!this.agents || this.agents.length === 0) {
+            agentDropdown.innerHTML = '<option value="">No agents available</option>';
+            agentInfo.style.display = 'none';
+            return;
+        }
+
+        // Populate dropdown
+        agentDropdown.innerHTML = '<option value="">Choose an agent...</option>' + 
+            this.agents.map(agent => 
+                `<option value="${agent.name}">🤖 ${agent.name} - ${agent.role}</option>`
+            ).join('');
+        
+        // Add event listener for dropdown change
+        agentDropdown.onchange = (e) => {
+            const selectedAgentName = e.target.value;
+            if (selectedAgentName) {
+                this.selectAgent(selectedAgentName);
+                this.showAgentInfo(selectedAgentName);
+            } else {
+                agentInfo.style.display = 'none';
+                this.currentAgent = null;
+                document.getElementById('chat-input').placeholder = 'Select an agent to start chatting...';
+            }
+        };
+    }
+
+    showAgentInfo(agentName) {
+        const agentInfo = document.getElementById('agent-info');
+        const agent = this.agents.find(a => a.name === agentName);
+        
+        if (agent) {
+            agentInfo.querySelector('.agent-description').textContent = agent.description;
+            agentInfo.querySelector('.agent-capabilities').innerHTML = 
+                agent.capabilities.map(cap => `<span class="capability-tag">${cap}</span>`).join('');
+            agentInfo.style.display = 'block';
+        }
+    }
+
+    selectAgent(agentName) {
+        this.currentAgent = agentName;
+        
+        // Update chat input placeholder
+        const chatInput = document.getElementById('chat-input');
+        const agent = this.agents.find(a => a.name === agentName);
+        if (agent) {
+            chatInput.placeholder = `Ask ${agent.name} anything... (${agent.role})`;
+        }
+        
+        // Create new session if none exists or if current session has different agent
+        if (!this.currentSessionId || this.getCurrentSession()?.agent !== agentName) {
+            this.createNewSession(agentName);
+        }
+    }
+
+    showAgentsError() {
+        const agentDropdown = document.getElementById('agent-dropdown');
+        const agentInfo = document.getElementById('agent-info');
+        agentDropdown.innerHTML = '<option value="">Failed to load agents</option>';
+        agentInfo.style.display = 'none';
     }
 
     loadSessions() {
@@ -645,9 +861,13 @@ const style = document.createElement('style');
 style.textContent = notificationStyles;
 document.head.appendChild(style);
 
-// Initialize the app when the page loads
-document.addEventListener('DOMContentLoaded', () => {
-    window.chatApp = new AgenticChatApp();
+// Initialize the app and make it globally available
+let app;
+document.addEventListener('DOMContentLoaded', function() {
+    app = new AgenticChatApp();
+    // Make app globally available for onclick handlers
+    window.app = app;
+    window.chatApp = app; // For compatibility
     
     // Cleanup on page unload
     window.addEventListener('beforeunload', () => {

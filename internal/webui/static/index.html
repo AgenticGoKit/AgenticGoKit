@@ -32,8 +32,27 @@
                         <span>New Chat</span>
                     </button>
                 </div>
-                <div id="sessions-list" class="sessions-list">
-                    <!-- Sessions will be dynamically loaded here -->
+                
+                <!-- Agent Selection Dropdown -->
+                <div class="sidebar-section">
+                    <h3 class="section-title">🤖 Select Agent</h3>
+                    <div class="agent-selector">
+                        <select id="agent-dropdown" class="agent-dropdown">
+                            <option value="">Choose an agent...</option>
+                        </select>
+                        <div id="agent-info" class="agent-info" style="display: none;">
+                            <div class="agent-description"></div>
+                            <div class="agent-capabilities"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Chat History Section -->
+                <div class="sidebar-section chat-history-section">
+                    <h3 class="section-title">💬 Chat History</h3>
+                    <div id="sessions-list" class="sessions-list">
+                        <!-- Chat sessions will be dynamically loaded here -->
+                    </div>
                 </div>
             </aside>
 

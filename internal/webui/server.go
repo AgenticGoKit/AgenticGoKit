@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strconv"
 	"sync"
@@ -73,11 +75,16 @@ func NewServer(config ServerConfig) *Server {
 	mux := http.NewServeMux()
 
 	// Static file serving
+	log.Printf("DEBUG: StaticDir configured as: %s", config.StaticDir)
+	absStaticDir, _ := filepath.Abs(config.StaticDir)
+	log.Printf("DEBUG: StaticDir absolute path: %s", absStaticDir)
+
 	staticHandler := http.FileServer(http.Dir(config.StaticDir))
 	mux.Handle("/static/", http.StripPrefix("/static/", staticHandler))
 
-	// Root handler serves the main chat interface
+	// Root handler serves the main chat interface by redirecting to static/index.html
 	mux.HandleFunc("/", server.handleRoot)
+	log.Printf("DEBUG: Root handler registered for path '/'")
 
 	// API endpoints
 	mux.HandleFunc("/api/health", server.handleHealth)
@@ -200,60 +207,53 @@ func (s *Server) GetURL() string {
 
 // handleRoot serves the main chat interface
 func (s *Server) handleRoot(w http.ResponseWriter, r *http.Request) {
+	log.Printf("DEBUG: handleRoot called - Method: %s, Path: %s", r.Method, r.URL.Path)
+
 	if r.URL.Path != "/" {
+		log.Printf("DEBUG: Path is not '/', returning 404 for path: %s", r.URL.Path)
 		http.NotFound(w, r)
 		return
 	}
 
-	// For now, serve a simple HTML page
-	// This will be replaced with a proper template in Task 5
-	html := `<!DOCTYPE html>
-<html>
-<head>
-    <title>AgenticGoKit Chat Interface</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
-        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .header { text-align: center; margin-bottom: 20px; }
-        .status { padding: 10px; background: #e8f5e8; border-radius: 4px; margin-bottom: 20px; }
-        .info { margin: 10px 0; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>🤖 AgenticGoKit Web Interface</h1>
-            <p>WebUI Server is Running Successfully</p>
-        </div>
-        
-        <div class="status">
-            <strong>✅ Server Status: Running</strong>
-        </div>
-        
-        <div class="info">
-            <h3>Server Information</h3>
-            <ul>
-                <li><strong>Port:</strong> ` + s.port + `</li>
-                <li><strong>URL:</strong> <a href="` + s.GetURL() + `">` + s.GetURL() + `</a></li>
-                <li><strong>API Health:</strong> <a href="/api/health">/api/health</a></li>
-                <li><strong>Config:</strong> <a href="/api/config">/api/config</a></li>
-                <li><strong>Agents:</strong> <a href="/api/agents">/api/agents</a></li>
-            </ul>
-        </div>
-        
-        <div class="info">
-            <h3>Next Steps</h3>
-            <p>This is a basic server setup for Task 1. The chat interface will be implemented in Task 5.</p>
-            <p>WebSocket communication will be added in Task 2.</p>
-        </div>
-    </div>
-</body>
-</html>`
+	log.Printf("DEBUG: handleRoot called for path: %s", r.URL.Path)
 
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(html))
+	// Get current working directory for debugging
+	cwd, _ := os.Getwd()
+	log.Printf("DEBUG: Current working directory: %s", cwd)
+
+	// Try multiple paths to find index.html
+	possiblePaths := []string{
+		"../../internal/webui/static/index.html",    // Relative to examples directory
+		"internal/webui/static/index.html",          // From project root
+		"./internal/webui/static/index.html",        // With explicit current dir
+		"../../../internal/webui/static/index.html", // In case we're deeper
+	}
+
+	var indexPath string
+	var found bool
+
+	for _, path := range possiblePaths {
+		absPath, _ := filepath.Abs(path)
+		log.Printf("DEBUG: Trying path: %s (absolute: %s)", path, absPath)
+
+		if _, err := os.Stat(path); err == nil {
+			indexPath = path
+			found = true
+			log.Printf("DEBUG: SUCCESS - Found file at: %s", path)
+			break
+		} else {
+			log.Printf("DEBUG: File not found at %s: %v", path, err)
+		}
+	}
+
+	if !found {
+		log.Printf("ERROR: Could not find index.html in any of the tried paths")
+		http.Error(w, "index.html not found", http.StatusNotFound)
+		return
+	}
+
+	log.Printf("DEBUG: Serving file: %s", indexPath)
+	http.ServeFile(w, r, indexPath)
 }
 
 // handleHealth provides a health check endpoint
@@ -384,23 +384,82 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Handle chat interaction
-	response := map[string]interface{}{
-		"status": "success",
-		"data": map[string]interface{}{
-			"agent":     chatReq.AgentName,
-			"message":   chatReq.Message,
-			"response":  "Hello! This is a mock response from " + chatReq.AgentName + ". The actual agent integration is in development.",
-			"timestamp": time.Now().Unix(),
-		},
-	}
+	var agentResponse string = "Hello! This is a mock response from " + chatReq.AgentName + ". The actual agent integration is in development."
 
 	// If agent manager is available, try to use it
 	if s.agentManager != nil {
-		// This would be where we integrate with the actual agent system
-		// For now, providing a mock response
+		log.Printf("DEBUG: Chat request - Agent: %s, Message: %s", chatReq.AgentName, chatReq.Message)
+
+		// Get all agents to find the requested one
+		agents := s.agentManager.GetActiveAgents()
+		var targetAgent core.Agent
+
+		for _, agent := range agents {
+			if agent.Name() == chatReq.AgentName {
+				targetAgent = agent
+				break
+			}
+		}
+
+		if targetAgent != nil {
+			log.Printf("DEBUG: Found agent %s, calling HandleEvent", targetAgent.Name())
+
+			// Create event for the agent
+			eventData := map[string]any{
+				"message":    chatReq.Message,
+				"session_id": chatReq.SessionID,
+				"timestamp":  time.Now().Format(time.RFC3339),
+			}
+			metadata := map[string]string{
+				"type": "chat_message",
+			}
+			event := core.NewEvent(targetAgent.Name(), eventData, metadata)
+
+			// Create input state
+			state := core.NewSimpleState(map[string]any{
+				"message":    chatReq.Message,
+				"session_id": chatReq.SessionID,
+			})
+
+			// Call the agent
+			ctx := context.Background()
+			result, err := targetAgent.HandleEvent(ctx, event, state)
+			if err != nil {
+				log.Printf("ERROR: Agent HandleEvent failed: %v", err)
+				agentResponse = fmt.Sprintf("Sorry, I encountered an error while processing your message: %v", err)
+			} else {
+				// Extract response from agent result
+				if responseMsg, exists := result.OutputState.Get("message"); exists {
+					if msgStr, ok := responseMsg.(string); ok {
+						agentResponse = msgStr
+						log.Printf("DEBUG: Agent response: %s", agentResponse)
+					}
+				}
+			}
+		} else {
+			log.Printf("DEBUG: Agent %s not found", chatReq.AgentName)
+			agentResponse = fmt.Sprintf("Sorry, I couldn't find agent '%s'. Available agents: %v", chatReq.AgentName, func() []string {
+				names := make([]string, len(agents))
+				for i, a := range agents {
+					names[i] = a.Name()
+				}
+				return names
+			}())
+		}
 	}
 
-	s.writeJSON(w, response)
+	responseData := map[string]interface{}{
+		"agent":     chatReq.AgentName,
+		"message":   chatReq.Message,
+		"response":  agentResponse,
+		"timestamp": time.Now().Unix(),
+	}
+
+	log.Printf("DEBUG: Sending response - agent: %s, response length: %d",
+		chatReq.AgentName, len(agentResponse))
+	log.Printf("DEBUG: Response content preview: %.100s...", agentResponse)
+
+	s.writeJSON(w, responseData)
 }
 
 // handleSessions handles session management endpoints
