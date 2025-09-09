@@ -11,12 +11,27 @@ import (
 	"github.com/kunalkushwaha/agenticgokit/core"
 )
 
-func TestWebSocketConnection(t *testing.T) {
-	// Create test server
+// Helper function to create a test connection manager
+func createTestConnectionManager(t *testing.T) (*ConnectionManager, *EnhancedSessionManager) {
 	config := &core.Config{}
+	sessionConfig := DefaultSessionConfig()
 
-	sessionManager := NewSessionManager(config)
-	connManager := NewConnectionManager(sessionManager)
+	sessionManager, err := NewEnhancedSessionManager(config, sessionConfig)
+	if err != nil {
+		t.Fatalf("Failed to create session manager: %v", err)
+	}
+
+	logger := core.Logger()
+	connManager := NewConnectionManager(sessionManager, logger)
+
+	return connManager, sessionManager
+}
+
+func TestWebSocketConnection(t *testing.T) {
+	// Create test connection manager
+	connManager, sessionManager := createTestConnectionManager(t)
+	defer sessionManager.Stop()
+
 	connManager.Start()
 	defer connManager.Stop()
 
@@ -39,11 +54,10 @@ func TestWebSocketConnection(t *testing.T) {
 }
 
 func TestWebSocketProtocol(t *testing.T) {
-	// Create test server
-	config := &core.Config{}
+	// Create test connection manager
+	connManager, sessionManager := createTestConnectionManager(t)
+	defer sessionManager.Stop()
 
-	sessionManager := NewSessionManager(config)
-	connManager := NewConnectionManager(sessionManager)
 	connManager.Start()
 	defer connManager.Stop()
 
@@ -98,11 +112,10 @@ func TestWebSocketProtocol(t *testing.T) {
 }
 
 func TestWebSocketChatFlow(t *testing.T) {
-	// Create test server
-	config := &core.Config{}
+	// Create test connection manager
+	connManager, sessionManager := createTestConnectionManager(t)
+	defer sessionManager.Stop()
 
-	sessionManager := NewSessionManager(config)
-	connManager := NewConnectionManager(sessionManager)
 	connManager.Start()
 	defer connManager.Stop()
 
@@ -185,11 +198,10 @@ func TestWebSocketChatFlow(t *testing.T) {
 }
 
 func TestWebSocketPingPong(t *testing.T) {
-	// Create test server
-	config := &core.Config{}
+	// Create test connection manager
+	connManager, sessionManager := createTestConnectionManager(t)
+	defer sessionManager.Stop()
 
-	sessionManager := NewSessionManager(config)
-	connManager := NewConnectionManager(sessionManager)
 	connManager.Start()
 	defer connManager.Stop()
 
@@ -206,6 +218,12 @@ func TestWebSocketPingPong(t *testing.T) {
 		t.Fatalf("Failed to connect to WebSocket: %v", err)
 	}
 	defer conn.Close()
+
+	// Read welcome message first
+	var welcomeMsg WebSocketMessage
+	if err := conn.ReadJSON(&welcomeMsg); err != nil {
+		t.Fatalf("Failed to read welcome message: %v", err)
+	}
 
 	// Send ping
 	pingMsg := &WebSocketMessage{
@@ -234,11 +252,10 @@ func TestWebSocketPingPong(t *testing.T) {
 }
 
 func TestWebSocketErrorHandling(t *testing.T) {
-	// Create test server
-	config := &core.Config{}
+	// Create test connection manager
+	connManager, sessionManager := createTestConnectionManager(t)
+	defer sessionManager.Stop()
 
-	sessionManager := NewSessionManager(config)
-	connManager := NewConnectionManager(sessionManager)
 	connManager.Start()
 	defer connManager.Stop()
 
@@ -284,10 +301,9 @@ func TestWebSocketErrorHandling(t *testing.T) {
 }
 
 func TestConnectionManager(t *testing.T) {
-	config := &core.Config{}
-
-	sessionManager := NewSessionManager(config)
-	connManager := NewConnectionManager(sessionManager)
+	// Create test connection manager
+	connManager, sessionManager := createTestConnectionManager(t)
+	defer sessionManager.Stop()
 
 	// Test initial state
 	if connManager.GetConnectionCount() != 0 {

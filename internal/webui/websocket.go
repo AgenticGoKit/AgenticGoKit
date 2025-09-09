@@ -10,9 +10,10 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/kunalkushwaha/agenticgokit/core"
 )
 
-// ConnectionManager manages WebSocket connections and message routing
+// ConnectionManager manages all WebSocket connections and their associated sessions
 type ConnectionManager struct {
 	// WebSocket upgrader
 	upgrader websocket.Upgrader
@@ -28,8 +29,11 @@ type ConnectionManager struct {
 	unregister chan *ClientConnection
 	broadcast  chan []byte
 
-	// Session manager reference
-	sessionManager *SessionManager
+	// Session manager reference - using enhanced session manager
+	sessionManager *EnhancedSessionManager
+
+	// Logger
+	logger core.CoreLogger
 
 	// Agent system integration (will be implemented later)
 	agentRunner interface{} // placeholder for now
@@ -37,6 +41,12 @@ type ConnectionManager struct {
 	// Context for graceful shutdown
 	ctx    context.Context
 	cancel context.CancelFunc
+
+	// Metrics
+	totalConnections  int64
+	activeConnections int64
+	messagesSent      int64
+	messagesReceived  int64
 }
 
 // ClientConnection represents a WebSocket connection with metadata
@@ -64,7 +74,7 @@ type ClientConnection struct {
 }
 
 // NewConnectionManager creates a new WebSocket connection manager
-func NewConnectionManager(sessionManager *SessionManager) *ConnectionManager {
+func NewConnectionManager(sessionManager *EnhancedSessionManager, logger core.CoreLogger) *ConnectionManager {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	upgrader := websocket.Upgrader{
@@ -83,6 +93,7 @@ func NewConnectionManager(sessionManager *SessionManager) *ConnectionManager {
 		unregister:     make(chan *ClientConnection),
 		broadcast:      make(chan []byte),
 		sessionManager: sessionManager,
+		logger:         logger,
 		ctx:            ctx,
 		cancel:         cancel,
 	}
@@ -417,8 +428,13 @@ func (c *ClientConnection) handleSessionCreate(msg *WebSocketMessage) {
 		return
 	}
 
-	// Create new session
-	session := c.manager.sessionManager.CreateSession()
+	// Create new session with enhanced session manager
+	session, err := c.manager.sessionManager.CreateSession(c.userAgent, "127.0.0.1") // TODO: get real IP
+	if err != nil {
+		c.sendError("SESSION_CREATE_FAILED", "Failed to create session", err.Error())
+		return
+	}
+
 	c.sessionID = session.ID
 
 	// Store connection in manager
@@ -447,8 +463,8 @@ func (c *ClientConnection) handleSessionJoin(msg *WebSocketMessage) {
 	}
 
 	// Validate session exists
-	session := c.manager.sessionManager.GetSession(data.SessionID)
-	if session == nil {
+	session, err := c.manager.sessionManager.GetSession(data.SessionID)
+	if err != nil {
 		c.sendError("SESSION_NOT_FOUND", "Session not found", data.SessionID)
 		return
 	}
@@ -479,7 +495,7 @@ func (c *ClientConnection) handleSessionJoin(msg *WebSocketMessage) {
 			MessageID: generateMessageID(),
 			Timestamp: chatMsg.Timestamp,
 			Data: map[string]interface{}{
-				"agent_name": chatMsg.AgentName,
+				"agent_name": chatMsg.Role, // Use Role field
 				"content":    chatMsg.Content,
 				"status":     "complete",
 			},
@@ -502,9 +518,20 @@ func (c *ClientConnection) handleChatMessage(msg *WebSocketMessage) {
 		return
 	}
 
-	// Add message to session
-	chatMsg := NewUserMessage(data.Content)
-	c.manager.sessionManager.AddMessage(c.sessionID, chatMsg)
+	// Create chat message with enhanced structure
+	chatMsg := ChatMessage{
+		ID:        generateMessageID(),
+		Role:      "user",
+		Content:   data.Content,
+		Timestamp: time.Now(),
+	}
+
+	// Add message to session using enhanced session manager
+	err = c.manager.sessionManager.AddMessage(c.sessionID, chatMsg)
+	if err != nil {
+		c.sendError("MESSAGE_ADD_FAILED", "Failed to add message to session", err.Error())
+		return
+	}
 
 	// TODO: Integration with agent system will be implemented in future tasks
 	// For now, send a mock response

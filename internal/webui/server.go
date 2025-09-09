@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"path/filepath"
+	"strconv"
 	"sync"
 	"time"
 
@@ -18,9 +19,7 @@ type Server struct {
 	server            *http.Server
 	config            *core.Config
 	agentManager      core.AgentManager
-	sessions          map[string]*ChatSession
-	sessionMutex      sync.RWMutex
-	sessionManager    *SessionManager
+	sessionManager    *EnhancedSessionManager
 	connectionManager *ConnectionManager
 	logger            core.CoreLogger
 
@@ -47,20 +46,27 @@ func NewServer(config ServerConfig) *Server {
 		config.StaticDir = "./internal/webui/static"
 	}
 
-	// Create session manager
-	sessionManager := NewSessionManager(config.Config)
+	// Create enhanced session manager
+	sessionConfig := DefaultSessionConfig()
+	sessionManager, err := NewEnhancedSessionManager(config.Config, sessionConfig)
+	if err != nil {
+		// Fallback to basic configuration if enhanced setup fails
+		sessionManager, _ = NewEnhancedSessionManager(&core.Config{}, DefaultSessionConfig())
+	}
 
-	// Create connection manager
-	connectionManager := NewConnectionManager(sessionManager)
+	// Create logger
+	logger := core.Logger()
+
+	// Create connection manager with enhanced session manager
+	connectionManager := NewConnectionManager(sessionManager, logger)
 
 	server := &Server{
 		port:              config.Port,
 		config:            config.Config,
 		agentManager:      config.AgentManager,
-		sessions:          make(map[string]*ChatSession),
 		sessionManager:    sessionManager,
 		connectionManager: connectionManager,
-		logger:            core.Logger(),
+		logger:            logger,
 	}
 
 	// Setup HTTP routes
@@ -353,44 +359,78 @@ func (s *Server) handleSessionDetails(w http.ResponseWriter, r *http.Request) {
 // Helper methods for session management (stubs for now, will be implemented in Task 3)
 
 func (s *Server) handleGetSessions(w http.ResponseWriter, r *http.Request) {
-	s.sessionMutex.RLock()
-	defer s.sessionMutex.RUnlock()
+	// Parse pagination parameters
+	offset := 0
+	limit := 50 // Default limit
 
-	sessions := make([]map[string]interface{}, 0, len(s.sessions))
-	for id, session := range s.sessions {
-		sessions = append(sessions, map[string]interface{}{
-			"id":         id,
+	if offsetStr := r.URL.Query().Get("offset"); offsetStr != "" {
+		if parsedOffset, err := strconv.Atoi(offsetStr); err == nil && parsedOffset >= 0 {
+			offset = parsedOffset
+		}
+	}
+
+	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
+		if parsedLimit, err := strconv.Atoi(limitStr); err == nil && parsedLimit > 0 && parsedLimit <= 100 {
+			limit = parsedLimit
+		}
+	}
+
+	// Get sessions from enhanced session manager
+	sessions, total, err := s.sessionManager.ListSessions(offset, limit)
+	if err != nil {
+		s.logger.Error().Err(err).Msg("Failed to list sessions")
+		http.Error(w, "Failed to list sessions", http.StatusInternalServerError)
+		return
+	}
+
+	sessionData := make([]map[string]interface{}, len(sessions))
+	for i, session := range sessions {
+		sessionData[i] = map[string]interface{}{
+			"id":         session.ID,
 			"created_at": session.CreatedAt,
 			"last_used":  session.LastUsed,
 			"messages":   len(session.Messages),
-		})
+			"active":     session.Active,
+			"user_agent": session.UserAgent,
+		}
 	}
 
 	response := map[string]interface{}{
-		"sessions": sessions,
-		"total":    len(sessions),
+		"sessions": sessionData,
+		"total":    total,
+		"offset":   offset,
+		"limit":    limit,
 	}
 
 	s.writeJSON(w, response)
 }
 
 func (s *Server) handleCreateSession(w http.ResponseWriter, r *http.Request) {
-	// Stub implementation - will be completed in Task 3
-	sessionID := generateSessionID()
-
-	session := &ChatSession{
-		ID:        sessionID,
-		Messages:  make([]ChatMessage, 0),
-		CreatedAt: time.Now(),
-		LastUsed:  time.Now(),
+	// Get user agent from request
+	userAgent := r.Header.Get("User-Agent")
+	if userAgent == "" {
+		userAgent = "Unknown"
 	}
 
-	s.sessionMutex.Lock()
-	s.sessions[sessionID] = session
-	s.sessionMutex.Unlock()
+	// Get client IP
+	clientIP := r.Header.Get("X-Forwarded-For")
+	if clientIP == "" {
+		clientIP = r.Header.Get("X-Real-IP")
+	}
+	if clientIP == "" {
+		clientIP = r.RemoteAddr
+	}
+
+	// Create session using enhanced session manager
+	session, err := s.sessionManager.CreateSession(userAgent, clientIP)
+	if err != nil {
+		s.logger.Error().Err(err).Msg("Failed to create session")
+		http.Error(w, "Failed to create session", http.StatusInternalServerError)
+		return
+	}
 
 	response := map[string]interface{}{
-		"id":         sessionID,
+		"id":         session.ID,
 		"created_at": session.CreatedAt,
 		"status":     "created",
 	}
@@ -399,11 +439,10 @@ func (s *Server) handleCreateSession(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleGetSession(w http.ResponseWriter, r *http.Request, sessionID string) {
-	s.sessionMutex.RLock()
-	session, exists := s.sessions[sessionID]
-	s.sessionMutex.RUnlock()
-
-	if !exists {
+	// Get session from enhanced session manager
+	session, err := s.sessionManager.GetSession(sessionID)
+	if err != nil {
+		s.logger.Error().Err(err).Str("session_id", sessionID).Msg("Session not found")
 		http.Error(w, "Session not found", http.StatusNotFound)
 		return
 	}
@@ -413,21 +452,22 @@ func (s *Server) handleGetSession(w http.ResponseWriter, r *http.Request, sessio
 		"created_at": session.CreatedAt,
 		"last_used":  session.LastUsed,
 		"messages":   session.Messages,
+		"active":     session.Active,
+		"user_agent": session.UserAgent,
+		"ip_address": session.IPAddress,
 	}
 
 	s.writeJSON(w, response)
 }
 
 func (s *Server) handleDeleteSession(w http.ResponseWriter, r *http.Request, sessionID string) {
-	s.sessionMutex.Lock()
-	defer s.sessionMutex.Unlock()
-
-	if _, exists := s.sessions[sessionID]; !exists {
+	// Delete session using enhanced session manager
+	err := s.sessionManager.DeleteSession(sessionID)
+	if err != nil {
+		s.logger.Error().Err(err).Str("session_id", sessionID).Msg("Failed to delete session")
 		http.Error(w, "Session not found", http.StatusNotFound)
 		return
 	}
-
-	delete(s.sessions, sessionID)
 
 	response := map[string]interface{}{
 		"id":     sessionID,
@@ -439,42 +479,9 @@ func (s *Server) handleDeleteSession(w http.ResponseWriter, r *http.Request, ses
 
 // startSessionCleanup starts a background routine to clean up expired sessions
 func (s *Server) startSessionCleanup(ctx context.Context) {
-	ticker := time.NewTicker(30 * time.Minute) // Clean up every 30 minutes
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-			s.cleanupExpiredSessions()
-		}
-	}
-}
-
-// cleanupExpiredSessions removes sessions that haven't been used for more than 24 hours
-func (s *Server) cleanupExpiredSessions() {
-	s.sessionMutex.Lock()
-	defer s.sessionMutex.Unlock()
-
-	expiration := time.Now().Add(-24 * time.Hour)
-	var expired []string
-
-	for id, session := range s.sessions {
-		if session.LastUsed.Before(expiration) {
-			expired = append(expired, id)
-		}
-	}
-
-	for _, id := range expired {
-		delete(s.sessions, id)
-	}
-
-	if len(expired) > 0 {
-		s.logger.Info().
-			Int("count", len(expired)).
-			Msg("Cleaned up expired sessions")
-	}
+	// Enhanced session manager handles its own cleanup routines
+	// This method is kept for compatibility but delegates to the session manager
+	s.logger.Info().Msg("Session cleanup routine delegated to enhanced session manager")
 }
 
 // writeJSON writes a JSON response
