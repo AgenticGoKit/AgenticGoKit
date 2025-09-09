@@ -83,6 +83,7 @@ func NewServer(config ServerConfig) *Server {
 	mux.HandleFunc("/api/health", server.handleHealth)
 	mux.HandleFunc("/api/config", server.handleConfig)
 	mux.HandleFunc("/api/agents", server.handleAgents)
+	mux.HandleFunc("/api/chat", server.handleChat)
 
 	// Session management endpoints
 	mux.HandleFunc("/api/sessions", server.handleSessions)
@@ -311,18 +312,95 @@ func (s *Server) handleAgents(w http.ResponseWriter, r *http.Request) {
 	}
 
 	agents := map[string]interface{}{
-		"available": []string{}, // Will be populated when agent manager is integrated
+		"available": []string{},
 		"total":     0,
-		"status":    "not_integrated", // Will change in Task 4
+		"status":    "not_integrated",
 	}
 
-	// TODO: Integrate with actual agent manager in Task 4
+	// Debug: log agent manager status
+	if s.logger != nil {
+		s.logger.Debug().
+			Bool("agent_manager_nil", s.agentManager == nil).
+			Msg("handleAgents: checking agent manager")
+	}
+
+	// Integrate with actual agent manager
 	if s.agentManager != nil {
 		agents["status"] = "integrated"
-		// agents["available"] = s.agentManager.GetActiveAgents()
+
+		// Get active agents from agent manager
+		activeAgents := s.agentManager.GetActiveAgents()
+
+		// Debug: log agent count
+		if s.logger != nil {
+			s.logger.Debug().
+				Int("active_agents_count", len(activeAgents)).
+				Msg("handleAgents: got active agents")
+		}
+
+		agentList := make([]map[string]interface{}, 0, len(activeAgents))
+
+		for _, agent := range activeAgents {
+			agentInfo := map[string]interface{}{
+				"name":         agent.Name(),
+				"description":  agent.GetDescription(),
+				"role":         agent.GetRole(),
+				"capabilities": agent.GetCapabilities(),
+				"enabled":      agent.IsEnabled(),
+			}
+			agentList = append(agentList, agentInfo)
+		}
+
+		agents["available"] = agentList
+		agents["total"] = len(activeAgents)
 	}
 
 	s.writeJSON(w, agents)
+}
+
+// handleChat handles chat interactions with agents
+func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Parse request body
+	var chatReq struct {
+		AgentName string `json:"agent_name"`
+		Message   string `json:"message"`
+		SessionID string `json:"session_id"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&chatReq); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	// Validate required fields
+	if chatReq.AgentName == "" || chatReq.Message == "" {
+		http.Error(w, "agent_name and message are required", http.StatusBadRequest)
+		return
+	}
+
+	// Handle chat interaction
+	response := map[string]interface{}{
+		"status": "success",
+		"data": map[string]interface{}{
+			"agent":     chatReq.AgentName,
+			"message":   chatReq.Message,
+			"response":  "Hello! This is a mock response from " + chatReq.AgentName + ". The actual agent integration is in development.",
+			"timestamp": time.Now().Unix(),
+		},
+	}
+
+	// If agent manager is available, try to use it
+	if s.agentManager != nil {
+		// This would be where we integrate with the actual agent system
+		// For now, providing a mock response
+	}
+
+	s.writeJSON(w, response)
 }
 
 // handleSessions handles session management endpoints
