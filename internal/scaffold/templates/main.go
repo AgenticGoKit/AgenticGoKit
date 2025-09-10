@@ -164,6 +164,12 @@ import (
 	"strings"
 	"sync"
 	"time"
+	{{if .Config.WebUIEnabled}}
+	"net/http"
+	"path/filepath"
+	"log"
+	"encoding/json"
+	{{end}}
 
 	"github.com/kunalkushwaha/agenticgokit/core"
 	_ "github.com/kunalkushwaha/agenticgokit/plugins/logging/zerolog"
@@ -226,6 +232,9 @@ func main() {
 	// TODO: Customize command-line arguments for your application
 	// You can add additional flags for configuration, debugging, or feature toggles
 	messageFlag := flag.String("m", "", "Message to process")
+	{{if .Config.WebUIEnabled}}
+	webuiFlag := flag.Bool("webui", false, "Start web interface mode")
+	{{end}}
 	// TODO: Add your custom flags here
 	// Examples:
 	// debugFlag := flag.Bool("debug", false, "Enable debug mode")
@@ -612,7 +621,14 @@ func main() {
 	
 	// All agents registered with orchestrator - debug logging reduced
 
-
+	{{if .Config.WebUIEnabled}}
+	// Check if WebUI mode is requested
+	if *webuiFlag {
+		logger.Info().Msg("Starting WebUI mode")
+		startWebUI(ctx, runner, config)
+		return
+	}
+	{{end}}
 
 	// Process user input from command line or interactive prompt
 	// TODO: Customize input processing for your application needs
@@ -1091,4 +1107,98 @@ func initializeProvider(providerType string) (core.ModelProvider, error) {
 
 	return provider, nil
 }
+
+{{if .Config.WebUIEnabled}}
+// WebUI Server Functions
+func startWebUI(ctx context.Context, runner core.Runner, config *core.Config) {
+	staticDir := "{{.Config.WebUIStaticDir}}"
+	if staticDir == "" {
+		staticDir = "internal/webui/static"
+	}
+	
+	port := {{.Config.WebUIPort}}
+	if port == 0 {
+		port = 8080
+	}
+
+	// Setup HTTP routes
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/" {
+			http.ServeFile(w, r, filepath.Join(staticDir, "index.html"))
+			return
+		}
+		http.FileServer(http.Dir(staticDir)).ServeHTTP(w, r)
+	})
+
+	http.HandleFunc("/api/agents", handleGetAgents)
+	http.HandleFunc("/api/chat", func(w http.ResponseWriter, r *http.Request) {
+		handleChat(w, r, ctx, runner, config)
+	})
+
+	log.Printf("Starting WebUI server on port %d", port)
+	log.Printf("Visit http://localhost:%d to access the chat interface", port)
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
+}
+
+func handleGetAgents(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	// Return predefined agents - customize as needed
+	agents := []map[string]interface{}{
+		{"id": "assistant", "name": "Assistant", "description": "General purpose assistant"},
+		{"id": "coder", "name": "Coder", "description": "Programming and code analysis"},
+		{"id": "writer", "name": "Writer", "description": "Content creation and writing"},
+		{"id": "analyst", "name": "Analyst", "description": "Data analysis and insights"},
+	}
+	
+	w.Write([]byte(fmt.Sprintf("%v", agents)))
+}
+
+func handleChat(w http.ResponseWriter, r *http.Request, ctx context.Context, runner core.Runner, config *core.Config) {
+	if r.Method != "POST" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Parse JSON request
+	var req struct {
+		Message string ` + "`json:\"message\"`" + `
+		Agent   string ` + "`json:\"agent\"`" + `
+	}
+	
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	// Create event for processing
+	event := core.NewEvent(req.Agent, core.EventData{
+		"message": req.Message,
+	}, map[string]string{
+		"route": req.Agent,
+	})
+
+	// Emit the event (async processing)
+	if err := runner.Emit(event); err != nil {
+		http.Error(w, fmt.Sprintf("Processing error: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Return immediate response (for async processing)
+	// Note: In a real implementation, you might want to implement WebSocket 
+	// or Server-Sent Events for real-time responses
+	w.Header().Set("Content-Type", "application/json")
+	response := map[string]interface{}{
+		"response": "Message received and processing started",
+		"agent":    req.Agent,
+		"status":   "processing",
+	}
+	
+	json.NewEncoder(w).Encode(response)
+}
+{{end}}
 `

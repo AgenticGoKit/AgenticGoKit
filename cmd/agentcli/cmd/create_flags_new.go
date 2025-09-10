@@ -22,6 +22,7 @@ type ConsolidatedCreateFlags struct {
 	MCP       string // "", "minimal", "standard", "advanced"
 	EnableMCP bool   // Simple MCP enable flag
 	RAG       string // "", "default", or chunk size
+	WebUI     bool   // Enable web interface
 
 	// Orchestration flags
 	Orchestration string // "sequential", "collaborative", "loop", "route"
@@ -371,6 +372,14 @@ func (f *ConsolidatedCreateFlags) ToProjectConfig(projectName string) (scaffold.
 	} else if config.Visualize {
 		// Set default visualization output directory when visualize is enabled
 		config.VisualizeOutputDir = "docs/workflows"
+	}
+
+	// Configure WebUI
+	if f.WebUI {
+		config.WebUIEnabled = true
+		config.WebUIPort = 8080 // Default port
+		config.WebUIStaticDir = "internal/webui/static"
+		config.WebUITemplatesDir = "internal/webui/templates"
 	}
 
 	// Apply intelligent defaults for embedding models and dimensions

@@ -54,6 +54,12 @@ type TemplateConfig struct {
 		WithMetrics   bool `yaml:"withMetrics" json:"withMetrics"`
 		Visualize     bool `yaml:"visualize" json:"visualize"`
 
+		// WebUI configuration
+		WebUIEnabled      bool   `yaml:"webUIEnabled" json:"webUIEnabled"`
+		WebUIPort         int    `yaml:"webUIPort" json:"webUIPort"`
+		WebUIStaticDir    string `yaml:"webUIStaticDir" json:"webUIStaticDir"`
+		WebUITemplatesDir string `yaml:"webUITemplatesDir" json:"webUITemplatesDir"`
+
 		// Performance settings
 		MaxConcurrency       int `yaml:"maxConcurrency" json:"maxConcurrency"`
 		OrchestrationTimeout int `yaml:"orchestrationTimeout" json:"orchestrationTimeout"`

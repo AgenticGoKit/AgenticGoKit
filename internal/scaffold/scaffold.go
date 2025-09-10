@@ -2,6 +2,7 @@ package scaffold
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -1546,6 +1547,13 @@ func createProjectDirectories(config ProjectConfig) error {
 		return err
 	}
 
+	// Create WebUI directory if enabled
+	if config.WebUIEnabled {
+		if err := createWebUIDirectory(config); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -1590,6 +1598,83 @@ func createDocsDirectory(config ProjectConfig) error {
 		return fmt.Errorf("failed to create docs directory %s: %w", docsDir, err)
 	}
 	fmt.Printf("Created directory: %s\n", docsDir)
+	return nil
+}
+
+// createWebUIDirectory creates the WebUI subdirectory and static files
+func createWebUIDirectory(config ProjectConfig) error {
+	webuiDir := filepath.Join(config.Name, "internal", "webui")
+	staticDir := filepath.Join(webuiDir, "static")
+
+	// Create WebUI directories
+	if err := os.MkdirAll(staticDir, 0755); err != nil {
+		return fmt.Errorf("failed to create WebUI directory %s: %w", staticDir, err)
+	}
+	fmt.Printf("Created directory: %s\n", staticDir)
+
+	// Create WebUI files
+	if err := createWebUIFiles(config, staticDir); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// createWebUIFiles creates the static WebUI files
+func createWebUIFiles(config ProjectConfig, staticDir string) error {
+	// Create index.html
+	indexPath := filepath.Join(staticDir, "index.html")
+	indexTemplate, err := template.New("webui_index").Parse(templates.WebUIIndexTemplate)
+	if err != nil {
+		return fmt.Errorf("failed to parse WebUI index template: %w", err)
+	}
+
+	var indexBuffer bytes.Buffer
+	indexTemplateData := struct {
+		Config ProjectConfig
+	}{
+		Config: config,
+	}
+	if err := indexTemplate.Execute(&indexBuffer, indexTemplateData); err != nil {
+		return fmt.Errorf("failed to execute WebUI index template: %w", err)
+	}
+
+	if err := os.WriteFile(indexPath, indexBuffer.Bytes(), 0644); err != nil {
+		return fmt.Errorf("failed to write WebUI index file: %w", err)
+	}
+	fmt.Printf("Created file: %s\n", indexPath)
+
+	// Create style.css
+	cssPath := filepath.Join(staticDir, "style.css")
+	cssTemplate, err := template.New("webui_css").Parse(templates.WebUICSSTemplate)
+	if err != nil {
+		return fmt.Errorf("failed to parse WebUI CSS template: %w", err)
+	}
+
+	var cssBuffer bytes.Buffer
+	cssTemplateData := struct {
+		Config ProjectConfig
+	}{
+		Config: config,
+	}
+	if err := cssTemplate.Execute(&cssBuffer, cssTemplateData); err != nil {
+		return fmt.Errorf("failed to execute WebUI CSS template: %w", err)
+	}
+
+	if err := os.WriteFile(cssPath, cssBuffer.Bytes(), 0644); err != nil {
+		return fmt.Errorf("failed to write WebUI CSS file: %w", err)
+	}
+	fmt.Printf("Created file: %s\n", cssPath)
+
+	// Create app.js
+	jsPath := filepath.Join(staticDir, "app.js")
+	// Temporarily disable JS template to test build
+	jsContent := "// WebUI JavaScript will be added here"
+	if err := os.WriteFile(jsPath, []byte(jsContent), 0644); err != nil {
+		return fmt.Errorf("failed to write WebUI JS file: %w", err)
+	}
+	fmt.Printf("Created file: %s\n", jsPath)
+
 	return nil
 }
 
