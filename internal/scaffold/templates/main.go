@@ -182,6 +182,12 @@ import (
 var memory core.Memory
 {{end}}
 
+{{if .Config.WebUIEnabled}}
+// Global agent handlers and shared results for WebUI access
+var globalAgentHandlers map[string]core.AgentHandler
+var globalResults *([]AgentOutput)
+var globalResultsMutex *sync.Mutex
+{{end}}
 
 
 // main is the entry point for the {{.Config.Name}} multi-agent system.
@@ -622,6 +628,11 @@ func main() {
 	// All agents registered with orchestrator - debug logging reduced
 
 	{{if .Config.WebUIEnabled}}
+	// Expose handlers/results to WebUI (share the same underlying data)
+	globalAgentHandlers = agentHandlers
+	globalResults = &results
+	globalResultsMutex = &resultsMutex
+
 	// Check if WebUI mode is requested
 	if *webuiFlag {
 		logger.Info().Msg("Starting WebUI mode")
@@ -1111,6 +1122,10 @@ func initializeProvider(providerType string) (core.ModelProvider, error) {
 {{if .Config.WebUIEnabled}}
 // WebUI Server Functions
 func startWebUI(ctx context.Context, runner core.Runner, config *core.Config) {
+	// Start the runner for orchestration support in WebUI mode
+	log.Printf("Starting workflow orchestrator for WebUI mode")
+	runner.Start(ctx)
+
 	staticDir := "{{.Config.WebUIStaticDir}}"
 	if staticDir == "" {
 		staticDir = "internal/webui/static"
@@ -1147,15 +1162,29 @@ func handleGetAgents(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	// Return predefined agents - customize as needed
-	agents := []map[string]interface{}{
-		{"id": "assistant", "name": "Assistant", "description": "General purpose assistant"},
-		{"id": "coder", "name": "Coder", "description": "Programming and code analysis"},
-		{"id": "writer", "name": "Writer", "description": "Content creation and writing"},
-		{"id": "analyst", "name": "Analyst", "description": "Data analysis and insights"},
+
+	// Return actual agents from globalAgentHandlers, skipping error-handlers
+	agents := []map[string]interface{}{}
+	for agentName := range globalAgentHandlers {
+		if strings.Contains(agentName, "error-handler") {
+			continue
+		}
+		agents = append(agents, map[string]interface{}{
+			"id":          agentName,
+			"name":        agentName,
+			"description": fmt.Sprintf("Agent %s from configuration", agentName),
+		})
 	}
-	
-	w.Write([]byte(fmt.Sprintf("%v", agents)))
+
+	if len(agents) == 0 {
+		// Fallback default agents if none registered
+		agents = []map[string]interface{}{
+			{"id": "agent1", "name": "Agent1", "description": "Default agent 1"},
+			{"id": "agent2", "name": "Agent2", "description": "Default agent 2"},
+		}
+	}
+
+	_ = json.NewEncoder(w).Encode(agents)
 }
 
 func handleChat(w http.ResponseWriter, r *http.Request, ctx context.Context, runner core.Runner, config *core.Config) {
@@ -1166,39 +1195,138 @@ func handleChat(w http.ResponseWriter, r *http.Request, ctx context.Context, run
 
 	// Parse JSON request
 	var req struct {
-		Message string ` + "`json:\"message\"`" + `
-		Agent   string ` + "`json:\"agent\"`" + `
+		Message          string ` + "`json:\"message\"`" + `
+		Agent            string ` + "`json:\"agent\"`" + `
+		UseOrchestration bool   ` + "`json:\"useOrchestration,omitempty\"`" + `
 	}
-	
+
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.Printf("ERROR: Failed to decode JSON request: %v", err)
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
 
-	// Create event for processing
-	event := core.NewEvent(req.Agent, core.EventData{
-		"message": req.Message,
-	}, map[string]string{
-		"route": req.Agent,
-	})
+	log.Printf("INFO: Received chat request - Agent: %s, UseOrchestration: %v", req.Agent, req.UseOrchestration)
 
-	// Emit the event (async processing)
-	if err := runner.Emit(event); err != nil {
-		http.Error(w, fmt.Sprintf("Processing error: %v", err), http.StatusInternalServerError)
+	// Verify agent exists
+	agentHandler, exists := globalAgentHandlers[req.Agent]
+	if !exists {
+		log.Printf("ERROR: Agent '%s' not found. Available: %v", req.Agent, getAgentNames())
+		http.Error(w, fmt.Sprintf("Agent '%s' not found", req.Agent), http.StatusNotFound)
 		return
 	}
 
-	// Return immediate response (for async processing)
-	// Note: In a real implementation, you might want to implement WebSocket 
-	// or Server-Sent Events for real-time responses
-	w.Header().Set("Content-Type", "application/json")
-	response := map[string]interface{}{
-		"response": "Message received and processing started",
-		"agent":    req.Agent,
-		"status":   "processing",
+	var agentResponse string
+	var status string
+
+	if req.UseOrchestration {
+		// Orchestrated multi-agent flow: emit and wait for results
+		log.Printf("INFO: Using orchestration mode for agent %s", req.Agent)
+		globalResultsMutex.Lock()
+		*globalResults = []AgentOutput{}
+		globalResultsMutex.Unlock()
+
+		event := core.NewEvent(req.Agent, core.EventData{
+			"message":    req.Message,
+			"user_input": req.Message,
+		}, map[string]string{
+			"route":      req.Agent,
+			"session_id": "webui-session",
+		})
+
+		if err := runner.Emit(event); err != nil {
+			log.Printf("ERROR: Orchestration failed: %v", err)
+			http.Error(w, fmt.Sprintf("Orchestration error: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		maxWait := 30 * time.Second
+		checkInterval := 500 * time.Millisecond
+		deadline := time.Now().Add(maxWait)
+
+		for time.Now().Before(deadline) {
+			globalResultsMutex.Lock()
+			num := len(*globalResults)
+			globalResultsMutex.Unlock()
+
+			// Heuristic: expect at least 1 result
+			if num >= 1 {
+				globalResultsMutex.Lock()
+				if len(*globalResults) > 0 {
+					latest := (*globalResults)[len(*globalResults)-1]
+					agentResponse = latest.Content
+					status = "completed"
+				}
+				globalResultsMutex.Unlock()
+				break
+			}
+			time.Sleep(checkInterval)
+		}
+
+		if agentResponse == "" {
+			globalResultsMutex.Lock()
+			count := len(*globalResults)
+			globalResultsMutex.Unlock()
+			if count > 0 {
+				agentResponse = fmt.Sprintf("Orchestration partially completed with %d result(s).", count)
+			} else {
+				agentResponse = "Orchestration completed, but no agent responses captured."
+			}
+			status = "timeout"
+		}
+	} else {
+		// Direct single agent invocation
+		log.Printf("INFO: Using direct agent mode for agent %s", req.Agent)
+		state := core.NewState()
+		state.Set("message", req.Message)
+		state.Set("user_input", req.Message)
+
+		event := core.NewEvent(req.Agent, core.EventData{
+			"message": req.Message,
+		}, map[string]string{
+			"route":      req.Agent,
+			"session_id": "webui-session",
+		})
+
+		result, err := agentHandler.Run(ctx, event, state)
+		if err != nil {
+			log.Printf("ERROR: Agent processing failed: %v", err)
+			http.Error(w, fmt.Sprintf("Agent processing error: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		if result.OutputState != nil {
+			if v, ok := result.OutputState.Get("result"); ok {
+				agentResponse = fmt.Sprintf("%v", v)
+			} else if v, ok := result.OutputState.Get("response"); ok {
+				agentResponse = fmt.Sprintf("%v", v)
+			} else if v, ok := result.OutputState.Get("output"); ok {
+				agentResponse = fmt.Sprintf("%v", v)
+			} else {
+				agentResponse = "Agent processed your request successfully"
+			}
+		} else {
+			agentResponse = "Agent processed your request"
+		}
+		status = "completed"
 	}
-	
-	json.NewEncoder(w).Encode(response)
+
+	w.Header().Set("Content-Type", "application/json")
+	resp := map[string]interface{}{
+		"response": agentResponse,
+		"agent":    req.Agent,
+		"status":   status,
+	}
+	_ = json.NewEncoder(w).Encode(resp)
+}
+
+// Helper: list available agent names
+func getAgentNames() []string {
+	names := make([]string, 0, len(globalAgentHandlers))
+	for name := range globalAgentHandlers {
+		names = append(names, name)
+	}
+	return names
 }
 {{end}}
 `

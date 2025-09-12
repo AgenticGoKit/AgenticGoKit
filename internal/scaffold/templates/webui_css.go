@@ -84,7 +84,7 @@ body {
 .agent-selector-container {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 1rem;
 }
 
 .agent-label {
@@ -108,6 +108,45 @@ body {
     outline: none;
     border-color: var(--primary-color);
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Orchestration Toggle */
+.orchestration-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    user-select: none;
+}
+
+.orchestration-toggle input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.25rem;
+    background: var(--surface-color);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.orchestration-toggle input[type="checkbox"]:checked {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.orchestration-toggle input[type="checkbox"]:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
+.orchestration-toggle:hover {
+    color: var(--text-primary);
+}
+
+.toggle-text {
+    font-weight: 500;
 }
 
 /* Main Content */

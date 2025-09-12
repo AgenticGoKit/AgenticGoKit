@@ -240,7 +240,7 @@ function removeTypingIndicator(typingId) {
 // Enable/disable form
 function setFormDisabled(disabled) {
     messageInput.disabled = disabled;
-    const submitButton = chatForm.querySelector('button[type="submit"]');
+    const submitButton = chatForm.querySelector('button[type=\"submit\"]');
     submitButton.disabled = disabled;
 }
 

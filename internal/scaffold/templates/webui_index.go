@@ -17,11 +17,13 @@ const WebUIIndexTemplate = `<!DOCTYPE html>
                 <div class="agent-selector-container">
                     <label for="agent-select" class="agent-label">Agent:</label>
                     <select id="agent-select" class="agent-select">
-                        <option value="assistant">Assistant</option>
-                        <option value="coder">Coder</option>
-                        <option value="writer">Writer</option>
-                        <option value="analyst">Analyst</option>
+                        <!-- Agents will be loaded dynamically from API -->
                     </select>
+                    
+                    <label class="orchestration-toggle">
+                        <input type="checkbox" id="orchestration-mode" />
+                        <span class="toggle-text">Full Workflow</span>
+                    </label>
                 </div>
             </div>
         </header>
@@ -31,8 +33,8 @@ const WebUIIndexTemplate = `<!DOCTYPE html>
             <!-- Agent Info Panel -->
             <div class="agent-info-panel" id="agent-info">
                 <div class="agent-details">
-                    <h3 id="agent-name">Assistant</h3>
-                    <p id="agent-description">General purpose assistant</p>
+                    <h3 id="agent-name">Loading...</h3>
+                    <p id="agent-description">Loading agents from configuration...</p>
                 </div>
             </div>
 
@@ -42,6 +44,7 @@ const WebUIIndexTemplate = `<!DOCTYPE html>
                     <div class="welcome-message">
                         <h3>Welcome to {{.Config.Name}}!</h3>
                         <p>Choose an agent and start chatting to get assistance with your tasks.</p>
+                        <p><strong>Tip:</strong> Toggle "Full Workflow" to use orchestrated multi-agent processing or keep it off for direct agent responses.</p>
                     </div>
                 </div>
             </div>

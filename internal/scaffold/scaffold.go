@@ -1668,9 +1668,7 @@ func createWebUIFiles(config ProjectConfig, staticDir string) error {
 
 	// Create app.js
 	jsPath := filepath.Join(staticDir, "app.js")
-	// Temporarily disable JS template to test build
-	jsContent := "// WebUI JavaScript will be added here"
-	if err := os.WriteFile(jsPath, []byte(jsContent), 0644); err != nil {
+	if err := os.WriteFile(jsPath, []byte(templates.WebUIJSTemplate), 0644); err != nil {
 		return fmt.Errorf("failed to write WebUI JS file: %w", err)
 	}
 	fmt.Printf("Created file: %s\n", jsPath)

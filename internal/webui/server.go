@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -79,8 +80,15 @@ func NewServer(config ServerConfig) *Server {
 	absStaticDir, _ := filepath.Abs(config.StaticDir)
 	log.Printf("DEBUG: StaticDir absolute path: %s", absStaticDir)
 
-	staticHandler := http.FileServer(http.Dir(config.StaticDir))
-	mux.Handle("/static/", http.StripPrefix("/static/", staticHandler))
+	// Static assets with long-lived caching (immutable)
+	staticFS := http.Dir(config.StaticDir)
+	fileServer := http.FileServer(staticFS)
+	static := http.StripPrefix("/static/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Cache static assets aggressively; HTML is served by handleRoot with no-store
+		w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+		fileServer.ServeHTTP(w, r)
+	}))
+	mux.Handle("/static/", static)
 
 	// Root handler serves the main chat interface by redirecting to static/index.html
 	mux.HandleFunc("/", server.handleRoot)
@@ -103,11 +111,12 @@ func NewServer(config ServerConfig) *Server {
 	handler := server.withMiddleware(mux)
 
 	server.server = &http.Server{
-		Addr:         ":" + config.Port,
-		Handler:      handler,
-		ReadTimeout:  30 * time.Second,
-		WriteTimeout: 30 * time.Second,
-		IdleTimeout:  120 * time.Second,
+		Addr:              ":" + config.Port,
+		Handler:           handler,
+		ReadTimeout:       30 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       120 * time.Second,
+		ReadHeaderTimeout: 10 * time.Second,
 	}
 
 	return server
@@ -252,6 +261,8 @@ func (s *Server) handleRoot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Do not cache the main HTML to ensure latest assets are loaded
+	w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate")
 	log.Printf("DEBUG: Serving file: %s", indexPath)
 	http.ServeFile(w, r, indexPath)
 }
@@ -259,7 +270,7 @@ func (s *Server) handleRoot(w http.ResponseWriter, r *http.Request) {
 // handleHealth provides a health check endpoint
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		s.writeErrorJSON(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
 
@@ -277,7 +288,7 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 // handleConfig returns server configuration information
 func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		s.writeErrorJSON(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
 
@@ -287,7 +298,7 @@ func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 			"url":  s.GetURL(),
 		},
 		"features": map[string]interface{}{
-			"websocket": false, // Will be true after Task 2
+			"websocket": true,
 			"sessions":  true,
 			"agents":    s.agentManager != nil,
 		},
@@ -307,7 +318,7 @@ func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 // handleAgents returns available agents information
 func (s *Server) handleAgents(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		s.writeErrorJSON(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
 
@@ -361,7 +372,7 @@ func (s *Server) handleAgents(w http.ResponseWriter, r *http.Request) {
 // handleChat handles chat interactions with agents
 func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		s.writeErrorJSON(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
 
@@ -372,8 +383,17 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 		SessionID string `json:"session_id"`
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&chatReq); err != nil {
-		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+	// Limit body to 1MB and enforce strict JSON
+	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
+	defer r.Body.Close()
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&chatReq); err != nil {
+		if err == io.EOF {
+			s.writeErrorJSON(w, http.StatusBadRequest, "Empty request body")
+			return
+		}
+		s.writeErrorJSON(w, http.StatusBadRequest, "Invalid JSON")
 		return
 	}
 
@@ -470,7 +490,7 @@ func (s *Server) handleSessions(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPost:
 		s.handleCreateSession(w, r)
 	default:
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		s.writeErrorJSON(w, http.StatusMethodNotAllowed, "Method not allowed")
 	}
 }
 
@@ -489,7 +509,7 @@ func (s *Server) handleSessionDetails(w http.ResponseWriter, r *http.Request) {
 	case http.MethodDelete:
 		s.handleDeleteSession(w, r, sessionID)
 	default:
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		s.writeErrorJSON(w, http.StatusMethodNotAllowed, "Method not allowed")
 	}
 }
 
@@ -624,6 +644,8 @@ func (s *Server) startSessionCleanup(ctx context.Context) {
 // writeJSON writes a JSON response
 func (s *Server) writeJSON(w http.ResponseWriter, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
+	// Dynamic API responses shouldn't be cached by default
+	w.Header().Set("Cache-Control", "no-store")
 
 	response := map[string]interface{}{
 		"status": "success",
@@ -632,7 +654,20 @@ func (s *Server) writeJSON(w http.ResponseWriter, data interface{}) {
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		s.logger.Error().Err(err).Msg("Failed to encode JSON response")
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		s.writeErrorJSON(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}
+}
+
+// writeErrorJSON writes a simple JSON error response with a message
+func (s *Server) writeErrorJSON(w http.ResponseWriter, status int, message string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Cache-Control", "no-store")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(map[string]any{
+		"status":    "error",
+		"message":   message,
+		"code":      status,
+		"timestamp": time.Now().Unix(),
+	})
 }
