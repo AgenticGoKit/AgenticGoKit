@@ -167,6 +167,28 @@
                 </div>
             </form>
             
+            <div class="settings-divider"></div>
+
+            <div class="setting-group">
+                <h4>AgentFlow Config (agentflow.toml)</h4>
+                <div class="config-actions">
+                    <button id="load-config-btn" type="button" class="small-btn">Load</button>
+                    <button id="save-config-btn" type="button" class="small-btn">Save</button>
+                    <span id="config-path" class="config-path"></span>
+                </div>
+                <textarea id="agentflow-editor" class="config-editor" rows="10" placeholder="agentflow.toml will appear here..."></textarea>
+            </div>
+
+            <div class="settings-divider"></div>
+
+            <div class="setting-group">
+                <h4>Flow Diagram (Mermaid)</h4>
+                <div class="config-actions">
+                    <button id="show-diagram-btn" type="button" class="small-btn">Refresh Diagram</button>
+                </div>
+                <pre id="flow-diagram" class="diagram-code" aria-label="Mermaid diagram code"></pre>
+            </div>
+
             <div class="settings-info">
                 <h4>About AgenticGoKit Chat</h4>
                 <p>Version: 0.5.0</p>
@@ -307,6 +329,14 @@
             color: var(--text-secondary);
             font-size: 0.8rem;
         }
+
+    .settings-divider { height: 1px; background: var(--border-color); margin: 1rem 0; }
+    .config-actions { display: flex; gap: .5rem; align-items: center; margin-bottom: .5rem; }
+    .small-btn { background: var(--background-light); border: 1px solid var(--border-color); color: var(--text-primary); padding: .35rem .6rem; border-radius: 6px; cursor: pointer; }
+    .small-btn:hover { background: #eef2ff; border-color: #c7d2fe; }
+    .config-editor { width: 100%; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: .85rem; border: 1px solid var(--border-color); border-radius: 8px; padding: .75rem; resize: vertical; background: #fff; }
+    .diagram-code { width: 100%; max-height: 240px; overflow: auto; background: #0b1021; color: #e5e7eb; border-radius: 8px; border: 1px solid #1f2937; padding: .75rem; }
+    .config-path { font-size: .8rem; color: var(--text-secondary); }
 
         .settings-info h4 {
             color: var(--text-primary);

@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/BurntSushi/toml"
 	"github.com/kunalkushwaha/agenticgokit/core"
 )
 
@@ -106,8 +107,11 @@ func NewServer(config ServerConfig) *Server {
 	// API endpoints
 	mux.HandleFunc("/api/health", server.handleHealth)
 	mux.HandleFunc("/api/config", server.handleConfig)
+	mux.HandleFunc("/api/config/raw", server.handleConfigRaw)
 	mux.HandleFunc("/api/agents", server.handleAgents)
 	mux.HandleFunc("/api/chat", server.handleChat)
+	// Visualization endpoints
+	mux.HandleFunc("/api/visualization/composition", server.handleVisualizationComposition)
 
 	// Session management endpoints
 	mux.HandleFunc("/api/sessions", server.handleSessions)
@@ -349,6 +353,170 @@ func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.writeJSON(w, config)
+}
+
+// handleConfigRaw provides raw agentflow.toml access for read and update
+func (s *Server) handleConfigRaw(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		s.handleGetRawConfig(w, r)
+	case http.MethodPut:
+		s.handlePutRawConfig(w, r)
+	default:
+		s.writeErrorJSON(w, http.StatusMethodNotAllowed, "Method not allowed")
+	}
+}
+
+// getConfigPath determines the agentflow.toml path (env override or CWD)
+func (s *Server) getConfigPath() string {
+	if env := os.Getenv("AGENTFLOW_CONFIG_PATH"); env != "" {
+		return env
+	}
+	// Default to agentflow.toml in current working directory
+	if wd, err := os.Getwd(); err == nil {
+		return filepath.Join(wd, "agentflow.toml")
+	}
+	return "agentflow.toml"
+}
+
+func (s *Server) handleGetRawConfig(w http.ResponseWriter, r *http.Request) {
+	path := s.getConfigPath()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			s.writeErrorJSON(w, http.StatusNotFound, "agentflow.toml not found")
+			return
+		}
+		s.logger.Error().Err(err).Str("path", path).Msg("Failed to read config")
+		s.writeErrorJSON(w, http.StatusInternalServerError, "Failed to read config")
+		return
+	}
+	resp := map[string]any{
+		"path":    path,
+		"size":    len(data),
+		"content": string(data),
+	}
+	s.writeJSON(w, resp)
+}
+
+func (s *Server) handlePutRawConfig(w http.ResponseWriter, r *http.Request) {
+	// Limit body size to 1MB
+	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
+	defer r.Body.Close()
+
+	// Accept JSON { toml: "..." }
+	var body struct {
+		Toml string `json:"toml"`
+	}
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&body); err != nil {
+		if err == io.EOF {
+			s.writeErrorJSON(w, http.StatusBadRequest, "Empty request body")
+			return
+		}
+		s.writeErrorJSON(w, http.StatusBadRequest, "Invalid JSON body")
+		return
+	}
+	if body.Toml == "" {
+		s.writeErrorJSON(w, http.StatusBadRequest, "Missing 'toml' content")
+		return
+	}
+
+	// Parse TOML to validate
+	var parsed core.Config
+	if err := toml.Unmarshal([]byte(body.Toml), &parsed); err != nil {
+		s.logger.Warn().Err(err).Msg("Config TOML validation failed")
+		s.writeErrorJSON(w, http.StatusBadRequest, fmt.Sprintf("TOML parse error: %v", err))
+		return
+	}
+	// Apply defaults and run basic validation
+	if err := parsed.ValidateOrchestrationConfig(); err != nil {
+		s.writeErrorJSON(w, http.StatusBadRequest, fmt.Sprintf("Config validation failed: %v", err))
+		return
+	}
+
+	// Write atomically to file
+	path := s.getConfigPath()
+	if err := atomicWriteFile(path, []byte(body.Toml)); err != nil {
+		s.logger.Error().Err(err).Str("path", path).Msg("Failed to write config")
+		s.writeErrorJSON(w, http.StatusInternalServerError, "Failed to write config")
+		return
+	}
+
+	// Update in-memory config reference
+	s.config = &parsed
+	// Optionally apply logging config immediately
+	s.config.ApplyLoggingConfig()
+
+	s.writeJSON(w, map[string]any{
+		"path":   path,
+		"status": "updated",
+	})
+}
+
+// atomicWriteFile writes data to a temp file and renames it over the target
+func atomicWriteFile(path string, data []byte) error {
+	dir := filepath.Dir(path)
+	base := filepath.Base(path)
+	tmp, err := os.CreateTemp(dir, base+".tmp-*")
+	if err != nil {
+		return err
+	}
+	tmpPath := tmp.Name()
+	// Ensure cleanup on error
+	defer func() { _ = os.Remove(tmpPath) }()
+
+	if _, err := tmp.Write(data); err != nil {
+		_ = tmp.Close()
+		return err
+	}
+	if err := tmp.Sync(); err != nil {
+		_ = tmp.Close()
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+	return os.Rename(tmpPath, path)
+}
+
+// handleVisualizationComposition returns a Mermaid composition diagram for current agents
+func (s *Server) handleVisualizationComposition(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		s.writeErrorJSON(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	// Prepare inputs
+	name := "agentflow"
+	mode := "composition"
+	if s.config != nil {
+		if s.config.AgentFlow.Name != "" {
+			name = s.config.AgentFlow.Name
+		}
+		if s.config.Orchestration.Mode != "" {
+			mode = s.config.Orchestration.Mode
+		}
+	}
+
+	var agents []core.Agent
+	if s.agentManager != nil {
+		agents = s.agentManager.GetActiveAgents()
+	} else {
+		agents = []core.Agent{}
+	}
+
+	// Generate diagram
+	gen := core.NewMermaidGenerator()
+	cfg := core.DefaultMermaidConfig()
+	diagram := gen.GenerateCompositionDiagram(mode, name, agents, cfg)
+
+	s.writeJSON(w, map[string]any{
+		"title":   fmt.Sprintf("%s (%s)", name, mode),
+		"diagram": diagram,
+		"agents":  len(agents),
+	})
 }
 
 // handleAgents returns available agents information

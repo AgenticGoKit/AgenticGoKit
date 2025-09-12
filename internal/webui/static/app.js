@@ -63,6 +63,16 @@ class AgenticChatApp {
             this.saveSettings();
         });
 
+    // Config editor actions
+    const loadBtn = document.getElementById('load-config-btn');
+    const saveBtn = document.getElementById('save-config-btn');
+    if (loadBtn) loadBtn.addEventListener('click', () => this.loadAgentflowToml());
+    if (saveBtn) saveBtn.addEventListener('click', () => this.saveAgentflowToml());
+
+    // Diagram viewer
+    const showDiagramBtn = document.getElementById('show-diagram-btn');
+    if (showDiagramBtn) showDiagramBtn.addEventListener('click', () => this.refreshDiagram());
+
         // Mobile menu toggle (for responsive design)
         const menuToggle = document.getElementById('menu-toggle');
         if (menuToggle) {
@@ -866,6 +876,63 @@ class AgenticChatApp {
         localStorage.setItem('agenticgokit_settings', JSON.stringify(this.settings));
         this.closeSettings();
         this.showSuccess('Settings saved successfully');
+    }
+
+    async loadAgentflowToml() {
+        try {
+            const res = await fetch('/api/config/raw');
+            const data = await res.json();
+            if (data.status === 'success' && data.data) {
+                const editor = document.getElementById('agentflow-editor');
+                if (editor) editor.value = data.data.content || '';
+                const pathEl = document.getElementById('config-path');
+                if (pathEl) pathEl.textContent = data.data.path || '';
+                this.showSuccess('Config loaded');
+            } else {
+                this.showError('Failed to load config');
+            }
+        } catch (e) {
+            console.error(e);
+            this.showError('Error loading config');
+        }
+    }
+
+    async saveAgentflowToml() {
+        try {
+            const editor = document.getElementById('agentflow-editor');
+            const toml = editor ? editor.value : '';
+            const res = await fetch('/api/config/raw', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ toml })
+            });
+            const data = await res.json();
+            if (res.ok && data.status === 'success') {
+                this.showSuccess('Config saved');
+            } else {
+                const msg = (data && data.message) ? data.message : 'Failed to save config';
+                this.showError(msg);
+            }
+        } catch (e) {
+            console.error(e);
+            this.showError('Error saving config');
+        }
+    }
+
+    async refreshDiagram() {
+        try {
+            const res = await fetch('/api/visualization/composition');
+            const data = await res.json();
+            const pre = document.getElementById('flow-diagram');
+            if (data.status === 'success' && data.data && pre) {
+                pre.textContent = data.data.diagram;
+            } else if (pre) {
+                pre.textContent = '// Failed to load diagram';
+            }
+        } catch (e) {
+            const pre = document.getElementById('flow-diagram');
+            if (pre) pre.textContent = '// Error fetching diagram';
+        }
     }
 
     populateSettingsForm() {
