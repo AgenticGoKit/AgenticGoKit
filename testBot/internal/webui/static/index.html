@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>testBot - AI Agent Chat</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <h1 class="app-title">testBot</h1>
+                <div class="agent-selector-container">
+                    <label for="agent-select" class="agent-label">Agent:</label>
+                    <select id="agent-select" class="agent-select">
+                        <!-- Agents will be loaded dynamically from API -->
+                    </select>
+                    
+                    <label class="orchestration-toggle">
+                        <input type="checkbox" id="orchestration-mode" />
+                        <span class="toggle-text">Full Workflow</span>
+                    </label>
+
+                    <button id="open-settings" class="mini-btn" title="Config & Diagram">⚙️</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Slide-over Settings Panel -->
+            <aside id="settings-panel" class="settings-panel" aria-hidden="true">
+                <div class="settings-header">
+                    <h3>Settings</h3>
+                    <button id="close-settings" class="mini-btn" title="Close">✖</button>
+                </div>
+                <div class="settings-body">
+                    <section class="settings-section">
+                        <h4>AgentFlow Config</h4>
+                        <div class="row-actions">
+                            <button id="load-config" class="mini-btn">Load</button>
+                            <button id="save-config" class="mini-btn">Save</button>
+                            <span id="config-path" class="muted"></span>
+                        </div>
+                        <textarea id="config-editor" class="config-editor" rows="10" placeholder="agentflow.toml will appear here..."></textarea>
+                    </section>
+                    <section class="settings-section">
+                        <h4>Flow Diagram (Mermaid)</h4>
+                        <div class="row-actions">
+                            <button id="refresh-diagram" class="mini-btn">Refresh</button>
+                        </div>
+                        <pre id="diagram-pre" class="diagram-pre" aria-label="Mermaid diagram code"></pre>
+                    </section>
+                    <section class="settings-section">
+                        <h4>Debug Trace (Mermaid sequence)</h4>
+                        <div class="row-actions">
+                            <button id="refresh-trace" class="mini-btn">Refresh</button>
+                        </div>
+                        <pre id="trace-pre" class="diagram-pre" aria-label="Mermaid trace code"></pre>
+                    </section>
+                </div>
+            </aside>
+            <!-- Agent Info Panel -->
+            <div class="agent-info-panel" id="agent-info">
+                <div class="agent-details">
+                    <h3 id="agent-name">Loading...</h3>
+                    <p id="agent-description">Loading agents from configuration...</p>
+                </div>
+            </div>
+
+            <!-- Chat Area -->
+            <div class="chat-container">
+                <div class="chat-messages" id="chat-messages">
+                    <div class="welcome-message">
+                        <h3>Welcome to testBot!</h3>
+                        <p>Choose an agent and start chatting to get assistance with your tasks.</p>
+                        <p><strong>Tip:</strong> Toggle "Full Workflow" to use orchestrated multi-agent processing or keep it off for direct agent responses.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Chat Input -->
+        <footer class="chat-input-container">
+            <form id="chat-form" class="chat-form">
+                <input 
+                    type="text" 
+                    id="message-input" 
+                    class="message-input" 
+                    placeholder="Type your message here..." 
+                    autocomplete="off"
+                >
+                <button type="submit" class="send-button">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22,2 15,22 11,13 2,9"></polygon>
+                    </svg>
+                </button>
+            </form>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
