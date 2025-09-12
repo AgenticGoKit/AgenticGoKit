@@ -34,12 +34,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const saveBtn = document.getElementById('save-config');
     const refreshBtn = document.getElementById('refresh-diagram');
     const refreshTraceBtn = document.getElementById('refresh-trace');
+    const toggleDiagCode = document.getElementById('toggle-diagram-code');
+    const toggleDiagRender = document.getElementById('toggle-diagram-render');
+    const toggleTraceCode = document.getElementById('toggle-trace-code');
+    const toggleTraceRender = document.getElementById('toggle-trace-render');
     if (openBtn && settingsPanel) openBtn.addEventListener('click', () => settingsPanel.classList.add('open'));
+    if (openBtn && settingsPanel) openBtn.addEventListener('click', async () => { try { await refreshDiagram(); await refreshTrace(); } catch {} });
     if (closeBtn && settingsPanel) closeBtn.addEventListener('click', () => settingsPanel.classList.remove('open'));
     if (loadBtn) loadBtn.addEventListener('click', loadAgentflowToml);
     if (saveBtn) saveBtn.addEventListener('click', saveAgentflowToml);
     if (refreshBtn) refreshBtn.addEventListener('click', refreshDiagram);
     if (refreshTraceBtn) refreshTraceBtn.addEventListener('click', refreshTrace);
+    if (toggleDiagCode) toggleDiagCode.addEventListener('click', () => setViewMode('diagram', 'code'));
+    if (toggleDiagRender) toggleDiagRender.addEventListener('click', () => setViewMode('diagram', 'render'));
+    if (toggleTraceCode) toggleTraceCode.addEventListener('click', () => setViewMode('trace', 'code'));
+    if (toggleTraceRender) toggleTraceRender.addEventListener('click', () => setViewMode('trace', 'render'));
 
     // Load config to set defaults, then agents and WS
     loadConfig().then(() => {
@@ -105,19 +114,55 @@ async function saveAgentflowToml() {
     }
 }
 
+function getViewMode(kind) {
+    try { return localStorage.getItem('viewMode:' + kind) || 'render'; } catch { return 'render'; }
+}
+
+function setViewMode(kind, mode) {
+    try { localStorage.setItem('viewMode:' + kind, mode); } catch {}
+    const pre = document.getElementById(kind === 'diagram' ? 'diagram-pre' : 'trace-pre');
+    const container = document.getElementById(kind === 'diagram' ? 'diagram-render' : 'trace-render');
+    if (pre && container) {
+        if (mode === 'code') { pre.classList.remove('hidden'); container.classList.add('hidden'); }
+        else { pre.classList.add('hidden'); container.classList.remove('hidden'); }
+    }
+}
+
 async function refreshDiagram() {
     try {
         const res = await fetch('/api/visualization/composition');
         const data = await res.json();
         const pre = document.getElementById('diagram-pre');
-        if (res.ok && data.status === 'success' && data.data && pre) {
-            pre.textContent = data.data.diagram;
-        } else if (pre) {
-            pre.textContent = '// Failed to load diagram';
+        const container = document.getElementById('diagram-render');
+        if (res.ok && data.status === 'success' && data.data) {
+            const code = data.data.diagram;
+            if (pre) pre.textContent = code;
+            setViewMode('diagram', getViewMode('diagram'));
+            if (container) {
+                // Ensure Mermaid is available (dynamically load if needed)
+                const ready = await ensureMermaid();
+                if (!ready) {
+                    container.innerHTML = '<div class="muted">Mermaid is not available (CDN blocked?). The raw code is shown above.</div>';
+                } else {
+                    try {
+                        const flowId = 'flowDiagram-' + Date.now();
+                        const { svg } = await mermaid.render(flowId, code);
+                        container.innerHTML = svg;
+                        try { container.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch {}
+                    } catch (e) {
+                        container.innerHTML = '<div class="muted">Mermaid render error</div>';
+                    }
+                }
+            }
+        } else {
+            if (pre) pre.textContent = '// Failed to load diagram';
+            if (container) container.innerHTML = '';
         }
     } catch (e) {
         const pre = document.getElementById('diagram-pre');
+        const container = document.getElementById('diagram-render');
         if (pre) pre.textContent = '// Error: ' + e.message;
+        if (container) container.innerHTML = '';
     }
 }
 
@@ -126,15 +171,82 @@ async function refreshTrace() {
         const res = await fetch('/api/visualization/trace');
         const data = await res.json();
         const pre = document.getElementById('trace-pre');
-        if (res.ok && data.status === 'success' && data.data && pre) {
-            pre.textContent = data.data.diagram;
-        } else if (pre) {
-            pre.textContent = '// Failed to load trace diagram';
+        const container = document.getElementById('trace-render');
+        if (res.ok && data.status === 'success' && data.data) {
+            const code = data.data.diagram;
+            const labels = Array.isArray(data.data.labels) ? data.data.labels : [];
+            if (pre) pre.textContent = code;
+            setViewMode('trace', getViewMode('trace'));
+            if (container) {
+                const ready = await ensureMermaid();
+                if (!ready) {
+                    container.innerHTML = '<div class="muted">Mermaid is not available (CDN blocked?). The raw code is shown above.</div>';
+                } else {
+                    try {
+                        const traceId = 'traceDiagram-' + Date.now();
+                        const { svg } = await mermaid.render(traceId, code);
+                        container.innerHTML = svg;
+                        // Attach tooltips using <title> elements so they work on hover
+                        try { attachTraceTooltips(container, labels); } catch {}
+                        try { container.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch {}
+                    } catch (e) {
+                        container.innerHTML = '<div class="muted">Mermaid render error</div>';
+                    }
+                }
+            }
+        } else {
+            if (pre) pre.textContent = '// Failed to load trace diagram';
+            if (container) container.innerHTML = '';
         }
     } catch (e) {
         const pre = document.getElementById('trace-pre');
+        const container = document.getElementById('trace-render');
         if (pre) pre.textContent = '// Error: ' + e.message;
+        if (container) container.innerHTML = '';
     }
+}
+
+// Ensure Mermaid is loaded (attempt dynamic CDN load if missing)
+async function ensureMermaid() {
+    if (window.mermaid) return true;
+    const sources = [
+        'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js',
+        'https://unpkg.com/mermaid@10/dist/mermaid.min.js',
+        'https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js'
+    ];
+    for (const src of sources) {
+        const ok = await new Promise((resolve) => {
+            const s = document.createElement('script');
+            s.src = src;
+            s.crossOrigin = 'anonymous';
+            s.referrerPolicy = 'no-referrer';
+            s.onload = () => { try { mermaid.initialize({ startOnLoad: false }); } catch {} resolve(true); };
+            s.onerror = () => resolve(false);
+            document.head.appendChild(s);
+        });
+        if (ok && window.mermaid) return true;
+    }
+    return false;
+}
+
+// Attach tooltip to arrows by mapping label text (e.g., "M1") to full message using a simple lookup.
+function attachTraceTooltips(container, labels) {
+    if (!container) return;
+    const map = new Map();
+    for (const l of labels) { if (l && l.id && l.message) map.set(String(l.id), String(l.message)); }
+    // mermaid renders arrow labels inside <text> nodes; we set a <title> as tooltip
+    const texts = container.querySelectorAll('text');
+    texts.forEach((t) => {
+        const val = (t.textContent || '').trim();
+        if (map.has(val)) {
+            // Remove any existing title to avoid duplicates
+            const prev = t.querySelector('title');
+            if (prev) prev.remove();
+            const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+            title.textContent = map.get(val);
+            t.appendChild(title);
+        }
+    });
 }
 
 function connectWebSocket() {

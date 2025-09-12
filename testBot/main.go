@@ -38,6 +38,8 @@ type FlowEdge struct {
 	To        string
 	Message   string
 	Timestamp time.Time
+	IsError   bool
+	Err       string
 }
 
 var flowTraceMu sync.Mutex
@@ -48,6 +50,16 @@ func recordFlowEdge(sessionID, from, to, message string) {
 		sessionID = "webui-session"
 	}
 	edge := FlowEdge{From: from, To: to, Message: message, Timestamp: time.Now()}
+	flowTraceMu.Lock()
+	flowTrace[sessionID] = append(flowTrace[sessionID], edge)
+	flowTraceMu.Unlock()
+}
+
+func recordFlowError(sessionID, from, to, errMsg string) {
+	if sessionID == "" {
+		sessionID = "webui-session"
+	}
+	edge := FlowEdge{From: from, To: to, Timestamp: time.Now(), IsError: true, Err: errMsg}
 	flowTraceMu.Lock()
 	flowTrace[sessionID] = append(flowTrace[sessionID], edge)
 	flowTraceMu.Unlock()
@@ -669,6 +681,12 @@ func (r *ResultCollectorHandler) Run(ctx context.Context, event core.Event, stat
 		content = fmt.Sprintf("Agent %s completed processing successfully", r.agentName)
 	}
 
+	// If the agent execution returned an error, record it into trace
+	if err != nil {
+		sessionID, _ := event.GetMetadataValue("session_id")
+		recordFlowError(sessionID, r.agentName, "User", err.Error())
+	}
+
 	// Record agent -> next route (or -> User) with the agent's response for trace visualization
 	{
 		nextTo := "User"
@@ -690,6 +708,19 @@ func (r *ResultCollectorHandler) Run(ctx context.Context, event core.Event, stat
 			}
 		}
 		recordFlowEdge(sessionID, r.agentName, nextTo, outMsg)
+		// Detect error flags from OutputState and annotate
+		if result.OutputState != nil {
+			if v, ok := result.OutputState.Get("error"); ok {
+				if s, ok2 := v.(string); ok2 && s != "" {
+					recordFlowError(sessionID, r.agentName, nextTo, s)
+				}
+			}
+			if v, ok := result.OutputState.Get("error_message"); ok {
+				if s, ok2 := v.(string); ok2 && s != "" {
+					recordFlowError(sessionID, r.agentName, nextTo, s)
+				}
+			}
+		}
 	}
 
 	// Store the output in a thread-safe manner
@@ -1315,21 +1346,33 @@ func handleTraceDiagram(w http.ResponseWriter, r *http.Request) {
 	edges := append([]FlowEdge(nil), flowTrace[session]...)
 	flowTraceMu.Unlock()
 
-	diagram := buildMermaidSequence(edges)
+	diagram, labels := buildMermaidSequenceLabeled(edges)
 	_ = json.NewEncoder(w).Encode(map[string]any{
 		"status": "success",
 		"data": map[string]any{
 			"session": session,
 			"diagram": diagram,
+			"labels":  labels,
 			"edges":   len(edges),
 		},
 	})
 }
 
-func buildMermaidSequence(edges []FlowEdge) string {
-	// Mermaid sequence diagram header
+// LabelInfo provides a mapping from a short label used in the diagram to the full message content.
+type LabelInfo struct {
+	ID      string `json:"id"`
+	From    string `json:"from"`
+	To      string `json:"to"`
+	Message string `json:"message"`
+}
+
+// buildMermaidSequenceLabeled returns a Mermaid diagram string and a list of labels mapping to full messages.
+func buildMermaidSequenceLabeled(edges []FlowEdge) (string, []LabelInfo) {
+	// Mermaid sequence diagram header with styling and autonumber
 	var b strings.Builder
+	b.WriteString("%%{init: {\"theme\": \"base\", \"sequence\": {\"mirrorActors\": false}, \"themeVariables\": {\"primaryColor\": \"#eef2ff\", \"primaryTextColor\": \"#0b1021\", \"actorBorder\": \"#4c6ef5\", \"actorBkg\": \"#eef2ff\", \"noteBkgColor\": \"#fff7ed\", \"noteTextColor\": \"#92400e\"}} }%%\n")
 	b.WriteString("sequenceDiagram\n")
+	b.WriteString("  autonumber\n")
 	// Collect participants in insertion order
 	seen := map[string]bool{}
 	order := []string{}
@@ -1349,24 +1392,41 @@ func buildMermaidSequence(edges []FlowEdge) string {
 	if len(order) == 0 {
 		// Provide a stub
 		b.WriteString("  participant User\n  participant Agent\n  User->>Agent: (no activity captured)\n")
-		return b.String()
+		return b.String(), nil
 	}
 	for _, p := range order {
 		b.WriteString("  participant " + escapeMermaidIdent(p) + "\n")
 	}
 
+	labels := make([]LabelInfo, 0, len(edges))
+	msgCounter := 0
 	for _, e := range edges {
-		msg := e.Message
-		if msg == "" {
-			msg = "(no message)"
+		if e.IsError {
+			errTxt := e.Err
+			if len(errTxt) > 200 {
+				errTxt = errTxt[:197] + "..."
+			}
+			who := e.From
+			if who == "" {
+				who = e.To
+			}
+			if who == "" {
+				who = "User"
+			}
+			b.WriteString("  Note over " + escapeMermaidIdent(who) + ": ❌ ERROR: " + escapeMermaidText(errTxt) + "\n")
+			continue
 		}
-		// Limit message to reasonable length
-		if len(msg) > 180 {
-			msg = msg[:177] + "..."
+		// Create a compact label for the message to keep the diagram tidy
+		msgCounter++
+		label := fmt.Sprintf("M%d", msgCounter)
+		full := e.Message
+		if full == "" {
+			full = "(no message)"
 		}
-		b.WriteString("  " + escapeMermaidIdent(e.From) + "->>" + escapeMermaidIdent(e.To) + ": " + escapeMermaidText(msg) + "\n")
+		labels = append(labels, LabelInfo{ID: label, From: e.From, To: e.To, Message: full})
+		b.WriteString("  " + escapeMermaidIdent(e.From) + "->>" + escapeMermaidIdent(e.To) + ": " + escapeMermaidText(label) + "\n")
 	}
-	return b.String()
+	return b.String(), labels
 }
 
 func escapeMermaidIdent(s string) string {
