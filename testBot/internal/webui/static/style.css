@@ -157,23 +157,14 @@ body {
     cursor: pointer;
 }
 .mini-btn:hover { border-color: var(--primary-color); }
-
-.settings-panel {
-    position: absolute;
-    top: 40px; /* below header */
-    right: 0;
-    width: min(520px, 95vw);
-    height: calc(100vh - 40px);
+.right-pane {
+    display: none;
+    height: 100%;
     background: var(--surface-color);
     border-left: 1px solid var(--border-color);
     box-shadow: var(--shadow-md);
-    transform: translateX(100%);
-    transition: transform 0.2s ease;
-    display: flex;
     flex-direction: column;
-    z-index: 10;
 }
-.settings-panel.open { transform: translateX(0); }
 .settings-header { display: flex; align-items: center; justify-content: space-between; padding: .75rem 1rem; border-bottom: 1px solid var(--border-color); }
 .settings-body { padding: 1rem; overflow: auto; gap: 1rem; display: flex; flex-direction: column; }
 .settings-section h4 { margin-bottom: .5rem; }
@@ -188,32 +179,51 @@ body {
 
 /* Left Debug Trace Pane */
 .left-pane {
-    position: absolute;
-    top: 40px; /* below header */
-    left: 0;
-    width: min(520px, 95vw);
-    height: calc(100vh - 40px);
+    display: none;
+    height: 100%;
     background: var(--surface-color);
     border-right: 1px solid var(--border-color);
     box-shadow: var(--shadow-md);
-    transform: translateX(-100%);
-    transition: transform 0.2s ease;
-    display: flex;
     flex-direction: column;
-    z-index: 10;
 }
-.left-pane.open { transform: translateX(0); }
 
-/* Main Content */
+/* Main content is a responsive grid for 3-pane layout */
 .main-content {
     flex: 1;
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr; /* default: center only */
+    grid-template-areas: 'center';
     overflow: hidden;
     max-width: 1200px;
     margin: 0 auto;
     width: 100%;
 }
+
+/* Only left open: 1/4 | 3/4 */
+.main-content.left-open:not(.right-open) {
+    grid-template-columns: 1fr 3fr;
+    grid-template-areas: 'left center';
+}
+
+/* Only right open: 3/4 | 1/4 */
+.main-content.right-open:not(.left-open) {
+    grid-template-columns: 3fr 1fr;
+    grid-template-areas: 'center right';
+}
+
+/* Both open: 1/4 | 1/2 | 1/4 */
+.main-content.left-open.right-open {
+    grid-template-columns: 1fr 2fr 1fr;
+    grid-template-areas: 'left center right';
+}
+
+.left-pane { grid-area: left; }
+.center-pane { grid-area: center; display: flex; flex-direction: column; overflow: hidden; }
+.right-pane { grid-area: right; }
+
+/* Show panes when corresponding state is active */
+.main-content.left-open > .left-pane { display: flex; }
+.main-content.right-open > .right-pane { display: flex; }
 
 /* Agent Info Panel */
 .agent-info-panel {

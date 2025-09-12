@@ -10,14 +10,14 @@ import (
 	"time"
 
 	"encoding/json"
-	"io"
 	"log"
 	"net/http"
 	"path/filepath"
 
-	"github.com/gorilla/websocket"
-
 	_ "testBot/agents"
+	configh "testBot/internal/config"
+	httpHandlers "testBot/internal/handlers"
+	tracing "testBot/internal/tracing"
 
 	"github.com/kunalkushwaha/agenticgokit/core"
 	_ "github.com/kunalkushwaha/agenticgokit/plugins/logging/zerolog"
@@ -32,103 +32,7 @@ var globalResultsMutex *sync.Mutex
 // Keep a global orchestrator reference for synchronous dispatch in WebUI
 var globalOrchestrator core.Orchestrator
 
-// --- Simple in-memory flow trace to drive a Mermaid debug view ---
-type FlowEdge struct {
-	From      string
-	To        string
-	Message   string
-	Timestamp time.Time
-	IsError   bool
-	Err       string
-}
-
-var flowTraceMu sync.Mutex
-var flowTrace = map[string][]FlowEdge{} // sessionID -> edges
-
-func recordFlowEdge(sessionID, from, to, message string) {
-	if sessionID == "" {
-		sessionID = "webui-session"
-	}
-	edge := FlowEdge{From: from, To: to, Message: message, Timestamp: time.Now()}
-	flowTraceMu.Lock()
-	flowTrace[sessionID] = append(flowTrace[sessionID], edge)
-	flowTraceMu.Unlock()
-}
-
-func recordFlowError(sessionID, from, to, errMsg string) {
-	if sessionID == "" {
-		sessionID = "webui-session"
-	}
-	edge := FlowEdge{From: from, To: to, Timestamp: time.Now(), IsError: true, Err: errMsg}
-	flowTraceMu.Lock()
-	flowTrace[sessionID] = append(flowTrace[sessionID], edge)
-	flowTraceMu.Unlock()
-}
-
-// getPrevFrom finds the most recent non-error edge that targeted the given agent (to) in this session
-// and returns the sender (from). If not found, returns ("", false).
-func getPrevFrom(sessionID, to string) (string, bool) {
-	flowTraceMu.Lock()
-	defer flowTraceMu.Unlock()
-	edges := flowTrace[sessionID]
-	for i := len(edges) - 1; i >= 0; i-- {
-		e := edges[i]
-		if e.IsError {
-			continue
-		}
-		if e.To == to && e.From != "" {
-			return e.From, true
-		}
-	}
-	return "", false
-}
-
-func extractMessage(event core.Event, state core.State) string {
-	// Prefer state keys, then event data
-	if state != nil {
-		// Common input/output keys in priority order
-		for _, key := range []string{"message", "user_input", "response", "output", "result", "content"} {
-			if v, ok := state.Get(key); ok {
-				if s, ok2 := v.(string); ok2 && s != "" {
-					return s
-				}
-			}
-		}
-		// Back-compat explicit checks
-		if v, ok := state.Get("message"); ok {
-			if s, ok2 := v.(string); ok2 && s != "" {
-				return s
-			}
-		}
-		if v, ok := state.Get("user_input"); ok {
-			if s, ok2 := v.(string); ok2 && s != "" {
-				return s
-			}
-		}
-	}
-	if event != nil && event.GetData() != nil {
-		// Check same set of keys in event data
-		for _, key := range []string{"message", "user_input", "response", "output", "result", "content"} {
-			if v, ok := event.GetData()[key]; ok {
-				if s, ok2 := v.(string); ok2 && s != "" {
-					return s
-				}
-			}
-		}
-		// Back-compat explicit checks
-		if v, ok := event.GetData()["message"]; ok {
-			if s, ok2 := v.(string); ok2 && s != "" {
-				return s
-			}
-		}
-		if v, ok := event.GetData()["user_input"]; ok {
-			if s, ok2 := v.(string); ok2 && s != "" {
-				return s
-			}
-		}
-	}
-	return ""
-}
+// --- Flow tracing is provided by internal/tracing package ---
 
 // main is the entry point for the testBot multi-agent system.
 //
@@ -711,7 +615,7 @@ func (r *ResultCollectorHandler) Run(ctx context.Context, event core.Event, stat
 	// If the agent execution returned an error, record it into trace
 	if err != nil {
 		sessionID, _ := event.GetMetadataValue("session_id")
-		recordFlowError(sessionID, r.agentName, "User", err.Error())
+		tracing.RecordError(sessionID, r.agentName, "User", err.Error())
 	}
 
 	// Record agent -> next route (or -> User) with the agent's response for trace visualization
@@ -739,18 +643,18 @@ func (r *ResultCollectorHandler) Run(ctx context.Context, event core.Event, stat
 					}
 				}
 			}
-			recordFlowEdge(sessionID, r.agentName, nextTo, outMsg)
+			tracing.RecordEdge(sessionID, r.agentName, nextTo, outMsg)
 		}
 		// Detect error flags from OutputState and annotate
 		if result.OutputState != nil {
 			if v, ok := result.OutputState.Get("error"); ok {
 				if s, ok2 := v.(string); ok2 && s != "" {
-					recordFlowError(sessionID, r.agentName, nextTo, s)
+					tracing.RecordError(sessionID, r.agentName, nextTo, s)
 				}
 			}
 			if v, ok := result.OutputState.Get("error_message"); ok {
 				if s, ok2 := v.(string); ok2 && s != "" {
-					recordFlowError(sessionID, r.agentName, nextTo, s)
+					tracing.RecordError(sessionID, r.agentName, nextTo, s)
 				}
 			}
 		}
@@ -878,34 +782,27 @@ func startWebUI(ctx context.Context, runner core.Runner, config *core.Config) {
 		http.FileServer(http.Dir(staticDir)).ServeHTTP(w, r)
 	})
 
-	http.HandleFunc("/api/agents", handleGetAgents)
-	http.HandleFunc("/api/chat", func(w http.ResponseWriter, r *http.Request) {
-		handleChat(w, r, ctx, runner, config)
-	})
+	srv := httpHandlers.NewServer(ctx, runner, config, globalOrchestrator, globalAgentHandlers, &resultsProxy{res: globalResults, mu: globalResultsMutex})
+	http.HandleFunc("/api/agents", srv.HandleGetAgents)
+	http.HandleFunc("/api/chat", srv.HandleChat)
 	// Raw config endpoints (read/update agentflow.toml)
 	http.HandleFunc("/api/config/raw", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
-			handleGetRawConfig(w, r)
+			configh.HandleGetRaw(w, r)
 			return
 		}
 		if r.Method == http.MethodPut {
-			handlePutRawConfig(w, r)
+			configh.HandlePutRaw(w, r)
 			return
 		}
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	})
 	// Simple Mermaid composition diagram endpoint
-	http.HandleFunc("/api/visualization/composition", func(w http.ResponseWriter, r *http.Request) {
-		handleCompositionDiagram(w, r, config)
-	})
+	http.HandleFunc("/api/visualization/composition", srv.HandleCompositionDiagram)
 	// Debug trace diagram endpoint (sequence view per session)
-	http.HandleFunc("/api/visualization/trace", func(w http.ResponseWriter, r *http.Request) {
-		handleTraceDiagram(w, r, runner)
-	})
+	http.HandleFunc("/api/visualization/trace", srv.HandleTraceDiagram)
 	// WebSocket streaming endpoint
-	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		handleWebSocket(w, r, ctx, runner, config)
-	})
+	http.HandleFunc("/ws", srv.HandleWebSocket)
 	// Config endpoint to inform frontend of features and defaults
 	http.HandleFunc("/api/config", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
@@ -913,189 +810,15 @@ func startWebUI(ctx context.Context, runner core.Runner, config *core.Config) {
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		// Determine recommended default for orchestration toggle
-		defaultOrch := false
-		mode := config.Orchestration.Mode
-		if mode == "sequential" || mode == "collaborative" || mode == "parallel" || mode == "loop" || mode == "mixed" || mode == "route" {
-			defaultOrch = true
-		}
-		resp := map[string]any{
-			"server": map[string]any{
-				"name": config.AgentFlow.Name,
-				"port": port,
-				"url":  fmt.Sprintf("http://localhost:%d", port),
-			},
-			"features": map[string]any{
-				"websocket": true,
-				"streaming": true,
-			},
-			"orchestration": map[string]any{
-				"mode":                 mode,
-				"default_enabled":      defaultOrch,
-				"sequential_agents":    config.Orchestration.SequentialAgents,
-				"collaborative_agents": config.Orchestration.CollaborativeAgents,
-				"loop_agent":           config.Orchestration.LoopAgent,
-			},
-		}
+		resp := configh.BuildInfo(config, port)
 		_ = json.NewEncoder(w).Encode(resp)
 	})
 
-	log.Printf("Starting WebUI server on port %d", port)
-	log.Printf("Visit http://localhost:%d to access the chat interface", port)
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
-}
-
-func handleGetAgents(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "GET" {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
+	fmt.Printf("Starting WebUI server on port %d\n", port)
+	fmt.Printf("Visit http://localhost:%d to access the chat interface\n", port)
+	if err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil); err != nil {
+		fmt.Printf("Server error: %v\n", err)
 	}
-
-	w.Header().Set("Content-Type", "application/json")
-
-	// Return actual agents from globalAgentHandlers, skipping error-handlers
-	agents := []map[string]interface{}{}
-	for agentName := range globalAgentHandlers {
-		if strings.Contains(agentName, "error-handler") {
-			continue
-		}
-		agents = append(agents, map[string]interface{}{
-			"id":          agentName,
-			"name":        agentName,
-			"description": fmt.Sprintf("Agent %s from configuration", agentName),
-		})
-	}
-
-	if len(agents) == 0 {
-		// Fallback default agents if none registered
-		agents = []map[string]interface{}{
-			{"id": "agent1", "name": "Agent1", "description": "Default agent 1"},
-			{"id": "agent2", "name": "Agent2", "description": "Default agent 2"},
-		}
-	}
-
-	_ = json.NewEncoder(w).Encode(agents)
-}
-
-func handleChat(w http.ResponseWriter, r *http.Request, ctx context.Context, runner core.Runner, config *core.Config) {
-	if r.Method != "POST" {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	// Parse JSON request
-	var req struct {
-		Message          string `json:"message"`
-		Agent            string `json:"agent"`
-		UseOrchestration bool   `json:"useOrchestration,omitempty"`
-	}
-
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		log.Printf("ERROR: Failed to decode JSON request: %v", err)
-		http.Error(w, "Invalid JSON", http.StatusBadRequest)
-		return
-	}
-
-	log.Printf("INFO: Received chat request - Agent: %s, UseOrchestration: %v", req.Agent, req.UseOrchestration)
-
-	// Verify agent exists
-	agentHandler, exists := globalAgentHandlers[req.Agent]
-	if !exists {
-		log.Printf("ERROR: Agent '%s' not found. Available: %v", req.Agent, getAgentNames())
-		http.Error(w, fmt.Sprintf("Agent '%s' not found", req.Agent), http.StatusNotFound)
-		return
-	}
-
-	var agentResponse string
-	var status string
-
-	if req.UseOrchestration {
-		// Orchestrated multi-agent flow: dispatch synchronously via orchestrator
-		log.Printf("INFO: Using orchestration mode for agent %s", req.Agent)
-		if globalOrchestrator == nil {
-			log.Printf("ERROR: Orchestrator not available for WebUI dispatch")
-			http.Error(w, "Orchestrator not available", http.StatusInternalServerError)
-			return
-		}
-
-		// Clear previous results and run synchronously
-		globalResultsMutex.Lock()
-		*globalResults = []AgentOutput{}
-		globalResultsMutex.Unlock()
-
-		// Record initial User -> first agent hop for trace
-		recordFlowEdge("webui-session", "User", req.Agent, req.Message)
-		event := core.NewEvent(req.Agent, core.EventData{
-			"message":    req.Message,
-			"user_input": req.Message,
-		}, map[string]string{
-			"route":      req.Agent,
-			"session_id": "webui-session",
-		})
-
-		if _, err := globalOrchestrator.Dispatch(ctx, event); err != nil {
-			log.Printf("ERROR: Orchestration dispatch failed: %v", err)
-			http.Error(w, fmt.Sprintf("Orchestration error: %v", err), http.StatusInternalServerError)
-			return
-		}
-
-		// Extract the last collected agent output
-		globalResultsMutex.Lock()
-		if len(*globalResults) > 0 {
-			latest := (*globalResults)[len(*globalResults)-1]
-			agentResponse = latest.Content
-			status = "completed"
-		} else {
-			agentResponse = "Orchestration completed, but no agent responses captured."
-			status = "no_output"
-		}
-		globalResultsMutex.Unlock()
-	} else {
-		// Direct single agent invocation
-		log.Printf("INFO: Using direct agent mode for agent %s", req.Agent)
-		state := core.NewState()
-		state.Set("message", req.Message)
-		state.Set("user_input", req.Message)
-
-		// Record initial User -> agent hop for trace
-		recordFlowEdge("webui-session", "User", req.Agent, req.Message)
-		event := core.NewEvent(req.Agent, core.EventData{
-			"message": req.Message,
-		}, map[string]string{
-			"route":      req.Agent,
-			"session_id": "webui-session",
-		})
-
-		result, err := agentHandler.Run(ctx, event, state)
-		if err != nil {
-			log.Printf("ERROR: Agent processing failed: %v", err)
-			http.Error(w, fmt.Sprintf("Agent processing error: %v", err), http.StatusInternalServerError)
-			return
-		}
-
-		if result.OutputState != nil {
-			if v, ok := result.OutputState.Get("result"); ok {
-				agentResponse = fmt.Sprintf("%v", v)
-			} else if v, ok := result.OutputState.Get("response"); ok {
-				agentResponse = fmt.Sprintf("%v", v)
-			} else if v, ok := result.OutputState.Get("output"); ok {
-				agentResponse = fmt.Sprintf("%v", v)
-			} else {
-				agentResponse = "Agent processed your request successfully"
-			}
-		} else {
-			agentResponse = "Agent processed your request"
-		}
-		status = "completed"
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	resp := map[string]interface{}{
-		"response": agentResponse,
-		"agent":    req.Agent,
-		"status":   status,
-	}
-	_ = json.NewEncoder(w).Encode(resp)
 }
 
 // Helper: list available agent names
@@ -1105,141 +828,6 @@ func getAgentNames() []string {
 		names = append(names, name)
 	}
 	return names
-}
-
-// WebSocket support
-var wsUpgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-	CheckOrigin:     func(r *http.Request) bool { return true },
-}
-
-type wsInbound struct {
-	Type             string
-	Agent            string
-	Message          string
-	UseOrchestration bool
-}
-
-type wsOutbound struct {
-	Type      string                 `json:"type"`
-	Agent     string                 `json:"agent,omitempty"`
-	Content   string                 `json:"content,omitempty"`
-	Status    string                 `json:"status,omitempty"`
-	Chunk     int                    `json:"chunk_index,omitempty"`
-	Total     int                    `json:"total_chunks,omitempty"`
-	Timestamp int64                  `json:"timestamp"`
-	Data      map[string]interface{} `json:"data,omitempty"`
-}
-
-func handleWebSocket(w http.ResponseWriter, r *http.Request, ctx context.Context, runner core.Runner, config *core.Config) {
-	conn, err := wsUpgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Printf("WS upgrade failed: %v", err)
-		return
-	}
-	defer conn.Close()
-
-	// Send welcome
-	_ = conn.WriteJSON(wsOutbound{Type: "welcome", Timestamp: time.Now().Unix()})
-
-	for {
-		var msg wsInbound
-		if err := conn.ReadJSON(&msg); err != nil {
-			log.Printf("WS read error: %v", err)
-			return
-		}
-
-		switch msg.Type {
-		case "chat":
-			if msg.Agent == "" || msg.Message == "" {
-				_ = conn.WriteJSON(wsOutbound{Type: "error", Status: "bad_request", Content: "agent and message required", Timestamp: time.Now().Unix()})
-				continue
-			}
-
-			// Progress notification
-			_ = conn.WriteJSON(wsOutbound{Type: "agent_progress", Agent: msg.Agent, Status: "processing", Content: "Processing...", Timestamp: time.Now().Unix()})
-
-			// Process in a goroutine and stream chunks
-			go func(m wsInbound) {
-				// Record initial hop
-				recordFlowEdge("webui-session", "User", m.Agent, m.Message)
-				content, status := processRequest(ctx, m.Agent, m.Message, m.UseOrchestration)
-				// Stream chunked content
-				chunks := chunkString(content, 180)
-				total := len(chunks)
-				for i, c := range chunks {
-					_ = conn.WriteJSON(wsOutbound{Type: "agent_chunk", Agent: m.Agent, Content: c, Chunk: i, Total: total, Timestamp: time.Now().Unix()})
-					time.Sleep(50 * time.Millisecond)
-				}
-				_ = conn.WriteJSON(wsOutbound{Type: "agent_complete", Agent: m.Agent, Status: status, Content: content, Timestamp: time.Now().Unix()})
-			}(msg)
-		default:
-			_ = conn.WriteJSON(wsOutbound{Type: "error", Status: "unknown_type", Content: "Unsupported message type", Timestamp: time.Now().Unix()})
-		}
-	}
-}
-
-// processRequest runs either orchestrated or direct agent call and returns final content and status
-func processRequest(ctx context.Context, agent string, message string, useOrch bool) (string, string) {
-	if useOrch {
-		if globalOrchestrator == nil {
-			return "Orchestrator not available", "error"
-		}
-		globalResultsMutex.Lock()
-		*globalResults = []AgentOutput{}
-		globalResultsMutex.Unlock()
-
-		event := core.NewEvent(agent, core.EventData{
-			"message":    message,
-			"user_input": message,
-		}, map[string]string{
-			"route":      agent,
-			"session_id": "webui-session",
-		})
-
-		if _, err := globalOrchestrator.Dispatch(ctx, event); err != nil {
-			return fmt.Sprintf("Orchestration error: %v", err), "error"
-		}
-		globalResultsMutex.Lock()
-		defer globalResultsMutex.Unlock()
-		if len(*globalResults) > 0 {
-			latest := (*globalResults)[len(*globalResults)-1]
-			return latest.Content, "completed"
-		}
-		return "Orchestration completed, but no agent responses captured.", "no_output"
-	}
-
-	// Direct
-	agentHandler, exists := globalAgentHandlers[agent]
-	if !exists {
-		return fmt.Sprintf("Agent '%s' not found", agent), "not_found"
-	}
-	state := core.NewState()
-	state.Set("message", message)
-	state.Set("user_input", message)
-
-	event := core.NewEvent(agent, core.EventData{
-		"message": message,
-	}, map[string]string{
-		"route":      agent,
-		"session_id": "webui-session",
-	})
-
-	result, err := agentHandler.Run(ctx, event, state)
-	if err != nil {
-		return fmt.Sprintf("Agent processing error: %v", err), "error"
-	}
-	if result.OutputState != nil {
-		if v, ok := result.OutputState.Get("result"); ok {
-			return fmt.Sprintf("%v", v), "completed"
-		} else if v, ok := result.OutputState.Get("response"); ok {
-			return fmt.Sprintf("%v", v), "completed"
-		} else if v, ok := result.OutputState.Get("output"); ok {
-			return fmt.Sprintf("%v", v), "completed"
-		}
-	}
-	return "Agent processed your request", "completed"
 }
 
 func chunkString(s string, size int) []string {
@@ -1260,395 +848,24 @@ func chunkString(s string, size int) []string {
 // --- Config and Visualization Helpers ---
 
 // getConfigPath returns env override path or default CWD agentflow.toml
-func getConfigPath() string {
-	if env := os.Getenv("AGENTFLOW_CONFIG_PATH"); env != "" {
-		return env
-	}
-	if wd, err := os.Getwd(); err == nil {
-		return filepath.Join(wd, "agentflow.toml")
-	}
-	return "agentflow.toml"
-}
-
-// atomicWriteFile writes data atomically to path
-func atomicWriteFile(path string, data []byte) error {
-	dir := filepath.Dir(path)
-	base := filepath.Base(path)
-	tmp, err := os.CreateTemp(dir, base+".tmp-*")
-	if err != nil {
-		return err
-	}
-	tmpPath := tmp.Name()
-	defer func() { _ = os.Remove(tmpPath) }()
-	if _, err := tmp.Write(data); err != nil {
-		_ = tmp.Close()
-		return err
-	}
-	if err := tmp.Sync(); err != nil {
-		_ = tmp.Close()
-		return err
-	}
-	if err := tmp.Close(); err != nil {
-		return err
-	}
-	return os.Rename(tmpPath, path)
-}
-
-// handleGetRawConfig returns the contents of agentflow.toml
-func handleGetRawConfig(w http.ResponseWriter, r *http.Request) {
-	path := getConfigPath()
-	data, err := os.ReadFile(path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			http.Error(w, "agentflow.toml not found", http.StatusNotFound)
-			return
-		}
-		http.Error(w, "Failed to read config", http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(map[string]any{
-		"status": "success",
-		"data":   map[string]any{"path": path, "size": len(data), "content": string(data)},
-	})
-}
-
-// handlePutRawConfig updates agentflow.toml after basic validation
-func handlePutRawConfig(w http.ResponseWriter, r *http.Request) {
-	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
-	defer r.Body.Close()
-	var body struct {
-		Toml string `json:"toml"`
-	}
-	dec := json.NewDecoder(r.Body)
-	dec.DisallowUnknownFields()
-	if err := dec.Decode(&body); err != nil {
-		if err == io.EOF {
-			http.Error(w, "Empty body", http.StatusBadRequest)
-			return
-		}
-		http.Error(w, "Invalid JSON", http.StatusBadRequest)
-		return
-	}
-	if strings.TrimSpace(body.Toml) == "" {
-		http.Error(w, "Missing 'toml'", http.StatusBadRequest)
-		return
-	}
-
-	// Parse TOML using core loader path for compatibility
-	tmpFile := filepath.Join(os.TempDir(), "agentflow-validate-"+fmt.Sprint(time.Now().UnixNano())+".toml")
-	_ = os.WriteFile(tmpFile, []byte(body.Toml), 0644)
-	parsed, err := core.LoadConfig(tmpFile)
-	_ = os.Remove(tmpFile)
-	if err != nil {
-		http.Error(w, "TOML parse error: "+err.Error(), http.StatusBadRequest)
-		return
-	}
-	if err := parsed.ValidateOrchestrationConfig(); err != nil {
-		http.Error(w, "Config validation failed: "+err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	// Write file atomically
-	path := getConfigPath()
-	if err := atomicWriteFile(path, []byte(body.Toml)); err != nil {
-		http.Error(w, "Failed to write config", http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(map[string]any{"status": "success", "data": map[string]any{"path": path, "updated": true}})
-}
+// Removed local config helpers and handlers; using testBot/internal/config instead
 
 // handleCompositionDiagram returns a Mermaid composition diagram
-func handleCompositionDiagram(w http.ResponseWriter, r *http.Request, cfg *core.Config) {
-	w.Header().Set("Content-Type", "application/json")
-	name := "agentflow"
-	mode := "composition"
-	if cfg != nil {
-		if cfg.AgentFlow.Name != "" {
-			name = cfg.AgentFlow.Name
-		}
-		if cfg.Orchestration.Mode != "" {
-			mode = cfg.Orchestration.Mode
-		}
-	}
-	// derive agents list from globalAgentHandlers keys
-	// For simplicity here, we just pass zero agents if none available
-	var agents []core.Agent
-	gen := core.NewMermaidGenerator()
-	mcfg := core.DefaultMermaidConfig()
-	diagram := gen.GenerateCompositionDiagram(mode, name, agents, mcfg)
-	_ = json.NewEncoder(w).Encode(map[string]any{
-		"status": "success",
-		"data":   map[string]any{"title": name + " (" + mode + ")", "diagram": diagram},
-	})
+// Composition and trace handlers moved to internal/handlers
+
+// resultsProxy implements handlers.ResultStore over our shared slice
+type resultsProxy struct {
+	res *[]AgentOutput
+	mu  *sync.Mutex
 }
 
-// handleTraceDiagram returns a Mermaid sequence diagram for the captured flow trace
-func handleTraceDiagram(w http.ResponseWriter, r *http.Request, runner core.Runner) {
-	w.Header().Set("Content-Type", "application/json")
-	// session query param, default to webui-session
-	session := r.URL.Query().Get("session")
-	if session == "" {
-		session = "webui-session"
+func (rp *resultsProxy) Reset() { rp.mu.Lock(); defer rp.mu.Unlock(); *rp.res = []AgentOutput{} }
+func (rp *resultsProxy) Latest() (string, bool) {
+	rp.mu.Lock()
+	defer rp.mu.Unlock()
+	if len(*rp.res) == 0 {
+		return "", false
 	}
-	// optional linearization param (default true)
-	linear := true
-	if v := r.URL.Query().Get("linear"); v == "false" || v == "0" || strings.EqualFold(v, "no") {
-		linear = false
-	}
-	// Pull framework trace entries from runner
-	var diagram string
-	var labels []LabelInfo
-	if runner != nil {
-		if entries, err := runner.DumpTrace(session); err == nil {
-			if len(entries) > 0 {
-				diagram, labels = buildMermaidFromFrameworkTrace(entries, linear)
-			} else {
-				// Fallback to shim if no entries yet
-				flowTraceMu.Lock()
-				edges := append([]FlowEdge(nil), flowTrace[session]...)
-				flowTraceMu.Unlock()
-				diagram, labels = buildMermaidSequenceLabeled(edges)
-			}
-		} else {
-			// Fallback to shim if dump failed
-			flowTraceMu.Lock()
-			edges := append([]FlowEdge(nil), flowTrace[session]...)
-			flowTraceMu.Unlock()
-			diagram, labels = buildMermaidSequenceLabeled(edges)
-		}
-	} else {
-		// Fallback to shim if no runner
-		flowTraceMu.Lock()
-		edges := append([]FlowEdge(nil), flowTrace[session]...)
-		flowTraceMu.Unlock()
-		diagram, labels = buildMermaidSequenceLabeled(edges)
-	}
-	_ = json.NewEncoder(w).Encode(map[string]any{
-		"status": "success",
-		"data": map[string]any{
-			"session": session,
-			"diagram": diagram,
-			"labels":  labels,
-			"edges":   len(labels),
-		},
-	})
-}
-
-// LabelInfo provides a mapping from a short label used in the diagram to the full message content.
-type LabelInfo struct {
-	ID      string `json:"id"`
-	From    string `json:"from"`
-	To      string `json:"to"`
-	Message string `json:"message"`
-}
-
-// buildMermaidSequenceLabeled returns a Mermaid diagram string and a list of labels mapping to full messages.
-func buildMermaidSequenceLabeled(edges []FlowEdge) (string, []LabelInfo) {
-	// Mermaid sequence diagram header with styling and autonumber
-	var b strings.Builder
-	b.WriteString("%%{init: {\"theme\": \"base\", \"sequence\": {\"mirrorActors\": false}, \"themeVariables\": {\"primaryColor\": \"#eef2ff\", \"primaryTextColor\": \"#0b1021\", \"actorBorder\": \"#4c6ef5\", \"actorBkg\": \"#eef2ff\", \"noteBkgColor\": \"#fff7ed\", \"noteTextColor\": \"#92400e\"}} }%%\n")
-	b.WriteString("sequenceDiagram\n")
-	b.WriteString("  autonumber\n")
-	// Collect participants in insertion order
-	seen := map[string]bool{}
-	order := []string{}
-	add := func(name string) {
-		if name == "" {
-			return
-		}
-		if !seen[name] {
-			seen[name] = true
-			order = append(order, name)
-		}
-	}
-	for _, e := range edges {
-		add(e.From)
-		add(e.To)
-	}
-	if len(order) == 0 {
-		// Provide a stub
-		b.WriteString("  participant User\n  participant Agent\n  User->>Agent: (no activity captured)\n")
-		return b.String(), nil
-	}
-	for _, p := range order {
-		b.WriteString("  participant " + escapeMermaidIdent(p) + "\n")
-	}
-
-	labels := make([]LabelInfo, 0, len(edges))
-	msgCounter := 0
-	for _, e := range edges {
-		if e.IsError {
-			errTxt := e.Err
-			if len(errTxt) > 200 {
-				errTxt = errTxt[:197] + "..."
-			}
-			who := e.From
-			if who == "" {
-				who = e.To
-			}
-			if who == "" {
-				who = "User"
-			}
-			b.WriteString("  Note over " + escapeMermaidIdent(who) + ": ❌ ERROR: " + escapeMermaidText(errTxt) + "\n")
-			continue
-		}
-		// Create a compact label for the message to keep the diagram tidy
-		msgCounter++
-		label := fmt.Sprintf("M%d", msgCounter)
-		full := e.Message
-		if full == "" {
-			full = "(no message)"
-		}
-		labels = append(labels, LabelInfo{ID: label, From: e.From, To: e.To, Message: full})
-		b.WriteString("  " + escapeMermaidIdent(e.From) + "->>" + escapeMermaidIdent(e.To) + ": " + escapeMermaidText(label) + "\n")
-	}
-	return b.String(), labels
-}
-
-func escapeMermaidIdent(s string) string {
-	// Very basic: replace spaces and special chars with underscores
-	repl := s
-	repl = strings.ReplaceAll(repl, " ", "_")
-	repl = strings.ReplaceAll(repl, "-", "_")
-	repl = strings.ReplaceAll(repl, ".", "_")
-	return repl
-}
-
-func escapeMermaidText(s string) string {
-	// Escape quotes and backticks minimally
-	repl := strings.ReplaceAll(s, "\n", " ")
-	repl = strings.ReplaceAll(repl, "\r", " ")
-	repl = strings.ReplaceAll(repl, "\"", "\\\"")
-	repl = strings.ReplaceAll(repl, "`", "'")
-	return repl
-}
-
-// buildMermaidFromFrameworkTrace converts core.Runner trace entries into a Mermaid sequence diagram.
-func buildMermaidFromFrameworkTrace(entries []core.TraceEntry, linear bool) (string, []LabelInfo) {
-	// Header and theme
-	var b strings.Builder
-	b.WriteString("%%{init: {\"theme\": \"base\", \"sequence\": {\"mirrorActors\": false}, \"themeVariables\": {\"primaryColor\": \"#eef2ff\", \"primaryTextColor\": \"#0b1021\", \"actorBorder\": \"#4c6ef5\", \"actorBkg\": \"#eef2ff\", \"noteBkgColor\": \"#fff7ed\", \"noteTextColor\": \"#92400e\"}} }%%\n")
-	b.WriteString("sequenceDiagram\n")
-	b.WriteString("  autonumber\n")
-
-	// Collect participants
-	seen := map[string]bool{"User": true}
-	order := []string{"User"}
-	// Track first agent and last agent processed
-	firstAgent := ""
-	for _, e := range entries {
-		if e.Type == "agent_start" && e.AgentID != "" {
-			if !seen[e.AgentID] {
-				seen[e.AgentID] = true
-				order = append(order, e.AgentID)
-			}
-			if firstAgent == "" {
-				firstAgent = e.AgentID
-			}
-		}
-		if e.Type == "agent_end" && e.AgentID != "" {
-			if !seen[e.AgentID] {
-				seen[e.AgentID] = true
-				order = append(order, e.AgentID)
-			}
-			// Peek route target too if non-linear rendering
-			if !linear && e.AgentResult != nil && e.AgentResult.OutputState != nil {
-				if rt, ok := e.AgentResult.OutputState.GetMeta(core.RouteMetadataKey); ok && rt != "" {
-					if !seen[rt] {
-						seen[rt] = true
-						order = append(order, rt)
-					}
-				}
-			}
-		}
-	}
-	if len(order) == 1 { // only User
-		b.WriteString("  participant User\n  participant Agent\n  User->>Agent: (no activity captured)\n")
-		return b.String(), nil
-	}
-	for _, p := range order {
-		b.WriteString("  participant " + escapeMermaidIdent(p) + "\n")
-	}
-
-	labels := []LabelInfo{}
-	counter := 0
-	// 1) Initial hop: find first agent_start and draw User -> firstAgent using state message
-	if firstAgent != "" {
-		// find the corresponding start entry to extract message/state
-		var msg string
-		for _, e := range entries {
-			if e.Type == "agent_start" && e.AgentID == firstAgent && e.State != nil {
-				for _, k := range []string{"message", "user_input", "response", "output", "result", "content"} {
-					if v, ok := e.State.Get(k); ok {
-						if s, ok2 := v.(string); ok2 && s != "" {
-							msg = s
-							break
-						}
-					}
-				}
-				if msg == "" {
-					msg = "(no message)"
-				}
-				break
-			}
-		}
-		counter++
-		lid := fmt.Sprintf("M%d", counter)
-		labels = append(labels, LabelInfo{ID: lid, From: "User", To: firstAgent, Message: msg})
-		b.WriteString("  User->>" + escapeMermaidIdent(firstAgent) + ": " + escapeMermaidText(lid) + "\n")
-	}
-
-	// 2) For each agent_end, draw agent -> next
-	// We keep a set to avoid duplicating edges if multiple end entries exist
-	for _, e := range entries {
-		if e.Type != "agent_end" || e.AgentID == "" {
-			continue
-		}
-		from := e.AgentID
-		// derive label content from AgentResult
-		var outMsg string
-		if e.AgentResult != nil && e.AgentResult.OutputState != nil {
-			for _, k := range []string{"response", "output", "message", "result", "content"} {
-				if v, ok := e.AgentResult.OutputState.Get(k); ok {
-					if s, ok2 := v.(string); ok2 && s != "" {
-						outMsg = s
-						break
-					}
-				}
-			}
-		}
-		if outMsg == "" {
-			outMsg = fmt.Sprintf("Agent %s completed", from)
-		}
-
-		// route decision
-		nextTo := "User"
-		if e.AgentResult != nil && e.AgentResult.OutputState != nil {
-			if rt, ok := e.AgentResult.OutputState.GetMeta(core.RouteMetadataKey); ok && rt != "" {
-				nextTo = fmt.Sprintf("%v", rt)
-			}
-		}
-		// Linearization: if not the first agent, or if nextTo equals a previous agent, end at User
-		if linear {
-			if from != firstAgent {
-				nextTo = "User"
-			}
-		} else {
-			// Non-linear: if nextTo is same as from (self) or empty, skip; if nextTo equals a previous sender, optionally keep or map to User
-			if nextTo == from || nextTo == "" {
-				continue
-			}
-		}
-		// Avoid showing routes to unknown system agents (like responsible_ai) in linear mode
-		if linear && nextTo != "User" && nextTo != firstAgent { /* allow agent1->agent2 only */
-		}
-		// add edge
-		counter++
-		lid := fmt.Sprintf("M%d", counter)
-		labels = append(labels, LabelInfo{ID: lid, From: from, To: nextTo, Message: outMsg})
-		b.WriteString("  " + escapeMermaidIdent(from) + "->>" + escapeMermaidIdent(nextTo) + ": " + escapeMermaidText(lid) + "\n")
-	}
-	return b.String(), labels
+	last := (*rp.res)[len(*rp.res)-1]
+	return last.Content, true
 }

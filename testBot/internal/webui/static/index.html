@@ -50,8 +50,29 @@
                     </section>
                 </div>
             </aside>
-            <!-- Slide-over Settings Panel -->
-            <aside id="settings-panel" class="settings-panel" aria-hidden="true">
+            <!-- Center Pane (Agent Info + Chat) -->
+            <section class="center-pane">
+                <!-- Agent Info Panel -->
+                <div class="agent-info-panel" id="agent-info">
+                    <div class="agent-details">
+                        <h3 id="agent-name">Loading...</h3>
+                        <p id="agent-description">Loading agents from configuration...</p>
+                    </div>
+                </div>
+                <!-- Chat Area -->
+                <div class="chat-container">
+                    <div class="chat-messages" id="chat-messages">
+                        <div class="welcome-message">
+                            <h3>Welcome to testBot!</h3>
+                            <p>Choose an agent and start chatting to get assistance with your tasks.</p>
+                            <p><strong>Tip:</strong> Toggle "Full Workflow" to use orchestrated multi-agent processing or keep it off for direct agent responses.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Settings Pane -->
+            <aside id="settings-panel" class="right-pane" aria-hidden="true">
                 <div class="settings-header">
                     <h3>Settings</h3>
                     <button id="close-settings" class="mini-btn" title="Close">✖</button>
@@ -68,24 +89,6 @@
                     </section>
                 </div>
             </aside>
-            <!-- Agent Info Panel -->
-            <div class="agent-info-panel" id="agent-info">
-                <div class="agent-details">
-                    <h3 id="agent-name">Loading...</h3>
-                    <p id="agent-description">Loading agents from configuration...</p>
-                </div>
-            </div>
-
-            <!-- Chat Area -->
-            <div class="chat-container">
-                <div class="chat-messages" id="chat-messages">
-                    <div class="welcome-message">
-                        <h3>Welcome to testBot!</h3>
-                        <p>Choose an agent and start chatting to get assistance with your tasks.</p>
-                        <p><strong>Tip:</strong> Toggle "Full Workflow" to use orchestrated multi-agent processing or keep it off for direct agent responses.</p>
-                    </div>
-                </div>
-            </div>
         </main>
 
         <!-- Chat Input -->

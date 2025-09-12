@@ -35,22 +35,33 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Left Trace Pane elements
     const tracePane = document.getElementById('trace-pane');
+    const mainContent = document.querySelector('.main-content');
     const openTraceBtn = document.getElementById('open-trace');
     const closeTraceBtn = document.getElementById('close-trace');
     const refreshTraceBtn = document.getElementById('refresh-trace');
     const toggleTraceCode = document.getElementById('toggle-trace-code');
     const toggleTraceRender = document.getElementById('toggle-trace-render');
 
-    if (openSettingsBtn && settingsPanel) openSettingsBtn.addEventListener('click', () => settingsPanel.classList.add('open'));
-    if (closeSettingsBtn && settingsPanel) closeSettingsBtn.addEventListener('click', () => settingsPanel.classList.remove('open'));
+    if (openSettingsBtn && settingsPanel) openSettingsBtn.addEventListener('click', () => {
+        if (mainContent) mainContent.classList.add('right-open');
+        settingsPanel.setAttribute('aria-hidden', 'false');
+    });
+    if (closeSettingsBtn && settingsPanel) closeSettingsBtn.addEventListener('click', () => {
+        if (mainContent) mainContent.classList.remove('right-open');
+        settingsPanel.setAttribute('aria-hidden', 'true');
+    });
     if (loadBtn) loadBtn.addEventListener('click', loadAgentflowToml);
     if (saveBtn) saveBtn.addEventListener('click', saveAgentflowToml);
 
     if (openTraceBtn && tracePane) openTraceBtn.addEventListener('click', async () => {
-        tracePane.classList.add('open');
+        if (mainContent) mainContent.classList.add('left-open');
+        tracePane.setAttribute('aria-hidden', 'false');
         try { await refreshTrace(); } catch {}
     });
-    if (closeTraceBtn && tracePane) closeTraceBtn.addEventListener('click', () => tracePane.classList.remove('open'));
+    if (closeTraceBtn && tracePane) closeTraceBtn.addEventListener('click', () => {
+        if (mainContent) mainContent.classList.remove('left-open');
+        tracePane.setAttribute('aria-hidden', 'true');
+    });
     if (refreshTraceBtn) refreshTraceBtn.addEventListener('click', refreshTrace);
     if (toggleTraceCode) toggleTraceCode.addEventListener('click', () => setViewMode('trace', 'code'));
     if (toggleTraceRender) toggleTraceRender.addEventListener('click', () => setViewMode('trace', 'render'));

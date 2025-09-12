@@ -264,308 +264,116 @@ func main() {
 ## Customization
 
 ### Quick Customizations
+# testBot
 
-1. **Modify Agent Behavior**: Edit files in `agents/` directory
-2. **Change Orchestration**: Update `agentflow.toml` orchestration settings
-3. **Add Dependencies**: Extend agent constructors in `main.go`
-4. **Custom Input/Output**: Modify processing logic in `main.go`
+An agentic, configuration-driven multi-agent system with a built-in Web UI, streaming, config editor, and flow visualization.
 
-### Advanced Customizations
+## Highlights (what’s new)
 
-For comprehensive customization guidance, see:
-- [`docs/CUSTOMIZATION.md`](docs/CUSTOMIZATION.md) - Detailed customization guide
-- [`agents/README.md`](agents/README.md) - Agent-specific documentation
+- Web UI with WebSocket-first streaming (HTTP fallback)
+- Config editor endpoints (read/write `agentflow.toml` safely)
+- Flow tracing and Mermaid sequence diagrams for debugging
+- Clean architecture: network handlers moved to `internal/handlers`, config utilities in `internal/config`, tracing in `internal/tracing`
 
-### Common Patterns
+## Prerequisites
 
-#### Adding Database Integration
+- Go 1.21+
+- LLM credentials (e.g., set `OPENAI_API_KEY` for OpenAI)
 
-```go
-// In main.go
-db, err := sql.Open("postgres", "your-connection-string")
-if err != nil {
-    return fmt.Errorf("failed to connect to database: %w", err)
-}
+Optional:
+- Set `AGENTFLOW_CONFIG_PATH` to point to a non-default `agentflow.toml`
 
-// Pass to agents
-agent1 := agents.NewAgent1(llmProvider, db)
+## Quick start
+
+Windows PowerShell:
+
+```powershell
+# From repo root
+pwsh -NoProfile -Command "Set-Location 'c:\Users\Kunal\work\ZynkWorks\AgenticGoKit\testBot'; go build .; .\testBot.exe -webui"
 ```
 
-#### Adding API Integration
+Then open `http://localhost:8080` in your browser.
 
-```go
-// In agents/agent1.go
-type Agent1Handler struct {
-    llm       agenticgokit.ModelProvider
-    apiClient *http.Client
-}
+CLI (no Web UI):
 
-func (a *Agent1Handler) callExternalAPI(ctx context.Context, data interface{}) (interface{}, error) {
-    // Your API integration logic
-    return nil, nil
-}
+```powershell
+pwsh -NoProfile -Command "Set-Location 'c:\Users\Kunal\work\ZynkWorks\AgenticGoKit\testBot'; go run . -m 'Hello there'"
 ```
 
-#### Custom Output Formatting
+## Web UI overview
 
-```go
-// In main.go
-func formatResults(results []AgentOutput) {
-    for _, result := range results {
-        // Format and process result as needed
-        logger.Info().Str("agent", result.AgentName).Str("content", result.Content).Msg("Agent result")
-    }
-}
+- Chat area on the right; debug trace pane can be toggled on the left (grid layout, resizes chat)
+- Real-time streaming via WebSocket; falls back to HTTP when needed
+- Flow view shows actual agent-to-agent transitions (self-loops included), with label tooltips
+
+## API surface
+
+HTTP (JSON):
+
+- `GET /api/agents` → list available agents
+- `POST /api/chat` → body: `{ "message": string, "agent": string, "useOrchestration": bool }`
+- `GET /api/config/raw` → returns `{ content, path, size }` for `agentflow.toml`
+- `PUT /api/config/raw` → body: `{ "toml": string }` (validated then atomically written)
+- `GET /api/config` → server features and orchestration info
+- `GET /api/visualization/composition` → composition diagram (Mermaid)
+- `GET /api/visualization/trace?session=webui-session&linear=true` → sequence diagram + labels
+
+WebSocket (`/ws`):
+
+- Send: `{ type: "chat", agent: string, message: string, useOrchestration?: boolean }`
+- Receive events:
+    - `welcome`
+    - `agent_progress`
+    - `agent_chunk` (chunked content for smooth streaming)
+    - `agent_complete`
+
+## Configuration
+
+The app is configuration-driven via `agentflow.toml`.
+
+- Read/write endpoints: `GET/PUT /api/config/raw`
+- Validation uses `core.LoadConfig` and `ValidateOrchestrationConfig`
+- Atomic writes ensure safe updates
+- Override path with `AGENTFLOW_CONFIG_PATH`
+
+Tip: validate configs with the CLI from repo root:
+
+```powershell
+pwsh -NoProfile -Command "Set-Location 'c:\Users\Kunal\work\ZynkWorks\AgenticGoKit'; .\agentcli.exe validate agentflow.toml"
 ```
 
-## � Monitoring and Observability
+## Project structure (key parts)
 
-### Logging
-
-The system uses structured logging with different levels:
-
-```bash
-# Set log level
-export LOG_LEVEL=debug  # debug, info, warn, error
-
-# View logs
-go run . -m "test" 2>&1 | jq '.'  # Pretty print JSON logs
+```
+testBot/
+    agents/                      # Agent registrations (imported in main)
+    internal/
+        config/                    # Config helpers and raw config handlers
+        handlers/                  # All HTTP/WS handlers (Server)
+        tracing/                   # In-memory tracing + Mermaid builders
+        webui/                     # Static assets (HTML/CSS/JS)
+    main.go                      # Wiring, startup, orchestration setup
+    agentflow.toml               # Main configuration
+    go.mod
+    README.md
 ```
 
-### Metrics
+## Notes on tracing and visualization
 
-To enable metrics, set `enable_metrics = true` in your MCP configuration.
-
-### Health Checks
-
-```bash
-# Check system health
-curl http://localhost:8080/health
-
-# Check individual components
-curl http://localhost:8080/health/agents
-curl http://localhost:8080/health/memory
-curl http://localhost:8080/health/mcp
-```
-
-## Testing
-
-### Running Tests
-
-```bash
-# Run all tests
-go test ./...
-
-# Run with coverage
-go test -cover ./...
-
-# Run specific test
-go test -run TestAgent1 ./agents
-```
-
-### Integration Testing
-
-```bash
-# Test full workflow
-go test -tags=integration ./...
-
-# Test with real LLM provider
-INTEGRATION_TEST=true go test ./...
-```
-
-### Load Testing
-
-```bash
-# Install hey
-go install github.com/rakyll/hey@latest
-
-# Load test the system
-hey -n 100 -c 10 -m POST -d '{"message":"test"}' http://localhost:8080/process
-```
-
-## Deployment
-
-### Docker
-
-```dockerfile
-FROM golang:1.21-alpine AS builder
-WORKDIR /app
-COPY . .
-RUN go mod download && go build -o main .
-
-FROM alpine:latest
-RUN apk --no-cache add ca-certificates
-WORKDIR /root/
-COPY --from=builder /app/main .
-COPY --from=builder /app/agentflow.toml .
-CMD ["./main"]
-```
-
-```bash
-# Build and run
-docker build -t testBot .
-docker run -e OPENAI_API_KEY=$OPENAI_API_KEY testBot
-```
-
-### Kubernetes
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: testBot
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: testBot
-  template:
-    metadata:
-      labels:
-        app: testBot
-    spec:
-      containers:
-      - name: testBot
-        image: your-registry/testBot:latest
-        env:
-        - name: OPENAI_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: api-keys
-              key: openai
-        ports:
-        - containerPort: 8080
-```
-
-### Cloud Deployment
-
-#### AWS Lambda
-
-```go
-package main
-
-import (
-    "context"
-    "github.com/aws/aws-lambda-go/lambda"
-    "testBot/agents"
-)
-
-type Request struct {
-    Message string `json:"message"`
-}
-
-type Response struct {
-    Result string `json:"result"`
-}
-
-func handler(ctx context.Context, req Request) (Response, error) {
-    // Initialize your agents
-    // Process the request
-    // Return response
-    return Response{Result: "processed"}, nil
-}
-
-func main() {
-    lambda.Start(handler)
-}
-```
+- We record the initial `User -> FirstAgent` hop at entrypoints only
+- Outbound edges come from agent results (`RouteMetadataKey`), preserving real routing
+- Mermaid sequence diagrams are labeled (compressed `M1/M2…` with hover tooltips)
 
 ## Troubleshooting
 
-### Common Issues
-
-#### 1. LLM Provider Connection Issues
-
-```bash
-# Check API key
-echo $OPENAI_API_KEY
-
-# Test connection
-curl -H "Authorization: Bearer $OPENAI_API_KEY" https://api.openai.com/v1/models
-```
-
-#### 2. Memory System Issues
-
-
-
-#### 3. Agent Execution Issues
-
-```bash
-# Enable debug logging
-LOG_LEVEL=debug go run . -m "test message"
-
-# Check agent registration
-grep -n "RegisterAgent" main.go
-```
-
-#### 4. Configuration Issues
-
-```bash
-# Validate TOML syntax
-go run . -validate-config
-
-# Check configuration loading
-LOG_LEVEL=debug go run . -m "test" 2>&1 | grep -i config
-```
-
-### Performance Issues
-
-1. **Slow Response Times**
-   - Check LLM provider latency
-   - Review agent processing logic
-   - Consider caching strategies
-
-2. **Memory Usage**
-   - Monitor Go memory usage
-   - Check for memory leaks in agents
-   - Optimize data structures
-
-3. **Concurrent Processing**
-   - Adjust `max_concurrency` settings
-   - Review goroutine usage
-   - Check for race conditions
-
-### Getting Help
-
-1. **Check Logs**: Enable debug logging for detailed information
-2. **Review Configuration**: Validate all settings in `agentflow.toml`
-3. **Test Components**: Test LLM provider, memory, and tools individually
-4. **Community Support**: Create an issue in the [AgenticGoKit repository](https://github.com/kunalkushwaha/agenticgokit)
-
-## Resources
-
-### Documentation
-
-- [AgenticGoKit Documentation](https://github.com/kunalkushwaha/agenticgokit)
-- [Multi-Agent Patterns](https://github.com/kunalkushwaha/agenticgokit/docs/patterns)
-- [Configuration Reference](https://github.com/kunalkushwaha/agenticgokit/docs/config)
-- [API Documentation](https://pkg.go.dev/github.com/kunalkushwaha/agenticgokit)
-
-### Examples
-
-- [Example Projects](https://github.com/kunalkushwaha/agenticgokit/examples)
-- [Integration Patterns](https://github.com/kunalkushwaha/agenticgokit/docs/integrations)
-- [Best Practices](https://github.com/kunalkushwaha/agenticgokit/docs/best-practices)
-
-### Community
-
-- [GitHub Issues](https://github.com/kunalkushwaha/agenticgokit/issues)
-- [Discussions](https://github.com/kunalkushwaha/agenticgokit/discussions)
-- [Contributing Guide](https://github.com/kunalkushwaha/agenticgokit/CONTRIBUTING.md)
+- Missing API key: set `OPENAI_API_KEY` (or provider-specific vars for Azure/Ollama)
+- No responses captured: check logs and your `agents` config in `agentflow.toml`
+- Blank trace: ensure tracing is enabled; the app registers framework trace hooks on start
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-- Built with [AgenticGoKit](https://github.com/kunalkushwaha/agenticgokit)
-- Powered by OpenAI
-
-
+MIT. See `LICENSE` at repo root.
 
 ---
 
-**Happy coding!**
-
-For questions or support, please refer to the [documentation](https://github.com/kunalkushwaha/agenticgokit) or create an issue.
+Happy building! If you need help, open an issue in the main repository.
