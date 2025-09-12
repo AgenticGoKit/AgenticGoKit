@@ -24,6 +24,7 @@ type Server struct {
 	agentManager      core.AgentManager
 	sessionManager    *EnhancedSessionManager
 	connectionManager *ConnectionManager
+	bridge            *AgentBridge
 	logger            core.CoreLogger
 
 	// Server state
@@ -63,12 +64,20 @@ func NewServer(config ServerConfig) *Server {
 	// Create connection manager with enhanced session manager
 	connectionManager := NewConnectionManager(sessionManager, logger)
 
+	// Optionally create an agent bridge if agent manager is provided
+	var bridge *AgentBridge
+	if config.AgentManager != nil {
+		bridge = NewAgentBridge(config.AgentManager, sessionManager, logger, nil)
+		connectionManager.AttachBridge(bridge)
+	}
+
 	server := &Server{
 		port:              config.Port,
 		config:            config.Config,
 		agentManager:      config.AgentManager,
 		sessionManager:    sessionManager,
 		connectionManager: connectionManager,
+		bridge:            bridge,
 		logger:            logger,
 	}
 
@@ -139,6 +148,27 @@ func (s *Server) Start(ctx context.Context) error {
 	// Start connection manager
 	s.connectionManager.Start()
 
+	// Log available transports on startup
+	s.logger.Info().
+		Str("transport", "http").
+		Str("endpoint", "/api/chat").
+		Msg("HTTP chat endpoint enabled")
+
+	if s.connectionManager != nil {
+		s.logger.Info().
+			Str("transport", "websocket").
+			Str("endpoint", "/ws").
+			Bool("streaming", s.bridge != nil).
+			Msg("WebSocket endpoint enabled")
+	}
+
+	// Start agent bridge if available
+	if s.bridge != nil {
+		if err := s.bridge.Start(ctx); err != nil {
+			s.logger.Error().Err(err).Msg("Failed to start agent bridge")
+		}
+	}
+
 	// Start server in a goroutine
 	errChan := make(chan error, 1)
 	go func() {
@@ -186,6 +216,11 @@ func (s *Server) Stop() error {
 
 	// Stop connection manager
 	s.connectionManager.Stop()
+
+	// Stop bridge if running
+	if s.bridge != nil {
+		_ = s.bridge.Stop()
+	}
 
 	// Create shutdown context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -299,6 +334,7 @@ func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 		},
 		"features": map[string]interface{}{
 			"websocket": true,
+			"streaming": s.bridge != nil,
 			"sessions":  true,
 			"agents":    s.agentManager != nil,
 		},
@@ -375,6 +411,7 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 		s.writeErrorJSON(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
+	// Note: decoded chatReq available from here onward
 
 	// Parse request body
 	var chatReq struct {
@@ -401,6 +438,17 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 	if chatReq.AgentName == "" || chatReq.Message == "" {
 		http.Error(w, "agent_name and message are required", http.StatusBadRequest)
 		return
+	}
+
+	// Transport debug log: HTTP chat path (after validation)
+	if s.logger != nil {
+		s.logger.Info().
+			Str("transport", "http").
+			Str("agent", chatReq.AgentName).
+			Str("session_id", chatReq.SessionID).
+			Str("remote_addr", r.RemoteAddr).
+			Str("user_agent", r.Header.Get("User-Agent")).
+			Msg("Received chat request")
 	}
 
 	// Handle chat interaction

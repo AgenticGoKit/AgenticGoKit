@@ -20,12 +20,16 @@ const (
 	MsgTypeTyping        MessageType = "typing"
 
 	// Server to Client message types
-	MsgTypeAgentResponse MessageType = "agent_response"
-	MsgTypeAgentProgress MessageType = "agent_progress"
-	MsgTypeSessionStatus MessageType = "session_status"
-	MsgTypePong          MessageType = "pong"
-	MsgTypeError         MessageType = "error"
-	MsgTypeSystemMessage MessageType = "system_message"
+	MsgTypeAgentResponse  MessageType = "agent_response"
+	MsgTypeAgentProgress  MessageType = "agent_progress"
+	MsgTypeAgentChunk     MessageType = "agent_chunk"
+	MsgTypeAgentComplete  MessageType = "agent_complete"
+	MsgTypeAgentError     MessageType = "agent_error"
+	MsgTypeSessionStatus  MessageType = "session_status"
+	MsgTypePong           MessageType = "pong"
+	MsgTypeError          MessageType = "error"
+	MsgTypeSystemMessage  MessageType = "system_message"
+	MsgTypeWorkflowUpdate MessageType = "workflow_update"
 )
 
 // WebSocketMessage represents the base structure for all WebSocket messages
@@ -80,6 +84,40 @@ type AgentProgressData struct {
 	OverallProgress float64       `json:"overall_progress"`
 	CurrentAgent    string        `json:"current_agent,omitempty"`
 	EstimatedTime   int           `json:"estimated_time,omitempty"` // seconds
+}
+
+// AgentChunkData represents a partial chunk of agent output
+type AgentChunkData struct {
+	AgentName  string                 `json:"agent_name"`
+	Content    string                 `json:"content"`
+	ChunkIndex int                    `json:"chunk_index"`
+	TotalHint  int                    `json:"total_hint,omitempty"`
+	Metadata   map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// AgentCompleteData represents the final completion of an agent response
+type AgentCompleteData struct {
+	AgentName string                 `json:"agent_name"`
+	Content   string                 `json:"content"`
+	Usage     map[string]interface{} `json:"usage,omitempty"`
+	Metadata  map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// AgentErrorData represents an agent error event
+type AgentErrorData struct {
+	AgentName string                 `json:"agent_name,omitempty"`
+	Code      string                 `json:"code"`
+	Message   string                 `json:"message"`
+	Metadata  map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// WorkflowUpdateData represents orchestration-level updates
+type WorkflowUpdateData struct {
+	Step     string                 `json:"step"`
+	Mode     string                 `json:"mode"`
+	Agents   []string               `json:"agents,omitempty"`
+	Message  string                 `json:"message,omitempty"`
+	Metadata map[string]interface{} `json:"metadata,omitempty"`
 }
 
 // AgentStatus represents the status of an individual agent
@@ -154,6 +192,72 @@ func NewAgentProgress(sessionID string, agents []AgentStatus, overallProgress fl
 		Data: map[string]interface{}{
 			"agents":           agents,
 			"overall_progress": overallProgress,
+		},
+	}
+}
+
+// NewAgentChunk creates a new agent chunk message
+func NewAgentChunk(sessionID, agentName, content string, chunkIndex, totalHint int, metadata map[string]interface{}) *WebSocketMessage {
+	return &WebSocketMessage{
+		Type:      MsgTypeAgentChunk,
+		SessionID: sessionID,
+		MessageID: generateMessageID(),
+		Timestamp: time.Now(),
+		Data: map[string]interface{}{
+			"agent_name":  agentName,
+			"content":     content,
+			"chunk_index": chunkIndex,
+			"total_hint":  totalHint,
+			"metadata":    metadata,
+		},
+	}
+}
+
+// NewAgentComplete creates a new agent complete message
+func NewAgentComplete(sessionID, agentName, content string, usage, metadata map[string]interface{}) *WebSocketMessage {
+	return &WebSocketMessage{
+		Type:      MsgTypeAgentComplete,
+		SessionID: sessionID,
+		MessageID: generateMessageID(),
+		Timestamp: time.Now(),
+		Data: map[string]interface{}{
+			"agent_name": agentName,
+			"content":    content,
+			"usage":      usage,
+			"metadata":   metadata,
+		},
+	}
+}
+
+// NewAgentError creates a new agent error message
+func NewAgentError(sessionID, agentName, code, message string, metadata map[string]interface{}) *WebSocketMessage {
+	return &WebSocketMessage{
+		Type:      MsgTypeAgentError,
+		SessionID: sessionID,
+		MessageID: generateMessageID(),
+		Timestamp: time.Now(),
+		Data: map[string]interface{}{
+			"agent_name": agentName,
+			"code":       code,
+			"message":    message,
+			"metadata":   metadata,
+		},
+	}
+}
+
+// NewWorkflowUpdate creates a new workflow update message
+func NewWorkflowUpdate(sessionID, step, mode, message string, agents []string, metadata map[string]interface{}) *WebSocketMessage {
+	return &WebSocketMessage{
+		Type:      MsgTypeWorkflowUpdate,
+		SessionID: sessionID,
+		MessageID: generateMessageID(),
+		Timestamp: time.Now(),
+		Data: map[string]interface{}{
+			"step":     step,
+			"mode":     mode,
+			"agents":   agents,
+			"message":  message,
+			"metadata": metadata,
 		},
 	}
 }

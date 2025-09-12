@@ -7,10 +7,11 @@ class AgenticChatApp {
         this.currentAgent = null;
         this.agents = [];
         this.isConnected = false;
+        this.features = { websocket: false, streaming: false };
         this.messageQueue = [];
         this.sessions = new Map();
         this.settings = {
-            serverUrl: window.location.origin.replace('http', 'ws'),
+            serverUrl: null,
             autoReconnect: true,
             reconnectDelay: 3000,
             maxReconnectAttempts: 5,
@@ -18,16 +19,17 @@ class AgenticChatApp {
         };
         this.reconnectAttempts = 0;
         this.isTyping = false;
-        this.typingTimeout = null;
-        this.sendingMessage = false; // Add debouncing flag
+    this.typingTimeout = null;
+    this.sendingMessage = false; // Add debouncing flag
+    this.activeStreams = new Map(); // key: agentName -> { el, content, lastIndex }
         
         this.init();
     }
 
     init() {
         this.setupEventListeners();
-        this.loadSettings();
-        this.connect();
+    this.loadSettings();
+    this.fetchConfig().then(() => this.connect());
         this.loadAgents();
         this.loadSessions();
     }
@@ -85,28 +87,30 @@ class AgenticChatApp {
     }
 
     connect() {
-        // For now, skip WebSocket connection and work in HTTP-only mode
-        console.log('Running in HTTP-only mode (WebSocket disabled for demo)');
-        this.isConnected = false; // Keep false since we're using HTTP API
-        this.updateConnectionStatus(false);
-        return;
-        
-        /* WebSocket connection code - disabled for demo
+        // Use HTTP-only mode if server doesn't advertise websocket
+        if (!this.features.websocket) {
+            console.info('[WebUI] Running in HTTP-only mode (WebSocket disabled by server config)');
+            this.isConnected = false;
+            this.updateConnectionStatus(false);
+            return;
+        }
+
         if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
             return;
         }
 
-        const wsUrl = `${this.settings.serverUrl}/ws`;
-        console.log('Connecting to WebSocket:', wsUrl);
+        const wsProto = window.location.protocol === 'https:' ? 'wss' : 'ws';
+        const wsUrl = `${wsProto}://${window.location.host}/ws`;
+        this.settings.serverUrl = `${wsProto}://${window.location.host}`;
+    console.info('[WebUI] Connecting to WebSocket:', wsUrl);
 
         try {
             this.websocket = new WebSocket(wsUrl);
             this.setupWebSocketHandlers();
         } catch (error) {
-            console.error('Failed to create WebSocket connection:', error);
+            console.error('[WebUI] Failed to create WebSocket connection:', error);
             this.handleConnectionError();
         }
-        */
     }
 
     setupWebSocketHandlers() {
@@ -117,9 +121,9 @@ class AgenticChatApp {
             this.updateConnectionStatus(true);
             this.processMessageQueue();
             
-            // Create initial session if none exists
+            // Request initial session from server if none exists
             if (!this.currentSessionId) {
-                this.createNewSession();
+                this.sendSessionCreate();
             }
         };
 
@@ -152,17 +156,23 @@ class AgenticChatApp {
         console.log('Received message:', message);
 
         switch (message.type) {
-            case 'session_created':
-                this.handleSessionCreated(message);
+            case 'session_status':
+                this.handleSessionStatus(message);
                 break;
             case 'agent_response':
                 this.handleAgentResponse(message);
                 break;
-            case 'agent_response_chunk':
+            case 'agent_chunk':
                 this.handleAgentResponseChunk(message);
                 break;
-            case 'agent_response_complete':
+            case 'agent_complete':
                 this.handleAgentResponseComplete(message);
+                break;
+            case 'agent_progress':
+                this.showTypingIndicator();
+                break;
+            case 'agent_error':
+                this.handleError({ message: (message.data && message.data.message) || 'Agent error' });
                 break;
             case 'error':
                 this.handleError(message);
@@ -175,17 +185,22 @@ class AgenticChatApp {
         }
     }
 
-    handleSessionCreated(message) {
-        this.currentSessionId = message.session_id;
-        this.sessions.set(message.session_id, {
-            id: message.session_id,
-            messages: [],
-            title: 'New Chat',
-            created_at: new Date().toISOString(),
-            last_message_at: new Date().toISOString()
-        });
+    handleSessionStatus(message) {
+        const sessionId = (message.data && message.data.session_id) || message.session_id;
+        if (!sessionId) return;
+        this.currentSessionId = sessionId;
+        if (!this.sessions.has(sessionId)) {
+            this.sessions.set(sessionId, {
+                id: sessionId,
+                messages: [],
+                title: 'New Chat',
+                created_at: new Date().toISOString(),
+                last_message_at: new Date().toISOString()
+            });
+        }
         this.updateSessionsList();
-        this.switchToSession(message.session_id);
+        this.switchToSession(sessionId);
+        this.processMessageQueue();
     }
 
     handleAgentResponse(message) {
@@ -251,26 +266,32 @@ class AgenticChatApp {
     updateConnectionStatus(connected) {
         const statusIndicator = document.querySelector('.status-indicator');
         const statusText = document.querySelector('.status-text');
+        const headerStatus = document.querySelector('.header-status');
         
         if (!statusIndicator || !statusText) {
             return; // Elements not found, skip update
         }
         
-        // In HTTP-only mode, show "Ready" instead of connection status
-        if (!this.websocket) {
+    // In HTTP-only mode, show "Ready" instead of connection status
+        if (!this.features.websocket) {
             statusIndicator.classList.remove('disconnected');
-            statusText.textContent = 'Ready';
+            statusText.textContent = 'Ready (HTTP)';
+            if (headerStatus) headerStatus.title = 'Using HTTP API (WebSocket disabled)';
             this.hideConnectionLostBanner();
+            console.info('[WebUI] Transport mode: HTTP');
             return;
         }
         
         if (connected) {
             statusIndicator.classList.remove('disconnected');
-            statusText.textContent = 'Connected';
+            statusText.textContent = 'Connected (WebSocket)';
+            if (headerStatus) headerStatus.title = 'Using WebSocket for real-time streaming';
+            console.info('[WebUI] Transport mode: WebSocket');
             this.hideConnectionLostBanner();
         } else {
             statusIndicator.classList.add('disconnected');
             statusText.textContent = 'Disconnected';
+            if (headerStatus) headerStatus.title = 'WebSocket disconnected';
             this.showConnectionLostBanner();
         }
     }
@@ -345,8 +366,63 @@ class AgenticChatApp {
         input.style.height = 'auto';
         this.showTypingIndicator();
 
-        // Send message via HTTP API (since WebSocket might not be implemented for chat yet)
-        this.sendMessageToAgent(message);
+        // Send via WS if connected, else HTTP fallback
+        if (this.websocket && this.isConnected) {
+            console.debug('[WebUI] Sending message via WebSocket');
+            this.sendMessageWS(message);
+        } else {
+            console.debug('[WebUI] Sending message via HTTP POST /api/chat');
+            this.sendMessageToAgent(message);
+        }
+    }
+
+    sendSessionCreate() {
+        if (!this.websocket) return;
+        const msg = {
+            type: 'session_create',
+            session_id: '',
+            message_id: this.generateId(),
+            timestamp: new Date().toISOString(),
+            data: { user_agent: navigator.userAgent }
+        };
+    console.debug('[WebUI] Sending session_create');
+    this.websocket.send(JSON.stringify(msg));
+    }
+
+    sendMessageWS(message) {
+        if (!this.websocket) return;
+        const payload = {
+            type: 'chat_message',
+            session_id: this.currentSessionId || '',
+            message_id: this.generateId(),
+            timestamp: new Date().toISOString(),
+            data: { content: message, message_type: 'text' }
+        };
+        if (this.isConnected && this.currentSessionId) {
+            console.debug('[WebUI] chat_message sent over WebSocket');
+            this.websocket.send(JSON.stringify(payload));
+        } else {
+            this.messageQueue.push(payload);
+            if (!this.currentSessionId) this.sendSessionCreate();
+        }
+    }
+
+    async fetchConfig() {
+        try {
+            const res = await fetch('/api/config');
+            const cfg = await res.json();
+            if (cfg && cfg.status === 'success' && cfg.data && cfg.data.features) {
+                this.features.websocket = !!cfg.data.features.websocket;
+                this.features.streaming = !!cfg.data.features.streaming;
+            }
+        } catch (e) {
+            this.features.websocket = false;
+            this.features.streaming = false;
+        }
+    }
+
+    generateId() {
+        return 'msg_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
     }
 
     async sendMessageToAgent(message) {
@@ -484,14 +560,45 @@ class AgenticChatApp {
     }
 
     updateStreamingMessage(chunkData) {
-        // Implementation for handling streaming responses
-        // This would update a message in real-time as chunks arrive
-        console.log('Streaming chunk:', chunkData);
+        const agentName = (chunkData.data && chunkData.data.agent_name) || chunkData.agent_name || 'Agent';
+        const content = (chunkData.data && chunkData.data.content) || chunkData.content || '';
+        const chunkIndex = (chunkData.data && chunkData.data.chunk_index) || chunkData.chunk_index || 0;
+
+        let stream = this.activeStreams.get(agentName);
+        if (!stream) {
+            const messagesContainer = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message agent streaming';
+            const timestamp = new Date().toISOString();
+            messageDiv.innerHTML = `
+                <div class="message-header">
+                    <div class="message-avatar">${agentName[0].toUpperCase()}</div>
+                    <span class="message-sender">${agentName}</span>
+                    <span class="message-time">${new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+                <div class="message-content"></div>
+            `;
+            messagesContainer.appendChild(messageDiv);
+            this.scrollToBottom();
+            stream = { el: messageDiv.querySelector('.message-content'), content: '', lastIndex: -1 };
+            this.activeStreams.set(agentName, stream);
+        }
+        if (chunkIndex <= stream.lastIndex) {
+            // out-of-order or duplicate
+        }
+        stream.content += content;
+        stream.lastIndex = chunkIndex;
+        stream.el.textContent = stream.content;
     }
 
     finalizeStreamingMessage(data) {
-        // Implementation for finalizing streaming responses
-        console.log('Streaming complete:', data);
+        const agentName = (data.data && data.data.agent_name) || data.agent_name || 'Agent';
+        const stream = this.activeStreams.get(agentName);
+        if (stream) {
+            const parent = stream.el.closest('.message');
+            if (parent) parent.classList.remove('streaming');
+            this.activeStreams.delete(agentName);
+        }
     }
 
     scrollToBottom() {

@@ -35,8 +35,8 @@ type ConnectionManager struct {
 	// Logger
 	logger core.CoreLogger
 
-	// Agent system integration (will be implemented later)
-	agentRunner interface{} // placeholder for now
+	// Agent system integration (optional)
+	bridge *AgentBridge
 
 	// Context for graceful shutdown
 	ctx    context.Context
@@ -97,6 +97,11 @@ func NewConnectionManager(sessionManager *EnhancedSessionManager, logger core.Co
 		ctx:            ctx,
 		cancel:         cancel,
 	}
+}
+
+// AttachBridge connects the agent bridge to the connection manager (optional)
+func (cm *ConnectionManager) AttachBridge(bridge *AgentBridge) {
+	cm.bridge = bridge
 }
 
 // Start begins the connection manager's main loop
@@ -228,7 +233,7 @@ func (cm *ConnectionManager) GetConnectedSessions() []string {
 // Internal handler methods
 
 func (cm *ConnectionManager) handleRegister(conn *ClientConnection) {
-	log.Printf("WebSocket client connected from %s", conn.userAgent)
+	log.Printf("[WebUI] transport=websocket event=connected user_agent=%s", conn.userAgent)
 
 	// Send welcome message
 	welcome := NewSystemMessage("", "info", "Connected to AgenticGoKit WebUI")
@@ -241,7 +246,7 @@ func (cm *ConnectionManager) handleUnregister(conn *ClientConnection) {
 
 	if conn.sessionID != "" {
 		delete(cm.connections, conn.sessionID)
-		log.Printf("WebSocket client disconnected from session %s", conn.sessionID)
+		log.Printf("[WebUI] transport=websocket event=disconnected session_id=%s", conn.sessionID)
 	}
 
 	close(conn.send)
@@ -533,18 +538,56 @@ func (c *ClientConnection) handleChatMessage(msg *WebSocketMessage) {
 		return
 	}
 
-	// TODO: Integration with agent system will be implemented in future tasks
-	// For now, send a mock response
-	response := NewAgentResponse(
-		c.sessionID,
-		"MockAgent",
-		fmt.Sprintf("Received: %s", data.Content),
-		"complete",
-	)
+	if c.manager.bridge == nil {
+		// Fallback mock response
+		response := NewAgentResponse(
+			c.sessionID,
+			"MockAgent",
+			fmt.Sprintf("Received: %s", data.Content),
+			"complete",
+		)
+		c.manager.sendToConnection(c, response)
+		log.Printf("[WebUI] transport=websocket event=chat session_id=%s mode=mock", c.sessionID)
+		return
+	}
 
-	c.manager.sendToConnection(c, response)
+	// With bridge: trigger processing and forward stream to WS
+	// Start processing via bridge (HTTP handlers already use bridge for sessions)
+	go func(sessionID, content string) {
+		// Ensure a session response channel exists
+		stream := c.manager.bridge.GetResponseStream(sessionID)
 
-	log.Printf("Processed chat message in session %s", c.sessionID)
+		// Kick off processing
+		_ = c.manager.bridge.ProcessChatMessage(c.ctx, sessionID, content, map[string]interface{}{})
+
+		// Forward responses as WS messages
+		for resp := range stream {
+			switch resp.Status {
+			case "processing":
+				// Map to progress message (simple form)
+				progress := NewAgentProgress(sessionID, []AgentStatus{{
+					Name:     resp.AgentName,
+					Status:   "processing",
+					Progress: 0.0,
+					Message:  resp.Content,
+				}}, 0.0)
+				c.manager.sendToConnection(c, progress)
+			case "partial":
+				chunk := NewAgentChunk(sessionID, resp.AgentName, resp.Content, resp.ChunkIndex, resp.TotalChunks, resp.Metadata)
+				c.manager.sendToConnection(c, chunk)
+			case "complete":
+				complete := NewAgentComplete(sessionID, resp.AgentName, resp.Content, map[string]interface{}{}, resp.Metadata)
+				c.manager.sendToConnection(c, complete)
+			case "error":
+				errMsg := NewAgentError(sessionID, resp.AgentName, "AGENT_ERROR", resp.Error, resp.Metadata)
+				c.manager.sendToConnection(c, errMsg)
+			default:
+				// Fallback to generic agent response
+				generic := NewAgentResponse(sessionID, resp.AgentName, resp.Content, resp.Status)
+				c.manager.sendToConnection(c, generic)
+			}
+		}
+	}(c.sessionID, data.Content)
 }
 
 func (c *ClientConnection) handlePing(msg *WebSocketMessage) {
