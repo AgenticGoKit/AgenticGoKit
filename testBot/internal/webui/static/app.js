@@ -28,25 +28,30 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Settings panel & actions
     const settingsPanel = document.getElementById('settings-panel');
-    const openBtn = document.getElementById('open-settings');
-    const closeBtn = document.getElementById('close-settings');
+    const openSettingsBtn = document.getElementById('open-settings');
+    const closeSettingsBtn = document.getElementById('close-settings');
     const loadBtn = document.getElementById('load-config');
     const saveBtn = document.getElementById('save-config');
-    const refreshBtn = document.getElementById('refresh-diagram');
+
+    // Left Trace Pane elements
+    const tracePane = document.getElementById('trace-pane');
+    const openTraceBtn = document.getElementById('open-trace');
+    const closeTraceBtn = document.getElementById('close-trace');
     const refreshTraceBtn = document.getElementById('refresh-trace');
-    const toggleDiagCode = document.getElementById('toggle-diagram-code');
-    const toggleDiagRender = document.getElementById('toggle-diagram-render');
     const toggleTraceCode = document.getElementById('toggle-trace-code');
     const toggleTraceRender = document.getElementById('toggle-trace-render');
-    if (openBtn && settingsPanel) openBtn.addEventListener('click', () => settingsPanel.classList.add('open'));
-    if (openBtn && settingsPanel) openBtn.addEventListener('click', async () => { try { await refreshDiagram(); await refreshTrace(); } catch {} });
-    if (closeBtn && settingsPanel) closeBtn.addEventListener('click', () => settingsPanel.classList.remove('open'));
+
+    if (openSettingsBtn && settingsPanel) openSettingsBtn.addEventListener('click', () => settingsPanel.classList.add('open'));
+    if (closeSettingsBtn && settingsPanel) closeSettingsBtn.addEventListener('click', () => settingsPanel.classList.remove('open'));
     if (loadBtn) loadBtn.addEventListener('click', loadAgentflowToml);
     if (saveBtn) saveBtn.addEventListener('click', saveAgentflowToml);
-    if (refreshBtn) refreshBtn.addEventListener('click', refreshDiagram);
+
+    if (openTraceBtn && tracePane) openTraceBtn.addEventListener('click', async () => {
+        tracePane.classList.add('open');
+        try { await refreshTrace(); } catch {}
+    });
+    if (closeTraceBtn && tracePane) closeTraceBtn.addEventListener('click', () => tracePane.classList.remove('open'));
     if (refreshTraceBtn) refreshTraceBtn.addEventListener('click', refreshTrace);
-    if (toggleDiagCode) toggleDiagCode.addEventListener('click', () => setViewMode('diagram', 'code'));
-    if (toggleDiagRender) toggleDiagRender.addEventListener('click', () => setViewMode('diagram', 'render'));
     if (toggleTraceCode) toggleTraceCode.addEventListener('click', () => setViewMode('trace', 'code'));
     if (toggleTraceRender) toggleTraceRender.addEventListener('click', () => setViewMode('trace', 'render'));
 
@@ -120,51 +125,17 @@ function getViewMode(kind) {
 
 function setViewMode(kind, mode) {
     try { localStorage.setItem('viewMode:' + kind, mode); } catch {}
-    const pre = document.getElementById(kind === 'diagram' ? 'diagram-pre' : 'trace-pre');
-    const container = document.getElementById(kind === 'diagram' ? 'diagram-render' : 'trace-render');
-    if (pre && container) {
-        if (mode === 'code') { pre.classList.remove('hidden'); container.classList.add('hidden'); }
-        else { pre.classList.add('hidden'); container.classList.remove('hidden'); }
+    if (kind === 'trace') {
+        const pre = document.getElementById('trace-pre');
+        const container = document.getElementById('trace-render');
+        if (pre && container) {
+            if (mode === 'code') { pre.classList.remove('hidden'); container.classList.add('hidden'); }
+            else { pre.classList.add('hidden'); container.classList.remove('hidden'); }
+        }
     }
 }
 
-async function refreshDiagram() {
-    try {
-        const res = await fetch('/api/visualization/composition');
-        const data = await res.json();
-        const pre = document.getElementById('diagram-pre');
-        const container = document.getElementById('diagram-render');
-        if (res.ok && data.status === 'success' && data.data) {
-            const code = data.data.diagram;
-            if (pre) pre.textContent = code;
-            setViewMode('diagram', getViewMode('diagram'));
-            if (container) {
-                // Ensure Mermaid is available (dynamically load if needed)
-                const ready = await ensureMermaid();
-                if (!ready) {
-                    container.innerHTML = '<div class="muted">Mermaid is not available (CDN blocked?). The raw code is shown above.</div>';
-                } else {
-                    try {
-                        const flowId = 'flowDiagram-' + Date.now();
-                        const { svg } = await mermaid.render(flowId, code);
-                        container.innerHTML = svg;
-                        try { container.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch {}
-                    } catch (e) {
-                        container.innerHTML = '<div class="muted">Mermaid render error</div>';
-                    }
-                }
-            }
-        } else {
-            if (pre) pre.textContent = '// Failed to load diagram';
-            if (container) container.innerHTML = '';
-        }
-    } catch (e) {
-        const pre = document.getElementById('diagram-pre');
-        const container = document.getElementById('diagram-render');
-        if (pre) pre.textContent = '// Error: ' + e.message;
-        if (container) container.innerHTML = '';
-    }
-}
+// Flow diagram removed as per requirement
 
 async function refreshTrace() {
     try {

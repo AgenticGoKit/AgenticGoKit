@@ -186,6 +186,24 @@ body {
 /* Helpers */
 .hidden { display: none !important; }
 
+/* Left Debug Trace Pane */
+.left-pane {
+    position: absolute;
+    top: 40px; /* below header */
+    left: 0;
+    width: min(520px, 95vw);
+    height: calc(100vh - 40px);
+    background: var(--surface-color);
+    border-right: 1px solid var(--border-color);
+    box-shadow: var(--shadow-md);
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    z-index: 10;
+}
+.left-pane.open { transform: translateX(0); }
+
 /* Main Content */
 .main-content {
     flex: 1;

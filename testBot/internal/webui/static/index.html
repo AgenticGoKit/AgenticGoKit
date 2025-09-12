@@ -23,6 +23,7 @@
                         <span class="toggle-text">Full Workflow</span>
                     </label>
 
+                    <button id="open-trace" class="mini-btn" title="Debug Trace">📈</button>
                     <button id="open-settings" class="mini-btn" title="Config & Diagram">⚙️</button>
                 </div>
             </div>
@@ -30,6 +31,25 @@
 
         <!-- Main Content -->
         <main class="main-content">
+            <!-- Left Debug Trace Pane -->
+            <aside id="trace-pane" class="left-pane" aria-hidden="true">
+                <div class="settings-header">
+                    <h3>Debug Trace</h3>
+                    <button id="close-trace" class="mini-btn" title="Close">✖</button>
+                </div>
+                <div class="settings-body">
+                    <section class="settings-section">
+                        <div class="row-actions">
+                            <button id="refresh-trace" class="mini-btn">Refresh</button>
+                            <span class="muted">View:</span>
+                            <button id="toggle-trace-code" class="mini-btn" title="Show raw Mermaid code">Show Code</button>
+                            <button id="toggle-trace-render" class="mini-btn" title="Show rendered diagram">Show Diagram</button>
+                        </div>
+                        <pre id="trace-pre" class="diagram-pre hidden" aria-label="Mermaid trace code"></pre>
+                        <div id="trace-render" class="diagram-render" aria-label="Rendered trace"></div>
+                    </section>
+                </div>
+            </aside>
             <!-- Slide-over Settings Panel -->
             <aside id="settings-panel" class="settings-panel" aria-hidden="true">
                 <div class="settings-header">
@@ -45,28 +65,6 @@
                             <span id="config-path" class="muted"></span>
                         </div>
                         <textarea id="config-editor" class="config-editor" rows="10" placeholder="agentflow.toml will appear here..."></textarea>
-                    </section>
-                    <section class="settings-section">
-                        <h4>Flow Diagram (Mermaid)</h4>
-                        <div class="row-actions">
-                            <button id="refresh-diagram" class="mini-btn">Refresh</button>
-                            <span class="muted">View:</span>
-                            <button id="toggle-diagram-code" class="mini-btn" title="Show raw Mermaid code">Show Code</button>
-                            <button id="toggle-diagram-render" class="mini-btn" title="Show rendered diagram">Show Diagram</button>
-                        </div>
-                        <pre id="diagram-pre" class="diagram-pre hidden" aria-label="Mermaid diagram code"></pre>
-                        <div id="diagram-render" class="diagram-render" aria-label="Rendered diagram"></div>
-                    </section>
-                    <section class="settings-section">
-                        <h4>Debug Trace (Mermaid sequence)</h4>
-                        <div class="row-actions">
-                            <button id="refresh-trace" class="mini-btn">Refresh</button>
-                            <span class="muted">View:</span>
-                            <button id="toggle-trace-code" class="mini-btn" title="Show raw Mermaid code">Show Code</button>
-                            <button id="toggle-trace-render" class="mini-btn" title="Show rendered diagram">Show Diagram</button>
-                        </div>
-                        <pre id="trace-pre" class="diagram-pre hidden" aria-label="Mermaid trace code"></pre>
-                        <div id="trace-render" class="diagram-render" aria-label="Rendered trace"></div>
                     </section>
                 </div>
             </aside>

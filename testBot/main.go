@@ -65,6 +65,24 @@ func recordFlowError(sessionID, from, to, errMsg string) {
 	flowTraceMu.Unlock()
 }
 
+// getPrevFrom finds the most recent non-error edge that targeted the given agent (to) in this session
+// and returns the sender (from). If not found, returns ("", false).
+func getPrevFrom(sessionID, to string) (string, bool) {
+	flowTraceMu.Lock()
+	defer flowTraceMu.Unlock()
+	edges := flowTrace[sessionID]
+	for i := len(edges) - 1; i >= 0; i-- {
+		e := edges[i]
+		if e.IsError {
+			continue
+		}
+		if e.To == to && e.From != "" {
+			return e.From, true
+		}
+	}
+	return "", false
+}
+
 func extractMessage(event core.Event, state core.State) string {
 	// Prefer state keys, then event data
 	if state != nil {
@@ -440,6 +458,15 @@ func main() {
 
 	logger.Info().Str("message", message).Msg("Processing user message")
 
+	// Register trace hooks for CLI flow as well
+	if reg := runner.GetCallbackRegistry(); reg != nil {
+		if tl := runner.GetTraceLogger(); tl != nil {
+			if err := core.RegisterTraceHooks(reg, tl); err != nil {
+				logger.Warn().Err(err).Msg("Failed to register trace hooks in CLI path")
+			}
+		}
+	}
+
 	// Start the workflow orchestrator (non-blocking)
 	// This initializes the event processing system and prepares agents for execution
 	// TODO: Add custom pre-execution setup here
@@ -641,14 +668,14 @@ func (r *ResultCollectorHandler) Run(ctx context.Context, event core.Event, stat
 	// Examples: calculate processing time, validate output, add metrics
 	processingTime := time.Since(startTime)
 
-	// Record flow edge for debug visualization (User -> Agent input)
+	// Prepare session and target; do not record inbound edges here to avoid misleading
+	// User->AgentN hops for internal chains. We'll record the initial User->FirstAgent
+	// at the entrypoints (HTTP/WS) and rely on outbound edges from agents for chaining.
 	sessionID, _ := event.GetMetadataValue("session_id")
-	from := event.GetSourceAgentID()
-	if from == "" {
-		from = "User"
+	if sessionID == "" {
+		sessionID = "webui-session"
 	}
-	to := r.agentName
-	recordFlowEdge(sessionID, from, to, extractMessage(event, state))
+	// target agent is available as r.agentName when needed
 
 	// Extract meaningful content from the result for display
 	// This tries multiple common output keys to find the agent's response
@@ -695,19 +722,25 @@ func (r *ResultCollectorHandler) Run(ctx context.Context, event core.Event, stat
 				nextTo = fmt.Sprintf("%v", route)
 			}
 		}
-		// Prefer the content we extracted; if empty, try common keys from OutputState
-		outMsg := content
-		if outMsg == "" && result.OutputState != nil {
-			for _, key := range []string{"response", "output", "result", "content"} {
-				if v, ok := result.OutputState.Get(key); ok {
-					if s, ok2 := v.(string); ok2 && s != "" {
-						outMsg = s
-						break
+		// Do not force linearization: keep the actual route including bounces between agents.
+		// Include self-loops and all non-empty routes for full visibility
+		if nextTo == "" {
+			// do not record empty route
+		} else {
+			// Prefer the content we extracted; if empty, try common keys from OutputState
+			outMsg := content
+			if outMsg == "" && result.OutputState != nil {
+				for _, key := range []string{"response", "output", "result", "content"} {
+					if v, ok := result.OutputState.Get(key); ok {
+						if s, ok2 := v.(string); ok2 && s != "" {
+							outMsg = s
+							break
+						}
 					}
 				}
 			}
+			recordFlowEdge(sessionID, r.agentName, nextTo, outMsg)
 		}
-		recordFlowEdge(sessionID, r.agentName, nextTo, outMsg)
 		// Detect error flags from OutputState and annotate
 		if result.OutputState != nil {
 			if v, ok := result.OutputState.Get("error"); ok {
@@ -811,6 +844,17 @@ func initializeProvider(providerType string) (core.ModelProvider, error) {
 
 // WebUI Server Functions
 func startWebUI(ctx context.Context, runner core.Runner, config *core.Config) {
+	// Wire framework-native tracing hooks before starting the runner
+	if reg := runner.GetCallbackRegistry(); reg != nil {
+		if tl := runner.GetTraceLogger(); tl != nil {
+			if err := core.RegisterTraceHooks(reg, tl); err != nil {
+				log.Printf("WARN: RegisterTraceHooks failed: %v", err)
+			}
+		} else {
+			log.Printf("WARN: TraceLogger not configured; trace view may be empty")
+		}
+	}
+
 	// Start the runner for orchestration support in WebUI mode
 	log.Printf("Starting workflow orchestrator for WebUI mode")
 	runner.Start(ctx)
@@ -856,7 +900,7 @@ func startWebUI(ctx context.Context, runner core.Runner, config *core.Config) {
 	})
 	// Debug trace diagram endpoint (sequence view per session)
 	http.HandleFunc("/api/visualization/trace", func(w http.ResponseWriter, r *http.Request) {
-		handleTraceDiagram(w, r)
+		handleTraceDiagram(w, r, runner)
 	})
 	// WebSocket streaming endpoint
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
@@ -979,6 +1023,8 @@ func handleChat(w http.ResponseWriter, r *http.Request, ctx context.Context, run
 		*globalResults = []AgentOutput{}
 		globalResultsMutex.Unlock()
 
+		// Record initial User -> first agent hop for trace
+		recordFlowEdge("webui-session", "User", req.Agent, req.Message)
 		event := core.NewEvent(req.Agent, core.EventData{
 			"message":    req.Message,
 			"user_input": req.Message,
@@ -1011,6 +1057,8 @@ func handleChat(w http.ResponseWriter, r *http.Request, ctx context.Context, run
 		state.Set("message", req.Message)
 		state.Set("user_input", req.Message)
 
+		// Record initial User -> agent hop for trace
+		recordFlowEdge("webui-session", "User", req.Agent, req.Message)
 		event := core.NewEvent(req.Agent, core.EventData{
 			"message": req.Message,
 		}, map[string]string{
@@ -1114,6 +1162,8 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request, ctx context.Context
 
 			// Process in a goroutine and stream chunks
 			go func(m wsInbound) {
+				// Record initial hop
+				recordFlowEdge("webui-session", "User", m.Agent, m.Message)
 				content, status := processRequest(ctx, m.Agent, m.Message, m.UseOrchestration)
 				// Stream chunked content
 				chunks := chunkString(content, 180)
@@ -1335,25 +1385,53 @@ func handleCompositionDiagram(w http.ResponseWriter, r *http.Request, cfg *core.
 }
 
 // handleTraceDiagram returns a Mermaid sequence diagram for the captured flow trace
-func handleTraceDiagram(w http.ResponseWriter, r *http.Request) {
+func handleTraceDiagram(w http.ResponseWriter, r *http.Request, runner core.Runner) {
 	w.Header().Set("Content-Type", "application/json")
 	// session query param, default to webui-session
 	session := r.URL.Query().Get("session")
 	if session == "" {
 		session = "webui-session"
 	}
-	flowTraceMu.Lock()
-	edges := append([]FlowEdge(nil), flowTrace[session]...)
-	flowTraceMu.Unlock()
-
-	diagram, labels := buildMermaidSequenceLabeled(edges)
+	// optional linearization param (default true)
+	linear := true
+	if v := r.URL.Query().Get("linear"); v == "false" || v == "0" || strings.EqualFold(v, "no") {
+		linear = false
+	}
+	// Pull framework trace entries from runner
+	var diagram string
+	var labels []LabelInfo
+	if runner != nil {
+		if entries, err := runner.DumpTrace(session); err == nil {
+			if len(entries) > 0 {
+				diagram, labels = buildMermaidFromFrameworkTrace(entries, linear)
+			} else {
+				// Fallback to shim if no entries yet
+				flowTraceMu.Lock()
+				edges := append([]FlowEdge(nil), flowTrace[session]...)
+				flowTraceMu.Unlock()
+				diagram, labels = buildMermaidSequenceLabeled(edges)
+			}
+		} else {
+			// Fallback to shim if dump failed
+			flowTraceMu.Lock()
+			edges := append([]FlowEdge(nil), flowTrace[session]...)
+			flowTraceMu.Unlock()
+			diagram, labels = buildMermaidSequenceLabeled(edges)
+		}
+	} else {
+		// Fallback to shim if no runner
+		flowTraceMu.Lock()
+		edges := append([]FlowEdge(nil), flowTrace[session]...)
+		flowTraceMu.Unlock()
+		diagram, labels = buildMermaidSequenceLabeled(edges)
+	}
 	_ = json.NewEncoder(w).Encode(map[string]any{
 		"status": "success",
 		"data": map[string]any{
 			"session": session,
 			"diagram": diagram,
 			"labels":  labels,
-			"edges":   len(edges),
+			"edges":   len(labels),
 		},
 	})
 }
@@ -1445,4 +1523,132 @@ func escapeMermaidText(s string) string {
 	repl = strings.ReplaceAll(repl, "\"", "\\\"")
 	repl = strings.ReplaceAll(repl, "`", "'")
 	return repl
+}
+
+// buildMermaidFromFrameworkTrace converts core.Runner trace entries into a Mermaid sequence diagram.
+func buildMermaidFromFrameworkTrace(entries []core.TraceEntry, linear bool) (string, []LabelInfo) {
+	// Header and theme
+	var b strings.Builder
+	b.WriteString("%%{init: {\"theme\": \"base\", \"sequence\": {\"mirrorActors\": false}, \"themeVariables\": {\"primaryColor\": \"#eef2ff\", \"primaryTextColor\": \"#0b1021\", \"actorBorder\": \"#4c6ef5\", \"actorBkg\": \"#eef2ff\", \"noteBkgColor\": \"#fff7ed\", \"noteTextColor\": \"#92400e\"}} }%%\n")
+	b.WriteString("sequenceDiagram\n")
+	b.WriteString("  autonumber\n")
+
+	// Collect participants
+	seen := map[string]bool{"User": true}
+	order := []string{"User"}
+	// Track first agent and last agent processed
+	firstAgent := ""
+	for _, e := range entries {
+		if e.Type == "agent_start" && e.AgentID != "" {
+			if !seen[e.AgentID] {
+				seen[e.AgentID] = true
+				order = append(order, e.AgentID)
+			}
+			if firstAgent == "" {
+				firstAgent = e.AgentID
+			}
+		}
+		if e.Type == "agent_end" && e.AgentID != "" {
+			if !seen[e.AgentID] {
+				seen[e.AgentID] = true
+				order = append(order, e.AgentID)
+			}
+			// Peek route target too if non-linear rendering
+			if !linear && e.AgentResult != nil && e.AgentResult.OutputState != nil {
+				if rt, ok := e.AgentResult.OutputState.GetMeta(core.RouteMetadataKey); ok && rt != "" {
+					if !seen[rt] {
+						seen[rt] = true
+						order = append(order, rt)
+					}
+				}
+			}
+		}
+	}
+	if len(order) == 1 { // only User
+		b.WriteString("  participant User\n  participant Agent\n  User->>Agent: (no activity captured)\n")
+		return b.String(), nil
+	}
+	for _, p := range order {
+		b.WriteString("  participant " + escapeMermaidIdent(p) + "\n")
+	}
+
+	labels := []LabelInfo{}
+	counter := 0
+	// 1) Initial hop: find first agent_start and draw User -> firstAgent using state message
+	if firstAgent != "" {
+		// find the corresponding start entry to extract message/state
+		var msg string
+		for _, e := range entries {
+			if e.Type == "agent_start" && e.AgentID == firstAgent && e.State != nil {
+				for _, k := range []string{"message", "user_input", "response", "output", "result", "content"} {
+					if v, ok := e.State.Get(k); ok {
+						if s, ok2 := v.(string); ok2 && s != "" {
+							msg = s
+							break
+						}
+					}
+				}
+				if msg == "" {
+					msg = "(no message)"
+				}
+				break
+			}
+		}
+		counter++
+		lid := fmt.Sprintf("M%d", counter)
+		labels = append(labels, LabelInfo{ID: lid, From: "User", To: firstAgent, Message: msg})
+		b.WriteString("  User->>" + escapeMermaidIdent(firstAgent) + ": " + escapeMermaidText(lid) + "\n")
+	}
+
+	// 2) For each agent_end, draw agent -> next
+	// We keep a set to avoid duplicating edges if multiple end entries exist
+	for _, e := range entries {
+		if e.Type != "agent_end" || e.AgentID == "" {
+			continue
+		}
+		from := e.AgentID
+		// derive label content from AgentResult
+		var outMsg string
+		if e.AgentResult != nil && e.AgentResult.OutputState != nil {
+			for _, k := range []string{"response", "output", "message", "result", "content"} {
+				if v, ok := e.AgentResult.OutputState.Get(k); ok {
+					if s, ok2 := v.(string); ok2 && s != "" {
+						outMsg = s
+						break
+					}
+				}
+			}
+		}
+		if outMsg == "" {
+			outMsg = fmt.Sprintf("Agent %s completed", from)
+		}
+
+		// route decision
+		nextTo := "User"
+		if e.AgentResult != nil && e.AgentResult.OutputState != nil {
+			if rt, ok := e.AgentResult.OutputState.GetMeta(core.RouteMetadataKey); ok && rt != "" {
+				nextTo = fmt.Sprintf("%v", rt)
+			}
+		}
+		// Linearization: if not the first agent, or if nextTo equals a previous agent, end at User
+		if linear {
+			if from != firstAgent {
+				nextTo = "User"
+			}
+		} else {
+			// Non-linear: if nextTo is same as from (self) or empty, skip; if nextTo equals a previous sender, optionally keep or map to User
+			if nextTo == from || nextTo == "" {
+				continue
+			}
+		}
+		// Avoid showing routes to unknown system agents (like responsible_ai) in linear mode
+		if linear && nextTo != "User" && nextTo != firstAgent { /* allow agent1->agent2 only */
+		}
+		// add edge
+		counter++
+		lid := fmt.Sprintf("M%d", counter)
+		labels = append(labels, LabelInfo{ID: lid, From: from, To: nextTo, Message: outMsg})
+		b.WriteString("  " + escapeMermaidIdent(from) + "->>" + escapeMermaidIdent(nextTo) + ": " + escapeMermaidText(lid) + "\n")
+	}
+	return b.String(), labels
 }
