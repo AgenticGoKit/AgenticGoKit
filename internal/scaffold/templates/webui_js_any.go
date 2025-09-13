@@ -3,22 +3,23 @@
 
 package templates
 
-const WebUIJSTemplate = `// Agent configurations - loaded dynamically from API
+const WebUIJSTemplate = `// State
 let agents = {};
-
-// DOM elements
-let chatMessages, messageInput, chatForm, agentSelect, agentName, agentDescription;
-
-// WebSocket state
-let ws = null;
-let wsReady = false;
-let currentAgentMessageDiv = null; // container for streaming updates
-let currentAgentContentDiv = null; // content element for streaming text
 let cfgFeatures = { websocket: false, streaming: false };
 
-// Initialize the application
-document.addEventListener('DOMContentLoaded', function() {
-    // Get DOM elements
+// DOM refs
+let chatMessages, messageInput, chatForm, agentSelect, agentName, agentDescription;
+let layoutRoot, leftPane, rightPane, toggleDebugBtn, toggleConfigBtn;
+let themeSelect;
+let traceDiagramEl, traceRawEl, traceLinearCheckbox, refreshTraceBtn, traceCodeToggle;
+let configEditor, configStatus, reloadConfigBtn, saveConfigBtn;
+
+// WS
+let ws = null; let wsReady = false;
+let currentAgentMessageDiv = null; let currentAgentContentDiv = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Core chat refs
     chatMessages = document.getElementById('chat-messages');
     messageInput = document.getElementById('message-input');
     chatForm = document.getElementById('chat-form');
@@ -26,18 +27,69 @@ document.addEventListener('DOMContentLoaded', function() {
     agentName = document.getElementById('agent-name');
     agentDescription = document.getElementById('agent-description');
 
-    // Set up event listeners
+    // Layout & panes
+    layoutRoot = document.getElementById('layoutRoot');
+    leftPane = document.getElementById('leftPane');
+    rightPane = document.getElementById('rightPane');
+    toggleDebugBtn = document.getElementById('toggle-debug');
+    toggleConfigBtn = document.getElementById('toggle-config');
+    themeSelect = document.getElementById('theme-select');
+
+    // Trace
+    traceDiagramEl = document.getElementById('trace-diagram');
+    traceRawEl = document.getElementById('trace-raw');
+        traceLinearCheckbox = document.getElementById('trace-linear');
+        traceCodeToggle = document.getElementById('trace-code-toggle');
+    refreshTraceBtn = document.getElementById('refresh-trace');
+
+    // Config
+    configEditor = document.getElementById('config-editor');
+    configStatus = document.getElementById('config-status');
+    reloadConfigBtn = document.getElementById('reload-config');
+    saveConfigBtn = document.getElementById('save-config');
+
+    // Events
     chatForm.addEventListener('submit', handleSubmit);
     agentSelect.addEventListener('change', handleAgentChange);
     messageInput.addEventListener('keydown', handleKeyDown);
 
-    // Load config to set defaults, then agents and WS
+    toggleDebugBtn.addEventListener('click', () => {
+        const isHidden = leftPane.getAttribute('aria-hidden') === 'true';
+        leftPane.setAttribute('aria-hidden', isHidden ? 'false' : 'true');
+        toggleDebugBtn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+        layoutRoot.classList.toggle('left-open', isHidden);
+        if (isHidden) loadTraceDiagram();
+    });
+    toggleConfigBtn.addEventListener('click', () => {
+        const isHidden = rightPane.getAttribute('aria-hidden') === 'true';
+        rightPane.setAttribute('aria-hidden', isHidden ? 'false' : 'true');
+        toggleConfigBtn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+        layoutRoot.classList.toggle('right-open', isHidden);
+        if (isHidden && configEditor.value.trim().length === 0) loadRawConfig();
+    });
+        traceLinearCheckbox.addEventListener('change', () => loadTraceDiagram());
+    refreshTraceBtn.addEventListener('click', () => loadTraceDiagram());
+        if (traceCodeToggle) traceCodeToggle.addEventListener('change', () => applyTraceCodeVisibility());
+    reloadConfigBtn.addEventListener('click', () => loadRawConfig());
+    saveConfigBtn.addEventListener('click', () => saveRawConfig());
+
+    if (themeSelect) {
+        // Initialize from localStorage
+        const savedThemePref = localStorage.getItem('traceTheme') || 'system';
+        themeSelect.value = savedThemePref;
+        applyPageTheme(themeSelect.value);
+        themeSelect.addEventListener('change', () => {
+            localStorage.setItem('traceTheme', themeSelect.value);
+            applyPageTheme(themeSelect.value);
+            loadTraceDiagram();
+        });
+    }
+
+    // Init
     loadConfig().then(() => {
         loadAgents();
         if (cfgFeatures.websocket) connectWebSocket();
     });
-
-    // Focus input
     messageInput.focus();
 });
 
@@ -56,9 +108,7 @@ async function loadConfig() {
             cfgFeatures.websocket = !!cfg.features.websocket;
             cfgFeatures.streaming = !!cfg.features.streaming;
         }
-    } catch (e) {
-        console.debug('config fetch failed', e);
-    }
+    } catch (e) { console.debug('config fetch failed', e); }
 }
 
 function connectWebSocket() {
@@ -117,237 +167,98 @@ function connectWebSocket() {
                 return;
             }
         };
-    } catch (e) {
-        console.warn('WS init failed; will use HTTP fallback', e);
-    }
+    } catch (e) { console.warn('WS init failed; will use HTTP fallback', e); }
 }
 
-// Load agents from the API
+// Agents
 async function loadAgents() {
     try {
         const response = await fetch('/api/agents');
-        if (!response.ok) {
-            throw new Error('Failed to load agents: ' + response.status);
-        }
+        if (!response.ok) throw new Error('Failed to load agents: ' + response.status);
         const agentList = await response.json();
-        
-        // Clear existing options
         agentSelect.innerHTML = '';
         agents = {};
-        
-        // Populate agents
         agentList.forEach(agent => {
-            agents[agent.id] = {
-                name: agent.name,
-                description: agent.description
-            };
-            
-            const option = document.createElement('option');
-            option.value = agent.id;
-            option.textContent = agent.name;
-            agentSelect.appendChild(option);
+            agents[agent.id] = { name: agent.name, description: agent.description };
+            const option = document.createElement('option'); option.value = agent.id; option.textContent = agent.name; agentSelect.appendChild(option);
         });
-        
-        // Update initial agent info
         updateAgentInfo();
-        
     } catch (error) {
         console.error('Error loading agents:', error);
-        
-        // Fallback to default agents
-        agents = {
-            'agent1': { name: 'Agent1', description: 'Default agent from configuration' },
-            'agent2': { name: 'Agent2', description: 'Default agent from configuration' }
-        };
-        
+        agents = { 'agent1': { name: 'Agent1', description: 'Default agent from configuration' }, 'agent2': { name: 'Agent2', description: 'Default agent from configuration' } };
         agentSelect.innerHTML = '';
-        Object.keys(agents).forEach(agentId => {
-            const option = document.createElement('option');
-            option.value = agentId;
-            option.textContent = agents[agentId].name;
-            agentSelect.appendChild(option);
-        });
-        
+        Object.keys(agents).forEach(id => { const o = document.createElement('option'); o.value = id; o.textContent = agents[id].name; agentSelect.appendChild(o); });
         updateAgentInfo();
     }
 }
 
-// Handle form submission
+// Chat submit
 async function handleSubmit(e) {
     e.preventDefault();
-    
-    const message = messageInput.value.trim();
-    if (!message) return;
-
+    const message = messageInput.value.trim(); if (!message) return;
     const selectedAgent = agentSelect.value;
-    
-    // Clear input and disable form
+
     messageInput.value = '';
     setFormDisabled(true);
-
-    // Add user message to chat
     addMessage('user', message, 'You');
-
-    // Add typing indicator
     const typingId = addTypingIndicator(selectedAgent);
 
     try {
         const orch = document.getElementById('orchestration-mode').checked;
-
         if (wsReady && cfgFeatures.websocket) {
-            // Use WebSocket streaming path
-            console.log('Using WebSocket transport');
             removeTypingIndicator(typingId);
             const agentDisplayName = (agents[selectedAgent] && agents[selectedAgent].name) ? agents[selectedAgent].name : selectedAgent;
             const parts = beginAgentStreaming(agentDisplayName);
-            currentAgentMessageDiv = parts.container;
-            currentAgentContentDiv = parts.content;
-
-            ws.send(JSON.stringify({
-                type: 'chat',
-                agent: selectedAgent,
-                message: message,
-                useOrchestration: orch
-            }));
-            // Re-enable form in agent_complete handler
-            return;
+            currentAgentMessageDiv = parts.container; currentAgentContentDiv = parts.content;
+            ws.send(JSON.stringify({ type: 'chat', agent: selectedAgent, message, useOrchestration: orch }));
+            return; // re-enable on agent_complete
         }
-
-        // Fallback to HTTP request/response
-        console.log('Using HTTP transport');
-        const response = await fetch('/api/chat', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                message: message,
-                agent: selectedAgent,
-                useOrchestration: orch
-            })
-        });
-
-        console.log('Response status:', response.status);
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('HTTP error response:', errorText);
-            throw new Error('HTTP error! status: ' + response.status + ', body: ' + errorText);
-        }
-
+        const response = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message, agent: selectedAgent, useOrchestration: orch }) });
+        if (!response.ok) { const errorText = await response.text(); throw new Error('HTTP ' + response.status + ': ' + errorText); }
         const data = await response.json();
-        console.log('Response data:', data);
-        
-        // Remove typing indicator
         removeTypingIndicator(typingId);
-        
-        // Add agent response
         addMessage('agent', data.response, agents[selectedAgent].name);
-
     } catch (error) {
-        console.error('Error details:', error);
-        console.error('Error stack:', error.stack);
-        
-        // Remove typing indicator
+        console.error('Chat error:', error);
         removeTypingIndicator(typingId);
-        
-        // Add error message with more details
-        addMessage('agent', 'Sorry, I encountered an error: ' + error.message + '. Please check the console for more details.', 'System');
+        addMessage('agent', 'Sorry, I encountered an error: ' + error.message + '. See console for details.', 'System');
     } finally {
-        if (!(wsReady && cfgFeatures.websocket)) {
-            setFormDisabled(false);
-            messageInput.focus();
-        }
+        if (!(wsReady && cfgFeatures.websocket)) { setFormDisabled(false); messageInput.focus(); }
     }
 }
 
-// Handle agent selection change
-function handleAgentChange() {
-    updateAgentInfo();
-    messageInput.focus();
-}
+function handleAgentChange() { updateAgentInfo(); messageInput.focus(); }
+function handleKeyDown(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); chatForm.dispatchEvent(new Event('submit')); } }
 
-// Handle keyboard shortcuts
-function handleKeyDown(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        chatForm.dispatchEvent(new Event('submit'));
-    }
-}
-
-// Update agent info panel
 function updateAgentInfo() {
-    const selectedAgent = agentSelect.value;
-    const agent = agents[selectedAgent];
-    
-    if (agent) {
-        agentName.textContent = agent.name;
-        agentDescription.textContent = agent.description;
-    } else {
-        agentName.textContent = 'Loading...';
-        agentDescription.textContent = 'Loading agent information...';
-    }
+    const selectedAgent = agentSelect.value; const agent = agents[selectedAgent];
+    if (agent) { agentName.textContent = agent.name; agentDescription.textContent = agent.description; }
+    else { agentName.textContent = 'Loading...'; agentDescription.textContent = 'Loading agent information...'; }
 }
 
-// Add message to chat
+// Messages
 function addMessage(sender, content, senderName) {
-    const messageDiv = document.createElement('div');
-    messageDiv.className = 'message ' + sender;
-    
-    const contentDiv = document.createElement('div');
-    contentDiv.className = 'message-content';
-    contentDiv.textContent = content;
-    
-    const infoDiv = document.createElement('div');
-    infoDiv.className = 'message-info';
-    infoDiv.textContent = senderName + ' • ' + new Date().toLocaleTimeString();
-    
-    messageDiv.appendChild(contentDiv);
-    messageDiv.appendChild(infoDiv);
-    
-    const welcomeMessage = chatMessages.querySelector('.welcome-message');
-    if (welcomeMessage) { welcomeMessage.remove(); }
-    
-    chatMessages.appendChild(messageDiv);
-    scrollToBottom();
+    const messageDiv = document.createElement('div'); messageDiv.className = 'message ' + sender;
+    const contentDiv = document.createElement('div'); contentDiv.className = 'message-content'; contentDiv.textContent = content;
+    const infoDiv = document.createElement('div'); infoDiv.className = 'message-info'; infoDiv.textContent = senderName + ' • ' + new Date().toLocaleTimeString();
+    messageDiv.appendChild(contentDiv); messageDiv.appendChild(infoDiv);
+    const welcomeMessage = chatMessages.querySelector('.welcome-message'); if (welcomeMessage) welcomeMessage.remove();
+    chatMessages.appendChild(messageDiv); scrollToBottom();
 }
 
-// Begin an agent streaming message; returns refs to container and content element
 function beginAgentStreaming(agentDisplayName) {
-    const messageDiv = document.createElement('div');
-    messageDiv.className = 'message agent';
-
-    const contentDiv = document.createElement('div');
-    contentDiv.className = 'message-content';
-    contentDiv.textContent = '';
-
-    const infoDiv = document.createElement('div');
-    infoDiv.className = 'message-info';
-    infoDiv.textContent = agentDisplayName + ' • ' + new Date().toLocaleTimeString();
-
-    messageDiv.appendChild(contentDiv);
-    messageDiv.appendChild(infoDiv);
-
-    const welcomeMessage = chatMessages.querySelector('.welcome-message');
-    if (welcomeMessage) welcomeMessage.remove();
-
-    chatMessages.appendChild(messageDiv);
-    scrollToBottom();
-
+    const messageDiv = document.createElement('div'); messageDiv.className = 'message agent';
+    const contentDiv = document.createElement('div'); contentDiv.className = 'message-content'; contentDiv.textContent = '';
+    const infoDiv = document.createElement('div'); infoDiv.className = 'message-info'; infoDiv.textContent = agentDisplayName + ' • ' + new Date().toLocaleTimeString();
+    messageDiv.appendChild(contentDiv); messageDiv.appendChild(infoDiv);
+    const welcomeMessage = chatMessages.querySelector('.welcome-message'); if (welcomeMessage) welcomeMessage.remove();
+    chatMessages.appendChild(messageDiv); scrollToBottom();
     return { container: messageDiv, content: contentDiv };
 }
+function endAgentStreaming() { currentAgentMessageDiv = null; currentAgentContentDiv = null; }
 
-function endAgentStreaming() {
-    currentAgentMessageDiv = null;
-    currentAgentContentDiv = null;
-}
-
-// Typing indicator helpers and other utilities (kept for compatibility)
 function addTypingIndicator(agentNameKey) {
-    const typingDiv = document.createElement('div');
-    const typingId = 'typing-' + Date.now();
-    typingDiv.id = typingId;
-    typingDiv.className = 'message agent';
+    const typingDiv = document.createElement('div'); const typingId = 'typing-' + Date.now(); typingDiv.id = typingId; typingDiv.className = 'message agent';
     const agentDisplayName = (agents[agentNameKey] && agents[agentNameKey].name) ? agents[agentNameKey].name : agentNameKey;
     typingDiv.innerHTML = '<div class="message-content typing-indicator">' +
         '<span>' + agentDisplayName + ' is typing</span>' +
@@ -356,23 +267,118 @@ function addTypingIndicator(agentNameKey) {
         '<div class="typing-dot"></div>' +
         '<div class="typing-dot"></div>' +
         '</div>' +
-        '</div>';
-    chatMessages.appendChild(typingDiv);
-    scrollToBottom();
-    return typingId;
+    '</div>';
+    chatMessages.appendChild(typingDiv); scrollToBottom(); return typingId;
 }
-
-function removeTypingIndicator(typingId) {
-    const typingDiv = document.getElementById(typingId);
-    if (typingDiv) typingDiv.remove();
-}
-
-function setFormDisabled(disabled) {
-    messageInput.disabled = disabled;
-    const submitButton = chatForm.querySelector('button[type="submit"]');
-    submitButton.disabled = disabled;
-}
-
+function removeTypingIndicator(typingId) { const div = document.getElementById(typingId); if (div) div.remove(); }
+function setFormDisabled(disabled) { messageInput.disabled = disabled; chatForm.querySelector('button[type="submit"]').disabled = disabled; }
 function scrollToBottom() { chatMessages.scrollTop = chatMessages.scrollHeight; }
-function autoResize(element) { element.style.height = 'auto'; element.style.height = element.scrollHeight + 'px'; }
+
+// Trace diagram
+async function loadTraceDiagram() {
+        try {
+        if (!traceDiagramEl) return;
+            const linear = traceLinearCheckbox && traceLinearCheckbox.checked ? 'true' : 'false';
+            // Determine theme preference
+            let themePref = 'system';
+            if (themeSelect) themePref = themeSelect.value || 'system';
+            let theme = '';
+            if (themePref === 'system') {
+                const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                theme = prefersDark ? 'dark' : 'light';
+            } else {
+                theme = themePref;
+            }
+            const res = await fetch('/api/visualization/trace?linear=' + linear + '&theme=' + encodeURIComponent(theme));
+        if (!res.ok) throw new Error('Failed to load trace: ' + res.status);
+        const obj = await res.json();
+        const data = obj && obj.data ? obj.data : {};
+        const code = data.diagram || '';
+        const labels = Array.isArray(data.labels) ? data.labels : [];
+        traceRawEl.textContent = code;
+        // Render mermaid
+        try {
+            const id = 'trace_' + Date.now();
+            const out = await mermaid.render(id, code);
+            traceDiagramEl.innerHTML = out.svg;
+            if (out.bindFunctions) out.bindFunctions(traceDiagramEl);
+            // Attach label tooltips: find label texts and set title attributes
+                    try {
+                        const labelMap = new Map(labels.map(l => [String(l.id || l.ID || l.Id), l]));
+                        const svgNS = 'http://www.w3.org/2000/svg';
+                        // Mermaid renders labels as <text>M1</text>; add <title> for tooltips
+                        const texts = traceDiagramEl.querySelectorAll('text');
+                        texts.forEach(t => {
+                            const txt = (t.textContent || '').trim();
+                            if (!labelMap.has(txt)) return;
+                            const info = labelMap.get(txt);
+                            const tip = (info.message || info.Message || '').toString();
+                            if (!tip) return;
+                            // Remove existing <title>
+                            [...t.querySelectorAll('title')].forEach(el => el.remove());
+                            const titleEl = document.createElementNS(svgNS, 'title');
+                            titleEl.textContent = tip;
+                            t.appendChild(titleEl);
+                            // Also add to parent <g> if present to increase hover area
+                            const p = t.parentElement;
+                            if (p && p.namespaceURI === svgNS) {
+                                [...p.querySelectorAll(':scope > title')].forEach(el => el.remove());
+                                const titleEl2 = document.createElementNS(svgNS, 'title');
+                                titleEl2.textContent = tip;
+                                p.appendChild(titleEl2);
+                            }
+                        });
+                    } catch {}
+        } catch (mermErr) {
+            console.warn('Mermaid render failed, showing raw.', mermErr);
+            traceDiagramEl.textContent = code;
+        }
+        applyTraceCodeVisibility();
+    } catch (e) {
+        console.error('Trace load error', e);
+        traceDiagramEl.textContent = 'Failed to load trace: ' + e.message;
+    }
+}
+
+function applyPageTheme(pref) {
+    // Pref can be 'system' | 'light' | 'dark'
+    const root = document.documentElement; // <html>
+    root.classList.remove('theme-light', 'theme-dark');
+    if (pref === 'light') root.classList.add('theme-light');
+    else if (pref === 'dark') root.classList.add('theme-dark');
+    // 'system' means rely on media query variables
+}
+
+function applyTraceCodeVisibility() {
+    if (!traceCodeToggle || !traceRawEl || !traceDiagramEl) return;
+    const showCode = !!traceCodeToggle.checked;
+    traceRawEl.hidden = !showCode;
+    traceDiagramEl.style.display = showCode ? 'none' : '';
+}
+
+// Config raw editor
+async function loadRawConfig() {
+    try {
+        const res = await fetch('/api/config/raw');
+        if (!res.ok) throw new Error('Failed to load config: ' + res.status);
+        const obj = await res.json();
+        const txt = obj && obj.data && typeof obj.data.content === 'string' ? obj.data.content : '';
+        configEditor.value = txt;
+        configStatus.textContent = 'Config loaded at ' + new Date().toLocaleTimeString();
+    } catch (e) {
+        configStatus.textContent = 'Load failed: ' + e.message;
+    }
+}
+async function saveRawConfig() {
+    try {
+        const body = JSON.stringify({ toml: configEditor.value });
+        const res = await fetch('/api/config/raw', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body });
+        if (!res.ok) { const t = await res.text(); throw new Error('Save failed: ' + res.status + ' ' + t); }
+        configStatus.textContent = 'Saved at ' + new Date().toLocaleTimeString();
+        // Refresh /api/config derived features optionally
+        loadConfig();
+    } catch (e) {
+        configStatus.textContent = 'Save failed: ' + e.message;
+    }
+}
 `

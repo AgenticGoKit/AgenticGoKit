@@ -1588,6 +1588,67 @@ func createInternalDirectory(config ProjectConfig) error {
 	}
 	fmt.Printf("Created directory: %s\n", handlersDir)
 
+	// Tracing package directory
+	tracingDir := filepath.Join(internalDir, "tracing")
+	if err := os.MkdirAll(tracingDir, 0755); err != nil {
+		return fmt.Errorf("failed to create internal/tracing directory %s: %w", tracingDir, err)
+	}
+	fmt.Printf("Created directory: %s\n", tracingDir)
+
+	// Write internal/config/config.go from template
+	{
+		t, err := template.New("config_helpers").Parse(templates.ConfigHelpersTemplate)
+		if err != nil {
+			return fmt.Errorf("failed to parse config helpers template: %w", err)
+		}
+		path := filepath.Join(configDir, "config.go")
+		f, err := os.Create(path)
+		if err != nil {
+			return fmt.Errorf("failed to create %s: %w", path, err)
+		}
+		defer f.Close()
+		if err := t.Execute(f, struct{ Config ProjectConfig }{Config: config}); err != nil {
+			return fmt.Errorf("failed to execute config helpers template: %w", err)
+		}
+		fmt.Printf("Created file: %s\n", path)
+	}
+
+	// Write internal/handlers/server.go from template
+	{
+		t, err := template.New("handlers_server").Parse(templates.HandlersServerTemplate)
+		if err != nil {
+			return fmt.Errorf("failed to parse handlers server template: %w", err)
+		}
+		path := filepath.Join(handlersDir, "server.go")
+		f, err := os.Create(path)
+		if err != nil {
+			return fmt.Errorf("failed to create %s: %w", path, err)
+		}
+		defer f.Close()
+		if err := t.Execute(f, struct{ Config ProjectConfig }{Config: config}); err != nil {
+			return fmt.Errorf("failed to execute handlers server template: %w", err)
+		}
+		fmt.Printf("Created file: %s\n", path)
+	}
+
+	// Write internal/tracing/tracing.go from template
+	{
+		t, err := template.New("tracing").Parse(templates.TracingTemplate)
+		if err != nil {
+			return fmt.Errorf("failed to parse tracing template: %w", err)
+		}
+		path := filepath.Join(tracingDir, "tracing.go")
+		f, err := os.Create(path)
+		if err != nil {
+			return fmt.Errorf("failed to create %s: %w", path, err)
+		}
+		defer f.Close()
+		if err := t.Execute(f, struct{ Config ProjectConfig }{Config: config}); err != nil {
+			return fmt.Errorf("failed to execute tracing template: %w", err)
+		}
+		fmt.Printf("Created file: %s\n", path)
+	}
+
 	return nil
 }
 
