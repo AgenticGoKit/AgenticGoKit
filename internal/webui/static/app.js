@@ -898,24 +898,34 @@ class AgenticChatApp {
     }
 
     async saveAgentflowToml() {
+        const btn = document.getElementById('save-config-btn');
         try {
             const editor = document.getElementById('agentflow-editor');
-            const toml = editor ? editor.value : '';
+            const toml = editor ? (editor.value || '') : '';
+            if (!toml.trim()) { this.showError('Config is empty. Nothing to save.'); return; }
+            if (btn) btn.disabled = true;
             const res = await fetch('/api/config/raw', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ toml })
             });
-            const data = await res.json();
-            if (res.ok && data.status === 'success') {
+            // Try to parse JSON; if not JSON, fall back to text
+            let bodyText = '';
+            let data = null;
+            try { data = await res.json(); } catch {
+                try { bodyText = await res.text(); } catch {}
+            }
+            if (res.ok && data && data.status === 'success') {
                 this.showSuccess('Config saved');
             } else {
-                const msg = (data && data.message) ? data.message : 'Failed to save config';
+                const msg = (data && data.message) ? data.message : (bodyText || `Failed to save config (HTTP ${res.status})`);
                 this.showError(msg);
             }
         } catch (e) {
             console.error(e);
             this.showError('Error saving config');
+        } finally {
+            if (btn) btn.disabled = false;
         }
     }
 

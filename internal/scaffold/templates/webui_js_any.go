@@ -433,15 +433,24 @@ async function loadRawConfig() {
     }
 }
 async function saveRawConfig() {
+    const btn = saveConfigBtn;
     try {
-        const body = JSON.stringify({ toml: getConfigText() });
+        const toml = getConfigText();
+        if (!toml || toml.trim().length === 0) { configStatus.textContent = 'Nothing to save: config is empty.'; return; }
+        if (btn) btn.disabled = true;
+        configStatus.textContent = 'Saving...';
+        const body = JSON.stringify({ toml });
         const res = await fetch('/api/config/raw', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body });
-        if (!res.ok) { const t = await res.text(); throw new Error('Save failed: ' + res.status + ' ' + t); }
+        const respText = await res.text();
+        if (!res.ok) { configStatus.textContent = 'Save failed: ' + res.status + ' ' + (respText || ''); return; }
         configStatus.textContent = 'Saved at ' + new Date().toLocaleTimeString();
         // Refresh /api/config derived features optionally
         loadConfig();
     } catch (e) {
-        configStatus.textContent = 'Save failed: ' + e.message;
+        console.error('Save config error', e);
+        configStatus.textContent = 'Save failed: ' + (e && e.message ? e.message : String(e));
+    } finally {
+        if (btn) btn.disabled = false;
     }
 }
 

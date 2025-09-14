@@ -102,6 +102,8 @@ func NewServer(config ServerConfig) *Server {
 
 	// Root handler serves the main chat interface by redirecting to static/index.html
 	mux.HandleFunc("/", server.handleRoot)
+	// Favicon handler to avoid 404 noise
+	mux.HandleFunc("/favicon.ico", server.handleFavicon)
 	log.Printf("DEBUG: Root handler registered for path '/'")
 
 	// API endpoints
@@ -304,6 +306,16 @@ func (s *Server) handleRoot(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate")
 	log.Printf("DEBUG: Serving file: %s", indexPath)
 	http.ServeFile(w, r, indexPath)
+}
+
+// handleFavicon serves a tiny inline SVG favicon to avoid 404s
+func (s *Server) handleFavicon(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "image/svg+xml")
+	// Cache for a day
+	w.Header().Set("Cache-Control", "public, max-age=86400, immutable")
+	// Simple robot head-like SVG icon
+	svg := `<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><rect width="56" height="40" x="4" y="12" rx="8" ry="8" fill="#4f46e5"/><circle cx="24" cy="32" r="6" fill="#ffffff"/><circle cx="40" cy="32" r="6" fill="#ffffff"/><rect x="16" y="44" width="32" height="4" rx="2" fill="#e5e7eb"/><rect x="30" y="2" width="4" height="10" rx="2" fill="#6b7280"/></svg>`
+	_, _ = w.Write([]byte(svg))
 }
 
 // handleHealth provides a health check endpoint
