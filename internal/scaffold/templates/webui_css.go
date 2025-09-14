@@ -121,8 +121,11 @@ body { font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetic
 .send-button:hover { background:var(--primary-hover); }
 .send-button:disabled { opacity:0.5; cursor:not-allowed; }
 
-/* Config editor */
-.config-editor { width:100%; min-height:280px; background:var(--background-color); color:var(--text-primary); border:1px solid var(--border-color); border-radius:var(--radius-sm); padding:0.5rem; font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; font-size:0.9rem; }
+/* Config editor (CodeJar + Prism) */
+.config-editor { width:100%; min-height:280px; background:var(--background-color); color:var(--text-primary); border:1px solid var(--border-color); border-radius:var(--radius-sm); padding:0.75rem; font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; font-size:0.9rem; line-height:1.5; overflow:auto; white-space:pre; tab-size:2; caret-color: var(--text-primary); }
+.config-editor:focus { outline:none; box-shadow:0 0 0 3px rgba(37,99,235,0.12); }
+.config-editor[contenteditable="true"] { -webkit-user-modify: read-write-plaintext-only; }
+.config-editor code { font-family: inherit; }
 .config-status { margin-top:0.5rem; color:var(--text-secondary); }
 
 /* Typing indicator */

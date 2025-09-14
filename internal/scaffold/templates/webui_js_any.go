@@ -13,6 +13,7 @@ let layoutRoot, leftPane, rightPane, toggleDebugBtn, toggleConfigBtn;
 let themeSelect;
 let traceDiagramEl, traceRawEl, traceLinearCheckbox, refreshTraceBtn, traceCodeToggle;
 let configEditor, configStatus, reloadConfigBtn, saveConfigBtn;
+let configJar = null; // CodeJar instance for TOML editor
 
 // WS
 let ws = null; let wsReady = false;
@@ -48,6 +49,33 @@ document.addEventListener('DOMContentLoaded', () => {
     reloadConfigBtn = document.getElementById('reload-config');
     saveConfigBtn = document.getElementById('save-config');
 
+    // Initialize CodeJar + Prism for TOML highlighting (if available)
+    try {
+        let CJ = null;
+        if (typeof window.CodeJar === 'function') CJ = window.CodeJar;
+        else if (window.codejar && typeof window.codejar.CodeJar === 'function') CJ = window.codejar.CodeJar;
+        else if (typeof window.codejar === 'function') CJ = window.codejar;
+        if (CJ && window.Prism && configEditor) {
+            const highlight = function(editor) {
+                const code = editor.textContent;
+                try {
+                    const html = window.Prism.highlight(code, window.Prism.languages.toml, 'toml');
+                    editor.innerHTML = html;
+                } catch {
+                    // Fallback: plain text
+                    editor.textContent = code;
+                }
+            };
+            configJar = CJ(configEditor, highlight, { tab: '  ' });
+        } else if (window.Prism && configEditor) {
+            // As a minimal fallback, apply static highlighting once
+            try {
+                const html = window.Prism.highlight(configEditor.textContent, window.Prism.languages.toml, 'toml');
+                configEditor.innerHTML = html;
+            } catch {}
+        }
+    } catch (e) { console.debug('Code editor init failed', e); }
+
     // Events
     chatForm.addEventListener('submit', handleSubmit);
     agentSelect.addEventListener('change', handleAgentChange);
@@ -65,7 +93,10 @@ document.addEventListener('DOMContentLoaded', () => {
         rightPane.setAttribute('aria-hidden', isHidden ? 'false' : 'true');
         toggleConfigBtn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
         layoutRoot.classList.toggle('right-open', isHidden);
-        if (isHidden && configEditor.value.trim().length === 0) loadRawConfig();
+        if (isHidden) {
+            const existing = getConfigText().trim();
+            if (existing.length === 0) loadRawConfig();
+        }
     });
         traceLinearCheckbox.addEventListener('change', () => loadTraceDiagram());
     refreshTraceBtn.addEventListener('click', () => loadTraceDiagram());
@@ -78,11 +109,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const savedThemePref = localStorage.getItem('traceTheme') || 'system';
         themeSelect.value = savedThemePref;
         applyPageTheme(themeSelect.value);
+        applyPrismTheme(themeSelect.value);
         themeSelect.addEventListener('change', () => {
             localStorage.setItem('traceTheme', themeSelect.value);
             applyPageTheme(themeSelect.value);
+            applyPrismTheme(themeSelect.value);
             loadTraceDiagram();
         });
+        // If system theme is used, react to OS changes
+        try {
+            const mql = window.matchMedia('(prefers-color-scheme: dark)');
+            mql.addEventListener ? mql.addEventListener('change', () => {
+                if ((themeSelect.value || 'system') === 'system') applyPrismTheme('system');
+            }) : mql.addListener && mql.addListener(() => {
+                if ((themeSelect.value || 'system') === 'system') applyPrismTheme('system');
+            });
+        } catch {}
     }
 
     // Init
@@ -349,6 +391,27 @@ function applyPageTheme(pref) {
     // 'system' means rely on media query variables
 }
 
+function applyPrismTheme(pref) {
+    // Enable light or dark Prism theme to match app theme
+    const light = document.getElementById('prism-theme-light');
+    const dark = document.getElementById('prism-theme-dark');
+    if (!light || !dark) return;
+    let mode = pref;
+    if (pref === 'system') {
+        try {
+            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            mode = prefersDark ? 'dark' : 'light';
+        } catch { mode = 'light'; }
+    }
+    if (mode === 'dark') {
+        light.disabled = true;
+        dark.disabled = false;
+    } else {
+        light.disabled = false;
+        dark.disabled = true;
+    }
+}
+
 function applyTraceCodeVisibility() {
     if (!traceCodeToggle || !traceRawEl || !traceDiagramEl) return;
     const showCode = !!traceCodeToggle.checked;
@@ -363,7 +426,7 @@ async function loadRawConfig() {
         if (!res.ok) throw new Error('Failed to load config: ' + res.status);
         const obj = await res.json();
         const txt = obj && obj.data && typeof obj.data.content === 'string' ? obj.data.content : '';
-        configEditor.value = txt;
+        setConfigText(txt);
         configStatus.textContent = 'Config loaded at ' + new Date().toLocaleTimeString();
     } catch (e) {
         configStatus.textContent = 'Load failed: ' + e.message;
@@ -371,7 +434,7 @@ async function loadRawConfig() {
 }
 async function saveRawConfig() {
     try {
-        const body = JSON.stringify({ toml: configEditor.value });
+        const body = JSON.stringify({ toml: getConfigText() });
         const res = await fetch('/api/config/raw', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body });
         if (!res.ok) { const t = await res.text(); throw new Error('Save failed: ' + res.status + ' ' + t); }
         configStatus.textContent = 'Saved at ' + new Date().toLocaleTimeString();
@@ -380,5 +443,29 @@ async function saveRawConfig() {
     } catch (e) {
         configStatus.textContent = 'Save failed: ' + e.message;
     }
+}
+
+// Helpers to interact with CodeJar editor
+function setConfigText(txt) {
+    try {
+        if (configJar) {
+            configJar.updateCode(txt || '');
+        } else if (configEditor) {
+            const s = txt || '';
+            if (window.Prism) {
+                try { configEditor.innerHTML = window.Prism.highlight(s, window.Prism.languages.toml, 'toml'); }
+                catch { configEditor.textContent = s; }
+            } else {
+                configEditor.textContent = s;
+            }
+        }
+    } catch {}
+}
+function getConfigText() {
+    try {
+        // Read raw text from the editor element; CodeJar works on the same element
+        if (configEditor) return configEditor.textContent || '';
+    } catch {}
+    return '';
 }
 `

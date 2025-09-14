@@ -7,11 +7,19 @@ const WebUIIndexTemplate = `<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{.Config.Name}} - AI Agent Chat</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Prism themes for syntax highlighting (we toggle these via JS to match app theme) -->
+    <link id="prism-theme-light" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs/themes/prism.min.css">
+    <link id="prism-theme-dark" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs/themes/prism-okaidia.min.css">
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
     <script>mermaid.initialize({ startOnLoad: false, theme: 'base' });</script>
     <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net">
     <meta name="color-scheme" content="light dark">
     <meta name="view-transition" content="same-origin">
+    <!-- Prism core and TOML language -->
+    <script src="https://cdn.jsdelivr.net/npm/prismjs/prism.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-toml.min.js"></script>
+    <!-- CodeJar lightweight code editor (UMD build) -->
+    <script src="https://cdn.jsdelivr.net/npm/codejar@4.2.0/codejar.min.js"></script>
 </head>
 <body>
     <div class="app-container grid-layout" id="layoutRoot">
@@ -106,7 +114,7 @@ const WebUIIndexTemplate = `<!DOCTYPE html>
                 </div>
                 <div class="pane-body">
                     <label for="config-editor" class="sr-only">agentflow.toml</label>
-                    <textarea id="config-editor" spellcheck="false" class="config-editor" placeholder="agentflow.toml will load here..."></textarea>
+                    <pre id="config-editor" spellcheck="false" class="config-editor language-toml" contenteditable="true" aria-label="agentflow.toml"></pre>
                     <div id="config-status" class="config-status" role="status" aria-live="polite"></div>
                 </div>
             </aside>
