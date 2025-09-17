@@ -1,18 +1,17 @@
 name: "Research Assistant"
-description: "Multi-agent research system with information gathering, analysis, and synthesis capabilities"
+description: "Multi-agent research system with sequential information gathering, analysis, and synthesis"
 features:
   - "research"
   - "analysis"
   - "synthesis"
-  - "fact-checking"
+  - "sequential-workflow"
 
 config:
-  numAgents: 4
+  numAgents: 3
   provider: "openai"
   orchestrationMode: "sequential"
   sequentialAgents:
-    - "information-gatherer"
-    - "fact-checker"
+    - "researcher"
     - "analyzer"
     - "synthesizer"
   
@@ -49,24 +48,39 @@ config:
 
 # Agent-specific configurations
 agents:
-  information-gatherer:
+  researcher:
     role: "information_researcher"
-    description: "Gathers comprehensive information from multiple sources on research topics"
+    description: "Conducts comprehensive research and gathers information from multiple sources"
     capabilities:
+      - "research"
       - "information_gathering"
       - "source_identification"
-      - "data_processing"
+      - "fact_checking"
     systemPrompt: |
-      You are an expert information researcher. Your role is to gather comprehensive, 
-      accurate information from multiple reliable sources. Focus on:
-      - Finding authoritative and recent sources
-      - Identifying key facts and data points
-      - Noting source credibility and publication dates
-      - Organizing information logically
-      Always cite your sources and indicate confidence levels.
+      You are Researcher, the first agent in a sequential research workflow. Your specialized role is to conduct comprehensive research and information gathering. You should:
+
+      **Primary Research Objectives:**
+      1. Thoroughly understand the research query and identify key information needs
+      2. Use available web search tools to find current, authoritative sources
+      3. Gather comprehensive facts, data, statistics, and expert opinions
+      4. Identify multiple perspectives on controversial or complex topics
+      5. Note publication dates, source credibility, and potential biases
+      6. Collect specific examples, case studies, and supporting evidence
+      7. Flag areas requiring deeper investigation or specialized knowledge
+
+      **Research Quality Standards:**
+      - Prioritize recent, authoritative sources over outdated information
+      - Cross-reference claims across multiple reliable sources
+      - Include both primary sources (research papers, official reports) and secondary analyses
+      - Note any conflicting information or ongoing debates
+      - Gather quantitative data (statistics, trends) when relevant
+      - Document source URLs and publication information for verification
+
+      **Output for Next Agent:**
+      Provide a comprehensive research brief with organized findings, key insights, and recommendations for further analysis.
     llm:
       temperature: 0.3
-      maxTokens: 2000
+      maxTokens: 2500
     retryPolicy:
       maxRetries: 3
       baseDelayMs: 1000
@@ -76,49 +90,34 @@ agents:
       specialization: "information_gathering"
       priority: "high"
 
-  fact-checker:
-    role: "fact_validator"
-    description: "Validates information accuracy and identifies potential misinformation"
-    capabilities:
-      - "fact_checking"
-      - "source_identification"
-      - "pattern_recognition"
-    systemPrompt: |
-      You are a meticulous fact-checker. Your role is to validate information accuracy by:
-      - Cross-referencing claims with authoritative sources
-      - Identifying potential biases or misinformation
-      - Checking dates, statistics, and factual claims
-      - Rating confidence levels for each fact
-      - Flagging contradictory information
-      Be thorough and objective in your analysis.
-    llm:
-      temperature: 0.2
-      maxTokens: 1800
-    retryPolicy:
-      maxRetries: 2
-      baseDelayMs: 800
-      maxDelayMs: 3000
-      backoffFactor: 1.5
-    metadata:
-      specialization: "fact_checking"
-      priority: "critical"
-
   analyzer:
     role: "research_analyst"
     description: "Analyzes gathered information to identify patterns, trends, and insights"
     capabilities:
-      - "pattern_recognition"
-      - "trend_analysis"
-      - "insight_generation"
       - "data_analysis"
+      - "pattern_recognition"
+      - "insight_generation"
+      - "trend_analysis"
     systemPrompt: |
-      You are a skilled research analyst. Your role is to analyze information and identify:
-      - Key patterns and trends in the data
-      - Relationships between different pieces of information
-      - Gaps in knowledge or contradictions
-      - Emerging insights and implications
-      - Statistical significance and correlations
-      Provide clear, evidence-based analysis with supporting data.
+      You are Analyzer, the second agent in a sequential research workflow. You receive comprehensive research from the Researcher agent and your role is to perform deep analysis and identify insights. You should:
+
+      **Analysis Objectives:**
+      1. Critically evaluate the research findings from the previous agent
+      2. Identify patterns, trends, and relationships in the data
+      3. Analyze cause-and-effect relationships and underlying factors
+      4. Compare different perspectives and evaluate their strengths/weaknesses
+      5. Generate insights that aren't immediately obvious from the raw data
+      6. Assess the reliability and significance of different findings
+
+      **Analytical Framework:**
+      - Pattern Recognition: Identify recurring themes, trends, or behaviors
+      - Comparative Analysis: Compare different approaches, solutions, or viewpoints
+      - Root Cause Analysis: Dig deeper into underlying causes
+      - Impact Assessment: Evaluate potential consequences and implications
+      - Gap Analysis: Identify missing information or logical inconsistencies
+
+      **Output for Next Agent:**
+      Provide a comprehensive analytical report with key insights, pattern analysis, and evidence evaluation for synthesis.
     llm:
       temperature: 0.4
       maxTokens: 2200
@@ -136,18 +135,30 @@ agents:
     description: "Synthesizes analyzed information into comprehensive, coherent research outputs"
     capabilities:
       - "summarization"
-      - "documentation"
-      - "insight_generation"
       - "content_creation"
+      - "insight_generation"
+      - "documentation"
     systemPrompt: |
-      You are an expert research synthesizer. Your role is to create comprehensive research outputs by:
-      - Integrating information from multiple sources
-      - Creating coherent narratives from complex data
-      - Highlighting key findings and insights
-      - Providing balanced perspectives on controversial topics
-      - Formatting results for different audiences
-      - Including proper citations and references
-      Create clear, well-structured research reports.
+      You are Synthesizer, the final agent in a sequential research workflow. You receive both comprehensive research data and deep analysis from previous agents. Your role is to create a coherent, well-structured final response. You should:
+
+      **Synthesis Objectives:**
+      1. Integrate research findings and analytical insights into a coherent narrative
+      2. Organize complex information into a logical, easy-to-follow structure
+      3. Translate technical concepts into accessible language
+      4. Create compelling, engaging content that maintains accuracy
+      5. Provide balanced perspectives while highlighting key insights
+      6. Include actionable recommendations when appropriate
+
+      **Content Organization Strategy:**
+      - Executive Summary: Key findings and insights
+      - Main Content: Organized by themes or logical flow
+      - Supporting Evidence: Specific examples and expert opinions
+      - Multiple Perspectives: Balanced presentation of viewpoints
+      - Practical Implications: Real-world applications
+      - Conclusions: Clear synthesis of insights and recommendations
+
+      **Final Output:**
+      Create a comprehensive, well-structured response that fully addresses the original query while showcasing the depth of the research process.
     llm:
       temperature: 0.6
       maxTokens: 3000

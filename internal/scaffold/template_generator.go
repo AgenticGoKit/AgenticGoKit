@@ -5,7 +5,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"text/template"
 
+	"github.com/kunalkushwaha/agenticgokit/internal/scaffold/templates"
 	"gopkg.in/yaml.v3"
 )
 
@@ -257,10 +259,29 @@ func (tg *TemplateGenerator) generateEnhancedConfig(projectName string) error {
 		MCPServers:       tg.templateConfig.MCPServers,
 	}
 
-	// TODO: Parse and execute config template when implemented
-	// Avoid unused variable warning until implemented
-	_ = templateData
-	return fmt.Errorf("CompleteAgentConfigTemplate not implemented yet")
+	// Parse and execute the complete config template
+	tmpl, err := template.New("agentconfig").Funcs(template.FuncMap{
+		"printf": fmt.Sprintf,
+	}).Parse(templates.CompleteAgentConfigTemplate)
+	if err != nil {
+		return fmt.Errorf("failed to parse config template: %w", err)
+	}
+
+	// Create agentflow.toml file
+	configPath := filepath.Join(tg.projectConfig.Name, "agentflow.toml")
+	configFile, err := os.Create(configPath)
+	if err != nil {
+		return fmt.Errorf("failed to create agentflow.toml: %w", err)
+	}
+	defer configFile.Close()
+
+	// Execute template
+	if err := tmpl.Execute(configFile, templateData); err != nil {
+		return fmt.Errorf("failed to execute config template: %w", err)
+	}
+
+	fmt.Printf("Generated enhanced configuration: %s\n", configPath)
+	return nil
 }
 
 // AgentConfigData represents agent data for template generation
@@ -307,8 +328,24 @@ func (tg *TemplateGenerator) convertAgentsToConfigData() []AgentConfigData {
 
 // getGlobalLLMConfig returns global LLM configuration
 func (tg *TemplateGenerator) getGlobalLLMConfig() LLMTemplateConfig {
+	provider := tg.templateConfig.Config.Provider
+	model := "gpt-4"
+
+	// Set appropriate model based on provider
+	switch provider {
+	case "openai":
+		model = "gpt-4"
+	case "azure":
+		model = "gpt-4"
+	case "ollama":
+		model = "llama2"
+	default:
+		model = "gpt-4"
+	}
+
 	return LLMTemplateConfig{
-		Provider:    tg.templateConfig.Config.Provider,
+		Provider:    provider,
+		Model:       model,
 		Temperature: 0.7,  // Default global temperature
 		MaxTokens:   2000, // Default global max tokens
 	}

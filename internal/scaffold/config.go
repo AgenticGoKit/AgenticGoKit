@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/kunalkushwaha/agenticgokit/cmd/agentcli/version"
+	"github.com/kunalkushwaha/agenticgokit/internal/scaffold/utils"
 )
 
 // AgenticGoKitVersion represents the version of AgenticGoKit to use in generated projects
@@ -143,65 +144,9 @@ func GetAgenticGoKitVersionWithFallback() (string, string) {
 	return "v0.3.4", "fallback"
 }
 
-// AgentInfo represents information about an agent including its name and purpose
-type AgentInfo struct {
-	Name        string // User-defined name like "analyzer", "processor"
-	FileName    string // File name like "analyzer.go"
-	DisplayName string // Capitalized name like "Analyzer"
-	Purpose     string // Brief description of the agent's purpose
-	Role        string // Agent role like "collaborative", "sequential", "loop"
-}
-
-// ProjectConfig represents the configuration for creating a new AgenticGoKit project
-type ProjectConfig struct {
-	Name          string
-	NumAgents     int
-	Provider      string
-	ResponsibleAI bool
-	ErrorHandler  bool
-
-	// MCP configuration
-	MCPEnabled         bool
-	MCPProduction      bool
-	MCPTransport       string
-	WithCache          bool
-	WithMetrics        bool
-	MCPTools           []string
-	MCPServers         []string
-	CacheBackend       string
-	MetricsPort        int
-	WithLoadBalancer   bool
-	ConnectionPoolSize int
-	RetryPolicy        string
-
-	// Multi-agent orchestration configuration
-	OrchestrationMode    string
-	CollaborativeAgents  []string
-	SequentialAgents     []string
-	LoopAgent            string
-	MaxIterations        int
-	OrchestrationTimeout int
-	FailureThreshold     float64
-	MaxConcurrency       int
-
-	// Visualization configuration
-	Visualize          bool
-	VisualizeOutputDir string
-
-	// Memory/RAG configuration
-	MemoryEnabled       bool
-	MemoryProvider      string // inmemory, pgvector, weaviate
-	EmbeddingProvider   string // openai, dummy
-	EmbeddingModel      string // text-embedding-3-small, etc.
-	EmbeddingDimensions int    // Auto-calculated based on embedding model
-	RAGEnabled          bool
-	RAGChunkSize        int
-	RAGOverlap          int
-	RAGTopK             int
-	RAGScoreThreshold   float64
-	HybridSearch        bool
-	SessionMemory       bool
-}
+// Use types from the utils package for consistency
+type AgentInfo = utils.AgentInfo
+type ProjectConfig = utils.ProjectConfig
 
 // TemplateData represents the data structure passed to templates
 type TemplateData struct {
@@ -476,7 +421,7 @@ func CreateEnhancedTemplateData(config ProjectConfig, agent AgentInfo, agents []
 		PrevAgent:      prevAgent,
 		IsFirstAgent:   agentIndex == 0,
 		IsLastAgent:    agentIndex == len(agents)-1,
-		SystemPrompt:   CreateSystemPrompt(agent, agentIndex, len(agents), config.OrchestrationMode),
+		SystemPrompt:   utils.CreateSystemPrompt(agent, agentIndex, len(agents), config.OrchestrationMode),
 		RoutingComment: routingComment,
 
 		// Enhanced fields
@@ -489,38 +434,6 @@ func CreateEnhancedTemplateData(config ProjectConfig, agent AgentInfo, agents []
 		FrameworkVersion:    AgenticGoKitVersion,
 		Features:            GetEnabledFeatures(config),
 	}
-}
-
-// CreateSystemPrompt creates a system prompt for an agent based on its role and position
-func CreateSystemPrompt(agent AgentInfo, index, total int, orchestrationMode string) string {
-	basePrompt := fmt.Sprintf("You are %s, a specialized AI agent", agent.DisplayName)
-
-	// Add purpose
-	if agent.Purpose != "" {
-		basePrompt += fmt.Sprintf(" whose purpose is to %s", agent.Purpose)
-	}
-
-	// Add orchestration context
-	switch orchestrationMode {
-	case "sequential":
-		if index == 0 {
-			basePrompt += ". You are the first agent in a sequential workflow. Process the user's input and prepare it for the next agent."
-		} else if index == total-1 {
-			basePrompt += ". You are the final agent in a sequential workflow. Process the input from previous agents and provide the final response."
-		} else {
-			basePrompt += fmt.Sprintf(". You are agent %d of %d in a sequential workflow. Process the input from the previous agent and pass refined results to the next agent.", index+1, total)
-		}
-	case "collaborative":
-		basePrompt += fmt.Sprintf(". You are one of %d agents working collaboratively. Process the user's input from your unique perspective and provide your specialized analysis.", total)
-	case "loop":
-		basePrompt += ". You are part of an iterative loop workflow. Process the input and refine it through multiple iterations until the desired outcome is achieved."
-	default:
-		basePrompt += ". You are part of a route-based workflow. Process requests that are specifically routed to you based on their content or type."
-	}
-
-	basePrompt += " Always provide clear, helpful, and accurate responses."
-
-	return basePrompt
 }
 
 // Import path resolution and validation functions
