@@ -482,12 +482,18 @@ type AgentInfo struct {
 // Utility functions for ID generation
 func generateEventID() string {
 	bytes := make([]byte, 8)
-	rand.Read(bytes)
+	if _, err := rand.Read(bytes); err != nil {
+		// Fallback to timestamp-based ID if crypto/rand fails
+		return fmt.Sprintf("evt_%d", time.Now().UnixNano())
+	}
 	return fmt.Sprintf("evt_%x", bytes)
 }
 
 func generateResponseID() string {
 	bytes := make([]byte, 8)
-	rand.Read(bytes)
+	if _, err := rand.Read(bytes); err != nil {
+		// Fallback to timestamp-based ID if crypto/rand fails
+		return fmt.Sprintf("resp_%d", time.Now().UnixNano())
+	}
 	return fmt.Sprintf("resp_%x", bytes)
 }

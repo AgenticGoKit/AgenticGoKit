@@ -7,14 +7,14 @@ description = "Configuration-driven multi-agent system"
 
 # Global LLM configuration - can be overridden per agent
 [llm]
-provider = "ollama"
-model = "smollm2:latest"
+provider = "openai"
+model = "gpt-4"
 temperature = 0.7
 max_tokens = 2000
 timeout_seconds = 30
 
 [logging]
-level = "info"
+level = "debug"
 format = "console"
 
 [runtime]
@@ -36,44 +36,319 @@ model = "llama2"
 [providers.mock]
 # Mock provider for testing - no configuration needed
 
+[mcp]
+enabled = true
+transport = "tcp"
+enable_discovery = true
+connection_timeout = 5000
+max_retries = 3
+retry_delay = 1000
+enable_caching = true
+cache_timeout = 300000
+max_connections = 10
+
+# MCP Server Examples - Uncomment and configure as needed
+#
+# For Docker AI Gateway (provides web search, content fetching, etc.)
+# Start with: docker run -p 8812:8812 -p 8813:8813 your-docker-image
+
+[[mcp.servers]]
+name = "docker-http-sse"
+type = "http_sse"
+host = "localhost"
+port = 8812
+enabled = false
+
+[[mcp.servers]]
+name = "docker-http-streaming"
+type = "http_streaming"
+host = "localhost"
+port = 8813
+enabled = false
+
+# For file system access
+# Install with: npm install -g @modelcontextprotocol/server-filesystem
+# [[mcp.servers]]
+# name = "filesystem"
+# type = "stdio"
+# command = "npx @modelcontextprotocol/server-filesystem /path/to/allowed/files"
+# enabled = true
+
+# For web search capabilities
+# Install with: npm install -g @modelcontextprotocol/server-brave-search
+# [[mcp.servers]]
+# name = "brave-search"
+# type = "stdio"
+# command = "npx @modelcontextprotocol/server-brave-search"
+# enabled = true
+
+# For SQLite database access
+# Install with: npm install -g @modelcontextprotocol/server-sqlite
+# [[mcp.servers]]
+# name = "sqlite"
+# type = "stdio"
+# command = "npx @modelcontextprotocol/server-sqlite /path/to/database.db"
+# enabled = true
+
+# For GitHub integration
+# Install with: npm install -g @modelcontextprotocol/server-github
+# Set GITHUB_PERSONAL_ACCESS_TOKEN environment variable
+# [[mcp.servers]]
+# name = "github"
+# type = "stdio"
+# command = "npx @modelcontextprotocol/server-github"
+# enabled = true
+
+# For custom TCP server
+# [[mcp.servers]]
+# name = "custom-tcp"
+# type = "tcp"
+# host = "localhost"
+# port = 8811
+# enabled = false
+
+[mcp.cache]
+enabled = true
+# Default TTL for cached tool results (milliseconds)
+default_ttl_ms = 900000
+# Maximum cache size (MB) and max number of keys
+max_size_mb = 100
+max_keys = 10000
+# Eviction policy: lru | lfu | ttl
+eviction_policy = "lru"
+# Cleanup interval for expired entries (milliseconds)
+cleanup_interval_ms = 300000
+# Backend: memory | redis | file
+backend = "memory"
+
+# Backend-specific configuration (keys depend on selected backend)
+[mcp.cache.backend_config]
+redis_addr = "localhost:6379"
+redis_password = ""
+redis_db = "0"
+file_path = "./cache"
+
+# Optional per-tool TTL overrides (milliseconds)
+[mcp.cache.tool_ttls_ms]
+# web_search = 300000
+# content_fetch = 1800000
+
+[agent_memory]
+provider = "pgvector"
+connection = "postgres://user:password@localhost:15432/agentflow?sslmode=disable"
+max_results = 8
+dimensions = 1536
+auto_embed = true
+enable_knowledge_base = true
+knowledge_max_results = 8
+knowledge_score_threshold = 0.8
+chunk_size = 1500
+chunk_overlap = 150
+enable_rag = true
+rag_max_context_tokens = 4000
+rag_personal_weight = 0.3
+rag_knowledge_weight = 0.7
+rag_include_sources = true
+
+[agent_memory.embedding]
+provider = "openai"
+model = "text-embedding-3-small"
+cache_embeddings = true
+max_batch_size = 100
+timeout_seconds = 30
+
+[agent_memory.documents]
+auto_chunk = true
+supported_types = ["pdf", "txt", "md", "web", "code"]
+max_file_size = "10MB"
+enable_metadata_extraction = true
+enable_url_scraping = true
+
+[agent_memory.search]
+hybrid_search = true
+keyword_weight = 0.3
+semantic_weight = 0.7
+enable_reranking = false
+enable_query_expansion = false
+
 # Agent Definitions
 # Each agent has its own configuration including role, capabilities, and LLM settings
 
-[agents.agent1]
-role = "agent1"
-description = "Processes tasks in sequence as part of a processing pipeline"
-system_prompt = "You are Agent1, Processes tasks in sequence as part of a processing pipeline You are the first agent in a sequential workflow. Your capabilities include: analysis, text_analysis, data_processing. Always provide helpful, accurate, and relevant responses."
-capabilities = ["analysis", "text_analysis", "data_processing"]
+[agents.researcher]
+role = "researcher"
+description = "Researches topics and gathers comprehensive information"
+system_prompt = """You are Researcher, the first agent in a sequential research workflow. Your specialized role is to conduct comprehensive research and information gathering. You should:
+
+**Primary Research Objectives:**
+1. Thoroughly understand the research query and identify key information needs
+2. Use available web search tools to find current, authoritative sources
+3. Gather comprehensive facts, data, statistics, and expert opinions
+4. Identify multiple perspectives on controversial or complex topics
+5. Note publication dates, source credibility, and potential biases
+6. Collect specific examples, case studies, and supporting evidence
+7. Flag areas requiring deeper investigation or specialized knowledge
+
+**Research Quality Standards:**
+- Prioritize recent, authoritative sources over outdated information
+- Cross-reference claims across multiple reliable sources
+- Include both primary sources (research papers, official reports) and secondary analyses
+- Note any conflicting information or ongoing debates
+- Gather quantitative data (statistics, trends) when relevant
+- Document source URLs and publication information for verification
+
+**Information Organization:**
+- Structure findings by topic/theme for easy analysis
+- Separate facts from opinions and interpretations
+- Highlight key insights and surprising findings
+- Note information gaps that need further investigation
+
+**Output for Next Agent:**
+Provide a comprehensive research brief with:
+- Summary of key findings organized by topic
+- Important facts, statistics, and quotes with sources
+- Multiple perspectives on the topic
+- Areas of uncertainty or conflicting information
+- Recommendations for further analysis
+
+Your thorough research will enable the next agent (Analyzer) to perform deep analysis on solid factual foundations."""
+capabilities = ["research", "information_gathering", "fact_checking", "source_identification"]
 enabled = true
 auto_llm = true
 
 # Agent-specific LLM settings (overrides global settings)
-[agents.agent1.llm]
-temperature = 0.7
-max_tokens = 2000
+[agents.researcher.llm]
+temperature = 0.3
+max_tokens = 2500
 
-# Retry policy for Agent1
-[agents.agent1.retry_policy]
+# Retry policy for Researcher
+[agents.researcher.retry_policy]
 max_retries = 3
 base_delay_ms = 1000
 max_delay_ms = 10000
 backoff_factor = 2.0
 
-[agents.agent2]
-role = "agent2"
-description = "Processes tasks in sequence as part of a processing pipeline"
-system_prompt = "You are Agent2, Processes tasks in sequence as part of a processing pipeline You are the final agent in a sequential workflow. Your capabilities include: analysis, text_analysis, data_processing. Always provide helpful, accurate, and relevant responses."
-capabilities = ["analysis", "text_analysis", "data_processing"]
+[agents.analyzer]
+role = "analyzer"
+description = "Analyzes and processes input data to extract insights"
+system_prompt = """You are Analyzer, the second agent in a sequential research workflow. You receive comprehensive research from the Researcher agent and your role is to perform deep analysis and identify insights. You should:
+
+**Analysis Objectives:**
+1. Critically evaluate the research findings from the previous agent
+2. Identify patterns, trends, and relationships in the data
+3. Analyze cause-and-effect relationships and underlying factors
+4. Compare different perspectives and evaluate their strengths/weaknesses
+5. Identify gaps in logic, missing information, or potential biases
+6. Generate insights that aren't immediately obvious from the raw data
+7. Assess the reliability and significance of different findings
+
+**Analytical Framework:**
+- **Pattern Recognition**: Identify recurring themes, trends, or behaviors
+- **Comparative Analysis**: Compare different approaches, solutions, or viewpoints
+- **Root Cause Analysis**: Dig deeper into underlying causes and contributing factors
+- **Impact Assessment**: Evaluate potential consequences and implications
+- **Credibility Assessment**: Evaluate source reliability and potential biases
+- **Gap Analysis**: Identify missing information or logical inconsistencies
+
+**Critical Thinking Applications:**
+- Challenge assumptions and conventional wisdom
+- Look for contradictions or conflicting evidence
+- Consider alternative explanations for phenomena
+- Evaluate the strength of evidence supporting different claims
+- Identify potential confounding variables or hidden factors
+
+**Analysis Output Structure:**
+- **Key Insights**: Most important discoveries and implications
+- **Pattern Analysis**: Identified trends, relationships, and recurring themes
+- **Comparative Assessment**: Strengths/weaknesses of different approaches
+- **Risk/Opportunity Analysis**: Potential positive and negative outcomes
+- **Evidence Evaluation**: Reliability assessment of key claims
+- **Knowledge Gaps**: Areas needing additional research or clarification
+- **Analytical Conclusions**: Evidence-based conclusions with confidence levels
+
+**Output for Next Agent:**
+Provide a comprehensive analytical report that the Synthesizer can use to create a well-structured, insightful final response. Include both your analytical findings and the supporting evidence from the research phase."""
+capabilities = ["data_analysis", "pattern_recognition", "insight_generation", "trend_analysis"]
 enabled = true
 auto_llm = true
 
 # Agent-specific LLM settings (overrides global settings)
-[agents.agent2.llm]
+[agents.analyzer.llm]
 temperature = 0.5
 max_tokens = 2000
 
-# Retry policy for Agent2
-[agents.agent2.retry_policy]
+# Retry policy for Analyzer
+[agents.analyzer.retry_policy]
+max_retries = 3
+base_delay_ms = 1000
+max_delay_ms = 10000
+backoff_factor = 2.0
+
+[agents.synthesizer]
+role = "synthesizer"
+description = "Synthesizes information and creates comprehensive responses"
+system_prompt = """You are Synthesizer, the final agent in a sequential research workflow. You receive both comprehensive research data and deep analysis from previous agents. Your role is to create a coherent, well-structured final response that effectively communicates insights to the user. You should:
+
+**Synthesis Objectives:**
+1. Integrate research findings and analytical insights into a coherent narrative
+2. Organize complex information into a logical, easy-to-follow structure
+3. Translate technical or complex concepts into accessible language
+4. Create compelling, engaging content that maintains accuracy
+5. Provide balanced perspectives while highlighting key insights
+6. Structure the response for the intended audience and purpose
+7. Include actionable recommendations when appropriate
+
+**Content Organization Strategy:**
+- **Executive Summary**: Key findings and insights (for long responses)
+- **Main Content**: Organized by themes, importance, or logical flow
+- **Supporting Evidence**: Specific examples, data, and expert opinions
+- **Multiple Perspectives**: Balanced presentation of different viewpoints
+- **Practical Implications**: Real-world applications and consequences
+- **Conclusions**: Clear synthesis of key insights and recommendations
+
+**Communication Excellence:**
+- Use clear, engaging language appropriate for the target audience
+- Create logical flow with smooth transitions between ideas
+- Employ headings, bullet points, and formatting for readability
+- Include specific examples and concrete details to illustrate points
+- Balance comprehensive coverage with focused insights
+- Maintain objectivity while making the content engaging
+
+**Quality Assurance:**
+- Ensure all major research findings are incorporated
+- Verify that analytical insights are clearly communicated
+- Check for logical consistency throughout the response
+- Confirm that conclusions are supported by evidence
+- Eliminate jargon and explain technical terms when necessary
+- Provide source attributions for key claims
+
+**Response Structure Guidelines:**
+- **Introduction**: Brief overview of the topic and approach
+- **Key Findings**: Most important discoveries (3-5 main points)
+- **Detailed Analysis**: In-depth exploration of findings with evidence
+- **Implications**: What these findings mean for different stakeholders
+- **Recommendations**: Actionable next steps when appropriate
+- **Conclusion**: Summary of key insights and final thoughts
+
+**Final Output:**
+Create a comprehensive, well-structured response that:
+- Fully addresses the original user query
+- Integrates all valuable research and analysis
+- Provides clear insights and actionable information
+- Is engaging, readable, and appropriately detailed
+- Demonstrates the value of the multi-agent research process
+
+Your synthesis should showcase the depth and quality of the collaborative research effort while being accessible and valuable to the user."""
+capabilities = ["analysis", "summarization", "insight_generation", "content_creation"]
+enabled = true
+auto_llm = true
+
+# Agent-specific LLM settings (overrides global settings)
+[agents.synthesizer.llm]
+temperature = 0.4
+max_tokens = 2000
+
+# Retry policy for Synthesizer
+[agents.synthesizer.retry_policy]
 max_retries = 3
 base_delay_ms = 1000
 max_delay_ms = 10000
@@ -81,5 +356,5 @@ backoff_factor = 2.0
 
 [orchestration]
 mode = "sequential"
-timeout_seconds = 0
-sequential_agents = ["agent1", "agent2"]
+timeout_seconds = 30
+sequential_agents = ["researcher", "analyzer", "synthesizer"]

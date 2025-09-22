@@ -15,29 +15,42 @@ agents/
 ## Agent Overview
 
 
-### Agent1 (agent1.go)
+### Researcher (researcher.go)
 
-**Purpose**: Processes tasks in sequence as part of a processing pipeline
+**Purpose**: Researches topics and gathers comprehensive information
 
 **Role in Workflow**: Sequential processing - processes input from previous agents
 
 **Key Responsibilities**:
 - Process input from user messages
-- 
-- 
+- Utilize memory system for context and knowledge retrieval
+- Access external tools and services via MCP
 - Generate meaningful responses for downstream processing
 
 
-### Agent2 (agent2.go)
+### Analyzer (analyzer.go)
 
-**Purpose**: Processes tasks in sequence as part of a processing pipeline
+**Purpose**: Analyzes and processes input data to extract insights
 
 **Role in Workflow**: Sequential processing - processes input from previous agents
 
 **Key Responsibilities**:
 - Process input from previous agents
-- 
-- 
+- Utilize memory system for context and knowledge retrieval
+- Access external tools and services via MCP
+- Generate meaningful responses for downstream processing
+
+
+### Synthesizer (synthesizer.go)
+
+**Purpose**: Synthesizes information and creates comprehensive responses
+
+**Role in Workflow**: Sequential processing - processes input from previous agents
+
+**Key Responsibilities**:
+- Process input from previous agents
+- Utilize memory system for context and knowledge retrieval
+- Access external tools and services via MCP
 - Generate meaningful responses for downstream processing
 
 
@@ -148,13 +161,58 @@ Combination of collaborative and sequential processing
 ## Memory System Integration
 
 
-Memory system is not enabled for this project. To enable it, update your `agentflow.toml` configuration.
+Your agents are configured with memory capabilities:
+
+- **Storage Provider**: pgvector
+- **Embedding Model**: text-embedding-3-small
+
+- **RAG Enabled**: Yes
+- **Chunk Size**: 1500
+- **Top K Results**: 8
+
+
+### Using Memory in Agents
+
+```go
+// Store information
+err := a.memory.Store(ctx, "important information", "category", "agent_name")
+
+// Query relevant information  
+results, err := a.memory.Query(ctx, "search query", 5)
+
+// Add to chat history
+err := a.memory.AddMessage(ctx, "user", "user message")
+err := a.memory.AddMessage(ctx, "assistant", "agent response")
+```
 
 
 ## Tool Integration (MCP)
 
 
-MCP (Model Context Protocol) is not enabled for this project. To enable tool integration, update your `agentflow.toml` configuration.
+Your agents can access external tools via MCP (Model Context Protocol):
+
+### Available Tools
+Check your `agentflow.toml` for configured MCP servers and tools.
+
+### Using Tools in Agents
+
+```go
+// Get available tools
+mcpManager := agenticgokit.GetMCPManager()
+if mcpManager != nil {
+    availableTools := mcpManager.GetAvailableTools()
+    
+    // Execute a tool
+    result, err := agenticgokit.ExecuteMCPTool(ctx, "tool_name", args)
+}
+```
+
+### Tool Integration Pattern
+
+1. **LLM requests tool usage** in its response
+2. **Agent parses tool calls** from LLM response  
+3. **Agent executes tools** via MCP manager
+4. **Agent sends results back to LLM** for final response
 
 
 ## Best Practices

@@ -1002,30 +1002,6 @@ body {
     outline-offset: 2px;
 }
 
-/* Dark mode support (future enhancement) - DISABLED
-@media (prefers-color-scheme: dark) {
-    :root {
-        --background-light: #1a1a1a;
-        --background-dark: #121212;
-        --text-primary: #e8eaed;
-        --text-secondary: #9aa0a6;
-        --border-color: #3c4043;
-    }
-    
-    .chat-container,
-    .chat-messages,
-    .message.agent .message-content,
-    .settings-panel {
-        background: var(--background-dark);
-        color: var(--text-primary);
-    }
-    
-    .chat-sidebar {
-        background: var(--background-light);
-    }
-}
-*/
-
 /* EMERGENCY FIXES - FORCE VISIBILITY AND COLORS */
 .chat-main,
 .chat-messages,

@@ -11,7 +11,9 @@ testAgent is a sophisticated multi-agent workflow system that leverages multiple
 - Go 1.21 or later
 - OpenAI API key
 
+- PostgreSQL with pgvector extension
 
+- Node.js (for MCP tools)
 
 ### Installation
 
@@ -27,9 +29,21 @@ testAgent is a sophisticated multi-agent workflow system that leverages multiple
    export OPENAI_API_KEY="your-api-key"
    ```
 
+3. **Setup PostgreSQL with pgvector**:
+   ```bash
+   # Start database
+   docker compose up -d
+   
+   # Run setup script
+   ./setup.sh  # or setup.bat on Windows
+   ```
 
-
-
+4. **Setup MCP tools** (optional):
+   ```bash
+   # Install MCP servers
+   npm install -g @modelcontextprotocol/server-filesystem
+   # Add other MCP servers as needed
+   ```
 
 ### Running the System
 
@@ -89,41 +103,53 @@ model = "gpt-4"
 temperature = 0.7
 
 # Agent definitions
-[agents.agent1]
-role = "agent1"
-description = "Processes tasks in sequence as part of a processing pipeline"
-system_prompt = "You are Agent1, Processes tasks in sequence as part of a processing pipeline"
+[agents.researcher]
+role = "researcher"
+description = "Researches topics and gathers comprehensive information"
+system_prompt = "You are Researcher, Researches topics and gathers comprehensive information"
 capabilities = ["general_assistance", "processing"]
 enabled = true
 
 # Agent-specific LLM settings
-[agents.agent1.llm]
+[agents.researcher.llm]
 temperature = 0.7
 max_tokens = 2000
 
-[agents.agent2]
-role = "agent2"
-description = "Processes tasks in sequence as part of a processing pipeline"
-system_prompt = "You are Agent2, Processes tasks in sequence as part of a processing pipeline"
+[agents.analyzer]
+role = "analyzer"
+description = "Analyzes and processes input data to extract insights"
+system_prompt = "You are Analyzer, Analyzes and processes input data to extract insights"
 capabilities = ["general_assistance", "processing"]
 enabled = true
 
 # Agent-specific LLM settings
-[agents.agent2.llm]
+[agents.analyzer.llm]
+temperature = 0.7
+max_tokens = 2000
+
+[agents.synthesizer]
+role = "synthesizer"
+description = "Synthesizes information and creates comprehensive responses"
+system_prompt = "You are Synthesizer, Synthesizes information and creates comprehensive responses"
+capabilities = ["general_assistance", "processing"]
+enabled = true
+
+# Agent-specific LLM settings
+[agents.synthesizer.llm]
 temperature = 0.7
 max_tokens = 2000
 
 # Orchestration
 [orchestration]
 mode = "sequential"
-agents = ["agent1", "agent2"]
+agents = ["researcher", "analyzer", "synthesizer"]
 ```
 
 ## Architecture
 
 ### System Overview
 
-testAgent implements a sequential multi-agent architecture with 2 specialized agents:
+testAgent implements a sequential multi-agent architecture with 3 specialized agents:
 
 ```
 User Input -> Agent1 -> Agent2 -> ... -> Final Response
@@ -134,8 +160,9 @@ User Input -> Agent1 -> Agent2 -> ... -> Final Response
 ```
 testAgent/
 |-- agents/                 # Agent implementations
-|   |-- agent1.go           # Agent1 agent
-|   |-- agent2.go           # Agent2 agent
+|   |-- researcher.go           # Researcher agent
+|   |-- analyzer.go           # Analyzer agent
+|   |-- synthesizer.go           # Synthesizer agent
 |   `-- README.md           # Agent documentation
 |-- internal/               # Internal packages
 |   |-- config/             # Configuration utilities
@@ -144,37 +171,52 @@ testAgent/
 |   `-- CUSTOMIZATION.md    # Customization guide
 |-- main.go                 # Application entry point
 |-- agentflow.toml          # Main configuration file
-
+|-- docker-compose.yml        # Database services
+|-- setup.sh                 # Database setup script
 |-- agentflow.toml          # System configuration
 |-- go.mod                  # Go module definition
+|-- docker-compose.yml        # Database services
+|-- setup.sh                # Database setup script
 `-- README.md               # This file
 ```
 
 ### Agent Responsibilities
 
 
-#### Agent1 (`agents/agent1.go`)
+#### Researcher (`agents/researcher.go`)
 
-**Purpose**: Processes tasks in sequence as part of a processing pipeline
+**Purpose**: Researches topics and gathers comprehensive information
 
 **Role**: Processes initial user input and prepares data for downstream agents
 
 **Key Features**:
-- Memory not enabled
-- No tool integration
-- No RAG capabilities
+- Memory-enabled for context retention
+- Tool integration via MCP
+- RAG capabilities for knowledge retrieval
 
 
-#### Agent2 (`agents/agent2.go`)
+#### Analyzer (`agents/analyzer.go`)
 
-**Purpose**: Processes tasks in sequence as part of a processing pipeline
+**Purpose**: Analyzes and processes input data to extract insights
+
+**Role**: Processes input from previous agents and passes refined data forward
+
+**Key Features**:
+- Memory-enabled for context retention
+- Tool integration via MCP
+- RAG capabilities for knowledge retrieval
+
+
+#### Synthesizer (`agents/synthesizer.go`)
+
+**Purpose**: Synthesizes information and creates comprehensive responses
 
 **Role**: Finalizes processing and generates the final response
 
 **Key Features**:
-- Memory not enabled
-- No tool integration
-- No RAG capabilities
+- Memory-enabled for context retention
+- Tool integration via MCP
+- RAG capabilities for knowledge retrieval
 
 
 
@@ -190,12 +232,104 @@ error_handler = true         # Enhanced error handling
 
 [orchestration]
 mode = "sequential"                # Execution pattern
-agents = ["agent1", "agent2"]
+agents = ["researcher", "analyzer", "synthesizer"]
 timeout = 0
 failure_threshold = 0
 ```
 
+### Memory Configuration
 
+```toml
+[agent_memory]
+enabled = true
+provider = "pgvector"
+connection = "postgres://user:password@localhost:15432/agentflow?sslmode=disable"
+dimensions = 1536
+
+[agent_memory.embedding]
+provider = "openai"
+model = "text-embedding-3-small"
+
+
+[agent_memory.rag]
+enabled = true
+chunk_size = 1500
+chunk_overlap = 150
+top_k = 8
+score_threshold = 0.75
+hybrid_search = true
+
+
+[agent_memory.session]
+enabled = true
+
+```
+
+**Memory Features**:
+- **Storage**: PostgreSQL with pgvector
+- **Embeddings**: text-embedding-3-small via openai
+- **RAG**: Enabled with 8 top results
+- **Sessions**: Conversation context tracking
+- **Search**: Hybrid semantic + keyword search
+
+
+### Tool Integration (MCP)
+
+```toml
+[mcp]
+enabled = true
+production = true
+enable_caching = true
+enable_metrics = true
+metrics_port = 0
+
+transport = "tcp"  # tcp | stdio | websocket
+connection_pool_size = 0
+retry_policy = ""
+
+# Example MCP servers
+[[mcp.servers]]
+name = "filesystem"
+command = "npx"
+args = ["@modelcontextprotocol/server-filesystem", "/allowed/path"]
+enabled = true
+
+[[mcp.servers]]
+name = "database"
+command = "npx"
+args = ["@modelcontextprotocol/server-postgres", "postgresql://localhost/db"]
+enabled = true
+```
+
+**Available Tools**:
+- web_search
+- academic_search
+- fact_check
+- citation_formatter
+
+
+#### MCP Cache Configuration
+
+```toml
+[mcp.cache]
+enabled = true
+default_ttl_ms = 900000      # 15 minutes
+max_size_mb = 100
+max_keys = 10000
+eviction_policy = "lru"     # lru | lfu | ttl
+cleanup_interval_ms = 300000 # 5 minutes
+backend = "memory"          # memory | redis | file
+
+[mcp.cache.backend_config]
+redis_addr = "localhost:6379"
+redis_password = ""
+redis_db = "0"
+file_path = "./cache"
+
+[mcp.cache.tool_ttls_ms]
+# web_search = 300000
+# content_fetch = 1800000
+```
 
 
 
@@ -334,7 +468,14 @@ go run . -m "test" 2>&1 | jq '.'  # Pretty print JSON logs
 
 ### Metrics
 
-To enable metrics, set `enable_metrics = true` in your MCP configuration.
+Metrics are available at `http://localhost:0/metrics` when enabled.
+
+Key metrics:
+- Agent execution duration
+- Success/failure rates
+- Memory operations
+- Tool usage statistics
+
 
 ### Health Checks
 
@@ -486,7 +627,14 @@ curl -H "Authorization: Bearer $OPENAI_API_KEY" https://api.openai.com/v1/models
 
 #### 2. Memory System Issues
 
+```bash
+# Check database connection
+psql -h localhost -p 15432 -U user -d agentflow -c "SELECT 1;"
 
+
+# Check embedding model
+
+```
 
 #### 3. Agent Execution Issues
 
@@ -562,7 +710,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Built with [AgenticGoKit](https://github.com/kunalkushwaha/agenticgokit)
 - Powered by OpenAI
 
+- Memory system using PostgreSQL with pgvector
 
+- Tool integration via [Model Context Protocol](https://modelcontextprotocol.io/)
 
 ---
 

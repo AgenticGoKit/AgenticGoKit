@@ -25,6 +25,9 @@ import (
 )
 
 
+// Global memory instance for access by agents
+var memory core.Memory
+
 
 
 // Global agent handlers and shared results for WebUI access
@@ -135,7 +138,162 @@ func main() {
 	// LLM provider initialized - debug logging reduced for cleaner output
 
 	
+	// Initialize MCP (Model Context Protocol) manager for tool integration
+	// MCP allows agents to access external tools and services like file systems,
+	// databases, APIs, and other integrations defined in your agentflow.toml
+	// TODO: Customize MCP initialization for your specific tool requirements
+	// You might want to add custom tool validation, authentication, or configuration
+	// MCP initialization - debug logging reduced for cleaner output
+	mcpInitCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
 
+	var mcpManager core.MCPManager
+	mcpDone := make(chan bool, 1)
+	var mcpErr error
+
+	// Initialize MCP in a separate goroutine to handle timeouts gracefully
+	// TODO: Add custom MCP initialization logic if needed
+	go func() {
+		mcpManager, mcpErr = initializeMCP()
+		mcpDone <- true
+	}()
+
+	select {
+	case <-mcpDone:
+		if mcpErr != nil {
+			logger.Warn().Err(mcpErr).Msg("MCP initialization failed, continuing without MCP")
+			mcpManager = nil
+		}
+	case <-mcpInitCtx.Done():
+		logger.Warn().Msg("MCP initialization timed out, continuing without MCP")
+		mcpManager = nil
+		mcpErr = fmt.Errorf("MCP initialization timeout")
+	}
+
+	if mcpManager != nil {
+		// MCP manager initialized successfully - debug logging reduced
+
+		// Initialize MCP tool registry with timeout
+		registryCtx, registryCancel := context.WithTimeout(ctx, 10*time.Second)
+		defer registryCancel()
+
+		registryDone := make(chan error, 1)
+		go func() {
+			registryDone <- core.InitializeMCPToolRegistry()
+		}()
+
+		select {
+		case err := <-registryDone:
+			if err != nil {
+				logger.Warn().Err(err).Msg("Failed to initialize MCP tool registry")
+			} else {
+				// MCP tool registry initialized successfully - debug logging reduced
+			}
+		case <-registryCtx.Done():
+			logger.Warn().Msg("MCP tool registry initialization timed out")
+		}
+
+		// Register MCP tools with the registry with timeout
+		toolsCtx, toolsCancel := context.WithTimeout(ctx, 10*time.Second)
+		defer toolsCancel()
+
+		toolsDone := make(chan error, 1)
+		go func() {
+			toolsDone <- core.RegisterMCPToolsWithRegistry(toolsCtx)
+		}()
+
+		select {
+		case err := <-toolsDone:
+			if err != nil {
+				logger.Warn().Err(err).Msg("Failed to register MCP tools with registry")
+			} else {
+				// MCP tools registered with registry successfully - debug logging reduced
+			}
+		case <-toolsCtx.Done():
+			logger.Warn().Msg("MCP tools registration timed out")
+		}
+	}
+
+	
+	// Initialize MCP cache manager from agentflow.toml
+	if err := initializeCache(); err != nil {
+		logger.Warn().Err(err).Msg("MCP cache initialization failed; continuing without cache")
+	} else {
+		// MCP cache manager initialized successfully - debug logging reduced
+	}
+	
+	
+
+	
+	// Initialize the memory system for persistent storage and retrieval
+	// This enables agents to remember previous conversations, store knowledge,
+	// and perform RAG (Retrieval-Augmented Generation) operations
+	// TODO: Customize memory initialization for your specific use case
+	// You might want to add custom indexing, data preprocessing, or storage optimization
+	logger.Info().Msg("Initializing memory system...")
+	
+	// Create memory configuration from agentflow.toml settings
+	// This includes database connections, embedding models, and RAG parameters
+	// TODO: Add custom memory configuration validation or enhancement here
+	memoryConfig := config.AgentMemory
+	
+	// Validate configuration before initializing memory
+	if err := validateMemoryConfig(memoryConfig, "text-embedding-3-small"); err != nil {
+		logger.Error().Err(err).Msg("Memory configuration validation failed")
+	fmt.Printf("Configuration Error: %v\n", err)
+		os.Exit(1)
+	}
+	
+	// Memory configuration validation passed - debug logging reduced
+	
+	memory, err := core.NewMemory(memoryConfig)
+	if err != nil {
+		logger.Error().Err(err).Msg("Failed to initialize memory")
+		fmt.Printf("Memory initialization failed: %v\n", err)
+		
+		// Provide specific troubleshooting based on provider
+		switch memoryConfig.Provider {
+		case "pgvector":
+		fmt.Printf("\nTip: PostgreSQL/PgVector Troubleshooting:\n")
+			fmt.Printf("   1. Start database: docker compose up -d\n")
+			fmt.Printf("   2. Run setup script: ./setup.sh (or setup.bat on Windows)\n")
+			fmt.Printf("   3. Check connection string in agentflow.toml\n")
+			fmt.Printf("   4. Verify database exists: psql -h localhost -U user -d agentflow\n")
+		case "weaviate":
+		fmt.Printf("\nTip: Weaviate Troubleshooting:\n")
+			fmt.Printf("   1. Start Weaviate: docker compose up -d\n")
+			fmt.Printf("   2. Check Weaviate is running: curl http://localhost:8080/v1/meta\n")
+			fmt.Printf("   3. Verify connection string in agentflow.toml\n")
+		case "memory":
+			fmt.Printf("\nTip: In-Memory Provider Issue:\n")
+			fmt.Printf("   This shouldn't fail - check your configuration\n")
+		}
+		
+		// Check embedding provider availability
+		if memoryConfig.Embedding.Provider == "ollama" {
+			fmt.Printf("\nTip: Ollama Troubleshooting:\n")
+			fmt.Printf("   1. Start Ollama: ollama serve\n")
+			fmt.Printf("   2. Pull model: ollama pull %s\n", memoryConfig.Embedding.Model)
+			fmt.Printf("   3. Test connection: curl http://localhost:11434/api/tags\n")
+		} else if memoryConfig.Embedding.Provider == "openai" {
+			fmt.Printf("\nTip: OpenAI Troubleshooting:\n")
+			fmt.Printf("   1. Set API key: export OPENAI_API_KEY=\"your-key\"\n")
+			fmt.Printf("   2. Verify key is valid and has credits\n")
+		}
+		
+		os.Exit(1)
+	}
+	defer memory.Close()
+	
+	// Test memory connection
+	testContent := fmt.Sprintf("System initialized at %s", time.Now().Format("2006-01-02 15:04:05"))
+	if err := memory.Store(ctx, testContent, "system-init"); err != nil {
+		logger.Warn().Err(err).Msg("Memory connection test failed, continuing anyway")
+	fmt.Printf("Warning: Memory connection test failed: %v\n", err)
+	fmt.Printf("Agents will still work, but memory features may be limited\n")
+	} else {
+		logger.Info().Msg("Memory system ready")
+	}
 	
 
 	// Create configuration-driven agent factory
@@ -189,7 +347,7 @@ func main() {
 			agentName:       agentName,
 			outputs:         &results,
 			mutex:           &resultsMutex,
-
+			memory:          memory, // Pass memory instance to handler
 		}
 
 		agentHandlers[agentName] = wrappedAgent
@@ -508,7 +666,133 @@ func main() {
 
 
 
+func initializeMCP() (core.MCPManager, error) {
+	// Load configuration from agentflow.toml in current directory
+	config, err := core.LoadConfigFromWorkingDir()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load configuration: %w", err)
+	}
 
+	// Check if MCP is enabled in configuration
+	if !config.MCP.Enabled {
+		return nil, fmt.Errorf("MCP is not enabled in agentflow.toml")
+	}
+
+	// Convert TOML config to MCP config
+	mcpConfig := core.MCPConfig{
+		EnableDiscovery:   config.MCP.EnableDiscovery,
+		ConnectionTimeout: time.Duration(config.MCP.ConnectionTimeout) * time.Millisecond,
+		MaxRetries:        config.MCP.MaxRetries,
+		RetryDelay:        time.Duration(config.MCP.RetryDelay) * time.Millisecond,
+		EnableCaching:     config.MCP.EnableCaching,
+		CacheTimeout:      time.Duration(config.MCP.CacheTimeout) * time.Millisecond,
+		MaxConnections:    config.MCP.MaxConnections,
+		Servers:           make([]core.MCPServerConfig, len(config.MCP.Servers)),
+	}
+
+	// Convert server configurations
+	for i, server := range config.MCP.Servers {
+		mcpConfig.Servers[i] = core.MCPServerConfig{
+			Name:    server.Name,
+			Type:    server.Type,
+			Host:    server.Host,
+			Port:    server.Port,
+			Command: server.Command,
+			Enabled: server.Enabled,
+		}
+	}
+
+	// Initialize MCP manager with configuration from TOML
+	err = core.InitializeMCP(mcpConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize MCP: %w", err)
+	}
+
+	// Get the initialized MCP manager
+	manager := core.GetMCPManager()
+	if manager == nil {
+		return nil, fmt.Errorf("MCP manager not available after initialization")
+	}
+
+	return manager, nil
+}
+
+
+
+func initializeCache() error {
+	// Initialize MCP cache manager if MCP caching is enabled
+	cfg, err := core.LoadConfig("agentflow.toml")
+	if err != nil {
+		return fmt.Errorf("failed to load config for cache: %w", err)
+	}
+	if !cfg.MCP.Enabled {
+		return nil
+	}
+
+	// Only proceed if caching is enabled globally or via [mcp.cache]
+	if !(cfg.MCP.EnableCaching || cfg.MCP.Cache.Enabled) {
+		return nil
+	}
+
+	// Start from defaults and override using TOML values
+	cacheCfg := core.DefaultMCPCacheConfig()
+
+	// Global toggle
+	cacheCfg.Enabled = cfg.MCP.EnableCaching || cfg.MCP.Cache.Enabled
+
+	// TTL and cleanup
+	if cfg.MCP.Cache.DefaultTTLMS > 0 {
+		cacheCfg.DefaultTTL = time.Duration(cfg.MCP.Cache.DefaultTTLMS) * time.Millisecond
+	} else if cfg.MCP.CacheTimeout > 0 {
+		// Back-compat global cache_timeout_ms
+		cacheCfg.DefaultTTL = time.Duration(cfg.MCP.CacheTimeout) * time.Millisecond
+	}
+	if cfg.MCP.Cache.CleanupIntervalMS > 0 {
+		cacheCfg.CleanupInterval = time.Duration(cfg.MCP.Cache.CleanupIntervalMS) * time.Millisecond
+	}
+
+	// Size & keys
+	if cfg.MCP.Cache.MaxSizeMB > 0 {
+		cacheCfg.MaxSize = cfg.MCP.Cache.MaxSizeMB
+	}
+	if cfg.MCP.Cache.MaxKeys > 0 {
+		cacheCfg.MaxKeys = cfg.MCP.Cache.MaxKeys
+	}
+
+	// Policy
+	if cfg.MCP.Cache.EvictionPolicy != "" {
+		cacheCfg.EvictionPolicy = cfg.MCP.Cache.EvictionPolicy
+	}
+
+	// Backend
+	if cfg.MCP.Cache.Backend != "" {
+		cacheCfg.Backend = cfg.MCP.Cache.Backend
+	}
+	if cfg.MCP.Cache.BackendConfig != nil {
+		// Ensure map exists then copy entries
+		if cacheCfg.BackendConfig == nil {
+			cacheCfg.BackendConfig = map[string]string{}
+		}
+		for k, v := range cfg.MCP.Cache.BackendConfig {
+			cacheCfg.BackendConfig[k] = v
+		}
+	}
+
+	// Per-tool TTLs
+	if len(cfg.MCP.Cache.ToolTTLsMS) > 0 {
+		cacheCfg.ToolTTLs = map[string]time.Duration{}
+		for tool, ms := range cfg.MCP.Cache.ToolTTLsMS {
+			if ms > 0 {
+				cacheCfg.ToolTTLs[tool] = time.Duration(ms) * time.Millisecond
+			}
+		}
+	}
+
+	if err := core.InitializeMCPCacheManager(cacheCfg); err != nil {
+		return fmt.Errorf("failed to initialize MCP cache manager: %w", err)
+	}
+	return nil
+}
 
 
 // ResultCollectorHandler wraps an agent handler to capture its outputs for display.
@@ -530,7 +814,7 @@ type ResultCollectorHandler struct {
 	agentName       string
 	outputs         *[]AgentOutput
 	mutex           *sync.Mutex
-
+	memory          core.Memory // Capture memory instance instead of using global
 }
 
 // AgentOutput holds the output from an agent along with metadata.
@@ -570,6 +854,21 @@ type AgentOutput struct {
 // You might want to modify how content is extracted, add custom
 // metadata collection, or implement different storage strategies.
 func (r *ResultCollectorHandler) Run(ctx context.Context, event core.Event, state core.State) (core.AgentResult, error) {
+	// Inject memory into context so agents can access it
+	if r.memory != nil {
+		sessionID := core.GetSessionID(ctx)
+		if sessionID == "default" {
+			sessionID = core.GenerateSessionID()
+		}
+		core.DebugLogWithFields(core.Logger(), "ResultCollector: Injecting memory into context", map[string]interface{}{
+			"injecting_memory_type": fmt.Sprintf("%T", r.memory),
+			"session_id":            sessionID,
+		})
+		ctx = core.WithMemory(ctx, r.memory, sessionID)
+	} else {
+		core.Logger().Warn().Msg("ResultCollector: Handler memory is nil, agents will get NoOpMemory")
+	}
+	
 	// TODO: Add pre-execution logic here if needed
 	// Examples: start timing, log execution start, validate input
 	startTime := time.Now()
@@ -636,6 +935,102 @@ func (r *ResultCollectorHandler) Run(ctx context.Context, event core.Event, stat
 	return result, err
 }
 
+
+// validateMemoryConfig validates the memory configuration against expected values
+func validateMemoryConfig(memoryConfig core.AgentMemoryConfig, expectedModel string) error {
+	// Determine expected dimensions and model based on embedding provider
+	var expectedDimensions int
+	var expectedModelName string
+	
+	switch memoryConfig.Embedding.Provider {
+	case "openai":
+		expectedDimensions = 1536
+		expectedModelName = "text-embedding-3-small" // Default OpenAI embedding model
+	case "ollama":
+		expectedDimensions = 768
+		expectedModelName = "nomic-embed-text:latest" // Default Ollama embedding model
+	case "dummy":
+		expectedDimensions = 1536 // Default for dummy provider
+		expectedModelName = "dummy-model"
+	default:
+		return fmt.Errorf("unknown embedding provider: %s\nValid options: openai, ollama, dummy", memoryConfig.Embedding.Provider)
+	}
+	
+	// Validate embedding dimensions
+	if memoryConfig.Dimensions != expectedDimensions {
+		return fmt.Errorf("%s provider requires %d dimensions, but %d configured in agentflow.toml\nSolution: Update [agent_memory] dimensions = %d", 
+			memoryConfig.Embedding.Provider, expectedDimensions, memoryConfig.Dimensions, expectedDimensions)
+	}
+	
+	// Flexible model validation - allow if model contains core model name or is empty (will use default)
+	if memoryConfig.Embedding.Model != "" {
+		coreModelName := strings.Split(expectedModelName, ":")[0] // Handle version tags like ":latest"
+		if !strings.Contains(memoryConfig.Embedding.Model, coreModelName) {
+			return fmt.Errorf("embedding model mismatch: expected '%s' or similar, got '%s'\nSolution: Update [agent_memory.embedding] model = \"%s\"", 
+				expectedModelName, memoryConfig.Embedding.Model, expectedModelName)
+		}
+	}
+	
+	// Validate memory provider configuration
+	switch memoryConfig.Provider {
+	case "pgvector":
+		if memoryConfig.Connection == "" {
+			return fmt.Errorf("pgvector provider requires a connection string\nSolution: Set [agent_memory] connection = \"postgres://user:password@localhost:15432/agentflow?sslmode=disable\"")
+		}
+		if !strings.Contains(memoryConfig.Connection, "postgres://") {
+			return fmt.Errorf("pgvector connection string should start with 'postgres://'. Current: %s", memoryConfig.Connection)
+		}
+	case "weaviate":
+		if memoryConfig.Connection == "" {
+			return fmt.Errorf("weaviate provider requires a connection string\nSolution: Set [agent_memory] connection = \"http://localhost:8080\"")
+		}
+		if !strings.Contains(memoryConfig.Connection, "http") {
+			return fmt.Errorf("weaviate connection string should be an HTTP URL. Current: %s", memoryConfig.Connection)
+		}
+	case "memory":
+		// In-memory provider doesn't need connection validation
+	default:
+		return fmt.Errorf("unknown memory provider: %s\nValid options: memory, pgvector, weaviate", memoryConfig.Provider)
+	}
+	
+	// Validate RAG configuration if enabled
+	
+	if memoryConfig.EnableRAG {
+		if memoryConfig.ChunkSize <= 0 {
+			return fmt.Errorf("RAG chunk size must be positive, got %d\nSolution: Set [agent_memory] chunk_size = 1000", memoryConfig.ChunkSize)
+		}
+		if memoryConfig.ChunkOverlap < 0 || memoryConfig.ChunkOverlap >= memoryConfig.ChunkSize {
+			return fmt.Errorf("RAG chunk overlap must be between 0 and chunk_size (%d), got %d\nSolution: Set [agent_memory] chunk_overlap = 100", 
+				memoryConfig.ChunkSize, memoryConfig.ChunkOverlap)
+		}
+		if memoryConfig.KnowledgeScoreThreshold < 0.0 || memoryConfig.KnowledgeScoreThreshold > 1.0 {
+			return fmt.Errorf("RAG score threshold must be between 0.0 and 1.0, got %.2f\nSolution: Set [agent_memory] knowledge_score_threshold = 0.1", 
+				memoryConfig.KnowledgeScoreThreshold)
+		}
+	}
+	
+	
+	// Validate embedding provider specific settings
+	switch memoryConfig.Embedding.Provider {
+	case "ollama":
+		if memoryConfig.Embedding.BaseURL == "" {
+			return fmt.Errorf("ollama embedding provider requires base_url\nSolution: Set [agent_memory.embedding] base_url = \"http://localhost:11434\"")
+		}
+	case "openai":
+		// OpenAI uses environment variables, so we can't validate API key here
+		// But we can check if the model name looks reasonable
+		if memoryConfig.Embedding.Model != "" && !strings.Contains(memoryConfig.Embedding.Model, "embedding") {
+			return fmt.Errorf("OpenAI model '%s' doesn't look like an embedding model\nRecommended: text-embedding-3-small or text-embedding-3-large", 
+				memoryConfig.Embedding.Model)
+		}
+	case "dummy":
+		// Dummy provider doesn't need validation
+	default:
+		return fmt.Errorf("unknown embedding provider: %s\nValid options: openai, ollama, dummy", memoryConfig.Embedding.Provider)
+	}
+	
+	return nil
+}
 
 
 func initializeProvider(providerType string) (core.ModelProvider, error) {

@@ -6,11 +6,40 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sync"
 	"time"
 
 	"github.com/kunalkushwaha/agenticgokit/core"
 )
+
+// sessionIDPattern defines a safe pattern for session IDs
+// Only allows alphanumeric characters, hyphens, and underscores
+var sessionIDPattern = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
+
+// validateSessionID validates and sanitizes a session ID to prevent path traversal attacks
+func validateSessionID(sessionID string) error {
+	if sessionID == "" {
+		return fmt.Errorf("session ID cannot be empty")
+	}
+
+	// Check length limits to prevent extremely long IDs
+	if len(sessionID) > 255 {
+		return fmt.Errorf("session ID too long (max 255 characters)")
+	}
+
+	// Check for valid characters only
+	if !sessionIDPattern.MatchString(sessionID) {
+		return fmt.Errorf("session ID contains invalid characters (only alphanumeric, hyphens, and underscores allowed)")
+	}
+
+	// Additional checks for path traversal attempts
+	if sessionID == "." || sessionID == ".." {
+		return fmt.Errorf("session ID cannot be '.' or '..'")
+	}
+
+	return nil
+}
 
 // SessionStorage defines the interface for session persistence
 type SessionStorage interface {
@@ -112,6 +141,11 @@ func (s *FileStorage) Save(session *ChatSession) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	// Validate session ID to prevent path traversal attacks
+	if err := validateSessionID(session.ID); err != nil {
+		return fmt.Errorf("invalid session ID: %w", err)
+	}
+
 	filePath := filepath.Join(s.baseDir, session.ID+".json")
 
 	// Create a copy without context fields for JSON serialization
@@ -150,6 +184,11 @@ func (s *FileStorage) Save(session *ChatSession) error {
 func (s *FileStorage) Load(sessionID string) (*ChatSession, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
+
+	// Validate session ID to prevent path traversal attacks
+	if err := validateSessionID(sessionID); err != nil {
+		return nil, fmt.Errorf("invalid session ID: %w", err)
+	}
 
 	filePath := filepath.Join(s.baseDir, sessionID+".json")
 
@@ -193,6 +232,11 @@ func (s *FileStorage) Load(sessionID string) (*ChatSession, error) {
 func (s *FileStorage) Delete(sessionID string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	// Validate session ID to prevent path traversal attacks
+	if err := validateSessionID(sessionID); err != nil {
+		return fmt.Errorf("invalid session ID: %w", err)
+	}
 
 	filePath := filepath.Join(s.baseDir, sessionID+".json")
 	if err := os.Remove(filePath); err != nil && !os.IsNotExist(err) {

@@ -17,4 +17,11 @@ import (
     // Agents (configurable factory registration)
     _ "github.com/kunalkushwaha/agenticgokit/plugins/agents/configurable"
     _ "github.com/kunalkushwaha/agenticgokit/plugins/llm/openai"
+    _ "github.com/kunalkushwaha/agenticgokit/plugins/memory/pgvector"
+    // Embedding services (bridge to internal factories)
+    _ "github.com/kunalkushwaha/agenticgokit/plugins/embedding"
+    // MCP: unified transport plugin supporting all transport types
+    _ "github.com/kunalkushwaha/agenticgokit/plugins/mcp/unified"
+    _ "github.com/kunalkushwaha/agenticgokit/plugins/mcp/registry/memory"
+    _ "github.com/kunalkushwaha/agenticgokit/plugins/mcp/cache/memory"
 )

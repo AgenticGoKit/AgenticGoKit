@@ -20,7 +20,7 @@ class AgenticChatApp {
         this.reconnectAttempts = 0;
         this.isTyping = false;
     this.typingTimeout = null;
-    this.sendingMessage = false; // Add debouncing flag
+    this.sendingMessage = false; // Debouncing flag to prevent duplicate sends
     this.activeStreams = new Map(); // key: agentName -> { el, content, lastIndex }
         
         this.init();

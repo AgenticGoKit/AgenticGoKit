@@ -161,38 +161,98 @@ model = "llama2"
 ### Memory System Customization
 
 
-Memory system is not currently enabled. To add memory capabilities:
+#### Current Configuration
+- **Provider**: pgvector
+- **Embedding Model**: text-embedding-3-small
 
-1. **Enable in configuration**:
+- **RAG Enabled**: Yes
+- **Chunk Size**: 1500
+
+
+#### PostgreSQL/PgVector Setup
 ```toml
 [agent_memory]
-enabled = true
-provider = "memory"  # or "pgvector", "weaviate"
+provider = "pgvector"
+connection = "postgres://user:password@localhost:5432/agentflow?sslmode=disable"
+dimensions = 1536
+
+[agent_memory.embedding]
+provider = "openai"
+model = "text-embedding-3-small"
 ```
 
-2. **Update agent constructors** to accept memory parameter
-3. **Modify main.go** to initialize memory system
+#### Weaviate Setup
+```toml
+[agent_memory]
+provider = "weaviate"
+connection = "http://localhost:8080"
+dimensions = 1536
+
+[agent_memory.embedding]
+provider = "openai"
+model = "text-embedding-3-small"
+```
+
+#### Custom Memory Operations
+```go
+// In your agent
+func (a *YourAgentHandler) customMemoryOperation(ctx context.Context, input string) error {
+    // Store with custom metadata
+    metadata := map[string]interface{}{
+        "category": "user_query",
+        "priority": "high",
+        "timestamp": time.Now(),
+    }
+    
+    return a.memory.StoreWithMetadata(ctx, input, metadata)
+}
+```
 
 
 ### Tool Integration (MCP)
 
 
-MCP is not currently enabled. To add tool integration:
+#### Adding New Tools
 
-1. **Enable in configuration**:
+1. **Configure MCP server** in `agentflow.toml`:
 ```toml
-[mcp]
-enabled = true
-
 [[mcp.servers]]
 name = "filesystem"
 command = "npx"
-args = ["@modelcontextprotocol/server-filesystem", "/path/to/files"]
+args = ["@modelcontextprotocol/server-filesystem", "/path/to/allowed/files"]
 enabled = true
 ```
 
-2. **Update main.go** to initialize MCP manager
-3. **Modify agents** to use available tools
+2. **Use tools in agents**:
+```go
+func (a *YourAgentHandler) useCustomTool(ctx context.Context, query string) (string, error) {
+    args := map[string]interface{}{
+        "path": "/path/to/file",
+        "content": query,
+    }
+    
+    result, err := agenticgokit.ExecuteMCPTool(ctx, "write_file", args)
+    if err != nil {
+        return "", err
+    }
+    
+    return result.Content[0].Text, nil
+}
+```
+
+#### Custom Tool Validation
+```go
+func (a *YourAgentHandler) validateToolCall(toolName string, args map[string]interface{}) error {
+    // Add your validation logic
+    switch toolName {
+    case "sensitive_operation":
+        if !a.hasPermission(args["operation"]) {
+            return fmt.Errorf("insufficient permissions")
+        }
+    }
+    return nil
+}
+```
 
 
 ## 🎨 User Interface Customization

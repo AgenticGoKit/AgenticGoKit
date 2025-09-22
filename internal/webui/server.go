@@ -257,19 +257,22 @@ func (s *Server) GetURL() string {
 
 // handleRoot serves the main chat interface
 func (s *Server) handleRoot(w http.ResponseWriter, r *http.Request) {
-	log.Printf("DEBUG: handleRoot called - Method: %s, Path: %s", r.Method, r.URL.Path)
+	s.logger.Debug().
+		Str("method", r.Method).
+		Str("path", r.URL.Path).
+		Msg("handleRoot called")
 
 	if r.URL.Path != "/" {
-		log.Printf("DEBUG: Path is not '/', returning 404 for path: %s", r.URL.Path)
+		s.logger.Debug().
+			Str("path", r.URL.Path).
+			Msg("Path is not '/', returning 404")
 		http.NotFound(w, r)
 		return
 	}
 
-	log.Printf("DEBUG: handleRoot called for path: %s", r.URL.Path)
-
 	// Get current working directory for debugging
 	cwd, _ := os.Getwd()
-	log.Printf("DEBUG: Current working directory: %s", cwd)
+	s.logger.Debug().Str("cwd", cwd).Msg("Current working directory")
 
 	// Try multiple paths to find index.html
 	possiblePaths := []string{
@@ -284,20 +287,26 @@ func (s *Server) handleRoot(w http.ResponseWriter, r *http.Request) {
 
 	for _, path := range possiblePaths {
 		absPath, _ := filepath.Abs(path)
-		log.Printf("DEBUG: Trying path: %s (absolute: %s)", path, absPath)
+		s.logger.Debug().
+			Str("path", path).
+			Str("absolute_path", absPath).
+			Msg("Trying path")
 
 		if _, err := os.Stat(path); err == nil {
 			indexPath = path
 			found = true
-			log.Printf("DEBUG: SUCCESS - Found file at: %s", path)
+			s.logger.Debug().Str("path", path).Msg("SUCCESS - Found file")
 			break
 		} else {
-			log.Printf("DEBUG: File not found at %s: %v", path, err)
+			s.logger.Debug().
+				Str("path", path).
+				Err(err).
+				Msg("File not found")
 		}
 	}
 
 	if !found {
-		log.Printf("ERROR: Could not find index.html in any of the tried paths")
+		s.logger.Error().Msg("Could not find index.html in any of the tried paths")
 		http.Error(w, "index.html not found", http.StatusNotFound)
 		return
 	}
