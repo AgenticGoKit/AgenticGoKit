@@ -4,10 +4,13 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"text/template"
 
 	"github.com/kunalkushwaha/agenticgokit/internal/scaffold/templates"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"gopkg.in/yaml.v3"
 )
 
@@ -238,6 +241,121 @@ func (tg *TemplateGenerator) convertToProjectConfig(projectName string) ProjectC
 	return config
 }
 
+// formatTOMLStringArray formats a string slice as a proper TOML array
+func formatTOMLStringArray(slice []string) string {
+	if len(slice) == 0 {
+		return "[]"
+	}
+	quoted := make([]string, len(slice))
+	for i, s := range slice {
+		quoted[i] = strconv.Quote(s)
+	}
+	return "[" + strings.Join(quoted, ", ") + "]"
+}
+
+// createTemplateFuncMap creates a comprehensive function map for template execution
+func createTemplateFuncMap() template.FuncMap {
+	return template.FuncMap{
+		// String formatting functions
+		"printf": func(format string, args ...interface{}) string {
+			// Handle slice formatting specially for TOML arrays
+			if format == "%q" && len(args) == 1 {
+				if slice, ok := args[0].([]string); ok {
+					return formatTOMLStringArray(slice)
+				}
+			}
+			return fmt.Sprintf(format, args...)
+		},
+		"sprintf": fmt.Sprintf,
+
+		// String manipulation functions
+		"toString": func(v interface{}) string {
+			return fmt.Sprintf("%v", v)
+		},
+		"quote": func(s string) string {
+			return strconv.Quote(s)
+		},
+		"quoteSlice": func(slice []string) string {
+			quoted := make([]string, len(slice))
+			for i, s := range slice {
+				quoted[i] = strconv.Quote(s)
+			}
+			return "[" + strings.Join(quoted, ", ") + "]"
+		},
+
+		// Conditional functions
+		"eq": func(a, b interface{}) bool {
+			return fmt.Sprintf("%v", a) == fmt.Sprintf("%v", b)
+		},
+		"ne": func(a, b interface{}) bool {
+			return fmt.Sprintf("%v", a) != fmt.Sprintf("%v", b)
+		},
+		"lt": func(a, b interface{}) bool {
+			return fmt.Sprintf("%v", a) < fmt.Sprintf("%v", b)
+		},
+		"le": func(a, b interface{}) bool {
+			return fmt.Sprintf("%v", a) <= fmt.Sprintf("%v", b)
+		},
+		"gt": func(a, b interface{}) bool {
+			return fmt.Sprintf("%v", a) > fmt.Sprintf("%v", b)
+		},
+		"ge": func(a, b interface{}) bool {
+			return fmt.Sprintf("%v", a) >= fmt.Sprintf("%v", b)
+		},
+
+		// Logical functions
+		"and": func(args ...bool) bool {
+			for _, arg := range args {
+				if !arg {
+					return false
+				}
+			}
+			return true
+		},
+		"or": func(args ...bool) bool {
+			for _, arg := range args {
+				if arg {
+					return true
+				}
+			}
+			return false
+		},
+		"not": func(b bool) bool {
+			return !b
+		},
+
+		// Utility functions
+		"default": func(defaultValue, value interface{}) interface{} {
+			if value == nil || fmt.Sprintf("%v", value) == "" {
+				return defaultValue
+			}
+			return value
+		},
+		"empty": func(value interface{}) bool {
+			if value == nil {
+				return true
+			}
+			str := fmt.Sprintf("%v", value)
+			return str == "" || str == "<nil>"
+		},
+
+		// String processing
+		"title": func(s string) string {
+			titleCaser := cases.Title(language.English)
+			return titleCaser.String(s)
+		},
+		"upper": strings.ToUpper,
+		"lower": strings.ToLower,
+		"trim":  strings.TrimSpace,
+		"replace": func(old, new, s string) string {
+			return strings.ReplaceAll(s, old, new)
+		},
+		"join": func(sep string, elems []string) string {
+			return strings.Join(elems, sep)
+		},
+	}
+}
+
 // generateEnhancedConfig creates an enhanced agentflow.toml with agent configurations
 func (tg *TemplateGenerator) generateEnhancedConfig(projectName string) error {
 	// Prepare template data
@@ -260,9 +378,7 @@ func (tg *TemplateGenerator) generateEnhancedConfig(projectName string) error {
 	}
 
 	// Parse and execute the complete config template
-	tmpl, err := template.New("agentconfig").Funcs(template.FuncMap{
-		"printf": fmt.Sprintf,
-	}).Parse(templates.CompleteAgentConfigTemplate)
+	tmpl, err := template.New("agentconfig").Funcs(createTemplateFuncMap()).Parse(templates.CompleteAgentConfigTemplate)
 	if err != nil {
 		return fmt.Errorf("failed to parse config template: %w", err)
 	}
@@ -305,7 +421,8 @@ func (tg *TemplateGenerator) convertAgentsToConfigData() []AgentConfigData {
 	var agents []AgentConfigData
 
 	for name, agent := range tg.templateConfig.Agents {
-		displayName := strings.ReplaceAll(strings.Title(strings.ReplaceAll(name, "-", " ")), " ", "")
+		titleCaser := cases.Title(language.English)
+		displayName := strings.ReplaceAll(titleCaser.String(strings.ReplaceAll(name, "-", " ")), " ", "")
 
 		agents = append(agents, AgentConfigData{
 			Name:         name,

@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/kunalkushwaha/agenticgokit/core"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // MermaidGeneratorImplementation provides the concrete implementation of Mermaid diagram generation
@@ -55,7 +57,8 @@ func (mg *MermaidGeneratorImplementation) GenerateOrchestrationDiagram(mode core
 	var diagram strings.Builder
 
 	// Add diagram header
-	title := fmt.Sprintf("%s Orchestration", strings.Title(string(mode)))
+	titleCaser := cases.Title(language.English)
+	title := fmt.Sprintf("%s Orchestration", titleCaser.String(string(mode)))
 	if config.Title != "" {
 		title = config.Title
 	}
@@ -125,7 +128,8 @@ func (mg *MermaidGeneratorImplementation) GenerateAgentDiagram(agent core.Agent,
 // GenerateWorkflowPatternDiagram creates diagrams for common workflow patterns
 func (mg *MermaidGeneratorImplementation) GenerateWorkflowPatternDiagram(patternName string, agents []core.Agent, config core.MermaidConfig) string {
 	if config.Title == "" {
-		config.Title = fmt.Sprintf("%s Pattern", strings.Title(patternName))
+		titleCaser := cases.Title(language.English)
+		config.Title = fmt.Sprintf("%s Pattern", titleCaser.String(patternName))
 	}
 
 	var diagram strings.Builder
@@ -455,7 +459,8 @@ func (mg *MermaidGeneratorImplementation) getCompositionTitle(mode, name string,
 		return config.Title
 	}
 
-	modeStr := strings.Title(mode)
+	titleCaser := cases.Title(language.English)
+	modeStr := titleCaser.String(mode)
 	if modeStr == "" {
 		modeStr = "Composition"
 	}

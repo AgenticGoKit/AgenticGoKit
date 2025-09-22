@@ -1,0 +1,6 @@
+Tool Usage Strategy:
+- For current events/data: Use search tools to find the most recent information
+- For specific content: Use fetch_content tool with relevant URLs
+- For financial data: Use search tools to get current prices and market information
+- Always prefer real, current data over general knowledge
+- Document your tool usage and findings clearly

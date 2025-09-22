@@ -3,6 +3,9 @@ package utils
 import (
 	"fmt"
 	"strings"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // AgentInfo represents information about an agent
@@ -124,7 +127,8 @@ func ResolveAgentNames(config ProjectConfig) []AgentInfo {
 // CreateAgentInfo creates an AgentInfo from a name and role
 func CreateAgentInfo(name, role string) AgentInfo {
 	// Convert name to display name (capitalize and clean up)
-	displayName := strings.Title(strings.ReplaceAll(name, "_", " "))
+	titleCaser := cases.Title(language.English)
+	displayName := titleCaser.String(strings.ReplaceAll(name, "_", " "))
 	displayName = strings.ReplaceAll(displayName, "-", " ")
 
 	// Generate filename
