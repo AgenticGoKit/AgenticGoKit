@@ -1,5 +1,159 @@
 package templates
 
+// CompleteAgentConfigTemplate provides a comprehensive TOML configuration template
+const CompleteAgentConfigTemplate = `# AgentFlow Configuration
+# Generated from template: {{.TemplateName}}
+# {{.Description}}
+
+[agent_flow]
+name = "{{.Config.Name}}"
+version = "1.0.0"
+description = "{{.Description}}"
+
+# Global LLM configuration - can be overridden per agent
+[llm]
+provider = "{{.GlobalLLM.Provider}}"
+model = "{{.GlobalLLM.Model}}"
+temperature = {{.GlobalLLM.Temperature}}
+max_tokens = {{.GlobalLLM.MaxTokens}}
+timeout_seconds = 30
+
+[logging]
+level = "debug"
+format = "console"
+
+[runtime]
+max_concurrent_agents = {{.Config.MaxConcurrency}}
+timeout_seconds = {{.Config.OrchestrationTimeout}}
+
+[providers.{{.GlobalLLM.Provider}}]
+{{- if eq .GlobalLLM.Provider "azure"}}
+# API key will be read from AZURE_OPENAI_API_KEY environment variable
+# Endpoint will be read from AZURE_OPENAI_ENDPOINT environment variable
+# Deployment will be read from AZURE_OPENAI_DEPLOYMENT environment variable
+{{- else if eq .GlobalLLM.Provider "openai"}}
+# API key will be read from OPENAI_API_KEY environment variable
+{{- else if eq .GlobalLLM.Provider "ollama"}}
+base_url = "http://localhost:11434"
+model = "llama2"
+{{- else if eq .GlobalLLM.Provider "mock"}}
+# Mock provider for testing - no configuration needed
+{{- end}}
+
+[providers.mock]
+# Mock provider for testing - no configuration needed
+
+{{- if .Config.MemoryEnabled}}
+[memory]
+provider = "{{.Config.MemoryProvider}}"
+connection_string = "{{.MemoryConnection}}"
+{{- if .Config.RAGEnabled}}
+enable_rag = true
+chunk_size = {{.Config.RAGChunkSize}}
+chunk_overlap = {{.Config.RAGOverlap}}
+top_k = {{.Config.RAGTopK}}
+score_threshold = {{.Config.RAGScoreThreshold}}
+{{- end}}
+{{- if .Config.SessionMemory}}
+session_memory = true
+{{- end}}
+{{- end}}
+
+{{- if .Config.MCPEnabled}}
+[mcp]
+enabled = true
+{{- if .Config.MCPProduction}}
+production = true
+{{- end}}
+{{- if .MCPServers}}
+{{- range .MCPServers}}
+[[mcp.servers]]
+name = "{{.Name}}"
+type = "{{.Type}}"
+{{- if .Command}}
+command = "{{.Command}}"
+{{- end}}
+{{- if .Host}}
+host = "{{.Host}}"
+{{- end}}
+{{- if .Port}}
+port = {{.Port}}
+{{- end}}
+enabled = {{.Enabled}}
+{{- end}}
+{{- end}}
+{{- end}}
+
+# Agent Definitions
+# Each agent has its own configuration including role, capabilities, and LLM settings
+
+{{- range .Agents}}
+[agents.{{.Name}}]
+role = "{{.Role}}"
+description = "{{.Description}}"
+system_prompt = """{{.SystemPrompt}}"""
+capabilities = {{.Capabilities | printf "%q"}}
+enabled = {{.Enabled}}
+auto_llm = true
+
+{{- if .LLM}}
+# Agent-specific LLM settings (overrides global settings)
+[agents.{{.Name}}.llm]
+{{- if .LLM.Model}}
+model = "{{.LLM.Model}}"
+{{- end}}
+temperature = {{.LLM.Temperature}}
+max_tokens = {{.LLM.MaxTokens}}
+{{- if .LLM.TopP}}
+top_p = {{.LLM.TopP}}
+{{- end}}
+{{- if .LLM.FrequencyPenalty}}
+frequency_penalty = {{.LLM.FrequencyPenalty}}
+{{- end}}
+{{- if .LLM.PresencePenalty}}
+presence_penalty = {{.LLM.PresencePenalty}}
+{{- end}}
+{{- end}}
+
+{{- if .RetryPolicy}}
+# Retry policy for {{.DisplayName}}
+[agents.{{.Name}}.retry_policy]
+max_retries = {{.RetryPolicy.MaxRetries}}
+base_delay_ms = {{.RetryPolicy.BaseDelayMs}}
+max_delay_ms = {{.RetryPolicy.MaxDelayMs}}
+backoff_factor = {{.RetryPolicy.BackoffFactor}}
+{{- end}}
+
+{{- if .RateLimit}}
+# Rate limiting for {{.DisplayName}}
+[agents.{{.Name}}.rate_limit]
+requests_per_second = {{.RateLimit.RequestsPerSecond}}
+burst_size = {{.RateLimit.BurstSize}}
+{{- end}}
+
+{{- if .Metadata}}
+# Metadata for {{.DisplayName}}
+[agents.{{.Name}}.metadata]
+{{- range $key, $value := .Metadata}}
+{{$key}} = "{{$value}}"
+{{- end}}
+{{- end}}
+
+{{- end}}
+
+[orchestration]
+mode = "{{.Config.OrchestrationMode}}"
+timeout_seconds = {{.Config.OrchestrationTimeout}}
+{{- if eq .Config.OrchestrationMode "sequential"}}
+sequential_agents = {{.Config.SequentialAgents | printf "%q"}}
+{{- else if eq .Config.OrchestrationMode "collaborative"}}
+collaborative_agents = {{.Config.CollaborativeAgents | printf "%q"}}
+{{- else if eq .Config.OrchestrationMode "loop"}}
+loop_agent = "{{.Config.LoopAgent}}"
+max_iterations = {{.Config.MaxIterations}}
+{{- end}}
+`
+
 const MainTemplate = `package main
 
 import (
