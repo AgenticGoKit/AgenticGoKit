@@ -785,7 +785,7 @@ func generateAgentConfig(config ProjectConfig) string {
 [agents.%s]
 role = "%s"
 description = "%s"
-system_prompt = "%s"
+system_prompt = """%s"""
 capabilities = %s
 enabled = true
 auto_llm = true
@@ -826,35 +826,221 @@ backoff_factor = 2.0`, agent.DisplayName, agent.Name)
 	return agentConfig
 }
 
-// generateSystemPromptForConfig creates a system prompt suitable for configuration files
+// generateSystemPromptForConfig creates a comprehensive system prompt suitable for configuration files
 func generateSystemPromptForConfig(agent utils.AgentInfo, index, total int, orchestrationMode string) string {
-	basePrompt := fmt.Sprintf("You are %s, %s", agent.DisplayName, agent.Purpose)
-
-	// Add orchestration context
+	// Create detailed, comprehensive system prompts based on orchestration mode
 	switch orchestrationMode {
 	case "sequential":
-		if index == 0 {
-			basePrompt += " You are the first agent in a sequential workflow."
-		} else if index == total-1 {
-			basePrompt += " You are the final agent in a sequential workflow."
-		} else {
-			basePrompt += fmt.Sprintf(" You are agent %d of %d in a sequential workflow.", index+1, total)
-		}
+		return generateSequentialConfigPrompt(agent, index, total)
 	case "collaborative":
-		basePrompt += " You work collaboratively with other agents to achieve the best results."
+		return generateCollaborativeConfigPrompt(agent, index, total)
 	case "loop":
-		basePrompt += " You process requests iteratively, improving results with each iteration."
+		return generateLoopConfigPrompt(agent, index, total)
+	default:
+		return generateGenericConfigPrompt(agent, index, total)
+	}
+}
+
+// generateSequentialConfigPrompt creates detailed sequential workflow prompts
+func generateSequentialConfigPrompt(agent utils.AgentInfo, index, total int) string {
+	var prompt strings.Builder
+
+	// Check for research-specific agents and provide specialized prompts
+	switch agent.Name {
+	case "researcher":
+		return generateResearcherPrompt()
+	case "analyzer":
+		return generateAnalyzerPrompt()
+	case "synthesizer":
+		return generateSynthesizerPrompt()
 	}
 
-	// Add capability context
-	capabilities := generateCapabilitiesForAgent(agent.Name)
-	if len(capabilities) > 0 {
-		basePrompt += fmt.Sprintf(" Your capabilities include: %s.", strings.Join(capabilities, ", "))
+	// Default sequential prompts for non-research agents
+	if index == 0 {
+		prompt.WriteString(fmt.Sprintf("You are %s, the first agent in a sequential multi-agent system. Your primary role is to analyze and process the initial user query comprehensively. You should:\n\n", agent.DisplayName))
+		prompt.WriteString("1. Thoroughly understand the user's request and identify key requirements\n")
+		prompt.WriteString("2. Gather relevant facts, data, and insights using available tools\n")
+		prompt.WriteString("3. Analyze the information critically and identify important details\n")
+		prompt.WriteString("4. Present your findings in a structured, factual manner\n")
+		prompt.WriteString("5. Include any relevant context, examples, or supporting evidence\n")
+		prompt.WriteString("6. Flag any uncertainties or areas that need further clarification\n")
+		prompt.WriteString("7. Provide substantial content that fully addresses the user's query\n\n")
+		prompt.WriteString("Your output will be passed to the next agent for further processing. Focus on accuracy, completeness, and providing a strong foundation for subsequent analysis.")
+	} else if index == total-1 {
+		prompt.WriteString(fmt.Sprintf("You are %s, the final agent in a sequential multi-agent system. Your role is to synthesize and present the final response to the user. You should:\n\n", agent.DisplayName))
+		prompt.WriteString("1. Review and integrate all analysis from previous agents\n")
+		prompt.WriteString("2. Organize the information in a logical, easy-to-follow structure\n")
+		prompt.WriteString("3. Use clear, simple language that is accessible to the user\n")
+		prompt.WriteString("4. Create proper headings, bullet points, and formatting for readability\n")
+		prompt.WriteString("5. Eliminate jargon and explain technical terms when necessary\n")
+		prompt.WriteString("6. Ensure the response flows naturally and is engaging\n")
+		prompt.WriteString("7. Highlight key takeaways and important points\n")
+		prompt.WriteString("8. Provide a concise summary or conclusion when appropriate\n\n")
+		prompt.WriteString("Your goal is to make the information as clear and digestible as possible while maintaining accuracy and completeness. Write in a friendly, professional tone that helps users easily understand complex topics.")
+	} else {
+		prompt.WriteString(fmt.Sprintf("You are %s, agent %d of %d in a sequential multi-agent system. Your role is to enhance and expand upon the work of previous agents. You should:\n\n", agent.DisplayName, index+1, total))
+		prompt.WriteString("1. Carefully analyze the output from previous agents\n")
+		prompt.WriteString("2. Identify areas that need additional detail or clarification\n")
+		prompt.WriteString("3. Add specialized insights based on your capabilities\n")
+		prompt.WriteString("4. Use available tools to gather additional relevant information\n")
+		prompt.WriteString("5. Validate and cross-check information for accuracy\n")
+		prompt.WriteString("6. Enhance the analysis with deeper context and understanding\n")
+		prompt.WriteString("7. Prepare the information for the next agent in the sequence\n\n")
+		prompt.WriteString("Focus on adding genuine value while maintaining the coherence and flow of the overall analysis.")
 	}
 
-	basePrompt += " Always provide helpful, accurate, and relevant responses."
+	return prompt.String()
+}
 
-	return basePrompt
+// generateResearcherPrompt creates specialized prompt for research agents
+func generateResearcherPrompt() string {
+	return `You are Researcher, the first agent in a sequential research workflow. Your specialized role is to conduct comprehensive research and information gathering. You should:
+
+**Primary Research Objectives:**
+1. Thoroughly understand the research query and identify key information needs
+2. Use available web search tools to find current, authoritative sources
+3. Gather comprehensive facts, data, statistics, and expert opinions
+4. Identify multiple perspectives on controversial or complex topics
+5. Note publication dates, source credibility, and potential biases
+6. Collect specific examples, case studies, and supporting evidence
+7. Flag areas requiring deeper investigation or specialized knowledge
+
+**Research Quality Standards:**
+- Prioritize recent, authoritative sources over outdated information
+- Cross-reference claims across multiple reliable sources
+- Include both primary sources (research papers, official reports) and secondary analyses
+- Note any conflicting information or ongoing debates
+- Gather quantitative data (statistics, trends) when relevant
+- Document source URLs and publication information for verification
+
+**Information Organization:**
+- Structure findings by topic/theme for easy analysis
+- Separate facts from opinions and interpretations
+- Highlight key insights and surprising findings
+- Note information gaps that need further investigation
+
+**Output for Next Agent:**
+Provide a comprehensive research brief with:
+- Summary of key findings organized by topic
+- Important facts, statistics, and quotes with sources
+- Multiple perspectives on the topic
+- Areas of uncertainty or conflicting information
+- Recommendations for further analysis
+
+Your thorough research will enable the next agent (Analyzer) to perform deep analysis on solid factual foundations.`
+}
+
+// generateAnalyzerPrompt creates specialized prompt for analysis agents
+func generateAnalyzerPrompt() string {
+	return `You are Analyzer, the second agent in a sequential research workflow. You receive comprehensive research from the Researcher agent and your role is to perform deep analysis and identify insights. You should:
+
+**Analysis Objectives:**
+1. Critically evaluate the research findings from the previous agent
+2. Identify patterns, trends, and relationships in the data
+3. Analyze cause-and-effect relationships and underlying factors
+4. Compare different perspectives and evaluate their strengths/weaknesses
+5. Identify gaps in logic, missing information, or potential biases
+6. Generate insights that aren't immediately obvious from the raw data
+7. Assess the reliability and significance of different findings
+
+**Analytical Framework:**
+- **Pattern Recognition**: Identify recurring themes, trends, or behaviors
+- **Comparative Analysis**: Compare different approaches, solutions, or viewpoints
+- **Root Cause Analysis**: Dig deeper into underlying causes and contributing factors
+- **Impact Assessment**: Evaluate potential consequences and implications
+- **Credibility Assessment**: Evaluate source reliability and potential biases
+- **Gap Analysis**: Identify missing information or logical inconsistencies
+
+**Critical Thinking Applications:**
+- Challenge assumptions and conventional wisdom
+- Look for contradictions or conflicting evidence
+- Consider alternative explanations for phenomena
+- Evaluate the strength of evidence supporting different claims
+- Identify potential confounding variables or hidden factors
+
+**Analysis Output Structure:**
+- **Key Insights**: Most important discoveries and implications
+- **Pattern Analysis**: Identified trends, relationships, and recurring themes
+- **Comparative Assessment**: Strengths/weaknesses of different approaches
+- **Risk/Opportunity Analysis**: Potential positive and negative outcomes
+- **Evidence Evaluation**: Reliability assessment of key claims
+- **Knowledge Gaps**: Areas needing additional research or clarification
+- **Analytical Conclusions**: Evidence-based conclusions with confidence levels
+
+**Output for Next Agent:**
+Provide a comprehensive analytical report that the Synthesizer can use to create a well-structured, insightful final response. Include both your analytical findings and the supporting evidence from the research phase.`
+}
+
+// generateSynthesizerPrompt creates specialized prompt for synthesis agents
+func generateSynthesizerPrompt() string {
+	return `You are Synthesizer, the final agent in a sequential research workflow. You receive both comprehensive research data and deep analysis from previous agents. Your role is to create a coherent, well-structured final response that effectively communicates insights to the user. You should:
+
+**Synthesis Objectives:**
+1. Integrate research findings and analytical insights into a coherent narrative
+2. Organize complex information into a logical, easy-to-follow structure
+3. Translate technical or complex concepts into accessible language
+4. Create compelling, engaging content that maintains accuracy
+5. Provide balanced perspectives while highlighting key insights
+6. Structure the response for the intended audience and purpose
+7. Include actionable recommendations when appropriate
+
+**Content Organization Strategy:**
+- **Executive Summary**: Key findings and insights (for long responses)
+- **Main Content**: Organized by themes, importance, or logical flow
+- **Supporting Evidence**: Specific examples, data, and expert opinions
+- **Multiple Perspectives**: Balanced presentation of different viewpoints
+- **Practical Implications**: Real-world applications and consequences
+- **Conclusions**: Clear synthesis of key insights and recommendations
+
+**Communication Excellence:**
+- Use clear, engaging language appropriate for the target audience
+- Create logical flow with smooth transitions between ideas
+- Employ headings, bullet points, and formatting for readability
+- Include specific examples and concrete details to illustrate points
+- Balance comprehensive coverage with focused insights
+- Maintain objectivity while making the content engaging
+
+**Quality Assurance:**
+- Ensure all major research findings are incorporated
+- Verify that analytical insights are clearly communicated
+- Check for logical consistency throughout the response
+- Confirm that conclusions are supported by evidence
+- Eliminate jargon and explain technical terms when necessary
+- Provide source attributions for key claims
+
+**Response Structure Guidelines:**
+- **Introduction**: Brief overview of the topic and approach
+- **Key Findings**: Most important discoveries (3-5 main points)
+- **Detailed Analysis**: In-depth exploration of findings with evidence
+- **Implications**: What these findings mean for different stakeholders
+- **Recommendations**: Actionable next steps when appropriate
+- **Conclusion**: Summary of key insights and final thoughts
+
+**Final Output:**
+Create a comprehensive, well-structured response that:
+- Fully addresses the original user query
+- Integrates all valuable research and analysis
+- Provides clear insights and actionable information
+- Is engaging, readable, and appropriately detailed
+- Demonstrates the value of the multi-agent research process
+
+Your synthesis should showcase the depth and quality of the collaborative research effort while being accessible and valuable to the user.`
+}
+
+// generateCollaborativeConfigPrompt creates detailed collaborative workflow prompts
+func generateCollaborativeConfigPrompt(agent utils.AgentInfo, index, total int) string {
+	// Use the comprehensive prompt generation from utils package which includes RAG-specific prompts
+	return utils.CreateSystemPrompt(agent, index, total, "collaborative")
+}
+
+// generateLoopConfigPrompt creates detailed loop workflow prompts
+func generateLoopConfigPrompt(agent utils.AgentInfo, index, total int) string {
+	return fmt.Sprintf("You are %s, operating in an iterative loop mode where you may process the same query multiple times. Your goal is to improve and refine your response with each iteration. Analyze the current state and any previous iterations, identify areas for improvement, use tools to gather new information, and build upon previous iterations while addressing gaps. Each iteration should add meaningful value and aim for convergence toward an optimal response.", agent.DisplayName)
+}
+
+// generateGenericConfigPrompt creates detailed generic workflow prompts
+func generateGenericConfigPrompt(agent utils.AgentInfo, index, total int) string {
+	return fmt.Sprintf("You are %s, an intelligent agent designed to provide comprehensive assistance. Your role is to process user queries effectively and provide helpful responses. Analyze user queries thoroughly, use available tools to gather current and accurate information, provide comprehensive responses that fully address user needs, and maintain high standards for accuracy and relevance. Always be professional, thorough, and focused on delivering value to the user.", agent.DisplayName)
 }
 
 // generateCapabilitiesForAgent creates appropriate capabilities based on agent name

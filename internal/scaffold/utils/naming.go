@@ -3,26 +3,27 @@ package utils
 import (
 	"fmt"
 	"strings"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
-// AgentInfo represents information about an agent including its name and purpose
+// AgentInfo represents information about an agent
 type AgentInfo struct {
-	Name        string // User-defined name like "analyzer", "processor"
-	FileName    string // File name like "analyzer.go"
-	DisplayName string // Capitalized name like "Analyzer"
-	Purpose     string // Brief description of the agent's purpose
-	Role        string // Agent role like "collaborative", "sequential", "loop"
+	Name        string
+	FileName    string
+	DisplayName string
+	Purpose     string
+	Role        string
 }
 
-// ProjectConfig represents the configuration for creating a new AgentFlow project
+// ProjectConfig represents the configuration for a scaffold project
 type ProjectConfig struct {
-	Name          string
-	NumAgents     int
-	Provider      string
-	ResponsibleAI bool
-	ErrorHandler  bool
-
-	// MCP configuration
+	Name               string
+	NumAgents          int
+	Provider           string
+	ResponsibleAI      bool
+	ErrorHandler       bool
 	MCPEnabled         bool
 	MCPProduction      bool
 	WithCache          bool
@@ -35,7 +36,7 @@ type ProjectConfig struct {
 	ConnectionPoolSize int
 	RetryPolicy        string
 
-	// Multi-agent orchestration configuration
+	// Orchestration configuration
 	OrchestrationMode    string
 	CollaborativeAgents  []string
 	SequentialAgents     []string
@@ -48,6 +49,23 @@ type ProjectConfig struct {
 	// Visualization configuration
 	Visualize          bool
 	VisualizeOutputDir string
+
+	// Memory/RAG configuration
+	MemoryEnabled       bool
+	MemoryProvider      string // inmemory, pgvector, weaviate
+	EmbeddingProvider   string // openai, dummy
+	EmbeddingModel      string // text-embedding-3-small, etc.
+	EmbeddingDimensions int    // Auto-calculated based on embedding model
+	RAGEnabled          bool
+	RAGChunkSize        int
+	RAGOverlap          int
+	RAGTopK             int
+	RAGScoreThreshold   float64
+	HybridSearch        bool
+	SessionMemory       bool
+
+	// MCP configuration
+	MCPTransport string // tcp, stdio, etc.
 }
 
 // ResolveAgentNames determines the final list of agents to create based on the config
@@ -80,177 +98,129 @@ func ResolveAgentNames(config ProjectConfig) []AgentInfo {
 		}
 
 	case "loop":
-		// For loop mode, still generate the requested number of agent files
-		if config.NumAgents > 0 {
-			for i := 1; i <= config.NumAgents; i++ {
-				name := fmt.Sprintf("agent%d", i)
-				if i == 1 && config.LoopAgent != "" {
-					name = config.LoopAgent
-				}
-				agents = append(agents, CreateAgentInfo(name, "loop"))
-			}
+		if config.LoopAgent != "" {
+			agents = append(agents, CreateAgentInfo(config.LoopAgent, "loop"))
 		} else {
-			// Fallback to at least one agent
-			loopName := config.LoopAgent
-			if loopName == "" {
-				loopName = "agent1"
-			}
-			agents = append(agents, CreateAgentInfo(loopName, "loop"))
+			agents = append(agents, CreateAgentInfo("agent1", "loop"))
 		}
 
 	case "mixed":
-		// Combine collaborative and sequential agents
+		// Add collaborative agents first
 		for _, name := range config.CollaborativeAgents {
 			agents = append(agents, CreateAgentInfo(name, "collaborative"))
 		}
+		// Add sequential agents
 		for _, name := range config.SequentialAgents {
 			agents = append(agents, CreateAgentInfo(name, "sequential"))
 		}
-		// If no named agents, fallback to numbered
-		if len(agents) == 0 {
-			for i := 1; i <= config.NumAgents; i++ {
-				agents = append(agents, CreateAgentInfo(fmt.Sprintf("agent%d", i), "mixed"))
-			}
-		}
 
-	default: // "route" mode
-		if len(config.CollaborativeAgents) > 0 {
-			for _, name := range config.CollaborativeAgents {
-				agents = append(agents, CreateAgentInfo(name, "route"))
-			}
-		} else if len(config.SequentialAgents) > 0 {
-			for _, name := range config.SequentialAgents {
-				agents = append(agents, CreateAgentInfo(name, "route"))
-			}
-		} else if config.LoopAgent != "" {
-			agents = append(agents, CreateAgentInfo(config.LoopAgent, "route"))
-		} else {
-			// Fallback to numbered agents
-			for i := 1; i <= config.NumAgents; i++ {
-				agents = append(agents, CreateAgentInfo(fmt.Sprintf("agent%d", i), "route"))
-			}
+	default:
+		// Route mode or unknown - create numbered agents
+		for i := 1; i <= config.NumAgents; i++ {
+			agents = append(agents, CreateAgentInfo(fmt.Sprintf("agent%d", i), config.OrchestrationMode))
 		}
 	}
 
 	return agents
 }
 
-// CreateAgentInfo creates AgentInfo from a name and mode
-func CreateAgentInfo(name, mode string) AgentInfo {
-	cleanName := strings.TrimSpace(strings.ToLower(name))
+// CreateAgentInfo creates an AgentInfo from a name and role
+func CreateAgentInfo(name, role string) AgentInfo {
+	// Convert name to display name (capitalize and clean up)
+	titleCaser := cases.Title(language.English)
+	displayName := titleCaser.String(strings.ReplaceAll(name, "_", " "))
+	displayName = strings.ReplaceAll(displayName, "-", " ")
 
-	// Sanitize name for Go identifiers
-	sanitizedName := SanitizeIdentifier(cleanName)
+	// Generate filename
+	fileName := fmt.Sprintf("%s.go", name)
+
+	// Infer purpose from name
+	purpose := InferPurpose(name)
 
 	return AgentInfo{
-		Name:        sanitizedName,
-		FileName:    sanitizedName + ".go",
-		DisplayName: CapitalizeFirst(sanitizedName),
-		Purpose:     InferPurpose(sanitizedName, mode),
-		Role:        mode,
+		Name:        name,
+		FileName:    fileName,
+		DisplayName: displayName,
+		Purpose:     purpose,
+		Role:        role,
 	}
 }
 
-// SanitizeIdentifier ensures the name is a valid Go identifier
-func SanitizeIdentifier(name string) string {
-	// Replace invalid characters with underscores
-	result := ""
-	for i, r := range name {
-		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (i > 0 && r >= '0' && r <= '9') || r == '_' {
-			result += string(r)
-		} else {
-			result += "_"
-		}
-	}
+// InferPurpose infers the purpose of an agent based on its name
+func InferPurpose(name string) string {
+	name = strings.ToLower(name)
 
-	// Ensure it starts with a letter
-	if len(result) == 0 || (result[0] >= '0' && result[0] <= '9') {
-		result = "agent_" + result
-	}
-
-	return result
-}
-
-// CapitalizeFirst capitalizes the first letter of a string
-func CapitalizeFirst(s string) string {
-	if len(s) == 0 {
-		return s
-	}
-	return strings.ToUpper(s[:1]) + s[1:]
-}
-
-// InferPurpose creates a purpose description based on the agent name and mode
-func InferPurpose(name, mode string) string {
-	// Common purposes based on name patterns
-	purposeMap := map[string]string{
-		"analyzer":         "Analyzes and processes input data to extract insights",
-		"processor":        "Processes and transforms data through various operations",
-		"validator":        "Validates results and ensures quality and accuracy",
-		"transformer":      "Transforms data from one format to another",
-		"enricher":         "Enriches data with additional context and information",
-		"filter":           "Filters and selects relevant information from input",
-		"summarizer":       "Summarizes and condenses information into key points",
-		"router":           "Routes requests to appropriate handlers or systems",
-		"monitor":          "Monitors system state and performance metrics",
-		"collector":        "Collects data from various sources and systems",
-		"detector":         "Detects patterns, anomalies, or specific conditions",
-		"optimizer":        "Optimizes processes and improves efficiency",
-		"coordinator":      "Coordinates activities between different components",
-		"scheduler":        "Schedules and manages task execution timing",
-		"integrator":       "Integrates data and functionality from multiple sources",
-		"researcher":       "Researches topics and gathers comprehensive information",
-		"data_collector":   "Collects and aggregates data from multiple sources",
-		"report_generator": "Generates comprehensive reports and summaries",
-	}
-
-	if purpose, exists := purposeMap[name]; exists {
-		return purpose
-	}
-
-	// Fallback purposes based on mode
-	switch mode {
-	case "collaborative":
-		return "Collaborates with other agents to process tasks in parallel"
-	case "sequential":
-		return "Processes tasks in sequence as part of a processing pipeline"
-	case "loop":
-		return "Iteratively processes tasks until completion criteria are met"
+	switch {
+	case strings.Contains(name, "document") && strings.Contains(name, "ingester"):
+		return "Ingests and processes documents for the knowledge base"
+	case strings.Contains(name, "query") && strings.Contains(name, "processor"):
+		return "Analyzes and optimizes user queries for retrieval"
+	case strings.Contains(name, "response") && strings.Contains(name, "generator"):
+		return "Generates comprehensive responses using retrieved information"
+	case strings.Contains(name, "research"):
+		return "Researches topics and gathers comprehensive information"
+	case strings.Contains(name, "analyzer") || strings.Contains(name, "analysis"):
+		return "Analyzes and processes input data to extract insights"
+	case strings.Contains(name, "synthesizer") || strings.Contains(name, "synthesis"):
+		return "Synthesizes information and creates comprehensive responses"
+	case strings.Contains(name, "writer") || strings.Contains(name, "content"):
+		return "Creates and formats written content"
+	case strings.Contains(name, "reviewer") || strings.Contains(name, "validator"):
+		return "Reviews and validates content for accuracy and quality"
+	case strings.Contains(name, "processor"):
+		return "Processes and transforms data"
+	case strings.Contains(name, "collector"):
+		return "Collects and organizes information"
+	case strings.Contains(name, "coordinator") || strings.Contains(name, "manager"):
+		return "Coordinates workflow and manages tasks"
+	case strings.Contains(name, "ingester"):
+		return "Ingests and preprocesses data"
+	case strings.Contains(name, "outputter"):
+		return "Formats and outputs final results"
+	case strings.Contains(name, "fact"):
+		return "Verifies facts and checks information accuracy"
 	default:
-		return "Handles specialized task processing within the workflow"
+		return "Provides general assistance and processing capabilities"
 	}
 }
 
-// ValidateAgentNames checks for naming conflicts and invalid names
+// ValidateAgentNames validates agent names for compliance
 func ValidateAgentNames(agents []AgentInfo) error {
-	nameSet := make(map[string]bool)
+	if len(agents) == 0 {
+		return fmt.Errorf("no agents defined")
+	}
 
+	nameMap := make(map[string]bool)
 	for _, agent := range agents {
-		if nameSet[agent.Name] {
+		if agent.Name == "" {
+			return fmt.Errorf("agent name cannot be empty")
+		}
+
+		if nameMap[agent.Name] {
 			return fmt.Errorf("duplicate agent name: %s", agent.Name)
 		}
-		nameSet[agent.Name] = true
+		nameMap[agent.Name] = true
 
-		// Check for reserved names
-		if isReservedName(agent.Name) {
-			return fmt.Errorf("agent name '%s' is reserved", agent.Name)
+		// Validate naming convention
+		if !isValidAgentName(agent.Name) {
+			return fmt.Errorf("invalid agent name '%s': must contain only lowercase letters, numbers, underscores, and hyphens", agent.Name)
 		}
 	}
 
 	return nil
 }
 
-// isReservedName checks if a name is reserved by the system
-func isReservedName(name string) bool {
-	reserved := []string{
-		"main", "config", "error", "handler", "responsible_ai",
-		"error_handler", "workflow_finalizer", "state", "event",
+// isValidAgentName checks if an agent name follows the naming convention
+func isValidAgentName(name string) bool {
+	if name == "" {
+		return false
 	}
 
-	for _, r := range reserved {
-		if name == r {
-			return true
+	for _, char := range name {
+		if !((char >= 'a' && char <= 'z') || (char >= '0' && char <= '9') || char == '_' || char == '-') {
+			return false
 		}
 	}
 
-	return false
+	return true
 }
