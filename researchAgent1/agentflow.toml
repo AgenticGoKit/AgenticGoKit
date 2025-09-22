@@ -1,0 +1,176 @@
+# AgentFlow Configuration
+
+[agent_flow]
+name = "researchAgent1"
+version = "1.0.0"
+description = "Configuration-driven multi-agent system"
+
+# Global LLM configuration - can be overridden per agent
+[llm]
+provider = "openai"
+model = "gpt-4"
+temperature = 0.7
+max_tokens = 2000
+timeout_seconds = 30
+
+[logging]
+level = "debug"
+format = "console"
+
+[runtime]
+max_concurrent_agents = 10
+timeout_seconds = 30
+
+[providers.azure]
+# API key will be read from AZURE_OPENAI_API_KEY environment variable
+# Endpoint will be read from AZURE_OPENAI_ENDPOINT environment variable
+# Deployment will be read from AZURE_OPENAI_DEPLOYMENT environment variable
+
+[providers.openai]
+# API key will be read from OPENAI_API_KEY environment variable
+
+[providers.ollama]
+base_url = "http://localhost:11434"
+model = "llama2"
+
+[providers.mock]
+# Mock provider for testing - no configuration needed
+
+[mcp]
+enabled = true
+transport = "tcp"
+enable_discovery = true
+connection_timeout = 5000
+max_retries = 3
+retry_delay = 1000
+enable_caching = true
+cache_timeout = 300000
+max_connections = 10
+
+# MCP Server Examples - Uncomment and configure as needed
+#
+# For Docker AI Gateway (provides web search, content fetching, etc.)
+# Start with: docker run -p 8812:8812 -p 8813:8813 your-docker-image
+
+[[mcp.servers]]
+name = "docker-http-sse"
+type = "http_sse"
+host = "localhost"
+port = 8812
+enabled = false
+
+[[mcp.servers]]
+name = "docker-http-streaming"
+type = "http_streaming"
+host = "localhost"
+port = 8813
+enabled = false
+
+# For file system access
+# Install with: npm install -g @modelcontextprotocol/server-filesystem
+# [[mcp.servers]]
+# name = "filesystem"
+# type = "stdio"
+# command = "npx @modelcontextprotocol/server-filesystem /path/to/allowed/files"
+# enabled = true
+
+# For web search capabilities
+# Install with: npm install -g @modelcontextprotocol/server-brave-search
+# [[mcp.servers]]
+# name = "brave-search"
+# type = "stdio"
+# command = "npx @modelcontextprotocol/server-brave-search"
+# enabled = true
+
+# For SQLite database access
+# Install with: npm install -g @modelcontextprotocol/server-sqlite
+# [[mcp.servers]]
+# name = "sqlite"
+# type = "stdio"
+# command = "npx @modelcontextprotocol/server-sqlite /path/to/database.db"
+# enabled = true
+
+# For GitHub integration
+# Install with: npm install -g @modelcontextprotocol/server-github
+# Set GITHUB_PERSONAL_ACCESS_TOKEN environment variable
+# [[mcp.servers]]
+# name = "github"
+# type = "stdio"
+# command = "npx @modelcontextprotocol/server-github"
+# enabled = true
+
+# For custom TCP server
+# [[mcp.servers]]
+# name = "custom-tcp"
+# type = "tcp"
+# host = "localhost"
+# port = 8811
+# enabled = false
+
+# Agent Definitions
+# Each agent has its own configuration including role, capabilities, and LLM settings
+
+[agents.researcher]
+role = "researcher"
+description = "Researches topics and gathers comprehensive information"
+system_prompt = "You are Researcher, Researches topics and gathers comprehensive information You work collaboratively with other agents to achieve the best results. Your capabilities include: research, information_gathering, fact_checking, source_identification. Always provide helpful, accurate, and relevant responses."
+capabilities = ["research", "information_gathering", "fact_checking", "source_identification"]
+enabled = true
+auto_llm = true
+
+# Agent-specific LLM settings (overrides global settings)
+[agents.researcher.llm]
+temperature = 0.3
+max_tokens = 2500
+
+# Retry policy for Researcher
+[agents.researcher.retry_policy]
+max_retries = 3
+base_delay_ms = 1000
+max_delay_ms = 10000
+backoff_factor = 2.0
+
+[agents.analyzer]
+role = "analyzer"
+description = "Analyzes and processes input data to extract insights"
+system_prompt = "You are Analyzer, Analyzes and processes input data to extract insights You work collaboratively with other agents to achieve the best results. Your capabilities include: data_analysis, pattern_recognition, insight_generation, trend_analysis. Always provide helpful, accurate, and relevant responses."
+capabilities = ["data_analysis", "pattern_recognition", "insight_generation", "trend_analysis"]
+enabled = true
+auto_llm = true
+
+# Agent-specific LLM settings (overrides global settings)
+[agents.analyzer.llm]
+temperature = 0.5
+max_tokens = 2000
+
+# Retry policy for Analyzer
+[agents.analyzer.retry_policy]
+max_retries = 3
+base_delay_ms = 1000
+max_delay_ms = 10000
+backoff_factor = 2.0
+
+[agents.synthesizer]
+role = "synthesizer"
+description = "Collaborates with other agents to process tasks in parallel"
+system_prompt = "You are Synthesizer, Collaborates with other agents to process tasks in parallel You work collaboratively with other agents to achieve the best results. Your capabilities include: analysis, summarization, insight_generation, content_creation. Always provide helpful, accurate, and relevant responses."
+capabilities = ["analysis", "summarization", "insight_generation", "content_creation"]
+enabled = true
+auto_llm = true
+
+# Agent-specific LLM settings (overrides global settings)
+[agents.synthesizer.llm]
+temperature = 0.4
+max_tokens = 2000
+
+# Retry policy for Synthesizer
+[agents.synthesizer.retry_policy]
+max_retries = 3
+base_delay_ms = 1000
+max_delay_ms = 10000
+backoff_factor = 2.0
+
+[orchestration]
+mode = "collaborative"
+timeout_seconds = 10
+collaborative_agents = ["researcher", "analyzer", "synthesizer"]
