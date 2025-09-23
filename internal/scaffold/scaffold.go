@@ -2,6 +2,7 @@ package scaffold
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -1546,6 +1547,13 @@ func createProjectDirectories(config ProjectConfig) error {
 		return err
 	}
 
+	// Create WebUI directory if enabled
+	if config.WebUIEnabled {
+		if err := createWebUIDirectory(config); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -1580,6 +1588,67 @@ func createInternalDirectory(config ProjectConfig) error {
 	}
 	fmt.Printf("Created directory: %s\n", handlersDir)
 
+	// Tracing package directory
+	tracingDir := filepath.Join(internalDir, "tracing")
+	if err := os.MkdirAll(tracingDir, 0755); err != nil {
+		return fmt.Errorf("failed to create internal/tracing directory %s: %w", tracingDir, err)
+	}
+	fmt.Printf("Created directory: %s\n", tracingDir)
+
+	// Write internal/config/config.go from template
+	{
+		t, err := template.New("config_helpers").Parse(templates.ConfigHelpersTemplate)
+		if err != nil {
+			return fmt.Errorf("failed to parse config helpers template: %w", err)
+		}
+		path := filepath.Join(configDir, "config.go")
+		f, err := os.Create(path)
+		if err != nil {
+			return fmt.Errorf("failed to create %s: %w", path, err)
+		}
+		defer f.Close()
+		if err := t.Execute(f, struct{ Config ProjectConfig }{Config: config}); err != nil {
+			return fmt.Errorf("failed to execute config helpers template: %w", err)
+		}
+		fmt.Printf("Created file: %s\n", path)
+	}
+
+	// Write internal/handlers/server.go from template
+	{
+		t, err := template.New("handlers_server").Parse(templates.HandlersServerTemplate)
+		if err != nil {
+			return fmt.Errorf("failed to parse handlers server template: %w", err)
+		}
+		path := filepath.Join(handlersDir, "server.go")
+		f, err := os.Create(path)
+		if err != nil {
+			return fmt.Errorf("failed to create %s: %w", path, err)
+		}
+		defer f.Close()
+		if err := t.Execute(f, struct{ Config ProjectConfig }{Config: config}); err != nil {
+			return fmt.Errorf("failed to execute handlers server template: %w", err)
+		}
+		fmt.Printf("Created file: %s\n", path)
+	}
+
+	// Write internal/tracing/tracing.go from template
+	{
+		t, err := template.New("tracing").Parse(templates.TracingTemplate)
+		if err != nil {
+			return fmt.Errorf("failed to parse tracing template: %w", err)
+		}
+		path := filepath.Join(tracingDir, "tracing.go")
+		f, err := os.Create(path)
+		if err != nil {
+			return fmt.Errorf("failed to create %s: %w", path, err)
+		}
+		defer f.Close()
+		if err := t.Execute(f, struct{ Config ProjectConfig }{Config: config}); err != nil {
+			return fmt.Errorf("failed to execute tracing template: %w", err)
+		}
+		fmt.Printf("Created file: %s\n", path)
+	}
+
 	return nil
 }
 
@@ -1590,6 +1659,81 @@ func createDocsDirectory(config ProjectConfig) error {
 		return fmt.Errorf("failed to create docs directory %s: %w", docsDir, err)
 	}
 	fmt.Printf("Created directory: %s\n", docsDir)
+	return nil
+}
+
+// createWebUIDirectory creates the WebUI subdirectory and static files
+func createWebUIDirectory(config ProjectConfig) error {
+	webuiDir := filepath.Join(config.Name, "internal", "webui")
+	staticDir := filepath.Join(webuiDir, "static")
+
+	// Create WebUI directories
+	if err := os.MkdirAll(staticDir, 0755); err != nil {
+		return fmt.Errorf("failed to create WebUI directory %s: %w", staticDir, err)
+	}
+	fmt.Printf("Created directory: %s\n", staticDir)
+
+	// Create WebUI files
+	if err := createWebUIFiles(config, staticDir); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// createWebUIFiles creates the static WebUI files
+func createWebUIFiles(config ProjectConfig, staticDir string) error {
+	// Create index.html
+	indexPath := filepath.Join(staticDir, "index.html")
+	indexTemplate, err := template.New("webui_index").Parse(templates.WebUIIndexTemplate)
+	if err != nil {
+		return fmt.Errorf("failed to parse WebUI index template: %w", err)
+	}
+
+	var indexBuffer bytes.Buffer
+	indexTemplateData := struct {
+		Config ProjectConfig
+	}{
+		Config: config,
+	}
+	if err := indexTemplate.Execute(&indexBuffer, indexTemplateData); err != nil {
+		return fmt.Errorf("failed to execute WebUI index template: %w", err)
+	}
+
+	if err := os.WriteFile(indexPath, indexBuffer.Bytes(), 0644); err != nil {
+		return fmt.Errorf("failed to write WebUI index file: %w", err)
+	}
+	fmt.Printf("Created file: %s\n", indexPath)
+
+	// Create style.css
+	cssPath := filepath.Join(staticDir, "style.css")
+	cssTemplate, err := template.New("webui_css").Parse(templates.WebUICSSTemplate)
+	if err != nil {
+		return fmt.Errorf("failed to parse WebUI CSS template: %w", err)
+	}
+
+	var cssBuffer bytes.Buffer
+	cssTemplateData := struct {
+		Config ProjectConfig
+	}{
+		Config: config,
+	}
+	if err := cssTemplate.Execute(&cssBuffer, cssTemplateData); err != nil {
+		return fmt.Errorf("failed to execute WebUI CSS template: %w", err)
+	}
+
+	if err := os.WriteFile(cssPath, cssBuffer.Bytes(), 0644); err != nil {
+		return fmt.Errorf("failed to write WebUI CSS file: %w", err)
+	}
+	fmt.Printf("Created file: %s\n", cssPath)
+
+	// Create app.js
+	jsPath := filepath.Join(staticDir, "app.js")
+	if err := os.WriteFile(jsPath, []byte(templates.WebUIJSTemplate), 0644); err != nil {
+		return fmt.Errorf("failed to write WebUI JS file: %w", err)
+	}
+	fmt.Printf("Created file: %s\n", jsPath)
+
 	return nil
 }
 

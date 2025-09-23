@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgenticGoKit Chat</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤖</text></svg>">
+</head>
+<body>
+    <div class="chat-container">
+        <!-- Header -->
+        <header class="chat-header">
+            <div class="header-title">
+                <button id="menu-toggle" class="menu-toggle" aria-label="Toggle menu" style="display: none;">☰</button>
+                <span class="logo">🤖</span>
+                <h1>AgenticGoKit</h1>
+            </div>
+            <div class="header-status">
+                <div class="status-indicator"></div>
+                <span class="status-text">Connecting...</span>
+                <button id="settings-btn" class="settings-btn" aria-label="Open settings" title="Settings">⚙️</button>
+            </div>
+        </header>
+
+        <div class="chat-body">
+            <!-- Sidebar -->
+            <aside class="chat-sidebar">
+                <div class="sidebar-header">
+                    <button id="new-chat-btn" class="new-chat-btn">
+                        <span>➕</span>
+                        <span>New Chat</span>
+                    </button>
+                </div>
+                
+                <!-- Agent Selection Dropdown -->
+                <div class="sidebar-section">
+                    <h3 class="section-title">🤖 Select Agent</h3>
+                    <div class="agent-selector">
+                        <select id="agent-dropdown" class="agent-dropdown">
+                            <option value="">Choose an agent...</option>
+                        </select>
+                        <div id="agent-info" class="agent-info" style="display: none;">
+                            <div class="agent-description"></div>
+                            <div class="agent-capabilities"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Chat History Section -->
+                <div class="sidebar-section chat-history-section">
+                    <h3 class="section-title">💬 Chat History</h3>
+                    <div id="sessions-list" class="sessions-list">
+                        <!-- Chat sessions will be dynamically loaded here -->
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Chat Area -->
+            <main class="chat-main">
+                <div id="chat-messages" class="chat-messages">
+                    <!-- Welcome message -->
+                    <div class="welcome-message">
+                        <div class="welcome-content">
+                            <h2>Welcome to AgenticGoKit Chat! 🤖</h2>
+                            <p>Start a conversation with your AI agents. They're ready to help you with any task.</p>
+                            <div class="welcome-features">
+                                <div class="feature-item">
+                                    <span class="feature-icon">💬</span>
+                                    <span>Real-time chat with AI agents</span>
+                                </div>
+                                <div class="feature-item">
+                                    <span class="feature-icon">🔄</span>
+                                    <span>Multi-agent collaboration</span>
+                                </div>
+                                <div class="feature-item">
+                                    <span class="feature-icon">📝</span>
+                                    <span>Persistent chat sessions</span>
+                                </div>
+                                <div class="feature-item">
+                                    <span class="feature-icon">🛠️</span>
+                                    <span>Tool integration & execution</span>
+                                </div>
+                            </div>
+                            <p class="welcome-tip">
+                                <strong>Tip:</strong> Type your message below and press Enter to start chatting!
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Input Area -->
+                <div class="chat-input-container">
+                    <div class="chat-input-wrapper">
+                        <textarea 
+                            id="chat-input" 
+                            class="chat-input" 
+                            placeholder="Type your message here... (Shift+Enter for new line)"
+                            rows="1"
+                            aria-label="Chat message input"
+                        ></textarea>
+                        <button 
+                            id="send-button" 
+                            class="send-button" 
+                            aria-label="Send message"
+                            title="Send message (Enter)"
+                        >
+                            <span>➤</span>
+                        </button>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Settings Panel -->
+    <div id="settings-panel" class="settings-panel">
+        <div class="settings-header">
+            <h3 class="settings-title">Settings</h3>
+            <button id="close-settings" class="close-settings" aria-label="Close settings">×</button>
+        </div>
+        <div class="settings-content">
+            <form id="settings-form">
+                <div class="setting-group">
+                    <label class="setting-label" for="auto-reconnect">
+                        <input type="checkbox" id="auto-reconnect" name="auto-reconnect" checked>
+                        Auto-reconnect when connection is lost
+                    </label>
+                </div>
+                
+                <div class="setting-group">
+                    <label class="setting-label" for="reconnect-delay">
+                        Reconnection delay (ms)
+                    </label>
+                    <input 
+                        type="number" 
+                        id="reconnect-delay" 
+                        name="reconnect-delay" 
+                        class="setting-input"
+                        value="3000"
+                        min="1000"
+                        max="30000"
+                        step="1000"
+                    >
+                </div>
+                
+                <div class="setting-group">
+                    <label class="setting-label" for="max-reconnect-attempts">
+                        Max reconnection attempts
+                    </label>
+                    <input 
+                        type="number" 
+                        id="max-reconnect-attempts" 
+                        name="max-reconnect-attempts" 
+                        class="setting-input"
+                        value="5"
+                        min="1"
+                        max="20"
+                    >
+                </div>
+                
+                <div class="setting-group">
+                    <button type="submit" class="setting-save-btn">Save Settings</button>
+                </div>
+            </form>
+            
+            <div class="settings-divider"></div>
+
+            <div class="setting-group">
+                <h4>AgentFlow Config (agentflow.toml)</h4>
+                <div class="config-actions">
+                    <button id="load-config-btn" type="button" class="small-btn">Load</button>
+                    <button id="save-config-btn" type="button" class="small-btn">Save</button>
+                    <span id="config-path" class="config-path"></span>
+                </div>
+                <textarea id="agentflow-editor" class="config-editor" rows="10" placeholder="agentflow.toml will appear here..."></textarea>
+            </div>
+
+            <div class="settings-divider"></div>
+
+            <div class="setting-group">
+                <h4>Flow Diagram (Mermaid)</h4>
+                <div class="config-actions">
+                    <button id="show-diagram-btn" type="button" class="small-btn">Refresh Diagram</button>
+                </div>
+                <pre id="flow-diagram" class="diagram-code" aria-label="Mermaid diagram code"></pre>
+            </div>
+
+            <div class="settings-info">
+                <h4>About AgenticGoKit Chat</h4>
+                <p>Version: 0.5.0</p>
+                <p>Build: WebUI Interface</p>
+                <p>Status: Active Development</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load JavaScript -->
+    <script src="/static/app.js"></script>
+
+    <style>
+        /* Additional styles for welcome message and settings */
+        .chat-body {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .welcome-message {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .welcome-content {
+            max-width: 500px;
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: var(--shadow-light);
+            border: 1px solid var(--border-color);
+        }
+
+        .welcome-content h2 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .welcome-content p {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .welcome-features {
+            display: grid;
+            gap: 1rem;
+            margin: 1.5rem 0;
+            text-align: left;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem;
+            background: var(--background-light);
+            border-radius: 6px;
+        }
+
+        .feature-icon {
+            font-size: 1.25rem;
+        }
+
+        .welcome-tip {
+            background: #e8f5e8;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid var(--secondary-color);
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .menu-toggle {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.25rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 4px;
+            transition: var(--transition);
+        }
+
+        .menu-toggle:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .settings-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.25rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 4px;
+            transition: var(--transition);
+        }
+
+        .settings-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .setting-label {
+            font-size: 0.875rem;
+        }
+
+        .setting-label input[type="checkbox"] {
+            margin-right: 0.5rem;
+        }
+
+        .setting-save-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--border-radius);
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            width: 100%;
+        }
+
+        .setting-save-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .settings-info {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+        }
+
+    .settings-divider { height: 1px; background: var(--border-color); margin: 1rem 0; }
+    .config-actions { display: flex; gap: .5rem; align-items: center; margin-bottom: .5rem; }
+    .small-btn { background: var(--background-light); border: 1px solid var(--border-color); color: var(--text-primary); padding: .35rem .6rem; border-radius: 6px; cursor: pointer; }
+    .small-btn:hover { background: #eef2ff; border-color: #c7d2fe; }
+    .config-editor { width: 100%; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: .85rem; border: 1px solid var(--border-color); border-radius: 8px; padding: .75rem; resize: vertical; background: #fff; }
+    .diagram-code { width: 100%; max-height: 240px; overflow: auto; background: #0b1021; color: #e5e7eb; border-radius: 8px; border: 1px solid #1f2937; padding: .75rem; }
+    .config-path { font-size: .8rem; color: var(--text-secondary); }
+
+        .settings-info h4 {
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .settings-info p {
+            margin-bottom: 0.25rem;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .menu-toggle {
+                display: block !important;
+            }
+
+            .header-title h1 {
+                display: none;
+            }
+
+            .welcome-content {
+                padding: 1.5rem;
+                margin: 1rem;
+            }
+
+            .welcome-features {
+                gap: 0.75rem;
+            }
+
+            .feature-item {
+                padding: 0.75rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .welcome-content {
+                padding: 1rem;
+            }
+
+            .welcome-content h2 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</body>
+</html>

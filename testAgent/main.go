@@ -1,160 +1,4 @@
-package templates
-
-// CompleteAgentConfigTemplate provides a comprehensive TOML configuration template
-const CompleteAgentConfigTemplate = `# AgentFlow Configuration
-# Generated from template: {{.TemplateName}}
-# {{.Description}}
-
-[agent_flow]
-name = "{{.Config.Name}}"
-version = "1.0.0"
-description = "{{.Description}}"
-
-# Global LLM configuration - can be overridden per agent
-[llm]
-provider = "{{.GlobalLLM.Provider}}"
-model = "{{.GlobalLLM.Model}}"
-temperature = {{.GlobalLLM.Temperature}}
-max_tokens = {{.GlobalLLM.MaxTokens}}
-timeout_seconds = 30
-
-[logging]
-level = "debug"
-format = "console"
-
-[runtime]
-max_concurrent_agents = {{.Config.MaxConcurrency}}
-timeout_seconds = {{.Config.OrchestrationTimeout}}
-
-[providers.{{.GlobalLLM.Provider}}]
-{{- if eq .GlobalLLM.Provider "azure"}}
-# API key will be read from AZURE_OPENAI_API_KEY environment variable
-# Endpoint will be read from AZURE_OPENAI_ENDPOINT environment variable
-# Deployment will be read from AZURE_OPENAI_DEPLOYMENT environment variable
-{{- else if eq .GlobalLLM.Provider "openai"}}
-# API key will be read from OPENAI_API_KEY environment variable
-{{- else if eq .GlobalLLM.Provider "ollama"}}
-base_url = "http://localhost:11434"
-model = "llama2"
-{{- else if eq .GlobalLLM.Provider "mock"}}
-# Mock provider for testing - no configuration needed
-{{- end}}
-
-[providers.mock]
-# Mock provider for testing - no configuration needed
-
-{{- if .Config.MemoryEnabled}}
-[memory]
-provider = "{{.Config.MemoryProvider}}"
-connection_string = "{{.MemoryConnection}}"
-{{- if .Config.RAGEnabled}}
-enable_rag = true
-chunk_size = {{.Config.RAGChunkSize}}
-chunk_overlap = {{.Config.RAGOverlap}}
-top_k = {{.Config.RAGTopK}}
-score_threshold = {{.Config.RAGScoreThreshold}}
-{{- end}}
-{{- if .Config.SessionMemory}}
-session_memory = true
-{{- end}}
-{{- end}}
-
-{{- if .Config.MCPEnabled}}
-[mcp]
-enabled = true
-{{- if .Config.MCPProduction}}
-production = true
-{{- end}}
-{{- if .MCPServers}}
-{{- range .MCPServers}}
-[[mcp.servers]]
-name = "{{.Name}}"
-type = "{{.Type}}"
-{{- if .Command}}
-command = "{{.Command}}"
-{{- end}}
-{{- if .Host}}
-host = "{{.Host}}"
-{{- end}}
-{{- if .Port}}
-port = {{.Port}}
-{{- end}}
-enabled = {{.Enabled}}
-{{- end}}
-{{- end}}
-{{- end}}
-
-# Agent Definitions
-# Each agent has its own configuration including role, capabilities, and LLM settings
-
-{{- range .Agents}}
-[agents.{{.Name}}]
-role = "{{.Role}}"
-description = "{{.Description}}"
-system_prompt = """{{.SystemPrompt}}"""
-capabilities = {{.Capabilities | printf "%q"}}
-enabled = {{.Enabled}}
-auto_llm = true
-
-{{- if .LLM}}
-# Agent-specific LLM settings (overrides global settings)
-[agents.{{.Name}}.llm]
-{{- if .LLM.Model}}
-model = "{{.LLM.Model}}"
-{{- end}}
-temperature = {{.LLM.Temperature}}
-max_tokens = {{.LLM.MaxTokens}}
-{{- if .LLM.TopP}}
-top_p = {{.LLM.TopP}}
-{{- end}}
-{{- if .LLM.FrequencyPenalty}}
-frequency_penalty = {{.LLM.FrequencyPenalty}}
-{{- end}}
-{{- if .LLM.PresencePenalty}}
-presence_penalty = {{.LLM.PresencePenalty}}
-{{- end}}
-{{- end}}
-
-{{- if .RetryPolicy}}
-# Retry policy for {{.DisplayName}}
-[agents.{{.Name}}.retry_policy]
-max_retries = {{.RetryPolicy.MaxRetries}}
-base_delay_ms = {{.RetryPolicy.BaseDelayMs}}
-max_delay_ms = {{.RetryPolicy.MaxDelayMs}}
-backoff_factor = {{.RetryPolicy.BackoffFactor}}
-{{- end}}
-
-{{- if .RateLimit}}
-# Rate limiting for {{.DisplayName}}
-[agents.{{.Name}}.rate_limit]
-requests_per_second = {{.RateLimit.RequestsPerSecond}}
-burst_size = {{.RateLimit.BurstSize}}
-{{- end}}
-
-{{- if .Metadata}}
-# Metadata for {{.DisplayName}}
-[agents.{{.Name}}.metadata]
-{{- range $key, $value := .Metadata}}
-{{$key}} = "{{$value}}"
-{{- end}}
-{{- end}}
-
-{{- end}}
-
-[orchestration]
-mode = "{{.Config.OrchestrationMode}}"
-timeout_seconds = {{.Config.OrchestrationTimeout}}
-{{- if eq .Config.OrchestrationMode "sequential"}}
-sequential_agents = {{.Config.SequentialAgents | printf "%q"}}
-{{- else if eq .Config.OrchestrationMode "collaborative"}}
-collaborative_agents = {{.Config.CollaborativeAgents | printf "%q"}}
-{{- else if eq .Config.OrchestrationMode "loop"}}
-loop_agent = "{{.Config.LoopAgent}}"
-max_iterations = {{.Config.MaxIterations}}
-{{- end}}
-`
-
-const MainTemplate = `package main
+package main
 
 import (
 	"context"
@@ -164,38 +8,38 @@ import (
 	"strings"
 	"sync"
 	"time"
-	{{if .Config.WebUIEnabled}}
+	
 	"net/http"
 	"path/filepath"
 	"log"
 	"encoding/json"
-	configh "{{.Config.Name}}/internal/config"
-	httpHandlers "{{.Config.Name}}/internal/handlers"
-	tracingh "{{.Config.Name}}/internal/tracing"
-	{{end}}
+	configh "testAgent/internal/config"
+	httpHandlers "testAgent/internal/handlers"
+	tracingh "testAgent/internal/tracing"
+	
 
 	"github.com/kunalkushwaha/agenticgokit/core"
 	_ "github.com/kunalkushwaha/agenticgokit/plugins/logging/zerolog"
 	_ "github.com/kunalkushwaha/agenticgokit/plugins/orchestrator/default"
-	_ "{{.Config.Name}}/agents"
+	_ "testAgent/agents"
 )
 
-{{if .Config.MemoryEnabled}}
+
 // Global memory instance for access by agents
 var memory core.Memory
-{{end}}
 
-{{if .Config.WebUIEnabled}}
+
+
 // Global agent handlers and shared results for WebUI access
 var globalAgentHandlers map[string]core.AgentHandler
 var globalResults *([]AgentOutput)
 var globalResultsMutex *sync.Mutex
 // Keep a global orchestrator reference for synchronous dispatch in WebUI
 var globalOrchestrator core.Orchestrator
-{{end}}
 
 
-// main is the entry point for the {{.Config.Name}} multi-agent system.
+
+// main is the entry point for the testAgent multi-agent system.
 //
 // This function orchestrates the entire workflow by:
 // 1. Loading configuration from agentflow.toml
@@ -231,7 +75,7 @@ func main() {
 	config.ApplyLoggingConfig()
 	
 	logger := core.Logger()
-	logger.Info().Str("log_level", config.Logging.Level).Str("log_format", config.Logging.Format).Msg("Starting {{.Config.Name}} multi-agent system with configured logging")
+	logger.Info().Str("log_level", config.Logging.Level).Str("log_format", config.Logging.Format).Msg("Starting testAgent multi-agent system with configured logging")
 
 	// TODO: Add any custom initialization logic here
 	// Examples:
@@ -243,9 +87,9 @@ func main() {
 	// TODO: Customize command-line arguments for your application
 	// You can add additional flags for configuration, debugging, or feature toggles
 	messageFlag := flag.String("m", "", "Message to process")
-	{{if .Config.WebUIEnabled}}
+	
 	webuiFlag := flag.Bool("webui", false, "Start web interface mode")
-	{{end}}
+	
 	// TODO: Add your custom flags here
 	// Examples:
 	// debugFlag := flag.Bool("debug", false, "Enable debug mode")
@@ -293,7 +137,7 @@ func main() {
 	// Example: Test the connection with a simple query
 	// LLM provider initialized - debug logging reduced for cleaner output
 
-	{{if .Config.MCPEnabled}}
+	
 	// Initialize MCP (Model Context Protocol) manager for tool integration
 	// MCP allows agents to access external tools and services like file systems,
 	// databases, APIs, and other integrations defined in your agentflow.toml
@@ -370,17 +214,17 @@ func main() {
 		}
 	}
 
-	{{if and .Config.MCPEnabled .Config.WithCache}}
+	
 	// Initialize MCP cache manager from agentflow.toml
 	if err := initializeCache(); err != nil {
 		logger.Warn().Err(err).Msg("MCP cache initialization failed; continuing without cache")
 	} else {
 		// MCP cache manager initialized successfully - debug logging reduced
 	}
-	{{end}}
-	{{end}}
+	
+	
 
-	{{if .Config.MemoryEnabled}}
+	
 	// Initialize the memory system for persistent storage and retrieval
 	// This enables agents to remember previous conversations, store knowledge,
 	// and perform RAG (Retrieval-Augmented Generation) operations
@@ -394,7 +238,7 @@ func main() {
 	memoryConfig := config.AgentMemory
 	
 	// Validate configuration before initializing memory
-	if err := validateMemoryConfig(memoryConfig, "{{.Config.EmbeddingModel}}"); err != nil {
+	if err := validateMemoryConfig(memoryConfig, "text-embedding-3-small"); err != nil {
 		logger.Error().Err(err).Msg("Memory configuration validation failed")
 	fmt.Printf("Configuration Error: %v\n", err)
 		os.Exit(1)
@@ -450,7 +294,7 @@ func main() {
 	} else {
 		logger.Info().Msg("Memory system ready")
 	}
-	{{end}}
+	
 
 	// Create configuration-driven agent factory
 	// This factory creates agents based on the configuration in agentflow.toml
@@ -503,7 +347,7 @@ func main() {
 			agentName:       agentName,
 			outputs:         &results,
 			mutex:           &resultsMutex,
-{{if .Config.MemoryEnabled}}			memory:          memory, // Pass memory instance to handler{{end}}
+			memory:          memory, // Pass memory instance to handler
 		}
 
 		agentHandlers[agentName] = wrappedAgent
@@ -601,10 +445,10 @@ func main() {
 		os.Exit(1)
 	}
 
-{{if .Config.WebUIEnabled}}
+
 	// Expose orchestrator globally for WebUI synchronous dispatch
 	globalOrchestrator = orchestrator
-{{end}}
+
 
 	// --- Hooks & Callbacks (Observability/Policies) ---
 	// You can register before/after hooks and error hooks for traceability, metrics, or policy checks.
@@ -637,7 +481,7 @@ func main() {
 	
 	// All agents registered with orchestrator - debug logging reduced
 
-	{{if .Config.WebUIEnabled}}
+	
 	// Expose handlers/results to WebUI (share the same underlying data)
 	globalAgentHandlers = agentHandlers
 	globalResults = &results
@@ -649,7 +493,7 @@ func main() {
 		startWebUI(ctx, runner, config)
 		return
 	}
-	{{end}}
+	
 
 	// Process user input from command line or interactive prompt
 	// TODO: Customize input processing for your application needs
@@ -819,15 +663,137 @@ func main() {
 	logger.Info().Msg("Workflow completed successfully")
 }
 
-{{.ProviderInitFunction}}
 
-{{if .Config.MCPEnabled}}
-{{.MCPInitFunction}}
-{{end}}
 
-{{if .Config.WithCache}}
-{{.CacheInitFunction}}
-{{end}}
+
+func initializeMCP() (core.MCPManager, error) {
+	// Load configuration from agentflow.toml in current directory
+	config, err := core.LoadConfigFromWorkingDir()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load configuration: %w", err)
+	}
+
+	// Check if MCP is enabled in configuration
+	if !config.MCP.Enabled {
+		return nil, fmt.Errorf("MCP is not enabled in agentflow.toml")
+	}
+
+	// Convert TOML config to MCP config
+	mcpConfig := core.MCPConfig{
+		EnableDiscovery:   config.MCP.EnableDiscovery,
+		ConnectionTimeout: time.Duration(config.MCP.ConnectionTimeout) * time.Millisecond,
+		MaxRetries:        config.MCP.MaxRetries,
+		RetryDelay:        time.Duration(config.MCP.RetryDelay) * time.Millisecond,
+		EnableCaching:     config.MCP.EnableCaching,
+		CacheTimeout:      time.Duration(config.MCP.CacheTimeout) * time.Millisecond,
+		MaxConnections:    config.MCP.MaxConnections,
+		Servers:           make([]core.MCPServerConfig, len(config.MCP.Servers)),
+	}
+
+	// Convert server configurations
+	for i, server := range config.MCP.Servers {
+		mcpConfig.Servers[i] = core.MCPServerConfig{
+			Name:    server.Name,
+			Type:    server.Type,
+			Host:    server.Host,
+			Port:    server.Port,
+			Command: server.Command,
+			Enabled: server.Enabled,
+		}
+	}
+
+	// Initialize MCP manager with configuration from TOML
+	err = core.InitializeMCP(mcpConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize MCP: %w", err)
+	}
+
+	// Get the initialized MCP manager
+	manager := core.GetMCPManager()
+	if manager == nil {
+		return nil, fmt.Errorf("MCP manager not available after initialization")
+	}
+
+	return manager, nil
+}
+
+
+
+func initializeCache() error {
+	// Initialize MCP cache manager if MCP caching is enabled
+	cfg, err := core.LoadConfig("agentflow.toml")
+	if err != nil {
+		return fmt.Errorf("failed to load config for cache: %w", err)
+	}
+	if !cfg.MCP.Enabled {
+		return nil
+	}
+
+	// Only proceed if caching is enabled globally or via [mcp.cache]
+	if !(cfg.MCP.EnableCaching || cfg.MCP.Cache.Enabled) {
+		return nil
+	}
+
+	// Start from defaults and override using TOML values
+	cacheCfg := core.DefaultMCPCacheConfig()
+
+	// Global toggle
+	cacheCfg.Enabled = cfg.MCP.EnableCaching || cfg.MCP.Cache.Enabled
+
+	// TTL and cleanup
+	if cfg.MCP.Cache.DefaultTTLMS > 0 {
+		cacheCfg.DefaultTTL = time.Duration(cfg.MCP.Cache.DefaultTTLMS) * time.Millisecond
+	} else if cfg.MCP.CacheTimeout > 0 {
+		// Back-compat global cache_timeout_ms
+		cacheCfg.DefaultTTL = time.Duration(cfg.MCP.CacheTimeout) * time.Millisecond
+	}
+	if cfg.MCP.Cache.CleanupIntervalMS > 0 {
+		cacheCfg.CleanupInterval = time.Duration(cfg.MCP.Cache.CleanupIntervalMS) * time.Millisecond
+	}
+
+	// Size & keys
+	if cfg.MCP.Cache.MaxSizeMB > 0 {
+		cacheCfg.MaxSize = cfg.MCP.Cache.MaxSizeMB
+	}
+	if cfg.MCP.Cache.MaxKeys > 0 {
+		cacheCfg.MaxKeys = cfg.MCP.Cache.MaxKeys
+	}
+
+	// Policy
+	if cfg.MCP.Cache.EvictionPolicy != "" {
+		cacheCfg.EvictionPolicy = cfg.MCP.Cache.EvictionPolicy
+	}
+
+	// Backend
+	if cfg.MCP.Cache.Backend != "" {
+		cacheCfg.Backend = cfg.MCP.Cache.Backend
+	}
+	if cfg.MCP.Cache.BackendConfig != nil {
+		// Ensure map exists then copy entries
+		if cacheCfg.BackendConfig == nil {
+			cacheCfg.BackendConfig = map[string]string{}
+		}
+		for k, v := range cfg.MCP.Cache.BackendConfig {
+			cacheCfg.BackendConfig[k] = v
+		}
+	}
+
+	// Per-tool TTLs
+	if len(cfg.MCP.Cache.ToolTTLsMS) > 0 {
+		cacheCfg.ToolTTLs = map[string]time.Duration{}
+		for tool, ms := range cfg.MCP.Cache.ToolTTLsMS {
+			if ms > 0 {
+				cacheCfg.ToolTTLs[tool] = time.Duration(ms) * time.Millisecond
+			}
+		}
+	}
+
+	if err := core.InitializeMCPCacheManager(cacheCfg); err != nil {
+		return fmt.Errorf("failed to initialize MCP cache manager: %w", err)
+	}
+	return nil
+}
+
 
 // ResultCollectorHandler wraps an agent handler to capture its outputs for display.
 //
@@ -848,7 +814,7 @@ type ResultCollectorHandler struct {
 	agentName       string
 	outputs         *[]AgentOutput
 	mutex           *sync.Mutex
-{{if .Config.MemoryEnabled}}	memory          core.Memory // Capture memory instance instead of using global{{end}}
+	memory          core.Memory // Capture memory instance instead of using global
 }
 
 // AgentOutput holds the output from an agent along with metadata.
@@ -888,7 +854,7 @@ type AgentOutput struct {
 // You might want to modify how content is extracted, add custom
 // metadata collection, or implement different storage strategies.
 func (r *ResultCollectorHandler) Run(ctx context.Context, event core.Event, state core.State) (core.AgentResult, error) {
-{{if .Config.MemoryEnabled}}	// Inject memory into context so agents can access it
+	// Inject memory into context so agents can access it
 	if r.memory != nil {
 		sessionID := core.GetSessionID(ctx)
 		if sessionID == "default" {
@@ -903,7 +869,7 @@ func (r *ResultCollectorHandler) Run(ctx context.Context, event core.Event, stat
 		core.Logger().Warn().Msg("ResultCollector: Handler memory is nil, agents will get NoOpMemory")
 	}
 	
-{{end}}	// TODO: Add pre-execution logic here if needed
+	// TODO: Add pre-execution logic here if needed
 	// Examples: start timing, log execution start, validate input
 	startTime := time.Now()
 	
@@ -960,16 +926,16 @@ func (r *ResultCollectorHandler) Run(ctx context.Context, event core.Event, stat
 	})
 	r.mutex.Unlock()
 
-	{{if .Config.WebUIEnabled}}
+	
 	// Record an edge for debugging visualization (shim), including full message content
 	tracingh.RecordAgentTransition("webui-session", r.agentName, result, content)
-	{{end}}
+	
 
 	// Return the original result unchanged so the workflow continues normally
 	return result, err
 }
 
-{{if .Config.MemoryEnabled}}
+
 // validateMemoryConfig validates the memory configuration against expected values
 func validateMemoryConfig(memoryConfig core.AgentMemoryConfig, expectedModel string) error {
 	// Determine expected dimensions and model based on embedding provider
@@ -1028,7 +994,7 @@ func validateMemoryConfig(memoryConfig core.AgentMemoryConfig, expectedModel str
 	}
 	
 	// Validate RAG configuration if enabled
-	{{if .Config.RAGEnabled}}
+	
 	if memoryConfig.EnableRAG {
 		if memoryConfig.ChunkSize <= 0 {
 			return fmt.Errorf("RAG chunk size must be positive, got %d\nSolution: Set [agent_memory] chunk_size = 1000", memoryConfig.ChunkSize)
@@ -1042,7 +1008,7 @@ func validateMemoryConfig(memoryConfig core.AgentMemoryConfig, expectedModel str
 				memoryConfig.KnowledgeScoreThreshold)
 		}
 	}
-	{{end}}
+	
 	
 	// Validate embedding provider specific settings
 	switch memoryConfig.Embedding.Provider {
@@ -1065,7 +1031,7 @@ func validateMemoryConfig(memoryConfig core.AgentMemoryConfig, expectedModel str
 	
 	return nil
 }
-{{end}}
+
 
 func initializeProvider(providerType string) (core.ModelProvider, error) {
 	// Load configuration to get provider settings
@@ -1134,7 +1100,7 @@ func initializeProvider(providerType string) (core.ModelProvider, error) {
 	return provider, nil
 }
 
-{{if .Config.WebUIEnabled}}
+
 // WebUI Server Functions
 func startWebUI(ctx context.Context, runner core.Runner, config *core.Config) {
 	// Wire framework-native tracing hooks before starting the runner
@@ -1152,11 +1118,11 @@ func startWebUI(ctx context.Context, runner core.Runner, config *core.Config) {
 	log.Printf("Starting workflow orchestrator for WebUI mode")
 	runner.Start(ctx)
 
-	staticDir := "{{.Config.WebUIStaticDir}}"
+	staticDir := "internal/webui/static"
 	if staticDir == "" {
 		staticDir = "internal/webui/static"
 	}
-	port := {{.Config.WebUIPort}}
+	port := 8080
 	if port == 0 { port = 8080 }
 
 	// Setup HTTP routes
@@ -1202,5 +1168,4 @@ func (rp *resultsProxy) Latest() (string, bool) {
 	latest := (*rp.res)[len(*rp.res)-1]
 	return latest.Content, true
 }
-{{end}}
-`
+

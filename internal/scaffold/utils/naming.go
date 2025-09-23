@@ -66,6 +66,12 @@ type ProjectConfig struct {
 
 	// MCP configuration
 	MCPTransport string // tcp, stdio, etc.
+
+	// WebUI configuration
+	WebUIEnabled      bool
+	WebUIPort         int
+	WebUIStaticDir    string
+	WebUITemplatesDir string
 }
 
 // ResolveAgentNames determines the final list of agents to create based on the config

@@ -58,8 +58,11 @@ EXAMPLES:
   # Custom configuration
   agentcli create custom-bot --agents 3 --memory pgvector --mcp standard
 
-  # Chat system with session memory
-  agentcli create chat-bot --template chat-system --memory pgvector
+  # Chat system with web interface
+  agentcli create chat-bot --template chat-system --webui
+
+  # WebUI with advanced features
+  agentcli create web-assistant --webui --memory pgvector --rag
 
 For detailed template information, use: agentcli create --help-templates`,
 	Args: func(cmd *cobra.Command, args []string) error {
@@ -121,6 +124,8 @@ func init() {
 		"MCP integration level (minimal, standard, advanced)")
 	createCmd.Flags().StringVar(&consolidatedFlags.RAG, "rag", "",
 		"Enable RAG with optional chunk size (default, 1000, 2000)")
+	createCmd.Flags().BoolVar(&consolidatedFlags.WebUI, "webui", false,
+		"Enable web-based chat interface")
 
 	// Orchestration flags
 	createCmd.Flags().StringVar(&consolidatedFlags.Orchestration, "orchestration", "",
