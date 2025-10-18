@@ -405,3 +405,227 @@ func ValidateRAGConfig(config *RAGConfig) *RAGConfig {
 
 	return &validated
 }
+
+// =============================================================================
+// TOOL CALLING HELPER FUNCTIONS
+// =============================================================================
+
+// ParseToolCalls extracts tool calls from LLM response content.
+// It supports multiple formats:
+//   - JSON format: {"tool_calls": [{"name": "func", "arguments": {...}}]}
+//   - Function call format: function_name(arg1="value1", arg2="value2")
+//   - Action format: Action: function_name\nAction Input: {...}
+//
+// Returns a slice of parsed tool calls, or empty slice if none found.
+func ParseToolCalls(content string) []ToolCall {
+	var toolCalls []ToolCall
+
+	// Try JSON format first (most structured)
+	if calls := parseJSONToolCalls(content); len(calls) > 0 {
+		return calls
+	}
+
+	// Try function call format: function_name(args)
+	if calls := parseFunctionStyleCalls(content); len(calls) > 0 {
+		return calls
+	}
+
+	// Try action format (ReAct style): Action: name\nAction Input: json
+	if calls := parseActionStyleCalls(content); len(calls) > 0 {
+		return calls
+	}
+
+	return toolCalls
+}
+
+// parseJSONToolCalls attempts to parse JSON-formatted tool calls
+func parseJSONToolCalls(content string) []ToolCall {
+	// For now, return empty - will implement JSON parsing if needed
+	// This would use encoding/json to unmarshal structured tool calls
+	return nil
+}
+
+// parseFunctionStyleCalls parses function-style tool calls
+// Example: calculate(expression="2+2")
+func parseFunctionStyleCalls(content string) []ToolCall {
+	var calls []ToolCall
+
+	// Simple regex-free parser for function calls
+	// Look for pattern: word(key="value", ...)
+	lines := strings.Split(content, "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if !strings.Contains(line, "(") || !strings.Contains(line, ")") {
+			continue
+		}
+
+		// Extract function name
+		parenIndex := strings.Index(line, "(")
+		if parenIndex <= 0 {
+			continue
+		}
+
+		name := strings.TrimSpace(line[:parenIndex])
+		if name == "" || strings.ContainsAny(name, " \t\n\"'") {
+			continue // Not a valid function name
+		}
+
+		// Extract arguments (simple key=value parsing)
+		argsStart := parenIndex + 1
+		argsEnd := strings.LastIndex(line, ")")
+		if argsEnd < argsStart {
+			continue // No closing paren
+		}
+
+		argsStr := line[argsStart:argsEnd]
+		args := parseSimpleArgs(argsStr)
+
+		// Allow functions with or without args
+		calls = append(calls, ToolCall{
+			Name:      name,
+			Arguments: args,
+		})
+	}
+
+	return calls
+}
+
+// parseActionStyleCalls parses ReAct-style action format
+// Example: Action: search\nAction Input: {"query": "weather"}
+func parseActionStyleCalls(content string) []ToolCall {
+	var calls []ToolCall
+
+	lines := strings.Split(content, "\n")
+	var currentAction string
+	var currentInput string
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+
+		if strings.HasPrefix(strings.ToLower(line), "action:") {
+			currentAction = strings.TrimSpace(line[7:]) // Remove "Action:"
+		} else if strings.HasPrefix(strings.ToLower(line), "action input:") {
+			currentInput = strings.TrimSpace(line[13:]) // Remove "Action Input:"
+
+			// If we have both action and input, create a tool call
+			if currentAction != "" {
+				args := parseSimpleJSON(currentInput)
+				calls = append(calls, ToolCall{
+					Name:      currentAction,
+					Arguments: args,
+				})
+				currentAction = ""
+				currentInput = ""
+			}
+		}
+	}
+
+	return calls
+}
+
+// parseSimpleArgs parses simple key=value or key="value" arguments
+func parseSimpleArgs(argsStr string) map[string]interface{} {
+	args := make(map[string]interface{})
+
+	if argsStr == "" {
+		return args
+	}
+
+	// Split by comma (simple parser, doesn't handle nested commas)
+	parts := strings.Split(argsStr, ",")
+
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if !strings.Contains(part, "=") {
+			continue
+		}
+
+		kv := strings.SplitN(part, "=", 2)
+		if len(kv) != 2 {
+			continue
+		}
+
+		key := strings.TrimSpace(kv[0])
+		value := strings.TrimSpace(kv[1])
+
+		// Remove quotes if present
+		value = strings.Trim(value, `"'`)
+
+		args[key] = value
+	}
+
+	return args
+}
+
+// parseSimpleJSON attempts to parse a simple JSON object into map
+func parseSimpleJSON(jsonStr string) map[string]interface{} {
+	args := make(map[string]interface{})
+
+	// Very simple JSON parser for basic objects
+	jsonStr = strings.TrimSpace(jsonStr)
+	if !strings.HasPrefix(jsonStr, "{") || !strings.HasSuffix(jsonStr, "}") {
+		// If not JSON, treat as single unnamed argument
+		if jsonStr != "" {
+			args["input"] = jsonStr
+		}
+		return args
+	}
+
+	// Remove braces
+	jsonStr = strings.TrimPrefix(jsonStr, "{")
+	jsonStr = strings.TrimSuffix(jsonStr, "}")
+	jsonStr = strings.TrimSpace(jsonStr)
+
+	// Split by comma (simple, doesn't handle nested objects)
+	parts := strings.Split(jsonStr, ",")
+
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if !strings.Contains(part, ":") {
+			continue
+		}
+
+		kv := strings.SplitN(part, ":", 2)
+		if len(kv) != 2 {
+			continue
+		}
+
+		key := strings.Trim(strings.TrimSpace(kv[0]), `"`)
+		value := strings.Trim(strings.TrimSpace(kv[1]), `"`)
+
+		args[key] = value
+	}
+
+	return args
+}
+
+// FormatToolsForPrompt generates a description of available tools
+// to include in the system prompt so the LLM knows what tools it can use.
+func FormatToolsForPrompt(tools []Tool) string {
+	if len(tools) == 0 {
+		return ""
+	}
+
+	var builder strings.Builder
+	builder.WriteString("\n\nYou have access to the following tools:\n\n")
+
+	for _, tool := range tools {
+		builder.WriteString(fmt.Sprintf("- %s: %s\n", tool.Name(), tool.Description()))
+	}
+
+	builder.WriteString("\nTo use a tool, respond with the function call in this format:\n")
+	builder.WriteString("tool_name(arg1=\"value1\", arg2=\"value2\")\n")
+	builder.WriteString("\nOr in ReAct format:\n")
+	builder.WriteString("Action: tool_name\n")
+	builder.WriteString("Action Input: {\"arg1\": \"value1\", \"arg2\": \"value2\"}\n")
+
+	return builder.String()
+}
+
+// FormatToolResult formats a tool execution result for inclusion in the LLM prompt
+func FormatToolResult(toolName string, result *ToolResult) string {
+	if result.Success {
+		return fmt.Sprintf("\nTool '%s' returned: %v\n", toolName, result.Content)
+	}
+	return fmt.Sprintf("\nTool '%s' failed with error: %s\n", toolName, result.Error)
+}

@@ -149,6 +149,16 @@ func (a *realAgent) Run(ctx context.Context, input string) (*Result, error) {
 		User:   input,
 	}
 
+	// Step 1.5: Add tool descriptions to system prompt if tools are available
+	if len(a.tools) > 0 {
+		toolDescriptions := FormatToolsForPrompt(a.tools)
+		prompt.System = prompt.System + toolDescriptions
+
+		core.Logger().Debug().
+			Int("tool_count", len(a.tools)).
+			Msg("Added tool descriptions to system prompt")
+	}
+
 	// Add model parameters from config if specified
 	if a.config.LLM.Temperature > 0 {
 		temp := float32(a.config.LLM.Temperature)
@@ -160,15 +170,19 @@ func (a *realAgent) Run(ctx context.Context, input string) (*Result, error) {
 	}
 
 	// Step 2: Enhance prompt with memory context if memory is enabled
-	if a.memoryProvider != nil {
-		memoryContext, err := a.buildMemoryContext(ctx, input)
-		if err != nil {
-			// Log warning but continue - memory failure shouldn't halt execution
-			core.Logger().Warn().Err(err).Msg("Failed to build memory context, continuing without it")
-		} else if memoryContext != "" {
-			// Prepend memory context to system prompt
-			prompt.System = prompt.System + "\n\nRelevant context from memory:\n" + memoryContext
-		}
+	// Use the new BuildEnrichedPrompt utility for proper RAG integration
+	if a.memoryProvider != nil && a.config.Memory != nil {
+		// Convert llm.Prompt to core.Prompt for enrichment
+		corePrompt := BuildEnrichedPrompt(ctx, prompt.System, prompt.User, a.memoryProvider, a.config.Memory)
+
+		// Update the LLM prompt with enriched content
+		prompt.System = corePrompt.System
+		prompt.User = corePrompt.User
+
+		core.Logger().Debug().
+			Str("original_input", input).
+			Int("enriched_length", len(prompt.User)).
+			Msg("Enhanced prompt with memory context")
 	}
 
 	// Step 3: Call the LLM provider
@@ -179,9 +193,23 @@ func (a *realAgent) Run(ctx context.Context, input string) (*Result, error) {
 		return nil, fmt.Errorf("LLM call failed: %w", err)
 	}
 
+	// Step 3.5: Execute tool calls if any are detected in the response
+	// This implements an agentic loop where the LLM can use tools and continue reasoning
+	var toolCalls []ToolCall
+	finalResponse := response.Content
+	if len(a.tools) > 0 {
+		const maxToolIterations = 5 // Prevent infinite tool-calling loops
+		var toolErr error
+		finalResponse, toolCalls, toolErr = a.executeToolsAndContinue(ctx, response.Content, prompt, maxToolIterations)
+		if toolErr != nil {
+			// Log warning but don't fail - use the last valid response
+			core.Logger().Warn().Err(toolErr).Msg("Tool execution encountered error, using last valid response")
+		}
+	}
+
 	// Step 4: Store the interaction in memory if enabled
 	if a.memoryProvider != nil {
-		if err := a.storeInMemory(ctx, input, response.Content); err != nil {
+		if err := a.storeInMemory(ctx, input, finalResponse); err != nil {
 			// Log warning but don't fail - memory storage is non-critical
 			core.Logger().Warn().Err(err).Msg("Failed to store interaction in memory")
 		}
@@ -204,12 +232,12 @@ func (a *realAgent) Run(ctx context.Context, input string) (*Result, error) {
 			// Memory: a.memoryProvider,
 		}
 
-		handlerResponse, err := a.handler(ctx, response.Content, capabilities)
+		handlerResponse, err := a.handler(ctx, finalResponse, capabilities)
 		if err != nil {
 			core.Logger().Warn().Err(err).Msg("Custom handler returned error")
 		} else if handlerResponse != "" {
 			// Handler can override the response
-			response.Content = handlerResponse
+			finalResponse = handlerResponse
 		}
 	}
 
@@ -220,10 +248,11 @@ func (a *realAgent) Run(ctx context.Context, input string) (*Result, error) {
 	duration := time.Since(startTime)
 	result := &Result{
 		Success:    true,
-		Content:    response.Content,
+		Content:    finalResponse,
 		Duration:   duration,
 		TokensUsed: response.Usage.TotalTokens,
 		MemoryUsed: a.memoryProvider != nil,
+		ToolCalls:  toolCalls, // Include tool execution details
 		StartTime:  startTime,
 		EndTime:    time.Now(),
 		Metadata: map[string]interface{}{
@@ -231,6 +260,15 @@ func (a *realAgent) Run(ctx context.Context, input string) (*Result, error) {
 			"provider":      a.config.LLM.Provider,
 			"finish_reason": response.FinishReason,
 		},
+	}
+
+	// Add tool names to ToolsCalled list for convenience
+	if len(toolCalls) > 0 {
+		var toolNames []string
+		for _, tc := range toolCalls {
+			toolNames = append(toolNames, tc.Name)
+		}
+		result.ToolsCalled = toolNames
 	}
 
 	// Add LLM interaction details
@@ -249,47 +287,56 @@ func (a *realAgent) Run(ctx context.Context, input string) (*Result, error) {
 }
 
 // buildMemoryContext retrieves relevant context from memory for the given input.
-// This is used to enhance the prompt with relevant historical information.
+// Deprecated: This method is kept for backward compatibility. Use BuildEnrichedPrompt instead.
 func (a *realAgent) buildMemoryContext(ctx context.Context, input string) (string, error) {
-	if a.memoryProvider == nil {
+	if a.memoryProvider == nil || a.config.Memory == nil {
 		return "", nil
 	}
 
-	// Query memory for relevant information
-	// Use core.Memory's Query method for personal memory
-	results, err := a.memoryProvider.Query(ctx, input, 5) // Get top 5 relevant memories
-	if err != nil {
-		return "", fmt.Errorf("failed to query memory: %w", err)
+	// Use the new utility function for enrichment
+	enrichedInput := EnrichWithMemory(ctx, a.memoryProvider, input, a.config.Memory)
+
+	// Return only the added context (not the original input)
+	if enrichedInput == input {
+		return "", nil // No context was added
 	}
 
-	if len(results) == 0 {
-		return "", nil
-	}
-
-	// Build context string from memory results
-	var contextBuilder strings.Builder
-	for i, result := range results {
-		contextBuilder.WriteString(fmt.Sprintf("%d. %s\n", i+1, result.Content))
-	}
-
-	return contextBuilder.String(), nil
+	return enrichedInput, nil
 }
 
 // storeInMemory stores the current interaction in memory for future reference.
+// This includes both the personal memory (for RAG) and chat history (for context).
 func (a *realAgent) storeInMemory(ctx context.Context, input, output string) error {
 	if a.memoryProvider == nil {
 		return nil
 	}
 
-	// Store user input
+	// Store as personal memory for RAG retrieval
+	// This allows the agent to recall facts and context from past conversations
 	if err := a.memoryProvider.Store(ctx, input, "user_message", "conversation"); err != nil {
-		return fmt.Errorf("failed to store user message: %w", err)
+		core.Logger().Warn().Err(err).Msg("Failed to store user message in memory")
+		// Don't return error - continue with chat history storage
 	}
 
-	// Store agent response
 	if err := a.memoryProvider.Store(ctx, output, "agent_response", "conversation"); err != nil {
-		return fmt.Errorf("failed to store agent response: %w", err)
+		core.Logger().Warn().Err(err).Msg("Failed to store agent response in memory")
+		// Don't return error - continue with chat history storage
 	}
+
+	// Store as chat messages for conversation history
+	// This enables the agent to maintain context across multiple turns
+	if err := a.memoryProvider.AddMessage(ctx, "user", input); err != nil {
+		return fmt.Errorf("failed to add user message to chat history: %w", err)
+	}
+
+	if err := a.memoryProvider.AddMessage(ctx, "assistant", output); err != nil {
+		return fmt.Errorf("failed to add assistant message to chat history: %w", err)
+	}
+
+	core.Logger().Debug().
+		Int("input_length", len(input)).
+		Int("output_length", len(output)).
+		Msg("Stored interaction in memory and chat history")
 
 	return nil
 }
@@ -459,4 +506,146 @@ func (a *realAgent) Cleanup(ctx context.Context) error {
 
 	core.Logger().Info().Str("agent", a.config.Name).Msg("Agent cleanup completed")
 	return nil
+}
+
+// =============================================================================
+// TOOL EXECUTION HELPERS
+// =============================================================================
+
+// executeTool looks up a tool by name and executes it with the given arguments.
+// Returns the tool result, including success status and any errors.
+func (a *realAgent) executeTool(ctx context.Context, toolCall ToolCall) ToolCall {
+	startTime := time.Now()
+
+	// Initialize result fields
+	toolCall.Success = false
+	toolCall.Duration = 0
+
+	// Find the tool by name
+	var tool Tool
+	for _, t := range a.tools {
+		if t.Name() == toolCall.Name {
+			tool = t
+			break
+		}
+	}
+
+	if tool == nil {
+		toolCall.Error = fmt.Sprintf("tool '%s' not found", toolCall.Name)
+		toolCall.Duration = time.Since(startTime)
+		return toolCall
+	}
+
+	// Execute the tool
+	result, err := tool.Execute(ctx, toolCall.Arguments)
+	toolCall.Duration = time.Since(startTime)
+
+	if err != nil {
+		toolCall.Error = err.Error()
+		toolCall.Success = false
+		if result != nil {
+			toolCall.Result = result.Content
+		}
+		return toolCall
+	}
+
+	if result == nil {
+		toolCall.Error = "tool returned nil result"
+		toolCall.Success = false
+		return toolCall
+	}
+
+	// Tool executed successfully
+	toolCall.Success = result.Success
+	toolCall.Result = result.Content
+	if !result.Success {
+		toolCall.Error = result.Error
+	}
+
+	return toolCall
+}
+
+// executeToolsAndContinue executes any tool calls found in the LLM response,
+// then calls the LLM again with the tool results. Returns the final response
+// after all tool executions or when no more tool calls are detected.
+//
+// This implements an agentic loop where the LLM can request tool usage,
+// get results, and continue reasoning with those results.
+func (a *realAgent) executeToolsAndContinue(
+	ctx context.Context,
+	initialResponse string,
+	originalPrompt llm.Prompt,
+	maxIterations int,
+) (string, []ToolCall, error) {
+	if len(a.tools) == 0 {
+		// No tools available, return response as-is
+		return initialResponse, nil, nil
+	}
+
+	var allToolCalls []ToolCall
+	currentResponse := initialResponse
+	iteration := 0
+
+	for iteration < maxIterations {
+		// Parse tool calls from the current response
+		toolCalls := ParseToolCalls(currentResponse)
+
+		if len(toolCalls) == 0 {
+			// No tool calls found, we're done
+			break
+		}
+
+		core.Logger().Debug().
+			Int("iteration", iteration+1).
+			Int("tool_calls", len(toolCalls)).
+			Msg("Executing tool calls")
+
+		// Execute all tool calls
+		var executedCalls []ToolCall
+		var toolResults strings.Builder
+
+		for _, call := range toolCalls {
+			executedCall := a.executeTool(ctx, call)
+			executedCalls = append(executedCalls, executedCall)
+			allToolCalls = append(allToolCalls, executedCall)
+
+			// Format tool result for next LLM call
+			toolResults.WriteString(FormatToolResult(executedCall.Name, &ToolResult{
+				Success: executedCall.Success,
+				Content: executedCall.Result,
+				Error:   executedCall.Error,
+			}))
+		}
+
+		// Build a new prompt with tool results
+		continuationPrompt := llm.Prompt{
+			System: originalPrompt.System,
+			User: fmt.Sprintf(
+				"Previous response:\n%s\n\nTool execution results:\n%s\n\nPlease continue with your response based on the tool results.",
+				currentResponse,
+				toolResults.String(),
+			),
+			Parameters: originalPrompt.Parameters,
+		}
+
+		// Call LLM again with tool results
+		response, err := a.llmProvider.Call(ctx, continuationPrompt)
+		if err != nil {
+			// Return what we have so far with the error
+			return currentResponse, allToolCalls, fmt.Errorf("LLM call failed after tool execution: %w", err)
+		}
+
+		currentResponse = response.Content
+		iteration++
+
+		// Check if we've reached max iterations
+		if iteration >= maxIterations {
+			core.Logger().Warn().
+				Int("max_iterations", maxIterations).
+				Msg("Reached maximum tool execution iterations")
+			break
+		}
+	}
+
+	return currentResponse, allToolCalls, nil
 }
