@@ -706,7 +706,7 @@ func validateMCPConfig(mcp *MCPConfig) []ValidationError {
 			})
 		}
 
-		validTypes := []string{"tcp", "stdio", "websocket"}
+		validTypes := []string{"tcp", "stdio", "websocket", "http_sse", "http_streaming"}
 		isValidType := false
 		for _, validType := range validTypes {
 			if server.Type == validType {
@@ -722,6 +722,47 @@ func validateMCPConfig(mcp *MCPConfig) []ValidationError {
 				Suggestion: fmt.Sprintf("Use one of: %s", strings.Join(validTypes, ", ")),
 				Severity:   "critical",
 			})
+		}
+
+		// Validate type-specific requirements
+		switch server.Type {
+		case "tcp", "websocket":
+			if server.Address == "" {
+				errors = append(errors, ValidationError{
+					Field:      fmt.Sprintf("tools.mcp.servers[%d].address", i),
+					Message:    fmt.Sprintf("%s server requires an address", server.Type),
+					Suggestion: "Provide a valid host address (e.g., localhost, 192.168.1.1)",
+					Severity:   "critical",
+				})
+			}
+			if server.Port <= 0 || server.Port > 65535 {
+				errors = append(errors, ValidationError{
+					Field:      fmt.Sprintf("tools.mcp.servers[%d].port", i),
+					Message:    fmt.Sprintf("%s server requires a valid port (1-65535)", server.Type),
+					Suggestion: "Provide a valid port number",
+					Severity:   "critical",
+				})
+			}
+
+		case "stdio":
+			if server.Command == "" {
+				errors = append(errors, ValidationError{
+					Field:      fmt.Sprintf("tools.mcp.servers[%d].command", i),
+					Message:    "STDIO server requires a command",
+					Suggestion: "Provide the command to execute (e.g., 'python mcp_server.py')",
+					Severity:   "critical",
+				})
+			}
+
+		case "http_sse", "http_streaming":
+			if server.Address == "" {
+				errors = append(errors, ValidationError{
+					Field:      fmt.Sprintf("tools.mcp.servers[%d].address", i),
+					Message:    fmt.Sprintf("%s server requires an address/endpoint", server.Type),
+					Suggestion: "Provide full URL (e.g., 'http://localhost:8080/mcp')",
+					Severity:   "critical",
+				})
+			}
 		}
 	}
 

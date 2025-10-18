@@ -1,6 +1,7 @@
 package vnext
 
 import (
+	"context"
 	"strings"
 	"time"
 
@@ -115,10 +116,12 @@ func createTools(config *ToolsConfig) ([]Tool, error) {
 
 	// Step 2: Initialize and discover MCP tools if enabled
 	if config.MCP != nil && config.MCP.Enabled {
+		core.Logger().Debug().Msg("MCP is enabled, initializing...")
 		if err := initializeMCP(config.MCP); err != nil {
 			// MCP initialization failure is not fatal - log and continue with internal tools
 			core.Logger().Warn().Err(err).Msg("Failed to initialize MCP, continuing without MCP tools")
 		} else {
+			core.Logger().Debug().Msg("MCP initialized successfully, discovering tools...")
 			// Discover MCP tools
 			mcpTools, err := DiscoverMCPTools()
 			if err != nil {
@@ -126,6 +129,8 @@ func createTools(config *ToolsConfig) ([]Tool, error) {
 			} else if len(mcpTools) > 0 {
 				allTools = append(allTools, mcpTools...)
 				core.Logger().Debug().Int("count", len(mcpTools)).Msg("Discovered MCP tools")
+			} else {
+				core.Logger().Warn().Msg("DiscoverMCPTools returned zero tools")
 			}
 		}
 	}
@@ -195,5 +200,45 @@ func initializeMCP(config *MCPConfig) error {
 	}
 
 	// Initialize MCP without cache
-	return core.InitializeMCP(coreMCPConfig)
+	if err := core.InitializeMCP(coreMCPConfig); err != nil {
+		return err
+	}
+
+	// Connect to all configured servers
+	mgr := core.GetMCPManager()
+	if mgr != nil {
+		ctx := context.Background()
+		for _, server := range config.Servers {
+			if server.Enabled {
+				core.Logger().Debug().Str("server", server.Name).Msg("Connecting to MCP server...")
+				if err := mgr.Connect(ctx, server.Name); err != nil {
+					core.Logger().Warn().
+						Err(err).
+						Str("server", server.Name).
+						Msg("Failed to connect to MCP server")
+				} else {
+					core.Logger().Debug().
+						Str("server", server.Name).
+						Msg("Successfully connected to MCP server")
+				}
+			}
+		}
+
+		// Initialize MCP tool registry (required for MCP tools to be available)
+		core.Logger().Debug().Msg("Initializing MCP tool registry...")
+		if err := core.InitializeMCPToolRegistry(); err != nil {
+			core.Logger().Warn().Err(err).Msg("Failed to initialize MCP tool registry")
+		}
+
+		// Register MCP tools with registry (discovers and registers tools from connected servers)
+		core.Logger().Debug().Msg("Registering MCP tools from connected servers...")
+		if err := core.RegisterMCPToolsWithRegistry(ctx); err != nil {
+			core.Logger().Warn().Err(err).Msg("Failed to register MCP tools")
+		} else {
+			tools := mgr.GetAvailableTools()
+			core.Logger().Debug().Int("tool_count", len(tools)).Msg("MCP tools registered successfully")
+		}
+	}
+
+	return nil
 }
