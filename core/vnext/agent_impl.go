@@ -24,7 +24,7 @@ type realAgent struct {
 	// Core dependencies - directly using internal implementations
 	llmProvider    llm.ModelProvider // LLM provider (Ollama, OpenAI, Azure, etc.)
 	memoryProvider core.Memory       // Memory provider (optional, for context/RAG)
-	tools          []core.Tool       // Tools available to the agent (optional)
+	tools          []Tool            // Tools available to the agent (optional)
 
 	// Runtime state
 	initialized bool

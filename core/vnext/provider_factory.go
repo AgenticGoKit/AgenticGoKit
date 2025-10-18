@@ -95,16 +95,16 @@ func createMemoryProvider(config *MemoryConfig) (core.Memory, error) {
 //   - Combine with internal tools
 //
 // Returns the list of initialized tools, nil (if disabled), or an error.
-func createTools(config *ToolsConfig) ([]core.Tool, error) {
+func createTools(config *ToolsConfig) ([]Tool, error) {
 	// Tools are optional - return nil if not configured or disabled
 	if config == nil || !config.Enabled {
 		return nil, nil
 	}
 
-	var allTools []core.Tool
+	var allTools []Tool
 
 	// Step 1: Discover internal tools (always available)
-	internalTools, err := core.DiscoverInternalTools()
+	internalTools, err := DiscoverInternalTools()
 	if err != nil {
 		// Log warning but continue - internal tools are optional
 		core.Logger().Warn().Err(err).Msg("Failed to discover internal tools")
@@ -120,7 +120,7 @@ func createTools(config *ToolsConfig) ([]core.Tool, error) {
 			core.Logger().Warn().Err(err).Msg("Failed to initialize MCP, continuing without MCP tools")
 		} else {
 			// Discover MCP tools
-			mcpTools, err := core.DiscoverMCPTools()
+			mcpTools, err := DiscoverMCPTools()
 			if err != nil {
 				core.Logger().Warn().Err(err).Msg("Failed to discover MCP tools")
 			} else if len(mcpTools) > 0 {
