@@ -1,0 +1,14 @@
+# Binaries
+researcher-reporter
+researcher-reporter.exe
+*.exe
+
+# Go build cache
+go.sum
+
+# Generated content files (keep locally, don't commit)
+BLOG.md
+CONTENT-PACKAGE.md
+DIAGRAMS.md
+QUICK-START.md
+SOCIAL-MEDIA.md
