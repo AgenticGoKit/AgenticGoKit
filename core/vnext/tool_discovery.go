@@ -43,10 +43,13 @@ func DiscoverInternalTools() ([]Tool, error) {
 func DiscoverMCPTools() ([]Tool, error) {
 	mgr := core.GetMCPManager()
 	if mgr == nil {
+		core.Logger().Debug().Msg("MCP manager not available")
 		return nil, fmt.Errorf("MCP manager not available")
 	}
 
 	mcpToolInfos := mgr.GetAvailableTools()
+	core.Logger().Debug().Int("count", len(mcpToolInfos)).Msg("GetAvailableTools returned")
+
 	var tools []Tool
 	for _, info := range mcpToolInfos {
 		wrapper := &mcpToolWrapper{
@@ -56,7 +59,7 @@ func DiscoverMCPTools() ([]Tool, error) {
 			manager:     mgr,
 		}
 		tools = append(tools, wrapper)
-		core.Logger().Debug().Str("tool", info.Name).Msg("Discovered MCP tool")
+		core.Logger().Debug().Str("tool", info.Name).Str("server", info.ServerName).Msg("Discovered MCP tool")
 	}
 	return tools, nil
 }

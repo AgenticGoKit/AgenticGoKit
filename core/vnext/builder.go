@@ -142,9 +142,56 @@ type ToolOption func(*ToolsConfig)
 // WithMCP enables MCP with specified servers
 func WithMCP(servers ...MCPServer) ToolOption {
 	return func(tc *ToolsConfig) {
-		// This would be implemented when MCP integration is consolidated
-		// For now, just enable tools
 		tc.Enabled = true
+
+		// Initialize MCP config if not exists
+		if tc.MCP == nil {
+			tc.MCP = &MCPConfig{
+				Enabled:           true,
+				Discovery:         false, // Explicit servers only
+				ConnectionTimeout: 30 * time.Second,
+				MaxRetries:        3,
+				RetryDelay:        1 * time.Second,
+			}
+		} else {
+			tc.MCP.Enabled = true
+		}
+
+		// Add servers to MCP configuration
+		tc.MCP.Servers = append(tc.MCP.Servers, servers...)
+	}
+}
+
+// WithMCPDiscovery enables automatic MCP server discovery
+func WithMCPDiscovery(scanPorts ...int) ToolOption {
+	return func(tc *ToolsConfig) {
+		tc.Enabled = true
+
+		// Initialize MCP config if not exists
+		if tc.MCP == nil {
+			tc.MCP = &MCPConfig{
+				Enabled:           true,
+				Discovery:         true,
+				ConnectionTimeout: 30 * time.Second,
+				MaxRetries:        3,
+				RetryDelay:        1 * time.Second,
+				DiscoveryTimeout:  10 * time.Second,
+			}
+		} else {
+			tc.MCP.Enabled = true
+			tc.MCP.Discovery = true
+			if tc.MCP.DiscoveryTimeout == 0 {
+				tc.MCP.DiscoveryTimeout = 10 * time.Second
+			}
+		}
+
+		// Set scan ports if provided, otherwise use defaults
+		if len(scanPorts) > 0 {
+			tc.MCP.ScanPorts = scanPorts
+		} else if len(tc.MCP.ScanPorts) == 0 {
+			// Default MCP ports
+			tc.MCP.ScanPorts = []int{8080, 8081, 8090, 8100, 3000, 3001}
+		}
 	}
 }
 

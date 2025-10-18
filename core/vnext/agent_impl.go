@@ -112,6 +112,16 @@ func newRealAgent(config *Config, handler HandlerFunc) (Agent, error) {
 
 	// Initialize tools if configured
 	if config.Tools != nil && config.Tools.Enabled {
+		// Initialize MCP if configured
+		if config.Tools.MCP != nil && config.Tools.MCP.Enabled {
+			if err := initializeMCP(config.Tools.MCP); err != nil {
+				core.Logger().Warn().Err(err).Msg("Failed to initialize MCP - continuing without MCP tools")
+			} else {
+				core.Logger().Debug().Msg("MCP initialized successfully")
+			}
+		}
+
+		// Create and discover tools
 		tools, err := createTools(config.Tools)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create tools: %w", err)
