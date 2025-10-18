@@ -1,0 +1,31 @@
+# Short Answer Agent Configuration
+# This demonstrates TOML-based configuration for vNext agents
+
+name = "ollama-helper"
+system_prompt = """You are a helpful AI assistant that provides short, concise answers.
+Keep your responses to 2-3 sentences maximum.
+Be direct and to the point.
+Do not provide long explanations unless specifically asked."""
+
+timeout = "30s"
+debug_mode = false
+
+# LLM Configuration
+[llm]
+provider = "ollama"
+model = "gemma3:1b"
+temperature = 0.3
+max_tokens = 200
+base_url = "http://localhost:11434"
+
+# Optional: Tracing Configuration
+[tracing]
+enabled = true
+level = "basic"
+
+# Optional: Streaming Configuration
+[streaming]
+enabled = false
+buffer_size = 100
+include_thoughts = false
+include_tool_calls = false
