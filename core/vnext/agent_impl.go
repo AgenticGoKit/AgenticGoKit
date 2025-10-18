@@ -360,9 +360,157 @@ func (a *realAgent) updateMetrics(startTime time.Time, hadError bool) {
 // RunWithOptions executes the agent with additional options.
 // Options allow fine-grained control over execution behavior including
 // timeouts, memory settings, tool configuration, and result detail level.
+// RunWithOptions executes the agent with custom runtime options.
+//
+// This method allows fine-grained control over execution parameters without
+// modifying the agent's base configuration. Options can override:
+//   - Timeout: Execution deadline via context
+//   - Memory: Session ID, memory provider settings
+//   - Tools: Tool selection and mode
+//   - LLM: Temperature, max tokens
+//   - Result: Detailed metadata, trace data, source attributions
+//
+// The method applies options by:
+//  1. Creating a derived context with timeout if specified
+//  2. Temporarily overriding agent configuration fields
+//  3. Calling Run() with the modified configuration
+//  4. Restoring original configuration
+//  5. Enhancing result with additional metadata if DetailedResult is true
+//
+// Example:
+//
+//	opts := &RunOptions{
+//	    Timeout: 30 * time.Second,
+//	    SessionID: "user-session-123",
+//	    DetailedResult: true,
+//	    Temperature: &temperature,
+//	}
+//	result, err := agent.RunWithOptions(ctx, "analyze this data", opts)
 func (a *realAgent) RunWithOptions(ctx context.Context, input string, opts *RunOptions) (*Result, error) {
-	// TODO: Implementation in Task 2.4
-	return nil, fmt.Errorf("not implemented yet")
+	if opts == nil {
+		// No options provided, delegate to standard Run()
+		return a.Run(ctx, input)
+	}
+
+	// Step 1: Apply timeout to context if specified
+	runCtx := ctx
+	var cancel context.CancelFunc
+	if opts.Timeout > 0 {
+		runCtx, cancel = context.WithTimeout(ctx, opts.Timeout)
+		defer cancel()
+	}
+
+	// Step 2: Save original configuration to restore later
+	originalTools := a.tools
+	originalTemperature := a.config.LLM.Temperature
+	originalMaxTokens := a.config.LLM.MaxTokens
+
+	// Restore configuration after execution
+	defer func() {
+		a.tools = originalTools
+		a.config.LLM.Temperature = originalTemperature
+		a.config.LLM.MaxTokens = originalMaxTokens
+	}()
+
+	// Step 3: Apply tool options
+	if opts.ToolMode == "none" {
+		// Disable all tools for this run
+		a.tools = nil
+	} else if len(opts.Tools) > 0 && opts.ToolMode == "specific" {
+		// Filter to only specified tools
+		filteredTools := []Tool{}
+		for _, toolName := range opts.Tools {
+			for _, tool := range a.tools {
+				if tool.Name() == toolName {
+					filteredTools = append(filteredTools, tool)
+					break
+				}
+			}
+		}
+		a.tools = filteredTools
+	}
+	// If ToolMode is "auto" or unspecified, use all configured tools (no change)
+
+	// Step 4: Apply memory options
+	if opts.Memory != nil {
+		// Override memory configuration for this run
+		if !opts.Memory.Enabled && a.memoryProvider != nil {
+			// Temporarily disable memory by setting provider to nil
+			originalMemory := a.memoryProvider
+			a.memoryProvider = nil
+			defer func() { a.memoryProvider = originalMemory }()
+		}
+		// Note: Changing memory provider at runtime is complex and not supported here.
+		// The Memory.Provider field would require recreating the provider.
+	}
+
+	// Apply session ID if specified
+	if opts.SessionID != "" {
+		// Store session ID in context for memory operations
+		runCtx = context.WithValue(runCtx, "session_id", opts.SessionID)
+	}
+
+	// Step 5: Apply LLM parameter overrides
+	if opts.Temperature != nil {
+		a.config.LLM.Temperature = float32(*opts.Temperature)
+	}
+	if opts.MaxTokens > 0 {
+		a.config.LLM.MaxTokens = opts.MaxTokens
+	}
+
+	// Step 6: Execute the run with applied options
+	result, err := a.Run(runCtx, input)
+	if err != nil {
+		return nil, err
+	}
+
+	// Step 7: Enhance result if detailed information is requested
+	if opts.DetailedResult {
+		// Add session information
+		if opts.SessionID != "" {
+			result.SessionID = opts.SessionID
+		}
+
+		// Add tool execution details if not already present
+		if len(result.ToolCalls) > 0 && len(result.ToolExecutions) == 0 {
+			for _, tc := range result.ToolCalls {
+				result.ToolExecutions = append(result.ToolExecutions, ToolExecution{
+					Name:      tc.Name,
+					Duration:  tc.Duration,
+					Success:   tc.Success,
+					Error:     tc.Error,
+					InputSize: len(fmt.Sprintf("%v", tc.Arguments)),
+				})
+			}
+		}
+
+		// Add configuration metadata
+		if result.Metadata == nil {
+			result.Metadata = make(map[string]interface{})
+		}
+		result.Metadata["timeout"] = opts.Timeout.String()
+		result.Metadata["tool_mode"] = opts.ToolMode
+		result.Metadata["max_retries"] = opts.MaxRetries
+		if opts.Temperature != nil {
+			result.Metadata["temperature_override"] = *opts.Temperature
+		}
+		if opts.MaxTokens > 0 {
+			result.Metadata["max_tokens_override"] = opts.MaxTokens
+		}
+	}
+
+	// Step 8: Add trace data if requested
+	if opts.IncludeTrace && result.TraceID != "" {
+		// Trace data would be fetched from tracing system
+		// For now, just flag that trace is available
+		if result.Metadata == nil {
+			result.Metadata = make(map[string]interface{})
+		}
+		result.Metadata["trace_available"] = true
+		result.Metadata["trace_id"] = result.TraceID
+	}
+
+	return result, nil
 }
 
 // RunStream executes the agent with streaming output.
