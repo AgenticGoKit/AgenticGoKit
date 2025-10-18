@@ -467,7 +467,7 @@ func TestMCPRealIntegration(t *testing.T) {
 			Name:    "docker-mcp",
 			Type:    "tcp",
 			Address: "localhost",
-			Port:    8811,
+			Port:    8812,
 			Enabled: true,
 		}
 
@@ -475,6 +475,7 @@ func TestMCPRealIntegration(t *testing.T) {
 			WithConfig(&vnext.Config{
 				Name:         "real-mcp-agent",
 				SystemPrompt: "You are a helpful assistant with MCP tools.",
+				Timeout:      60 * time.Second,
 				LLM: vnext.LLMConfig{
 					Provider:    "ollama",
 					Model:       "gemma3:1b",
