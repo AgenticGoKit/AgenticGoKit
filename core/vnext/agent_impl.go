@@ -532,15 +532,297 @@ func (a *realAgent) RunWithOptions(ctx context.Context, input string, opts *RunO
 //	    fmt.Print(chunk.Delta)
 //	}
 func (a *realAgent) RunStream(ctx context.Context, input string, opts ...StreamOption) (Stream, error) {
-	// TODO: Implementation in Task 2.5
-	return nil, fmt.Errorf("not implemented yet")
+	if !a.initialized {
+		return nil, fmt.Errorf("agent not initialized")
+	}
+
+	if a.llmProvider == nil {
+		return nil, fmt.Errorf("no LLM provider configured")
+	}
+
+	// Create stream metadata
+	metadata := &StreamMetadata{
+		AgentName: a.Name(),
+		StartTime: time.Now(),
+		Model:     a.config.LLM.Model,
+		Extra:     make(map[string]interface{}),
+	}
+
+	// Add session ID if provided in context
+	if sessionID := ctx.Value("session_id"); sessionID != nil {
+		if id, ok := sessionID.(string); ok {
+			metadata.SessionID = id
+		}
+	}
+
+	// Add trace ID if provided in context
+	if traceID := ctx.Value("trace_id"); traceID != nil {
+		if id, ok := traceID.(string); ok {
+			metadata.TraceID = id
+		}
+	}
+
+	// Create stream with options
+	stream, writer := NewStream(ctx, metadata, opts...)
+
+	// Start streaming in a goroutine
+	go func() {
+		defer writer.Close()
+
+		startTime := time.Now()
+
+		// Build prompt (similar to Run method)
+		prompt := llm.Prompt{
+			System: a.config.SystemPrompt,
+			User:   input,
+			Parameters: llm.ModelParameters{
+				Temperature: convertFloat32ToFloat32Ptr(a.config.LLM.Temperature),
+				MaxTokens:   convertIntToInt32Ptr(a.config.LLM.MaxTokens),
+			},
+		}
+
+		// Add memory context if available
+		if a.memoryProvider != nil {
+			enrichedPrompt := BuildEnrichedPrompt(ctx, prompt.System, prompt.User, a.memoryProvider, a.config.Memory)
+			prompt.System = enrichedPrompt.System
+			prompt.User = enrichedPrompt.User
+		}
+
+		// Add tool descriptions to system prompt if tools are available
+		if len(a.tools) > 0 {
+			toolDescriptions := FormatToolsForPrompt(a.tools)
+			if toolDescriptions != "" {
+				prompt.System = prompt.System + "\n\n" + toolDescriptions
+			}
+		}
+
+		// Start LLM streaming
+		tokenChan, err := a.llmProvider.Stream(ctx, prompt)
+		if err != nil {
+			writer.Write(&StreamChunk{
+				Type:  ChunkTypeError,
+				Error: fmt.Errorf("failed to start LLM stream: %w", err),
+			})
+			a.updateMetrics(startTime, true)
+			return
+		}
+
+		// Track tokens for final result
+		var contentBuilder strings.Builder
+		var tokenCount int
+
+		// Stream tokens
+		for token := range tokenChan {
+			if token.Error != nil {
+				writer.Write(&StreamChunk{
+					Type:  ChunkTypeError,
+					Error: token.Error,
+				})
+				a.updateMetrics(startTime, true)
+				return
+			}
+
+			// Write text chunk
+			if token.Content != "" {
+				contentBuilder.WriteString(token.Content)
+				tokenCount++
+
+				writer.Write(&StreamChunk{
+					Type:  ChunkTypeDelta,
+					Delta: token.Content,
+				})
+			}
+		}
+
+		finalContent := contentBuilder.String()
+		duration := time.Since(startTime)
+
+		// Create final result
+		finalResult := &Result{
+			Success:   true,
+			Content:   finalContent,
+			Duration:  duration,
+			StartTime: startTime,
+			EndTime:   time.Now(),
+			SessionID: metadata.SessionID,
+			TraceID:   metadata.TraceID,
+			Metadata:  make(map[string]interface{}),
+		}
+
+		// Process tool calls if present and tools are available
+		if len(a.tools) > 0 {
+			toolCalls := ParseToolCalls(finalContent)
+			if len(toolCalls) > 0 {
+				finalResult.ToolCalls = toolCalls
+				finalResult.ToolsCalled = extractToolNames(toolCalls)
+
+				// Execute tools and stream the results
+				err := a.executeToolsAndStream(ctx, input, finalContent, toolCalls, writer)
+				if err != nil {
+					writer.Write(&StreamChunk{
+						Type:  ChunkTypeError,
+						Error: fmt.Errorf("tool execution failed: %w", err),
+					})
+					a.updateMetrics(startTime, true)
+					return
+				}
+			}
+		}
+
+		// Store in memory if available
+		if a.memoryProvider != nil {
+			if err := a.storeInMemory(ctx, input, finalContent); err != nil {
+				// Memory storage failures are non-blocking
+				writer.Write(&StreamChunk{
+					Type:    ChunkTypeThought,
+					Content: fmt.Sprintf("Failed to store in memory: %v", err),
+				})
+			}
+		}
+
+		// Update metrics
+		a.updateMetrics(startTime, false)
+
+		// Set final result on the stream
+		if s, ok := stream.(*basicStream); ok {
+			s.SetResult(finalResult)
+		}
+
+		// Send completion chunk
+		writer.Write(&StreamChunk{
+			Type: ChunkTypeDone,
+		})
+	}()
+
+	return stream, nil
 }
 
 // RunStreamWithOptions executes the agent with streaming output and additional options.
 // Combines the flexibility of RunWithOptions with real-time streaming.
 func (a *realAgent) RunStreamWithOptions(ctx context.Context, input string, runOpts *RunOptions, streamOpts ...StreamOption) (Stream, error) {
-	// TODO: Implementation in Task 2.6
-	return nil, fmt.Errorf("not implemented yet")
+	if runOpts == nil {
+		// No run options, delegate to RunStream
+		return a.RunStream(ctx, input, streamOpts...)
+	}
+
+	// Save original configuration
+	originalConfig := a.config
+	defer func() {
+		// Restore original configuration
+		a.config = originalConfig
+	}()
+
+	// Create a copy of config for this run
+	configCopy := *a.config
+	a.config = &configCopy
+
+	// Apply timeout to context if specified
+	if runOpts.Timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, runOpts.Timeout)
+		defer cancel()
+	}
+
+	// Apply session ID to context if specified
+	if runOpts.SessionID != "" {
+		ctx = context.WithValue(ctx, "session_id", runOpts.SessionID)
+	}
+
+	// Apply temperature override if specified
+	if runOpts.Temperature != nil {
+		a.config.LLM.Temperature = float32(*runOpts.Temperature)
+	}
+
+	// Apply max tokens override if specified
+	if runOpts.MaxTokens > 0 {
+		a.config.LLM.MaxTokens = runOpts.MaxTokens
+	}
+
+	// Apply memory configuration if specified
+	if runOpts.Memory != nil {
+		// Create a copy of memory config
+		if a.config.Memory == nil {
+			a.config.Memory = &MemoryConfig{}
+		}
+		memoryCopy := *a.config.Memory
+		a.config.Memory = &memoryCopy
+
+		// Apply memory options (map from RunOptions.Memory to MemoryConfig)
+		if runOpts.Memory.Provider != "" {
+			a.config.Memory.Provider = runOpts.Memory.Provider
+		}
+		// Note: MemoryConfig doesn't have Enabled, ContextAware, SessionScoped fields
+		// These are handled at the MemoryOptions level in the interface
+	}
+
+	// Apply tool filtering if specified
+	if runOpts.ToolMode != "" {
+		switch runOpts.ToolMode {
+		case "none":
+			// Temporarily disable all tools
+			a.tools = nil
+		case "specific":
+			if len(runOpts.Tools) > 0 {
+				// Filter tools to only those specified
+				filteredTools := make([]Tool, 0)
+				for _, tool := range a.tools {
+					for _, toolName := range runOpts.Tools {
+						if tool.Name() == toolName {
+							filteredTools = append(filteredTools, tool)
+							break
+						}
+					}
+				}
+				a.tools = filteredTools
+			}
+			// "auto" uses all available tools (no change needed)
+		}
+	}
+
+	// Apply stream options from run options if specified
+	if runOpts.StreamOptions != nil {
+		// Merge with provided stream options
+		mergedOpts := make([]StreamOption, 0, len(streamOpts)+4)
+
+		// Add options from runOpts.StreamOptions
+		if runOpts.StreamOptions.BufferSize > 0 {
+			mergedOpts = append(mergedOpts, WithBufferSize(runOpts.StreamOptions.BufferSize))
+		}
+		if runOpts.StreamOptions.IncludeThoughts {
+			mergedOpts = append(mergedOpts, WithThoughts())
+		}
+		if runOpts.StreamOptions.IncludeToolCalls {
+			mergedOpts = append(mergedOpts, WithToolCalls())
+		}
+		if runOpts.StreamOptions.IncludeMetadata {
+			mergedOpts = append(mergedOpts, WithStreamMetadata())
+		}
+		if runOpts.StreamOptions.TextOnly {
+			mergedOpts = append(mergedOpts, WithTextOnly())
+		}
+		if runOpts.StreamOptions.Timeout > 0 {
+			mergedOpts = append(mergedOpts, WithStreamTimeout(runOpts.StreamOptions.Timeout))
+		}
+		if runOpts.StreamOptions.FlushInterval > 0 {
+			mergedOpts = append(mergedOpts, WithFlushInterval(runOpts.StreamOptions.FlushInterval))
+		}
+		if runOpts.StreamOptions.Handler != nil {
+			mergedOpts = append(mergedOpts, WithStreamHandler(runOpts.StreamOptions.Handler))
+		}
+
+		// Add provided stream options (these take precedence)
+		mergedOpts = append(mergedOpts, streamOpts...)
+
+		streamOpts = mergedOpts
+	}
+
+	// Apply stream handler from run options if specified
+	if runOpts.StreamHandler != nil {
+		streamOpts = append(streamOpts, WithStreamHandler(runOpts.StreamHandler))
+	}
+
+	// Delegate to RunStream with the merged options
+	return a.RunStream(ctx, input, streamOpts...)
 }
 
 // Name returns the agent's name from configuration.
@@ -806,4 +1088,82 @@ func (a *realAgent) executeToolsAndContinue(
 	}
 
 	return currentResponse, allToolCalls, nil
+}
+
+// convertFloat32ToFloat32Ptr converts a float32 to a *float32 for LLM parameters
+func convertFloat32ToFloat32Ptr(f32 float32) *float32 {
+	if f32 == 0 {
+		return nil // Use provider default
+	}
+	return &f32
+}
+
+// convertFloat64ToFloat32Ptr converts a float64 to a *float32 for LLM parameters
+func convertFloat64ToFloat32Ptr(f64 float64) *float32 {
+	if f64 == 0 {
+		return nil // Use provider default
+	}
+	f32 := float32(f64)
+	return &f32
+}
+
+// convertIntToInt32Ptr converts an int to a *int32 for LLM parameters
+func convertIntToInt32Ptr(i int) *int32 {
+	if i == 0 {
+		return nil // Use provider default
+	}
+	i32 := int32(i)
+	return &i32
+}
+
+// extractToolNames extracts tool names from a list of tool calls
+func extractToolNames(toolCalls []ToolCall) []string {
+	names := make([]string, len(toolCalls))
+	for i, call := range toolCalls {
+		names[i] = call.Name
+	}
+	return names
+}
+
+// executeToolsAndStream executes tool calls and streams the results
+func (a *realAgent) executeToolsAndStream(ctx context.Context, userInput, llmResponse string, toolCalls []ToolCall, writer StreamWriter) error {
+	if len(toolCalls) == 0 {
+		return nil
+	}
+
+	// Execute each tool call and stream the results
+	for _, toolCall := range toolCalls {
+		// Send tool call chunk
+		writer.Write(&StreamChunk{
+			Type:     ChunkTypeToolCall,
+			ToolName: toolCall.Name,
+			ToolArgs: toolCall.Arguments,
+			ToolID:   fmt.Sprintf("call_%d", time.Now().UnixNano()),
+		})
+
+		// Execute the tool
+		executedCall := a.executeTool(ctx, toolCall)
+		if executedCall.Error != "" {
+			// Send error result
+			writer.Write(&StreamChunk{
+				Type:  ChunkTypeToolRes,
+				Error: fmt.Errorf("tool %s failed: %s", toolCall.Name, executedCall.Error),
+			})
+			continue
+		}
+
+		// Send tool result chunk
+		resultContent := ""
+		if executedCall.Result != nil {
+			resultContent = fmt.Sprintf("%v", executedCall.Result)
+		}
+
+		writer.Write(&StreamChunk{
+			Type:     ChunkTypeToolRes,
+			Content:  resultContent,
+			ToolName: toolCall.Name,
+		})
+	}
+
+	return nil
 }

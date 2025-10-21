@@ -60,18 +60,18 @@ func (o *OllamaAdapter) Call(ctx context.Context, prompt Prompt) (Response, erro
 
 	// Determine final parameters, preferring explicit prompt settings
 	var finalMaxTokens int
-if prompt.Parameters.MaxTokens != nil && *prompt.Parameters.MaxTokens > 0 {
-	finalMaxTokens = int(*prompt.Parameters.MaxTokens)
-} else {
-	finalMaxTokens = o.maxTokens
-}
+	if prompt.Parameters.MaxTokens != nil && *prompt.Parameters.MaxTokens > 0 {
+		finalMaxTokens = int(*prompt.Parameters.MaxTokens)
+	} else {
+		finalMaxTokens = o.maxTokens
+	}
 
-var finalTemperature float32
-if prompt.Parameters.Temperature != nil && *prompt.Parameters.Temperature > 0 {
-	finalTemperature = *prompt.Parameters.Temperature
-} else {
-	finalTemperature = o.temperature
-}
+	var finalTemperature float32
+	if prompt.Parameters.Temperature != nil && *prompt.Parameters.Temperature > 0 {
+		finalTemperature = *prompt.Parameters.Temperature
+	} else {
+		finalTemperature = o.temperature
+	}
 
 	// Build messages array
 	messages := []map[string]string{}
@@ -132,7 +132,97 @@ if prompt.Parameters.Temperature != nil && *prompt.Parameters.Temperature > 0 {
 
 // Stream implements the ModelProvider interface for streaming responses.
 func (o *OllamaAdapter) Stream(ctx context.Context, prompt Prompt) (<-chan Token, error) {
-	return nil, errors.New("streaming not supported by OllamaAdapter")
+	// Create the request payload for Ollama streaming API
+	payload := map[string]interface{}{
+		"model":  o.model,
+		"prompt": fmt.Sprintf("%s\n\nHuman: %s\n\nAssistant:", prompt.System, prompt.User),
+		"stream": true,
+		"options": map[string]interface{}{
+			"temperature": o.temperature,
+			"num_predict": o.maxTokens,
+		},
+	}
+
+	// Apply prompt parameters if provided
+	if prompt.Parameters.Temperature != nil {
+		payload["options"].(map[string]interface{})["temperature"] = *prompt.Parameters.Temperature
+	}
+	if prompt.Parameters.MaxTokens != nil {
+		payload["options"].(map[string]interface{})["num_predict"] = *prompt.Parameters.MaxTokens
+	}
+
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request payload: %w", err)
+	}
+
+	// Create HTTP request for streaming
+	req, err := http.NewRequestWithContext(ctx, "POST", o.baseURL+"/api/generate", bytes.NewReader(payloadBytes))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	// Make the request
+	client := &http.Client{Timeout: 120 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to make request: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		resp.Body.Close()
+		return nil, fmt.Errorf("HTTP error: %d", resp.StatusCode)
+	}
+
+	// Create token channel
+	tokenChan := make(chan Token, 10)
+
+	// Start goroutine to process streaming response
+	go func() {
+		defer close(tokenChan)
+		defer resp.Body.Close()
+
+		decoder := json.NewDecoder(resp.Body)
+
+		for {
+			select {
+			case <-ctx.Done():
+				tokenChan <- Token{Error: ctx.Err()}
+				return
+			default:
+			}
+
+			var response struct {
+				Response string `json:"response"`
+				Done     bool   `json:"done"`
+				Error    string `json:"error,omitempty"`
+			}
+
+			if err := decoder.Decode(&response); err != nil {
+				if err == io.EOF {
+					return // End of stream
+				}
+				tokenChan <- Token{Error: fmt.Errorf("failed to decode response: %w", err)}
+				return
+			}
+
+			if response.Error != "" {
+				tokenChan <- Token{Error: fmt.Errorf("ollama error: %s", response.Error)}
+				return
+			}
+
+			if response.Response != "" {
+				tokenChan <- Token{Content: response.Response}
+			}
+
+			if response.Done {
+				return // Stream complete
+			}
+		}
+	}()
+
+	return tokenChan, nil
 }
 
 // Embeddings implements the ModelProvider interface for generating embeddings.
@@ -144,9 +234,9 @@ func (o *OllamaAdapter) Embeddings(ctx context.Context, texts []string) ([][]flo
 	// Use the configured embedding model
 	// Common embedding models in Ollama: nomic-embed-text, all-minilm, mxbai-embed-large
 	embeddingModel := o.embeddingModel
-	
+
 	embeddings := make([][]float64, len(texts))
-	
+
 	// Process each text individually as Ollama embeddings API typically handles one at a time
 	for i, text := range texts {
 		requestBody := map[string]interface{}{

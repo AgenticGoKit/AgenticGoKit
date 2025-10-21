@@ -6,7 +6,25 @@ This directory contains examples demonstrating the **vNext public APIs** for Age
 
 ## 📚 Available Examples
 
-### 1. [Ollama Short Answer Agent](./ollama-short-answer/)
+### 1. [Streaming Demo](./streaming-demo/)
+**Best for: Understanding Real-time Streaming**
+
+A comprehensive example demonstrating real-time streaming capabilities across different LLM providers. Shows tokens arriving as they're generated.
+
+- ✅ Real-time token streaming
+- ✅ Multiple demo modes (basic, advanced, multi-provider, interactive)
+- ✅ Performance metrics and comparison
+- ✅ Streaming with options and configuration
+- ✅ Provider comparison (Ollama, OpenAI, Azure)
+
+```bash
+cd streaming-demo
+go run main.go
+# Or for simple streaming:
+go run simple_example.go
+```
+
+### 2. [Ollama QuickStart Agent](./ollama-quickstart/)
 **Best for: Learning the Builder Pattern**
 
 A complete example showing how to create a single agent using the Builder pattern with Ollama. The agent is configured to provide short, concise answers.
@@ -37,7 +55,23 @@ cd ollama-quickstart
 go run main.go
 ```
 
-### 3. [Ollama Config-Based Agent](./ollama-config-based/)
+### 3. [Ollama Short Answer Agent](./ollama-short-answer/)
+**Best for: Learning the Builder Pattern**
+
+A complete example showing how to create a single agent using the Builder pattern with Ollama. The agent is configured to provide short, concise answers.
+
+- ✅ Builder Pattern with `NewBuilder()`
+- ✅ Custom configuration
+- ✅ ChatAgent preset
+- ✅ Multiple query examples
+- ✅ Full error handling
+
+```bash
+cd ollama-short-answer
+go run main.go
+```
+
+### 4. [Ollama Config-Based Agent](./ollama-config-based/)
 **Best for: Production Deployments**
 
 Demonstrates TOML-based configuration for agents, separating code from configuration.
@@ -58,6 +92,7 @@ go run main.go my-config.toml
 
 | Use Case | Example | Complexity |
 |----------|---------|------------|
+| Understanding streaming | Streaming Demo | ⭐⭐ Moderate |
 | Learning basics | Ollama QuickStart | ⭐ Simple |
 | Production single agent | Ollama Short Answer | ⭐⭐ Moderate |
 | Config-driven apps | Ollama Config-Based | ⭐⭐ Moderate |
@@ -91,11 +126,22 @@ result, err := agent.Run(ctx, "Hello!")
 opts := vnext.NewRunOptions().SetTimeout(60 * time.Second)
 result, err := agent.RunWithOptions(ctx, input, opts)
 
-// Streaming
+// Streaming (real-time token delivery)
 stream, err := agent.RunStream(ctx, input)
 for chunk := range stream.Chunks() {
-    fmt.Print(chunk.Delta)
+    if chunk.Type == vnext.ChunkTypeDelta {
+        fmt.Print(chunk.Delta) // Print token as it arrives
+    }
 }
+
+// Advanced streaming with options
+streamOpts := []vnext.StreamOption{
+    vnext.WithBufferSize(100),
+    vnext.WithThoughts(),
+    vnext.WithToolCalls(),
+}
+runOpts := &vnext.RunOptions{Timeout: 30 * time.Second}
+stream, err := agent.RunStreamWithOptions(ctx, input, runOpts, streamOpts...)
 ```
 
 ### Configuration Types
@@ -200,6 +246,7 @@ example-name/
 
 ## 🌟 Key Features Demonstrated
 
+- ✅ **Real-time Streaming**: See responses being generated token by token
 - ✅ **Builder Pattern**: Flexible agent construction
 - ✅ **QuickStart API**: Rapid development
 - ✅ **TOML Configuration**: Declarative setup

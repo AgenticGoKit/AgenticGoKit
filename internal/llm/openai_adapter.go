@@ -1,12 +1,16 @@
 package llm
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
+	"strings"
+	"time"
 )
 
 // OpenAIAdapter implements the ModelProvider interface for OpenAI's API.
@@ -63,12 +67,12 @@ func (o *OpenAIAdapter) Call(ctx context.Context, prompt Prompt) (Response, erro
 			"content": userPrompt,
 		},
 	}
-	
+
 	// Add system message if provided
 	if prompt.System != "" {
 		messages = append([]map[string]interface{}{
 			{
-				"role":    "system", 
+				"role":    "system",
 				"content": prompt.System,
 			},
 		}, messages...)
@@ -137,18 +141,140 @@ func (o *OpenAIAdapter) Call(ctx context.Context, prompt Prompt) (Response, erro
 
 // Stream implements the ModelProvider interface for streaming responses.
 func (o *OpenAIAdapter) Stream(ctx context.Context, prompt Prompt) (<-chan Token, error) {
-	ch := make(chan Token)
+	userPrompt := prompt.User
+	if userPrompt == "" {
+		return nil, errors.New("user prompt cannot be empty")
+	}
+
+	maxTokens := o.maxTokens
+	if prompt.Parameters.MaxTokens != nil {
+		maxTokens = int(*prompt.Parameters.MaxTokens)
+	}
+	temperature := o.temperature
+	if prompt.Parameters.Temperature != nil {
+		temperature = *prompt.Parameters.Temperature
+	}
+
+	// Build messages array for Chat Completions API
+	messages := []map[string]interface{}{
+		{
+			"role":    "user",
+			"content": userPrompt,
+		},
+	}
+
+	// Add system message if provided
+	if prompt.System != "" {
+		messages = append([]map[string]interface{}{
+			{
+				"role":    "system",
+				"content": prompt.System,
+			},
+		}, messages...)
+	}
+
+	// Create streaming request
+	requestBody, err := json.Marshal(map[string]interface{}{
+		"model":       o.model,
+		"messages":    messages,
+		"max_tokens":  maxTokens,
+		"temperature": temperature,
+		"stream":      true, // Enable streaming
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request payload: %w", err)
+	}
+
+	// Create HTTP request for streaming
+	req, err := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/chat/completions", bytes.NewBuffer(requestBody))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+o.apiKey)
+
+	// Make the request
+	client := &http.Client{Timeout: 120 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to make request: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		resp.Body.Close()
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("OpenAI API error: %d - %s", resp.StatusCode, string(body))
+	}
+
+	// Create token channel
+	tokenChan := make(chan Token, 10)
+
+	// Start goroutine to process streaming response
 	go func() {
-		defer close(ch)
-		// For now, just call Call and send the whole response as one token (streaming can be implemented later with SSE)
-		resp, err := o.Call(ctx, prompt)
-		if err != nil {
-			ch <- Token{Error: err}
-			return
+		defer close(tokenChan)
+		defer resp.Body.Close()
+
+		scanner := bufio.NewScanner(resp.Body)
+		for scanner.Scan() {
+			line := scanner.Text()
+			if line == "" {
+				continue // Skip empty lines
+			}
+
+			// Check for context cancellation
+			select {
+			case <-ctx.Done():
+				tokenChan <- Token{Error: ctx.Err()}
+				return
+			default:
+			}
+
+			// Process SSE data lines
+			if strings.HasPrefix(line, "data: ") {
+				data := strings.TrimSpace(strings.TrimPrefix(line, "data: "))
+				if data == "[DONE]" {
+					return // Stream finished successfully
+				}
+
+				// Parse the JSON chunk
+				var streamResponse struct {
+					Choices []struct {
+						Delta struct {
+							Content string `json:"content"`
+						} `json:"delta"`
+						FinishReason *string `json:"finish_reason"`
+					} `json:"choices"`
+				}
+
+				if err := json.Unmarshal([]byte(data), &streamResponse); err != nil {
+					tokenChan <- Token{Error: fmt.Errorf("failed to decode stream chunk: %w", err)}
+					return
+				}
+
+				// Extract content delta
+				if len(streamResponse.Choices) > 0 {
+					content := streamResponse.Choices[0].Delta.Content
+					if content != "" {
+						select {
+						case tokenChan <- Token{Content: content}:
+						case <-ctx.Done():
+							tokenChan <- Token{Error: ctx.Err()}
+							return
+						}
+					}
+				}
+			}
 		}
-		ch <- Token{Content: resp.Content}
+
+		// Check for scanner errors
+		if err := scanner.Err(); err != nil {
+			if ctx.Err() == nil {
+				tokenChan <- Token{Error: fmt.Errorf("stream read error: %w", err)}
+			}
+		}
 	}()
-	return ch, nil
+
+	return tokenChan, nil
 }
 
 // Embeddings implements the ModelProvider interface for generating embeddings.
@@ -159,7 +285,7 @@ func (o *OpenAIAdapter) Embeddings(ctx context.Context, texts []string) ([][]flo
 
 	// Use appropriate embedding model instead of chat model
 	embeddingModel := "text-embedding-3-small"
-	
+
 	requestBody, err := json.Marshal(map[string]interface{}{
 		"model": embeddingModel,
 		"input": texts,

@@ -664,3 +664,311 @@ func TestStreamConcurrency(t *testing.T) {
 		}
 	})
 }
+
+// =============================================================================
+// INTEGRATION TESTS WITH REAL LLM (Ollama)
+// =============================================================================
+
+func TestRunStream_RealOllamaIntegration(t *testing.T) {
+	// Skip if no Ollama available
+	if testing.Short() {
+		t.Skip("Skipping streaming integration test in short mode")
+	}
+
+	// Create a simple agent configuration
+	config := &vnext.Config{
+		Name:         "test-streaming-agent",
+		SystemPrompt: "You are a helpful assistant. Be brief in your responses.",
+		Timeout:      60 * time.Second, // Add required timeout
+		LLM: vnext.LLMConfig{
+			Provider:    "ollama",
+			Model:       "gemma3:1b", // Use smaller model for faster tests
+			Temperature: 0.1,
+			MaxTokens:   100,
+		},
+	}
+
+	// Create agent
+	agent, err := vnext.NewBuilder("test-streaming").
+		WithConfig(config).
+		Build()
+	if err != nil {
+		t.Skipf("Failed to create agent (Ollama not available?): %v", err)
+	}
+
+	// Initialize agent
+	ctx := context.Background()
+	err = agent.Initialize(ctx)
+	if err != nil {
+		t.Skipf("Failed to initialize agent (Ollama not available?): %v", err)
+	}
+	defer agent.Cleanup(ctx)
+
+	// Test basic streaming
+	t.Run("BasicRealStreaming", func(t *testing.T) {
+		stream, err := agent.RunStream(ctx, "What is 2+2? Answer in one word.")
+		if err != nil {
+			t.Skipf("Failed to start stream (Ollama not available?): %v", err)
+		}
+
+		// Collect streaming chunks
+		var chunks []string
+		var totalChunks int
+		var errorChunks int
+
+		for chunk := range stream.Chunks() {
+			totalChunks++
+
+			switch chunk.Type {
+			case vnext.ChunkTypeDelta:
+				chunks = append(chunks, chunk.Delta)
+			case vnext.ChunkTypeText:
+				chunks = append(chunks, chunk.Content)
+			case vnext.ChunkTypeError:
+				errorChunks++
+				t.Logf("Error chunk: %v", chunk.Error)
+			case vnext.ChunkTypeDone:
+				t.Log("Stream completed")
+			default:
+				t.Logf("Chunk type: %s, content: %s", chunk.Type, chunk.Content)
+			}
+		}
+
+		// Wait for final result
+		result, err := stream.Wait()
+		if err != nil {
+			t.Fatalf("Stream wait failed: %v", err)
+		}
+
+		// Verify we received streaming chunks
+		t.Logf("Total chunks: %d, text chunks: %d, errors: %d", totalChunks, len(chunks), errorChunks)
+		if totalChunks == 0 {
+			t.Error("Should receive at least one chunk")
+		}
+		if len(chunks) == 0 {
+			t.Error("Should receive at least one text chunk")
+		}
+
+		// Verify the final result makes sense
+		if !result.Success {
+			t.Errorf("Result should be successful, got: %+v", result)
+		}
+		if result.Content == "" {
+			t.Error("Result should have content")
+		}
+		if result.Duration <= 0 {
+			t.Error("Should have execution duration")
+		}
+
+		// Verify streamed content matches final result
+		streamedContent := strings.Join(chunks, "")
+		if result.Content != streamedContent {
+			t.Errorf("Streamed content mismatch:\nFinal: %q\nStreamed: %q", result.Content, streamedContent)
+		}
+
+		t.Logf("Successfully streamed response: %q", result.Content)
+	})
+
+	// Test streaming with options
+	t.Run("RealStreamingWithOptions", func(t *testing.T) {
+		stream, err := agent.RunStream(ctx, "Count to 3",
+			vnext.WithTextOnly(),
+			vnext.WithBufferSize(50),
+		)
+		if err != nil {
+			t.Skipf("Failed to start stream: %v", err)
+		}
+
+		var chunks int
+		for chunk := range stream.Chunks() {
+			chunks++
+			// With TextOnly, we should only get text/delta/done chunks
+			expectedTypes := []vnext.ChunkType{
+				vnext.ChunkTypeDelta,
+				vnext.ChunkTypeText,
+				vnext.ChunkTypeDone,
+			}
+
+			found := false
+			for _, expectedType := range expectedTypes {
+				if chunk.Type == expectedType {
+					found = true
+					break
+				}
+			}
+
+			if !found {
+				t.Errorf("With TextOnly, unexpected chunk type: %s", chunk.Type)
+			}
+		}
+
+		result, err := stream.Wait()
+		if err != nil {
+			t.Fatalf("Stream wait failed: %v", err)
+		}
+		if !result.Success {
+			t.Errorf("Result should be successful")
+		}
+
+		t.Logf("Received %d chunks for counting task", chunks)
+	})
+}
+
+func TestRunStreamWithOptions_RealOllamaIntegration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping streaming integration test in short mode")
+	}
+
+	config := &vnext.Config{
+		Name:         "test-stream-options-agent",
+		SystemPrompt: "You are a helpful assistant.",
+		Timeout:      60 * time.Second,
+		LLM: vnext.LLMConfig{
+			Provider:    "ollama",
+			Model:       "gemma3:1b",
+			Temperature: 0.5,
+			MaxTokens:   50,
+		},
+	}
+
+	agent, err := vnext.NewBuilder("test-stream-options").
+		WithConfig(config).
+		Build()
+	if err != nil {
+		t.Skipf("Failed to create agent: %v", err)
+	}
+
+	ctx := context.Background()
+	err = agent.Initialize(ctx)
+	if err != nil {
+		t.Skipf("Failed to initialize agent: %v", err)
+	}
+	defer agent.Cleanup(ctx)
+
+	// Test with run options
+	t.Run("WithRunOptions", func(t *testing.T) {
+		// Use nil run options to test the delegation path
+		stream, err := agent.RunStreamWithOptions(ctx, "Hello", nil,
+			vnext.WithTextOnly(),
+		)
+		if err != nil {
+			t.Skipf("Failed to start stream: %v", err)
+		}
+
+		// Wait for completion
+		result, err := stream.Wait()
+		if err != nil {
+			t.Fatalf("Stream wait failed: %v", err)
+		}
+		if result == nil {
+			t.Fatal("Result is nil")
+		}
+		if !result.Success {
+			t.Errorf("Result should be successful")
+		}
+		if result.Content == "" {
+			t.Error("Result should have content")
+		}
+
+		t.Logf("RunStreamWithOptions result: %q", result.Content)
+	})
+
+	// Test temperature override
+	t.Run("WithTemperatureOverride", func(t *testing.T) {
+		temperature := 0.1
+		runOpts := vnext.NewRunOptions()
+		runOpts.Temperature = &temperature
+
+		stream, err := agent.RunStreamWithOptions(ctx, "Say hi", runOpts)
+		if err != nil {
+			t.Skipf("Failed to start stream: %v", err)
+		}
+
+		result, err := stream.Wait()
+		if err != nil {
+			t.Fatalf("Stream wait failed: %v", err)
+		}
+		if !result.Success {
+			t.Errorf("Result should be successful")
+		}
+
+		t.Logf("Temperature override result: %q", result.Content)
+	})
+}
+
+func TestStreamUtilities_RealOllamaIntegration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping streaming integration test in short mode")
+	}
+
+	config := &vnext.Config{
+		Name:    "test-stream-utils-agent",
+		Timeout: 60 * time.Second,
+		LLM: vnext.LLMConfig{
+			Provider: "ollama",
+			Model:    "gemma3:1b",
+		},
+	}
+
+	agent, err := vnext.NewBuilder("test-utils").
+		WithConfig(config).
+		Build()
+	if err != nil {
+		t.Skipf("Failed to create agent: %v", err)
+	}
+
+	ctx := context.Background()
+	err = agent.Initialize(ctx)
+	if err != nil {
+		t.Skipf("Failed to initialize agent: %v", err)
+	}
+	defer agent.Cleanup(ctx)
+
+	t.Run("CollectStream", func(t *testing.T) {
+		stream, err := agent.RunStream(ctx, "Say 'test'")
+		if err != nil {
+			t.Skipf("Failed to start stream: %v", err)
+		}
+
+		output, result, err := vnext.CollectStream(stream)
+		if err != nil {
+			t.Fatalf("CollectStream failed: %v", err)
+		}
+		if output == "" {
+			t.Error("Output should not be empty")
+		}
+		if !result.Success {
+			t.Errorf("Result should be successful")
+		}
+		if result.Content != output {
+			t.Errorf("Output mismatch: result=%q, collected=%q", result.Content, output)
+		}
+
+		t.Logf("CollectStream output: %q", output)
+	})
+
+	t.Run("StreamToChannel", func(t *testing.T) {
+		stream, err := agent.RunStream(ctx, "Count: 1, 2, 3")
+		if err != nil {
+			t.Skipf("Failed to start stream: %v", err)
+		}
+
+		textChan := vnext.StreamToChannel(stream)
+		var parts []string
+		for text := range textChan {
+			parts = append(parts, text)
+		}
+
+		result, err := stream.Wait()
+		if err != nil {
+			t.Fatalf("Stream wait failed: %v", err)
+		}
+
+		combined := strings.Join(parts, "")
+		if result.Content != combined {
+			t.Errorf("Channel content mismatch: result=%q, combined=%q", result.Content, combined)
+		}
+
+		t.Logf("StreamToChannel parts: %d, combined: %q", len(parts), combined)
+	})
+}
