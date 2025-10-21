@@ -184,7 +184,7 @@ func (m *InMemoryProvider) GetHistory(ctx context.Context, limit ...int) ([]core
 }
 
 func (m *InMemoryProvider) NewSession() string {
-	return generateID()
+	return core.GenerateSessionID()
 }
 
 func (m *InMemoryProvider) SetSession(ctx context.Context, sessionID string) context.Context {
