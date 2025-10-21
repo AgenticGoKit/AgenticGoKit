@@ -45,7 +45,7 @@ func (w *WeaviateProvider) GetHistory(ctx context.Context, limit ...int) ([]core
 }
 
 func (w *WeaviateProvider) NewSession() string {
-	return generateID()
+	return core.GenerateSessionID()
 }
 
 func (w *WeaviateProvider) SetSession(ctx context.Context, sessionID string) context.Context {
@@ -79,4 +79,3 @@ func (w *WeaviateProvider) SearchAll(ctx context.Context, query string, options 
 func (w *WeaviateProvider) BuildContext(ctx context.Context, query string, options ...core.ContextOption) (*core.RAGContext, error) {
 	return nil, fmt.Errorf("Weaviate provider not yet implemented")
 }
-

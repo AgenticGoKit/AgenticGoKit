@@ -44,6 +44,25 @@ func DefaultRetryConfig() RetryConfig {
 
 // NewPgVectorProvider creates a new PgVector provider
 func NewPgVectorProvider(config core.AgentMemoryConfig, embeddingService core.EmbeddingService) (core.Memory, error) {
+	// Validate embedding service
+	if embeddingService == nil {
+		return nil, fmt.Errorf("embedding service is required for PgVector provider")
+	}
+
+	// Validate dimensions configuration
+	if config.Dimensions <= 0 {
+		// Use embedding service dimensions if not configured
+		config.Dimensions = embeddingService.GetDimensions()
+		if config.Dimensions <= 0 {
+			return nil, fmt.Errorf("invalid dimensions configuration: %d", config.Dimensions)
+		}
+	}
+
+	// Validate connection string
+	if config.Connection == "" {
+		return nil, fmt.Errorf("connection string is required for PgVector provider")
+	}
+
 	provider := &PgVectorProvider{
 		config:           config,
 		retryConfig:      DefaultRetryConfig(),
@@ -410,7 +429,7 @@ func (p *PgVectorProvider) GetHistory(ctx context.Context, limit ...int) ([]core
 }
 
 func (p *PgVectorProvider) NewSession() string {
-	return generateID()
+	return core.GenerateSessionID()
 }
 
 func (p *PgVectorProvider) SetSession(ctx context.Context, sessionID string) context.Context {
