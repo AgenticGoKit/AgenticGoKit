@@ -2,7 +2,7 @@
 
 **Unified agent and workflow surface for AgenticGoKit**
 
-The `core/vnext` package delivers the next-generation agent runtime with a focused API surface, streamlined builder, and first-class integrations for memory, tools, MCP servers, and workflows. These documents mirror the existing `docs/reference/api` layout but focus specifically on vNext types so you can adopt the new primitives without digging through the source.
+The `core/vnext` package delivers the next-generation agent runtime with a focused API surface, streamlined builder, and first-class integrations for memory, tools, MCP servers, and workflows. This is the **recommended API** for new projects, offering production-ready streaming, workflow orchestration, and comprehensive error handling.
 
 ## 📦 Package Overview
 
@@ -33,21 +33,38 @@ import (
     "context"
     "log"
 
-    vnext "github.com/kunalkushwaha/agenticgokit/core/vnext"
+    "github.com/kunalkushwaha/agenticgokit/core/vnext"
 )
 
 func main() {
+    // Quick agent creation
     agent, err := vnext.NewChatAgent("demo-bot")
     if err != nil {
         log.Fatal(err)
     }
 
-    result, err := agent.Run(context.Background(), "Summarise the vNext API")
+    // Basic execution
+    result, err := agent.Run(context.Background(), "Explain vnext workflows")
     if err != nil {
         log.Fatal(err)
     }
 
     log.Println("Response:", result.Content)
+    
+    // Streaming execution  
+    stream, err := agent.RunStream(ctx, "Generate a detailed report")
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    for chunk := range stream.Chunks() {
+        if chunk.Type == vnext.ChunkTypeDelta {
+            fmt.Print(chunk.Delta) // Real-time token display
+        }
+    }
+    
+    finalResult, _ := stream.Wait()
+    log.Println("Final:", finalResult.Content)
 }
 ```
 
