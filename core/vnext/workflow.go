@@ -266,14 +266,11 @@ func (w *basicWorkflow) Run(ctx context.Context, input string) (*WorkflowResult,
 
 // RunStream implements Workflow.RunStream
 func (w *basicWorkflow) RunStream(ctx context.Context, input string, opts ...StreamOption) (Stream, error) {
-	// Apply timeout from config
-	if w.config.Timeout > 0 {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, w.config.Timeout)
-		defer cancel()
-	}
+	// Use the original context for agent execution
+	// Let individual agents handle their own timeouts
+	agentCtx := ctx
 
-	// Create stream
+	// Create stream using the original context
 	metadata := &StreamMetadata{
 		AgentName: fmt.Sprintf("workflow_%s", w.config.Mode),
 		StartTime: time.Now(),
@@ -283,12 +280,25 @@ func (w *basicWorkflow) RunStream(ctx context.Context, input string, opts ...Str
 		},
 	}
 
-	stream, writer := NewStream(ctx, metadata, opts...)
+	stream, writer := NewStream(agentCtx, metadata, opts...)
 
 	// Start workflow execution in goroutine
 	go func() {
 		defer writer.Close()
 		startTime := time.Now()
+
+		// Debug: Check if context is already cancelled
+		select {
+		case <-agentCtx.Done():
+			err := fmt.Errorf("agent context already cancelled before workflow start: %w", agentCtx.Err())
+			writer.Write(&StreamChunk{
+				Type:  ChunkTypeError,
+				Error: err,
+			})
+			writer.CloseWithError(err)
+			return
+		default:
+		}
 
 		// Initialize workflow context
 		w.context.Set("initial_input", input)
@@ -312,13 +322,13 @@ func (w *basicWorkflow) RunStream(ctx context.Context, input string, opts ...Str
 
 		switch w.config.Mode {
 		case Sequential:
-			stepResults, finalOutput, err = w.executeSequentialStreaming(ctx, input, writer)
+			stepResults, finalOutput, err = w.executeSequentialStreaming(agentCtx, input, writer)
 		case Parallel:
-			stepResults, finalOutput, err = w.executeParallelStreaming(ctx, input, writer)
+			stepResults, finalOutput, err = w.executeParallelStreaming(agentCtx, input, writer)
 		case DAG:
-			stepResults, finalOutput, err = w.executeDAGStreaming(ctx, input, writer)
+			stepResults, finalOutput, err = w.executeDAGStreaming(agentCtx, input, writer)
 		case Loop:
-			stepResults, finalOutput, err = w.executeLoopStreaming(ctx, input, writer)
+			stepResults, finalOutput, err = w.executeLoopStreaming(agentCtx, input, writer)
 		default:
 			err = fmt.Errorf("unsupported workflow mode: %s", w.config.Mode)
 		}
@@ -383,6 +393,20 @@ func (w *basicWorkflow) RunStream(ctx context.Context, input string, opts ...Str
 	return stream, nil
 }
 
+// safeStreamWrite writes to the stream with panic recovery
+func safeStreamWrite(writer StreamWriter, chunk *StreamChunk, stepName string) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("stream write panic in step %s: %v", stepName, r)
+		}
+	}()
+
+	if writer != nil && chunk != nil {
+		writer.Write(chunk)
+	}
+	return nil
+}
+
 // executeSequentialStreaming runs steps one after another with streaming
 func (w *basicWorkflow) executeSequentialStreaming(ctx context.Context, input string, writer StreamWriter) ([]StepResult, string, error) {
 	w.mu.RLock()
@@ -396,26 +420,36 @@ func (w *basicWorkflow) executeSequentialStreaming(ctx context.Context, input st
 		// Check context cancellation
 		select {
 		case <-ctx.Done():
-			return results, currentInput, ctx.Err()
+			contextErr := fmt.Errorf("sequential workflow cancelled at step %d/%d (%s): %w", i+1, len(steps), step.Name, ctx.Err())
+			return results, currentInput, contextErr
 		default:
 		}
 
-		// Emit step start
-		writer.Write(&StreamChunk{
+		// Emit step start with safe writing
+		stepStartChunk := &StreamChunk{
 			Type:    ChunkTypeMetadata,
 			Content: fmt.Sprintf("Step %d/%d: %s", i+1, len(steps), step.Name),
 			Metadata: map[string]interface{}{
-				"step_name":  step.Name,
-				"step_index": i,
+				"step_name":   step.Name,
+				"step_index":  i,
+				"total_steps": len(steps),
 			},
-		})
+		}
+
+		if writeErr := safeStreamWrite(writer, stepStartChunk, step.Name); writeErr != nil {
+			// Log warning but continue execution
+			fmt.Printf("Warning: Failed to write step start chunk: %v\n", writeErr)
+		}
 
 		// Execute step with streaming if agent supports it
 		stepResult, output, err := w.executeStepStreaming(ctx, step, currentInput, writer)
 		results = append(results, stepResult)
 
 		if err != nil {
-			return results, currentInput, fmt.Errorf("step %s failed: %w", step.Name, err)
+			// Enhanced error with step context
+			stepErr := fmt.Errorf("sequential workflow step %d/%d (%s) failed after processing %d steps: %w",
+				i+1, len(steps), step.Name, len(results), err)
+			return results, currentInput, stepErr
 		}
 
 		currentInput = output
@@ -533,6 +567,22 @@ func (w *basicWorkflow) executeLoopStreaming(ctx context.Context, input string, 
 func (w *basicWorkflow) executeStepStreaming(ctx context.Context, step WorkflowStep, input string, writer StreamWriter) (StepResult, string, error) {
 	startTime := time.Now()
 
+	// Check context cancellation before step execution
+	select {
+	case <-ctx.Done():
+		contextErr := ctx.Err()
+		stepErr := fmt.Errorf("step %s cancelled before execution: %w", step.Name, contextErr)
+		return StepResult{
+			StepName:  step.Name,
+			Success:   false,
+			Output:    "",
+			Error:     stepErr.Error(),
+			Timestamp: startTime,
+			Duration:  time.Since(startTime),
+		}, "", stepErr
+	default:
+	}
+
 	// Check condition
 	if step.Condition != nil && !step.Condition(ctx, w.context) {
 		return StepResult{
@@ -552,26 +602,55 @@ func (w *basicWorkflow) executeStepStreaming(ctx context.Context, step WorkflowS
 	// Try to run with streaming if agent supports it
 	stream, err := step.Agent.RunStream(ctx, input)
 	if err != nil {
+		// Enhanced error context
+		enhancedErr := fmt.Errorf("step %s agent streaming failed: %w", step.Name, err)
+		if ctx.Err() != nil {
+			enhancedErr = fmt.Errorf("step %s cancelled during agent start (context: %v): %w", step.Name, ctx.Err(), err)
+		}
+
 		return StepResult{
 			StepName:  step.Name,
 			Success:   false,
 			Output:    "",
-			Error:     err.Error(),
+			Error:     enhancedErr.Error(),
 			Timestamp: startTime,
 			Duration:  time.Since(startTime),
-		}, "", err
+		}, "", enhancedErr
 	}
 
 	// Forward chunks from agent stream to workflow stream
 	var output string
+	chunkCount := 0
 	for chunk := range stream.Chunks() {
+		chunkCount++
+
+		// Check for context cancellation during streaming
+		select {
+		case <-ctx.Done():
+			contextErr := fmt.Errorf("step %s cancelled during streaming at chunk %d: %w", step.Name, chunkCount, ctx.Err())
+			return StepResult{
+				StepName:  step.Name,
+				Success:   false,
+				Output:    output,
+				Error:     contextErr.Error(),
+				Timestamp: startTime,
+				Duration:  time.Since(startTime),
+			}, output, contextErr
+		default:
+		}
+
 		// Modify chunk metadata to include step name
 		if chunk.Metadata == nil {
 			chunk.Metadata = make(map[string]interface{})
 		}
 		chunk.Metadata["step_name"] = step.Name
+		chunk.Metadata["chunk_count"] = chunkCount
 
-		writer.Write(chunk)
+		// Use safe stream writing
+		if writeErr := safeStreamWrite(writer, chunk, step.Name); writeErr != nil {
+			// Log warning but continue processing
+			fmt.Printf("Warning: Failed to write chunk %d for step %s: %v\n", chunkCount, step.Name, writeErr)
+		}
 
 		// Collect text for final output
 		if chunk.Type == ChunkTypeText || chunk.Type == ChunkTypeDelta {
@@ -585,7 +664,12 @@ func (w *basicWorkflow) executeStepStreaming(ctx context.Context, step WorkflowS
 
 	result, streamErr := stream.Wait()
 	if streamErr != nil {
-		err = streamErr
+		// Enhanced error context for stream errors
+		if ctx.Err() != nil {
+			err = fmt.Errorf("step %s stream wait failed with context cancellation (context: %v): %w", step.Name, ctx.Err(), streamErr)
+		} else {
+			err = fmt.Errorf("step %s stream wait failed: %w", step.Name, streamErr)
+		}
 	}
 
 	stepResult := StepResult{
@@ -602,7 +686,8 @@ func (w *basicWorkflow) executeStepStreaming(ctx context.Context, step WorkflowS
 
 	if err != nil {
 		stepResult.Error = err.Error()
-		return stepResult, "", err
+		// Log step failure with context
+		return stepResult, "", fmt.Errorf("workflow step %s failed after %.2fs: %w", step.Name, time.Since(startTime).Seconds(), err)
 	}
 
 	// Store result in context

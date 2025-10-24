@@ -16,6 +16,11 @@ func TestBuilderBasic(t *testing.T) {
 		t.Fatal("NewBuilder returned nil")
 	}
 
+	// Configure with Ollama for local testing (no API key required)
+	builder.WithLLM(vnext.WithLLMProvider("ollama")).
+		WithLLM(vnext.WithLLMModel("gemma2:2b")).
+		WithLLM(vnext.WithLLMBaseURL("http://localhost:11434"))
+
 	// Test building an agent with default config
 	agent, err := builder.Build()
 	if err != nil {
