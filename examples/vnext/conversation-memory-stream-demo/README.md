@@ -137,8 +137,9 @@ The demo processes different chunk types:
 ### 3. Final Result
 After streaming completes, get the full result:
 ```go
-result := stream.Result()
+result, err := stream.Wait()
 // Contains: full content, duration, memory queries, tokens used
+// Handle err if needed
 ```
 
 ## Comparison: Streaming vs Non-Streaming
