@@ -181,9 +181,11 @@ func (a *realAgent) Run(ctx context.Context, input string) (*Result, error) {
 
 	// Step 2: Enhance prompt with memory context if memory is enabled
 	// Use the new BuildEnrichedPrompt utility for proper RAG integration
+	memoryQueries := 0
 	if a.memoryProvider != nil && a.config.Memory != nil {
 		// Convert llm.Prompt to core.Prompt for enrichment
-		corePrompt := BuildEnrichedPrompt(ctx, prompt.System, prompt.User, a.memoryProvider, a.config.Memory)
+		var corePrompt core.Prompt
+		corePrompt, memoryQueries = BuildEnrichedPrompt(ctx, prompt.System, prompt.User, a.memoryProvider, a.config.Memory)
 
 		// Update the LLM prompt with enriched content
 		prompt.System = corePrompt.System
@@ -192,6 +194,7 @@ func (a *realAgent) Run(ctx context.Context, input string) (*Result, error) {
 		core.Logger().Debug().
 			Str("original_input", input).
 			Int("enriched_length", len(prompt.User)).
+			Int("memory_queries", memoryQueries).
 			Msg("Enhanced prompt with memory context")
 	}
 
@@ -257,14 +260,15 @@ func (a *realAgent) Run(ctx context.Context, input string) (*Result, error) {
 	// Step 7: Build and return the result
 	duration := time.Since(startTime)
 	result := &Result{
-		Success:    true,
-		Content:    finalResponse,
-		Duration:   duration,
-		TokensUsed: response.Usage.TotalTokens,
-		MemoryUsed: a.memoryProvider != nil,
-		ToolCalls:  toolCalls, // Include tool execution details
-		StartTime:  startTime,
-		EndTime:    time.Now(),
+		Success:       true,
+		Content:       finalResponse,
+		Duration:      duration,
+		TokensUsed:    response.Usage.TotalTokens,
+		MemoryUsed:    a.memoryProvider != nil,
+		MemoryQueries: memoryQueries, // Now properly tracks memory query count
+		ToolCalls:     toolCalls,     // Include tool execution details
+		StartTime:     startTime,
+		EndTime:       time.Now(),
 		Metadata: map[string]interface{}{
 			"model":         a.config.LLM.Model,
 			"provider":      a.config.LLM.Provider,
@@ -304,7 +308,7 @@ func (a *realAgent) buildMemoryContext(ctx context.Context, input string) (strin
 	}
 
 	// Use the new utility function for enrichment
-	enrichedInput := EnrichWithMemory(ctx, a.memoryProvider, input, a.config.Memory)
+	enrichedInput, _ := EnrichWithMemory(ctx, a.memoryProvider, input, a.config.Memory)
 
 	// Return only the added context (not the original input)
 	if enrichedInput == input {
@@ -582,8 +586,10 @@ func (a *realAgent) RunStream(ctx context.Context, input string, opts ...StreamO
 		}
 
 		// Add memory context if available
+		memoryQueries := 0
 		if a.memoryProvider != nil {
-			enrichedPrompt := BuildEnrichedPrompt(ctx, prompt.System, prompt.User, a.memoryProvider, a.config.Memory)
+			var enrichedPrompt core.Prompt
+			enrichedPrompt, memoryQueries = BuildEnrichedPrompt(ctx, prompt.System, prompt.User, a.memoryProvider, a.config.Memory)
 			prompt.System = enrichedPrompt.System
 			prompt.User = enrichedPrompt.User
 		}
@@ -639,14 +645,16 @@ func (a *realAgent) RunStream(ctx context.Context, input string, opts ...StreamO
 
 		// Create final result
 		finalResult := &Result{
-			Success:   true,
-			Content:   finalContent,
-			Duration:  duration,
-			StartTime: startTime,
-			EndTime:   time.Now(),
-			SessionID: metadata.SessionID,
-			TraceID:   metadata.TraceID,
-			Metadata:  make(map[string]interface{}),
+			Success:       true,
+			Content:       finalContent,
+			Duration:      duration,
+			StartTime:     startTime,
+			EndTime:       time.Now(),
+			SessionID:     metadata.SessionID,
+			TraceID:       metadata.TraceID,
+			MemoryUsed:    a.memoryProvider != nil,
+			MemoryQueries: memoryQueries, // Track memory queries performed during stream
+			Metadata:      make(map[string]interface{}),
 		}
 
 		// Process tool calls if present and tools are available
