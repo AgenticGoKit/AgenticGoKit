@@ -24,11 +24,12 @@ import (
 //   - input: The user's input/query
 //   - config: Memory configuration with RAG settings
 //
-// Returns the enriched input string with memory context prepended, or the
-// original input if no relevant memories are found or an error occurs.
-func EnrichWithMemory(ctx context.Context, memoryProvider core.Memory, input string, config *MemoryConfig) string {
+// Returns the enriched input string with memory context prepended (or the
+// original input if no relevant memories are found or an error occurs), and
+// the number of memory queries performed.
+func EnrichWithMemory(ctx context.Context, memoryProvider core.Memory, input string, config *MemoryConfig) (string, int) {
 	if memoryProvider == nil || config == nil {
-		return input
+		return input, 0
 	}
 
 	// Determine how many memories to retrieve
@@ -39,23 +40,25 @@ func EnrichWithMemory(ctx context.Context, memoryProvider core.Memory, input str
 
 	// Query memory for relevant context
 	memories, err := memoryProvider.Query(ctx, input, limit)
+	queryCount := 1 // We performed one query
+
 	if err != nil {
 		core.Logger().Warn().Err(err).Msg("Failed to query memory for context")
-		return input
+		return input, queryCount
 	}
 
-	// If no memories found, return original input
+	// If no memories found, return original input (but count the query)
 	if len(memories) == 0 {
-		return input
+		return input, queryCount
 	}
 
 	// Build RAG context if configured
 	if config.RAG != nil {
-		return BuildRAGContext(memories, config.RAG, input)
+		return BuildRAGContext(memories, config.RAG, input), queryCount
 	}
 
 	// Fallback: simple context formatting
-	return BuildMemorySimpleContext(memories, input)
+	return BuildMemorySimpleContext(memories, input), queryCount
 }
 
 // buildRAGContext builds a RAG-enhanced context from memories using the provided RAG configuration.
@@ -176,10 +179,11 @@ func BuildMemorySimpleContext(memories []core.Result, query string) string {
 //   - memoryProvider: The memory provider to query for chat history
 //   - historyLimit: Maximum number of messages to include (0 for default)
 //
-// Returns a formatted string with chat history, or empty string if no history available.
-func BuildChatHistoryContext(ctx context.Context, memoryProvider core.Memory, historyLimit int) string {
+// Returns a formatted string with chat history (or empty string if no history available),
+// and a boolean indicating whether a query was performed.
+func BuildChatHistoryContext(ctx context.Context, memoryProvider core.Memory, historyLimit int) (string, bool) {
 	if memoryProvider == nil {
-		return ""
+		return "", false
 	}
 
 	// Use default limit if not specified
@@ -189,8 +193,10 @@ func BuildChatHistoryContext(ctx context.Context, memoryProvider core.Memory, hi
 
 	// Get chat history
 	messages, err := memoryProvider.GetHistory(ctx, historyLimit)
+	queryPerformed := true // We called GetHistory
+
 	if err != nil || len(messages) == 0 {
-		return ""
+		return "", queryPerformed
 	}
 
 	var context strings.Builder
@@ -214,7 +220,7 @@ func BuildChatHistoryContext(ctx context.Context, memoryProvider core.Memory, hi
 
 	context.WriteString("---\n\n")
 
-	return context.String()
+	return context.String(), queryPerformed
 }
 
 // =============================================================================
@@ -231,24 +237,30 @@ func BuildChatHistoryContext(ctx context.Context, memoryProvider core.Memory, hi
 //   - memoryProvider: Optional memory provider for context
 //   - config: Optional memory configuration
 //
-// Returns a core.Prompt ready for LLM execution.
-func BuildEnrichedPrompt(ctx context.Context, systemPrompt, userInput string, memoryProvider core.Memory, config *MemoryConfig) core.Prompt {
+// Returns a core.Prompt ready for LLM execution and the number of memory queries performed.
+func BuildEnrichedPrompt(ctx context.Context, systemPrompt, userInput string, memoryProvider core.Memory, config *MemoryConfig) (core.Prompt, int) {
 	prompt := core.Prompt{
 		System: systemPrompt,
 		User:   userInput,
 	}
 
-	// If no memory provider or config, return basic prompt
+	// If no memory provider or config, return basic prompt with 0 queries
 	if memoryProvider == nil || config == nil {
-		return prompt
+		return prompt, 0
 	}
 
+	totalQueries := 0
+
 	// Enrich with memory context
-	enrichedInput := EnrichWithMemory(ctx, memoryProvider, userInput, config)
+	enrichedInput, ragQueries := EnrichWithMemory(ctx, memoryProvider, userInput, config)
+	totalQueries += ragQueries
 
 	// Optionally add chat history
 	if config.RAG != nil && config.RAG.HistoryLimit > 0 {
-		chatHistory := BuildChatHistoryContext(ctx, memoryProvider, config.RAG.HistoryLimit)
+		chatHistory, historyQueried := BuildChatHistoryContext(ctx, memoryProvider, config.RAG.HistoryLimit)
+		if historyQueried {
+			totalQueries++ // Count the GetHistory query
+		}
 		if chatHistory != "" {
 			// Prepend chat history to enriched input
 			enrichedInput = chatHistory + enrichedInput
@@ -257,7 +269,7 @@ func BuildEnrichedPrompt(ctx context.Context, systemPrompt, userInput string, me
 
 	prompt.User = enrichedInput
 
-	return prompt
+	return prompt, totalQueries
 }
 
 // =============================================================================
