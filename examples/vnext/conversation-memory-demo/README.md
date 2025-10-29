@@ -110,7 +110,7 @@ agent, err := vnext.NewBuilder("chat-assistant").
                 HistoryLimit:    20,
             },
         },
-        Timeout: 60 * time.Second,
+        Timeout: 300 * time.Second,
     }).
     Build()
 ```
