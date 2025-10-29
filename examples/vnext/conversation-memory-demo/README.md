@@ -186,5 +186,4 @@ Memory: &vnext.MemoryConfig{
 
 - Try the [memory-and-tools](../memory-and-tools/) example for tool integration
 - Explore [streaming-demo](../streaming-demo/) for real-time responses
-- Check [mcp-integration](../mcp-integration/) for external tool connections</content>
-<parameter name="filePath">c:\Users\Kunal\work\ZynkWorks\PRs\AgenticGoKit\examples\vnext\conversation-memory-demo\README.md
+- Check [mcp-integration](../mcp-integration/) for external tool connections
