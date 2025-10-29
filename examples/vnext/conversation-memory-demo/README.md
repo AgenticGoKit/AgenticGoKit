@@ -50,7 +50,7 @@ When processing new messages, the agent:
 
 2. **Model**: Pull the required model
    ```bash
-   ollama pull gemma3:1b
+   ollama pull gpt-oss:120b-cloud
    ```
 
 ### Build and Run
