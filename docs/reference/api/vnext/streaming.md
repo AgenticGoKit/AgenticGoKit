@@ -139,6 +139,14 @@ for chunk := range stream.Chunks() {
 
 // Get final result
 result, err := stream.Wait()
+if err != nil {
+    log.Printf("Stream error: %v", err)
+}
+
+// Access result fields
+fmt.Printf("Duration: %v\n", result.Duration)
+fmt.Printf("Memory queries: %d\n", result.MemoryQueries)
+fmt.Printf("Tokens used: %d\n", result.TokensUsed)
 ```
 
 ### Streaming with Options
@@ -560,6 +568,101 @@ vnext.WithFlushInterval(50*time.Millisecond), // Faster flush
 vnext.WithTextOnly(),
 vnext.WithBufferSize(50), // Smaller buffer
 ```
+
+## 💾 Memory Integration
+
+Streaming agents can use memory for context-aware conversations. The `Result` returned by `stream.Wait()` includes memory tracking:
+
+### Streaming with Memory
+
+```go
+// Create agent with memory
+agent, err := vnext.NewBuilder("chat-assistant").
+    WithConfig(&vnext.Config{
+        LLM: vnext.LLMConfig{
+            Provider: "ollama",
+            Model:    "qwen3:0.6b",
+            MaxTokens: 2000,
+        },
+        Memory: &vnext.MemoryConfig{
+            Provider: "memory",
+            RAG: &vnext.RAGConfig{
+                MaxTokens:      1000,
+                PersonalWeight: 0.8,
+                HistoryLimit:   20,
+            },
+        },
+    }).
+    Build()
+
+// Stream with memory context
+stream, err := agent.RunStream(ctx, "What did we discuss earlier?")
+
+for chunk := range stream.Chunks() {
+    if chunk.Type == vnext.ChunkTypeDelta {
+        fmt.Print(chunk.Delta)
+    }
+}
+
+// Check memory usage
+result, err := stream.Wait()
+if result.MemoryUsed {
+    fmt.Printf("\n[Memory] %d queries performed\n", result.MemoryQueries)
+}
+```
+
+### Result Fields
+
+The `Result` struct provides memory tracking:
+
+```go
+type Result struct {
+    Content       string        // Final response content
+    Duration      time.Duration // Total execution time
+    MemoryUsed    bool          // Whether memory was accessed
+    MemoryQueries int           // Number of memory queries (RAG + history)
+    TokensUsed    int           // LLM tokens consumed
+    // ... other fields
+}
+```
+
+**Memory Query Tracking:**
+- Counts both RAG semantic queries and chat history retrievals
+- Typically 2 queries per turn: 1 RAG query + 1 history fetch
+- Queries are counted even if they return 0 results
+- Useful for monitoring memory system usage
+
+### Interactive Memory Streaming
+
+```go
+scanner := bufio.NewScanner(os.Stdin)
+conversationCount := 0
+
+for {
+    fmt.Print("You: ")
+    if !scanner.Scan() {
+        break
+    }
+    input := strings.TrimSpace(scanner.Text())
+    
+    fmt.Printf("\nAssistant (Turn %d): ", conversationCount)
+    stream, err := agent.RunStream(ctx, input)
+    
+    for chunk := range stream.Chunks() {
+        if chunk.Type == vnext.ChunkTypeDelta {
+            fmt.Print(chunk.Delta)
+        }
+    }
+    
+    result, _ := stream.Wait()
+    fmt.Printf("\n[Memory] %d queries | [Time] %v\n\n", 
+        result.MemoryQueries, result.Duration)
+    
+    conversationCount++
+}
+```
+
+See [Memory API](memory.md) for detailed memory configuration and [examples/vnext/conversation-memory-stream-demo](../../../examples/vnext/conversation-memory-stream-demo/) for a complete implementation.
 
 ## 🌟 Best Practices
 
