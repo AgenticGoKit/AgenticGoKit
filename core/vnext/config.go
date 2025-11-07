@@ -36,12 +36,14 @@ type Config struct {
 
 // LLMConfig contains LLM provider configuration
 type LLMConfig struct {
-	Provider    string  `toml:"provider"`           // openai, ollama, azure, anthropic
-	Model       string  `toml:"model"`              // Model name
-	Temperature float32 `toml:"temperature"`        // 0.0 to 2.0
-	MaxTokens   int     `toml:"max_tokens"`         // Maximum tokens to generate
-	BaseURL     string  `toml:"base_url,omitempty"` // Custom base URL
-	APIKey      string  `toml:"api_key,omitempty"`  // API key (prefer env vars)
+	Provider    string  `toml:"provider"`            // openai, ollama, azure, anthropic, openrouter
+	Model       string  `toml:"model"`               // Model name
+	Temperature float32 `toml:"temperature"`         // 0.0 to 2.0
+	MaxTokens   int     `toml:"max_tokens"`          // Maximum tokens to generate
+	BaseURL     string  `toml:"base_url,omitempty"`  // Custom base URL
+	APIKey      string  `toml:"api_key,omitempty"`   // API key (prefer env vars)
+	SiteURL     string  `toml:"site_url,omitempty"`  // OpenRouter: Site URL for rankings
+	SiteName    string  `toml:"site_name,omitempty"` // OpenRouter: Site name for analytics
 }
 
 // MemoryConfig contains memory and RAG configuration

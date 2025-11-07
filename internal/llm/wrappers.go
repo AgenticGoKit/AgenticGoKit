@@ -166,6 +166,10 @@ type PublicLLMProviderConfig struct {
 	// Ollama-specific fields
 	BaseURL string `json:"base_url,omitempty" toml:"base_url,omitempty"`
 
+	// OpenRouter-specific fields
+	SiteURL  string `json:"site_url,omitempty" toml:"site_url,omitempty"`
+	SiteName string `json:"site_name,omitempty" toml:"site_name,omitempty"`
+
 	// HTTP client configuration
 	HTTPTimeout time.Duration `json:"http_timeout,omitempty" toml:"http_timeout,omitempty"`
 }
@@ -210,6 +214,28 @@ func NewOllamaAdapterWrapped(baseURL, model string, maxTokens int, temperature f
 	return NewModelProviderWrapper(adapter), nil
 }
 
+func NewOpenRouterAdapterWrapped(
+	apiKey, model, baseURL string,
+	maxTokens int,
+	temperature float32,
+	siteURL, siteName string,
+) (PublicModelProvider, error) {
+	adapter, err := NewOpenRouterAdapter(
+		apiKey,
+		model,
+		baseURL,
+		maxTokens,
+		temperature,
+		siteURL,
+		siteName,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewModelProviderWrapper(adapter), nil
+}
+
 func NewModelProviderFromConfigWrapped(config PublicLLMProviderConfig) (PublicModelProvider, error) {
 	internalConfig := ProviderConfig{
 		Type:                ProviderType(config.Type),
@@ -221,6 +247,8 @@ func NewModelProviderFromConfigWrapped(config PublicLLMProviderConfig) (PublicMo
 		ChatDeployment:      config.ChatDeployment,
 		EmbeddingDeployment: config.EmbeddingDeployment,
 		BaseURL:             config.BaseURL,
+		SiteURL:             config.SiteURL,
+		SiteName:            config.SiteName,
 		HTTPTimeout:         config.HTTPTimeout,
 	}
 
