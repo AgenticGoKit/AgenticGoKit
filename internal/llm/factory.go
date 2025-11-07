@@ -15,6 +15,7 @@ const (
 	ProviderTypeAzureOpenAI ProviderType = "azure"
 	ProviderTypeOllama      ProviderType = "ollama"
 	ProviderTypeOpenRouter  ProviderType = "openrouter"
+	ProviderTypeHuggingFace ProviderType = "huggingface"
 )
 
 // ProviderConfig holds configuration for creating LLM providers
@@ -36,6 +37,16 @@ type ProviderConfig struct {
 	// OpenRouter-specific fields
 	SiteURL  string `json:"site_url,omitempty" toml:"site_url,omitempty"`
 	SiteName string `json:"site_name,omitempty" toml:"site_name,omitempty"`
+
+	// HuggingFace-specific fields
+	HFAPIType           string   `json:"hf_api_type,omitempty" toml:"hf_api_type,omitempty"`
+	HFWaitForModel      bool     `json:"hf_wait_for_model,omitempty" toml:"hf_wait_for_model,omitempty"`
+	HFUseCache          bool     `json:"hf_use_cache,omitempty" toml:"hf_use_cache,omitempty"`
+	HFTopP              float32  `json:"hf_top_p,omitempty" toml:"hf_top_p,omitempty"`
+	HFTopK              int      `json:"hf_top_k,omitempty" toml:"hf_top_k,omitempty"`
+	HFDoSample          bool     `json:"hf_do_sample,omitempty" toml:"hf_do_sample,omitempty"`
+	HFStopSequences     []string `json:"hf_stop_sequences,omitempty" toml:"hf_stop_sequences,omitempty"`
+	HFRepetitionPenalty float32  `json:"hf_repetition_penalty,omitempty" toml:"hf_repetition_penalty,omitempty"`
 
 	// HTTP client configuration
 	HTTPTimeout time.Duration `json:"http_timeout,omitempty" toml:"http_timeout,omitempty"`
@@ -80,6 +91,8 @@ func (f *ProviderFactory) CreateProvider(config ProviderConfig) (ModelProvider, 
 		return f.createOllamaProvider(config)
 	case ProviderTypeOpenRouter:
 		return f.createOpenRouterProvider(config)
+	case ProviderTypeHuggingFace:
+		return f.createHuggingFaceProvider(config)
 	default:
 		return nil, fmt.Errorf("unsupported provider type: %s", config.Type)
 	}
@@ -162,6 +175,51 @@ func (f *ProviderFactory) createOpenRouterProvider(config ProviderConfig) (Model
 		config.Temperature,
 		config.SiteURL,
 		config.SiteName,
+	)
+}
+
+// createHuggingFaceProvider creates a Hugging Face provider
+func (f *ProviderFactory) createHuggingFaceProvider(config ProviderConfig) (ModelProvider, error) {
+	// API key validation (not required for local TGI)
+	apiType := HFAPIType(config.HFAPIType)
+	if apiType == "" {
+		apiType = HFAPITypeInference
+	}
+
+	if apiType != HFAPITypeTGI && config.APIKey == "" {
+		return nil, fmt.Errorf("API key is required for Hugging Face provider (except for local TGI)")
+	}
+
+	model := config.Model
+	if model == "" {
+		model = "gpt2" // Default model for free tier
+	}
+
+	baseURL := config.BaseURL
+	// Validate baseURL requirement for non-inference API types
+	if (apiType == HFAPITypeEndpoint || apiType == HFAPITypeTGI || apiType == HFAPITypeChat) && baseURL == "" {
+		return nil, fmt.Errorf("base URL is required for API type: %s", apiType)
+	}
+
+	options := HFAdapterOptions{
+		TopP:              config.HFTopP,
+		TopK:              config.HFTopK,
+		DoSample:          config.HFDoSample,
+		WaitForModel:      config.HFWaitForModel,
+		UseCache:          config.HFUseCache,
+		StopSequences:     config.HFStopSequences,
+		RepetitionPenalty: config.HFRepetitionPenalty,
+		HTTPTimeout:       config.HTTPTimeout,
+	}
+
+	return NewHuggingFaceAdapter(
+		config.APIKey,
+		model,
+		baseURL,
+		apiType,
+		config.MaxTokens,
+		config.Temperature,
+		options,
 	)
 }
 

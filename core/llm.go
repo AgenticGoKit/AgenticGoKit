@@ -178,6 +178,16 @@ type LLMProviderConfig struct {
 	SiteURL  string `json:"site_url,omitempty" toml:"site_url,omitempty"`
 	SiteName string `json:"site_name,omitempty" toml:"site_name,omitempty"`
 
+	// HuggingFace-specific fields
+	HFAPIType           string   `json:"hf_api_type,omitempty" toml:"hf_api_type,omitempty"`
+	HFWaitForModel      bool     `json:"hf_wait_for_model,omitempty" toml:"hf_wait_for_model,omitempty"`
+	HFUseCache          bool     `json:"hf_use_cache,omitempty" toml:"hf_use_cache,omitempty"`
+	HFTopP              float64  `json:"hf_top_p,omitempty" toml:"hf_top_p,omitempty"`
+	HFTopK              int      `json:"hf_top_k,omitempty" toml:"hf_top_k,omitempty"`
+	HFDoSample          bool     `json:"hf_do_sample,omitempty" toml:"hf_do_sample,omitempty"`
+	HFStopSequences     []string `json:"hf_stop_sequences,omitempty" toml:"hf_stop_sequences,omitempty"`
+	HFRepetitionPenalty float64  `json:"hf_repetition_penalty,omitempty" toml:"hf_repetition_penalty,omitempty"`
+
 	// HTTP client configuration
 	HTTPTimeout time.Duration `json:"http_timeout,omitempty" toml:"http_timeout,omitempty"`
 }
@@ -200,6 +210,16 @@ func NewModelProviderFromConfig(config LLMProviderConfig) (ModelProvider, error)
 		ChatDeployment:      config.ChatDeployment,
 		EmbeddingDeployment: config.EmbeddingDeployment,
 		BaseURL:             config.BaseURL,
+		SiteURL:             config.SiteURL,
+		SiteName:            config.SiteName,
+		HFAPIType:           config.HFAPIType,
+		HFWaitForModel:      config.HFWaitForModel,
+		HFUseCache:          config.HFUseCache,
+		HFTopP:              config.HFTopP,
+		HFTopK:              config.HFTopK,
+		HFDoSample:          config.HFDoSample,
+		HFStopSequences:     config.HFStopSequences,
+		HFRepetitionPenalty: config.HFRepetitionPenalty,
 		HTTPTimeout:         config.HTTPTimeout,
 	}
 
@@ -370,6 +390,27 @@ func NewLLMProvider(config AgentLLMConfig) (ModelProvider, error) {
 		}
 		if siteName := os.Getenv("OPENROUTER_SITE_NAME"); siteName != "" {
 			providerConfig.SiteName = siteName
+		}
+	case "huggingface":
+		if apiKey := os.Getenv("HUGGINGFACE_API_KEY"); apiKey != "" {
+			providerConfig.APIKey = apiKey
+		}
+		if baseURL := os.Getenv("HUGGINGFACE_BASE_URL"); baseURL != "" {
+			providerConfig.BaseURL = baseURL
+		}
+		if apiType := os.Getenv("HUGGINGFACE_API_TYPE"); apiType != "" {
+			providerConfig.HFAPIType = apiType
+		} else {
+			providerConfig.HFAPIType = "inference" // Default to Inference API
+		}
+		// Optional HF-specific parameters from environment
+		if waitForModel := os.Getenv("HUGGINGFACE_WAIT_FOR_MODEL"); waitForModel == "true" {
+			providerConfig.HFWaitForModel = true
+		}
+		if useCache := os.Getenv("HUGGINGFACE_USE_CACHE"); useCache == "false" {
+			providerConfig.HFUseCache = false
+		} else {
+			providerConfig.HFUseCache = true // Default to true
 		}
 	}
 
