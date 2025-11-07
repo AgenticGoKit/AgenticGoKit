@@ -174,6 +174,10 @@ type LLMProviderConfig struct {
 	// Ollama-specific fields
 	BaseURL string `json:"base_url,omitempty" toml:"base_url,omitempty"`
 
+	// OpenRouter-specific fields
+	SiteURL  string `json:"site_url,omitempty" toml:"site_url,omitempty"`
+	SiteName string `json:"site_name,omitempty" toml:"site_name,omitempty"`
+
 	// HTTP client configuration
 	HTTPTimeout time.Duration `json:"http_timeout,omitempty" toml:"http_timeout,omitempty"`
 }
@@ -351,6 +355,21 @@ func NewLLMProvider(config AgentLLMConfig) (ModelProvider, error) {
 			providerConfig.BaseURL = baseURL
 		} else {
 			providerConfig.BaseURL = "http://localhost:11434"
+		}
+	case "openrouter":
+		if apiKey := os.Getenv("OPENROUTER_API_KEY"); apiKey != "" {
+			providerConfig.APIKey = apiKey
+		}
+		if baseURL := os.Getenv("OPENROUTER_BASE_URL"); baseURL != "" {
+			providerConfig.BaseURL = baseURL
+		} else {
+			providerConfig.BaseURL = "https://openrouter.ai/api/v1"
+		}
+		if siteURL := os.Getenv("OPENROUTER_SITE_URL"); siteURL != "" {
+			providerConfig.SiteURL = siteURL
+		}
+		if siteName := os.Getenv("OPENROUTER_SITE_NAME"); siteName != "" {
+			providerConfig.SiteName = siteName
 		}
 	}
 

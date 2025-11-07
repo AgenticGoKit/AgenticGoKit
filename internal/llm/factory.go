@@ -14,6 +14,7 @@ const (
 	ProviderTypeOpenAI      ProviderType = "openai"
 	ProviderTypeAzureOpenAI ProviderType = "azure"
 	ProviderTypeOllama      ProviderType = "ollama"
+	ProviderTypeOpenRouter  ProviderType = "openrouter"
 )
 
 // ProviderConfig holds configuration for creating LLM providers
@@ -23,15 +24,19 @@ type ProviderConfig struct {
 	Model       string       `json:"model,omitempty" toml:"model,omitempty"`
 	MaxTokens   int          `json:"max_tokens,omitempty" toml:"max_tokens,omitempty"`
 	Temperature float32      `json:"temperature,omitempty" toml:"temperature,omitempty"`
-	
+
 	// Azure-specific fields
 	Endpoint            string `json:"endpoint,omitempty" toml:"endpoint,omitempty"`
 	ChatDeployment      string `json:"chat_deployment,omitempty" toml:"chat_deployment,omitempty"`
 	EmbeddingDeployment string `json:"embedding_deployment,omitempty" toml:"embedding_deployment,omitempty"`
-	
+
 	// Ollama-specific fields
 	BaseURL string `json:"base_url,omitempty" toml:"base_url,omitempty"`
-	
+
+	// OpenRouter-specific fields
+	SiteURL  string `json:"site_url,omitempty" toml:"site_url,omitempty"`
+	SiteName string `json:"site_name,omitempty" toml:"site_name,omitempty"`
+
 	// HTTP client configuration
 	HTTPTimeout time.Duration `json:"http_timeout,omitempty" toml:"http_timeout,omitempty"`
 }
@@ -73,6 +78,8 @@ func (f *ProviderFactory) CreateProvider(config ProviderConfig) (ModelProvider, 
 		return f.createAzureProvider(config)
 	case ProviderTypeOllama:
 		return f.createOllamaProvider(config)
+	case ProviderTypeOpenRouter:
+		return f.createOpenRouterProvider(config)
 	default:
 		return nil, fmt.Errorf("unsupported provider type: %s", config.Type)
 	}
@@ -86,7 +93,7 @@ func (f *ProviderFactory) createOpenAIProvider(config ProviderConfig) (ModelProv
 	if config.Model == "" {
 		config.Model = "gpt-4o-mini" // Default model
 	}
-	
+
 	return NewOpenAIAdapter(config.APIKey, config.Model, config.MaxTokens, config.Temperature)
 }
 
@@ -104,7 +111,7 @@ func (f *ProviderFactory) createAzureProvider(config ProviderConfig) (ModelProvi
 	if config.EmbeddingDeployment == "" {
 		return nil, fmt.Errorf("embedding deployment is required for Azure OpenAI provider")
 	}
-	
+
 	options := AzureOpenAIAdapterOptions{
 		Endpoint:            config.Endpoint,
 		APIKey:              config.APIKey,
@@ -112,7 +119,7 @@ func (f *ProviderFactory) createAzureProvider(config ProviderConfig) (ModelProvi
 		EmbeddingDeployment: config.EmbeddingDeployment,
 		HTTPClient:          f.httpClient,
 	}
-	
+
 	return NewAzureOpenAIAdapter(options)
 }
 
@@ -122,13 +129,40 @@ func (f *ProviderFactory) createOllamaProvider(config ProviderConfig) (ModelProv
 	if baseURL == "" {
 		baseURL = "http://localhost:11434" // Default Ollama URL
 	}
-	
+
 	model := config.Model
 	if model == "" {
 		model = "llama3.2:latest" // Default model
 	}
-	
+
 	return NewOllamaAdapter(baseURL, model, config.MaxTokens, config.Temperature)
+}
+
+// createOpenRouterProvider creates an OpenRouter provider
+func (f *ProviderFactory) createOpenRouterProvider(config ProviderConfig) (ModelProvider, error) {
+	if config.APIKey == "" {
+		return nil, fmt.Errorf("API key is required for OpenRouter provider")
+	}
+
+	baseURL := config.BaseURL
+	if baseURL == "" {
+		baseURL = "https://openrouter.ai/api/v1"
+	}
+
+	model := config.Model
+	if model == "" {
+		model = "openai/gpt-3.5-turbo" // Default model
+	}
+
+	return NewOpenRouterAdapter(
+		config.APIKey,
+		model,
+		baseURL,
+		config.MaxTokens,
+		config.Temperature,
+		config.SiteURL,
+		config.SiteName,
+	)
 }
 
 // DefaultFactory is a global factory instance for convenience
