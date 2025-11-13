@@ -1,6 +1,7 @@
 package vnext
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"regexp"
@@ -119,13 +120,25 @@ type CircuitBreakerConfig struct {
 	HalfOpenMaxCalls int           `toml:"half_open_max_calls"`
 }
 
+// LoopConditionFunc evaluates whether a loop workflow should continue
+// Parameters:
+//   - ctx: Context for cancellation/timeout
+//   - iteration: Current iteration number (0-indexed)
+//   - lastResult: Result from the last completed iteration (nil on first call before any iteration)
+//
+// Returns:
+//   - shouldContinue: true to continue looping, false to exit
+//   - error: Non-nil error stops the loop with error
+type LoopConditionFunc func(ctx context.Context, iteration int, lastResult *WorkflowResult) (shouldContinue bool, err error)
+
 // WorkflowConfig contains workflow orchestration settings
 type WorkflowConfig struct {
-	Mode          WorkflowMode  `toml:"mode"`
-	Agents        []string      `toml:"agents"`
-	Timeout       time.Duration `toml:"timeout"`
-	MaxIterations int           `toml:"max_iterations"`
-	Memory        *MemoryConfig `toml:"memory,omitempty"`
+	Mode          WorkflowMode      `toml:"mode"`
+	Agents        []string          `toml:"agents"`
+	Timeout       time.Duration     `toml:"timeout"`
+	MaxIterations int               `toml:"max_iterations"`
+	Memory        *MemoryConfig     `toml:"memory,omitempty"`
+	LoopCondition LoopConditionFunc `toml:"-"` // Custom loop exit condition (not serializable)
 }
 
 // WorkflowMode defines workflow execution modes

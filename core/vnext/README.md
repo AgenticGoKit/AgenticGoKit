@@ -285,6 +285,53 @@ workflow, err := vnext.NewParallelWorkflow("Analysis",
 result, err := workflow.Run(ctx, "Analyze this article")
 ```
 
+### SubWorkflows (Workflow Composition)
+
+**Workflows can be used as agents within other workflows**, enabling powerful composition patterns:
+
+```go
+// Create a parallel analysis subworkflow
+analysisWorkflow, _ := vnext.NewParallelWorkflow(&vnext.WorkflowConfig{
+    Name: "Analysis",
+})
+analysisWorkflow.AddStep(vnext.WorkflowStep{Name: "sentiment", Agent: sentimentAgent})
+analysisWorkflow.AddStep(vnext.WorkflowStep{Name: "keywords", Agent: keywordAgent})
+
+// Wrap as an agent using the builder
+subAgent, _ := vnext.NewBuilder("sub-agent").
+    WithSubWorkflow(
+        vnext.WithWorkflowInstance(analysisWorkflow),
+        vnext.WithSubWorkflowMaxDepthBuilder(5),
+    ).
+    Build()
+
+// Use in parent workflow
+mainWorkflow, _ := vnext.NewSequentialWorkflow(&vnext.WorkflowConfig{
+    Name: "ContentPipeline",
+})
+mainWorkflow.AddStep(vnext.WorkflowStep{Name: "fetch", Agent: fetchAgent})
+mainWorkflow.AddStep(vnext.WorkflowStep{Name: "analyze", Agent: subAgent}) // SubWorkflow!
+mainWorkflow.AddStep(vnext.WorkflowStep{Name: "report", Agent: reportAgent})
+```
+
+**Alternative: Direct SubWorkflow Creation**
+
+```go
+// Direct creation without builder
+subAgent := vnext.NewSubWorkflowAgent("analysis", analysisWorkflow,
+    vnext.WithSubWorkflowMaxDepth(5),
+    vnext.WithSubWorkflowDescription("Multi-faceted analysis"),
+)
+```
+
+**Benefits:**
+- **Modularity**: Break complex workflows into reusable components
+- **Clarity**: Each workflow focuses on a specific task
+- **Testability**: Test subworkflows independently
+- **Reusability**: Use same subworkflow in multiple parent workflows
+
+**Example:** See `examples/vnext/story-writer-chat-v2/` for a complete multi-character story generation system using SubWorkflows.
+
 ### Workflow Streaming
 
 ```go

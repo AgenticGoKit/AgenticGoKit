@@ -96,6 +96,63 @@ Example loop exit condition inside an agent:
 workflowCtx.Set("loop_continue", false) // stored via WorkflowContext in custom logic
 ```
 
+## 🔄 SubWorkflows (Workflow Composition)
+
+**Workflows can be used as agents within other workflows**, enabling powerful composition patterns. Use `NewSubWorkflowAgent()` to wrap any workflow as an agent that can be added as a step.
+
+### Creating SubWorkflow Agents
+
+```go
+// Create a parallel analysis workflow
+analysisWorkflow, _ := vnext.NewParallelWorkflow(&vnext.WorkflowConfig{
+    Name: "Analysis",
+})
+analysisWorkflow.AddStep(vnext.WorkflowStep{Name: "sentiment", Agent: sentimentAgent})
+analysisWorkflow.AddStep(vnext.WorkflowStep{Name: "keywords", Agent: keywordAgent})
+
+// Wrap as an agent
+analysisAgent := vnext.NewSubWorkflowAgent("analysis", analysisWorkflow)
+
+// Use in parent workflow
+mainWorkflow, _ := vnext.NewSequentialWorkflow(&vnext.WorkflowConfig{
+    Name: "ContentPipeline",
+})
+mainWorkflow.AddStep(vnext.WorkflowStep{Name: "fetch", Agent: fetchAgent})
+mainWorkflow.AddStep(vnext.WorkflowStep{Name: "analyze", Agent: analysisAgent}) // SubWorkflow!
+mainWorkflow.AddStep(vnext.WorkflowStep{Name: "report", Agent: reportAgent})
+
+result, _ := mainWorkflow.Run(ctx, "Analyze article")
+```
+
+### SubWorkflow Options
+
+```go
+subAgent := vnext.NewSubWorkflowAgent(
+    "analysis",
+    workflow,
+    vnext.WithSubWorkflowMaxDepth(5),           // Max nesting levels
+    vnext.WithSubWorkflowDescription("Analysis pipeline"),
+)
+```
+
+### Benefits
+
+- **Modularity**: Break complex workflows into reusable components
+- **Clarity**: Each workflow focuses on a specific task
+- **Testability**: Test subworkflows independently
+- **Reusability**: Same subworkflow can be used in multiple parent workflows
+
+### Safety Features
+
+- **Depth Tracking**: Prevents infinite nesting (default max: 10 levels)
+- **Metadata**: SubWorkflow execution tracked in result metadata
+- **Error Context**: Clear error messages showing workflow hierarchy
+- **Streaming**: Works seamlessly with workflow streaming
+
+### Real-World Example
+
+See `examples/vnext/story-writer-chat-v2/` for a complete example using SubWorkflows for multi-character story generation.
+
 ## 🧠 WorkflowContext
 
 ```go

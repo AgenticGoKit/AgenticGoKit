@@ -31,6 +31,9 @@ type Workflow interface {
 	// SetMemory configures shared memory for the workflow
 	SetMemory(memory Memory)
 
+	// SetLoopCondition configures a custom loop exit condition (only for Loop mode workflows)
+	SetLoopCondition(condition LoopConditionFunc) error
+
 	// GetConfig returns the workflow configuration
 	GetConfig() *WorkflowConfig
 
@@ -49,6 +52,24 @@ type WorkflowStep struct {
 	Metadata     map[string]interface{}                       // Additional step metadata
 }
 
+// IterationExitReason indicates why a loop workflow terminated
+type IterationExitReason string
+
+const (
+	ExitMaxIterations    IterationExitReason = "max_iterations"    // Loop reached MaxIterations limit
+	ExitConditionMet     IterationExitReason = "condition_met"     // Custom LoopCondition returned false
+	ExitError            IterationExitReason = "error"             // Error occurred during execution
+	ExitContextCancelled IterationExitReason = "context_cancelled" // Context was cancelled
+)
+
+// IterationInfo contains metadata about loop workflow execution
+type IterationInfo struct {
+	TotalIterations    int                    `json:"total_iterations"`    // Number of iterations executed
+	ExitReason         IterationExitReason    `json:"exit_reason"`         // Why the loop stopped
+	LastIterationNum   int                    `json:"last_iteration_num"`  // Last iteration number (0-indexed)
+	ConvergenceMetrics map[string]interface{} `json:"convergence_metrics"` // Optional custom metrics
+}
+
 // WorkflowResult represents the result of workflow execution
 type WorkflowResult struct {
 	Success       bool                   `json:"success"`
@@ -59,6 +80,7 @@ type WorkflowResult struct {
 	ExecutionPath []string               `json:"execution_path"` // Order of executed steps
 	Metadata      map[string]interface{} `json:"metadata"`
 	Error         string                 `json:"error,omitempty"`
+	IterationInfo *IterationInfo         `json:"iteration_info,omitempty"` // Loop-specific metadata (nil for non-loop workflows)
 }
 
 // StepResult represents the result of a single workflow step
@@ -161,6 +183,20 @@ func NewLoopWorkflow(config *WorkflowConfig) (Workflow, error) {
 	return newBasicWorkflow(config)
 }
 
+// NewLoopWorkflowWithCondition creates a loop workflow with a custom exit condition
+func NewLoopWorkflowWithCondition(config *WorkflowConfig, condition LoopConditionFunc) (Workflow, error) {
+	if config == nil {
+		config = &WorkflowConfig{
+			Mode:          Loop,
+			Timeout:       120 * time.Second,
+			MaxIterations: 10,
+		}
+	}
+	config.Mode = Loop
+	config.LoopCondition = condition
+	return newBasicWorkflow(config)
+}
+
 // NewWorkflow creates a workflow with the specified configuration
 func NewWorkflow(config *WorkflowConfig) (Workflow, error) {
 	if config == nil {
@@ -249,6 +285,16 @@ func (w *basicWorkflow) Run(ctx context.Context, input string) (*WorkflowResult,
 		}
 	}
 
+	// Get iteration info if this was a loop workflow
+	var iterationInfo *IterationInfo
+	if w.config.Mode == Loop {
+		if info, ok := w.context.Get("iteration_info"); ok {
+			if typedInfo, ok := info.(*IterationInfo); ok {
+				iterationInfo = typedInfo
+			}
+		}
+	}
+
 	return &WorkflowResult{
 		Success:       err == nil,
 		FinalOutput:   finalOutput,
@@ -260,8 +306,9 @@ func (w *basicWorkflow) Run(ctx context.Context, input string) (*WorkflowResult,
 			"workflow_id": w.context.WorkflowID,
 			"mode":        string(w.config.Mode),
 		},
-		Error: errToString(err),
-	}, nil
+		Error:         errToString(err),
+		IterationInfo: iterationInfo, // Populated for Loop workflows
+	}, err
 }
 
 // RunStream implements Workflow.RunStream
@@ -524,6 +571,7 @@ func (w *basicWorkflow) executeDAGStreaming(ctx context.Context, input string, w
 func (w *basicWorkflow) executeLoopStreaming(ctx context.Context, input string, writer StreamWriter) ([]StepResult, string, error) {
 	w.mu.RLock()
 	maxIterations := w.config.MaxIterations
+	loopCondition := w.config.LoopCondition
 	w.mu.RUnlock()
 
 	if maxIterations == 0 {
@@ -533,8 +581,29 @@ func (w *basicWorkflow) executeLoopStreaming(ctx context.Context, input string, 
 	allResults := make([]StepResult, 0)
 	currentInput := input
 	iteration := 0
+	var lastResult *WorkflowResult
 
 	for iteration < maxIterations {
+		// Check custom loop condition BEFORE executing iteration (except first iteration)
+		if loopCondition != nil && iteration > 0 && lastResult != nil {
+			shouldContinue, err := loopCondition(ctx, iteration, lastResult)
+			if err != nil {
+				return allResults, currentInput, fmt.Errorf("loop condition error at iteration %d: %w", iteration, err)
+			}
+			if !shouldContinue {
+				// Condition met (e.g., "APPROVED" found) - exit loop
+				writer.Write(&StreamChunk{
+					Type:    ChunkTypeMetadata,
+					Content: fmt.Sprintf("Loop exiting: condition met after %d iteration(s)", iteration),
+					Metadata: map[string]interface{}{
+						"exit_reason":      "condition_met",
+						"total_iterations": iteration,
+					},
+				})
+				break
+			}
+		}
+
 		writer.Write(&StreamChunk{
 			Type:    ChunkTypeMetadata,
 			Content: fmt.Sprintf("Loop iteration %d/%d", iteration+1, maxIterations),
@@ -542,6 +611,8 @@ func (w *basicWorkflow) executeLoopStreaming(ctx context.Context, input string, 
 				"iteration": iteration + 1,
 			},
 		})
+
+		iterStartTime := time.Now()
 
 		// Execute all steps in sequence
 		results, output, err := w.executeSequentialStreaming(ctx, currentInput, writer)
@@ -551,11 +622,33 @@ func (w *basicWorkflow) executeLoopStreaming(ctx context.Context, input string, 
 			return allResults, currentInput, err
 		}
 
+		// Build WorkflowResult for condition evaluation on next iteration
+		iterTokens := 0
+		for _, res := range results {
+			iterTokens += res.Tokens
+		}
+
+		lastResult = &WorkflowResult{
+			Success:     true,
+			FinalOutput: output,
+			StepResults: results,
+			TotalTokens: iterTokens,
+			Duration:    time.Since(iterStartTime),
+		}
+
 		currentInput = output
 		iteration++
 
-		// Check for convergence (simplified - would need proper condition)
+		// Check for convergence (simplified fallback)
 		if output == input {
+			writer.Write(&StreamChunk{
+				Type:    ChunkTypeMetadata,
+				Content: fmt.Sprintf("Loop exiting: output converged after %d iteration(s)", iteration),
+				Metadata: map[string]interface{}{
+					"exit_reason":      "convergence",
+					"total_iterations": iteration,
+				},
+			})
 			break
 		}
 	}
@@ -618,6 +711,23 @@ func (w *basicWorkflow) executeStepStreaming(ctx context.Context, step WorkflowS
 		}, "", enhancedErr
 	}
 
+	// Emit agent start lifecycle event
+	startMetadata := map[string]interface{}{
+		"step_name": step.Name,
+	}
+	if stepIndex, ok := w.context.Get("current_step_index"); ok {
+		startMetadata["step_index"] = stepIndex
+	}
+
+	startChunk := &StreamChunk{
+		Type:      ChunkTypeAgentStart,
+		Timestamp: startTime,
+		Metadata:  startMetadata,
+	}
+	if writeErr := safeStreamWrite(writer, startChunk, step.Name); writeErr != nil {
+		fmt.Printf("Warning: Failed to write agent_start chunk for step %s: %v\n", step.Name, writeErr)
+	}
+
 	// Forward chunks from agent stream to workflow stream
 	var output string
 	chunkCount := 0
@@ -640,10 +750,14 @@ func (w *basicWorkflow) executeStepStreaming(ctx context.Context, step WorkflowS
 		}
 
 		// Modify chunk metadata to include step name
+		// IMPORTANT: Preserve existing step_name from nested workflows/agents
+		// Only set step_name if not already present (for top-level agents)
 		if chunk.Metadata == nil {
 			chunk.Metadata = make(map[string]interface{})
 		}
-		chunk.Metadata["step_name"] = step.Name
+		if _, hasStepName := chunk.Metadata["step_name"]; !hasStepName {
+			chunk.Metadata["step_name"] = step.Name
+		}
 		chunk.Metadata["chunk_count"] = chunkCount
 
 		// Use safe stream writing
@@ -686,8 +800,39 @@ func (w *basicWorkflow) executeStepStreaming(ctx context.Context, step WorkflowS
 
 	if err != nil {
 		stepResult.Error = err.Error()
+
+		// Emit agent complete (failure) lifecycle event
+		completeChunk := &StreamChunk{
+			Type:      ChunkTypeAgentComplete,
+			Timestamp: time.Now(),
+			Metadata: map[string]interface{}{
+				"step_name": step.Name,
+				"success":   false,
+				"duration":  stepResult.Duration.Seconds(),
+				"error":     err.Error(),
+			},
+		}
+		if writeErr := safeStreamWrite(writer, completeChunk, step.Name); writeErr != nil {
+			fmt.Printf("Warning: Failed to write agent_complete chunk for step %s: %v\n", step.Name, writeErr)
+		}
+
 		// Log step failure with context
 		return stepResult, "", fmt.Errorf("workflow step %s failed after %.2fs: %w", step.Name, time.Since(startTime).Seconds(), err)
+	}
+
+	// Emit agent complete (success) lifecycle event
+	completeChunk := &StreamChunk{
+		Type:      ChunkTypeAgentComplete,
+		Timestamp: time.Now(),
+		Metadata: map[string]interface{}{
+			"step_name": step.Name,
+			"success":   true,
+			"duration":  stepResult.Duration.Seconds(),
+			"tokens":    stepResult.Tokens,
+		},
+	}
+	if writeErr := safeStreamWrite(writer, completeChunk, step.Name); writeErr != nil {
+		fmt.Printf("Warning: Failed to write agent_complete chunk for step %s: %v\n", step.Name, writeErr)
 	}
 
 	// Store result in context
@@ -918,26 +1063,103 @@ func (w *basicWorkflow) executeLoop(ctx context.Context, input string) ([]StepRe
 
 	allResults := make([]StepResult, 0)
 	currentInput := input
+	var lastResult *WorkflowResult
+	var exitReason IterationExitReason
+	lastIterationExecuted := -1
 
 	for iteration := 0; iteration < maxIterations; iteration++ {
 		w.context.IterationNum = iteration
 
+		// Check custom loop condition BEFORE executing iteration
+		if w.config.LoopCondition != nil {
+			shouldContinue, err := w.config.LoopCondition(ctx, iteration, lastResult)
+			if err != nil {
+				exitReason = ExitError
+				// Store iteration info before returning error
+				w.context.Set("iteration_info", &IterationInfo{
+					TotalIterations:  lastIterationExecuted + 1,
+					ExitReason:       exitReason,
+					LastIterationNum: lastIterationExecuted,
+				})
+				return allResults, currentInput, fmt.Errorf("loop condition error: %w", err)
+			}
+			if !shouldContinue {
+				exitReason = ExitConditionMet
+				break
+			}
+		}
+
 		// Execute one iteration
+		lastIterationExecuted = iteration // Track that we're executing this iteration
+		iterStartTime := time.Now()
 		iterResults, output, err := w.executeSequential(ctx, currentInput)
 		allResults = append(allResults, iterResults...)
 
 		if err != nil {
+			// Check if error is due to context cancellation
+			if ctx.Err() != nil {
+				exitReason = ExitContextCancelled
+			} else {
+				exitReason = ExitError
+			}
+			// Store iteration info before returning error
+			w.context.Set("iteration_info", &IterationInfo{
+				TotalIterations:  lastIterationExecuted + 1,
+				ExitReason:       exitReason,
+				LastIterationNum: lastIterationExecuted,
+			})
 			return allResults, output, err
 		}
 
-		// Check loop condition (stored in context)
+		// Build WorkflowResult for condition evaluation on next iteration
+		// Calculate total tokens from iteration results
+		iterTokens := 0
+		for _, res := range iterResults {
+			iterTokens += res.Tokens
+		}
+
+		lastResult = &WorkflowResult{
+			Success:     true,
+			FinalOutput: output,
+			StepResults: iterResults,
+			TotalTokens: iterTokens,
+			Duration:    time.Since(iterStartTime),
+		}
+
+		// Check context cancellation
+		select {
+		case <-ctx.Done():
+			exitReason = ExitContextCancelled
+			w.context.Set("iteration_info", &IterationInfo{
+				TotalIterations:  lastIterationExecuted + 1,
+				ExitReason:       exitReason,
+				LastIterationNum: lastIterationExecuted,
+			})
+			return allResults, output, ctx.Err()
+		default:
+		}
+
+		// Check legacy loop condition (stored in context for backward compatibility)
 		shouldContinue, _ := w.context.Get("loop_continue")
 		if shouldContinue == false {
-			return allResults, output, nil
+			exitReason = ExitConditionMet
+			break
 		}
 
 		currentInput = output
 	}
+
+	// If loop completed without condition exit, it's max iterations
+	if exitReason == "" {
+		exitReason = ExitMaxIterations
+	}
+
+	// Store iteration info in context for result building
+	w.context.Set("iteration_info", &IterationInfo{
+		TotalIterations:  lastIterationExecuted + 1,
+		ExitReason:       exitReason,
+		LastIterationNum: lastIterationExecuted,
+	})
 
 	return allResults, currentInput, nil
 }
@@ -1037,6 +1259,19 @@ func (w *basicWorkflow) SetMemory(memory Memory) {
 	w.context.SharedMemory = memory
 }
 
+// SetLoopCondition implements Workflow.SetLoopCondition
+func (w *basicWorkflow) SetLoopCondition(condition LoopConditionFunc) error {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	if w.config.Mode != Loop {
+		return fmt.Errorf("SetLoopCondition only valid for Loop mode workflows, current mode: %s", w.config.Mode)
+	}
+
+	w.config.LoopCondition = condition
+	return nil
+}
+
 // GetConfig implements Workflow.GetConfig
 func (w *basicWorkflow) GetConfig() *WorkflowConfig {
 	w.mu.RLock()
@@ -1090,6 +1325,152 @@ func getWorkflowFactory() WorkflowFactory {
 	workflowMutex.RLock()
 	defer workflowMutex.RUnlock()
 	return workflowFactory
+}
+
+// =============================================================================
+// LOOP CONDITION BUILDERS
+// =============================================================================
+
+// Conditions provides convenience builders for common loop exit conditions
+var Conditions = struct {
+	OutputContains func(substring string) LoopConditionFunc
+	OutputMatches  func(pattern string) LoopConditionFunc
+	MaxTokens      func(maxTokens int) LoopConditionFunc
+	Convergence    func(threshold float64) LoopConditionFunc
+	And            func(conditions ...LoopConditionFunc) LoopConditionFunc
+	Or             func(conditions ...LoopConditionFunc) LoopConditionFunc
+	Not            func(condition LoopConditionFunc) LoopConditionFunc
+	Custom         func(fn func(ctx context.Context, iteration int, lastResult *WorkflowResult) (bool, error)) LoopConditionFunc
+}{
+	// OutputContains returns a condition that stops when output contains the substring
+	OutputContains: func(substring string) LoopConditionFunc {
+		return func(ctx context.Context, iteration int, lastResult *WorkflowResult) (bool, error) {
+			if lastResult == nil {
+				return true, nil // Continue on first iteration
+			}
+			// Stop (return false) if substring is found
+			found := false
+			if lastResult.FinalOutput != "" {
+				for i := 0; i < len(lastResult.FinalOutput)-len(substring)+1; i++ {
+					if lastResult.FinalOutput[i:i+len(substring)] == substring {
+						found = true
+						break
+					}
+				}
+			}
+			return !found, nil // Continue if NOT found
+		}
+	},
+
+	// OutputMatches returns a condition that stops when output matches a regex pattern
+	OutputMatches: func(pattern string) LoopConditionFunc {
+		return func(ctx context.Context, iteration int, lastResult *WorkflowResult) (bool, error) {
+			if lastResult == nil {
+				return true, nil
+			}
+			// Note: We avoid importing regexp to keep dependencies minimal
+			// Users should use Custom() for complex pattern matching
+			return true, fmt.Errorf("OutputMatches requires regexp import - use Conditions.Custom() instead")
+		}
+	},
+
+	// MaxTokens returns a condition that stops when total tokens exceed threshold
+	MaxTokens: func(maxTokens int) LoopConditionFunc {
+		totalTokens := 0
+		return func(ctx context.Context, iteration int, lastResult *WorkflowResult) (bool, error) {
+			if lastResult != nil {
+				totalTokens += lastResult.TotalTokens
+			}
+			return totalTokens < maxTokens, nil
+		}
+	},
+
+	// Convergence returns a condition that stops when output change is below threshold
+	// Threshold is the minimum ratio of change (0.0 to 1.0)
+	Convergence: func(threshold float64) LoopConditionFunc {
+		var previousOutput string
+		return func(ctx context.Context, iteration int, lastResult *WorkflowResult) (bool, error) {
+			if lastResult == nil {
+				return true, nil
+			}
+
+			currentOutput := lastResult.FinalOutput
+			if previousOutput == "" {
+				previousOutput = currentOutput
+				return true, nil
+			}
+
+			// Calculate simple edit distance ratio
+			changes := 0
+			maxLen := len(currentOutput)
+			if len(previousOutput) > maxLen {
+				maxLen = len(previousOutput)
+			}
+
+			// Count character differences
+			for i := 0; i < maxLen; i++ {
+				if i >= len(previousOutput) || i >= len(currentOutput) {
+					changes++
+				} else if previousOutput[i] != currentOutput[i] {
+					changes++
+				}
+			}
+
+			changeRatio := float64(changes) / float64(maxLen)
+			previousOutput = currentOutput
+
+			// Continue if change ratio is above threshold
+			return changeRatio >= threshold, nil
+		}
+	},
+
+	// And returns a condition that continues only if ALL conditions are true
+	And: func(conditions ...LoopConditionFunc) LoopConditionFunc {
+		return func(ctx context.Context, iteration int, lastResult *WorkflowResult) (bool, error) {
+			for _, condition := range conditions {
+				shouldContinue, err := condition(ctx, iteration, lastResult)
+				if err != nil {
+					return false, fmt.Errorf("AND condition failed: %w", err)
+				}
+				if !shouldContinue {
+					return false, nil // Stop if any condition says stop
+				}
+			}
+			return true, nil // Continue only if all say continue
+		}
+	},
+
+	// Or returns a condition that continues if ANY condition is true
+	Or: func(conditions ...LoopConditionFunc) LoopConditionFunc {
+		return func(ctx context.Context, iteration int, lastResult *WorkflowResult) (bool, error) {
+			for _, condition := range conditions {
+				shouldContinue, err := condition(ctx, iteration, lastResult)
+				if err != nil {
+					return false, fmt.Errorf("OR condition failed: %w", err)
+				}
+				if shouldContinue {
+					return true, nil // Continue if any condition says continue
+				}
+			}
+			return false, nil // Stop only if all say stop
+		}
+	},
+
+	// Not returns a condition that inverts the given condition
+	Not: func(condition LoopConditionFunc) LoopConditionFunc {
+		return func(ctx context.Context, iteration int, lastResult *WorkflowResult) (bool, error) {
+			shouldContinue, err := condition(ctx, iteration, lastResult)
+			if err != nil {
+				return false, err
+			}
+			return !shouldContinue, nil
+		}
+	},
+
+	// Custom wraps a custom function as a LoopConditionFunc
+	Custom: func(fn func(ctx context.Context, iteration int, lastResult *WorkflowResult) (bool, error)) LoopConditionFunc {
+		return LoopConditionFunc(fn)
+	},
 }
 
 // =============================================================================

@@ -11,6 +11,7 @@ AgenticGoKit has evolved significantly with many core features already implement
 | **Core Runner & Orchestration** | ✅ **COMPLETED** | Event system, Runner core, Route/Collaborate modes |
 | **Multi-Agent Orchestration** | ✅ **COMPLETED** | Collaborative, Sequential, Loop, and Mixed patterns |
 | **Workflow Visualization** | ✅ **COMPLETED** | Automatic Mermaid diagram generation |
+| **SubWorkflow Composition** | ✅ **COMPLETED** | Workflows as agents, nested workflows, builder integration |
 | **CLI Tooling** | ✅ **COMPLETED** | Project scaffolding, orchestration modes, visualization |
 | **ModelProvider Interface** | ✅ **COMPLETED** | OpenAI, Azure OpenAI, Ollama adapters |
 | **MCP Integration** | ✅ **COMPLETED** | Tool discovery, execution, server management |
@@ -25,6 +26,13 @@ AgenticGoKit has evolved significantly with many core features already implement
 ---
 
 ## Recently Completed Features
+
+### ✅ SubWorkflow Composition (Completed - v0.5.0)
+- **Workflow as Agent**: Wrap any workflow to use as an agent in other workflows
+- **Builder Integration**: `WithSubWorkflow()` method with functional options
+- **Nesting Support**: Multi-level workflow hierarchies with depth tracking
+- **Safety Features**: Maximum depth limits, metadata tracking, error context
+- **Streaming Support**: SubWorkflows work seamlessly with workflow streaming
 
 ### ✅ Multi-Agent Orchestration (Completed)
 - **Collaborative Mode**: All agents process events in parallel with result aggregation
