@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // WebUIToAgentAdapter provides adapters for converting WebUI concepts to agent concepts
@@ -422,3 +422,4 @@ func (matcher *AgentCapabilityMatcher) MatchBestAgent(
 
 	return bestAgent, confidence, nil
 }
+

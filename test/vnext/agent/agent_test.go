@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core/vnext"
+	vnext "github.com/agenticgokit/agenticgokit/v1beta"
 )
 
 // mockLLMProvider implements a mock LLM provider for testing
@@ -809,3 +809,6 @@ func TestTracingOptions(t *testing.T) {
 		t.Error("Performance tracing should be enabled")
 	}
 }
+
+
+

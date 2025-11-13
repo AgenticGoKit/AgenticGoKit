@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // MCPAwareAgent is an intelligent agent that leverages MCP tools for task execution.
@@ -609,3 +609,4 @@ func (a *MCPAwareAgent) updateStateWithResults(inputState core.State, results []
 
 	return outputState
 }
+

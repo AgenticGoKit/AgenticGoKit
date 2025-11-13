@@ -3,7 +3,7 @@ package defaultrunner
 import (
 	"context"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // memoryAwareAgentHandler wraps an AgentHandler to inject memory + session into context.
@@ -57,3 +57,4 @@ func init() {
 		return r
 	})
 }
+

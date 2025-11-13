@@ -1,6 +1,6 @@
 package validation
 
-import "github.com/kunalkushwaha/agenticgokit/core"
+import "github.com/agenticgokit/agenticgokit/core"
 
 // ValidationErrorType represents different types of validation errors
 type ValidationErrorType string
@@ -143,3 +143,4 @@ func (wv *simpleWorkflowValidator) ValidateWorkflowGraph(graph core.WorkflowGrap
 
 	return result
 }
+

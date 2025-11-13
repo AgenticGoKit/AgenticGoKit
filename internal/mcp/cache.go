@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // MemoryCache implements MCPCache using in-memory storage with LRU eviction.
@@ -294,3 +294,4 @@ func (c *MemoryCache) cleanupRoutine() {
 		}
 	}
 }
+

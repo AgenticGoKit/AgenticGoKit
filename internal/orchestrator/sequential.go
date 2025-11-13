@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // SequentialOrchestrator implements sequential execution of agents
@@ -97,3 +97,4 @@ func (o *SequentialOrchestrator) Stop() {
 	o.handlers = make(map[string]core.AgentHandler)
 	core.Logger().Debug().Msg("SequentialOrchestrator: Stopped")
 }
+

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // Simple test for basic functionality without external dependencies
@@ -248,3 +248,4 @@ func TestTimeouts(t *testing.T) {
 		t.Error("Expected context to timeout")
 	}
 }
+

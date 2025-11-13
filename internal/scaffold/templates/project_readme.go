@@ -336,7 +336,7 @@ import (
     "context"
     "fmt"
     "{{.Config.Name}}/agents"
-    "github.com/kunalkushwaha/agenticgokit/core"
+    "github.com/agenticgokit/agenticgokit/core"
 )
 
 func main() {
@@ -649,28 +649,28 @@ LOG_LEVEL=debug go run . -m "test" 2>&1 | grep -i config
 1. **Check Logs**: Enable debug logging for detailed information
 2. **Review Configuration**: Validate all settings in ` + "`agentflow.toml`" + `
 3. **Test Components**: Test LLM provider, memory, and tools individually
-4. **Community Support**: Create an issue in the [AgenticGoKit repository](https://github.com/kunalkushwaha/agenticgokit)
+4. **Community Support**: Create an issue in the [AgenticGoKit repository](https://github.com/agenticgokit/agenticgokit)
 
 ## Resources
 
 ### Documentation
 
-- [AgenticGoKit Documentation](https://github.com/kunalkushwaha/agenticgokit)
-- [Multi-Agent Patterns](https://github.com/kunalkushwaha/agenticgokit/docs/patterns)
-- [Configuration Reference](https://github.com/kunalkushwaha/agenticgokit/docs/config)
-- [API Documentation](https://pkg.go.dev/github.com/kunalkushwaha/agenticgokit)
+- [AgenticGoKit Documentation](https://github.com/agenticgokit/agenticgokit)
+- [Multi-Agent Patterns](https://github.com/agenticgokit/agenticgokit/docs/patterns)
+- [Configuration Reference](https://github.com/agenticgokit/agenticgokit/docs/config)
+- [API Documentation](https://pkg.go.dev/github.com/agenticgokit/agenticgokit)
 
 ### Examples
 
-- [Example Projects](https://github.com/kunalkushwaha/agenticgokit/examples)
-- [Integration Patterns](https://github.com/kunalkushwaha/agenticgokit/docs/integrations)
-- [Best Practices](https://github.com/kunalkushwaha/agenticgokit/docs/best-practices)
+- [Example Projects](https://github.com/agenticgokit/agenticgokit/examples)
+- [Integration Patterns](https://github.com/agenticgokit/agenticgokit/docs/integrations)
+- [Best Practices](https://github.com/agenticgokit/agenticgokit/docs/best-practices)
 
 ### Community
 
-- [GitHub Issues](https://github.com/kunalkushwaha/agenticgokit/issues)
-- [Discussions](https://github.com/kunalkushwaha/agenticgokit/discussions)
-- [Contributing Guide](https://github.com/kunalkushwaha/agenticgokit/CONTRIBUTING.md)
+- [GitHub Issues](https://github.com/agenticgokit/agenticgokit/issues)
+- [Discussions](https://github.com/agenticgokit/agenticgokit/discussions)
+- [Contributing Guide](https://github.com/agenticgokit/agenticgokit/CONTRIBUTING.md)
 
 ## License
 
@@ -678,7 +678,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Acknowledgments
 
-- Built with [AgenticGoKit](https://github.com/kunalkushwaha/agenticgokit)
+- Built with [AgenticGoKit](https://github.com/agenticgokit/agenticgokit)
 - Powered by {{if eq .Config.Provider "openai"}}OpenAI{{else if eq .Config.Provider "azure"}}Azure OpenAI{{else if eq .Config.Provider "ollama"}}Ollama{{else}}{{.Config.Provider}}{{end}}
 {{if .Config.MemoryEnabled}}
 - Memory system using {{if eq .Config.MemoryProvider "pgvector"}}PostgreSQL with pgvector{{else if eq .Config.MemoryProvider "weaviate"}}Weaviate{{else}}in-memory storage{{end}}{{end}}
@@ -689,5 +689,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Happy coding!**
 
-For questions or support, please refer to the [documentation](https://github.com/kunalkushwaha/agenticgokit) or create an issue.
+For questions or support, please refer to the [documentation](https://github.com/agenticgokit/agenticgokit) or create an issue.
 `
+

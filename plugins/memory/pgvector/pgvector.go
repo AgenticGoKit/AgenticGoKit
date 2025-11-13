@@ -1,8 +1,8 @@
 package pgvector
 
 import (
-	"github.com/kunalkushwaha/agenticgokit/core"
-	providers "github.com/kunalkushwaha/agenticgokit/internal/memory/providers"
+	"github.com/agenticgokit/agenticgokit/core"
+	providers "github.com/agenticgokit/agenticgokit/internal/memory/providers"
 )
 
 func init() {
@@ -29,3 +29,4 @@ func init() {
 		return providers.NewPgVectorProvider(cfg, embed)
 	})
 }
+

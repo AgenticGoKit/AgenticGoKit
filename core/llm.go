@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/internal/llm"
+	"github.com/agenticgokit/agenticgokit/internal/llm"
 )
 
 // Essential public types for LLM interaction
@@ -227,7 +227,7 @@ func NewModelProviderFromConfig(config LLMProviderConfig) (ModelProvider, error)
 	if err != nil {
 		// Provide actionable error guiding users to import a plugin
 		if strings.TrimSpace(config.Type) != "" {
-			return nil, fmt.Errorf("llm provider '%s' not registered. Import the plugin: _ 'github.com/kunalkushwaha/agenticgokit/plugins/llm/%s' (original error: %w)", config.Type, strings.ToLower(config.Type), err)
+			return nil, fmt.Errorf("llm provider '%s' not registered. Import the plugin: _ 'github.com/agenticgokit/agenticgokit/plugins/llm/%s' (original error: %w)", config.Type, strings.ToLower(config.Type), err)
 		}
 		return nil, fmt.Errorf("llm provider type not specified; set LLMProviderConfig.Type and import the matching plugin (original error: %w)", err)
 	}
@@ -423,3 +423,4 @@ func NewLLMProvider(config AgentLLMConfig) (ModelProvider, error) {
 
 // LLMConfig is an alias for AgentLLMConfig for backward compatibility
 type LLMConfig = AgentLLMConfig
+

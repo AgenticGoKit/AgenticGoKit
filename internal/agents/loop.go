@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	agenticgokit "github.com/kunalkushwaha/agenticgokit/internal/core"
-	"github.com/kunalkushwaha/agenticgokit/core"
+	agenticgokit "github.com/agenticgokit/agenticgokit/internal/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // defaultMaxIterations is the default limit if LoopAgentConfig.MaxIterations is not set.
@@ -325,3 +325,4 @@ func (l *LoopAgent) ApplySystemPrompt(ctx context.Context, state agenticgokit.St
 
 	return workingState, nil
 }
+

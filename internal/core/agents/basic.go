@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // Initialize the basic implementations in the core package during package initialization
@@ -371,3 +371,4 @@ func NewBasicConfigurableAgentFactory(config *core.Config) core.ConfigurableAgen
 	}
 	return &basicConfigurableAgentFactory{config: config}
 }
+

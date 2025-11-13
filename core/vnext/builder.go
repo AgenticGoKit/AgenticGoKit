@@ -12,6 +12,9 @@ import (
 
 // Builder defines the streamlined interface for building agents
 // Reduced from 30+ methods to 8 core methods using functional options
+//
+// Deprecated: Use github.com/agenticgokit/agenticgokit/v1beta.Builder instead.
+// This interface will be removed in v1.0.0.
 type Builder interface {
 	// Core configuration (4 methods)
 	WithConfig(config *Config) Builder
@@ -292,6 +295,9 @@ type streamlinedBuilder struct {
 }
 
 // NewBuilder creates a new streamlined agent builder
+//
+// Deprecated: Use github.com/agenticgokit/agenticgokit/v1beta.NewBuilder() instead.
+// This function will be removed in v1.0.0.
 func NewBuilder(name string) Builder {
 	return &streamlinedBuilder{
 		config: &Config{
@@ -623,6 +629,9 @@ func (b *streamlinedBuilder) validateConfig() error {
 // =============================================================================
 
 // NewChatAgent creates a chat agent with sensible defaults
+//
+// Deprecated: Use github.com/agenticgokit/agenticgokit/v1beta.NewBuilder() instead.
+// This function will be removed in v1.0.0.
 func NewChatAgent(name string, opts ...Option) (Agent, error) {
 	builder := NewBuilder(name).WithPreset(ChatAgent)
 

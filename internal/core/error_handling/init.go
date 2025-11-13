@@ -5,7 +5,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // init automatically registers the error handling factories when the package is imported
@@ -90,3 +90,4 @@ func (ra *retryHandlerAdapter) CalculateDelay(attempt int) time.Duration {
 
 // retryManagerAdapter adapts the internal implementation to the core interface
 // Remove retry manager adapter for now; core exposes RetryHandler only
+

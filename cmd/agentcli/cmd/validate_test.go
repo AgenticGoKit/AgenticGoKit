@@ -72,7 +72,7 @@ module test-project
 
 go 1.21
 
-require github.com/kunalkushwaha/agenticgokit v0.1.0
+require github.com/agenticgokit/agenticgokit v0.1.0
 `), 0644)
 		require.NoError(t, err)
 
@@ -229,7 +229,7 @@ func TestIsAgenticGoKitProject(t *testing.T) {
 	err = os.WriteFile("go.mod", []byte(`
 module test
 
-require github.com/kunalkushwaha/agenticgokit v0.1.0
+require github.com/agenticgokit/agenticgokit v0.1.0
 `), 0644)
 	require.NoError(t, err)
 
@@ -248,7 +248,7 @@ func TestContainsAgenticGoKitDependency(t *testing.T) {
 go 1.21
 
 require (
-	github.com/kunalkushwaha/agenticgokit v0.1.0
+	github.com/agenticgokit/agenticgokit v0.1.0
 	github.com/spf13/cobra v1.7.0
 )
 `

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // CacheManager implements MCPCacheManager and manages cache instances for MCP tools.
@@ -266,3 +266,4 @@ type executorWrapper struct {
 func (w *executorWrapper) ExecuteTool(ctx context.Context, toolName string, args map[string]interface{}) (core.MCPToolResult, error) {
 	return w.executor.ExecuteTool(ctx, toolName, args)
 }
+

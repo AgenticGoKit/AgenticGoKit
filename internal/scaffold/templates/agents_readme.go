@@ -41,7 +41,7 @@ agents/
    
    import (
        "context"
-       agenticgokit "github.com/kunalkushwaha/agenticgokit/core"
+       agenticgokit "github.com/agenticgokit/agenticgokit/core"
    )
    
    type NewAgentHandler struct {
@@ -255,8 +255,8 @@ go run . -m "your message" --debug
 
 ## Additional Resources
 
-- [AgenticGoKit Documentation](https://github.com/kunalkushwaha/agenticgokit)
-- [Multi-Agent Patterns](https://github.com/kunalkushwaha/agenticgokit/docs/patterns)
+- [AgenticGoKit Documentation](https://github.com/agenticgokit/agenticgokit)
+- [Multi-Agent Patterns](https://github.com/agenticgokit/agenticgokit/docs/patterns)
 - [MCP Protocol Specification](https://modelcontextprotocol.io/)
 - [Configuration Reference](../agentflow.toml)
 
@@ -264,3 +264,4 @@ go run . -m "your message" --debug
 
 **Need help?** Check the main project README or create an issue in the AgenticGoKit repository.
 `
+

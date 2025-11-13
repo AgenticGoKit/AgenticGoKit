@@ -3,8 +3,8 @@ package openrouter
 import (
 	"context"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
-	"github.com/kunalkushwaha/agenticgokit/internal/llm"
+	"github.com/agenticgokit/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/internal/llm"
 )
 
 // providerAdapter adapts internal llm.PublicProviderAdapter to core.ModelProvider
@@ -93,3 +93,4 @@ func factory(cfg core.LLMProviderConfig) (core.ModelProvider, error) {
 func init() {
 	core.RegisterModelProviderFactory("openrouter", factory)
 }
+

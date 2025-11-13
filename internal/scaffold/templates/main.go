@@ -174,9 +174,9 @@ import (
 	tracingh "{{.Config.Name}}/internal/tracing"
 	{{end}}
 
-	"github.com/kunalkushwaha/agenticgokit/core"
-	_ "github.com/kunalkushwaha/agenticgokit/plugins/logging/zerolog"
-	_ "github.com/kunalkushwaha/agenticgokit/plugins/orchestrator/default"
+	"github.com/agenticgokit/agenticgokit/core"
+	_ "github.com/agenticgokit/agenticgokit/plugins/logging/zerolog"
+	_ "github.com/agenticgokit/agenticgokit/plugins/orchestrator/default"
 	_ "{{.Config.Name}}/agents"
 )
 
@@ -1204,3 +1204,4 @@ func (rp *resultsProxy) Latest() (string, bool) {
 }
 {{end}}
 `
+

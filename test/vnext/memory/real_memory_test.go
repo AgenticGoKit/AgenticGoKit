@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
-	"github.com/kunalkushwaha/agenticgokit/core/vnext"
-	"github.com/kunalkushwaha/agenticgokit/internal/memory/providers"
+	"github.com/agenticgokit/agenticgokit/core"
+	vnext "github.com/agenticgokit/agenticgokit/v1beta"
+	"github.com/agenticgokit/agenticgokit/internal/memory/providers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -487,3 +487,6 @@ func min(a, b int) int {
 	}
 	return b
 }
+
+
+

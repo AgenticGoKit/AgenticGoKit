@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core/vnext"
+	vnext "github.com/agenticgokit/agenticgokit/v1beta"
 )
 
 // mockToolManager implements ToolManager for testing
@@ -553,3 +553,6 @@ func TestToolManagerDisabledServer(t *testing.T) {
 		t.Errorf("Expected 0 tools from disabled server, got %d", len(manager.Available()))
 	}
 }
+
+
+

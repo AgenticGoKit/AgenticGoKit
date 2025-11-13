@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // OllamaEmbeddingService implements EmbeddingService using Ollama API

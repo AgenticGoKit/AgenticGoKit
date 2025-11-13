@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 func TestInMemoryStorage(t *testing.T) {
@@ -476,3 +476,4 @@ func TestSessionPagination(t *testing.T) {
 
 	t.Log("Session pagination test passed")
 }
+

@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
-	"github.com/kunalkushwaha/agenticgokit/core/vnext"
+	"github.com/agenticgokit/agenticgokit/core"
+	vnext "github.com/agenticgokit/agenticgokit/v1beta"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -300,3 +300,6 @@ func TestMemoryStorage(t *testing.T) {
 		assert.Equal(t, output, messages[1].Content)
 	})
 }
+
+
+

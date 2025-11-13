@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 func TestLoadConfig_Defaults(t *testing.T) {

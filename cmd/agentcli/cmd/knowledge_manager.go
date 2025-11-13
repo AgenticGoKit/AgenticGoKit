@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // KnowledgeManager provides centralized management of knowledge base operations
@@ -1025,3 +1025,4 @@ func tagsMatch(documentTags, filterTags []string) bool {
 	}
 	return false
 }
+

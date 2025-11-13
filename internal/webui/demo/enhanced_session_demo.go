@@ -5,8 +5,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
-	"github.com/kunalkushwaha/agenticgokit/internal/webui"
+	"github.com/agenticgokit/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/internal/webui"
 )
 
 // Demo program to showcase enhanced session management features
@@ -117,3 +117,4 @@ func main() {
 	fmt.Println("- ✅ Session retrieval")
 	fmt.Println("- ✅ Enhanced session data structure")
 }
+

@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core/vnext"
+	vnext "github.com/agenticgokit/agenticgokit/v1beta"
 )
 
 // =============================================================================
@@ -705,3 +705,6 @@ func (m *mockSubWorkflowAgent) Initialize(ctx context.Context) error {
 func (m *mockSubWorkflowAgent) Cleanup(ctx context.Context) error {
 	return nil
 }
+
+
+

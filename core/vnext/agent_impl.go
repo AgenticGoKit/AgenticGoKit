@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
-	"github.com/kunalkushwaha/agenticgokit/internal/llm"
+	"github.com/agenticgokit/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/internal/llm"
 )
 
 // realAgent is the concrete implementation of the Agent interface.
@@ -1175,3 +1175,4 @@ func (a *realAgent) executeToolsAndStream(ctx context.Context, userInput, llmRes
 
 	return nil
 }
+

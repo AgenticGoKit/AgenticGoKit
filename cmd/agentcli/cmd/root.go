@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/kunalkushwaha/agenticgokit/cmd/agentcli/version"
+	"github.com/agenticgokit/agenticgokit/cmd/agentcli/version"
 	"github.com/spf13/cobra"
 )
 
@@ -160,3 +160,4 @@ func showEnhancedHelp(cmd *cobra.Command) {
 
 	fmt.Printf("\nUse \"agentcli <command> --help\" for detailed information about a command.\n")
 }
+

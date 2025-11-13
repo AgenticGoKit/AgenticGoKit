@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 	"github.com/kunalkushwaha/mcp-navigator-go/pkg/client"
 	"github.com/kunalkushwaha/mcp-navigator-go/pkg/mcp"
 	"github.com/kunalkushwaha/mcp-navigator-go/pkg/transport"
@@ -337,3 +337,4 @@ func (m *httpSSEMCPManager) GetMetrics() core.MCPMetrics {
 
 // Note: This plugin doesn't auto-register to avoid conflicts with other plugins.
 // Import it explicitly when needed for HTTP SSE transport.
+

@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 	"github.com/kunalkushwaha/mcp-navigator-go/pkg/client"
 	"github.com/kunalkushwaha/mcp-navigator-go/pkg/mcp"
 )
@@ -322,3 +322,4 @@ func (t *MCPTool) JSONString() string {
 
 	return string(jsonData)
 }
+

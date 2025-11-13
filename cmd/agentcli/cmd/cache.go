@@ -10,7 +10,7 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 	"github.com/spf13/cobra"
 )
 
@@ -528,3 +528,4 @@ func init() {
 	cacheInfoCmd.Flags().StringVar(&cacheServer, "server", "", "Show info for specific server")
 	cacheInfoCmd.Flags().StringVar(&cacheTool, "tool", "", "Show info for specific tool")
 }
+

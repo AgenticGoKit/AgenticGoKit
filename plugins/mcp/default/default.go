@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // defaultMCPManager is a minimal MCP manager implementation registered by this plugin.
@@ -356,3 +356,4 @@ func (r *simpleToolRegistry) CallTool(ctx context.Context, name string, args map
 	}
 	return t.Call(ctx, args)
 }
+

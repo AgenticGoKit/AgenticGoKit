@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // Plugin: In-memory FunctionToolRegistry extracted from core
@@ -91,3 +91,4 @@ func init() {
 		return newInMemoryFunctionToolRegistry(), nil
 	})
 }
+

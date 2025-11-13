@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kunalkushwaha/agenticgokit/core/vnext"
+	vnext "github.com/agenticgokit/agenticgokit/v1beta"
 )
 
 // TestBuilderSubWorkflow tests the WithSubWorkflow builder method
@@ -347,3 +347,6 @@ func (m *mockAgent) Initialize(ctx context.Context) error {
 func (m *mockAgent) Cleanup(ctx context.Context) error {
 	return nil
 }
+
+
+

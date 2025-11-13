@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	vnext "github.com/kunalkushwaha/agenticgokit/core/vnext"
+	vnext "github.com/agenticgokit/agenticgokit/v1beta"
 )
 
 // TestStreamChunkTypes tests all chunk type constants
@@ -972,3 +972,5 @@ func TestStreamUtilities_RealOllamaIntegration(t *testing.T) {
 		t.Logf("StreamToChannel parts: %d, combined: %q", len(parts), combined)
 	})
 }
+
+

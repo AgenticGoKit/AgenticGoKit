@@ -1,8 +1,8 @@
 package defaultorchestrator
 
 import (
-	"github.com/kunalkushwaha/agenticgokit/core"
-	internal "github.com/kunalkushwaha/agenticgokit/internal/orchestrator"
+	"github.com/agenticgokit/agenticgokit/core"
+	internal "github.com/agenticgokit/agenticgokit/internal/orchestrator"
 )
 
 // init registers the internal orchestrator factory with the core package via a public plugin.
@@ -22,3 +22,4 @@ func init() {
 		return f.CreateOrchestrator(icfg)
 	})
 }
+

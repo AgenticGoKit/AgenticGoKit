@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // Helper function to create a test connection manager
@@ -441,3 +441,4 @@ func TestMessageValidation(t *testing.T) {
 
 	t.Log("Message validation test passed")
 }
+

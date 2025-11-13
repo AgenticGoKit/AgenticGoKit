@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core/vnext"
+	vnext "github.com/agenticgokit/agenticgokit/v1beta"
 )
 
 // =============================================================================
@@ -309,3 +309,6 @@ func BenchmarkValidationError_Creation(b *testing.B) {
 		}
 	}
 }
+
+
+

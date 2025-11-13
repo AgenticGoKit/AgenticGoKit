@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core/vnext"
+	vnext "github.com/agenticgokit/agenticgokit/v1beta"
 )
 
 // mockAgent implements a simple agent for workflow testing
@@ -914,3 +914,6 @@ func TestWorkflowConfig(t *testing.T) {
 		t.Errorf("MaxIterations = %d, want 10", config.MaxIterations)
 	}
 }
+
+
+

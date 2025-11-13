@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // ConfigurableAgentFactory creates agents based on resolved configuration
@@ -424,3 +424,4 @@ func init() {
 		return NewConfigurableAgentFactory(cfg)
 	})
 }
+

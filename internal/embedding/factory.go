@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
-	"github.com/kunalkushwaha/agenticgokit/internal/embedding/providers"
+	"github.com/agenticgokit/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/internal/embedding/providers"
 )
 
 // EmbeddingFactory creates embedding services based on provider type
@@ -97,3 +97,4 @@ func init() {
 	RegisterOllamaFactory(providers.NewOllamaEmbeddingService)
 	RegisterDummyFactory(providers.NewDummyEmbeddingService)
 }
+

@@ -14,7 +14,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pgvector/pgvector-go"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // PgVectorProvider - production-ready PostgreSQL with pgvector
@@ -1064,3 +1064,4 @@ func (p *PgVectorProvider) batchIngestChunk(ctx context.Context, docs []core.Doc
 		return tx.Commit(ctx)
 	})
 }
+

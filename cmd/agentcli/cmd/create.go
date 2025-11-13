@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kunalkushwaha/agenticgokit/internal/scaffold"
+	"github.com/agenticgokit/agenticgokit/internal/scaffold"
 	"github.com/spf13/cobra"
 )
 
@@ -367,3 +367,4 @@ func completeMCPLevels(cmd *cobra.Command, args []string, toComplete string) ([]
 	levels := []string{"basic", "production", "full"}
 	return levels, cobra.ShellCompDirectiveNoFileComp
 }
+

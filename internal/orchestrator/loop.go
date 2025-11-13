@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // LoopOrchestrator implements loop execution with a single agent
@@ -126,3 +126,4 @@ func (o *LoopOrchestrator) Stop() {
 	o.handlers = make(map[string]core.AgentHandler)
 	core.Logger().Debug().Msg("LoopOrchestrator: Stopped")
 }
+

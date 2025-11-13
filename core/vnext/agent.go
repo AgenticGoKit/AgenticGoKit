@@ -1,3 +1,9 @@
+// Package vnext provides the next-generation agent API.
+//
+// Deprecated: This package will be removed in v1.0.0.
+// Use github.com/agenticgokit/agenticgokit/v1beta instead.
+// The v1beta package provides the same functionality with better stability.
+// See README.md for migration guide.
 package vnext
 
 import (

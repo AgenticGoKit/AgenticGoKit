@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // sessionIDPattern defines a safe pattern for session IDs
@@ -766,3 +766,4 @@ func (sm *EnhancedSessionManager) saveAllSessions() error {
 
 	return nil
 }
+

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // DocumentProcessor interface defines how different document types are processed
@@ -438,3 +438,4 @@ func min(a, b int) int {
 	}
 	return b
 }
+

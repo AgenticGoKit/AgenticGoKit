@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	agenticgokit "github.com/kunalkushwaha/agenticgokit/internal/core"
+	agenticgokit "github.com/agenticgokit/agenticgokit/internal/core"
 )
 
 // Helper: filter out execution metadata keys added by agents
@@ -501,3 +501,4 @@ func keysFromMapStr(m map[string]string) []string {
 	sort.Strings(keys)
 	return keys
 }
+
