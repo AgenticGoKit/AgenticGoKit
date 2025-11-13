@@ -21,8 +21,27 @@ The `core/vnext` package delivers the next-generation agent runtime with a focus
 | Configuration schemas & loaders | [configuration.md](configuration.md) |
 | Memory APIs, RAG helpers, sessions | [memory.md](memory.md) |
 | Tool manager, MCP integration, caching | [tools.md](tools.md) |
-| Workflow orchestration & streaming | [workflow.md](workflow.md) |
+| Workflow orchestration, streaming & composition | [workflow.md](workflow.md) |
 | Streaming primitives & helpers | [streaming.md](streaming.md) |
+
+## 🔑 Key Features
+
+### SubWorkflow Composition
+**Workflows can be used as agents within other workflows**, enabling powerful modular designs. Wrap any workflow as an agent using `NewSubWorkflowAgent()` or the builder's `WithSubWorkflow()` method.
+
+```go
+// Create nested workflows
+analysisWorkflow, _ := vnext.NewParallelWorkflow(&vnext.WorkflowConfig{Name: "Analysis"})
+analysisWorkflow.AddStep(vnext.WorkflowStep{Name: "sentiment", Agent: sentimentAgent})
+
+// Wrap as agent
+subAgent := vnext.NewSubWorkflowAgent("analysis", analysisWorkflow)
+
+// Use in parent workflow
+mainWorkflow.AddStep(vnext.WorkflowStep{Name: "analyze", Agent: subAgent})
+```
+
+See [workflow.md](workflow.md#-subworkflows-workflow-composition) for details.
 
 ## 🚀 Quick Start
 

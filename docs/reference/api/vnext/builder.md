@@ -133,6 +133,57 @@ builder.WithWorkflow(
 
 The workflow config is picked up when the agent is orchestrated via the vNext workflow engine.
 
+## 🔄 SubWorkflow Options
+
+**Build agents that wrap workflows**, enabling workflow composition and nesting.
+
+```go
+// Create a workflow first
+parallelWorkflow, _ := vnext.NewParallelWorkflow(&vnext.WorkflowConfig{
+    Name: "ParallelAnalysis",
+})
+parallelWorkflow.AddStep(vnext.WorkflowStep{Name: "step1", Agent: agent1})
+parallelWorkflow.AddStep(vnext.WorkflowStep{Name: "step2", Agent: agent2})
+
+// Use builder to create SubWorkflow agent
+subAgent, err := vnext.NewBuilder("sub-agent").
+    WithSubWorkflow(
+        vnext.WithWorkflowInstance(parallelWorkflow),
+        vnext.WithSubWorkflowMaxDepthBuilder(5),
+        vnext.WithSubWorkflowDescriptionBuilder("Parallel analysis pipeline"),
+    ).
+    Build()
+
+// Now use subAgent in another workflow
+mainWorkflow.AddStep(vnext.WorkflowStep{Name: "analyze", Agent: subAgent})
+```
+
+### SubWorkflow Builder Options
+
+- `WithWorkflowInstance(workflow)` - **Required**: Provides the workflow to wrap
+- `WithSubWorkflowMaxDepthBuilder(depth)` - Sets maximum nesting depth (default: 10)
+- `WithSubWorkflowDescriptionBuilder(desc)` - Sets description for the SubWorkflow agent
+
+### Alternative: Direct Construction
+
+For simpler cases, use `NewSubWorkflowAgent()` directly:
+
+```go
+subAgent := vnext.NewSubWorkflowAgent("analysis", workflow,
+    vnext.WithSubWorkflowMaxDepth(5),
+    vnext.WithSubWorkflowDescription("Analysis pipeline"),
+)
+```
+
+### Use Cases
+
+- **Modular Workflows**: Break complex flows into reusable subworkflows
+- **Conditional Branching**: Use different subworkflows based on conditions
+- **Parallel Processing**: Nest parallel workflows within sequential flows
+- **Multi-Level Orchestration**: Create hierarchical agent systems
+
+See [workflow.md](workflow.md#-subworkflows-workflow-composition) for more details on SubWorkflow composition.
+
 ## ♻️ Cloning Builders
 
 Freeze the base configuration and create custom variants:
