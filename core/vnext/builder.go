@@ -19,10 +19,11 @@ type Builder interface {
 	WithHandler(handler HandlerFunc) Builder
 	Build() (Agent, error)
 
-	// Convenience methods (4 methods)
+	// Convenience methods (5 methods)
 	WithMemory(opts ...MemoryOption) Builder
 	WithTools(opts ...ToolOption) Builder
 	WithWorkflow(opts ...WorkflowOption) Builder
+	WithSubWorkflow(opts ...BuilderSubWorkflowOption) Builder
 	Clone() Builder
 }
 
@@ -34,6 +35,7 @@ const (
 	ResearchAgent PresetType = "research"
 	DataAgent     PresetType = "data"
 	WorkflowAgent PresetType = "workflow"
+	// Note: SubWorkflow agents are created via WithSubWorkflow(), not as a preset
 )
 
 // HandlerFunc defines a simplified custom handler signature
@@ -234,6 +236,30 @@ func WithWorkflowMode(mode string) WorkflowOption {
 	}
 }
 
+// BuilderSubWorkflowOption defines functional options for SubWorkflow configuration in builder
+type BuilderSubWorkflowOption func(*streamlinedBuilder)
+
+// WithWorkflowInstance sets the workflow instance to wrap as an agent
+func WithWorkflowInstance(workflow Workflow) BuilderSubWorkflowOption {
+	return func(b *streamlinedBuilder) {
+		b.workflowInstance = workflow
+	}
+}
+
+// WithSubWorkflowMaxDepthBuilder sets the maximum nesting depth for SubWorkflow
+func WithSubWorkflowMaxDepthBuilder(depth int) BuilderSubWorkflowOption {
+	return func(b *streamlinedBuilder) {
+		b.subworkflowMaxDepth = depth
+	}
+}
+
+// WithSubWorkflowDescriptionBuilder sets a custom description for the SubWorkflow agent
+func WithSubWorkflowDescriptionBuilder(description string) BuilderSubWorkflowOption {
+	return func(b *streamlinedBuilder) {
+		b.subworkflowDesc = description
+	}
+}
+
 // WithWorkflowAgents sets the agents for workflow execution
 func WithWorkflowAgents(agents ...string) WorkflowOption {
 	return func(wc *WorkflowConfig) {
@@ -257,6 +283,12 @@ type streamlinedBuilder struct {
 	config  *Config
 	handler HandlerFunc
 	built   bool
+
+	// SubWorkflow fields
+	workflowInstance    Workflow
+	subworkflowMaxDepth int
+	subworkflowDesc     string
+	isSubWorkflow       bool
 }
 
 // NewBuilder creates a new streamlined agent builder
@@ -379,7 +411,27 @@ func (b *streamlinedBuilder) Build() (Agent, error) {
 	// Mark as built to prevent further modifications
 	b.built = true
 
-	// Validate configuration
+	// Check if this is a SubWorkflow agent
+	if b.isSubWorkflow {
+		if b.workflowInstance == nil {
+			return nil, fmt.Errorf("SubWorkflow agent requires workflow instance - use WithWorkflowInstance()")
+		}
+
+		// Build SubWorkflow agent options
+		var swOpts []SubWorkflowOption
+
+		if b.subworkflowMaxDepth > 0 {
+			swOpts = append(swOpts, WithSubWorkflowMaxDepth(b.subworkflowMaxDepth))
+		}
+
+		if b.subworkflowDesc != "" {
+			swOpts = append(swOpts, WithSubWorkflowDescription(b.subworkflowDesc))
+		}
+
+		return NewSubWorkflowAgent(b.config.Name, b.workflowInstance, swOpts...), nil
+	}
+
+	// Validate configuration for non-SubWorkflow agents
 	if err := b.validateConfig(); err != nil {
 		return nil, fmt.Errorf("invalid configuration: %w", err)
 	}
@@ -461,6 +513,36 @@ func (b *streamlinedBuilder) WithWorkflow(opts ...WorkflowOption) Builder {
 	return b
 }
 
+// WithSubWorkflow configures a SubWorkflow agent (workflow wrapped as agent)
+// This allows you to wrap any Workflow as an Agent for hierarchical composition.
+//
+// Example:
+//
+//	loop := vnext.NewLoopWorkflowWithCondition("revisions", agents, 3, vnext.OutputContains("APPROVED"))
+//	agent, err := vnext.NewBuilder("revision-agent").
+//	    WithSubWorkflow(
+//	        vnext.WithWorkflowInstance(loop),
+//	        vnext.WithSubWorkflowMaxDepthBuilder(5),
+//	        vnext.WithSubWorkflowDescriptionBuilder("Writer-Editor revision loop"),
+//	    ).
+//	    Build()
+func (b *streamlinedBuilder) WithSubWorkflow(opts ...BuilderSubWorkflowOption) Builder {
+	if b.built {
+		panic("Cannot modify frozen builder. Use Clone() first.")
+	}
+
+	// Mark as SubWorkflow agent
+	b.isSubWorkflow = true
+	b.subworkflowMaxDepth = 10 // Default
+
+	// Apply functional options
+	for _, opt := range opts {
+		opt(b)
+	}
+
+	return b
+}
+
 // Clone creates a new builder with the same configuration
 func (b *streamlinedBuilder) Clone() Builder {
 	// Deep copy the configuration
@@ -505,9 +587,13 @@ func (b *streamlinedBuilder) Clone() Builder {
 	}
 
 	return &streamlinedBuilder{
-		config:  newConfig,
-		handler: b.handler,
-		built:   false, // New builder is not built yet
+		config:              newConfig,
+		handler:             b.handler,
+		built:               false, // New builder is not built yet
+		workflowInstance:    b.workflowInstance,
+		subworkflowMaxDepth: b.subworkflowMaxDepth,
+		subworkflowDesc:     b.subworkflowDesc,
+		isSubWorkflow:       b.isSubWorkflow,
 	}
 }
 
@@ -1011,6 +1097,76 @@ Chaining options:
 		WithTools(
 			WithToolTimeout(20 * time.Second),
 			WithMaxConcurrentTools(3),
+		).
+		Build()
+
+SubWorkflow agent - wrapping workflows as agents:
+	// Create individual agents
+	writer, _ := NewChatAgent("writer", WithLLM("openai", "gpt-4"))
+	editor, _ := NewChatAgent("editor", WithLLM("openai", "gpt-4"))
+	publisher, _ := NewChatAgent("publisher", WithLLM("openai", "gpt-4"))
+
+	// Create a conditional loop workflow
+	revisionLoop := NewLoopWorkflowWithCondition(
+		"revision_loop",
+		[]Agent{writer, editor},
+		3, // max iterations
+		OutputContains("APPROVED"), // exit when editor approves
+	)
+
+	// Wrap loop as an agent using builder
+	loopAgent, err := NewBuilder("revision-agent").
+		WithSubWorkflow(
+			WithWorkflowInstance(revisionLoop),
+			WithSubWorkflowMaxDepthBuilder(5),
+			WithSubWorkflowDescriptionBuilder("Writer-Editor revision loop"),
+		).
+		Build()
+
+	// Use in a larger workflow
+	mainPipeline := NewSequentialWorkflow("story_pipeline", []Agent{
+		loopAgent,   // SubWorkflow agent!
+		publisher,
+	})
+
+SubWorkflow with complex nesting:
+	// Level 1: Parallel analysis
+	analysisWorkflow := NewParallelWorkflow("analysis", []Agent{
+		sentimentAgent,
+		summaryAgent,
+		keywordsAgent,
+	})
+
+	// Level 2: Wrap as agent
+	analysisAgent, _ := NewBuilder("analysis-agent").
+		WithSubWorkflow(WithWorkflowInstance(analysisWorkflow)).
+		Build()
+
+	// Level 3: Sequential with loop
+	reviewLoop := NewLoopWorkflowWithCondition(
+		"review_loop",
+		[]Agent{analysisAgent, reviewAgent},
+		5,
+		Convergence(0.95),
+	)
+
+	// Level 4: Final pipeline
+	mainWorkflow := NewSequentialWorkflow("main", []Agent{
+		preprocessAgent,
+		NewSubWorkflowAgent("review", reviewLoop),
+		outputAgent,
+	})
+
+SubWorkflow quick creation (without builder):
+	// Direct creation for simple cases
+	loop := NewLoopWorkflow("task_loop", []Agent{agent1, agent2}, 3)
+	loopAgent := NewSubWorkflowAgent("loop-agent", loop)
+
+	// Or using builder for more control
+	loopAgent2, _ := NewBuilder("loop-agent").
+		WithSubWorkflow(
+			WithWorkflowInstance(loop),
+			WithSubWorkflowMaxDepthBuilder(10),
 		).
 		Build()
 */

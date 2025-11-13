@@ -750,10 +750,14 @@ func (w *basicWorkflow) executeStepStreaming(ctx context.Context, step WorkflowS
 		}
 
 		// Modify chunk metadata to include step name
+		// IMPORTANT: Preserve existing step_name from nested workflows/agents
+		// Only set step_name if not already present (for top-level agents)
 		if chunk.Metadata == nil {
 			chunk.Metadata = make(map[string]interface{})
 		}
-		chunk.Metadata["step_name"] = step.Name
+		if _, hasStepName := chunk.Metadata["step_name"]; !hasStepName {
+			chunk.Metadata["step_name"] = step.Name
+		}
 		chunk.Metadata["chunk_count"] = chunkCount
 
 		// Use safe stream writing
