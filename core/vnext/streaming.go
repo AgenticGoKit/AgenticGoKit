@@ -29,14 +29,16 @@ import (
 type ChunkType string
 
 const (
-	ChunkTypeText     ChunkType = "text"        // Text content chunk
-	ChunkTypeDelta    ChunkType = "delta"       // Incremental update
-	ChunkTypeThought  ChunkType = "thought"     // Agent reasoning/thinking
-	ChunkTypeToolCall ChunkType = "tool_call"   // Tool invocation
-	ChunkTypeToolRes  ChunkType = "tool_result" // Tool result
-	ChunkTypeMetadata ChunkType = "metadata"    // Metadata update
-	ChunkTypeError    ChunkType = "error"       // Error chunk
-	ChunkTypeDone     ChunkType = "done"        // Stream completion
+	ChunkTypeText          ChunkType = "text"           // Text content chunk
+	ChunkTypeDelta         ChunkType = "delta"          // Incremental update
+	ChunkTypeThought       ChunkType = "thought"        // Agent reasoning/thinking
+	ChunkTypeToolCall      ChunkType = "tool_call"      // Tool invocation
+	ChunkTypeToolRes       ChunkType = "tool_result"    // Tool result
+	ChunkTypeMetadata      ChunkType = "metadata"       // Metadata update
+	ChunkTypeError         ChunkType = "error"          // Error chunk
+	ChunkTypeDone          ChunkType = "done"           // Stream completion
+	ChunkTypeAgentStart    ChunkType = "agent_start"    // Agent/step begins execution (workflow lifecycle)
+	ChunkTypeAgentComplete ChunkType = "agent_complete" // Agent/step completes execution (workflow lifecycle)
 )
 
 // StreamChunk represents a single chunk in a streaming response
