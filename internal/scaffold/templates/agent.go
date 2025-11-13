@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"strings"
 
-	agenticgokit "github.com/kunalkushwaha/agenticgokit/core"
+	agenticgokit "github.com/agenticgokit/agenticgokit/core"
 )
 
 // {{.Agent.DisplayName}}Handler represents a custom {{.Agent.Name}} agent handler.
@@ -545,3 +545,4 @@ func (a *{{.Agent.DisplayName}}Handler) Run(ctx context.Context, event agenticgo
 //     return nil
 // }
 `
+

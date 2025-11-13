@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog"
@@ -628,3 +628,4 @@ func (h *HealthChecker) checkMetricsHealth(ctx context.Context) *HealthStatus {
 		},
 	}
 }
+

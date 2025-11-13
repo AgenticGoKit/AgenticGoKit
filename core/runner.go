@@ -58,6 +58,9 @@ type RunnerImpl struct {
 }
 
 // NewRunner creates a new RunnerImpl.
+//
+// Deprecated: This function will be removed in v1.0.0.
+// Use github.com/agenticgokit/agenticgokit/v1beta instead.
 func NewRunner(queueSize int) *RunnerImpl {
 	if queueSize <= 0 {
 		queueSize = 100
@@ -339,8 +342,8 @@ func (r *RunnerImpl) loop(ctx context.Context) {
 
 				if agentErr == nil {
 					if GetLogLevel() == DEBUG {
-					Logger().Debug().Str("event_id", event.GetID()).Msg("Dispatching to orchestrator")
-				}
+						Logger().Debug().Str("event_id", event.GetID()).Msg("Dispatching to orchestrator")
+					}
 					agentResult, agentErr = orchestrator.Dispatch(eventCtx, event)
 				}
 

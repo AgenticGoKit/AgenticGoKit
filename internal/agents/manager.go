@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // DefaultAgentManager implements the AgentManager interface
@@ -353,3 +353,4 @@ func init() {
 		return NewDefaultAgentManager(factory)
 	})
 }
+

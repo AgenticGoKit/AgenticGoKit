@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // ErrorRoutingImplementation provides the concrete implementation of error routing
@@ -201,3 +201,4 @@ func (eri *ErrorRoutingImplementation) IncrementRetryCount(event core.Event) cor
 
 	return newEvent
 }
+

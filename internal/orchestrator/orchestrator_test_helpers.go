@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // MockOrchestrator for testing handler interactions

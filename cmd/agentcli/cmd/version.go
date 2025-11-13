@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/kunalkushwaha/agenticgokit/cmd/agentcli/version"
+	"github.com/agenticgokit/agenticgokit/cmd/agentcli/version"
 	"github.com/spf13/cobra"
 )
 

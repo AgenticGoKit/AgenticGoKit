@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // init registers the WorkflowValidator implementation with the core package
@@ -490,3 +490,4 @@ func (wv *WorkflowValidatorImpl) detectOrphanedNodes(graph core.WorkflowGraph, r
 		}
 	}
 }
+

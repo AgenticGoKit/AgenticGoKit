@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 type realMCPCache struct {
@@ -239,3 +239,4 @@ func init() {
 		return createRealMCPCacheManager(cfg)
 	})
 }
+

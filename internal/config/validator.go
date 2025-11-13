@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // DefaultConfigValidator implements core.ConfigValidator

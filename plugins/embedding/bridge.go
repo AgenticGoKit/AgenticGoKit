@@ -6,7 +6,8 @@ package embedding
 // internal/embedding package which registers embedding factories with core.
 
 import (
-	_ "github.com/kunalkushwaha/agenticgokit/internal/embedding"
+	_ "github.com/agenticgokit/agenticgokit/internal/embedding"
 )
 
 // No additional code required; blank import triggers init in internal/embedding
+

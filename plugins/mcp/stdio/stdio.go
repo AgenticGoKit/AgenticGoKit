@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // Placeholder STDIO MCP plugin. Implements core.MCPManager minimally and reserved for future expansion.
@@ -51,3 +51,4 @@ func init() {
 		return newSTDIOManager(cfg)
 	})
 }
+

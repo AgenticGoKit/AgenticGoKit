@@ -7,66 +7,67 @@ package main
 import (
     // Orchestrator factory (mode-specific)
     {{- if eq .Config.OrchestrationMode "collaborative" }}
-    _ "github.com/kunalkushwaha/agenticgokit/plugins/orchestrator/collaborative"
+    _ "github.com/agenticgokit/agenticgokit/plugins/orchestrator/collaborative"
     {{- else if eq .Config.OrchestrationMode "sequential" }}
-    _ "github.com/kunalkushwaha/agenticgokit/plugins/orchestrator/sequential"
+    _ "github.com/agenticgokit/agenticgokit/plugins/orchestrator/sequential"
     {{- else if eq .Config.OrchestrationMode "loop" }}
-    _ "github.com/kunalkushwaha/agenticgokit/plugins/orchestrator/loop"
+    _ "github.com/agenticgokit/agenticgokit/plugins/orchestrator/loop"
     {{- else if eq .Config.OrchestrationMode "mixed" }}
-    _ "github.com/kunalkushwaha/agenticgokit/plugins/orchestrator/mixed"
+    _ "github.com/agenticgokit/agenticgokit/plugins/orchestrator/mixed"
     {{- else }}
-    _ "github.com/kunalkushwaha/agenticgokit/plugins/orchestrator/route"
+    _ "github.com/agenticgokit/agenticgokit/plugins/orchestrator/route"
     {{- end }}
 
     // Ensure base orchestrator registration
-    _ "github.com/kunalkushwaha/agenticgokit/plugins/orchestrator/default"
+    _ "github.com/agenticgokit/agenticgokit/plugins/orchestrator/default"
 
     // Runner (default)
-    _ "github.com/kunalkushwaha/agenticgokit/plugins/runner/default"
+    _ "github.com/agenticgokit/agenticgokit/plugins/runner/default"
 
     // Logging provider (zerolog)
-    _ "github.com/kunalkushwaha/agenticgokit/plugins/logging/zerolog"
+    _ "github.com/agenticgokit/agenticgokit/plugins/logging/zerolog"
     // Agents (configurable factory registration)
-    _ "github.com/kunalkushwaha/agenticgokit/plugins/agents/configurable"
+    _ "github.com/agenticgokit/agenticgokit/plugins/agents/configurable"
 
     {{- /* LLM provider based on config */}}
     {{- if eq .Config.Provider "openai" }}
-    _ "github.com/kunalkushwaha/agenticgokit/plugins/llm/openai"
+    _ "github.com/agenticgokit/agenticgokit/plugins/llm/openai"
     {{- else if eq .Config.Provider "azure" }}
-    _ "github.com/kunalkushwaha/agenticgokit/plugins/llm/azureopenai"
+    _ "github.com/agenticgokit/agenticgokit/plugins/llm/azureopenai"
     {{- else if eq .Config.Provider "azureopenai" }}
-    _ "github.com/kunalkushwaha/agenticgokit/plugins/llm/azureopenai"
+    _ "github.com/agenticgokit/agenticgokit/plugins/llm/azureopenai"
     {{- else if eq .Config.Provider "ollama" }}
-    _ "github.com/kunalkushwaha/agenticgokit/plugins/llm/ollama"
+    _ "github.com/agenticgokit/agenticgokit/plugins/llm/ollama"
     {{- end }}
 
     {{- /* Memory provider based on config */}}
     {{- if .Config.MemoryEnabled }}
         {{- if eq .Config.MemoryProvider "pgvector" }}
-    _ "github.com/kunalkushwaha/agenticgokit/plugins/memory/pgvector"
+    _ "github.com/agenticgokit/agenticgokit/plugins/memory/pgvector"
         {{- else if eq .Config.MemoryProvider "weaviate" }}
-    _ "github.com/kunalkushwaha/agenticgokit/plugins/memory/weaviate"
+    _ "github.com/agenticgokit/agenticgokit/plugins/memory/weaviate"
         {{- else if eq .Config.MemoryProvider "memory" }}
-    _ "github.com/kunalkushwaha/agenticgokit/plugins/memory/memory"
+    _ "github.com/agenticgokit/agenticgokit/plugins/memory/memory"
         {{- end }}
     {{- end }}
 
     {{- /* Embedding provider based on config */}}
     {{- if .Config.MemoryEnabled }}
     // Embedding services (bridge to internal factories)
-    _ "github.com/kunalkushwaha/agenticgokit/plugins/embedding"
+    _ "github.com/agenticgokit/agenticgokit/plugins/embedding"
     {{- end }}
 
     {{- /* MCP unified transport and supporting plugins */}}
     {{- if .Config.MCPEnabled }}
     // MCP: unified transport plugin supporting all transport types
-    _ "github.com/kunalkushwaha/agenticgokit/plugins/mcp/unified"
-    _ "github.com/kunalkushwaha/agenticgokit/plugins/mcp/registry/memory"
+    _ "github.com/agenticgokit/agenticgokit/plugins/mcp/unified"
+    _ "github.com/agenticgokit/agenticgokit/plugins/mcp/registry/memory"
     {{- if .Config.WithCache }}
         {{- if or (eq .Config.CacheBackend "") (eq .Config.CacheBackend "memory") }}
-    _ "github.com/kunalkushwaha/agenticgokit/plugins/mcp/cache/memory"
+    _ "github.com/agenticgokit/agenticgokit/plugins/mcp/cache/memory"
         {{- end }}
     {{- end }}
     {{- end }}
 )
 `
+

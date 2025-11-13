@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // CollaborativeOrchestrator dispatches events to all registered handlers concurrently.
@@ -165,3 +165,4 @@ func (o *CollaborativeOrchestrator) GetCallbackRegistry() *core.CallbackRegistry
 func (o *CollaborativeOrchestrator) Stop() {
 	core.DebugLog(core.Logger(), "CollaborativeOrchestrator: Stopped")
 }
+

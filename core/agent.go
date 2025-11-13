@@ -1,5 +1,9 @@
 // Package core provides essential agent interfaces and types for AgentFlow.
 // The Agent interface is the primary public API for all agent implementations.
+//
+// Deprecated: This package will be removed in v1.0.0.
+// Use github.com/agenticgokit/agenticgokit/v1beta instead.
+// See README.md for migration guide.
 package core
 
 import (

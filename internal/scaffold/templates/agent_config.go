@@ -16,7 +16,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // Example{{.Agent.DisplayName}}Agent shows how to create a custom agent type
@@ -168,3 +168,4 @@ func RegisterCustomAgentTypes() error {
 	return nil
 }
 `
+

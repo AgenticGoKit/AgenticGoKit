@@ -5,13 +5,13 @@ import (
 	"testing"
 	"time"
 
-	vnext "github.com/kunalkushwaha/agenticgokit/core/vnext"
+	vnext "github.com/agenticgokit/agenticgokit/v1beta"
 
 	// Import MCP plugin
-	_ "github.com/kunalkushwaha/agenticgokit/plugins/mcp/default"
+	_ "github.com/agenticgokit/agenticgokit/plugins/mcp/default"
 
 	// Import LLM provider
-	_ "github.com/kunalkushwaha/agenticgokit/plugins/llm/ollama"
+	_ "github.com/agenticgokit/agenticgokit/plugins/llm/ollama"
 )
 
 // TestMCPConfigurationSetup tests that MCP configuration is properly set up
@@ -503,3 +503,5 @@ func TestMCPRealIntegration(t *testing.T) {
 		}
 	})
 }
+
+

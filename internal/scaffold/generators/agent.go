@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"text/template"
 
-	"github.com/kunalkushwaha/agenticgokit/internal/scaffold/templates"
-	"github.com/kunalkushwaha/agenticgokit/internal/scaffold/utils"
+	"github.com/agenticgokit/agenticgokit/internal/scaffold/templates"
+	"github.com/agenticgokit/agenticgokit/internal/scaffold/utils"
 )
 
 // Use types from the utils package for consistency
@@ -121,3 +121,4 @@ func (g *AgentGenerator) GenerateAllAgentFiles(config ProjectConfig) error {
 
 	return nil
 }
+

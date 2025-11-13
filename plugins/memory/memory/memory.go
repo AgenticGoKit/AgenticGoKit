@@ -1,8 +1,8 @@
 package memory
 
 import (
-	"github.com/kunalkushwaha/agenticgokit/core"
-	im "github.com/kunalkushwaha/agenticgokit/internal/memory/providers"
+	"github.com/agenticgokit/agenticgokit/core"
+	im "github.com/agenticgokit/agenticgokit/internal/memory/providers"
 )
 
 func init() {
@@ -10,3 +10,4 @@ func init() {
 		return im.NewInMemoryProvider(cfg)
 	})
 }
+

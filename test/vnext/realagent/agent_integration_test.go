@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core/vnext"
+	vnext "github.com/agenticgokit/agenticgokit/v1beta"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -233,3 +233,6 @@ func BenchmarkAgentRun(b *testing.B) {
 		}
 	}
 }
+
+
+

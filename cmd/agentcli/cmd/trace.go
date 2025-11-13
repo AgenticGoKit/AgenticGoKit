@@ -15,7 +15,7 @@ import (
 	"text/tabwriter"
 	"time"
 
-	agenticgokit "github.com/kunalkushwaha/agenticgokit/core" // Import core types
+	agenticgokit "github.com/agenticgokit/agenticgokit/core" // Import core types
 
 	"github.com/spf13/cobra"
 )
@@ -798,3 +798,4 @@ func normalizeEventID(id string) string {
 	}
 	return id
 }
+

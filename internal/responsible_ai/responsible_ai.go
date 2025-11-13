@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // RAIAction represents the action to take after content analysis
@@ -375,3 +375,4 @@ func parseFloat(s string) float64 {
 	fmt.Sscanf(s, "%f", &f)
 	return f
 }
+

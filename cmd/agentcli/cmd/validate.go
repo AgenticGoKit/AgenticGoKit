@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 	"github.com/spf13/cobra"
 )
 
@@ -262,7 +262,7 @@ func validateProjectStructure(results *ValidationResults) {
 	if pathExists("go.mod") {
 		content, err := os.ReadFile("go.mod")
 		if err == nil {
-			if !strings.Contains(string(content), "github.com/kunalkushwaha/agenticgokit") {
+			if !strings.Contains(string(content), "github.com/agenticgokit/agenticgokit") {
 				results.Warnings = append(results.Warnings, ValidationIssue{
 					Type:       "warning",
 					Code:       "MISSING_DEPENDENCY",
@@ -669,5 +669,6 @@ func containsAgenticGoKitDependency(goModPath string) bool {
 	if err != nil {
 		return false
 	}
-	return strings.Contains(string(content), "github.com/kunalkushwaha/agenticgokit")
+	return strings.Contains(string(content), "github.com/agenticgokit/agenticgokit")
 }
+

@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
-	"github.com/kunalkushwaha/agenticgokit/internal/scaffold"
+	"github.com/agenticgokit/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/internal/scaffold"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
@@ -681,3 +681,4 @@ func listConfigTemplates() {
 		fmt.Println()
 	}
 }
+

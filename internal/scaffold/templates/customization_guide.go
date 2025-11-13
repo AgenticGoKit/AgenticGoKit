@@ -738,5 +738,6 @@ os.Setenv("LOG_LEVEL", "debug")
 
 ---
 
-This guide covers the most common customization scenarios. For more advanced use cases, refer to the [AgenticGoKit documentation](https://github.com/kunalkushwaha/agenticgokit) or create an issue for support.
+This guide covers the most common customization scenarios. For more advanced use cases, refer to the [AgenticGoKit documentation](https://github.com/agenticgokit/agenticgokit) or create an issue for support.
 `
+

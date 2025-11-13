@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // AgentHTTPHandlers provides HTTP handlers for agent-related operations
@@ -487,3 +487,4 @@ func (h *AgentHTTPHandlers) RegisterHandlers(mux *http.ServeMux) {
 	mux.HandleFunc("/api/health", h.HandleHealthCheck)
 	// Note: WebSocket handler will be registered separately through ConnectionManager
 }
+

@@ -8,7 +8,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // RetrierImplementation implements retry logic with various strategies
@@ -176,3 +176,4 @@ type retryResultInternal struct {
 	ErrorHistory  []string
 	TotalDuration time.Duration
 }
+

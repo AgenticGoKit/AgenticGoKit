@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core/vnext"
+	vnext "github.com/agenticgokit/agenticgokit/v1beta"
 )
 
 // BenchmarkResult stores performance metrics
@@ -441,3 +441,6 @@ func main() {
 
 	fmt.Println("\n✨ Benchmark complete!")
 }
+
+
+

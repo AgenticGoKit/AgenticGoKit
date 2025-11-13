@@ -7,10 +7,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
-	"github.com/kunalkushwaha/agenticgokit/internal/llm"
-	"github.com/kunalkushwaha/agenticgokit/internal/mcp" // Import the MCP package
-	"github.com/kunalkushwaha/agenticgokit/internal/tools"
+	"github.com/agenticgokit/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/internal/llm"
+	"github.com/agenticgokit/agenticgokit/internal/mcp" // Import the MCP package
+	"github.com/agenticgokit/agenticgokit/internal/tools"
 )
 
 // convertTomlToMCPConfig converts MCPConfigToml to MCPConfig
@@ -370,3 +370,4 @@ func InitRealMCPFactory() {}
 
 // init automatically registers the real MCP factory when this package is imported
 func init() {}
+

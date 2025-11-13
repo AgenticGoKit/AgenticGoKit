@@ -12,7 +12,7 @@ import (
     "strings"
     "time"
 
-    "github.com/kunalkushwaha/agenticgokit/core"
+    "github.com/agenticgokit/agenticgokit/core"
 )
 
 // GetPath returns env override path or default CWD agentflow.toml
@@ -108,3 +108,4 @@ func BuildInfo(cfg *core.Config, port int) map[string]any {
     }
 }
 `
+

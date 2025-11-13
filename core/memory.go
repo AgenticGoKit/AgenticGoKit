@@ -234,6 +234,9 @@ type DateRange struct {
 // =============================================================================
 
 // NewMemory creates a new memory instance based on configuration
+//
+// Deprecated: This function will be removed in v1.0.0.
+// Use github.com/agenticgokit/agenticgokit/v1beta instead.
 func NewMemory(config AgentMemoryConfig) (Memory, error) {
 	// Set defaults
 	if config.MaxResults == 0 {

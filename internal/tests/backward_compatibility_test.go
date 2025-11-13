@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // TestBackwardCompatibility verifies that all essential public APIs work correctly
@@ -195,3 +195,4 @@ type testLLMAdapter struct{}
 func (a *testLLMAdapter) Complete(ctx context.Context, systemPrompt string, userPrompt string) (string, error) {
 	return "test completion", nil
 }
+

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // ConfigResolver handles configuration resolution with environment variable overrides
@@ -428,3 +428,4 @@ func (r *ConfigResolver) ValidateResolvedConfig() []core.ValidationError {
 	validator := NewDefaultConfigValidator()
 	return validator.ValidateConfig(r.config)
 }
+

@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 func TestPluginRegistration(t *testing.T) {
@@ -119,7 +119,7 @@ func TestOpenRouterIntegration(t *testing.T) {
 		Model:       "openai/gpt-3.5-turbo",
 		MaxTokens:   150,
 		Temperature: 0.7,
-		SiteURL:     "https://github.com/kunalkushwaha/agenticgokit",
+		SiteURL:     "https://github.com/agenticgokit/agenticgokit",
 		SiteName:    "AgenticGoKit Tests",
 	}
 
@@ -320,3 +320,4 @@ func TestParameterOverrides(t *testing.T) {
 
 	t.Logf("Response with parameter overrides: %s", response.Content)
 }
+

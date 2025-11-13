@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core/vnext"
+	vnext "github.com/agenticgokit/agenticgokit/v1beta"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -397,3 +397,6 @@ func TestBuilderClone(t *testing.T) {
 	assert.Equal(t, "Original prompt", agent1.Config().SystemPrompt)
 	assert.Equal(t, "Cloned prompt", agent2.Config().SystemPrompt)
 }
+
+
+

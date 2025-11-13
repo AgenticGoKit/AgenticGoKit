@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/internal/llm" // Keep importing the package under test
+	"github.com/agenticgokit/agenticgokit/internal/llm" // Keep importing the package under test
 )
 
 // Helper to get Azure Adapter for benchmarks, skipping if not configured
@@ -86,3 +86,4 @@ func BenchmarkAzureEmbeddings(b *testing.B) {
 }
 
 // TODO: Add benchmarks for OpenAIAdapter and OllamaAdapter in their respective test files.
+

@@ -1,7 +1,8 @@
 package main
 
-import "github.com/kunalkushwaha/agenticgokit/cmd/agentcli/cmd"
+import "github.com/agenticgokit/agenticgokit/cmd/agentcli/cmd"
 
 func main() {
 	cmd.Execute()
 }
+

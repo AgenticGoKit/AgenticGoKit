@@ -126,7 +126,7 @@ func TestOpenRouterAdapter_Call(t *testing.T) {
 		"https://openrouter.ai/api/v1",
 		150,
 		0.7,
-		"https://github.com/kunalkushwaha/agenticgokit",
+		"https://github.com/agenticgokit/agenticgokit",
 		"AgenticGoKit",
 	)
 	if err != nil {
@@ -440,3 +440,4 @@ func TestBuildOpenRouterMessages(t *testing.T) {
 		})
 	}
 }
+

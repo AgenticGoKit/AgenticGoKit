@@ -1220,7 +1220,7 @@ func createMCPManagerInternal(config MCPConfig) (MCPManager, error) {
 		return mcpManagerFactory(config)
 	}
 	// No plugin has registered a factory yet; provide actionable guidance.
-	return nil, fmt.Errorf("no MCP manager plugin registered: add a blank import for github.com/kunalkushwaha/agenticgokit/plugins/mcp/default (or a transport plugin like /tcp, /stdio, or /websocket)")
+	return nil, fmt.Errorf("no MCP manager plugin registered: add a blank import for github.com/agenticgokit/agenticgokit/plugins/mcp/default (or a transport plugin like /tcp, /stdio, or /websocket)")
 }
 
 // createMCPCacheManagerInternal creates a cache manager through internal factory.
@@ -1228,7 +1228,7 @@ func createMCPCacheManagerInternal(config MCPCacheConfig) (MCPCacheManager, erro
 	if mcpCacheManagerFactory != nil {
 		return mcpCacheManagerFactory(config)
 	}
-	return nil, fmt.Errorf("no MCP cache manager plugin registered: add a blank import for github.com/kunalkushwaha/agenticgokit/plugins/mcp/default or a cache plugin")
+	return nil, fmt.Errorf("no MCP cache manager plugin registered: add a blank import for github.com/agenticgokit/agenticgokit/plugins/mcp/default or a cache plugin")
 }
 
 // createMCPToolRegistryInternal creates a tool registry through internal factory.
@@ -1236,7 +1236,7 @@ func createMCPToolRegistryInternal() (FunctionToolRegistry, error) {
 	if functionToolRegistryFactory != nil {
 		return functionToolRegistryFactory()
 	}
-	return nil, fmt.Errorf("no MCP function tool registry plugin registered: add a blank import for github.com/kunalkushwaha/agenticgokit/plugins/mcp/default or a registry plugin")
+	return nil, fmt.Errorf("no MCP function tool registry plugin registered: add a blank import for github.com/agenticgokit/agenticgokit/plugins/mcp/default or a registry plugin")
 }
 
 // initializeProductionMetrics initializes production metrics.
@@ -1651,3 +1651,4 @@ func (a *basicMCPAwareAgent) GetMCPManager() MCPManager {
 func (a *basicMCPAwareAgent) GetConfig() MCPAgentConfig {
 	return a.config
 }
+

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // ConfigAwareUnifiedAgent extends UnifiedAgent with configuration awareness
@@ -515,3 +515,4 @@ func (ca *ConfigAwareParallelAgent) runParallelExecution(ctx context.Context, in
 	mergedState.Set("parallel_execution_completed", true)
 	return mergedState, nil
 }
+

@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core/vnext"
-	_ "github.com/kunalkushwaha/agenticgokit/plugins/llm/ollama"
+	vnext "github.com/agenticgokit/agenticgokit/v1beta"
+	_ "github.com/agenticgokit/agenticgokit/plugins/llm/ollama"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -202,3 +202,6 @@ func TestRunWithOptions_IncludeTrace(t *testing.T) {
 func TestRunWithOptions_MemoryOptions(t *testing.T) {
 	t.Skip("Requires real memory provider to fully test")
 }
+
+
+

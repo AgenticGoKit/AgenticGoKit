@@ -3,8 +3,8 @@ package azureopenai
 import (
 	"context"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
-	"github.com/kunalkushwaha/agenticgokit/internal/llm"
+	"github.com/agenticgokit/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/internal/llm"
 )
 
 // providerAdapter adapts internal llm.PublicProviderAdapter to core.ModelProvider
@@ -50,3 +50,4 @@ func init() {
 	core.RegisterModelProviderFactory("azureopenai", factory)
 	core.RegisterModelProviderFactory("azure", factory) // Also register as "azure" for compatibility
 }
+
