@@ -1,5 +1,13 @@
 # Tool Integration
 
+> **⚠️ DEPRECATED:** This guide covers tool integration for the legacy `core` package.
+> 
+> **For new projects, use v1beta:** See **[v1beta Tool Integration Guide](../v1beta/tool-integration.md)** for the modern API.
+> 
+> **Migrating from legacy?** See **[Migration Guide](../MIGRATION.md#tool-integration)**
+
+---
+
 **Dynamic Tool Discovery and Execution with MCP Protocol**
 
 AgentFlow uses the Model Context Protocol (MCP) to provide agents with dynamic tool discovery and execution capabilities. This guide covers everything from basic tool usage to building custom MCP servers.

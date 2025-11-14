@@ -1,5 +1,13 @@
 # Custom Tools Guide
 
+> **⚠️ DEPRECATED:** This guide covers custom tools for the legacy `core` package.
+> 
+> **For new projects, use v1beta:** See **[v1beta Tool Integration Guide](../v1beta/tool-integration.md)** for the modern API.
+> 
+> **Migrating from legacy?** See **[Migration Guide](../MIGRATION.md#tool-integration)**
+
+---
+
 This guide covers building custom tools for AgentFlow agents. Learn how to create AgentFlow-native tools using the `FunctionTool` interface and how to integrate external MCP servers for extended functionality.
 
 ## 🎯 Overview

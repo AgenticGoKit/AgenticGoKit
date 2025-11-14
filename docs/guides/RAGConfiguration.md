@@ -1,5 +1,13 @@
 # RAG Configuration Guide
 
+> **⚠️ DEPRECATED:** This guide covers RAG configuration for the legacy `core` package.
+> 
+> **For new projects, use v1beta:** See **[v1beta Memory & RAG Guide](../v1beta/memory-and-rag.md)** for the modern API.
+> 
+> **Migrating from legacy?** See **[Migration Guide](../MIGRATION.md#memory--rag)**
+
+---
+
 **Configuring Retrieval-Augmented Generation in AgentFlow**
 
 AgentFlow provides comprehensive RAG (Retrieval-Augmented Generation) capabilities through flexible TOML configuration. This guide covers all configuration options for building knowledge-aware agents with document understanding and context assembly.

@@ -1,5 +1,13 @@
 # Memory Provider Setup Guide
 
+> **⚠️ DEPRECATED:** This guide covers memory provider setup for the legacy `core` package.
+> 
+> **For new projects, use v1beta:** See **[v1beta Memory & RAG Example](../v1beta/examples/memory-rag.md)** for the modern API.
+> 
+> **Migrating from legacy?** See **[Migration Guide](../MIGRATION.md#memory--rag)**
+
+---
+
 **Complete setup guides for AgenticGoKit memory providers**
 
 AgenticGoKit supports multiple memory providers for different use cases. This guide provides step-by-step setup instructions for each provider, from development to production deployment.
