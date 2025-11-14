@@ -3,9 +3,9 @@
 > **⚠️ ALPHA RELEASE** - This project is in active development. APIs may change and features are still being stabilized. Use in production at your own risk. We welcome feedback and contributions!
 >
 > **📋 API Versioning Plan:**
-> - **Current (v0.x)**: `v1beta` package is the recommended API
+> - **Current (v0.x)**: `v1beta` package is the recommended API (formerly `vnext`)
 > - **v1.0 Release**: `v1beta` will become the primary `v1` package
-> - **Legacy APIs**: `core` package will be removed in v1.0
+> - **Legacy APIs**: Both `core` and `core/vnext` packages will be removed in v1.0
 
 **Production-ready Go framework for building intelligent multi-agent AI systems**
 
@@ -327,17 +327,19 @@ go run .
 - **Recommended**: Use `v1beta` package for all new projects
 - **Import Path**: `github.com/agenticgokit/agenticgokit/v1beta`
 - **Stability**: Beta - API is mostly stable, minor changes possible
+- **Note**: `v1beta` is the evolution of the former `core/vnext` package
 
 ### v1.0 Release Plan
 
 **What's Changing:**
 - `v1beta` package will become the primary `v1` API
-- Legacy `core` package will be **removed entirely**
+- Legacy `core` and `core/vnext` packages will be **removed entirely**
 - Clean, stable API with semantic versioning guarantees
 
 **Migration Path:**
-- If you're using `v1beta`: Minimal changes (import path update only)
+- If you're using `v1beta` or `vnext`: Minimal changes (import path update only)
 - If you're using `core`: Migrate to `v1beta` now to prepare
+- **`core/vnext` users**: `vnext` has been renamed to `v1beta` - update imports
 
 **Timeline:**
 - v0.x (Current): `v1beta` stabilization and testing

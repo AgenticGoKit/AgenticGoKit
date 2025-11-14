@@ -1,5 +1,13 @@
 # AgenticGoKit Memory System - Complete Implementation Guide
 
+> **⚠️ DEPRECATED:** This guide covers the legacy `core` package memory system.
+> 
+> **For new projects, use v1beta:** See **[v1beta Memory & RAG Guide](../v1beta/memory-and-rag.md)** for the modern API.
+> 
+> **Migrating from legacy?** See **[Migration Guide](../MIGRATION.md#memory--rag)**
+
+---
+
 ## 🎯 Overview
 
 AgenticGoKit provides a powerful, production-ready memory system that enables agents to maintain persistent context, conversation history, and knowledge bases. The system supports multiple storage backends, RAG (Retrieval-Augmented Generation) capabilities, and advanced features like vector embeddings, batch operations, and intelligent retry logic.
