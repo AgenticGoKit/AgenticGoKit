@@ -23,13 +23,27 @@ import (
     "context"
     "fmt"
     "log"
+    "time"
+
     "github.com/agenticgokit/agenticgokit/v1beta"
+    _ "github.com/agenticgokit/agenticgokit/plugins/llm/ollama"
 )
 
 func main() {
-    // Create a basic chat agent
-    agent, err := v1beta.NewBuilder("ChatAssistant").
-        WithLLM("openai", "gpt-4").
+    config := &v1beta.Config{
+        Name:         "ollama-assistant",
+        SystemPrompt: "You are a helpful assistant.",
+        Timeout:      120 * time.Second,
+        LLM: v1beta.LLMConfig{
+            Provider:    "ollama",
+            Model:       "gemma3:1b",
+            Temperature: 0.7,
+            MaxTokens:   100,
+        },
+    }
+
+    agent, err := v1beta.NewBuilder("ollama-assistant").
+        WithConfig(config).
         Build()
     if err != nil {
         log.Fatalf("Failed to create agent: %v", err)
@@ -58,7 +72,10 @@ import (
     "context"
     "fmt"
     "log"
+    "time"
+
     "github.com/agenticgokit/agenticgokit/v1beta"
+    _ "github.com/agenticgokit/agenticgokit/plugins/llm/ollama"
 )
 ```
 
