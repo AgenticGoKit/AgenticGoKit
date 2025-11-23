@@ -23,9 +23,8 @@ const (
 
 // Structure for chat messages sent to the API
 type azureChatMessage struct {
-	Role    string `json:"role"`              // "system", "user", "assistant"
-	Content string `json:"content,omitempty"` // Text content
-	// TODO: Add support for multi-modal content if needed
+	Role    string      `json:"role"`              // "system", "user", "assistant"
+	Content interface{} `json:"content,omitempty"` // Text content or multimodal content array
 }
 
 // Request structure for the Chat Completions API
@@ -195,10 +194,56 @@ func mapInternalPrompt(prompt Prompt) []azureChatMessage {
 	if prompt.System != "" {
 		messages = append(messages, azureChatMessage{Role: "system", Content: prompt.System})
 	}
-	if prompt.User != "" {
-		messages = append(messages, azureChatMessage{Role: "user", Content: prompt.User})
+	
+	// Build user message with potential multimodal content
+	if prompt.User != "" || len(prompt.Images) > 0 {
+		var userContent interface{}
+		
+		if len(prompt.Images) > 0 {
+			// Build multimodal content array
+			contentArray := []map[string]interface{}{}
+			
+			// Add text content if present
+			if prompt.User != "" {
+				contentArray = append(contentArray, map[string]interface{}{
+					"type": "text",
+					"text": prompt.User,
+				})
+			}
+			
+			// Add images
+			for _, img := range prompt.Images {
+				imageContent := map[string]interface{}{
+					"type": "image_url",
+				}
+				
+				if img.URL != "" {
+					imageContent["image_url"] = map[string]interface{}{
+						"url": img.URL,
+					}
+				} else if img.Base64 != "" {
+					// Azure OpenAI supports base64 images in data URL format
+					dataURL := img.Base64
+					if !strings.HasPrefix(dataURL, "data:") {
+						dataURL = "data:image/jpeg;base64," + dataURL
+					}
+					imageContent["image_url"] = map[string]interface{}{
+						"url": dataURL,
+					}
+				}
+				
+				contentArray = append(contentArray, imageContent)
+			}
+			
+			userContent = contentArray
+		} else {
+			// Text-only content
+			userContent = prompt.User
+		}
+		
+		messages = append(messages, azureChatMessage{Role: "user", Content: userContent})
 	}
-	// TODO: Map history if added to llm.Prompt
+	
 	return messages
 }
 
@@ -233,7 +278,10 @@ func (a *AzureOpenAIAdapter) Call(ctx context.Context, prompt Prompt) (Response,
 	}
 
 	if len(apiResp.Choices) > 0 {
-		llmResp.Content = apiResp.Choices[0].Message.Content
+		// Handle Content as interface{} - it should be a string for text responses
+		if contentStr, ok := apiResp.Choices[0].Message.Content.(string); ok {
+			llmResp.Content = contentStr
+		}
 		llmResp.FinishReason = apiResp.Choices[0].FinishReason
 	} else {
 		// This case should ideally be covered by non-2xx status code, but check just in case

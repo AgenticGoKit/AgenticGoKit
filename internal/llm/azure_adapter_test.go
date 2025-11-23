@@ -233,3 +233,101 @@ func min(a, b int) int {
 	}
 	return b
 }
+
+// Multimodal Message Building Tests
+
+func TestMapInternalPrompt_TextOnly(t *testing.T) {
+	prompt := Prompt{
+		System: "You are a helpful assistant",
+		User:   "Hello",
+	}
+
+	messages := mapInternalPrompt(prompt)
+
+	if len(messages) != 2 {
+		t.Fatalf("Expected 2 messages, got %d", len(messages))
+	}
+	if messages[0].Role != "system" {
+		t.Errorf("Expected system role, got %s", messages[0].Role)
+	}
+	if messages[1].Role != "user" {
+		t.Errorf("Expected user role, got %s", messages[1].Role)
+	}
+}
+
+func TestMapInternalPrompt_WithImageURL(t *testing.T) {
+	prompt := Prompt{
+		User: "Describe this image",
+		Images: []ImageData{
+			{URL: "https://example.com/image.jpg"},
+		},
+	}
+
+	messages := mapInternalPrompt(prompt)
+
+	if len(messages) != 1 {
+		t.Fatalf("Expected 1 message, got %d", len(messages))
+	}
+	
+	content, ok := messages[0].Content.([]map[string]interface{})
+	if !ok {
+		t.Fatal("Content should be an array for multimodal")
+	}
+	if len(content) != 2 {
+		t.Fatalf("Expected 2 content items (text + image), got %d", len(content))
+	}
+	if content[0]["type"] != "text" {
+		t.Errorf("First content should be text, got %v", content[0]["type"])
+	}
+	if content[1]["type"] != "image_url" {
+		t.Errorf("Second content should be image_url, got %v", content[1]["type"])
+	}
+}
+
+func TestMapInternalPrompt_WithBase64Image(t *testing.T) {
+	prompt := Prompt{
+		User: "What's in this image?",
+		Images: []ImageData{
+			{Base64: "base64encodeddata"},
+		},
+	}
+
+	messages := mapInternalPrompt(prompt)
+
+	content, ok := messages[0].Content.([]map[string]interface{})
+	if !ok {
+		t.Fatal("Content should be an array")
+	}
+	
+	imageContent := content[1]
+	if imageContent["type"] != "image_url" {
+		t.Error("Expected image_url type")
+	}
+	
+	imageURL := imageContent["image_url"].(map[string]interface{})
+	url := imageURL["url"].(string)
+	if !strings.Contains(url, "data:image/jpeg;base64,") {
+		t.Errorf("Expected data URL prefix, got %s", url)
+	}
+}
+
+func TestMapInternalPrompt_MultipleImages(t *testing.T) {
+	prompt := Prompt{
+		User: "Compare these",
+		Images: []ImageData{
+			{URL: "https://example.com/1.jpg"},
+			{URL: "https://example.com/2.jpg"},
+		},
+	}
+
+	messages := mapInternalPrompt(prompt)
+
+	content, ok := messages[0].Content.([]map[string]interface{})
+	if !ok {
+		t.Fatal("Content should be an array")
+	}
+	if len(content) != 3 {
+		t.Fatalf("Expected 3 content items (1 text + 2 images), got %d", len(content))
+	}
+}
+

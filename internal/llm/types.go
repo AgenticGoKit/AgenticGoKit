@@ -15,6 +15,12 @@ type Prompt struct {
 	System string
 	// User message is the primary input or question.
 	User string
+	// Images holds image data for multimodal models.
+	Images []ImageData
+	// Audio holds audio data for multimodal models.
+	Audio []AudioData
+	// Video holds video data for multimodal models.
+	Video []VideoData
 	// Parameters specify model configuration for this call.
 	Parameters ModelParameters
 	// TODO: Add fields for message history, function calls/definitions
@@ -35,7 +41,47 @@ type Response struct {
 	Usage UsageStats
 	// FinishReason indicates why the model stopped generating tokens (e.g., "stop", "length", "content_filter").
 	FinishReason string
+	// Images holds generated images.
+	Images []ImageData
+	// Audio holds generated audio.
+	Audio []AudioData
+	// Video holds generated video.
+	Video []VideoData
+	// Attachments holds other media attachments.
+	Attachments []Attachment
 	// TODO: Add fields for function call results, log probabilities, etc.
+}
+
+// ImageData represents image content.
+type ImageData struct {
+	URL      string            // URL to the image
+	Base64   string            // Base64 encoded image data
+	Metadata map[string]string // Additional metadata
+}
+
+// AudioData represents audio content.
+type AudioData struct {
+	URL      string            // URL to the audio
+	Base64   string            // Base64 encoded audio data
+	Format   string            // Audio format (mp3, wav, etc.)
+	Metadata map[string]string // Additional metadata
+}
+
+// VideoData represents video content.
+type VideoData struct {
+	URL      string            // URL to the video
+	Base64   string            // Base64 encoded video data
+	Format   string            // Video format (mp4, avi, etc.)
+	Metadata map[string]string // Additional metadata
+}
+
+// Attachment represents generic media attachment.
+type Attachment struct {
+	Name     string            // Name of the attachment
+	Type     string            // MIME type
+	Data     []byte            // Raw data
+	URL      string            // URL if applicable
+	Metadata map[string]string // Additional metadata
 }
 
 // Token represents a single token streamed from a language model.

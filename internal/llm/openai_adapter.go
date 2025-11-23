@@ -61,22 +61,61 @@ func (o *OpenAIAdapter) Call(ctx context.Context, prompt Prompt) (Response, erro
 	}
 
 	// Build messages array for Chat Completions API
-	messages := []map[string]interface{}{
-		{
-			"role":    "user",
-			"content": userPrompt,
-		},
-	}
+	messages := []map[string]interface{}{}
 
 	// Add system message if provided
 	if prompt.System != "" {
-		messages = append([]map[string]interface{}{
-			{
-				"role":    "system",
-				"content": prompt.System,
-			},
-		}, messages...)
+		messages = append(messages, map[string]interface{}{
+			"role":    "system",
+			"content": prompt.System,
+		})
 	}
+
+	// Construct user message content
+	var userContent interface{}
+	if len(prompt.Images) > 0 {
+		// Multimodal content
+		contentParts := []map[string]interface{}{
+			{
+				"type": "text",
+				"text": userPrompt,
+			},
+		}
+
+		for _, img := range prompt.Images {
+			imgObj := map[string]interface{}{
+				"type": "image_url",
+				"image_url": map[string]string{
+					"url": img.URL,
+				},
+			}
+			// If Base64 is provided and URL is empty, construct data URL
+			if img.URL == "" && img.Base64 != "" {
+				// Assume jpeg if not specified, or try to detect? 
+				// For now, let's assume the Base64 string might already contain the prefix or we add a generic one.
+				// Standard format: data:image/jpeg;base64,{base64_image}
+				if !strings.HasPrefix(img.Base64, "data:") {
+					imgObj["image_url"] = map[string]string{
+						"url": fmt.Sprintf("data:image/jpeg;base64,%s", img.Base64),
+					}
+				} else {
+					imgObj["image_url"] = map[string]string{
+						"url": img.Base64,
+					}
+				}
+			}
+			contentParts = append(contentParts, imgObj)
+		}
+		userContent = contentParts
+	} else {
+		// Text-only content
+		userContent = userPrompt
+	}
+
+	messages = append(messages, map[string]interface{}{
+		"role":    "user",
+		"content": userContent,
+	})
 
 	requestBody, err := json.Marshal(map[string]interface{}{
 		"model":       o.model,
@@ -156,22 +195,58 @@ func (o *OpenAIAdapter) Stream(ctx context.Context, prompt Prompt) (<-chan Token
 	}
 
 	// Build messages array for Chat Completions API
-	messages := []map[string]interface{}{
-		{
-			"role":    "user",
-			"content": userPrompt,
-		},
-	}
+	messages := []map[string]interface{}{}
 
 	// Add system message if provided
 	if prompt.System != "" {
-		messages = append([]map[string]interface{}{
-			{
-				"role":    "system",
-				"content": prompt.System,
-			},
-		}, messages...)
+		messages = append(messages, map[string]interface{}{
+			"role":    "system",
+			"content": prompt.System,
+		})
 	}
+
+	// Construct user message content
+	var userContent interface{}
+	if len(prompt.Images) > 0 {
+		// Multimodal content
+		contentParts := []map[string]interface{}{
+			{
+				"type": "text",
+				"text": userPrompt,
+			},
+		}
+
+		for _, img := range prompt.Images {
+			imgObj := map[string]interface{}{
+				"type": "image_url",
+				"image_url": map[string]string{
+					"url": img.URL,
+				},
+			}
+			// If Base64 is provided and URL is empty, construct data URL
+			if img.URL == "" && img.Base64 != "" {
+				if !strings.HasPrefix(img.Base64, "data:") {
+					imgObj["image_url"] = map[string]string{
+						"url": fmt.Sprintf("data:image/jpeg;base64,%s", img.Base64),
+					}
+				} else {
+					imgObj["image_url"] = map[string]string{
+						"url": img.Base64,
+					}
+				}
+			}
+			contentParts = append(contentParts, imgObj)
+		}
+		userContent = contentParts
+	} else {
+		// Text-only content
+		userContent = userPrompt
+	}
+
+	messages = append(messages, map[string]interface{}{
+		"role":    "user",
+		"content": userContent,
+	})
 
 	// Create streaming request
 	requestBody, err := json.Marshal(map[string]interface{}{

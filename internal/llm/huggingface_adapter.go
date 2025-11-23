@@ -188,20 +188,64 @@ func (h *HuggingFaceAdapter) buildInferenceRequest(prompt Prompt, maxTokens int,
 
 // buildChatRequest creates a request body for Chat API (OpenAI-compatible)
 func (h *HuggingFaceAdapter) buildChatRequest(prompt Prompt, maxTokens int, temperature float32, stream bool) map[string]interface{} {
-	messages := []map[string]string{}
+	messages := []map[string]interface{}{}
 
 	if prompt.System != "" {
-		messages = append(messages, map[string]string{
+		messages = append(messages, map[string]interface{}{
 			"role":    "system",
 			"content": prompt.System,
 		})
 	}
 
-	if prompt.User != "" {
-		messages = append(messages, map[string]string{
-			"role":    "user",
-			"content": prompt.User,
-		})
+	// Build user message with potential multimodal content
+	if prompt.User != "" || len(prompt.Images) > 0 {
+		userMessage := map[string]interface{}{
+			"role": "user",
+		}
+		
+		if len(prompt.Images) > 0 {
+			// Build multimodal content array
+			contentArray := []map[string]interface{}{}
+			
+			// Add text content if present
+			if prompt.User != "" {
+				contentArray = append(contentArray, map[string]interface{}{
+					"type": "text",
+					"text": prompt.User,
+				})
+			}
+			
+			// Add images
+			for _, img := range prompt.Images {
+				imageContent := map[string]interface{}{
+					"type": "image_url",
+				}
+				
+				if img.URL != "" {
+					imageContent["image_url"] = map[string]interface{}{
+						"url": img.URL,
+					}
+				} else if img.Base64 != "" {
+					// Hugging Face supports base64 images in data URL format
+					dataURL := img.Base64
+					if !strings.HasPrefix(dataURL, "data:") {
+						dataURL = "data:image/jpeg;base64," + dataURL
+					}
+					imageContent["image_url"] = map[string]interface{}{
+						"url": dataURL,
+					}
+				}
+				
+				contentArray = append(contentArray, imageContent)
+			}
+			
+			userMessage["content"] = contentArray
+		} else {
+			// Text-only content
+			userMessage["content"] = prompt.User
+		}
+		
+		messages = append(messages, userMessage)
 	}
 
 	request := map[string]interface{}{
