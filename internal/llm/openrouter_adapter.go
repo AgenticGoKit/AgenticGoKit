@@ -110,6 +110,50 @@ func buildOpenRouterMessages(prompt Prompt) []map[string]interface{} {
 				contentArray = append(contentArray, imageContent)
 			}
 			
+			// Add audio files
+			for _, audio := range prompt.Audio {
+				audioContent := map[string]interface{}{
+					"type": "input_audio",
+				}
+				
+				if audio.Base64 != "" {
+					audioContent["input_audio"] = map[string]interface{}{
+						"data":   audio.Base64,
+						"format": audio.Format,
+					}
+					contentArray = append(contentArray, audioContent)
+				}
+			}
+			
+			// Add video files
+			for _, video := range prompt.Video {
+				videoContent := map[string]interface{}{
+					"type": "input_video",
+				}
+				
+				if video.URL != "" {
+					videoContent["input_video"] = map[string]interface{}{
+						"url": video.URL,
+					}
+					contentArray = append(contentArray, videoContent)
+				} else if video.Base64 != "" {
+					format := video.Format
+					if format == "" {
+						format = "mp4"
+					}
+					if !strings.HasPrefix(video.Base64, "data:") {
+						videoContent["input_video"] = map[string]interface{}{
+							"url": fmt.Sprintf("data:video/%s;base64,%s", format, video.Base64),
+						}
+					} else {
+						videoContent["input_video"] = map[string]interface{}{
+							"url": video.Base64,
+						}
+					}
+					contentArray = append(contentArray, videoContent)
+				}
+			}
+			
 			userMessage["content"] = contentArray
 		} else {
 			// Text-only content

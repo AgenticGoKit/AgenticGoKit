@@ -106,6 +106,51 @@ func (o *OpenAIAdapter) Call(ctx context.Context, prompt Prompt) (Response, erro
 			}
 			contentParts = append(contentParts, imgObj)
 		}
+		
+		// Add audio files
+		for _, audio := range prompt.Audio {
+			audioObj := map[string]interface{}{
+				"type": "input_audio",
+			}
+			
+			if audio.Base64 != "" {
+				audioObj["input_audio"] = map[string]interface{}{
+					"data":   audio.Base64,
+					"format": audio.Format,
+				}
+				contentParts = append(contentParts, audioObj)
+			}
+		}
+		
+		// Add video files
+		for _, video := range prompt.Video {
+			videoObj := map[string]interface{}{
+				"type": "input_video",
+			}
+			
+			if video.URL != "" {
+				videoObj["input_video"] = map[string]interface{}{
+					"url": video.URL,
+				}
+				contentParts = append(contentParts, videoObj)
+			} else if video.Base64 != "" {
+				format := video.Format
+				if format == "" {
+					format = "mp4"
+				}
+				if !strings.HasPrefix(video.Base64, "data:") {
+					videoObj["input_video"] = map[string]interface{}{
+						"url": fmt.Sprintf("data:video/%s;base64,%s", format, video.Base64),
+					}
+				} else {
+					videoObj["input_video"] = map[string]interface{}{
+						"url": video.Base64,
+					}
+				}
+				contentParts = append(contentParts, videoObj)
+			}
+		}
+		
 		userContent = contentParts
 	} else {
 		// Text-only content
@@ -237,6 +282,51 @@ func (o *OpenAIAdapter) Stream(ctx context.Context, prompt Prompt) (<-chan Token
 			}
 			contentParts = append(contentParts, imgObj)
 		}
+		
+		// Add audio files
+		for _, audio := range prompt.Audio {
+			audioObj := map[string]interface{}{
+				"type": "input_audio",
+			}
+			
+			if audio.Base64 != "" {
+				audioObj["input_audio"] = map[string]interface{}{
+					"data":   audio.Base64,
+					"format": audio.Format,
+				}
+				contentParts = append(contentParts, audioObj)
+			}
+		}
+		
+		// Add video files
+		for _, video := range prompt.Video {
+			videoObj := map[string]interface{}{
+				"type": "input_video",
+			}
+			
+			if video.URL != "" {
+				videoObj["input_video"] = map[string]interface{}{
+					"url": video.URL,
+				}
+				contentParts = append(contentParts, videoObj)
+			} else if video.Base64 != "" {
+				format := video.Format
+				if format == "" {
+					format = "mp4"
+				}
+				if !strings.HasPrefix(video.Base64, "data:") {
+					videoObj["input_video"] = map[string]interface{}{
+						"url": fmt.Sprintf("data:video/%s;base64,%s", format, video.Base64),
+					}
+				} else {
+					videoObj["input_video"] = map[string]interface{}{
+						"url": video.Base64,
+					}
+				}
+				contentParts = append(contentParts, videoObj)
+			}
+		}
+		
 		userContent = contentParts
 	} else {
 		// Text-only content

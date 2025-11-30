@@ -120,6 +120,14 @@ func (o *OllamaAdapter) Call(ctx context.Context, prompt Prompt) (Response, erro
 			userMessage["images"] = images
 		}
 	}
+
+	// Log warning for unsupported Audio/Video inputs
+	if len(prompt.Audio) > 0 {
+		fmt.Printf("WARN: Ollama adapter does not currently support Audio inputs. Ignoring %d audio files.\n", len(prompt.Audio))
+	}
+	if len(prompt.Video) > 0 {
+		fmt.Printf("WARN: Ollama adapter does not currently support Video inputs. Ignoring %d video files.\n", len(prompt.Video))
+	}
 	
 	messages = append(messages, userMessage)
 
@@ -218,6 +226,14 @@ func (o *OllamaAdapter) Stream(ctx context.Context, prompt Prompt) (<-chan Token
 		if len(images) > 0 {
 			payload["images"] = images
 		}
+	}
+
+	// Log warning for unsupported Audio/Video inputs
+	if len(prompt.Audio) > 0 {
+		fmt.Printf("WARN: Ollama adapter does not currently support Audio inputs. Ignoring %d audio files.\n", len(prompt.Audio))
+	}
+	if len(prompt.Video) > 0 {
+		fmt.Printf("WARN: Ollama adapter does not currently support Video inputs. Ignoring %d video files.\n", len(prompt.Video))
 	}
 
 	// Apply prompt parameters if provided
