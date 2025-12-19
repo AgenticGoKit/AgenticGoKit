@@ -194,15 +194,15 @@ func mapInternalPrompt(prompt Prompt) []azureChatMessage {
 	if prompt.System != "" {
 		messages = append(messages, azureChatMessage{Role: "system", Content: prompt.System})
 	}
-	
+
 	// Build user message with potential multimodal content
 	if prompt.User != "" || len(prompt.Images) > 0 {
 		var userContent interface{}
-		
+
 		if len(prompt.Images) > 0 {
 			// Build multimodal content array
 			contentArray := []map[string]interface{}{}
-			
+
 			// Add text content if present
 			if prompt.User != "" {
 				contentArray = append(contentArray, map[string]interface{}{
@@ -210,13 +210,13 @@ func mapInternalPrompt(prompt Prompt) []azureChatMessage {
 					"text": prompt.User,
 				})
 			}
-			
+
 			// Add images
 			for _, img := range prompt.Images {
 				imageContent := map[string]interface{}{
 					"type": "image_url",
 				}
-				
+
 				if img.URL != "" {
 					imageContent["image_url"] = map[string]interface{}{
 						"url": img.URL,
@@ -231,16 +231,16 @@ func mapInternalPrompt(prompt Prompt) []azureChatMessage {
 						"url": dataURL,
 					}
 				}
-				
+
 				contentArray = append(contentArray, imageContent)
 			}
-			
+
 			// Add audio files
 			for _, audio := range prompt.Audio {
 				audioContent := map[string]interface{}{
 					"type": "input_audio",
 				}
-				
+
 				if audio.Base64 != "" {
 					audioContent["input_audio"] = map[string]interface{}{
 						"data":   audio.Base64,
@@ -249,13 +249,13 @@ func mapInternalPrompt(prompt Prompt) []azureChatMessage {
 					contentArray = append(contentArray, audioContent)
 				}
 			}
-			
+
 			// Add video files
 			for _, video := range prompt.Video {
 				videoContent := map[string]interface{}{
 					"type": "input_video",
 				}
-				
+
 				if video.URL != "" {
 					videoContent["input_video"] = map[string]interface{}{
 						"url": video.URL,
@@ -278,16 +278,16 @@ func mapInternalPrompt(prompt Prompt) []azureChatMessage {
 					contentArray = append(contentArray, videoContent)
 				}
 			}
-			
+
 			userContent = contentArray
 		} else {
 			// Text-only content
 			userContent = prompt.User
 		}
-		
+
 		messages = append(messages, azureChatMessage{Role: "user", Content: userContent})
 	}
-	
+
 	return messages
 }
 
@@ -325,6 +325,19 @@ func (a *AzureOpenAIAdapter) Call(ctx context.Context, prompt Prompt) (Response,
 		// Handle Content as interface{} - it should be a string for text responses
 		if contentStr, ok := apiResp.Choices[0].Message.Content.(string); ok {
 			llmResp.Content = contentStr
+		} else if apiResp.Choices[0].Message.Content != nil {
+			// Handle non-string content (array for multimodal, structured responses, etc.)
+			// Try to serialize to JSON for structured content
+			if contentBytes, err := json.Marshal(apiResp.Choices[0].Message.Content); err == nil {
+				llmResp.Content = string(contentBytes)
+			} else {
+				// Last resort fallback
+				llmResp.Content = fmt.Sprintf("%v", apiResp.Choices[0].Message.Content)
+			}
+
+			// Log warning in debug scenarios
+			fmt.Printf("WARN: Azure adapter received non-string content type %T, serialized to JSON\n",
+				apiResp.Choices[0].Message.Content)
 		}
 		llmResp.FinishReason = apiResp.Choices[0].FinishReason
 	} else {
