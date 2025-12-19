@@ -56,6 +56,49 @@ type agentMetrics struct {
 	lastRunTime     time.Time
 }
 
+// addMultimodalDataToPrompt adds multimodal data from RunOptions to an llm.Prompt.
+// This is a helper to avoid code duplication between execute and ExecuteStreaming.
+func addMultimodalDataToPrompt(prompt *llm.Prompt, opts *RunOptions) {
+	if opts == nil {
+		return
+	}
+
+	if len(opts.Images) > 0 {
+		prompt.Images = make([]llm.ImageData, len(opts.Images))
+		for i, img := range opts.Images {
+			prompt.Images[i] = llm.ImageData{
+				URL:      img.URL,
+				Base64:   img.Base64,
+				Metadata: img.Metadata,
+			}
+		}
+	}
+
+	if len(opts.Audio) > 0 {
+		prompt.Audio = make([]llm.AudioData, len(opts.Audio))
+		for i, aud := range opts.Audio {
+			prompt.Audio[i] = llm.AudioData{
+				URL:      aud.URL,
+				Base64:   aud.Base64,
+				Format:   aud.Format,
+				Metadata: aud.Metadata,
+			}
+		}
+	}
+
+	if len(opts.Video) > 0 {
+		prompt.Video = make([]llm.VideoData, len(opts.Video))
+		for i, vid := range opts.Video {
+			prompt.Video[i] = llm.VideoData{
+				URL:      vid.URL,
+				Base64:   vid.Base64,
+				Format:   vid.Format,
+				Metadata: vid.Metadata,
+			}
+		}
+	}
+}
+
 // newRealAgent creates a new agent instance from configuration.
 // This is the constructor called by builder.Build() to create a real,
 // functional agent that makes actual LLM calls.
@@ -145,6 +188,7 @@ func newRealAgent(config *Config, handler HandlerFunc) (Agent, error) {
 //  4. Execute tools if needed
 //  5. Store interaction in memory if enabled
 //  6. Return result with content, timing, and metadata
+//
 // Run executes the agent with the given input and returns the result.
 func (a *realAgent) Run(ctx context.Context, input string) (*Result, error) {
 	return a.execute(ctx, input, nil)
@@ -166,40 +210,7 @@ func (a *realAgent) execute(ctx context.Context, input string, opts *RunOptions)
 	}
 
 	// Add multimodal data if present in opts
-	if opts != nil {
-		if len(opts.Images) > 0 {
-			prompt.Images = make([]llm.ImageData, len(opts.Images))
-			for i, img := range opts.Images {
-				prompt.Images[i] = llm.ImageData{
-					URL:      img.URL,
-					Base64:   img.Base64,
-					Metadata: img.Metadata,
-				}
-			}
-		}
-		if len(opts.Audio) > 0 {
-			prompt.Audio = make([]llm.AudioData, len(opts.Audio))
-			for i, aud := range opts.Audio {
-				prompt.Audio[i] = llm.AudioData{
-					URL:      aud.URL,
-					Base64:   aud.Base64,
-					Format:   aud.Format,
-					Metadata: aud.Metadata,
-				}
-			}
-		}
-		if len(opts.Video) > 0 {
-			prompt.Video = make([]llm.VideoData, len(opts.Video))
-			for i, vid := range opts.Video {
-				prompt.Video[i] = llm.VideoData{
-					URL:      vid.URL,
-					Base64:   vid.Base64,
-					Format:   vid.Format,
-					Metadata: vid.Metadata,
-				}
-			}
-		}
-	}
+	addMultimodalDataToPrompt(&prompt, opts)
 
 	// Step 1.5: Add tool descriptions to system prompt if tools are available
 	if len(a.tools) > 0 {
@@ -626,40 +637,7 @@ func (a *realAgent) executeStream(ctx context.Context, input string, runOpts *Ru
 		}
 
 		// Add multimodal data if present in runOpts
-		if runOpts != nil {
-			if len(runOpts.Images) > 0 {
-				prompt.Images = make([]llm.ImageData, len(runOpts.Images))
-				for i, img := range runOpts.Images {
-					prompt.Images[i] = llm.ImageData{
-						URL:      img.URL,
-						Base64:   img.Base64,
-						Metadata: img.Metadata,
-					}
-				}
-			}
-			if len(runOpts.Audio) > 0 {
-				prompt.Audio = make([]llm.AudioData, len(runOpts.Audio))
-				for i, aud := range runOpts.Audio {
-					prompt.Audio[i] = llm.AudioData{
-						URL:      aud.URL,
-						Base64:   aud.Base64,
-						Format:   aud.Format,
-						Metadata: aud.Metadata,
-					}
-				}
-			}
-			if len(runOpts.Video) > 0 {
-				prompt.Video = make([]llm.VideoData, len(runOpts.Video))
-				for i, vid := range runOpts.Video {
-					prompt.Video[i] = llm.VideoData{
-						URL:      vid.URL,
-						Base64:   vid.Base64,
-						Format:   vid.Format,
-						Metadata: vid.Metadata,
-					}
-				}
-			}
-		}
+		addMultimodalDataToPrompt(&prompt, runOpts)
 
 		// Add memory context if available
 		memoryQueries := 0

@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -80,9 +81,9 @@ func (o *OllamaAdapter) Call(ctx context.Context, prompt Prompt) (Response, erro
 	if prompt.System != "" {
 		messages = append(messages, map[string]interface{}{"role": "system", "content": prompt.System})
 	}
-	
+
 	userMessage := map[string]interface{}{"role": "user", "content": prompt.User}
-	
+
 	// Add images if present
 	if len(prompt.Images) > 0 {
 		images := []string{}
@@ -105,9 +106,12 @@ func (o *OllamaAdapter) Call(ctx context.Context, prompt Prompt) (Response, erro
 
 				client := &http.Client{Timeout: 30 * time.Second}
 				resp, err := client.Do(req)
+				if err != nil {
+					continue
+				}
+				defer resp.Body.Close()
 
-				if err == nil && resp.StatusCode == http.StatusOK {
-					defer resp.Body.Close()
+				if resp.StatusCode == http.StatusOK {
 					data, err := io.ReadAll(resp.Body)
 					if err == nil {
 						base64Data := base64.StdEncoding.EncodeToString(data)
@@ -123,12 +127,12 @@ func (o *OllamaAdapter) Call(ctx context.Context, prompt Prompt) (Response, erro
 
 	// Log warning for unsupported Audio/Video inputs
 	if len(prompt.Audio) > 0 {
-		fmt.Printf("WARN: Ollama adapter does not currently support Audio inputs. Ignoring %d audio files.\n", len(prompt.Audio))
+		log.Printf("WARN: Ollama adapter does not currently support Audio inputs. Ignoring %d audio files.\n", len(prompt.Audio))
 	}
 	if len(prompt.Video) > 0 {
-		fmt.Printf("WARN: Ollama adapter does not currently support Video inputs. Ignoring %d video files.\n", len(prompt.Video))
+		log.Printf("WARN: Ollama adapter does not currently support Video inputs. Ignoring %d video files.\n", len(prompt.Video))
 	}
-	
+
 	messages = append(messages, userMessage)
 
 	// Prepare the request payload
@@ -212,9 +216,12 @@ func (o *OllamaAdapter) Stream(ctx context.Context, prompt Prompt) (<-chan Token
 
 				client := &http.Client{Timeout: 30 * time.Second}
 				resp, err := client.Do(req)
+				if err != nil {
+					continue
+				}
+				defer resp.Body.Close()
 
-				if err == nil && resp.StatusCode == http.StatusOK {
-					defer resp.Body.Close()
+				if resp.StatusCode == http.StatusOK {
 					data, err := io.ReadAll(resp.Body)
 					if err == nil {
 						base64Data := base64.StdEncoding.EncodeToString(data)
@@ -230,10 +237,10 @@ func (o *OllamaAdapter) Stream(ctx context.Context, prompt Prompt) (<-chan Token
 
 	// Log warning for unsupported Audio/Video inputs
 	if len(prompt.Audio) > 0 {
-		fmt.Printf("WARN: Ollama adapter does not currently support Audio inputs. Ignoring %d audio files.\n", len(prompt.Audio))
+		log.Printf("WARN: Ollama adapter does not currently support Audio inputs. Ignoring %d audio files.\n", len(prompt.Audio))
 	}
 	if len(prompt.Video) > 0 {
-		fmt.Printf("WARN: Ollama adapter does not currently support Video inputs. Ignoring %d video files.\n", len(prompt.Video))
+		log.Printf("WARN: Ollama adapter does not currently support Video inputs. Ignoring %d video files.\n", len(prompt.Video))
 	}
 
 	// Apply prompt parameters if provided
