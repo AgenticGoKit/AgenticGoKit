@@ -61,22 +61,30 @@ func (o *OpenAIAdapter) Call(ctx context.Context, prompt Prompt) (Response, erro
 	}
 
 	// Build messages array for Chat Completions API
-	messages := []map[string]interface{}{
-		{
-			"role":    "user",
-			"content": userPrompt,
-		},
-	}
+	messages := []map[string]interface{}{}
 
 	// Add system message if provided
 	if prompt.System != "" {
-		messages = append([]map[string]interface{}{
-			{
-				"role":    "system",
-				"content": prompt.System,
-			},
-		}, messages...)
+		messages = append(messages, map[string]interface{}{
+			"role":    "system",
+			"content": prompt.System,
+		})
 	}
+
+	// Construct user message content
+	var userContent interface{}
+	if len(prompt.Images) > 0 {
+		// Multimodal content
+		userContent = BuildMultimodalContent(userPrompt, prompt)
+	} else {
+		// Text-only content
+		userContent = userPrompt
+	}
+
+	messages = append(messages, map[string]interface{}{
+		"role":    "user",
+		"content": userContent,
+	})
 
 	requestBody, err := json.Marshal(map[string]interface{}{
 		"model":       o.model,
@@ -156,22 +164,30 @@ func (o *OpenAIAdapter) Stream(ctx context.Context, prompt Prompt) (<-chan Token
 	}
 
 	// Build messages array for Chat Completions API
-	messages := []map[string]interface{}{
-		{
-			"role":    "user",
-			"content": userPrompt,
-		},
-	}
+	messages := []map[string]interface{}{}
 
 	// Add system message if provided
 	if prompt.System != "" {
-		messages = append([]map[string]interface{}{
-			{
-				"role":    "system",
-				"content": prompt.System,
-			},
-		}, messages...)
+		messages = append(messages, map[string]interface{}{
+			"role":    "system",
+			"content": prompt.System,
+		})
 	}
+
+	// Construct user message content
+	var userContent interface{}
+	if len(prompt.Images) > 0 {
+		// Multimodal content
+		userContent = BuildMultimodalContent(userPrompt, prompt)
+	} else {
+		// Text-only content
+		userContent = userPrompt
+	}
+
+	messages = append(messages, map[string]interface{}{
+		"role":    "user",
+		"content": userContent,
+	})
 
 	// Create streaming request
 	requestBody, err := json.Marshal(map[string]interface{}{

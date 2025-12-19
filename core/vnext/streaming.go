@@ -39,6 +39,10 @@ const (
 	ChunkTypeDone          ChunkType = "done"           // Stream completion
 	ChunkTypeAgentStart    ChunkType = "agent_start"    // Agent/step begins execution (workflow lifecycle)
 	ChunkTypeAgentComplete ChunkType = "agent_complete" // Agent/step completes execution (workflow lifecycle)
+	// New chunk types for multimodal content
+	ChunkTypeImage ChunkType = "image"
+	ChunkTypeAudio ChunkType = "audio"
+	ChunkTypeVideo ChunkType = "video"
 )
 
 // StreamChunk represents a single chunk in a streaming response
@@ -56,6 +60,10 @@ type StreamChunk struct {
 	Error     error                  `json:"error,omitempty"`     // Error if type is error
 	Timestamp time.Time              `json:"timestamp"`           // When chunk was created
 	Index     int                    `json:"index"`               // Chunk sequence number
+	// New fields for multimodal content
+	ImageData *ImageData `json:"image_data,omitempty"` // Image data for image chunks
+	AudioData *AudioData `json:"audio_data,omitempty"` // Audio data for audio chunks
+	VideoData *VideoData `json:"video_data,omitempty"` // Video data for video chunks
 }
 
 // StreamMetadata contains information about the stream
@@ -66,6 +74,38 @@ type StreamMetadata struct {
 	StartTime time.Time              `json:"start_time"`
 	Model     string                 `json:"model,omitempty"`
 	Extra     map[string]interface{} `json:"extra,omitempty"`
+}
+
+// ImageData represents image content in the stream
+type ImageData struct {
+	URL      string            `json:"url,omitempty"`
+	Base64   string            `json:"base64,omitempty"`
+	Metadata map[string]string `json:"metadata,omitempty"`
+}
+
+// AudioData represents audio content in the stream
+type AudioData struct {
+	URL      string            `json:"url,omitempty"`
+	Base64   string            `json:"base64,omitempty"`
+	Format   string            `json:"format,omitempty"`
+	Metadata map[string]string `json:"metadata,omitempty"`
+}
+
+// VideoData represents video content in the stream
+type VideoData struct {
+	URL      string            `json:"url,omitempty"`
+	Base64   string            `json:"base64,omitempty"`
+	Format   string            `json:"format,omitempty"`
+	Metadata map[string]string `json:"metadata,omitempty"`
+}
+
+// Attachment represents generic media attachment
+type Attachment struct {
+	Name     string            `json:"name,omitempty"`
+	Type     string            `json:"type,omitempty"`
+	Data     []byte            `json:"data,omitempty"`
+	URL      string            `json:"url,omitempty"`
+	Metadata map[string]string `json:"metadata,omitempty"`
 }
 
 // =============================================================================

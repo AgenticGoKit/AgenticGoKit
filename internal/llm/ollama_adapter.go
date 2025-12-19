@@ -3,11 +3,14 @@ package llm
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -74,13 +77,63 @@ func (o *OllamaAdapter) Call(ctx context.Context, prompt Prompt) (Response, erro
 	}
 
 	// Build messages array
-	messages := []map[string]string{}
+	messages := []map[string]interface{}{}
 	if prompt.System != "" {
-		messages = append(messages, map[string]string{"role": "system", "content": prompt.System})
+		messages = append(messages, map[string]interface{}{"role": "system", "content": prompt.System})
 	}
-	if prompt.User != "" {
-		messages = append(messages, map[string]string{"role": "user", "content": prompt.User})
+
+	userMessage := map[string]interface{}{"role": "user", "content": prompt.User}
+
+	// Add images if present
+	if len(prompt.Images) > 0 {
+		images := []string{}
+		for _, img := range prompt.Images {
+			// Ollama expects base64 strings
+			if img.Base64 != "" {
+				// Strip prefix if present (e.g. data:image/jpeg;base64,)
+				base64Data := img.Base64
+				if idx := strings.Index(base64Data, ","); idx != -1 {
+					base64Data = base64Data[idx+1:]
+				}
+				images = append(images, base64Data)
+			} else if img.URL != "" {
+				// Fetch URL and convert to base64
+				req, err := http.NewRequestWithContext(ctx, "GET", img.URL, nil)
+				if err != nil {
+					continue
+				}
+				req.Header.Set("User-Agent", "AgenticGoKit/1.0")
+
+				client := &http.Client{Timeout: 30 * time.Second}
+				resp, err := client.Do(req)
+				if err != nil {
+					continue
+				}
+				defer resp.Body.Close()
+
+				if resp.StatusCode == http.StatusOK {
+					data, err := io.ReadAll(resp.Body)
+					if err == nil {
+						base64Data := base64.StdEncoding.EncodeToString(data)
+						images = append(images, base64Data)
+					}
+				}
+			}
+		}
+		if len(images) > 0 {
+			userMessage["images"] = images
+		}
 	}
+
+	// Log warning for unsupported Audio/Video inputs
+	if len(prompt.Audio) > 0 {
+		log.Printf("WARN: Ollama adapter does not currently support Audio inputs. Ignoring %d audio files.\n", len(prompt.Audio))
+	}
+	if len(prompt.Video) > 0 {
+		log.Printf("WARN: Ollama adapter does not currently support Video inputs. Ignoring %d video files.\n", len(prompt.Video))
+	}
+
+	messages = append(messages, userMessage)
 
 	// Prepare the request payload
 	requestBody := map[string]interface{}{
@@ -141,6 +194,53 @@ func (o *OllamaAdapter) Stream(ctx context.Context, prompt Prompt) (<-chan Token
 			"temperature": o.temperature,
 			"num_predict": o.maxTokens,
 		},
+	}
+
+	// Add images if present
+	if len(prompt.Images) > 0 {
+		images := []string{}
+		for _, img := range prompt.Images {
+			if img.Base64 != "" {
+				base64Data := img.Base64
+				if idx := strings.Index(base64Data, ","); idx != -1 {
+					base64Data = base64Data[idx+1:]
+				}
+				images = append(images, base64Data)
+			} else if img.URL != "" {
+				// Fetch URL and convert to base64
+				req, err := http.NewRequestWithContext(ctx, "GET", img.URL, nil)
+				if err != nil {
+					continue
+				}
+				req.Header.Set("User-Agent", "AgenticGoKit/1.0")
+
+				client := &http.Client{Timeout: 30 * time.Second}
+				resp, err := client.Do(req)
+				if err != nil {
+					continue
+				}
+				defer resp.Body.Close()
+
+				if resp.StatusCode == http.StatusOK {
+					data, err := io.ReadAll(resp.Body)
+					if err == nil {
+						base64Data := base64.StdEncoding.EncodeToString(data)
+						images = append(images, base64Data)
+					}
+				}
+			}
+		}
+		if len(images) > 0 {
+			payload["images"] = images
+		}
+	}
+
+	// Log warning for unsupported Audio/Video inputs
+	if len(prompt.Audio) > 0 {
+		log.Printf("WARN: Ollama adapter does not currently support Audio inputs. Ignoring %d audio files.\n", len(prompt.Audio))
+	}
+	if len(prompt.Video) > 0 {
+		log.Printf("WARN: Ollama adapter does not currently support Video inputs. Ignoring %d video files.\n", len(prompt.Video))
 	}
 
 	// Apply prompt parameters if provided

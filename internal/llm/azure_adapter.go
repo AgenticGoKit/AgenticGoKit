@@ -23,9 +23,8 @@ const (
 
 // Structure for chat messages sent to the API
 type azureChatMessage struct {
-	Role    string `json:"role"`              // "system", "user", "assistant"
-	Content string `json:"content,omitempty"` // Text content
-	// TODO: Add support for multi-modal content if needed
+	Role    string      `json:"role"`              // "system", "user", "assistant"
+	Content interface{} `json:"content,omitempty"` // Text content or multimodal content array
 }
 
 // Request structure for the Chat Completions API
@@ -195,10 +194,22 @@ func mapInternalPrompt(prompt Prompt) []azureChatMessage {
 	if prompt.System != "" {
 		messages = append(messages, azureChatMessage{Role: "system", Content: prompt.System})
 	}
-	if prompt.User != "" {
-		messages = append(messages, azureChatMessage{Role: "user", Content: prompt.User})
+
+	// Build user message with potential multimodal content
+	if prompt.User != "" || len(prompt.Images) > 0 || len(prompt.Audio) > 0 || len(prompt.Video) > 0 {
+		var userContent interface{}
+
+		if len(prompt.Images) > 0 || len(prompt.Audio) > 0 || len(prompt.Video) > 0 {
+			// Use shared multimodal content builder
+			userContent = BuildMultimodalContent(prompt.User, prompt)
+		} else {
+			// Text-only content
+			userContent = prompt.User
+		}
+
+		messages = append(messages, azureChatMessage{Role: "user", Content: userContent})
 	}
-	// TODO: Map history if added to llm.Prompt
+
 	return messages
 }
 
@@ -233,7 +244,23 @@ func (a *AzureOpenAIAdapter) Call(ctx context.Context, prompt Prompt) (Response,
 	}
 
 	if len(apiResp.Choices) > 0 {
-		llmResp.Content = apiResp.Choices[0].Message.Content
+		// Handle Content as interface{} - it should be a string for text responses
+		if contentStr, ok := apiResp.Choices[0].Message.Content.(string); ok {
+			llmResp.Content = contentStr
+		} else if apiResp.Choices[0].Message.Content != nil {
+			// Handle non-string content (array for multimodal, structured responses, etc.)
+			// Try to serialize to JSON for structured content
+			if contentBytes, err := json.Marshal(apiResp.Choices[0].Message.Content); err == nil {
+				llmResp.Content = string(contentBytes)
+			} else {
+				// Last resort fallback
+				llmResp.Content = fmt.Sprintf("%v", apiResp.Choices[0].Message.Content)
+			}
+
+			// Log warning in debug scenarios
+			fmt.Printf("WARN: Azure adapter received non-string content type %T, serialized to JSON\n",
+				apiResp.Choices[0].Message.Content)
+		}
 		llmResp.FinishReason = apiResp.Choices[0].FinishReason
 	} else {
 		// This case should ideally be covered by non-2xx status code, but check just in case

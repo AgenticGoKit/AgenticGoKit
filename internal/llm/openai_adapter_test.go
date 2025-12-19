@@ -93,3 +93,4 @@ func TestOpenAIAdapter_Embeddings(t *testing.T) {
 		assert.Equal(t, 0, len(embeddings))
 	})
 }
+

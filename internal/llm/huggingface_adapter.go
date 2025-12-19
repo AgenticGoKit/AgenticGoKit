@@ -188,20 +188,30 @@ func (h *HuggingFaceAdapter) buildInferenceRequest(prompt Prompt, maxTokens int,
 
 // buildChatRequest creates a request body for Chat API (OpenAI-compatible)
 func (h *HuggingFaceAdapter) buildChatRequest(prompt Prompt, maxTokens int, temperature float32, stream bool) map[string]interface{} {
-	messages := []map[string]string{}
+	messages := []map[string]interface{}{}
 
 	if prompt.System != "" {
-		messages = append(messages, map[string]string{
+		messages = append(messages, map[string]interface{}{
 			"role":    "system",
 			"content": prompt.System,
 		})
 	}
 
-	if prompt.User != "" {
-		messages = append(messages, map[string]string{
-			"role":    "user",
-			"content": prompt.User,
-		})
+	// Build user message with potential multimodal content
+	if prompt.User != "" || len(prompt.Images) > 0 || len(prompt.Audio) > 0 || len(prompt.Video) > 0 {
+		userMessage := map[string]interface{}{
+			"role": "user",
+		}
+
+		if len(prompt.Images) > 0 || len(prompt.Audio) > 0 || len(prompt.Video) > 0 {
+			// Use shared multimodal content builder
+			userMessage["content"] = BuildMultimodalContent(prompt.User, prompt)
+		} else {
+			// Text-only content
+			userMessage["content"] = prompt.User
+		}
+
+		messages = append(messages, userMessage)
 	}
 
 	request := map[string]interface{}{

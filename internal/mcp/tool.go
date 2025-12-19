@@ -217,6 +217,7 @@ func (t *MCPTool) validateArgumentType(name string, value interface{}, schema in
 }
 
 // convertMCPResponseToAgentFlow converts an MCP response to AgentFlow format.
+// This method handles multimodal content (images, audio, video) from MCP tool responses.
 func (t *MCPTool) convertMCPResponseToAgentFlow(response *mcp.CallToolResponse) (map[string]any, error) {
 	result := make(map[string]any)
 
@@ -224,6 +225,10 @@ func (t *MCPTool) convertMCPResponseToAgentFlow(response *mcp.CallToolResponse) 
 	if len(response.Content) > 0 {
 		var contents []map[string]interface{}
 		var textParts []string
+		var images []map[string]interface{}
+		var audioFiles []map[string]interface{}
+		var videoFiles []map[string]interface{}
+		var attachments []map[string]interface{}
 
 		for _, content := range response.Content {
 			contentMap := map[string]interface{}{
@@ -251,6 +256,30 @@ func (t *MCPTool) convertMCPResponseToAgentFlow(response *mcp.CallToolResponse) 
 			}
 
 			contents = append(contents, contentMap)
+
+			// Categorize multimodal content based on type or MIME type
+			switch content.Type {
+			case "image":
+				images = append(images, t.buildImageData(content))
+			case "audio":
+				audioFiles = append(audioFiles, t.buildAudioData(content))
+			case "video":
+				videoFiles = append(videoFiles, t.buildVideoData(content))
+			default:
+				// Check MIME type for content categorization
+				if content.MimeType != "" {
+					if isImageMimeType(content.MimeType) {
+						images = append(images, t.buildImageData(content))
+					} else if isAudioMimeType(content.MimeType) {
+						audioFiles = append(audioFiles, t.buildAudioData(content))
+					} else if isVideoMimeType(content.MimeType) {
+						videoFiles = append(videoFiles, t.buildVideoData(content))
+					} else if content.Data != "" || content.URI != "" {
+						// Generic attachment
+						attachments = append(attachments, t.buildAttachmentData(content))
+					}
+				}
+			}
 		}
 
 		result["content"] = contents
@@ -261,6 +290,20 @@ func (t *MCPTool) convertMCPResponseToAgentFlow(response *mcp.CallToolResponse) 
 			if len(textParts) > 1 {
 				result["all_text"] = textParts // All text content
 			}
+		}
+
+		// Add categorized multimodal content
+		if len(images) > 0 {
+			result["images"] = images
+		}
+		if len(audioFiles) > 0 {
+			result["audio"] = audioFiles
+		}
+		if len(videoFiles) > 0 {
+			result["video"] = videoFiles
+		}
+		if len(attachments) > 0 {
+			result["attachments"] = attachments
 		}
 	}
 
@@ -294,6 +337,161 @@ func (t *MCPTool) formatMCPContent(contents []mcp.Content) string {
 	}
 
 	return fmt.Sprintf("%s (and %d more)", parts[0], len(parts)-1)
+}
+
+// buildImageData creates an image data map from MCP content.
+func (t *MCPTool) buildImageData(content mcp.Content) map[string]interface{} {
+	imageData := map[string]interface{}{}
+	if content.URI != "" {
+		imageData["url"] = content.URI
+	}
+	if content.Data != "" {
+		imageData["base64"] = content.Data
+	}
+	if content.Name != "" || content.MimeType != "" {
+		metadata := map[string]string{}
+		if content.Name != "" {
+			metadata["name"] = content.Name
+		}
+		if content.MimeType != "" {
+			metadata["mime_type"] = content.MimeType
+		}
+		imageData["metadata"] = metadata
+	}
+	return imageData
+}
+
+// buildAudioData creates an audio data map from MCP content.
+func (t *MCPTool) buildAudioData(content mcp.Content) map[string]interface{} {
+	audioData := map[string]interface{}{}
+	if content.URI != "" {
+		audioData["url"] = content.URI
+	}
+	if content.Data != "" {
+		audioData["base64"] = content.Data
+	}
+	// Extract format from MIME type (e.g., "audio/mp3" -> "mp3")
+	if content.MimeType != "" {
+		audioData["format"] = extractFormatFromMimeType(content.MimeType)
+	}
+	if content.Name != "" || content.MimeType != "" {
+		metadata := map[string]string{}
+		if content.Name != "" {
+			metadata["name"] = content.Name
+		}
+		if content.MimeType != "" {
+			metadata["mime_type"] = content.MimeType
+		}
+		audioData["metadata"] = metadata
+	}
+	return audioData
+}
+
+// buildVideoData creates a video data map from MCP content.
+func (t *MCPTool) buildVideoData(content mcp.Content) map[string]interface{} {
+	videoData := map[string]interface{}{}
+	if content.URI != "" {
+		videoData["url"] = content.URI
+	}
+	if content.Data != "" {
+		videoData["base64"] = content.Data
+	}
+	// Extract format from MIME type (e.g., "video/mp4" -> "mp4")
+	if content.MimeType != "" {
+		videoData["format"] = extractFormatFromMimeType(content.MimeType)
+	}
+	if content.Name != "" || content.MimeType != "" {
+		metadata := map[string]string{}
+		if content.Name != "" {
+			metadata["name"] = content.Name
+		}
+		if content.MimeType != "" {
+			metadata["mime_type"] = content.MimeType
+		}
+		videoData["metadata"] = metadata
+	}
+	return videoData
+}
+
+// buildAttachmentData creates an attachment data map from MCP content.
+func (t *MCPTool) buildAttachmentData(content mcp.Content) map[string]interface{} {
+	attachmentData := map[string]interface{}{}
+	if content.Name != "" {
+		attachmentData["name"] = content.Name
+	}
+	if content.MimeType != "" {
+		attachmentData["type"] = content.MimeType
+	}
+	if content.URI != "" {
+		attachmentData["url"] = content.URI
+	}
+	if content.Data != "" {
+		attachmentData["data"] = content.Data
+	}
+	if content.Name != "" || content.MimeType != "" {
+		metadata := map[string]string{}
+		if content.Name != "" {
+			metadata["name"] = content.Name
+		}
+		if content.MimeType != "" {
+			metadata["mime_type"] = content.MimeType
+		}
+		attachmentData["metadata"] = metadata
+	}
+	return attachmentData
+}
+
+// isImageMimeType checks if the MIME type is an image type.
+func isImageMimeType(mimeType string) bool {
+	imageTypes := []string{
+		"image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp",
+		"image/bmp", "image/svg+xml", "image/tiff", "image/x-icon",
+	}
+	for _, t := range imageTypes {
+		if mimeType == t {
+			return true
+		}
+	}
+	return len(mimeType) > 6 && mimeType[:6] == "image/"
+}
+
+// isAudioMimeType checks if the MIME type is an audio type.
+func isAudioMimeType(mimeType string) bool {
+	audioTypes := []string{
+		"audio/mpeg", "audio/mp3", "audio/wav", "audio/ogg", "audio/flac",
+		"audio/aac", "audio/webm", "audio/x-wav", "audio/mp4",
+	}
+	for _, t := range audioTypes {
+		if mimeType == t {
+			return true
+		}
+	}
+	return len(mimeType) > 6 && mimeType[:6] == "audio/"
+}
+
+// isVideoMimeType checks if the MIME type is a video type.
+func isVideoMimeType(mimeType string) bool {
+	videoTypes := []string{
+		"video/mp4", "video/mpeg", "video/webm", "video/ogg", "video/avi",
+		"video/quicktime", "video/x-msvideo", "video/x-matroska",
+	}
+	for _, t := range videoTypes {
+		if mimeType == t {
+			return true
+		}
+	}
+	return len(mimeType) > 6 && mimeType[:6] == "video/"
+}
+
+// extractFormatFromMimeType extracts the format from a MIME type.
+// e.g., "audio/mp3" -> "mp3", "video/mp4" -> "mp4"
+func extractFormatFromMimeType(mimeType string) string {
+	for i := len(mimeType) - 1; i >= 0; i-- {
+		if mimeType[i] == '/' {
+			return mimeType[i+1:]
+		}
+	}
+	return mimeType
 }
 
 // ToMCPToolInfo converts this MCPTool to a core.MCPToolInfo.
