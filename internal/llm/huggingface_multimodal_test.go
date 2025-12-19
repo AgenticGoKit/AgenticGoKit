@@ -25,7 +25,7 @@ func TestHuggingFace_BuildChatRequest_Multimodal_TextOnly(t *testing.T) {
 	messages, ok := request["messages"].([]map[string]interface{})
 	assert.True(t, ok)
 	assert.Len(t, messages, 2)
-	
+
 	assert.Equal(t, "system", messages[0]["role"])
 	assert.Equal(t, "user", messages[1]["role"])
 }
@@ -53,7 +53,7 @@ func TestHuggingFace_BuildChatRequest_Multimodal_WithImageURL(t *testing.T) {
 	content, ok := messages[0]["content"].([]map[string]interface{})
 	assert.True(t, ok)
 	assert.Len(t, content, 2) // text + image
-	
+
 	assert.Equal(t, "text", content[0]["type"])
 	assert.Equal(t, "image_url", content[1]["type"])
 }
@@ -79,12 +79,12 @@ func TestHuggingFace_BuildChatRequest_Multimodal_WithBase64Image(t *testing.T) {
 
 	content, ok := messages[0]["content"].([]map[string]interface{})
 	assert.True(t, ok)
-	
+
 	imageContent := content[1]
 	assert.Equal(t, "image_url", imageContent["type"])
-	
-	imageURL := imageContent["image_url"].(map[string]interface{})
-	url := imageURL["url"].(string)
+
+	imageURL := imageContent["image_url"].(map[string]string)
+	url := imageURL["url"]
 	assert.Contains(t, url, "data:image/jpeg;base64,")
 }
 

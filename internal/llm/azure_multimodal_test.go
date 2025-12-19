@@ -42,7 +42,7 @@ func TestMapInternalPrompt_Multimodal_WithImageURL(t *testing.T) {
 	assert.Equal(t, "text", content[0]["type"])
 	assert.Equal(t, "image_url", content[1]["type"])
 
-	imageURL := content[1]["image_url"].(map[string]interface{})
+	imageURL := content[1]["image_url"].(map[string]string)
 	assert.Equal(t, "https://example.com/image.jpg", imageURL["url"])
 }
 
@@ -61,8 +61,8 @@ func TestMapInternalPrompt_Multimodal_WithBase64Image(t *testing.T) {
 	assert.Len(t, content, 2)
 
 	assert.Equal(t, "image_url", content[1]["type"])
-	imageURL := content[1]["image_url"].(map[string]interface{})
-	url := imageURL["url"].(string)
+	imageURL := content[1]["image_url"].(map[string]string)
+	url := imageURL["url"]
 	assert.Contains(t, url, "data:image/jpeg;base64,")
 }
 

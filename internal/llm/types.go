@@ -1,6 +1,10 @@
 package llm
 
-import "context"
+import (
+	"context"
+	"fmt"
+	"strings"
+)
 
 // ModelParameters holds common configuration options for language model calls.
 type ModelParameters struct {
@@ -111,4 +115,96 @@ type ModelProvider interface {
 	// It returns a slice of embeddings (each embedding is a []float64) corresponding
 	// to the input texts, or an error if the operation fails.
 	Embeddings(ctx context.Context, texts []string) ([][]float64, error)
+}
+
+// BuildMultimodalContent creates multimodal content parts from a prompt.
+// This is a shared utility function used by multiple LLM adapters (OpenAI, Azure, HuggingFace, OpenRouter)
+// to build standardized multimodal content arrays including text, images, audio, and video.
+// Returns a slice of content parts in the OpenAI-compatible format.
+func BuildMultimodalContent(userPrompt string, prompt Prompt) []map[string]interface{} {
+	contentParts := []map[string]interface{}{}
+
+	// Add text content if present
+	if userPrompt != "" {
+		contentParts = append(contentParts, map[string]interface{}{
+			"type": "text",
+			"text": userPrompt,
+		})
+	}
+
+	// Add images
+	for _, img := range prompt.Images {
+		// Skip images with no URL or Base64 data
+		if img.URL == "" && img.Base64 == "" {
+			continue
+		}
+
+		imgObj := map[string]interface{}{
+			"type": "image_url",
+		}
+
+		if img.URL != "" {
+			imgObj["image_url"] = map[string]string{
+				"url": img.URL,
+			}
+		} else if img.Base64 != "" {
+			// Base64 is provided, construct data URL
+			if !strings.HasPrefix(img.Base64, "data:") {
+				imgObj["image_url"] = map[string]string{
+					"url": fmt.Sprintf("data:image/jpeg;base64,%s", img.Base64),
+				}
+			} else {
+				imgObj["image_url"] = map[string]string{
+					"url": img.Base64,
+				}
+			}
+		}
+		contentParts = append(contentParts, imgObj)
+	}
+
+	// Add audio files
+	for _, audio := range prompt.Audio {
+		audioObj := map[string]interface{}{
+			"type": "input_audio",
+		}
+
+		if audio.Base64 != "" {
+			audioObj["input_audio"] = map[string]interface{}{
+				"data":   audio.Base64,
+				"format": audio.Format,
+			}
+			contentParts = append(contentParts, audioObj)
+		}
+	}
+
+	// Add video files
+	for _, video := range prompt.Video {
+		videoObj := map[string]interface{}{
+			"type": "input_video",
+		}
+
+		if video.URL != "" {
+			videoObj["input_video"] = map[string]interface{}{
+				"url": video.URL,
+			}
+			contentParts = append(contentParts, videoObj)
+		} else if video.Base64 != "" {
+			format := video.Format
+			if format == "" {
+				format = "mp4"
+			}
+			if !strings.HasPrefix(video.Base64, "data:") {
+				videoObj["input_video"] = map[string]interface{}{
+					"url": fmt.Sprintf("data:video/%s;base64,%s", format, video.Base64),
+				}
+			} else {
+				videoObj["input_video"] = map[string]interface{}{
+					"url": video.Base64,
+				}
+			}
+			contentParts = append(contentParts, videoObj)
+		}
+	}
+
+	return contentParts
 }

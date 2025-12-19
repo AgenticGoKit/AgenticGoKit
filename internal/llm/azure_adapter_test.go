@@ -268,7 +268,7 @@ func TestMapInternalPrompt_WithImageURL(t *testing.T) {
 	if len(messages) != 1 {
 		t.Fatalf("Expected 1 message, got %d", len(messages))
 	}
-	
+
 	content, ok := messages[0].Content.([]map[string]interface{})
 	if !ok {
 		t.Fatal("Content should be an array for multimodal")
@@ -298,14 +298,14 @@ func TestMapInternalPrompt_WithBase64Image(t *testing.T) {
 	if !ok {
 		t.Fatal("Content should be an array")
 	}
-	
+
 	imageContent := content[1]
 	if imageContent["type"] != "image_url" {
 		t.Error("Expected image_url type")
 	}
-	
-	imageURL := imageContent["image_url"].(map[string]interface{})
-	url := imageURL["url"].(string)
+
+	imageURL := imageContent["image_url"].(map[string]string)
+	url := imageURL["url"]
 	if !strings.Contains(url, "data:image/jpeg;base64,") {
 		t.Errorf("Expected data URL prefix, got %s", url)
 	}
@@ -330,4 +330,3 @@ func TestMapInternalPrompt_MultipleImages(t *testing.T) {
 		t.Fatalf("Expected 3 content items (1 text + 2 images), got %d", len(content))
 	}
 }
-

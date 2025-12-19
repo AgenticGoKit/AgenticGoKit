@@ -44,93 +44,6 @@ func NewOpenAIAdapter(apiKey, model string, maxTokens int, temperature float32) 
 	}, nil
 }
 
-// buildMultimodalContent creates multimodal content parts from a prompt.
-// Returns a slice of content parts including text, images, audio, and video.
-func buildMultimodalContent(userPrompt string, prompt Prompt) []map[string]interface{} {
-	contentParts := []map[string]interface{}{
-		{
-			"type": "text",
-			"text": userPrompt,
-		},
-	}
-
-	// Add images
-	for _, img := range prompt.Images {
-		// Skip images with no URL or Base64 data
-		if img.URL == "" && img.Base64 == "" {
-			continue
-		}
-
-		imgObj := map[string]interface{}{
-			"type": "image_url",
-		}
-
-		if img.URL != "" {
-			imgObj["image_url"] = map[string]string{
-				"url": img.URL,
-			}
-		} else if img.Base64 != "" {
-			// Base64 is provided, construct data URL
-			if !strings.HasPrefix(img.Base64, "data:") {
-				imgObj["image_url"] = map[string]string{
-					"url": fmt.Sprintf("data:image/jpeg;base64,%s", img.Base64),
-				}
-			} else {
-				imgObj["image_url"] = map[string]string{
-					"url": img.Base64,
-				}
-			}
-		}
-		contentParts = append(contentParts, imgObj)
-	}
-
-	// Add audio files
-	for _, audio := range prompt.Audio {
-		audioObj := map[string]interface{}{
-			"type": "input_audio",
-		}
-
-		if audio.Base64 != "" {
-			audioObj["input_audio"] = map[string]interface{}{
-				"data":   audio.Base64,
-				"format": audio.Format,
-			}
-			contentParts = append(contentParts, audioObj)
-		}
-	}
-
-	// Add video files
-	for _, video := range prompt.Video {
-		videoObj := map[string]interface{}{
-			"type": "input_video",
-		}
-
-		if video.URL != "" {
-			videoObj["input_video"] = map[string]interface{}{
-				"url": video.URL,
-			}
-			contentParts = append(contentParts, videoObj)
-		} else if video.Base64 != "" {
-			format := video.Format
-			if format == "" {
-				format = "mp4"
-			}
-			if !strings.HasPrefix(video.Base64, "data:") {
-				videoObj["input_video"] = map[string]interface{}{
-					"url": fmt.Sprintf("data:video/%s;base64,%s", format, video.Base64),
-				}
-			} else {
-				videoObj["input_video"] = map[string]interface{}{
-					"url": video.Base64,
-				}
-			}
-			contentParts = append(contentParts, videoObj)
-		}
-	}
-
-	return contentParts
-}
-
 // Call implements the ModelProvider interface for a single request/response.
 func (o *OpenAIAdapter) Call(ctx context.Context, prompt Prompt) (Response, error) {
 	userPrompt := prompt.User
@@ -162,7 +75,7 @@ func (o *OpenAIAdapter) Call(ctx context.Context, prompt Prompt) (Response, erro
 	var userContent interface{}
 	if len(prompt.Images) > 0 {
 		// Multimodal content
-		userContent = buildMultimodalContent(userPrompt, prompt)
+		userContent = BuildMultimodalContent(userPrompt, prompt)
 	} else {
 		// Text-only content
 		userContent = userPrompt
@@ -265,7 +178,7 @@ func (o *OpenAIAdapter) Stream(ctx context.Context, prompt Prompt) (<-chan Token
 	var userContent interface{}
 	if len(prompt.Images) > 0 {
 		// Multimodal content
-		userContent = buildMultimodalContent(userPrompt, prompt)
+		userContent = BuildMultimodalContent(userPrompt, prompt)
 	} else {
 		// Text-only content
 		userContent = userPrompt

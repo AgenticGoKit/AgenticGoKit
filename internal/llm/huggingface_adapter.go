@@ -198,97 +198,19 @@ func (h *HuggingFaceAdapter) buildChatRequest(prompt Prompt, maxTokens int, temp
 	}
 
 	// Build user message with potential multimodal content
-	if prompt.User != "" || len(prompt.Images) > 0 {
+	if prompt.User != "" || len(prompt.Images) > 0 || len(prompt.Audio) > 0 || len(prompt.Video) > 0 {
 		userMessage := map[string]interface{}{
 			"role": "user",
 		}
-		
-		if len(prompt.Images) > 0 {
-			// Build multimodal content array
-			contentArray := []map[string]interface{}{}
-			
-			// Add text content if present
-			if prompt.User != "" {
-				contentArray = append(contentArray, map[string]interface{}{
-					"type": "text",
-					"text": prompt.User,
-				})
-			}
-			
-			// Add images
-			for _, img := range prompt.Images {
-				imageContent := map[string]interface{}{
-					"type": "image_url",
-				}
-				
-				if img.URL != "" {
-					imageContent["image_url"] = map[string]interface{}{
-						"url": img.URL,
-					}
-				} else if img.Base64 != "" {
-					// Hugging Face supports base64 images in data URL format
-					dataURL := img.Base64
-					if !strings.HasPrefix(dataURL, "data:") {
-						dataURL = "data:image/jpeg;base64," + dataURL
-					}
-					imageContent["image_url"] = map[string]interface{}{
-						"url": dataURL,
-					}
-				}
-				
-				contentArray = append(contentArray, imageContent)
-			}
-			
-			// Add audio files
-			for _, audio := range prompt.Audio {
-				audioContent := map[string]interface{}{
-					"type": "input_audio",
-				}
-				
-				if audio.Base64 != "" {
-					audioContent["input_audio"] = map[string]interface{}{
-						"data":   audio.Base64,
-						"format": audio.Format,
-					}
-					contentArray = append(contentArray, audioContent)
-				}
-			}
-			
-			// Add video files
-			for _, video := range prompt.Video {
-				videoContent := map[string]interface{}{
-					"type": "input_video",
-				}
-				
-				if video.URL != "" {
-					videoContent["input_video"] = map[string]interface{}{
-						"url": video.URL,
-					}
-					contentArray = append(contentArray, videoContent)
-				} else if video.Base64 != "" {
-					format := video.Format
-					if format == "" {
-						format = "mp4"
-					}
-					if !strings.HasPrefix(video.Base64, "data:") {
-						videoContent["input_video"] = map[string]interface{}{
-							"url": fmt.Sprintf("data:video/%s;base64,%s", format, video.Base64),
-						}
-					} else {
-						videoContent["input_video"] = map[string]interface{}{
-							"url": video.Base64,
-						}
-					}
-					contentArray = append(contentArray, videoContent)
-				}
-			}
-			
-			userMessage["content"] = contentArray
+
+		if len(prompt.Images) > 0 || len(prompt.Audio) > 0 || len(prompt.Video) > 0 {
+			// Use shared multimodal content builder
+			userMessage["content"] = BuildMultimodalContent(prompt.User, prompt)
 		} else {
 			// Text-only content
 			userMessage["content"] = prompt.User
 		}
-		
+
 		messages = append(messages, userMessage)
 	}
 
