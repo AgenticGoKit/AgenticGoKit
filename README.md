@@ -1,6 +1,6 @@
 # AgenticGoKit
 
-> **⚠️ ALPHA RELEASE** - This project is in active development. APIs may change and features are still being stabilized. Use in production at your own risk. We welcome feedback and contributions!
+> **🚀 BETA RELEASE** - The v1beta API is now stable and recommended for all new projects. While we continue to refine features, the core APIs are production-ready. We welcome feedback and contributions!
 >
 > **📋 API Versioning Plan:**
 > - **Current (v0.x)**: `v1beta` package is the recommended API (formerly `vnext`)
@@ -39,15 +39,24 @@ import (
     "context"
     "fmt"
     "log"
+    "time"
     
     "github.com/agenticgokit/agenticgokit/v1beta"
 )
 
 func main() {
     // Create a chat agent with Ollama
-    agent, err := v1beta.NewBuilder().
-        WithLLM("ollama", "gemma3:1b").
-        WithBaseURL("http://localhost:11434").
+    agent, err := v1beta.NewBuilder("ChatAgent").
+        WithConfig(&v1beta.Config{
+            Name:         "ChatAgent",
+            SystemPrompt: "You are a helpful assistant",
+            Timeout:      30 * time.Second,
+            LLM: v1beta.LLMConfig{
+                Provider: "ollama",
+                Model:    "gemma3:1b",
+                BaseURL:  "http://localhost:11434",
+            },
+        }).
         Build()
     if err != nil {
         log.Fatal(err)
@@ -84,16 +93,30 @@ import (
 
 func main() {
     // Create specialized agents
-    researcher, _ := v1beta.NewBuilder().
-        WithName("researcher").
-        WithSystemPrompt("You are a research specialist").
-        WithLLM("ollama", "gemma3:1b").
+    researcher, _ := v1beta.NewBuilder("researcher").
+        WithConfig(&v1beta.Config{
+            Name:         "researcher",
+            SystemPrompt: "You are a research specialist",
+            Timeout:      60 * time.Second,
+            LLM: v1beta.LLMConfig{
+                Provider: "ollama",
+                Model:    "gemma3:1b",
+                BaseURL:  "http://localhost:11434",
+            },
+        }).
         Build()
     
-    analyzer, _ := v1beta.NewBuilder().
-        WithName("analyzer").
-        WithSystemPrompt("You are a data analyst").
-        WithLLM("ollama", "gemma3:1b").
+    analyzer, _ := v1beta.NewBuilder("analyzer").
+        WithConfig(&v1beta.Config{
+            Name:         "analyzer",
+            SystemPrompt: "You are a data analyst",
+            Timeout:      60 * time.Second,
+            LLM: v1beta.LLMConfig{
+                Provider: "ollama",
+                Model:    "gemma3:1b",
+                BaseURL:  "http://localhost:11434",
+            },
+        }).
         Build()
     
     // Build workflow
@@ -113,7 +136,7 @@ func main() {
     }
     
     result, _ := stream.Wait()
-    fmt.Printf("\nComplete: %s\n", result.Content)
+    fmt.Printf("\nComplete: %s\n", result.FinalOutput)
 }
 ```
 
@@ -136,8 +159,13 @@ func main() {
 ```go
 import "github.com/agenticgokit/agenticgokit/v1beta"
 
-// Single agent
-agent, _ := v1beta.NewBuilder().WithLLM("ollama", "gemma3:1b").Build()
+// Single agent with configuration
+agent, _ := v1beta.NewBuilder("MyAgent").
+    WithConfig(&v1beta.Config{
+        Name: "MyAgent",
+        LLM:  v1beta.LLMConfig{Provider: "ollama", Model: "gemma3:1b"},
+    }).
+    Build()
 result, _ := agent.Run(ctx, "Hello world")
 
 // Streaming agent  
@@ -155,24 +183,29 @@ stream, _ := workflow.RunStream(ctx, input)
 
 ### Basic Agent
 ```go
-// Basic chat agent
-agent, _ := v1beta.NewBuilder().
-    WithLLM("ollama", "gemma3:1b").
+// Basic chat agent using preset
+agent, _ := v1beta.NewBuilder("helper").
+    WithPreset(v1beta.ChatAgent).
     Build()
 
 // With custom configuration  
-agent, _ := v1beta.NewBuilder().
-    WithName("helper").
-    WithLLM("ollama", "gemma3:1b").
-    WithBaseURL("http://localhost:11434").
-    WithMemory(&v1beta.MemoryConfig{
-        Provider: "memory",
-        RAG: &v1beta.RAGConfig{Enabled: true},
+agent, _ := v1beta.NewBuilder("helper").
+    WithConfig(&v1beta.Config{
+        Name:         "helper",
+        SystemPrompt: "You are a helpful assistant",
+        LLM: v1beta.LLMConfig{
+            Provider: "ollama",
+            Model:    "gemma3:1b",
+            BaseURL:  "http://localhost:11434",
+        },
     }).
-    WithTools(&v1beta.ToolsConfig{
-        Enabled: true,
-        MCP: &v1beta.MCPConfig{Enabled: true},
-    }).
+    WithMemory(
+        v1beta.WithMemoryProvider("memory"),
+        v1beta.WithRAG(4000, 0.3, 0.7),
+    ).
+    WithTools(
+        v1beta.WithMCPDiscovery(), // Enable MCP auto-discovery
+    ).
     Build()
 ```
 
@@ -265,28 +298,52 @@ AgenticGoKit supports multiple LLM providers out of the box:
 
 ```go
 // OpenAI
-agent, _ := v1beta.NewBuilder().
-    WithLLM("openai", "gpt-4").
-    WithAPIKey(os.Getenv("OPENAI_API_KEY")).
+agent, _ := v1beta.NewBuilder("OpenAIAgent").
+    WithConfig(&v1beta.Config{
+        Name: "OpenAIAgent",
+        LLM: v1beta.LLMConfig{
+            Provider: "openai",
+            Model:    "gpt-4",
+            APIKey:   os.Getenv("OPENAI_API_KEY"),
+        },
+    }).
     Build()
 
 // Azure OpenAI
-agent, _ := v1beta.NewBuilder().
-    WithLLM("azure", "gpt-4").
-    WithBaseURL("https://your-resource.openai.azure.com").
-    WithAPIKey(os.Getenv("AZURE_OPENAI_API_KEY")).
+agent, _ := v1beta.NewBuilder("AzureAgent").
+    WithConfig(&v1beta.Config{
+        Name: "AzureAgent",
+        LLM: v1beta.LLMConfig{
+            Provider: "azure",
+            Model:    "gpt-4",
+            BaseURL:  "https://your-resource.openai.azure.com",
+            APIKey:   os.Getenv("AZURE_OPENAI_API_KEY"),
+        },
+    }).
     Build()
 
 // Ollama (Local)
-agent, _ := v1beta.NewBuilder().
-    WithLLM("ollama", "gemma3:1b").
-    WithBaseURL("http://localhost:11434").
+agent, _ := v1beta.NewBuilder("OllamaAgent").
+    WithConfig(&v1beta.Config{
+        Name: "OllamaAgent",
+        LLM: v1beta.LLMConfig{
+            Provider: "ollama",
+            Model:    "gemma3:1b",
+            BaseURL:  "http://localhost:11434",
+        },
+    }).
     Build()
 
 // HuggingFace
-agent, _ := v1beta.NewBuilder().
-    WithLLM("huggingface", "meta-llama/Llama-2-7b-chat-hf").
-    WithAPIKey(os.Getenv("HUGGINGFACE_API_KEY")).
+agent, _ := v1beta.NewBuilder("HFAgent").
+    WithConfig(&v1beta.Config{
+        Name: "HFAgent",
+        LLM: v1beta.LLMConfig{
+            Provider: "huggingface",
+            Model:    "meta-llama/Llama-2-7b-chat-hf",
+            APIKey:   os.Getenv("HUGGINGFACE_API_KEY"),
+        },
+    }).
     Build()
 ```
 
@@ -322,11 +379,11 @@ go run .
 
 ## API Versioning & Roadmap
 
-### Current Status (v0.x - Alpha)
+### Current Status (v0.x - Beta)
 
 - **Recommended**: Use `v1beta` package for all new projects
 - **Import Path**: `github.com/agenticgokit/agenticgokit/v1beta`
-- **Stability**: Beta - API is mostly stable, minor changes possible
+- **Stability**: Beta - API is stable, ready for production use
 - **Note**: `v1beta` is the evolution of the former `core/vnext` package
 
 ### v1.0 Release Plan
