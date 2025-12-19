@@ -10,6 +10,49 @@ import (
 	"github.com/agenticgokit/agenticgokit/internal/llm"
 )
 
+// addMultimodalDataToPrompt adds multimodal data from RunOptions to an llm.Prompt.
+// This is a helper to avoid code duplication between execute and streaming methods.
+func addMultimodalDataToPrompt(prompt *llm.Prompt, opts *RunOptions) {
+	if opts == nil {
+		return
+	}
+
+	if len(opts.Images) > 0 {
+		prompt.Images = make([]llm.ImageData, len(opts.Images))
+		for i, img := range opts.Images {
+			prompt.Images[i] = llm.ImageData{
+				URL:      img.URL,
+				Base64:   img.Base64,
+				Metadata: img.Metadata,
+			}
+		}
+	}
+
+	if len(opts.Audio) > 0 {
+		prompt.Audio = make([]llm.AudioData, len(opts.Audio))
+		for i, aud := range opts.Audio {
+			prompt.Audio[i] = llm.AudioData{
+				URL:      aud.URL,
+				Base64:   aud.Base64,
+				Format:   aud.Format,
+				Metadata: aud.Metadata,
+			}
+		}
+	}
+
+	if len(opts.Video) > 0 {
+		prompt.Video = make([]llm.VideoData, len(opts.Video))
+		for i, vid := range opts.Video {
+			prompt.Video[i] = llm.VideoData{
+				URL:      vid.URL,
+				Base64:   vid.Base64,
+				Format:   vid.Format,
+				Metadata: vid.Metadata,
+			}
+		}
+	}
+}
+
 // realAgent is the concrete implementation of the Agent interface.
 // It integrates with real LLM providers, memory systems, and tools to provide
 // full agent functionality. This replaces the mock streamlinedAgent implementation.
@@ -146,6 +189,11 @@ func newRealAgent(config *Config, handler HandlerFunc) (Agent, error) {
 //  5. Store interaction in memory if enabled
 //  6. Return result with content, timing, and metadata
 func (a *realAgent) Run(ctx context.Context, input string) (*Result, error) {
+	return a.execute(ctx, input, nil)
+}
+
+// execute contains the core execution logic, shared between Run and RunWithOptions
+func (a *realAgent) execute(ctx context.Context, input string, opts *RunOptions) (*Result, error) {
 	startTime := time.Now()
 
 	// Validate that agent is properly initialized
@@ -158,6 +206,9 @@ func (a *realAgent) Run(ctx context.Context, input string) (*Result, error) {
 		System: a.config.SystemPrompt,
 		User:   input,
 	}
+
+	// Add multimodal data if present in opts
+	addMultimodalDataToPrompt(&prompt, opts)
 
 	// Step 1.5: Add tool descriptions to system prompt if tools are available
 	if len(a.tools) > 0 {
@@ -472,8 +523,8 @@ func (a *realAgent) RunWithOptions(ctx context.Context, input string, opts *RunO
 		a.config.LLM.MaxTokens = opts.MaxTokens
 	}
 
-	// Step 6: Execute the run with applied options
-	result, err := a.Run(runCtx, input)
+	// Step 6: Execute the run with applied options (including multimodal data)
+	result, err := a.execute(runCtx, input, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -1175,6 +1226,3 @@ func (a *realAgent) executeToolsAndStream(ctx context.Context, userInput, llmRes
 
 	return nil
 }
-
-
-

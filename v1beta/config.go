@@ -45,6 +45,9 @@ type LLMConfig struct {
 	APIKey      string  `toml:"api_key,omitempty"`   // API key (prefer env vars)
 	SiteURL     string  `toml:"site_url,omitempty"`  // OpenRouter: Site URL for rankings
 	SiteName    string  `toml:"site_name,omitempty"` // OpenRouter: Site name for analytics
+	// New fields for multimodal support
+	Modalities  []string `toml:"modalities,omitempty"`   // Supported modalities (text, image, audio, video)
+	OutputTypes []string `toml:"output_types,omitempty"` // Desired output types
 }
 
 // MemoryConfig contains memory and RAG configuration
@@ -1048,4 +1051,3 @@ func CloneConfig(config *Config) *Config {
 
 	return &clone
 }
-

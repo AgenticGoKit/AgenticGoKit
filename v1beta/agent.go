@@ -56,6 +56,12 @@ type Result struct {
 	MemoryUsed    bool     `json:"memory_used,omitempty"`
 	MemoryQueries int      `json:"memory_queries,omitempty"`
 
+	// New fields for multimodal output
+	Images      []ImageData  `json:"images,omitempty"`
+	Audio       []AudioData  `json:"audio,omitempty"`
+	Video       []VideoData  `json:"video,omitempty"`
+	Attachments []Attachment `json:"attachments,omitempty"`
+
 	// Advanced execution details (from DetailedResult)
 	ToolExecutions  []ToolExecution  `json:"tool_executions,omitempty"`
 	LLMInteractions []LLMInteraction `json:"llm_interactions,omitempty"`
@@ -434,6 +440,11 @@ type RunOptions struct {
 	MaxTokens   int      `json:"max_tokens,omitempty"`  // Override max tokens for this run
 	Temperature *float64 `json:"temperature,omitempty"` // Override temperature for this run
 
+	// Multimodal input
+	Images []ImageData `json:"images,omitempty"` // Images to include in the prompt
+	Audio  []AudioData `json:"audio,omitempty"`  // Audio to include in the prompt
+	Video  []VideoData `json:"video,omitempty"`  // Video to include in the prompt
+
 	// Middleware configuration
 	SkipMiddleware []string `json:"skip_middleware,omitempty"` // Skip specific middleware by name
 }
@@ -742,4 +753,3 @@ Tool-specific execution:
 
 	result, err := agent.RunWithOptions(ctx, "Calculate the square root of 144 and find current news", opts)
 */
-
