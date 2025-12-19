@@ -6,8 +6,8 @@ import (
 	"log"
 	"time"
 
-	_ "github.com/agenticgokit/agenticgokit/plugins/llm/ollama"
 	vnext "github.com/agenticgokit/agenticgokit/v1beta"
+	_ "github.com/agenticgokit/agenticgokit/plugins/llm/ollama"
 )
 
 func main() {
@@ -27,7 +27,7 @@ func main() {
 		Timeout:      30 * time.Second,
 		LLM: vnext.LLMConfig{
 			Provider:    "ollama",
-			Model:       "gemma3:1b",
+			Model:       "gpt-oss:20b-cloud",
 			Temperature: 0.3,
 			MaxTokens:   200,
 			BaseURL:     "http://localhost:11434",
@@ -77,3 +77,6 @@ func main() {
 	fmt.Println("  QuickStart demo completed!")
 	fmt.Println("===========================================")
 }
+
+
+
