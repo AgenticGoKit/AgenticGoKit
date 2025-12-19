@@ -637,7 +637,7 @@ func FormatToolsForPrompt(tools []Tool) string {
 // FormatToolResult formats a tool execution result for inclusion in the LLM prompt
 func FormatToolResult(toolName string, result *ToolResult) string {
 	if result.Success {
-		return fmt.Sprintf("\nTool '%s' returned: %v\n", toolName, result.Content)
+		return fmt.Sprintf("\nTool %s returned: %v\n", toolName, result.Content)
 	}
-	return fmt.Sprintf("\nTool '%s' failed with error: %s\n", toolName, result.Error)
+	return fmt.Sprintf("\nTool %s failed with error: %s\n", toolName, result.Error)
 }

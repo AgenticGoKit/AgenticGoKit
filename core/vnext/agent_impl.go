@@ -1033,7 +1033,7 @@ func (a *realAgent) executeTool(ctx context.Context, toolCall ToolCall) ToolCall
 	}
 
 	if tool == nil {
-		toolCall.Error = fmt.Sprintf("tool '%s' not found", toolCall.Name)
+		toolCall.Error = fmt.Sprintf("tool %s not found", toolCall.Name)
 		toolCall.Duration = time.Since(startTime)
 		return toolCall
 	}
