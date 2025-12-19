@@ -40,22 +40,12 @@ func main() {
     if err != nil {
         log.Fatalf("Failed to start stream: %v", err)
     }
-    defer stream.Close()
 
     fmt.Println("Streaming response:")
     fmt.Println("---")
 
-    // Process stream chunks
-    for {
-        chunk, err := stream.Next()
-        if err != nil {
-            if err == v1beta.ErrStreamDone {
-                break
-            }
-            log.Printf("Stream error: %v", err)
-            break
-        }
-
+    // Process stream chunks via channel
+    for chunk := range stream.Chunks() {
         // Handle different chunk types
         switch chunk.Type {
         case v1beta.ChunkTypeText:
@@ -65,10 +55,17 @@ func main() {
         case v1beta.ChunkTypeDone:
             fmt.Println("\n---")
             fmt.Println("Stream complete")
-            return
         case v1beta.ChunkTypeError:
             log.Printf("Chunk error: %s", chunk.Content)
         }
+    }
+
+    // Wait for stream completion and get final result
+    result, err := stream.Wait()
+    if err != nil {
+        log.Printf("Stream error: %v", err)
+    } else {
+        fmt.Printf("Tokens used: %d\n", result.TokensUsed)
     }
 }
 ```
@@ -94,28 +91,27 @@ stream, err := agent.RunStream(context.Background(), query)
 if err != nil {
     log.Fatalf("Failed to start stream: %v", err)
 }
-defer stream.Close()
 ```
 
 **Key Points:**
 - `RunStream()` returns a `Stream` interface
-- Always `defer stream.Close()` to clean up resources
-- Stream starts immediately upon creation
+- Use `stream.Chunks()` channel to receive chunks
+- Use `stream.Wait()` to get the final result
+- Use `stream.Cancel()` to stop the stream early
 
 ### 3. Process Chunks
 
 ```go
-for {
-    chunk, err := stream.Next()
-    if err != nil {
-        if err == v1beta.ErrStreamDone {
-            break // Normal completion
-        }
-        log.Printf("Stream error: %v", err)
-        break
-    }
-    
-    // Process chunk
+// Channel-based streaming - iterate over chunks
+for chunk := range stream.Chunks() {
+    // Process each chunk as it arrives
+    fmt.Print(chunk.Content)
+}
+
+// Wait for completion and get final result
+result, err := stream.Wait()
+if err != nil {
+    log.Printf("Stream error: %v", err)
 }
 ```
 
@@ -141,15 +137,7 @@ const (
 ### Handling All Chunk Types
 
 ```go
-for {
-    chunk, err := stream.Next()
-    if err != nil {
-        if err == v1beta.ErrStreamDone {
-            break
-        }
-        return err
-    }
-
+for chunk := range stream.Chunks() {
     switch chunk.Type {
     case v1beta.ChunkTypeText:
         fmt.Print(chunk.Content)
@@ -177,9 +165,15 @@ for {
         
     case v1beta.ChunkTypeDone:
         fmt.Println("\n[Stream complete]")
-        return nil
     }
 }
+
+// Get final result after stream completes
+result, err := stream.Wait()
+if err != nil {
+    return err
+}
+fmt.Printf("Total tokens: %d\n", result.TokensUsed)
 ```
 
 ---
@@ -187,6 +181,8 @@ for {
 ## Advanced Patterns
 
 ### Channel-Based Streaming
+
+The Stream interface already provides a channel via `Chunks()`. Here's how to forward to your own channel:
 
 ```go
 func streamToChannel(agent v1beta.Agent, query string) (<-chan string, <-chan error) {
@@ -202,20 +198,17 @@ func streamToChannel(agent v1beta.Agent, query string) (<-chan string, <-chan er
             errChan <- err
             return
         }
-        defer stream.Close()
 
-        for {
-            chunk, err := stream.Next()
-            if err != nil {
-                if err != v1beta.ErrStreamDone {
-                    errChan <- err
-                }
-                return
-            }
-
+        // Read from the stream's built-in channel
+        for chunk := range stream.Chunks() {
             if chunk.Type == v1beta.ChunkTypeText || chunk.Type == v1beta.ChunkTypeDelta {
                 textChan <- chunk.Content
             }
+        }
+
+        // Check for errors on completion
+        if _, err := stream.Wait(); err != nil {
+            errChan <- err
         }
     }()
 
@@ -243,29 +236,26 @@ stream, err := agent.RunStream(ctx, "Long running query...")
 if err != nil {
     log.Fatal(err)
 }
-defer stream.Close()
 
-// Process chunks with cancellation
+// Cancel stream after 5 seconds
 go func() {
     time.Sleep(5 * time.Second)
-    cancel() // Cancel after 5 seconds
+    stream.Cancel() // Use stream's Cancel method
 }()
 
-for {
-    chunk, err := stream.Next()
-    if err != nil {
-        if err == context.Canceled {
-            fmt.Println("\nStream cancelled")
-            return
-        }
-        if err == v1beta.ErrStreamDone {
-            break
-        }
-        log.Printf("Error: %v", err)
-        return
-    }
-    
+// Process chunks - channel closes when cancelled or complete
+for chunk := range stream.Chunks() {
     fmt.Print(chunk.Content)
+}
+
+// Check completion status
+result, err := stream.Wait()
+if err != nil {
+    if err == context.Canceled {
+        fmt.Println("\nStream cancelled")
+    } else {
+        log.Printf("Error: %v", err)
+    }
 }
 ```
 
@@ -277,21 +267,17 @@ func streamWithCallback(agent v1beta.Agent, query string, onChunk func(string)) 
     if err != nil {
         return err
     }
-    defer stream.Close()
 
-    for {
-        chunk, err := stream.Next()
-        if err != nil {
-            if err == v1beta.ErrStreamDone {
-                return nil
-            }
-            return err
-        }
-
+    // Process chunks via channel with callback
+    for chunk := range stream.Chunks() {
         if chunk.Type == v1beta.ChunkTypeText || chunk.Type == v1beta.ChunkTypeDelta {
             onChunk(chunk.Content)
         }
     }
+
+    // Return any error from stream completion
+    _, err = stream.Wait()
+    return err
 }
 
 // Usage
@@ -338,12 +324,7 @@ agent, err := v1beta.NewBuilder("Agent").
 ```go
 // Process large streams without loading entire response
 var totalTokens int
-for {
-    chunk, err := stream.Next()
-    if err != nil {
-        break
-    }
-    
+for chunk := range stream.Chunks() {
     // Process chunk immediately, don't accumulate
     fmt.Print(chunk.Content)
     
@@ -352,7 +333,10 @@ for {
         totalTokens += tokens
     }
 }
-fmt.Printf("\nTotal tokens: %d\n", totalTokens)
+
+// Get final token count from result
+result, _ := stream.Wait()
+fmt.Printf("\nTotal tokens: %d\n", result.TokensUsed)
 ```
 
 ---
@@ -363,26 +347,9 @@ fmt.Printf("\nTotal tokens: %d\n", totalTokens)
 
 ```go
 func processStream(stream v1beta.Stream) error {
-    defer stream.Close()
-    
-    for {
-        chunk, err := stream.Next()
-        if err != nil {
-            if err == v1beta.ErrStreamDone {
-                return nil // Normal completion
-            }
-            
-            // Check if retryable
-            if v1beta.IsRetryable(err) {
-                log.Printf("Retryable error: %v", err)
-                // Implement retry logic
-                continue
-            }
-            
-            return fmt.Errorf("stream error: %w", err)
-        }
-        
-        // Handle chunk
+    // Process all chunks from the channel
+    for chunk := range stream.Chunks() {
+        // Handle error chunks
         if chunk.Type == v1beta.ChunkTypeError {
             log.Printf("Chunk error: %s", chunk.Content)
             continue
@@ -390,6 +357,14 @@ func processStream(stream v1beta.Stream) error {
         
         fmt.Print(chunk.Content)
     }
+    
+    // Check final result for errors
+    _, err := stream.Wait()
+    if err != nil {
+        return fmt.Errorf("stream error: %w", err)
+    }
+    
+    return nil
 }
 ```
 
