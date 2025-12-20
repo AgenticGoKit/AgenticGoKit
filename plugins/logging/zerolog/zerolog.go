@@ -11,7 +11,7 @@ import (
 	zlog "github.com/rs/zerolog/log"
 	"gopkg.in/natefinch/lumberjack.v2"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // Register the zerolog provider on import.
@@ -328,3 +328,4 @@ func updateLogger() {
 	
 	zlog.Logger = zerolog.New(writer).With().Timestamp().Logger()
 }
+

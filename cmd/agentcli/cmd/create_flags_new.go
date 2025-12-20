@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/kunalkushwaha/agenticgokit/internal/scaffold"
+	"github.com/agenticgokit/agenticgokit/internal/scaffold"
 )
 
 // ConsolidatedCreateFlags represents the new simplified flag structure
@@ -484,3 +484,4 @@ func GetTemplateHelp() string {
 
 	return help.String()
 }
+

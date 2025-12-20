@@ -8,7 +8,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/kunalkushwaha/agenticgokit/internal/scaffold/templates"
+	"github.com/agenticgokit/agenticgokit/internal/scaffold/templates"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 	"gopkg.in/yaml.v3"
@@ -521,3 +521,4 @@ func GetTemplateInfo(templateName string) (*TemplateConfig, error) {
 
 	return &templateConfig, nil
 }
+

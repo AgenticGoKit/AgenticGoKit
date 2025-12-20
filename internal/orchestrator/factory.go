@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // OrchestratorType represents the type of orchestrator

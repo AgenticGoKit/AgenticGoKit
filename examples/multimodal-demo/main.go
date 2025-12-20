@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core/vnext"
+	"github.com/agenticgokit/agenticgokit/v1beta"
 )
 
 func main() {
@@ -37,9 +37,9 @@ func main() {
 		log.Fatal("Please set OPENAI_API_KEY environment variable for OpenAI provider")
 	}
 
-	config := &vnext.Config{
+	config := &v1beta.Config{
 		Name: "MultimodalAgent",
-		LLM: vnext.LLMConfig{
+		LLM: v1beta.LLMConfig{
 			Provider:    provider,
 			Model:       model,
 			APIKey:      apiKey,
@@ -48,11 +48,11 @@ func main() {
 			OutputTypes: []string{"text"},
 		},
 		SystemPrompt: "You are a helpful assistant that can analyze images, audio, and video content.",
-		Timeout:      120 * time.Second,
+		Timeout:      320 * time.Second,
 	}
 
 	// Build the agent
-	agent, err := vnext.NewBuilder("MultimodalAgent").
+	agent, err := v1beta.NewBuilder("MultimodalAgent").
 		WithConfig(config).
 		Build()
 	if err != nil {
@@ -69,8 +69,8 @@ func main() {
 	imageURL := "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
 	fmt.Printf("Image: %s\n\n", imageURL)
 
-	result, err := agent.RunWithOptions(ctx, "What is in this image? Describe it briefly.", &vnext.RunOptions{
-		Images: []vnext.ImageData{
+	result, err := agent.RunWithOptions(ctx, "What is in this image? Describe it briefly.", &v1beta.RunOptions{
+		Images: []v1beta.ImageData{
 			{
 				URL: imageURL,
 			},
@@ -110,8 +110,8 @@ func main() {
 	fmt.Printf("Image 1: %s\n", image1)
 	fmt.Printf("Image 2: %s\n\n", image2)
 
-	result, err = agent.RunWithOptions(ctx, "Compare these two images. What are the main differences?", &vnext.RunOptions{
-		Images: []vnext.ImageData{
+	result, err = agent.RunWithOptions(ctx, "Compare these two images. What are the main differences?", &v1beta.RunOptions{
+		Images: []v1beta.ImageData{
 			{URL: image1},
 			{URL: image2},
 		},
@@ -160,7 +160,7 @@ Note: Audio and video support is currently only available with OpenAI.
 }
 
 // analyzeLocalImage reads and analyzes a local image file
-func analyzeLocalImage(ctx context.Context, agent vnext.Agent, imagePath string) {
+func analyzeLocalImage(ctx context.Context, agent v1beta.Agent, imagePath string) {
 	fmt.Println("\n" + strings.Repeat("=", 60))
 	fmt.Println("Example 2: Local Image Analysis")
 	fmt.Println(strings.Repeat("=", 60))
@@ -173,8 +173,8 @@ func analyzeLocalImage(ctx context.Context, agent vnext.Agent, imagePath string)
 	}
 	base64Image := base64.StdEncoding.EncodeToString(imageData)
 
-	result, err := agent.RunWithOptions(ctx, "What details can you see in this uploaded image?", &vnext.RunOptions{
-		Images: []vnext.ImageData{
+	result, err := agent.RunWithOptions(ctx, "What details can you see in this uploaded image?", &v1beta.RunOptions{
+		Images: []v1beta.ImageData{
 			{Base64: base64Image},
 		},
 	})
@@ -187,7 +187,7 @@ func analyzeLocalImage(ctx context.Context, agent vnext.Agent, imagePath string)
 }
 
 // analyzeLocalAudio reads and analyzes a local audio file
-func analyzeLocalAudio(ctx context.Context, agent vnext.Agent, audioPath string) {
+func analyzeLocalAudio(ctx context.Context, agent v1beta.Agent, audioPath string) {
 	fmt.Println("\n" + strings.Repeat("=", 60))
 	fmt.Println("Audio Analysis")
 	fmt.Println(strings.Repeat("=", 60))
@@ -203,8 +203,8 @@ func analyzeLocalAudio(ctx context.Context, agent vnext.Agent, audioPath string)
 	// Determine format from extension
 	ext := strings.TrimPrefix(strings.ToLower(filepath.Ext(audioPath)), ".")
 
-	result, err := agent.RunWithOptions(ctx, "Please transcribe and describe what you hear in this audio.", &vnext.RunOptions{
-		Audio: []vnext.AudioData{
+	result, err := agent.RunWithOptions(ctx, "Please transcribe and describe what you hear in this audio.", &v1beta.RunOptions{
+		Audio: []v1beta.AudioData{
 			{
 				Base64: base64Audio,
 				Format: ext,
@@ -220,7 +220,7 @@ func analyzeLocalAudio(ctx context.Context, agent vnext.Agent, audioPath string)
 }
 
 // analyzeLocalVideo reads and analyzes a local video file
-func analyzeLocalVideo(ctx context.Context, agent vnext.Agent, videoPath string) {
+func analyzeLocalVideo(ctx context.Context, agent v1beta.Agent, videoPath string) {
 	fmt.Println("\n" + strings.Repeat("=", 60))
 	fmt.Println("Video Analysis")
 	fmt.Println(strings.Repeat("=", 60))
@@ -246,8 +246,8 @@ func analyzeLocalVideo(ctx context.Context, agent vnext.Agent, videoPath string)
 	// Determine format from extension
 	ext := strings.TrimPrefix(strings.ToLower(filepath.Ext(videoPath)), ".")
 
-	result, err := agent.RunWithOptions(ctx, "Please describe what happens in this video. Include key events and details.", &vnext.RunOptions{
-		Video: []vnext.VideoData{
+	result, err := agent.RunWithOptions(ctx, "Please describe what happens in this video. Include key events and details.", &v1beta.RunOptions{
+		Video: []v1beta.VideoData{
 			{
 				Base64: base64Video,
 				Format: ext,

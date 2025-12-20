@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 	"github.com/spf13/cobra"
 )
 
@@ -922,3 +922,4 @@ func maskAPIKey(key string) string {
 	}
 	return key[:4] + "..." + key[len(key)-4:]
 }
+

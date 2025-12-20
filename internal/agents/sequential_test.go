@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	agenticgokit "github.com/kunalkushwaha/agenticgokit/internal/core"
+	agenticgokit "github.com/agenticgokit/agenticgokit/internal/core"
 )
 
 // --- Test Helper Agents ---
@@ -227,3 +227,4 @@ func BenchmarkSequentialAgent_Run(b *testing.B) {
 		}
 	}
 }
+

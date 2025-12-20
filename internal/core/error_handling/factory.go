@@ -2,7 +2,7 @@
 package error_handling
 
 import (
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // ErrorHandlingFactory provides factory functions for error handling components
@@ -40,3 +40,4 @@ var defaultFactory = NewErrorHandlingFactory()
 func GetDefaultFactory() *ErrorHandlingFactory {
 	return defaultFactory
 }
+

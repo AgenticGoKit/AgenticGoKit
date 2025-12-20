@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // WorkflowValidatorImplementation provides the concrete implementation of workflow validation
@@ -672,3 +672,4 @@ func (wv *WorkflowValidatorImplementation) supportsCollaboration(handler core.Ag
 	// For now, we assume all handlers support collaboration unless proven otherwise
 	return true
 }
+

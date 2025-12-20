@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/kunalkushwaha/agenticgokit/internal/scaffold"
+	"github.com/agenticgokit/agenticgokit/internal/scaffold"
 	"gopkg.in/yaml.v3"
 )
 
@@ -369,3 +369,4 @@ func getBuiltinTemplates() map[string]ProjectTemplate {
 		},
 	}
 }
+

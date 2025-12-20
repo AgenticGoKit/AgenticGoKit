@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // Server represents the WebUI HTTP server with WebSocket support
@@ -908,3 +908,4 @@ func (s *Server) writeErrorJSON(w http.ResponseWriter, status int, message strin
 		"timestamp": time.Now().Unix(),
 	})
 }
+

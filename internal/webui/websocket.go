@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // ConnectionManager manages all WebSocket connections and their associated sessions
@@ -604,3 +604,4 @@ func (c *ClientConnection) sendError(code, message, details string) {
 	errorMsg := NewWSErrorMessage(c.sessionID, code, message, details)
 	c.manager.sendToConnection(c, errorMsg)
 }
+

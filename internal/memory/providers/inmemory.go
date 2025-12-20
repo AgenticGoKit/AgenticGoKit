@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // InMemoryProvider - fast in-memory implementation for development/testing
@@ -485,3 +485,4 @@ func (m *InMemoryProvider) formatContextText(query string, results *core.HybridR
 
 	return builder.String()
 }
+

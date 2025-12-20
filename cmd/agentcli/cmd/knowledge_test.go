@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -496,3 +496,4 @@ func BenchmarkChunking(b *testing.B) {
 		}
 	}
 }
+

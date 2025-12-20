@@ -5,8 +5,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
-	"github.com/kunalkushwaha/agenticgokit/internal/tools"
+	"github.com/agenticgokit/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/internal/tools"
 )
 
 // NewMCPManager creates a new MCP manager with the given configuration.
@@ -69,3 +69,4 @@ func NewMCPManagerImpl(config core.MCPConfig, registry *tools.ToolRegistry, logg
 	// Call the original constructor that was renamed to avoid conflicts
 	return createMCPManager(config, registry, logger)
 }
+

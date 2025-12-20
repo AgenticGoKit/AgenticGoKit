@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core/vnext"
+	vnext "github.com/agenticgokit/agenticgokit/v1beta"
 )
 
 func TestParallelWorkflowStreaming() {
@@ -198,3 +198,6 @@ func main() {
 
 	fmt.Println("\n🎉 All integration tests complete!")
 }
+
+
+

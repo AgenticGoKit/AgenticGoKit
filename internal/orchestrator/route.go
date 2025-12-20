@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // RouteOrchestrator routes events to a single registered handler based on metadata.
@@ -267,3 +267,4 @@ func (o *RouteOrchestrator) SetEmitter(emitter EventEmitter) {
 func (o *RouteOrchestrator) Stop() {
 	core.Logger().Debug().Msg("RouteOrchestrator stopping.")
 }
+

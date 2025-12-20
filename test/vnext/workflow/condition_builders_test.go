@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core/vnext"
+	vnext "github.com/agenticgokit/agenticgokit/v1beta"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -352,3 +352,6 @@ func (m *mockAgentWithTokens) Initialize(ctx context.Context) error {
 func (m *mockAgentWithTokens) Cleanup(ctx context.Context) error {
 	return nil
 }
+
+
+

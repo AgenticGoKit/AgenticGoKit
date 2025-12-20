@@ -8,7 +8,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 	"github.com/rs/zerolog"
 )
 
@@ -527,3 +527,4 @@ func (DefaultRetryPolicies) ThrottleRetry() RetryPolicy {
 
 	return policy
 }
+

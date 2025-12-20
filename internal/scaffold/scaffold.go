@@ -10,8 +10,8 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/kunalkushwaha/agenticgokit/internal/scaffold/templates"
-	"github.com/kunalkushwaha/agenticgokit/internal/scaffold/utils"
+	"github.com/agenticgokit/agenticgokit/internal/scaffold/templates"
+	"github.com/agenticgokit/agenticgokit/internal/scaffold/utils"
 )
 
 func CreateAgentProject(config ProjectConfig) error {
@@ -128,13 +128,13 @@ func createGoMod(config ProjectConfig) error {
 
 go 1.21
 
-require github.com/kunalkushwaha/agenticgokit %s
+require github.com/agenticgokit/agenticgokit %s
 `, config.Name, AgenticGoKitVersion)
 
 	// If running from a local source checkout, add a replace to the repo root so
 	// generated projects can resolve in-repo packages (e.g., plugins/*) during tests/dev.
 	if repoRoot := findLocalRepoRoot(); repoRoot != "" {
-		goModContent += fmt.Sprintf("\nreplace github.com/kunalkushwaha/agenticgokit => %s\n", repoRoot)
+		goModContent += fmt.Sprintf("\nreplace github.com/agenticgokit/agenticgokit => %s\n", repoRoot)
 	}
 
 	goModPath := filepath.Join(config.Name, "go.mod")
@@ -146,7 +146,7 @@ require github.com/kunalkushwaha/agenticgokit %s
 }
 
 // findLocalRepoRoot walks up from this file to locate the repo root containing go.mod
-// that declares module github.com/kunalkushwaha/agenticgokit. Returns "" if not found.
+// that declares module github.com/agenticgokit/agenticgokit. Returns "" if not found.
 func findLocalRepoRoot() string {
 	// This file lives under internal/scaffold. Start from there.
 	_, file, _, ok := runtime.Caller(0)
@@ -154,7 +154,7 @@ func findLocalRepoRoot() string {
 		return ""
 	}
 	dir := filepath.Dir(file)
-	const modDecl = "module github.com/kunalkushwaha/agenticgokit"
+	const modDecl = "module github.com/agenticgokit/agenticgokit"
 
 	for {
 		gm := filepath.Join(dir, "go.mod")
@@ -1890,3 +1890,4 @@ func createPluginsBundle(config ProjectConfig) error {
 	fmt.Printf("Created file: %s\n", pluginsPath)
 	return nil
 }
+

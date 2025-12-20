@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // ConfigAwareAgent represents an agent that can be configured from ResolvedAgentConfig
@@ -23,3 +23,4 @@ type ConfigAwareAgent interface {
 	UpdateConfiguration(config *core.ResolvedAgentConfig) error
 	ApplySystemPrompt(ctx context.Context, state core.State) (core.State, error)
 }
+

@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 	"github.com/ledongthuc/pdf"
 )
 
@@ -110,3 +110,4 @@ func (pp *PDFProcessor) ExtractMetadata(filePath string) (map[string]any, error)
 
 	return md, nil
 }
+

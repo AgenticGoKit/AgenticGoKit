@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // CircuitBreakerImplementation implements the circuit breaker pattern for error handling
@@ -166,3 +166,4 @@ func (cb *CircuitBreakerImplementation) GetMetrics() core.CircuitBreakerMetrics 
 		ConcurrentCalls: cb.concurrentCalls,
 	}
 }
+

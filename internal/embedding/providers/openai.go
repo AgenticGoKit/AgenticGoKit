@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // OpenAIEmbeddingService implements EmbeddingService using OpenAI API

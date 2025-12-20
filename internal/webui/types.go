@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // ChatSession represents a chat session between user and agents
@@ -291,3 +291,4 @@ func (s *ChatSession) GetStats() SessionStats {
 		MessagesPerHour: messagesPerHour,
 	}
 }
+

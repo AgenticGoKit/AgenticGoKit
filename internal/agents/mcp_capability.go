@@ -4,7 +4,7 @@ package agents
 import (
 	"fmt"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // MCPCapability adds MCP tool integration to any agent
@@ -91,3 +91,4 @@ func init() {
 		}
 	})
 }
+

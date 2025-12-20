@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // init registers the MermaidGenerator implementation with the core package
@@ -332,3 +332,4 @@ func (mg *MermaidGeneratorImpl) generateGenericPattern(builder *strings.Builder,
 	}
 	builder.WriteString(" --> OUTPUT[\"📤 Output\"]\n")
 }
+

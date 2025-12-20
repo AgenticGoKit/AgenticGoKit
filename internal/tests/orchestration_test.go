@@ -3,7 +3,7 @@ package tests
 import (
 	"testing"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 func TestValidateOrchestrationConfig(t *testing.T) {

@@ -1,4 +1,7 @@
 // Package core provides essential factory functions for creating agents and runners in AgentFlow.
+//
+// Deprecated: This package will be removed in v1.0.0.
+// Use github.com/agenticgokit/agenticgokit/v1beta instead.
 package core
 
 import (

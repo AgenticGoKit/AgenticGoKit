@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/cmd/agentcli/version"
-	"github.com/kunalkushwaha/agenticgokit/internal/scaffold/utils"
+	"github.com/agenticgokit/agenticgokit/cmd/agentcli/version"
+	"github.com/agenticgokit/agenticgokit/internal/scaffold/utils"
 )
 
 // AgenticGoKitVersion represents the version of AgenticGoKit to use in generated projects
@@ -819,3 +819,4 @@ func CreateProjectWithValidation(config ProjectConfig) error {
 	// Create the project with validated configuration
 	return CreateAgentProjectModular(config)
 }
+

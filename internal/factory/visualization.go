@@ -2,9 +2,9 @@
 package factory
 
 import (
-	"github.com/kunalkushwaha/agenticgokit/core"
-	"github.com/kunalkushwaha/agenticgokit/internal/validation"
-	"github.com/kunalkushwaha/agenticgokit/internal/visualization"
+	"github.com/agenticgokit/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/internal/validation"
+	"github.com/agenticgokit/agenticgokit/internal/visualization"
 )
 
 // NewMermaidGenerator creates a new Mermaid generator implementation
@@ -16,3 +16,4 @@ func NewMermaidGenerator() core.MermaidGenerator {
 func NewWorkflowValidator() core.WorkflowValidator {
 	return validation.NewWorkflowValidatorImplementation()
 }
+

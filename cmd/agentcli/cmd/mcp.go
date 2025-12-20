@@ -9,7 +9,7 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 	"github.com/spf13/cobra"
 )
 
@@ -518,3 +518,4 @@ func init() {
 	// Info command flags
 	mcpInfoCmd.Flags().StringVar(&mcpServer, "server", "", "Server name to show info for (required)")
 }
+

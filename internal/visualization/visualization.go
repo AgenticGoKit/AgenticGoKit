@@ -3,7 +3,7 @@ package visualization
 import (
 	"fmt"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // MermaidDiagramType defines the type of Mermaid diagram to generate
@@ -114,3 +114,4 @@ func (mg *simpleMermaidGenerator) SaveDiagramAsMarkdown(filename, title, diagram
 func (mg *simpleMermaidGenerator) SaveDiagramWithMetadata(filename, title, description, diagram string, metadata map[string]interface{}) error {
 	return nil // TODO: Implement
 }
+

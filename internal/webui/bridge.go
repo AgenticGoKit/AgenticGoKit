@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // AgentBridge provides the interface between WebUI and the core agent system
@@ -497,3 +497,4 @@ func generateResponseID() string {
 	}
 	return fmt.Sprintf("resp_%x", bytes)
 }
+

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
@@ -589,3 +589,4 @@ func (mg *MermaidGeneratorImplementation) SaveDiagramWithMetadata(filename, titl
 func (mg *MermaidGeneratorImplementation) getGeneratedTimestamp() string {
 	return fmt.Sprintf("*Generated on %s*", time.Now().Format("January 2, 2006 at 3:04 PM"))
 }
+

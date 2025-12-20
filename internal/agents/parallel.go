@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
-	agenticgokit "github.com/kunalkushwaha/agenticgokit/internal/core"
+	"github.com/agenticgokit/agenticgokit/core"
+	agenticgokit "github.com/agenticgokit/agenticgokit/internal/core"
 )
 
 // ParallelAgentConfig holds configuration for ParallelAgent.
@@ -317,3 +317,4 @@ func (a *ParallelAgent) ApplySystemPrompt(ctx context.Context, state agenticgoki
 
 	return workingState, nil
 }
+

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // =============================================================================
@@ -217,3 +217,4 @@ func init() {
 		return &echoTool{}
 	})
 }
+

@@ -5,7 +5,7 @@ import (
 	"context"
 	mathrand "math/rand"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // DummyEmbeddingService for testing and development

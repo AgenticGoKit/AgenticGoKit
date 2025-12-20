@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/internal/llm"
+	"github.com/agenticgokit/agenticgokit/internal/llm"
 )
 
 // TestOpenAIStreamingImplementation tests that OpenAI streaming is properly implemented
@@ -63,3 +63,4 @@ func TestOpenAIStreamingMethodSignature(t *testing.T) {
 
 	t.Log("OpenAI adapter correctly implements ModelProvider interface with streaming")
 }
+

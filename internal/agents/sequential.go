@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
-	agenticgokit "github.com/kunalkushwaha/agenticgokit/internal/core"
+	"github.com/agenticgokit/agenticgokit/core"
+	agenticgokit "github.com/agenticgokit/agenticgokit/internal/core"
 )
 
 // SequentialAgent runs a series of sub-agents one after another.
@@ -253,3 +253,4 @@ func (s *SequentialAgent) ApplySystemPrompt(ctx context.Context, state agenticgo
 
 	return workingState, nil
 }
+

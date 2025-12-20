@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // ConfigReloadCallback defines the callback function signature for configuration changes
@@ -400,3 +400,4 @@ func (r *DefaultConfigReloader) SetDebouncePeriod(period time.Duration) {
 
 	r.debouncePeriod = period
 }
+

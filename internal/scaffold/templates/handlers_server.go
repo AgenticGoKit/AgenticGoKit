@@ -14,7 +14,7 @@ import (
     tracingh "{{.Config.Name}}/internal/tracing"
 
     "github.com/gorilla/websocket"
-    "github.com/kunalkushwaha/agenticgokit/core"
+    "github.com/agenticgokit/agenticgokit/core"
 )
 
 // ResultStore abstracts access to results collected by the app
@@ -290,3 +290,4 @@ func chunkString(s string, size int) []string {
     return chunks
 }
 `
+

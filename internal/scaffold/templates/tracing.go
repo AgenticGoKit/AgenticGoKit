@@ -8,7 +8,7 @@ import (
     "sync"
     "time"
 
-    "github.com/kunalkushwaha/agenticgokit/core"
+    "github.com/agenticgokit/agenticgokit/core"
 )
 
 // FlowEdge captures a hop in the agent flow for a given session.
@@ -385,3 +385,4 @@ func escapeText(s string) string {
     return repl
 }
 `
+

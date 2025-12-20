@@ -4,7 +4,7 @@ import (
 	"github.com/spf13/cobra"
 
 	// Import embedding factory to enable Ollama and other embedding services
-	_ "github.com/kunalkushwaha/agenticgokit/internal/embedding"
+	_ "github.com/agenticgokit/agenticgokit/internal/embedding"
 )
 
 // Knowledge command flags
@@ -480,3 +480,4 @@ func runKnowledgeClear(cmd *cobra.Command, args []string) error {
 	// Clear documents
 	return km.Clear(cmd.Context(), options)
 }
+

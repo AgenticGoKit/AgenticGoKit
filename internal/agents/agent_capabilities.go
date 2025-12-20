@@ -4,7 +4,7 @@ package agents
 import (
 	"fmt"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // =============================================================================
@@ -401,3 +401,4 @@ func init() {
 		}
 	})
 }
+

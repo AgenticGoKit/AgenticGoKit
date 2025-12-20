@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // ErrorRoutingValidator validates error routing configurations
@@ -432,3 +432,4 @@ func DefaultErrorChain(registry map[string]core.AgentHandler) *ErrorHandlingChai
 		Add().
 		Build()
 }
+

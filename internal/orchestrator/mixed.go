@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // MixedOrchestrator implements hybrid orchestration combining collaborative and sequential patterns
@@ -264,3 +264,4 @@ func (o *MixedOrchestrator) Stop() {
 
 	core.Logger().Debug().Msg("MixedOrchestrator: Stopped and cleaned up")
 }
+

@@ -5,9 +5,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
-	"github.com/kunalkushwaha/agenticgokit/internal/embedding"
-	"github.com/kunalkushwaha/agenticgokit/internal/memory/providers"
+	"github.com/agenticgokit/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/internal/embedding"
+	"github.com/agenticgokit/agenticgokit/internal/memory/providers"
 )
 
 // NewMemory creates a new memory instance based on configuration
@@ -195,3 +195,4 @@ func (m *noOpMemory) BuildContext(ctx context.Context, query string, options ...
 func init() {
 	core.RegisterMemoryFactory(NewMemory)
 }
+

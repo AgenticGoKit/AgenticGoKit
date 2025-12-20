@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core/vnext"
+	vnext "github.com/agenticgokit/agenticgokit/v1beta"
 )
 
 // TestConfigStructure tests the Config structure
@@ -750,3 +750,6 @@ func TestConfigWithAllFeatures(t *testing.T) {
 		t.Error("Streaming should be configured")
 	}
 }
+
+
+

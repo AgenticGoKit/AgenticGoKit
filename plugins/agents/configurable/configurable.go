@@ -6,5 +6,6 @@ package configurable
 
 import (
 	// Trigger init() in internal/agents to register the ConfigurableAgentFactory.
-	_ "github.com/kunalkushwaha/agenticgokit/internal/agents"
+	_ "github.com/agenticgokit/agenticgokit/internal/agents"
 )
+

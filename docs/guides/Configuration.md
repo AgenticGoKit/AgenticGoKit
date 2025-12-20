@@ -1,5 +1,13 @@
 # Configuration Management
 
+> **⚠️ DEPRECATED:** This guide covers the legacy `agentflow.toml` configuration system used with the deprecated `core` package.
+> 
+> **For new projects, use v1beta:** See **[v1beta Configuration Guide](../v1beta/configuration.md)** for the modern API.
+> 
+> **Migrating from legacy?** See **[Migration Guide](../MIGRATION.md)**
+
+---
+
 **Managing AgentFlow Configuration with agentflow.toml**
 
 AgentFlow uses TOML configuration files to manage all aspects of your agent system: LLM providers, MCP servers, multi-agent orchestration settings, workflow visualization, and more.

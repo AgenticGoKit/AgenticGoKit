@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 func TestLoggingAndTracingConsolidation(t *testing.T) {

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // DefaultCallbackRegistry manages registered callback functions.
@@ -139,3 +139,4 @@ func (r *DefaultCallbackRegistry) Invoke(ctx context.Context, args core.Callback
 		Msg("Finished invoking callbacks, returning final state")
 	return currentState, lastErr
 }
+

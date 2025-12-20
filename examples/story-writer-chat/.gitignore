@@ -1,0 +1,41 @@
+# Environment files
+.env
+.env.local
+
+# Build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+story-writer-chat
+story-writer-chat-v2
+
+# Test binary
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Dependency directories
+vendor/
+
+# Go workspace file
+go.work
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env.local
+frontend/.vite/

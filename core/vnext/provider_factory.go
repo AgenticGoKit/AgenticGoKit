@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kunalkushwaha/agenticgokit/core"
-	"github.com/kunalkushwaha/agenticgokit/internal/llm"
+	"github.com/agenticgokit/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/internal/llm"
 )
 
 // createLLMProvider creates a ModelProvider instance from LLMConfig.
@@ -242,3 +242,4 @@ func initializeMCP(config *MCPConfig) error {
 
 	return nil
 }
+
