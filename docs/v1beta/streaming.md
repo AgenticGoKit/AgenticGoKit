@@ -443,7 +443,6 @@ for chunk := range stream.Chunks() {
     fmt.Print(chunk.Delta)
 }
 ```
-```
 
 ---
 
