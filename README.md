@@ -1,6 +1,6 @@
 # AgenticGoKit
 
-> **🚀 BETA RELEASE** - The v1beta API is now stable and recommended for all new projects. While we continue to refine features, the core APIs are production-ready. We welcome feedback and contributions!
+> **🚀 BETA RELEASE** - The v1beta API is now stable and recommended for all new projects. While still in beta, the core APIs are working well and ready for testing. We continue to refine features and welcome feedback and contributions!
 >
 > **📋 API Versioning Plan:**
 > - **Current (v0.x)**: `v1beta` package is the recommended API (formerly `vnext`)
@@ -20,11 +20,13 @@
 ## Why Choose AgenticGoKit?
 
 - **v1beta APIs**: Modern, streaming-first agent interface with comprehensive error handling
+- **Multimodal Support**: Native support for images, audio, and video inputs alongside text
 - **Real-time Streaming**: Watch your agents think and respond in real-time  
 - **Multi-Agent Workflows**: Sequential, parallel, DAG, and loop orchestration patterns
+- **Multiple LLM Providers**: Seamlessly switch between OpenAI, Ollama, Azure OpenAI, HuggingFace, and more
 - **High Performance**: Compiled Go binaries with minimal overhead
 - **Rich Integrations**: Memory providers, tool discovery, MCP protocol support
-- **Production Ready**: Works with OpenAI, Ollama, Azure OpenAI, HuggingFace out of the box
+- **Active Development**: Beta status with stable core APIs and ongoing improvements
 
 ---
 
@@ -136,7 +138,7 @@ func main() {
     }
     
     result, _ := stream.Wait()
-    fmt.Printf("\nComplete: %s\n", result.FinalOutput)
+    fmt.Printf("\nComplete: %s\n", result.Content)
 }
 ```
 
@@ -146,11 +148,70 @@ func main() {
 - **Unified Agent Interface**: Single API for all agent operations
 - **Real-time Streaming**: Watch tokens generate in real-time
 - **Multi-Agent Workflows**: Sequential, parallel, DAG, loop orchestration, and subworkflows
+- **Multimodal Input**: Support for images, audio, and video alongside text
 - **Memory & RAG**: Built-in persistence and retrieval
 - **Tool Integration**: MCP protocol, function calling, tool discovery
 - **Subworkflows**: Compose workflows as agents for complex hierarchies
-- **Multiple LLM Providers**: OpenAI, Azure OpenAI, Ollama, HuggingFace
+- **Multiple LLM Providers**: OpenAI, Azure OpenAI, Ollama, HuggingFace, OpenRouter, and custom providers
 - **Flexible Configuration**: Builder pattern with type-safe options
+
+### Multimodal Capabilities
+
+AgenticGoKit provides native support for multimodal inputs, allowing your agents to process images, audio, and video alongside text:
+
+```go
+// Create options with multimodal input
+opts := v1beta.NewRunOptions()
+opts.Images = []v1beta.ImageData{
+    {
+        URL:      "https://example.com/image.jpg",
+        Metadata: map[string]interface{}{"source": "web"},
+    },
+    {
+        Base64:   base64EncodedImageData,
+        Metadata: map[string]interface{}{"type": "screenshot"},
+    },
+}
+opts.Audio = []v1beta.AudioData{
+    {
+        URL:      "https://example.com/audio.mp3",
+        Format:   "mp3",
+        Metadata: map[string]interface{}{"duration": "30s"},
+    },
+}
+opts.Video = []v1beta.VideoData{
+    {
+        Base64:   base64EncodedVideoData,
+        Format:   "mp4",
+        Metadata: map[string]interface{}{"resolution": "1080p"},
+    },
+}
+
+// Run agent with multimodal input
+result, err := agent.RunWithOptions(ctx, "Describe this image and summarize the audio", opts)
+```
+
+**Supported Modalities:**
+- **Images**: JPG, PNG, GIF (via URL or Base64)
+- **Audio**: MP3, WAV, OGG (via URL or Base64)
+- **Video**: MP4, WebM (via URL or Base64)
+
+**Compatible Providers:** OpenAI GPT-4 Vision, Gemini Pro Vision, and other multimodal LLMs
+
+### Supported LLM Providers
+
+AgenticGoKit works with all major LLM providers out of the box:
+
+| Provider | Model Examples | Use Case |
+|----------|---------------|----------|
+| **OpenAI** | GPT-4, GPT-4 Vision, GPT-3.5-turbo | Production-grade conversational and multimodal AI |
+| **Azure OpenAI** | GPT-4, GPT-3.5-turbo | Enterprise deployments with Azure |
+| **Ollama** | Llama 3, Gemma, Mistral, Phi | Local development and privacy-focused apps |
+| **HuggingFace** | Llama-2, Mistral, Falcon | Open-source model experimentation |
+| **OpenRouter** | Multiple models | Access to various providers via single API |
+| **Custom** | Any OpenAI-compatible API | Bring your own provider |
+
+Switch providers with a simple configuration change—no code modifications required.
 
 ## API Usage
 
@@ -383,7 +444,8 @@ go run .
 
 - **Recommended**: Use `v1beta` package for all new projects
 - **Import Path**: `github.com/agenticgokit/agenticgokit/v1beta`
-- **Stability**: Beta - API is stable, ready for production use
+- **Stability**: Beta - Core APIs are stable and functional, suitable for testing and development
+- **Status**: APIs may evolve based on feedback before v1.0 release
 - **Note**: `v1beta` is the evolution of the former `core/vnext` package
 
 ### v1.0 Release Plan
@@ -409,9 +471,10 @@ The `v1beta` package represents our next-generation API design:
 - ✅ Unified builder pattern
 - ✅ Better error handling
 - ✅ Workflow composition
-- ✅ Production-ready
+- ✅ Stable core APIs (beta status)
+- ⚠️ Minor changes possible before v1.0
 
-By using `v1beta` today, you're future-proofing your code for the v1.0 release.
+By using `v1beta` today, you're getting access to the latest features and helping shape the v1.0 release with your feedback.
 
 ## Resources
 
