@@ -18,6 +18,7 @@ const (
 	ProviderTypeHuggingFace   ProviderType = "huggingface"
 	ProviderTypeVLLM          ProviderType = "vllm"
 	ProviderTypeMLFlowGateway ProviderType = "mlflow"
+	ProviderTypeBentoML       ProviderType = "bentoml"
 )
 
 // ProviderConfig holds configuration for creating LLM providers
@@ -75,6 +76,18 @@ type ProviderConfig struct {
 	MLFlowTopP             float32           `json:"mlflow_top_p,omitempty" toml:"mlflow_top_p,omitempty"`
 	MLFlowStop             []string          `json:"mlflow_stop,omitempty" toml:"mlflow_stop,omitempty"`
 
+	// BentoML-specific fields
+	BentoMLTopP             float32           `json:"bentoml_top_p,omitempty" toml:"bentoml_top_p,omitempty"`
+	BentoMLTopK             int               `json:"bentoml_top_k,omitempty" toml:"bentoml_top_k,omitempty"`
+	BentoMLPresencePenalty  float32           `json:"bentoml_presence_penalty,omitempty" toml:"bentoml_presence_penalty,omitempty"`
+	BentoMLFrequencyPenalty float32           `json:"bentoml_frequency_penalty,omitempty" toml:"bentoml_frequency_penalty,omitempty"`
+	BentoMLStop             []string          `json:"bentoml_stop,omitempty" toml:"bentoml_stop,omitempty"`
+	BentoMLServiceName      string            `json:"bentoml_service_name,omitempty" toml:"bentoml_service_name,omitempty"`
+	BentoMLRunners          []string          `json:"bentoml_runners,omitempty" toml:"bentoml_runners,omitempty"`
+	BentoMLExtraHeaders     map[string]string `json:"bentoml_extra_headers,omitempty" toml:"bentoml_extra_headers,omitempty"`
+	BentoMLMaxRetries       int               `json:"bentoml_max_retries,omitempty" toml:"bentoml_max_retries,omitempty"`
+	BentoMLRetryDelay       time.Duration     `json:"bentoml_retry_delay,omitempty" toml:"bentoml_retry_delay,omitempty"`
+
 	// HTTP client configuration
 	HTTPTimeout time.Duration `json:"http_timeout,omitempty" toml:"http_timeout,omitempty"`
 }
@@ -124,6 +137,8 @@ func (f *ProviderFactory) CreateProvider(config ProviderConfig) (ModelProvider, 
 		return f.createVLLMProvider(config)
 	case ProviderTypeMLFlowGateway:
 		return f.createMLFlowGatewayProvider(config)
+	case ProviderTypeBentoML:
+		return f.createBentoMLProvider(config)
 	default:
 		return nil, fmt.Errorf("unsupported provider type: %s", config.Type)
 	}
@@ -319,6 +334,39 @@ func (f *ProviderFactory) createMLFlowGatewayProvider(config ProviderConfig) (Mo
 	}
 
 	return NewMLFlowGatewayAdapter(mlflowConfig)
+}
+
+// createBentoMLProvider creates a BentoML provider
+func (f *ProviderFactory) createBentoMLProvider(config ProviderConfig) (ModelProvider, error) {
+	if config.Model == "" {
+		return nil, fmt.Errorf("model is required for BentoML provider")
+	}
+
+	baseURL := config.BaseURL
+	if baseURL == "" {
+		baseURL = "http://localhost:3000"
+	}
+
+	bentomlConfig := BentoMLConfig{
+		BaseURL:          baseURL,
+		APIKey:           config.APIKey,
+		Model:            config.Model,
+		MaxTokens:        config.MaxTokens,
+		Temperature:      config.Temperature,
+		TopP:             config.BentoMLTopP,
+		TopK:             config.BentoMLTopK,
+		PresencePenalty:  config.BentoMLPresencePenalty,
+		FrequencyPenalty: config.BentoMLFrequencyPenalty,
+		Stop:             config.BentoMLStop,
+		ServiceName:      config.BentoMLServiceName,
+		Runners:          config.BentoMLRunners,
+		ExtraHeaders:     config.BentoMLExtraHeaders,
+		MaxRetries:       config.BentoMLMaxRetries,
+		RetryDelay:       config.BentoMLRetryDelay,
+		HTTPTimeout:      config.HTTPTimeout,
+	}
+
+	return NewBentoMLAdapter(bentomlConfig)
 }
 
 // DefaultFactory is a global factory instance for convenience

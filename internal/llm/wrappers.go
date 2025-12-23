@@ -325,6 +325,16 @@ func NewMLFlowGatewayAdapterWrapped(config MLFlowGatewayConfig) (PublicModelProv
 	return NewModelProviderWrapper(adapter), nil
 }
 
+// NewBentoMLAdapterWrapped creates a wrapped BentoML adapter
+func NewBentoMLAdapterWrapped(config BentoMLConfig) (PublicModelProvider, error) {
+	adapter, err := NewBentoMLAdapter(config)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewModelProviderWrapper(adapter), nil
+}
+
 func NewModelProviderFromConfigWrapped(config PublicLLMProviderConfig) (PublicModelProvider, error) {
 	internalConfig := ProviderConfig{
 		Type:                ProviderType(config.Type),

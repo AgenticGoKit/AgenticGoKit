@@ -213,6 +213,18 @@ type LLMProviderConfig struct {
 	MLFlowTopP             float64           `json:"mlflow_top_p,omitempty" toml:"mlflow_top_p,omitempty"`
 	MLFlowStop             []string          `json:"mlflow_stop,omitempty" toml:"mlflow_stop,omitempty"`
 
+	// BentoML-specific fields
+	BentoMLTopP             float64           `json:"bentoml_top_p,omitempty" toml:"bentoml_top_p,omitempty"`
+	BentoMLTopK             int               `json:"bentoml_top_k,omitempty" toml:"bentoml_top_k,omitempty"`
+	BentoMLPresencePenalty  float64           `json:"bentoml_presence_penalty,omitempty" toml:"bentoml_presence_penalty,omitempty"`
+	BentoMLFrequencyPenalty float64           `json:"bentoml_frequency_penalty,omitempty" toml:"bentoml_frequency_penalty,omitempty"`
+	BentoMLStop             []string          `json:"bentoml_stop,omitempty" toml:"bentoml_stop,omitempty"`
+	BentoMLServiceName      string            `json:"bentoml_service_name,omitempty" toml:"bentoml_service_name,omitempty"`
+	BentoMLRunners          []string          `json:"bentoml_runners,omitempty" toml:"bentoml_runners,omitempty"`
+	BentoMLExtraHeaders     map[string]string `json:"bentoml_extra_headers,omitempty" toml:"bentoml_extra_headers,omitempty"`
+	BentoMLMaxRetries       int               `json:"bentoml_max_retries,omitempty" toml:"bentoml_max_retries,omitempty"`
+	BentoMLRetryDelay       time.Duration     `json:"bentoml_retry_delay,omitempty" toml:"bentoml_retry_delay,omitempty"`
+
 	// HTTP client configuration
 	HTTPTimeout time.Duration `json:"http_timeout,omitempty" toml:"http_timeout,omitempty"`
 }
