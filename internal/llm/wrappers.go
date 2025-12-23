@@ -180,6 +180,31 @@ type PublicLLMProviderConfig struct {
 	HFStopSequences     []string `json:"hf_stop_sequences,omitempty" toml:"hf_stop_sequences,omitempty"`
 	HFRepetitionPenalty float64  `json:"hf_repetition_penalty,omitempty" toml:"hf_repetition_penalty,omitempty"`
 
+	// vLLM-specific fields
+	VLLMTopK              int      `json:"vllm_top_k,omitempty" toml:"vllm_top_k,omitempty"`
+	VLLMTopP              float64  `json:"vllm_top_p,omitempty" toml:"vllm_top_p,omitempty"`
+	VLLMMinP              float64  `json:"vllm_min_p,omitempty" toml:"vllm_min_p,omitempty"`
+	VLLMPresencePenalty   float64  `json:"vllm_presence_penalty,omitempty" toml:"vllm_presence_penalty,omitempty"`
+	VLLMFrequencyPenalty  float64  `json:"vllm_frequency_penalty,omitempty" toml:"vllm_frequency_penalty,omitempty"`
+	VLLMRepetitionPenalty float64  `json:"vllm_repetition_penalty,omitempty" toml:"vllm_repetition_penalty,omitempty"`
+	VLLMBestOf            int      `json:"vllm_best_of,omitempty" toml:"vllm_best_of,omitempty"`
+	VLLMUseBeamSearch     bool     `json:"vllm_use_beam_search,omitempty" toml:"vllm_use_beam_search,omitempty"`
+	VLLMLengthPenalty     float64  `json:"vllm_length_penalty,omitempty" toml:"vllm_length_penalty,omitempty"`
+	VLLMStopTokenIds      []int    `json:"vllm_stop_token_ids,omitempty" toml:"vllm_stop_token_ids,omitempty"`
+	VLLMSkipSpecialTokens bool     `json:"vllm_skip_special_tokens,omitempty" toml:"vllm_skip_special_tokens,omitempty"`
+	VLLMIgnoreEOS         bool     `json:"vllm_ignore_eos,omitempty" toml:"vllm_ignore_eos,omitempty"`
+	VLLMStop              []string `json:"vllm_stop,omitempty" toml:"vllm_stop,omitempty"`
+
+	// MLFlow Gateway-specific fields
+	MLFlowChatRoute        string            `json:"mlflow_chat_route,omitempty" toml:"mlflow_chat_route,omitempty"`
+	MLFlowEmbeddingsRoute  string            `json:"mlflow_embeddings_route,omitempty" toml:"mlflow_embeddings_route,omitempty"`
+	MLFlowCompletionsRoute string            `json:"mlflow_completions_route,omitempty" toml:"mlflow_completions_route,omitempty"`
+	MLFlowExtraHeaders     map[string]string `json:"mlflow_extra_headers,omitempty" toml:"mlflow_extra_headers,omitempty"`
+	MLFlowMaxRetries       int               `json:"mlflow_max_retries,omitempty" toml:"mlflow_max_retries,omitempty"`
+	MLFlowRetryDelay       time.Duration     `json:"mlflow_retry_delay,omitempty" toml:"mlflow_retry_delay,omitempty"`
+	MLFlowTopP             float64           `json:"mlflow_top_p,omitempty" toml:"mlflow_top_p,omitempty"`
+	MLFlowStop             []string          `json:"mlflow_stop,omitempty" toml:"mlflow_stop,omitempty"`
+
 	// HTTP client configuration
 	HTTPTimeout time.Duration `json:"http_timeout,omitempty" toml:"http_timeout,omitempty"`
 }
@@ -280,6 +305,26 @@ func NewHuggingFaceAdapterWrapped(
 	return NewModelProviderWrapper(adapter), nil
 }
 
+// NewVLLMAdapterWrapped creates a wrapped vLLM adapter
+func NewVLLMAdapterWrapped(config VLLMConfig) (PublicModelProvider, error) {
+	adapter, err := NewVLLMAdapter(config)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewModelProviderWrapper(adapter), nil
+}
+
+// NewMLFlowGatewayAdapterWrapped creates a wrapped MLFlow AI Gateway adapter
+func NewMLFlowGatewayAdapterWrapped(config MLFlowGatewayConfig) (PublicModelProvider, error) {
+	adapter, err := NewMLFlowGatewayAdapter(config)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewModelProviderWrapper(adapter), nil
+}
+
 func NewModelProviderFromConfigWrapped(config PublicLLMProviderConfig) (PublicModelProvider, error) {
 	internalConfig := ProviderConfig{
 		Type:                ProviderType(config.Type),
@@ -302,6 +347,29 @@ func NewModelProviderFromConfigWrapped(config PublicLLMProviderConfig) (PublicMo
 		HFStopSequences:     config.HFStopSequences,
 		HFRepetitionPenalty: float32(config.HFRepetitionPenalty),
 		HTTPTimeout:         config.HTTPTimeout,
+		// vLLM fields
+		VLLMTopK:              config.VLLMTopK,
+		VLLMTopP:              float32(config.VLLMTopP),
+		VLLMMinP:              float32(config.VLLMMinP),
+		VLLMPresencePenalty:   float32(config.VLLMPresencePenalty),
+		VLLMFrequencyPenalty:  float32(config.VLLMFrequencyPenalty),
+		VLLMRepetitionPenalty: float32(config.VLLMRepetitionPenalty),
+		VLLMBestOf:            config.VLLMBestOf,
+		VLLMUseBeamSearch:     config.VLLMUseBeamSearch,
+		VLLMLengthPenalty:     float32(config.VLLMLengthPenalty),
+		VLLMStopTokenIds:      config.VLLMStopTokenIds,
+		VLLMSkipSpecialTokens: config.VLLMSkipSpecialTokens,
+		VLLMIgnoreEOS:         config.VLLMIgnoreEOS,
+		VLLMStop:              config.VLLMStop,
+		// MLFlow fields
+		MLFlowChatRoute:        config.MLFlowChatRoute,
+		MLFlowEmbeddingsRoute:  config.MLFlowEmbeddingsRoute,
+		MLFlowCompletionsRoute: config.MLFlowCompletionsRoute,
+		MLFlowExtraHeaders:     config.MLFlowExtraHeaders,
+		MLFlowMaxRetries:       config.MLFlowMaxRetries,
+		MLFlowRetryDelay:       config.MLFlowRetryDelay,
+		MLFlowTopP:             float32(config.MLFlowTopP),
+		MLFlowStop:             config.MLFlowStop,
 	}
 
 	adapter, err := CreateProviderFromConfig(internalConfig)
