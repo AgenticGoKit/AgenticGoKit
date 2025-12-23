@@ -35,6 +35,7 @@ func main() {
 		BaseURL:               baseURL,
 		MLFlowChatRoute:       chatRoute,
 		MLFlowEmbeddingsRoute: embeddingsRoute,
+		Model:                 "gpt-4o-mini", // Optional: override route default or satisfy adapter
 		MaxTokens:             2048,
 		Temperature:           0.7,
 		// Retry configuration (optional)

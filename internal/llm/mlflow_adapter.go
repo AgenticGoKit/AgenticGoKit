@@ -76,10 +76,17 @@ func NewMLFlowGatewayAdapter(config MLFlowGatewayConfig) (*MLFlowGatewayAdapter,
 		strings.TrimSuffix(config.BaseURL, "/"),
 		config.ChatRoute)
 
+	// MLFlow Gateway requires a model name in the request, but it's often
+	// defined in the gateway config. If not provided, we use the route name.
+	model := config.Model
+	if model == "" {
+		model = config.ChatRoute
+	}
+
 	// Create OpenAI adapter with MLFlow Gateway configuration
 	openaiConfig := OpenAIAdapterConfig{
 		APIKey:       config.APIKey,
-		Model:        config.Model, // May be empty if route has a default model
+		Model:        model,
 		MaxTokens:    config.MaxTokens,
 		Temperature:  config.Temperature,
 		BaseURL:      baseURL,
@@ -140,9 +147,16 @@ func (m *MLFlowGatewayAdapter) Embeddings(ctx context.Context, texts []string) (
 		strings.TrimSuffix(m.config.BaseURL, "/"),
 		m.config.EmbeddingsRoute)
 
+	// MLFlow Gateway requires a model name in the request.
+	// If not provided, we use the embeddings route name.
+	model := m.config.Model
+	if model == "" {
+		model = m.config.EmbeddingsRoute
+	}
+
 	embeddingsConfig := OpenAIAdapterConfig{
 		APIKey:       m.config.APIKey,
-		Model:        m.config.Model,
+		Model:        model,
 		BaseURL:      embeddingsBaseURL,
 		ExtraHeaders: m.config.ExtraHeaders,
 		HTTPTimeout:  m.config.HTTPTimeout,

@@ -21,6 +21,68 @@ This example demonstrates how to use MLFlow AI Gateway as an LLM provider with A
    export MLFLOW_EMBEDDINGS_ROUTE="embeddings"
    ```
 
+## Running MLFlow Gateway with Docker
+
+### Option 1: Quick Start with Official Image
+
+```bash
+docker run -p 5001:5001 \
+  -e OPENAI_API_KEY=$OPENAI_API_KEY \
+  -v $(pwd)/gateway-config.yaml:/gateway-config.yaml \
+  ghcr.io/mlflow/mlflow:latest \
+  mlflow gateway start --config-path /gateway-config.yaml --port 5001 --host 0.0.0.0
+```
+
+### Option 2: Docker Compose (Recommended)
+
+Create a `docker-compose.yml` file:
+
+```yaml
+version: '3.8'
+
+services:
+  mlflow-gateway:
+    image: ghcr.io/mlflow/mlflow:latest
+    ports:
+      - "5001:5001"
+    volumes:
+      - ./gateway-config.yaml:/gateway-config.yaml
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    command: mlflow gateway start --config-path /gateway-config.yaml --port 5001 --host 0.0.0.0
+```
+
+Then run:
+```bash
+docker-compose up -d
+```
+
+### Option 3: Custom Dockerfile
+
+Create a `Dockerfile`:
+
+```dockerfile
+FROM python:3.10-slim
+
+RUN pip install mlflow[gateway]
+
+WORKDIR /app
+COPY gateway-config.yaml /app/
+
+EXPOSE 5001
+
+CMD ["mlflow", "gateway", "start", "--config-path", "/app/gateway-config.yaml", "--port", "5001", "--host", "0.0.0.0"]
+```
+
+Build and run:
+```bash
+docker build -t mlflow-gateway .
+docker run -p 5001:5001 -e OPENAI_API_KEY=$OPENAI_API_KEY mlflow-gateway
+```
+
+> **Note**: Always use `--host 0.0.0.0` to make MLflow accessible outside the container.
+
 ## Gateway Configuration Example
 
 Create a `gateway-config.yaml` file. Note: MLFlow Gateway >= 2.9 uses `endpoints` with `endpoint_type`:
@@ -84,7 +146,7 @@ The MLFlow Gateway provider supports these configuration options:
 | `MLFlowChatRoute` | Route name for chat completions | Required |
 | `MLFlowEmbeddingsRoute` | Route name for embeddings | - |
 | `MLFlowCompletionsRoute` | Route name for completions | - |
-| `Model` | Override the route's default model | - |
+| `Model` | Model name (optional, see note below) | Route name |
 | `APIKey` | Gateway API key (if configured) | - |
 | `MaxTokens` | Maximum tokens to generate | `2048` |
 | `Temperature` | Sampling temperature | `0.7` |
@@ -93,6 +155,8 @@ The MLFlow Gateway provider supports these configuration options:
 | `MLFlowExtraHeaders` | Additional HTTP headers | - |
 | `MLFlowTopP` | Nucleus sampling | - |
 | `MLFlowStop` | Stop sequences | - |
+
+> **Note on `Model` field**: The `Model` field is optional. If not provided, it defaults to the route name (e.g., `chat`). MLFlow Gateway typically uses the model configured in your `gateway-config.yaml` and ignores the model name in the request. You can explicitly set it if your gateway setup requires it.
 
 ## Example Code
 
@@ -113,6 +177,7 @@ func main() {
         Type:            "mlflow",
         BaseURL:         "http://localhost:5001",
         MLFlowChatRoute: "chat",
+        Model:           "gpt-4o-mini", // Optional: defaults to route name
         MaxTokens:       2048,
         Temperature:     0.7,
     })
