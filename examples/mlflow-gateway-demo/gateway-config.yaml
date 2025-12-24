@@ -1,0 +1,50 @@
+# MLFlow AI Gateway Configuration Example
+# This file should be used with `mlflow gateway start --config-path gateway-config.yaml`
+# 
+# MLFlow Gateway (mlflow >= 2.9) uses endpoints with task_type instead of routes with route_type
+
+endpoints:
+  # OpenAI GPT-4 Chat Endpoint
+  - name: chat
+    endpoint_type: llm/v1/chat
+    model:
+      provider: openai
+      name: gpt-4
+      config:
+        openai_api_key: $OPENAI_API_KEY
+
+  # OpenAI GPT-4o Endpoint (Latest)
+  - name: gpt4o
+    endpoint_type: llm/v1/chat
+    model:
+      provider: openai
+      name: gpt-4o
+      config:
+        openai_api_key: $OPENAI_API_KEY
+
+  # OpenAI Embeddings Endpoint
+  - name: embeddings
+    endpoint_type: llm/v1/embeddings
+    model:
+      provider: openai
+      name: text-embedding-3-small
+      config:
+        openai_api_key: $OPENAI_API_KEY
+
+  # Anthropic Claude Endpoint (optional)
+  # - name: claude
+  #   endpoint_type: llm/v1/chat
+  #   model:
+  #     provider: anthropic
+  #     name: claude-3-sonnet-20240229
+  #     config:
+  #       anthropic_api_key: $ANTHROPIC_API_KEY
+
+  # Cohere Endpoint (optional)
+  # - name: cohere
+  #   endpoint_type: llm/v1/chat
+  #   model:
+  #     provider: cohere
+  #     name: command
+  #     config:
+  #       cohere_api_key: $COHERE_API_KEY

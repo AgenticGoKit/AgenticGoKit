@@ -11,11 +11,14 @@ import (
 type ProviderType string
 
 const (
-	ProviderTypeOpenAI      ProviderType = "openai"
-	ProviderTypeAzureOpenAI ProviderType = "azure"
-	ProviderTypeOllama      ProviderType = "ollama"
-	ProviderTypeOpenRouter  ProviderType = "openrouter"
-	ProviderTypeHuggingFace ProviderType = "huggingface"
+	ProviderTypeOpenAI        ProviderType = "openai"
+	ProviderTypeAzureOpenAI   ProviderType = "azure"
+	ProviderTypeOllama        ProviderType = "ollama"
+	ProviderTypeOpenRouter    ProviderType = "openrouter"
+	ProviderTypeHuggingFace   ProviderType = "huggingface"
+	ProviderTypeVLLM          ProviderType = "vllm"
+	ProviderTypeMLFlowGateway ProviderType = "mlflow"
+	ProviderTypeBentoML       ProviderType = "bentoml"
 )
 
 // ProviderConfig holds configuration for creating LLM providers
@@ -47,6 +50,43 @@ type ProviderConfig struct {
 	HFDoSample          bool     `json:"hf_do_sample,omitempty" toml:"hf_do_sample,omitempty"`
 	HFStopSequences     []string `json:"hf_stop_sequences,omitempty" toml:"hf_stop_sequences,omitempty"`
 	HFRepetitionPenalty float32  `json:"hf_repetition_penalty,omitempty" toml:"hf_repetition_penalty,omitempty"`
+
+	// vLLM-specific fields
+	VLLMTopK              int      `json:"vllm_top_k,omitempty" toml:"vllm_top_k,omitempty"`
+	VLLMTopP              float32  `json:"vllm_top_p,omitempty" toml:"vllm_top_p,omitempty"`
+	VLLMMinP              float32  `json:"vllm_min_p,omitempty" toml:"vllm_min_p,omitempty"`
+	VLLMPresencePenalty   float32  `json:"vllm_presence_penalty,omitempty" toml:"vllm_presence_penalty,omitempty"`
+	VLLMFrequencyPenalty  float32  `json:"vllm_frequency_penalty,omitempty" toml:"vllm_frequency_penalty,omitempty"`
+	VLLMRepetitionPenalty float32  `json:"vllm_repetition_penalty,omitempty" toml:"vllm_repetition_penalty,omitempty"`
+	VLLMBestOf            int      `json:"vllm_best_of,omitempty" toml:"vllm_best_of,omitempty"`
+	VLLMUseBeamSearch     bool     `json:"vllm_use_beam_search,omitempty" toml:"vllm_use_beam_search,omitempty"`
+	VLLMLengthPenalty     float32  `json:"vllm_length_penalty,omitempty" toml:"vllm_length_penalty,omitempty"`
+	VLLMStopTokenIds      []int    `json:"vllm_stop_token_ids,omitempty" toml:"vllm_stop_token_ids,omitempty"`
+	VLLMSkipSpecialTokens bool     `json:"vllm_skip_special_tokens,omitempty" toml:"vllm_skip_special_tokens,omitempty"`
+	VLLMIgnoreEOS         bool     `json:"vllm_ignore_eos,omitempty" toml:"vllm_ignore_eos,omitempty"`
+	VLLMStop              []string `json:"vllm_stop,omitempty" toml:"vllm_stop,omitempty"`
+
+	// MLFlow Gateway-specific fields
+	MLFlowChatRoute        string            `json:"mlflow_chat_route,omitempty" toml:"mlflow_chat_route,omitempty"`
+	MLFlowEmbeddingsRoute  string            `json:"mlflow_embeddings_route,omitempty" toml:"mlflow_embeddings_route,omitempty"`
+	MLFlowCompletionsRoute string            `json:"mlflow_completions_route,omitempty" toml:"mlflow_completions_route,omitempty"`
+	MLFlowExtraHeaders     map[string]string `json:"mlflow_extra_headers,omitempty" toml:"mlflow_extra_headers,omitempty"`
+	MLFlowMaxRetries       int               `json:"mlflow_max_retries,omitempty" toml:"mlflow_max_retries,omitempty"`
+	MLFlowRetryDelay       time.Duration     `json:"mlflow_retry_delay,omitempty" toml:"mlflow_retry_delay,omitempty"`
+	MLFlowTopP             float32           `json:"mlflow_top_p,omitempty" toml:"mlflow_top_p,omitempty"`
+	MLFlowStop             []string          `json:"mlflow_stop,omitempty" toml:"mlflow_stop,omitempty"`
+
+	// BentoML-specific fields
+	BentoMLTopP             float32           `json:"bentoml_top_p,omitempty" toml:"bentoml_top_p,omitempty"`
+	BentoMLTopK             int               `json:"bentoml_top_k,omitempty" toml:"bentoml_top_k,omitempty"`
+	BentoMLPresencePenalty  float32           `json:"bentoml_presence_penalty,omitempty" toml:"bentoml_presence_penalty,omitempty"`
+	BentoMLFrequencyPenalty float32           `json:"bentoml_frequency_penalty,omitempty" toml:"bentoml_frequency_penalty,omitempty"`
+	BentoMLStop             []string          `json:"bentoml_stop,omitempty" toml:"bentoml_stop,omitempty"`
+	BentoMLServiceName      string            `json:"bentoml_service_name,omitempty" toml:"bentoml_service_name,omitempty"`
+	BentoMLRunners          []string          `json:"bentoml_runners,omitempty" toml:"bentoml_runners,omitempty"`
+	BentoMLExtraHeaders     map[string]string `json:"bentoml_extra_headers,omitempty" toml:"bentoml_extra_headers,omitempty"`
+	BentoMLMaxRetries       int               `json:"bentoml_max_retries,omitempty" toml:"bentoml_max_retries,omitempty"`
+	BentoMLRetryDelay       time.Duration     `json:"bentoml_retry_delay,omitempty" toml:"bentoml_retry_delay,omitempty"`
 
 	// HTTP client configuration
 	HTTPTimeout time.Duration `json:"http_timeout,omitempty" toml:"http_timeout,omitempty"`
@@ -93,6 +133,12 @@ func (f *ProviderFactory) CreateProvider(config ProviderConfig) (ModelProvider, 
 		return f.createOpenRouterProvider(config)
 	case ProviderTypeHuggingFace:
 		return f.createHuggingFaceProvider(config)
+	case ProviderTypeVLLM:
+		return f.createVLLMProvider(config)
+	case ProviderTypeMLFlowGateway:
+		return f.createMLFlowGatewayProvider(config)
+	case ProviderTypeBentoML:
+		return f.createBentoMLProvider(config)
 	default:
 		return nil, fmt.Errorf("unsupported provider type: %s", config.Type)
 	}
@@ -221,6 +267,106 @@ func (f *ProviderFactory) createHuggingFaceProvider(config ProviderConfig) (Mode
 		config.Temperature,
 		options,
 	)
+}
+
+// createVLLMProvider creates a vLLM provider
+func (f *ProviderFactory) createVLLMProvider(config ProviderConfig) (ModelProvider, error) {
+	if config.Model == "" {
+		return nil, fmt.Errorf("model is required for vLLM provider")
+	}
+
+	baseURL := config.BaseURL
+	if baseURL == "" {
+		baseURL = "http://localhost:8000"
+	}
+
+	vllmConfig := VLLMConfig{
+		BaseURL:           baseURL,
+		APIKey:            config.APIKey,
+		Model:             config.Model,
+		MaxTokens:         config.MaxTokens,
+		Temperature:       config.Temperature,
+		TopK:              config.VLLMTopK,
+		TopP:              config.VLLMTopP,
+		MinP:              config.VLLMMinP,
+		PresencePenalty:   config.VLLMPresencePenalty,
+		FrequencyPenalty:  config.VLLMFrequencyPenalty,
+		RepetitionPenalty: config.VLLMRepetitionPenalty,
+		BestOf:            config.VLLMBestOf,
+		UseBeamSearch:     config.VLLMUseBeamSearch,
+		LengthPenalty:     config.VLLMLengthPenalty,
+		StopTokenIds:      config.VLLMStopTokenIds,
+		SkipSpecialTokens: config.VLLMSkipSpecialTokens,
+		IgnoreEOS:         config.VLLMIgnoreEOS,
+		Stop:              config.VLLMStop,
+		HTTPTimeout:       config.HTTPTimeout,
+	}
+
+	return NewVLLMAdapter(vllmConfig)
+}
+
+// createMLFlowGatewayProvider creates an MLFlow AI Gateway provider
+func (f *ProviderFactory) createMLFlowGatewayProvider(config ProviderConfig) (ModelProvider, error) {
+	if config.MLFlowChatRoute == "" {
+		return nil, fmt.Errorf("mlflow_chat_route is required for MLFlow Gateway provider")
+	}
+
+	baseURL := config.BaseURL
+	if baseURL == "" {
+		baseURL = "http://localhost:5001"
+	}
+
+	mlflowConfig := MLFlowGatewayConfig{
+		BaseURL:          baseURL,
+		ChatRoute:        config.MLFlowChatRoute,
+		EmbeddingsRoute:  config.MLFlowEmbeddingsRoute,
+		CompletionsRoute: config.MLFlowCompletionsRoute,
+		Model:            config.Model,
+		APIKey:           config.APIKey,
+		ExtraHeaders:     config.MLFlowExtraHeaders,
+		MaxTokens:        config.MaxTokens,
+		Temperature:      config.Temperature,
+		TopP:             config.MLFlowTopP,
+		Stop:             config.MLFlowStop,
+		MaxRetries:       config.MLFlowMaxRetries,
+		RetryDelay:       config.MLFlowRetryDelay,
+		HTTPTimeout:      config.HTTPTimeout,
+	}
+
+	return NewMLFlowGatewayAdapter(mlflowConfig)
+}
+
+// createBentoMLProvider creates a BentoML provider
+func (f *ProviderFactory) createBentoMLProvider(config ProviderConfig) (ModelProvider, error) {
+	if config.Model == "" {
+		return nil, fmt.Errorf("model is required for BentoML provider")
+	}
+
+	baseURL := config.BaseURL
+	if baseURL == "" {
+		baseURL = "http://localhost:3000"
+	}
+
+	bentomlConfig := BentoMLConfig{
+		BaseURL:          baseURL,
+		APIKey:           config.APIKey,
+		Model:            config.Model,
+		MaxTokens:        config.MaxTokens,
+		Temperature:      config.Temperature,
+		TopP:             config.BentoMLTopP,
+		TopK:             config.BentoMLTopK,
+		PresencePenalty:  config.BentoMLPresencePenalty,
+		FrequencyPenalty: config.BentoMLFrequencyPenalty,
+		Stop:             config.BentoMLStop,
+		ServiceName:      config.BentoMLServiceName,
+		Runners:          config.BentoMLRunners,
+		ExtraHeaders:     config.BentoMLExtraHeaders,
+		MaxRetries:       config.BentoMLMaxRetries,
+		RetryDelay:       config.BentoMLRetryDelay,
+		HTTPTimeout:      config.HTTPTimeout,
+	}
+
+	return NewBentoMLAdapter(bentomlConfig)
 }
 
 // DefaultFactory is a global factory instance for convenience

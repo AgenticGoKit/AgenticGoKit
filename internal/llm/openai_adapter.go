@@ -13,15 +13,51 @@ import (
 	"time"
 )
 
-// OpenAIAdapter implements the ModelProvider interface for OpenAI's API.
+// DefaultOpenAIBaseURL is the default OpenAI API endpoint
+const DefaultOpenAIBaseURL = "https://api.openai.com/v1"
+
+// OpenAIAdapterConfig holds extended configuration for OpenAI-compatible adapters
+type OpenAIAdapterConfig struct {
+	APIKey       string
+	Model        string
+	MaxTokens    int
+	Temperature  float32
+	BaseURL      string            // Custom base URL (for vLLM, MLFlow, etc.)
+	ExtraHeaders map[string]string // Custom headers (for gateways)
+	HTTPTimeout  time.Duration     // HTTP client timeout
+
+	// Extended sampling parameters (for vLLM compatibility)
+	TopP              float32
+	TopK              int
+	PresencePenalty   float32
+	FrequencyPenalty  float32
+	RepetitionPenalty float32
+	Stop              []string
+}
+
+// OpenAIAdapter implements the ModelProvider interface for OpenAI-compatible APIs.
+// This adapter can be used for OpenAI, vLLM, MLFlow Gateway, and any other
+// OpenAI-compatible endpoint by configuring the baseURL.
 type OpenAIAdapter struct {
-	apiKey      string
-	model       string
-	maxTokens   int
-	temperature float32
+	apiKey       string
+	model        string
+	maxTokens    int
+	temperature  float32
+	baseURL      string            // Default: https://api.openai.com/v1
+	extraHeaders map[string]string // Custom headers for gateways
+	httpClient   *http.Client
+
+	// Extended sampling parameters
+	topP              float32
+	topK              int
+	presencePenalty   float32
+	frequencyPenalty  float32
+	repetitionPenalty float32
+	stop              []string
 }
 
 // NewOpenAIAdapter creates a new OpenAIAdapter instance.
+// SIGNATURE REMAINS UNCHANGED for backward compatibility.
 func NewOpenAIAdapter(apiKey, model string, maxTokens int, temperature float32) (*OpenAIAdapter, error) {
 	if apiKey == "" {
 		return nil, errors.New("API key cannot be empty")
@@ -41,7 +77,76 @@ func NewOpenAIAdapter(apiKey, model string, maxTokens int, temperature float32) 
 		model:       model,
 		maxTokens:   maxTokens,
 		temperature: temperature,
+		baseURL:     DefaultOpenAIBaseURL, // Default OpenAI URL
+		httpClient:  &http.Client{Timeout: 120 * time.Second},
 	}, nil
+}
+
+// NewOpenAIAdapterWithConfig creates an OpenAI-compatible adapter with extended configuration.
+// Use this for vLLM, MLFlow Gateway, or any OpenAI-compatible endpoint.
+func NewOpenAIAdapterWithConfig(config OpenAIAdapterConfig) (*OpenAIAdapter, error) {
+	if config.Model == "" {
+		return nil, errors.New("model is required")
+	}
+	if config.BaseURL == "" {
+		config.BaseURL = DefaultOpenAIBaseURL
+	}
+	if config.MaxTokens == 0 {
+		config.MaxTokens = 2048
+	}
+	if config.Temperature == 0 {
+		config.Temperature = 0.7
+	}
+	if config.HTTPTimeout == 0 {
+		config.HTTPTimeout = 120 * time.Second
+	}
+
+	return &OpenAIAdapter{
+		apiKey:            config.APIKey,
+		model:             config.Model,
+		maxTokens:         config.MaxTokens,
+		temperature:       config.Temperature,
+		baseURL:           strings.TrimSuffix(config.BaseURL, "/"),
+		extraHeaders:      config.ExtraHeaders,
+		httpClient:        &http.Client{Timeout: config.HTTPTimeout},
+		topP:              config.TopP,
+		topK:              config.TopK,
+		presencePenalty:   config.PresencePenalty,
+		frequencyPenalty:  config.FrequencyPenalty,
+		repetitionPenalty: config.RepetitionPenalty,
+		stop:              config.Stop,
+	}, nil
+}
+
+// SetBaseURL allows overriding the default OpenAI endpoint (e.g., for vLLM or MLFlow)
+func (o *OpenAIAdapter) SetBaseURL(url string) {
+	if url != "" {
+		o.baseURL = strings.TrimSuffix(url, "/")
+	}
+}
+
+// SetExtraHeaders allows adding custom headers (e.g., for MLFlow Gateway)
+func (o *OpenAIAdapter) SetExtraHeaders(headers map[string]string) {
+	o.extraHeaders = headers
+}
+
+// setHeaders sets common headers for requests
+func (o *OpenAIAdapter) setHeaders(req *http.Request) {
+	req.Header.Set("Content-Type", "application/json")
+	if o.apiKey != "" {
+		req.Header.Set("Authorization", "Bearer "+o.apiKey)
+	}
+	for key, value := range o.extraHeaders {
+		req.Header.Set(key, value)
+	}
+}
+
+// getBaseURL returns the base URL, defaulting to OpenAI if not set
+func (o *OpenAIAdapter) getBaseURL() string {
+	if o.baseURL == "" {
+		return DefaultOpenAIBaseURL
+	}
+	return o.baseURL
 }
 
 // Call implements the ModelProvider interface for a single request/response.
@@ -86,25 +191,46 @@ func (o *OpenAIAdapter) Call(ctx context.Context, prompt Prompt) (Response, erro
 		"content": userContent,
 	})
 
-	requestBody, err := json.Marshal(map[string]interface{}{
+	// Build request body with extended parameters
+	reqBody := map[string]interface{}{
 		"model":       o.model,
 		"messages":    messages,
 		"max_tokens":  maxTokens,
 		"temperature": temperature,
-	})
+	}
+
+	// Add extended sampling parameters if set (for vLLM compatibility)
+	if o.topP > 0 {
+		reqBody["top_p"] = o.topP
+	}
+	if o.topK > 0 {
+		reqBody["top_k"] = o.topK
+	}
+	if o.presencePenalty != 0 {
+		reqBody["presence_penalty"] = o.presencePenalty
+	}
+	if o.frequencyPenalty != 0 {
+		reqBody["frequency_penalty"] = o.frequencyPenalty
+	}
+	if o.repetitionPenalty != 0 {
+		reqBody["repetition_penalty"] = o.repetitionPenalty
+	}
+	if len(o.stop) > 0 {
+		reqBody["stop"] = o.stop
+	}
+
+	requestBody, err := json.Marshal(reqBody)
 	if err != nil {
 		return Response{}, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/chat/completions", bytes.NewBuffer(requestBody))
+	req, err := http.NewRequestWithContext(ctx, "POST", o.getBaseURL()+"/chat/completions", bytes.NewBuffer(requestBody))
 	if err != nil {
 		return Response{}, err
 	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+o.apiKey)
+	o.setHeaders(req)
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := o.httpClient.Do(req)
 	if err != nil {
 		return Response{}, err
 	}
@@ -189,29 +315,49 @@ func (o *OpenAIAdapter) Stream(ctx context.Context, prompt Prompt) (<-chan Token
 		"content": userContent,
 	})
 
-	// Create streaming request
-	requestBody, err := json.Marshal(map[string]interface{}{
+	// Build request body with extended parameters
+	reqBody := map[string]interface{}{
 		"model":       o.model,
 		"messages":    messages,
 		"max_tokens":  maxTokens,
 		"temperature": temperature,
 		"stream":      true, // Enable streaming
-	})
+	}
+
+	// Add extended sampling parameters if set (for vLLM compatibility)
+	if o.topP > 0 {
+		reqBody["top_p"] = o.topP
+	}
+	if o.topK > 0 {
+		reqBody["top_k"] = o.topK
+	}
+	if o.presencePenalty != 0 {
+		reqBody["presence_penalty"] = o.presencePenalty
+	}
+	if o.frequencyPenalty != 0 {
+		reqBody["frequency_penalty"] = o.frequencyPenalty
+	}
+	if o.repetitionPenalty != 0 {
+		reqBody["repetition_penalty"] = o.repetitionPenalty
+	}
+	if len(o.stop) > 0 {
+		reqBody["stop"] = o.stop
+	}
+
+	requestBody, err := json.Marshal(reqBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request payload: %w", err)
 	}
 
 	// Create HTTP request for streaming
-	req, err := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/chat/completions", bytes.NewBuffer(requestBody))
+	req, err := http.NewRequestWithContext(ctx, "POST", o.getBaseURL()+"/chat/completions", bytes.NewBuffer(requestBody))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+o.apiKey)
+	o.setHeaders(req)
 
 	// Make the request
-	client := &http.Client{Timeout: 120 * time.Second}
-	resp, err := client.Do(req)
+	resp, err := o.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to make request: %w", err)
 	}
@@ -219,7 +365,7 @@ func (o *OpenAIAdapter) Stream(ctx context.Context, prompt Prompt) (<-chan Token
 	if resp.StatusCode != http.StatusOK {
 		resp.Body.Close()
 		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("OpenAI API error: %d - %s", resp.StatusCode, string(body))
+		return nil, fmt.Errorf("API error: %d - %s", resp.StatusCode, string(body))
 	}
 
 	// Create token channel
@@ -299,8 +445,12 @@ func (o *OpenAIAdapter) Embeddings(ctx context.Context, texts []string) ([][]flo
 		return [][]float64{}, nil
 	}
 
-	// Use appropriate embedding model instead of chat model
-	embeddingModel := "text-embedding-3-small"
+	// Use the configured model for embeddings, or default to OpenAI's embedding model
+	embeddingModel := o.model
+	if o.baseURL == DefaultOpenAIBaseURL || o.baseURL == "" {
+		// For OpenAI, use appropriate embedding model
+		embeddingModel = "text-embedding-3-small"
+	}
 
 	requestBody, err := json.Marshal(map[string]interface{}{
 		"model": embeddingModel,
@@ -310,15 +460,13 @@ func (o *OpenAIAdapter) Embeddings(ctx context.Context, texts []string) ([][]flo
 		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/embeddings", bytes.NewBuffer(requestBody))
+	req, err := http.NewRequestWithContext(ctx, "POST", o.getBaseURL()+"/embeddings", bytes.NewBuffer(requestBody))
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+o.apiKey)
+	o.setHeaders(req)
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := o.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -326,12 +474,13 @@ func (o *OpenAIAdapter) Embeddings(ctx context.Context, texts []string) ([][]flo
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return nil, errors.New("OpenAI API error: " + string(body))
+		return nil, fmt.Errorf("embeddings API error: %s", string(body))
 	}
 
 	var response struct {
 		Data []struct {
 			Embedding []float64 `json:"embedding"`
+			Index     int       `json:"index"`
 		} `json:"data"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
@@ -343,9 +492,19 @@ func (o *OpenAIAdapter) Embeddings(ctx context.Context, texts []string) ([][]flo
 	}
 
 	embeddings := make([][]float64, len(texts))
-	for i, item := range response.Data {
-		embeddings[i] = item.Embedding
+	for _, item := range response.Data {
+		embeddings[item.Index] = item.Embedding
 	}
 
 	return embeddings, nil
+}
+
+// Model returns the model name
+func (o *OpenAIAdapter) Model() string {
+	return o.model
+}
+
+// BaseURL returns the base URL
+func (o *OpenAIAdapter) BaseURL() string {
+	return o.getBaseURL()
 }
