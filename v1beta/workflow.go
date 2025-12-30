@@ -37,6 +37,9 @@ type Workflow interface {
 	// GetConfig returns the workflow configuration
 	GetConfig() *WorkflowConfig
 
+	// Memory returns the shared memory provider for the workflow
+	Memory() Memory
+
 	// Lifecycle methods
 	Initialize(ctx context.Context) error
 	Shutdown(ctx context.Context) error
@@ -1259,6 +1262,13 @@ func (w *basicWorkflow) SetMemory(memory Memory) {
 	w.context.SharedMemory = memory
 }
 
+// Memory implements Workflow.Memory
+func (w *basicWorkflow) Memory() Memory {
+	w.mu.RLock()
+	defer w.mu.RUnlock()
+	return w.memory
+}
+
 // SetLoopCondition implements Workflow.SetLoopCondition
 func (w *basicWorkflow) SetLoopCondition(condition LoopConditionFunc) error {
 	w.mu.Lock()
@@ -1630,4 +1640,3 @@ Accessing workflow results:
 			stepResult.Tokens)
 	}
 */
-

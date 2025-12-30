@@ -16,6 +16,44 @@ AgenticGoKit v1beta provides flexible memory integration that enables:
 
 ---
 
+## 🧠 Memory Hierarchy & Preferences
+
+AgenticGoKit uses a layered approach to memory. When multiple memory types are enabled, they are prioritized and mixed to provide the best context for the LLM.
+
+### 1. The Three Tiers of Memory
+
+| Memory Type | Scope | How it Works | Primary Purpose |
+| :--- | :--- | :--- | :--- |
+| **Chat History** | Session | Recent messages in the current conversation. | Maintaining flow and following pronouns (e.g., "What did I just say?"). |
+| **Personal Memory** | User/Global | Past interactions across sessions, retrieved by semantic similarity. | Recalling user preferences or facts mentioned long ago (e.g., "favorite color"). |
+| **Knowledge Base** | Global | Static documents or data ingested via `IngestDocuments`. | Providing factual, external context the agent wasn't trained on (e.g., "Product Specs"). |
+
+### 2. Priority & Ordering
+
+In the final prompt sent to the LLM, the information is typically ordered from most recent to most relevant:
+
+1.  **Chat History**: Placed at the top to establish the immediate conversation state.
+2.  **RAG Context**: Mixed results from Personal Memory and Knowledge Base.
+3.  **User Query**: The actual question at the very bottom.
+
+### 3. Tuning Preferences with Weights
+
+When using RAG, you can control the "trust level" between your Knowledge Base and the User's Personal Memory using weights:
+
+```go
+v1beta.WithRAG(
+    2000, // maxTokens
+    0.3,  // personalWeight (User facts)
+    0.7,  // knowledgeWeight (Official docs)
+)
+```
+
+- **Higher Knowledge Weight**: Best for "Expert" assistants where official data is the source of truth.
+- **Higher Personal Weight**: Best for "Personal" assistants that should adapt to the user's history and style.
+
+---
+
+
 ## 🚀 Quick Start
 
 ### Basic In-Memory Storage
@@ -494,6 +532,54 @@ agent, _ := v1beta.NewBuilder("HybridAgent").
         v1beta.WithRAG(4000, 0.3, 0.7),
     ).
     Build()
+```
+
+---
+
+## 🔧 Programmatic Access
+
+Access and manipulate memory directly through the `Agent` and `Workflow` interfaces:
+
+### Accessing Memory Provider
+
+```go
+// Get memory provider from agent
+memory := agent.Memory()
+
+// Get memory provider from workflow
+memory := workflow.Memory()
+
+if memory != nil {
+    // Perform direct memory operations
+    err := memory.Store(ctx, "Direct memory storage")
+}
+```
+
+### Inspecting Execution Context
+
+The execution result includes detailed information about how memory was used:
+
+```go
+result, _ := agent.Run(ctx, "query")
+
+if result.MemoryUsed {
+    fmt.Printf("Memory queries performed: %d\n", result.MemoryQueries)
+    
+    // Access detailed RAG context
+    if result.MemoryContext != nil {
+        fmt.Printf("Total tokens: %d\n", result.MemoryContext.TotalTokens)
+        
+        // Inspect knowledge base matches
+        for _, match := range result.MemoryContext.KnowledgeBase {
+            fmt.Printf("Match: %s (Score: %.2f)\n", match.Content, match.Score)
+        }
+        
+        // Check source attribution
+        for _, source := range result.MemoryContext.SourceAttribution {
+            fmt.Printf("Source: %s\n", source)
+        }
+    }
+}
 ```
 
 ---

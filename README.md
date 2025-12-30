@@ -149,7 +149,7 @@ func main() {
 - **Real-time Streaming**: Watch tokens generate in real-time
 - **Multi-Agent Workflows**: Sequential, parallel, DAG, loop orchestration, and subworkflows
 - **Multimodal Input**: Support for images, audio, and video alongside text
-- **Memory & RAG**: Built-in persistence and retrieval
+- **Memory & RAG**: Built-in persistence, retrieval, and direct memory access
 - **Tool Integration**: MCP protocol, function calling, tool discovery
 - **Subworkflows**: Compose workflows as agents for complex hierarchies
 - **Multiple LLM Providers**: OpenAI, Azure OpenAI, Ollama, HuggingFace, OpenRouter, and custom providers

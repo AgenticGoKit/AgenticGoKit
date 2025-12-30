@@ -2,11 +2,15 @@ package v1beta
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
 	"github.com/agenticgokit/agenticgokit/core"
 	"github.com/agenticgokit/agenticgokit/internal/llm"
+
+	// Register memory providers
+	_ "github.com/agenticgokit/agenticgokit/plugins/memory/chromem"
 )
 
 // createLLMProvider creates a ModelProvider instance from LLMConfig.
@@ -79,6 +83,28 @@ func createMemoryProvider(config *MemoryConfig) (core.Memory, error) {
 		agentMemoryConfig.RAGKnowledgeWeight = config.RAG.KnowledgeWeight
 		if config.RAG.HistoryLimit > 0 {
 			agentMemoryConfig.KnowledgeMaxResults = config.RAG.HistoryLimit
+		}
+	}
+
+	// Apply Options if present
+	if config.Options != nil {
+		if dim, ok := config.Options["dimensions"]; ok {
+			var d int
+			if _, err := fmt.Sscanf(dim, "%d", &d); err == nil {
+				agentMemoryConfig.Dimensions = d
+			}
+		}
+		if ep, ok := config.Options["embedding_provider"]; ok {
+			agentMemoryConfig.Embedding.Provider = ep
+		}
+		if em, ok := config.Options["embedding_model"]; ok {
+			agentMemoryConfig.Embedding.Model = em
+		}
+		if ek, ok := config.Options["embedding_api_key"]; ok {
+			agentMemoryConfig.Embedding.APIKey = ek
+		}
+		if eu, ok := config.Options["embedding_url"]; ok {
+			agentMemoryConfig.Embedding.BaseURL = eu
 		}
 	}
 

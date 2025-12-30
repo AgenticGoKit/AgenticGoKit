@@ -239,6 +239,25 @@ func (wa *SubWorkflowAgent) buildMetadata(workflowResult *WorkflowResult, includ
 	return metadata
 }
 
+// Memory returns the memory provider for this agent (delegating to the workflow)
+func (a *SubWorkflowAgent) Memory() Memory {
+	// SubWorkflowAgent wraps a Workflow. We need to expose its memory.
+	// Since we are also updating Workflow interface to have Memory(),
+	// we can delegate this call once Workflow is updated.
+	// However, currently Workflow interface might not have Memory() yet
+	// (it's the next step in my plan).
+	// To avoid compile errors if I do this out of order, I should assume Workflow will have it.
+	// But `a.workflow` is of type `Workflow` interface?
+	// Let's check struct definition.
+	// line 12: type SubWorkflowAgent struct { workflow Workflow ... }
+	// So yes, I rely on Workflow interface change.
+	// I should update Workflow interface FIRST or concurrently.
+	// Since I am already here, I will write the code assuming Workflow has it.
+	// If I compile/test now, it will fail until Step 5 is done.
+	// But since I am doing sequential edits, I will finish this file then do workflow.go.
+	return a.workflow.Memory()
+}
+
 // getFullPath returns the full hierarchical path of this workflow agent
 func (wa *SubWorkflowAgent) getFullPath() string {
 	if wa.parentPath == "" {
@@ -460,4 +479,3 @@ func NewLoopSubWorkflow(name string, config *WorkflowConfig) (Agent, error) {
 	}
 	return NewSubWorkflowAgent(name, workflow), nil
 }
-

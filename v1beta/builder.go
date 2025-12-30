@@ -795,6 +795,11 @@ func (a *streamlinedAgent) Capabilities() []string {
 	return capabilities
 }
 
+// Memory returns the memory provider (nil for streamlined agent)
+func (a *streamlinedAgent) Memory() Memory {
+	return nil
+}
+
 // RunStream executes the agent with streaming output
 func (a *streamlinedAgent) RunStream(ctx context.Context, input string, opts ...StreamOption) (Stream, error) {
 	return a.RunStreamWithOptions(ctx, input, nil, opts...)
@@ -1170,4 +1175,3 @@ SubWorkflow quick creation (without builder):
 		).
 		Build()
 */
-

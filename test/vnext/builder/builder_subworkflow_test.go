@@ -348,5 +348,6 @@ func (m *mockAgent) Cleanup(ctx context.Context) error {
 	return nil
 }
 
-
-
+func (m *mockAgent) Memory() vnext.Memory {
+	return nil
+}

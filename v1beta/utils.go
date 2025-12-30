@@ -15,21 +15,11 @@ import (
 // building RAG contexts, and formatting prompts for LLM calls.
 
 // EnrichWithMemory enriches user input with relevant memory context.
-// It queries the memory provider for relevant memories and formats them
+// It queries the memory provider for relevant memories and knowledge and formats them
 // into a context-enriched prompt based on the memory configuration.
-//
-// Parameters:
-//   - ctx: Context for cancellation and timeouts
-//   - memoryProvider: The memory provider to query
-//   - input: The user's input/query
-//   - config: Memory configuration with RAG settings
-//
-// Returns the enriched input string with memory context prepended (or the
-// original input if no relevant memories are found or an error occurs), and
-// the number of memory queries performed.
-func EnrichWithMemory(ctx context.Context, memoryProvider core.Memory, input string, config *MemoryConfig) (string, int) {
+func EnrichWithMemory(ctx context.Context, memoryProvider core.Memory, input string, config *MemoryConfig) (string, []core.Result, []core.KnowledgeResult, int) {
 	if memoryProvider == nil || config == nil {
-		return input, 0
+		return input, nil, nil, 0
 	}
 
 	// Determine how many memories to retrieve
@@ -38,27 +28,76 @@ func EnrichWithMemory(ctx context.Context, memoryProvider core.Memory, input str
 		limit = config.RAG.HistoryLimit
 	}
 
-	// Query memory for relevant context
-	memories, err := memoryProvider.Query(ctx, input, limit)
-	queryCount := 1 // We performed one query
+	// Logic: If RAG is enabled, we use SearchAll to get both personal and knowledge
+	queryCount := 0
+	var personalMemories []core.Result
+	var knowledgeResults []core.KnowledgeResult
 
-	if err != nil {
-		Logger().Warn().Err(err).Msg("Failed to query memory for context")
-		return input, queryCount
-	}
-
-	// If no memories found, return original input (but count the query)
-	if len(memories) == 0 {
-		return input, queryCount
-	}
-
-	// Build RAG context if configured
 	if config.RAG != nil {
-		return BuildRAGContext(memories, config.RAG, input), queryCount
+		hybrid, err := memoryProvider.SearchAll(ctx, input, core.WithLimit(limit))
+		queryCount++
+		if err == nil && hybrid != nil {
+			personalMemories = hybrid.PersonalMemory
+			knowledgeResults = hybrid.Knowledge
+		}
+	} else {
+		// Fallback to only personal memory
+		mems, err := memoryProvider.Query(ctx, input, limit)
+		queryCount++
+		if err == nil {
+			personalMemories = mems
+		}
 	}
 
-	// Fallback: simple context formatting
-	return BuildMemorySimpleContext(memories, input), queryCount
+	// Build context text
+	var contextText string
+	if config.RAG != nil {
+		contextText = BuildHybridRAGContext(personalMemories, knowledgeResults, config.RAG, input)
+	} else {
+		contextText = BuildMemorySimpleContext(personalMemories, input)
+	}
+
+	return contextText, personalMemories, knowledgeResults, queryCount
+}
+
+// BuildHybridRAGContext builds a RAG-enhanced context from both personal and knowledge results.
+func BuildHybridRAGContext(personal []core.Result, knowledge []core.KnowledgeResult, ragConfig *RAGConfig, query string) string {
+	if len(personal) == 0 && len(knowledge) == 0 {
+		return query
+	}
+
+	var context strings.Builder
+	context.WriteString("# Relevant Context\n\n")
+
+	// Add Personal Memories
+	if len(personal) > 0 {
+		context.WriteString("## Personal Memory\n")
+		for i, m := range personal {
+			context.WriteString(fmt.Sprintf("- %s (Relevance: %.2f)\n", m.Content, m.Score))
+			if i >= 2 { // Limit personal to 3
+				break
+			}
+		}
+		context.WriteString("\n")
+	}
+
+	// Add Knowledge Base
+	if len(knowledge) > 0 {
+		context.WriteString("## Knowledge Base\n")
+		for i, k := range knowledge {
+			context.WriteString(fmt.Sprintf("- %s [Source: %s] (Relevance: %.2f)\n", k.Content, k.Source, k.Score))
+			if i >= 4 { // Limit knowledge to 5
+				break
+			}
+		}
+		context.WriteString("\n")
+	}
+
+	context.WriteString("---\n\n")
+	context.WriteString("# User Query\n\n")
+	context.WriteString(query)
+
+	return context.String()
 }
 
 // buildRAGContext builds a RAG-enhanced context from memories using the provided RAG configuration.
@@ -237,8 +276,9 @@ func BuildChatHistoryContext(ctx context.Context, memoryProvider core.Memory, hi
 //   - memoryProvider: Optional memory provider for context
 //   - config: Optional memory configuration
 //
-// Returns a core.Prompt ready for LLM execution and the number of memory queries performed.
-func BuildEnrichedPrompt(ctx context.Context, systemPrompt, userInput string, memoryProvider core.Memory, config *MemoryConfig) (core.Prompt, int) {
+// Returns a core.Prompt ready for LLM execution, the RAGContext (if any),
+// and the number of memory queries performed.
+func BuildEnrichedPrompt(ctx context.Context, systemPrompt, userInput string, memoryProvider core.Memory, config *MemoryConfig) (core.Prompt, *RAGContext, int) {
 	prompt := core.Prompt{
 		System: systemPrompt,
 		User:   userInput,
@@ -246,14 +286,40 @@ func BuildEnrichedPrompt(ctx context.Context, systemPrompt, userInput string, me
 
 	// If no memory provider or config, return basic prompt with 0 queries
 	if memoryProvider == nil || config == nil {
-		return prompt, 0
+		return prompt, nil, 0
 	}
 
 	totalQueries := 0
+	var personal []core.Result
+	var knowledge []core.KnowledgeResult
+	var enrichedInput string
 
 	// Enrich with memory context
-	enrichedInput, ragQueries := EnrichWithMemory(ctx, memoryProvider, userInput, config)
-	totalQueries += ragQueries
+	enrichedInput, personal, knowledge, totalQueries = EnrichWithMemory(ctx, memoryProvider, userInput, config)
+
+	// Build initial RAGContext
+	ragContext := &RAGContext{
+		TotalTokens: EstimateTokens(enrichedInput),
+	}
+
+	// Populate RAGContext with personal memory results
+	for _, m := range personal {
+		ragContext.PersonalMemory = append(ragContext.PersonalMemory, MemoryResult{
+			Content: m.Content,
+			Score:   m.Score,
+		})
+	}
+
+	// Populate RAGContext with knowledge base results
+	for _, k := range knowledge {
+		ragContext.KnowledgeBase = append(ragContext.KnowledgeBase, MemoryResult{
+			Content:  k.Content,
+			Score:    k.Score,
+			Source:   k.Source,
+			Metadata: k.Metadata,
+		})
+		ragContext.SourceAttribution = append(ragContext.SourceAttribution, k.Source)
+	}
 
 	// Optionally add chat history
 	if config.RAG != nil && config.RAG.HistoryLimit > 0 {
@@ -264,12 +330,13 @@ func BuildEnrichedPrompt(ctx context.Context, systemPrompt, userInput string, me
 		if chatHistory != "" {
 			// Prepend chat history to enriched input
 			enrichedInput = chatHistory + enrichedInput
+			ragContext.ChatHistory = []string{chatHistory}
 		}
 	}
 
 	prompt.User = enrichedInput
 
-	return prompt, totalQueries
+	return prompt, ragContext, totalQueries
 }
 
 // =============================================================================

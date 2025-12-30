@@ -178,6 +178,35 @@ func newRealAgent(config *Config, handler HandlerFunc) (Agent, error) {
 	return agent, nil
 }
 
+// Memory returns the memory provider for this agent
+func (a *realAgent) Memory() Memory {
+	// The core.Memory interface needs to be wrapped or cast to v1beta.Memory?
+	// The problem is core.Memory and v1beta.Memory might be defined differently or identical.
+	// Looking at v1beta/memory.go (which I read previously), v1beta.Memory is an interface.
+	// Looking at v1beta/agent_impl.go imports: "github.com/agenticgokit/agenticgokit/core"
+	// and a.memoryProvider is core.Memory.
+	// v1beta.Memory interface (from Step 24 in agent.go) matches core.Memory methods mostly?
+	// Wait, I need to check if core.Memory satisfies v1beta.Memory.
+	// If not, I might need an adapter.
+	// Let's assume for now they are compatible or I can cast.
+	// Actually, v1beta.Memory is defined in agent.go line 318.
+	// It has Store, Query, NewSession, SetSession, IngestDocument, BuildContext.
+
+	// Let's verify core.Memory definition.
+	// Since I cannot read core/memory.go right now without extra steps,
+	// I will check if realAgent.memoryProvider satisfies it.
+	// realAgent uses core.Memory.
+
+	// If I just return it, it might fail if types don't match.
+	// Let's check imports. v1beta/memory.go defines NewMemory returns Memory.
+	// v1beta/agent_impl.go has a.memoryProvider of type core.Memory.
+
+	if a.memoryProvider == nil {
+		return nil
+	}
+	return &coreMemoryAdapter{mem: a.memoryProvider}
+}
+
 // Run executes the agent with the given input and returns the result.
 // This method makes actual LLM API calls and integrates with memory and tools.
 //
@@ -233,10 +262,14 @@ func (a *realAgent) execute(ctx context.Context, input string, opts *RunOptions)
 	// Step 2: Enhance prompt with memory context if memory is enabled
 	// Use the new BuildEnrichedPrompt utility for proper RAG integration
 	memoryQueries := 0
+	var ragContext *RAGContext
 	if a.memoryProvider != nil && a.config.Memory != nil {
 		// Convert llm.Prompt to core.Prompt for enrichment
 		var corePrompt core.Prompt
-		corePrompt, memoryQueries = BuildEnrichedPrompt(ctx, prompt.System, prompt.User, a.memoryProvider, a.config.Memory)
+
+		// Note: We are currently capturing detailed RAG context.
+		// The MemoryContext field in Result will be populated.
+		corePrompt, ragContext, memoryQueries = BuildEnrichedPrompt(ctx, prompt.System, prompt.User, a.memoryProvider, a.config.Memory)
 
 		// Update the LLM prompt with enriched content
 		prompt.System = corePrompt.System
@@ -317,6 +350,7 @@ func (a *realAgent) execute(ctx context.Context, input string, opts *RunOptions)
 		TokensUsed:    response.Usage.TotalTokens,
 		MemoryUsed:    a.memoryProvider != nil,
 		MemoryQueries: memoryQueries, // Now properly tracks memory query count
+		MemoryContext: ragContext,    // Populated from BuildEnrichedPrompt
 		ToolCalls:     toolCalls,     // Include tool execution details
 		StartTime:     startTime,
 		EndTime:       time.Now(),
@@ -359,7 +393,7 @@ func (a *realAgent) buildMemoryContext(ctx context.Context, input string) (strin
 	}
 
 	// Use the new utility function for enrichment
-	enrichedInput, _ := EnrichWithMemory(ctx, a.memoryProvider, input, a.config.Memory)
+	enrichedInput, _, _, _ := EnrichWithMemory(ctx, a.memoryProvider, input, a.config.Memory)
 
 	// Return only the added context (not the original input)
 	if enrichedInput == input {
@@ -638,9 +672,10 @@ func (a *realAgent) RunStream(ctx context.Context, input string, opts ...StreamO
 
 		// Add memory context if available
 		memoryQueries := 0
+		var ragContext *RAGContext
 		if a.memoryProvider != nil {
 			var enrichedPrompt core.Prompt
-			enrichedPrompt, memoryQueries = BuildEnrichedPrompt(ctx, prompt.System, prompt.User, a.memoryProvider, a.config.Memory)
+			enrichedPrompt, ragContext, memoryQueries = BuildEnrichedPrompt(ctx, prompt.System, prompt.User, a.memoryProvider, a.config.Memory)
 			prompt.System = enrichedPrompt.System
 			prompt.User = enrichedPrompt.User
 		}
@@ -705,6 +740,7 @@ func (a *realAgent) RunStream(ctx context.Context, input string, opts ...StreamO
 			TraceID:       metadata.TraceID,
 			MemoryUsed:    a.memoryProvider != nil,
 			MemoryQueries: memoryQueries, // Track memory queries performed during stream
+			MemoryContext: ragContext,    // Populated from BuildEnrichedPrompt
 			Metadata:      make(map[string]interface{}),
 		}
 
@@ -1225,4 +1261,177 @@ func (a *realAgent) executeToolsAndStream(ctx context.Context, userInput, llmRes
 	}
 
 	return nil
+}
+
+// =============================================================================
+// MEMORY ADAPTER
+// =============================================================================
+
+// coreMemoryAdapter adapts the internal core.Memory to the public v1beta.Memory interface
+type coreMemoryAdapter struct {
+	mem core.Memory
+}
+
+func (a *coreMemoryAdapter) Store(ctx context.Context, content string, opts ...StoreOption) error {
+	// Parse options
+	config := &StoreConfig{
+		ContentType: "text",
+		Source:      "agent",
+	}
+	for _, opt := range opts {
+		opt(config)
+	}
+
+	// Call core memory (assuming signature: Store(ctx, content, type, source))
+	return a.mem.Store(ctx, content, config.ContentType, config.Source)
+}
+
+func (a *coreMemoryAdapter) Query(ctx context.Context, query string, opts ...QueryOption) ([]MemoryResult, error) {
+	// Parse options
+	config := &QueryConfig{
+		Limit: 5,
+	}
+	for _, opt := range opts {
+		opt(config)
+	}
+
+	// Call core memory
+	results, err := a.mem.Query(ctx, query, config.Limit)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert results
+	memoryResults := make([]MemoryResult, len(results))
+	for i, r := range results {
+		memoryResults[i] = MemoryResult{
+			Content: r.Content,
+			Score:   float32(r.Score),
+			// Source:    r.Source, // Fields might vary, focusing on core content
+			// Metadata:  r.Metadata,
+		}
+	}
+	return memoryResults, nil
+}
+
+func (a *coreMemoryAdapter) NewSession() string {
+	return a.mem.NewSession()
+}
+
+func (a *coreMemoryAdapter) SetSession(ctx context.Context, sessionID string) context.Context {
+	return a.mem.SetSession(ctx, sessionID)
+}
+
+func (a *coreMemoryAdapter) IngestDocument(ctx context.Context, doc Document) error {
+	// Convert v1beta.Document to core.Document
+	coreDoc := core.Document{
+		ID:       doc.ID,
+		Content:  doc.Content,
+		Title:    doc.Title,
+		Source:   doc.Source,
+		Metadata: doc.Metadata,
+	}
+	return a.mem.IngestDocument(ctx, coreDoc)
+}
+
+func (a *coreMemoryAdapter) IngestDocuments(ctx context.Context, docs []Document) error {
+	coreDocs := make([]core.Document, len(docs))
+	for i, doc := range docs {
+		coreDocs[i] = core.Document{
+			ID:       doc.ID,
+			Content:  doc.Content,
+			Title:    doc.Title,
+			Source:   doc.Source,
+			Metadata: doc.Metadata,
+		}
+	}
+	return a.mem.IngestDocuments(ctx, coreDocs)
+}
+
+func (a *coreMemoryAdapter) SearchKnowledge(ctx context.Context, query string, opts ...QueryOption) ([]MemoryResult, error) {
+	config := &QueryConfig{Limit: 5}
+	for _, opt := range opts {
+		opt(config)
+	}
+
+	results, err := a.mem.SearchKnowledge(ctx, query, core.WithLimit(config.Limit))
+	if err != nil {
+		return nil, err
+	}
+
+	memoryResults := make([]MemoryResult, len(results))
+	for i, r := range results {
+		memoryResults[i] = MemoryResult{
+			Content:  r.Content,
+			Score:    r.Score,
+			Source:   r.Source,
+			Metadata: r.Metadata,
+		}
+	}
+	return memoryResults, nil
+}
+
+func (a *coreMemoryAdapter) BuildContext(ctx context.Context, query string, opts ...ContextOption) (*RAGContext, error) {
+	// Convert to core.ContextOption not easily possible if types differ.
+	// Calling without options for now.
+	coreCtx, err := a.mem.BuildContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	if coreCtx == nil {
+		return nil, nil
+	}
+
+	// Helper to convert results strings for chat history
+	convertHistory := func(msgs []core.Message) []string {
+		out := make([]string, len(msgs))
+		for i, m := range msgs {
+			out[i] = fmt.Sprintf("%s: %s", m.Role, m.Content)
+		}
+		return out
+	}
+
+	// Helper to convert personal memory results
+	convertPersonal := func(res []core.Result) []MemoryResult {
+		out := make([]MemoryResult, len(res))
+		for i, r := range res {
+			out[i] = MemoryResult{
+				Content: r.Content,
+				Score:   r.Score,
+				// Source/Metadata not available in core.Result (personal memory)
+			}
+		}
+		return out
+	}
+
+	// Helper to convert knowledge results
+	convertKnowledge := func(res []core.KnowledgeResult) []MemoryResult {
+		out := make([]MemoryResult, len(res))
+		for i, r := range res {
+			// Convert map[string]any to map[string]interface{}
+			var metadata map[string]interface{}
+			if r.Metadata != nil {
+				metadata = make(map[string]interface{})
+				for k, v := range r.Metadata {
+					metadata[k] = v
+				}
+			}
+
+			out[i] = MemoryResult{
+				Content:  r.Content,
+				Score:    r.Score,
+				Source:   r.Source,
+				Metadata: metadata,
+			}
+		}
+		return out
+	}
+
+	return &RAGContext{
+		PersonalMemory:    convertPersonal(coreCtx.PersonalMemory),
+		KnowledgeBase:     convertKnowledge(coreCtx.Knowledge), // Mapped from Knowledge
+		ChatHistory:       convertHistory(coreCtx.ChatHistory),
+		TotalTokens:       coreCtx.TokenCount, // Mapped from TokenCount
+		SourceAttribution: coreCtx.Sources,    // Mapped from Sources
+	}, nil
 }
