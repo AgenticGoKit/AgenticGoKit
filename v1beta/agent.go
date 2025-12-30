@@ -21,6 +21,7 @@ type Agent interface {
 	// Configuration access
 	Config() *Config
 	Capabilities() []string
+	Memory() Memory
 
 	// Lifecycle methods
 	Initialize(ctx context.Context) error
@@ -51,10 +52,11 @@ type Result struct {
 	Metadata  map[string]interface{} `json:"metadata,omitempty"`
 
 	// Execution details (consolidated from DetailedResult)
-	TokensUsed    int      `json:"tokens_used,omitempty"`
-	ToolsCalled   []string `json:"tools_called,omitempty"`
-	MemoryUsed    bool     `json:"memory_used,omitempty"`
-	MemoryQueries int      `json:"memory_queries,omitempty"`
+	TokensUsed    int         `json:"tokens_used,omitempty"`
+	ToolsCalled   []string    `json:"tools_called,omitempty"`
+	MemoryUsed    bool        `json:"memory_used,omitempty"`
+	MemoryQueries int         `json:"memory_queries,omitempty"`
+	MemoryContext *RAGContext `json:"memory_context,omitempty"`
 
 	// New fields for multimodal output
 	Images      []ImageData  `json:"images,omitempty"`
@@ -328,6 +330,8 @@ type Memory interface {
 
 	// RAG operations (if RAG is configured)
 	IngestDocument(ctx context.Context, doc Document) error
+	IngestDocuments(ctx context.Context, docs []Document) error
+	SearchKnowledge(ctx context.Context, query string, opts ...QueryOption) ([]MemoryResult, error)
 	BuildContext(ctx context.Context, query string, opts ...ContextOption) (*RAGContext, error)
 }
 

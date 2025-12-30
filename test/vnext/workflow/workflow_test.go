@@ -92,6 +92,10 @@ func (m *mockAgent) GetCallCount() int {
 	return int(atomic.LoadInt32(&m.callCount))
 }
 
+func (m *mockAgent) Memory() vnext.Memory {
+	return nil
+}
+
 // TestWorkflowModeConstants tests workflow mode constants
 func TestWorkflowModeConstants(t *testing.T) {
 	modes := []vnext.WorkflowMode{
@@ -914,6 +918,3 @@ func TestWorkflowConfig(t *testing.T) {
 		t.Errorf("MaxIterations = %d, want 10", config.MaxIterations)
 	}
 }
-
-
-

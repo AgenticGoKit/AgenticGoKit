@@ -217,6 +217,14 @@ func (m *noOpMemory) IngestDocument(ctx context.Context, doc Document) error {
 	return nil
 }
 
+func (m *noOpMemory) IngestDocuments(ctx context.Context, docs []Document) error {
+	return nil
+}
+
+func (m *noOpMemory) SearchKnowledge(ctx context.Context, query string, opts ...QueryOption) ([]MemoryResult, error) {
+	return []MemoryResult{}, nil
+}
+
 func (m *noOpMemory) BuildContext(ctx context.Context, query string, opts ...ContextOption) (*RAGContext, error) {
 	return &RAGContext{
 		PersonalMemory:    []MemoryResult{},
@@ -434,4 +442,3 @@ func GetMemoryStats(ctx context.Context, memory Memory) (*MemoryStats, error) {
 	}
 	return &MemoryStats{}, fmt.Errorf("memory provider does not support statistics")
 }
-

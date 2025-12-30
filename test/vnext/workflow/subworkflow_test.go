@@ -706,5 +706,6 @@ func (m *mockSubWorkflowAgent) Cleanup(ctx context.Context) error {
 	return nil
 }
 
-
-
+func (m *mockSubWorkflowAgent) Memory() vnext.Memory {
+	return nil
+}
