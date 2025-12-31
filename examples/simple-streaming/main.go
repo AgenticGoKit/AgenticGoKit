@@ -15,18 +15,20 @@ func main() {
 	fmt.Println()
 
 	// Create a simple agent with Ollama
-	agent, err := vnext.QuickChatAgentWithConfig("gemma2:2b", &vnext.Config{
-		Name:         "simple-streamer",
-		SystemPrompt: "You are a helpful assistant. Be concise but friendly.",
-		Timeout:      30 * time.Second,
-		LLM: vnext.LLMConfig{
-			Provider:    "ollama",
-			Model:       "gemma3:1b",
-			Temperature: 0.7,
-			MaxTokens:   200,
-			BaseURL:     "http://localhost:11434",
-		},
-	})
+	agent, err := vnext.NewBuilder("simple-streamer").
+		WithConfig(&vnext.Config{
+			Name:         "simple-streamer",
+			SystemPrompt: "You are a helpful assistant. Be concise but friendly.",
+			Timeout:      30 * time.Second,
+			LLM: vnext.LLMConfig{
+				Provider:    "ollama",
+				Model:       "gemma3:1b",
+				Temperature: 0.7,
+				MaxTokens:   200,
+				BaseURL:     "http://localhost:11434",
+			},
+		}).
+		Build()
 	if err != nil {
 		log.Fatalf("Failed to create agent: %v", err)
 	}
@@ -78,6 +80,3 @@ func main() {
 
 	fmt.Println("\n🎉 This is how streaming works! Tokens arrive in real-time instead of waiting for the complete response.")
 }
-
-
-

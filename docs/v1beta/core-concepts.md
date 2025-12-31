@@ -30,20 +30,23 @@ Every agent implements this interface:
 
 ```go
 type Agent interface {
-    // Run executes the agent with the given query
-    Run(ctx context.Context, query string) (*Result, error)
-    
-    // RunWithOptions executes with additional options
-    RunWithOptions(ctx context.Context, query string, opts *RunOptions) (*Result, error)
-    
-    // RunStream executes with streaming responses
-    RunStream(ctx context.Context, query string) (Stream, error)
-    
-    // Config returns the agent's configuration
+    // Core execution methods
+    Name() string
+    Run(ctx context.Context, input string) (*Result, error)
+    RunWithOptions(ctx context.Context, input string, opts *RunOptions) (*Result, error)
+
+    // Streaming execution methods
+    RunStream(ctx context.Context, input string, opts ...StreamOption) (Stream, error)
+    RunStreamWithOptions(ctx context.Context, input string, runOpts *RunOptions, streamOpts ...StreamOption) (Stream, error)
+
+    // Configuration access
     Config() *Config
-    
-    // Capabilities returns available features
     Capabilities() []string
+    Memory() Memory
+
+    // Lifecycle methods
+    Initialize(ctx context.Context) error
+    Cleanup(ctx context.Context) error
 }
 ```
 
@@ -65,7 +68,7 @@ researchAgent, err := v1beta.NewBuilder("Researcher").
     Build()
 
 // Quick agent - rapid prototyping (single parameter: model)
-quickAgent, _ := v1beta.QuickChatAgent("gpt-4")
+quickAgent, _ := v1beta.NewChatAgent("QuickAgent", v1beta.WithLLM("openai", "gpt-4"))
 ```
 
 #### 2. Custom Builder (Full Control)
@@ -73,11 +76,14 @@ quickAgent, _ := v1beta.QuickChatAgent("gpt-4")
 ```go
 // Create agent with full customization
 agent, err := v1beta.NewBuilder("CustomAgent").
-    WithLLM("openai", "gpt-4").
     WithConfig(&v1beta.Config{
         SystemPrompt: "You are a helpful assistant",
-        Temperature:  0.7,
-        MaxTokens:    2000,
+        LLM: v1beta.LLMConfig{
+            Provider:    "openai",
+            Model:       "gpt-4",
+            Temperature: 0.7,
+            MaxTokens:   2000,
+        },
     }).
     WithTools(myTools).
     WithMemory(&v1beta.MemoryOptions{
@@ -248,58 +254,74 @@ Tools extend agent capabilities beyond LLM interactions.
 ### Tool Structure
 
 ```go
-type Tool struct {
-    Name        string                 // Unique tool identifier
-    Description string                 // What the tool does
-    Parameters  map[string]interface{} // JSON Schema for parameters
-    Handler     ToolHandler            // Function to execute
+type Tool interface {
+    Name() string
+    Description() string
+    Execute(ctx context.Context, args map[string]interface{}) (*ToolResult, error)
 }
 
-type ToolHandler func(ctx context.Context, args map[string]interface{}) (interface{}, error)
+type ToolInfo struct {
+    Name        string                 `json:"name"`
+    Description string                 `json:"description"`
+    Parameters  map[string]interface{} `json:"parameters"`
+    Category    string                 `json:"category"`
+}
 ```
 
 ### Creating Tools
 
+### Creating Tools
+
+To create a tool, define a struct that implements the `Tool` interface:
+
 ```go
-searchTool := v1beta.Tool{
-    Name:        "web_search",
-    Description: "Search the web for information",
-    Parameters: map[string]interface{}{
-        "type": "object",
-        "properties": map[string]interface{}{
-            "query": map[string]interface{}{
-                "type":        "string",
-                "description": "Search query",
-            },
-            "max_results": map[string]interface{}{
-                "type":        "integer",
-                "description": "Maximum number of results",
-                "default":     5,
-            },
-        },
-        "required": []string{"query"},
-    },
-    Handler: func(ctx context.Context, args map[string]interface{}) (interface{}, error) {
-        query := args["query"].(string)
-        maxResults := 5
-        if mr, ok := args["max_results"].(int); ok {
-            maxResults = mr
-        }
-        
-        // Implement search logic
-        results := performSearch(query, maxResults)
-        return results, nil
-    },
+type SearchTool struct{}
+
+func (t *SearchTool) Name() string {
+    return "web_search"
+}
+
+func (t *SearchTool) Description() string {
+    return "Search the web for information"
+}
+
+func (t *SearchTool) Execute(ctx context.Context, args map[string]interface{}) (*v1beta.ToolResult, error) {
+    query, _ := args["query"].(string)
+    // Implement search logic...
+    return &v1beta.ToolResult{
+        Success: true,
+        Content: "Search results...",
+    }, nil
 }
 ```
 
 ### Adding Tools to Agents
 
+Tools can be integrated via MCP (Model Context Protocol) or registered internally:
+
 ```go
-agent, err := v1beta.NewBuilder("SearchBot").
+// 1. Using MCP (Recommended)
+mcpServer := v1beta.MCPServer{
+    Name:    "filesystem",
+    Type:    "stdio",
+    Command: "mcp-server-filesystem",
+    Enabled: true,
+}
+
+agent, err := v1beta.NewBuilder("ToolAgent").
     WithPreset(v1beta.ChatAgent).
-    WithTools([]v1beta.Tool{searchTool, calculatorTool}).
+    WithTools(
+        v1beta.WithMCP(mcpServer),
+        v1beta.WithToolTimeout(30*time.Second),
+    ).
     Build()
+
+// 2. Registering Internal Tools (Global)
+// func init() {
+//     v1beta.RegisterInternalTool("web_search", func() v1beta.Tool {
+//         return &SearchTool{}
+//     })
+// }
 ```
 
 ### ToolCallHelper
@@ -384,23 +406,28 @@ agent, _ := v1beta.NewBuilder("EphemeralAgent").
 ### Memory Interface
 
 ```go
-type MemoryProvider interface {
-    // Store saves a memory entry
-    Store(ctx context.Context, entry MemoryEntry) error
-    
-    // Retrieve gets relevant memories
-    Retrieve(ctx context.Context, query string, limit int) ([]MemoryEntry, error)
-    
-    // Clear removes all memories (optional)
-    Clear(ctx context.Context) error
+type Memory interface {
+    // Basic operations
+    Store(ctx context.Context, content string, opts ...StoreOption) error
+    Query(ctx context.Context, query string, opts ...QueryOption) ([]MemoryResult, error)
+
+    // Session management
+    NewSession() string
+    SetSession(ctx context.Context, sessionID string) context.Context
+
+    // RAG operations (if RAG is configured)
+    IngestDocument(ctx context.Context, doc Document) error
+    IngestDocuments(ctx context.Context, docs []Document) error
+    SearchKnowledge(ctx context.Context, query string, opts ...QueryOption) ([]MemoryResult, error)
+    BuildContext(ctx context.Context, query string, opts ...ContextOption) (*RAGContext, error)
 }
 
-type MemoryEntry struct {
-    ID        string                 // Unique identifier
-    Content   string                 // Memory content
-    Metadata  map[string]interface{} // Additional data
-    Timestamp time.Time              // When stored
-    Embedding []float64              // Vector embedding (optional)
+type MemoryResult struct {
+    Content   string                 `json:"content"`
+    Score     float32                `json:"score"`
+    Source    string                 `json:"source"`
+    Metadata  map[string]interface{} `json:"metadata"`
+    Timestamp time.Time              `json:"timestamp"`
 }
 ```
 
@@ -512,13 +539,14 @@ Direct configuration access:
 ```go
 cfg := &v1beta.Config{
     SystemPrompt: "You are helpful",
-    Temperature:  0.7,
-    MaxTokens:    2000,
     Timeout:      30 * time.Second,
+    LLM: v1beta.LLMConfig{
+        Temperature: 0.7,
+        MaxTokens:   2000,
+    },
 }
 
 agent, err := v1beta.NewBuilder("Agent").
-    WithLLM("openai", "gpt-4").
     WithConfig(cfg).
     WithTools(tools).
     WithMemory(&v1beta.MemoryOptions{
@@ -688,7 +716,7 @@ const (
 
 ### 2. Use Preset Builders
 - Leverage `NewBuilder(name).WithPreset(ChatAgent)` for common cases
-- Use `QuickChatAgent(model)` for rapid prototyping
+- Use `NewChatAgent(name, WithLLM(provider, model))` for rapid prototyping
 - Use custom builder with full configuration for complex needs
 
 ### 3. Configure Timeouts

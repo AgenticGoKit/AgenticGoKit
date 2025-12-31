@@ -29,21 +29,27 @@ import (
 func main() {
     // Create specialized agents
     researcher, err := v1beta.NewBuilder("Researcher").
-        WithLLM("openai", "gpt-4").
+        WithConfig(&v1beta.Config{
+            LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+        }).
         Build()
     if err != nil {
         log.Fatalf("Failed to create researcher: %v", err)
     }
 
     summarizer, err := v1beta.NewBuilder("Summarizer").
-        WithLLM("openai", "gpt-3.5-turbo").
+        WithConfig(&v1beta.Config{
+            LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-3.5-turbo"},
+        }).
         Build()
     if err != nil {
         log.Fatalf("Failed to create summarizer: %v", err)
     }
 
     writer, err := v1beta.NewBuilder("Writer").
-        WithLLM("openai", "gpt-4").
+        WithConfig(&v1beta.Config{
+            LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+        }).
         Build()
     if err != nil {
         log.Fatalf("Failed to create writer: %v", err)
@@ -86,15 +92,21 @@ func main() {
 
 ```go
 researcher, err := v1beta.NewBuilder("Researcher").
-    WithLLM("openai", "gpt-4").
+    WithConfig(&v1beta.Config{
+        LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+    }).
     Build()
 
 summarizer, err := v1beta.NewBuilder("Summarizer").
-    WithLLM("openai", "gpt-3.5-turbo").
+    WithConfig(&v1beta.Config{
+        LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-3.5-turbo"},
+    }).
     Build()
 
 writer, err := v1beta.NewBuilder("Writer").
-    WithLLM("openai", "gpt-4").
+    WithConfig(&v1beta.Config{
+        LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+    }).
     Build()
 ```
 
@@ -244,15 +256,21 @@ func (w *ConditionalWorkflow) Run(ctx context.Context, input string) (map[string
 
 ```go
 extractor, _ := v1beta.NewBuilder("Extractor").
-    WithLLM("openai", "gpt-4").
+    WithConfig(&v1beta.Config{
+        LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+    }).
     Build()
 
 transformer, _ := v1beta.NewBuilder("Transformer").
-    WithLLM("openai", "gpt-4").
+    WithConfig(&v1beta.Config{
+        LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+    }).
     Build()
 
 loader, _ := v1beta.NewBuilder("Loader").
-    WithLLM("openai", "gpt-3.5-turbo").
+    WithConfig(&v1beta.Config{
+        LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-3.5-turbo"},
+    }).
     Build()
 
 workflow, _ := v1beta.NewSequentialWorkflow(

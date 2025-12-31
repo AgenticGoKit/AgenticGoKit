@@ -109,10 +109,9 @@ agent := vnext.NewBuilder("agent").
 // ✅ New (v1beta - Recommended)
 import "github.com/agenticgokit/agenticgokit/v1beta"
 
-agent, err := v1beta.PresetChatAgentBuilder().
-    WithName("agent").
-    WithModel("openai", "gpt-4").
-    Build()
+agent, err := v1beta.NewChatAgent("agent",
+    v1beta.WithLLM("openai", "gpt-4"),
+)
 ```
 
 ---

@@ -35,7 +35,9 @@ func main() {
     
     // Create agent with custom handler
     agent, _ := v1beta.NewBuilder("CustomAgent").
-        WithLLM("openai", "gpt-4").
+        WithConfig(&v1beta.Config{
+            LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+        }).
         WithHandler(handler).
         Build()
     
@@ -93,7 +95,9 @@ handler := func(ctx context.Context, input string, capabilities *v1beta.Capabili
 }
 
 agent, _ := v1beta.NewBuilder("CodingAssistant").
-    WithLLM("openai", "gpt-4").
+    WithConfig(&v1beta.Config{
+        LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+    }).
     WithHandler(handler).
     Build()
 ```
@@ -245,7 +249,9 @@ baseHandler := func(ctx context.Context, input string, capabilities *v1beta.Capa
 handler := v1beta.WithToolAugmentation(baseHandler)
 
 agent, _ := v1beta.NewBuilder("ToolAgent").
-    WithLLM("openai", "gpt-4").
+    WithConfig(&v1beta.Config{
+        LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+    }).
     WithTools(
         v1beta.WithMCP(mcpServers...),
     ).
@@ -267,7 +273,9 @@ baseHandler := func(ctx context.Context, input string, capabilities *v1beta.Capa
 handler := v1beta.WithMemoryAugmentation(baseHandler)
 
 agent, _ := v1beta.NewBuilder("MemoryAgent").
-    WithLLM("openai", "gpt-4").
+    WithConfig(&v1beta.Config{
+        LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+    }).
     WithMemory(
         v1beta.WithMemoryProvider("memory"),
     ).
@@ -289,7 +297,9 @@ baseHandler := func(ctx context.Context, input string, capabilities *v1beta.Capa
 handler := v1beta.WithRAGAugmentation(baseHandler, "knowledge_base", 5)
 
 agent, _ := v1beta.NewBuilder("RAGAgent").
-    WithLLM("openai", "gpt-4").
+    WithConfig(&v1beta.Config{
+        LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+    }).
     WithMemory(
         v1beta.WithMemoryProvider("pgvector"),
         v1beta.WithRAG(4000, 0.3, 0.7),
@@ -340,7 +350,9 @@ postprocessHandler := func(ctx context.Context, input string, capabilities *v1be
 handler := v1beta.Chain(preprocessHandler, processHandler, postprocessHandler)
 
 agent, _ := v1beta.NewBuilder("ChainedAgent").
-    WithLLM("openai", "gpt-4").
+    WithConfig(&v1beta.Config{
+        LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+    }).
     WithHandler(handler).
     Build()
 ```
@@ -366,7 +378,9 @@ sentimentHandler := func(ctx context.Context, input string, capabilities *v1beta
 handler := v1beta.ParallelHandlers("\n---\n", summaryHandler, keywordsHandler, sentimentHandler)
 
 agent, _ := v1beta.NewBuilder("AnalysisAgent").
-    WithLLM("openai", "gpt-4").
+    WithConfig(&v1beta.Config{
+        LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+    }).
     WithHandler(handler).
     Build()
 ```
@@ -510,7 +524,9 @@ func createResearchAssistant() (v1beta.Agent, error) {
     }
     
     return v1beta.NewBuilder("ResearchAssistant").
-        WithLLM("openai", "gpt-4").
+        WithConfig(&v1beta.Config{
+            LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+        }).
         WithTools(
             v1beta.WithMCP(/* web search server */),
         ).
@@ -562,7 +578,9 @@ func createCodeReviewAgent() (v1beta.Agent, error) {
     }
     
     return v1beta.NewBuilder("CodeReviewer").
-        WithLLM("openai", "gpt-4").
+        WithConfig(&v1beta.Config{
+            LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+        }).
         WithHandler(handler).
         Build()
 }
@@ -625,7 +643,9 @@ func createSupportBot() (v1beta.Agent, error) {
     augmentedHandler := v1beta.WithMemoryAugmentation(handler)
     
     return v1beta.NewBuilder("SupportBot").
-        WithLLM("openai", "gpt-4").
+        WithConfig(&v1beta.Config{
+            LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+        }).
         WithMemory(
             v1beta.WithMemoryProvider("pgvector"),
             v1beta.WithRAG(4000, 0.3, 0.7),

@@ -30,19 +30,27 @@ import (
 func main() {
     // Create specialized agents for different analysis tasks
     sentimentAgent, _ := v1beta.NewBuilder("SentimentAnalyzer").
-        WithLLM("openai", "gpt-3.5-turbo").
+        WithConfig(&v1beta.Config{
+            LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-3.5-turbo"},
+        }).
         Build()
 
     topicsAgent, _ := v1beta.NewBuilder("TopicExtractor").
-        WithLLM("openai", "gpt-3.5-turbo").
+        WithConfig(&v1beta.Config{
+            LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-3.5-turbo"},
+        }).
         Build()
 
     summaryAgent, _ := v1beta.NewBuilder("Summarizer").
-        WithLLM("openai", "gpt-4").
+        WithConfig(&v1beta.Config{
+            LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+        }).
         Build()
 
     keywordsAgent, _ := v1beta.NewBuilder("KeywordExtractor").
-        WithLLM("openai", "gpt-3.5-turbo").
+        WithConfig(&v1beta.Config{
+            LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-3.5-turbo"},
+        }).
         Build()
 
     // Create parallel workflow
@@ -104,11 +112,15 @@ func main() {
 
 ```go
 sentimentAgent, _ := v1beta.NewBuilder("SentimentAnalyzer").
-    WithLLM("openai", "gpt-3.5-turbo").
+    WithConfig(&v1beta.Config{
+        LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-3.5-turbo"},
+    }).
     Build()
 
 topicsAgent, _ := v1beta.NewBuilder("TopicExtractor").
-    WithLLM("openai", "gpt-3.5-turbo").
+    WithConfig(&v1beta.Config{
+        LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-3.5-turbo"},
+    }).
     Build()
 
 // ... more agents
@@ -240,9 +252,15 @@ if err != nil {
 
 ```go
 // Fetch from multiple sources in parallel
-newsAgent, _ := v1beta.NewBuilder("NewsAggregator").WithLLM("openai", "gpt-4").Build()
-socialAgent, _ := v1beta.NewBuilder("SocialAggregator").WithLLM("openai", "gpt-4").Build()
-researchAgent, _ := v1beta.NewBuilder("ResearchAggregator").WithLLM("openai", "gpt-4").Build()
+newsAgent, _ := v1beta.NewBuilder("NewsAggregator").WithConfig(&v1beta.Config{
+    LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+}).Build()
+socialAgent, _ := v1beta.NewBuilder("SocialAggregator").WithConfig(&v1beta.Config{
+    LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+}).Build()
+researchAgent, _ := v1beta.NewBuilder("ResearchAggregator").WithConfig(&v1beta.Config{
+    LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+}).Build()
 
 workflow, _ := v1beta.NewParallelWorkflow(
     "DataAggregation",
@@ -258,10 +276,18 @@ results, _ := workflow.Run(ctx, "Go programming language")
 
 ```go
 // Translate to multiple languages simultaneously
-enAgent, _ := v1beta.NewBuilder("EnglishTranslator").WithLLM("openai", "gpt-4").Build()
-esAgent, _ := v1beta.NewBuilder("SpanishTranslator").WithLLM("openai", "gpt-4").Build()
-frAgent, _ := v1beta.NewBuilder("FrenchTranslator").WithLLM("openai", "gpt-4").Build()
-deAgent, _ := v1beta.NewBuilder("GermanTranslator").WithLLM("openai", "gpt-4").Build()
+enAgent, _ := v1beta.NewBuilder("EnglishTranslator").WithConfig(&v1beta.Config{
+    LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+}).Build()
+esAgent, _ := v1beta.NewBuilder("SpanishTranslator").WithConfig(&v1beta.Config{
+    LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+}).Build()
+frAgent, _ := v1beta.NewBuilder("FrenchTranslator").WithConfig(&v1beta.Config{
+    LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+}).Build()
+deAgent, _ := v1beta.NewBuilder("GermanTranslator").WithConfig(&v1beta.Config{
+    LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+}).Build()
 
 workflow, _ := v1beta.NewParallelWorkflow(
     "MultiTranslation",
@@ -276,10 +302,18 @@ workflow, _ := v1beta.NewParallelWorkflow(
 
 ```go
 // Validate content from multiple perspectives
-grammarAgent, _ := v1beta.NewBuilder("GrammarChecker").WithLLM("openai", "gpt-4").Build()
-factAgent, _ := v1beta.NewBuilder("FactChecker").WithLLM("openai", "gpt-4").Build()
-toneAgent, _ := v1beta.NewBuilder("ToneAnalyzer").WithLLM("openai", "gpt-4").Build()
-plagiarismAgent, _ := v1beta.NewBuilder("PlagiarismChecker").WithLLM("openai", "gpt-4").Build()
+grammarAgent, _ := v1beta.NewBuilder("GrammarChecker").WithConfig(&v1beta.Config{
+    LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+}).Build()
+factAgent, _ := v1beta.NewBuilder("FactChecker").WithConfig(&v1beta.Config{
+    LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+}).Build()
+toneAgent, _ := v1beta.NewBuilder("ToneAnalyzer").WithConfig(&v1beta.Config{
+    LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+}).Build()
+plagiarismAgent, _ := v1beta.NewBuilder("PlagiarismChecker").WithConfig(&v1beta.Config{
+    LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+}).Build()
 
 workflow, _ := v1beta.NewParallelWorkflow(
     "ContentValidation",

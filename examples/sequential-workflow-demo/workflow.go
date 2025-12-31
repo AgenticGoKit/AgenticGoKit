@@ -20,57 +20,61 @@ type SimpleSequentialWorkflow struct {
 // NewSimpleSequentialWorkflow creates a simple 2-agent workflow
 func NewSimpleSequentialWorkflow(apiKey string) (*SimpleSequentialWorkflow, error) {
 	// Agent 1: Researcher
-	researcher, err := vnext.QuickChatAgentWithConfig("Researcher", &vnext.Config{
-		Name: "researcher",
-		SystemPrompt: `You are a Research Assistant. Your role is to:
+	researcher, err := vnext.NewBuilder("researcher").
+		WithConfig(&vnext.Config{
+			Name: "researcher",
+			SystemPrompt: `You are a Research Assistant. Your role is to:
 - Research the given topic thoroughly
 - Find key facts, statistics, and interesting insights
 - Organize information clearly
 - Provide concise but informative research notes (150-200 words)
 
 Provide research notes for the topic given by the user.`,
-		Timeout: 60 * time.Second,
-		Streaming: &vnext.StreamingConfig{
-			Enabled:       true,
-			BufferSize:    50,
-			FlushInterval: 50,
-		},
-		LLM: vnext.LLMConfig{
-			Provider:    "openrouter",
-			Model:       "openai/gpt-4o-mini",
-			Temperature: 0.7,
-			MaxTokens:   500,
-			APIKey:      apiKey,
-		},
-	})
+			Timeout: 60 * time.Second,
+			Streaming: &vnext.StreamingConfig{
+				Enabled:       true,
+				BufferSize:    50,
+				FlushInterval: 50,
+			},
+			LLM: vnext.LLMConfig{
+				Provider:    "openrouter",
+				Model:       "openai/gpt-4o-mini",
+				Temperature: 0.7,
+				MaxTokens:   500,
+				APIKey:      apiKey,
+			},
+		}).
+		Build()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create researcher agent: %w", err)
 	}
 
 	// Agent 2: Writer
-	writer, err := vnext.QuickChatAgentWithConfig("Writer", &vnext.Config{
-		Name: "writer",
-		SystemPrompt: `You are a Professional Writer. Your role is to:
+	writer, err := vnext.NewBuilder("writer").
+		WithConfig(&vnext.Config{
+			Name: "writer",
+			SystemPrompt: `You are a Professional Writer. Your role is to:
 - Take research notes and turn them into engaging content
 - Write in a clear, accessible style
 - Create a well-structured article or summary
 - Make the content interesting and easy to read (200-300 words)
 
 Write an article based on the research notes provided.`,
-		Timeout: 60 * time.Second,
-		Streaming: &vnext.StreamingConfig{
-			Enabled:       true,
-			BufferSize:    50,
-			FlushInterval: 50,
-		},
-		LLM: vnext.LLMConfig{
-			Provider:    "openrouter",
-			Model:       "openai/gpt-4o-mini",
-			Temperature: 0.8,
-			MaxTokens:   600,
-			APIKey:      apiKey,
-		},
-	})
+			Timeout: 60 * time.Second,
+			Streaming: &vnext.StreamingConfig{
+				Enabled:       true,
+				BufferSize:    50,
+				FlushInterval: 50,
+			},
+			LLM: vnext.LLMConfig{
+				Provider:    "openrouter",
+				Model:       "openai/gpt-4o-mini",
+				Temperature: 0.8,
+				MaxTokens:   600,
+				APIKey:      apiKey,
+			},
+		}).
+		Build()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create writer agent: %w", err)
 	}
@@ -250,6 +254,3 @@ func ValidateAPIKey() (string, error) {
 	}
 	return apiKey, nil
 }
-
-
-

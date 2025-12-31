@@ -29,10 +29,9 @@ import (
 )
 
 func main() {
-    agent, err := v1beta.NewBuilder("MyAgent").
-        WithPreset(v1beta.ChatAgent).
-        WithLLM("openai", "gpt-4").
-        Build()
+    agent, err := v1beta.NewChatAgent("MyAgent",
+        v1beta.WithLLM("openai", "gpt-4"),
+    )
     if err != nil {
         log.Fatal(err)
     }
@@ -47,12 +46,13 @@ agent, err := v1beta.NewBuilder("AdvancedAgent").
     WithLLM("openai", "gpt-4").
     WithConfig(&v1beta.Config{
         SystemPrompt: "You are a helpful research assistant",
-        Temperature:  0.7,
-        MaxTokens:    2000,
-        TopP:         0.9,
+        LLM: v1beta.LLMConfig{
+            Provider:    "openai",
+            Model:       "gpt-4",
+            Temperature: 0.7,
+            MaxTokens:   2000,
+        },
         Timeout:      60 * time.Second,
-        MaxRetries:   3,
-        RetryDelay:   time.Second,
     }).
     WithTools(tools).
     WithMemory(
@@ -95,35 +95,7 @@ agent, _ := v1beta.NewBuilder("Orchestrator").
     Build()
 ```
 
-#### WithLLM()
-Configure the LLM provider and model:
 
-```go
-// OpenAI
-agent, _ := v1beta.NewBuilder("Agent").
-    WithLLM("openai", "gpt-4").
-    Build()
-
-// Azure AI
-agent, _ := v1beta.NewBuilder("Agent").
-    WithLLM("azureai", "gpt-4").
-    Build()
-
-// Ollama (local)
-agent, _ := v1beta.NewBuilder("Agent").
-    WithLLM("ollama", "llama2").
-    Build()
-
-// HuggingFace
-agent, _ := v1beta.NewBuilder("Agent").
-    WithLLM("huggingface", "mistralai/Mixtral-8x7B-Instruct-v0.1").
-    Build()
-
-// OpenRouter
-agent, _ := v1beta.NewBuilder("Agent").
-    WithLLM("openrouter", "anthropic/claude-3-opus").
-    Build()
-```
 
 #### WithConfig()
 Set advanced configuration options:
@@ -131,19 +103,19 @@ Set advanced configuration options:
 ```go
 agent, _ := v1beta.NewBuilder("Agent").
     WithConfig(&v1beta.Config{
-        // LLM Settings
         SystemPrompt: "You are a helpful assistant",
-        Temperature:  0.7,    // Creativity (0.0 - 2.0)
-        MaxTokens:    2000,   // Response length limit
-        TopP:         0.9,    // Nucleus sampling
+        Timeout:      60 * time.Second,
         
-        // Execution Settings
-        Timeout:    60 * time.Second,  // Operation timeout
-        MaxRetries: 3,                 // Retry failed requests
-        RetryDelay: time.Second,       // Delay between retries
+        // LLM Settings
+        LLM: v1beta.LLMConfig{
+            Temperature: 0.7,    // Creativity (0.0 - 2.0)
+            MaxTokens:   2000,   // Response length limit
+        },
         
         // Streaming Settings
-        StreamBufferSize: 100,  // Buffer size for streaming
+        Streaming: &v1beta.StreamingConfig{
+            BufferSize: 100,
+        },
     }).
     Build()
 ```
@@ -209,19 +181,25 @@ type Config struct {
     // Core Settings
     Name         string
     SystemPrompt string
+    Timeout      time.Duration
+    DebugMode    bool
     
-    // LLM Parameters
-    Temperature float64
+    // LLM Configuration
+    LLM LLMConfig
+    
+    // Feature Configurations
+    Memory    *MemoryConfig
+    Tools     *ToolsConfig
+    Workflow  *WorkflowConfig
+    Tracing   *TracingConfig
+    Streaming *StreamingConfig
+}
+
+type LLMConfig struct {
+    Provider    string
+    Model       string
+    Temperature float32
     MaxTokens   int
-    TopP        float64
-    
-    // Execution Settings
-    Timeout    time.Duration
-    MaxRetries int
-    RetryDelay time.Duration
-    
-    // Streaming Settings
-    StreamBufferSize int
 }
 ```
 
@@ -230,12 +208,13 @@ type Config struct {
 ```go
 config := &v1beta.Config{
     SystemPrompt: "You are a helpful assistant",
-    Temperature:  0.7,
-    MaxTokens:    2000,
-    TopP:         0.9,
     Timeout:      60 * time.Second,
-    MaxRetries:   3,
-    RetryDelay:   time.Second,
+    LLM: v1beta.LLMConfig{
+        Provider:    "openai",
+        Model:       "gpt-4",
+        Temperature: 0.7,
+        MaxTokens:   2000,
+    },
 }
 
 agent, err := v1beta.NewBuilder("Agent").
@@ -270,18 +249,17 @@ result, _ := agent.RunWithOptions(ctx, "Write a story", opts)
 
 ```go
 type RunOptions struct {
-    // LLM Parameters
-    Temperature  float64
-    MaxTokens    int
-    TopP         float64
-    SystemPrompt string
+    // LLM Parameters (overrides)
+    Temperature *float64 // Pointer to allow nil (no override)
+    MaxTokens   int
     
     // Execution Control
     Timeout time.Duration
+    Context map[string]interface{}
     
     // Memory Control
-    MemoryEnabled bool
-    SessionID     string
+    Memory    *MemoryOptions
+    SessionID string
 }
 ```
 
@@ -372,15 +350,15 @@ if err != nil {
 
 // Use with builder
 agent, err := v1beta.NewBuilder(cfg.Name).
-    WithLLM(cfg.LLM.Provider, cfg.LLM.Model).
     WithConfig(&v1beta.Config{
         SystemPrompt: cfg.SystemPrompt,
-        Temperature:  cfg.LLM.Temperature,
-        MaxTokens:    cfg.LLM.MaxTokens,
-        TopP:         cfg.LLM.TopP,
-        Timeout:      cfg.Execution.Timeout,
-        MaxRetries:   cfg.Execution.MaxRetries,
-        RetryDelay:   cfg.Execution.RetryDelay,
+        Timeout:      cfg.Timeout,
+        LLM: v1beta.LLMConfig{
+            Provider:    cfg.LLM.Provider,
+            Model:       cfg.LLM.Model,
+            Temperature: float32(cfg.LLM.Temperature),
+            MaxTokens:   cfg.LLM.MaxTokens,
+        },
     }).
     Build()
 ```
@@ -412,7 +390,6 @@ func createAgent() (v1beta.Agent, error) {
     }
     
     return v1beta.NewBuilder("Agent").
-        WithLLM("openai", "gpt-4").
         WithConfig(config).
         Build()
 }
@@ -422,9 +399,10 @@ func createAgent() (v1beta.Agent, error) {
 
 ```go
 func createAgentWithFeatures(features map[string]bool) (v1beta.Agent, error) {
-    builder := v1beta.NewBuilder("Agent").
-        WithPreset(v1beta.ChatAgent).
-        WithLLM("openai", "gpt-4")
+    // Start with preset and customize
+    builder := v1beta.NewChatAgent("Agent",
+        v1beta.WithLLM("openai", "gpt-4"),
+    )
     
     if features["memory"] {
         builder = builder.WithMemory(&v1beta.MemoryOptions{
@@ -476,7 +454,6 @@ func createFromProfile(profileName string) (v1beta.Agent, error) {
     profile := profiles[profileName]
     
     return v1beta.NewBuilder(profile.Name).
-        WithLLM("openai", "gpt-4").
         WithConfig(profile.Config).
         WithTools(profile.Tools).
         Build()
@@ -491,10 +468,9 @@ func createFromProfile(profileName string) (v1beta.Agent, error) {
 
 ```go
 // ✅ Recommended - clear and type-safe
-agent, _ := v1beta.NewBuilder("Agent").
-    WithPreset(v1beta.ChatAgent).
-    WithLLM("openai", "gpt-4").
-    Build()
+agent, _ := v1beta.NewChatAgent("Agent",
+    v1beta.WithLLM("openai", "gpt-4"),
+)
 
 // ❌ Avoid - harder to read and maintain
 config := &v1beta.Config{...}
@@ -508,7 +484,9 @@ agent, _ := v1beta.NewAgentFromConfig(config)
 agent, _ := v1beta.NewBuilder("Agent").
     WithPreset(v1beta.ChatAgent). // Good defaults
     WithConfig(&v1beta.Config{
-        Temperature: 0.8, // Override only what you need
+        LLM: v1beta.LLMConfig{
+            Temperature: 0.8, // Override only what you need
+        },
     }).
     Build()
 ```

@@ -113,7 +113,9 @@ import (
 
 func main() {
     agent, err := v1beta.NewBuilder("MyAgent").
-        WithLLM("openai", "gpt-4").
+        WithConfig(&v1beta.Config{
+            LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+        }).
         Build()
     if err != nil {
         log.Fatal(err)

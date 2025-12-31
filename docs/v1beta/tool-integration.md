@@ -82,7 +82,6 @@ mcpServer := v1beta.MCPServer{
 }
 
 agent, _ := v1beta.NewBuilder("FSAgent").
-    WithLLM("openai", "gpt-4").
     WithTools(
         v1beta.WithMCP(mcpServer),
     ).
@@ -108,7 +107,6 @@ mcpServer := v1beta.MCPServer{
 }
 
 agent, _ := v1beta.NewBuilder("DBAgent").
-    WithLLM("openai", "gpt-4").
     WithTools(
         v1beta.WithMCP(mcpServer),
     ).
@@ -133,7 +131,6 @@ mcpServer := v1beta.MCPServer{
 }
 
 agent, _ := v1beta.NewBuilder("RealtimeAgent").
-    WithLLM("openai", "gpt-4").
     WithTools(
         v1beta.WithMCP(mcpServer),
     ).
@@ -159,7 +156,6 @@ mcpServer := v1beta.MCPServer{
 }
 
 agent, _ := v1beta.NewBuilder("WebAgent").
-    WithLLM("openai", "gpt-4").
     WithTools(
         v1beta.WithMCP(mcpServer),
     ).
@@ -185,7 +181,6 @@ mcpServer := v1beta.MCPServer{
 }
 
 agent, _ := v1beta.NewBuilder("DataAgent").
-    WithLLM("openai", "gpt-4").
     WithTools(
         v1beta.WithMCP(mcpServer),
     ).
@@ -207,7 +202,6 @@ Automatically discover MCP servers on the network:
 
 ```go
 agent, _ := v1beta.NewBuilder("DiscoveryAgent").
-    WithLLM("openai", "gpt-4").
     WithTools(
         v1beta.WithMCPDiscovery(8080, 8081, 8090, 8100), // Scan these ports
     ).
@@ -219,7 +213,6 @@ agent, _ := v1beta.NewBuilder("DiscoveryAgent").
 ```go
 // Custom discovery settings
 agent, _ := v1beta.NewBuilder("CustomDiscovery").
-    WithLLM("openai", "gpt-4").
     WithTools(
         v1beta.WithMCPDiscovery(), // Uses default ports
         v1beta.WithToolTimeout(30 * time.Second),
@@ -227,30 +220,38 @@ agent, _ := v1beta.NewBuilder("CustomDiscovery").
     Build()
 ```
 
-### Manual Tool Registration
+### Internal Tool Registration
 
-Register tools programmatically:
+Register tools globally using the internal registry:
 
 ```go
 import "github.com/agenticgokit/agenticgokit/v1beta"
 
-// Get tool manager from capabilities
+// Define a custom tool
+type searchTool struct{}
+
+func (t *searchTool) Name() string { return "web_search" }
+func (t *searchTool) Description() string { return "Search the web" }
+func (t *searchTool) Execute(ctx context.Context, args map[string]interface{}) (*v1beta.ToolResult, error) {
+    // Implementation
+    return &v1beta.ToolResult{Success: true, Content: "Results"}, nil
+}
+
+func init() {
+    // Register tool factory
+    v1beta.RegisterInternalTool("web_search", func() v1beta.Tool {
+        return &searchTool{}
+    })
+}
+
+// Handler example using the tool
 handler := func(ctx context.Context, input string, capabilities *v1beta.Capabilities) (string, error) {
-    // List available tools
-    tools := capabilities.Tools.List()
-    for _, tool := range tools {
-        fmt.Printf("Tool: %s - %s\n", tool.Name, tool.Description)
-    }
-    
-    // Check if specific tool is available
     if capabilities.Tools.IsAvailable("web_search") {
-        // Use the tool
-        result, _ := capabilities.Tools.Execute(ctx, "web_search", map[string]interface{}{
+         result, _ := capabilities.Tools.Execute(ctx, "web_search", map[string]interface{}{
             "query": "latest news",
         })
         return fmt.Sprintf("%v", result.Content), nil
     }
-    
     return capabilities.LLM("You are a helpful assistant.", input)
 }
 ```
@@ -263,9 +264,10 @@ handler := func(ctx context.Context, input string, capabilities *v1beta.Capabili
 
 ```go
 agent, _ := v1beta.NewBuilder("ConfiguredAgent").
-    WithLLM("openai", "gpt-4").
     WithTools(
-        v1beta.WithMCP(servers...),
+        v1beta.WithMCP(&v1beta.MCPConfig{
+            Servers: servers,
+        }),
         v1beta.WithToolTimeout(30 * time.Second),
         v1beta.WithMaxConcurrentTools(5),
     ).
@@ -426,9 +428,10 @@ handler := func(ctx context.Context, input string, capabilities *v1beta.Capabili
 
 ```go
 agent, _ := v1beta.NewBuilder("CachedAgent").
-    WithLLM("openai", "gpt-4").
     WithTools(
-        v1beta.WithMCP(servers...),
+        v1beta.WithMCP(&v1beta.MCPConfig{
+            Servers: servers,
+        }),
         v1beta.WithToolCaching(15 * time.Minute), // 15 minute TTL
     ).
     Build()
@@ -773,7 +776,10 @@ cat /var/log/mcp-server.log
 ```go
 agent, _ := v1beta.NewBuilder("Agent").
     WithTools(
-        v1beta.WithMCPDiscovery(8080, 8081, 8090),
+        v1beta.WithMCP(&v1beta.MCPConfig{
+            Discovery: true,
+            ScanPorts: []int{8080, 8081, 8090},
+        }),
     ).
     Build()
 ```
@@ -786,7 +792,9 @@ agent, _ := v1beta.NewBuilder("Agent").
 ```go
 agent, _ := v1beta.NewBuilder("Agent").
     WithTools(
-        v1beta.WithMCP(servers...),
+        v1beta.WithMCP(&v1beta.MCPConfig{
+            Servers: servers,
+        }),
         v1beta.WithToolTimeout(60 * time.Second),
     ).
     Build()

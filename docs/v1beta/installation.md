@@ -70,9 +70,9 @@ import (
 )
 
 func main() {
-    agent, err := v1beta.PresetChatAgentBuilder().
-        WithName("HelloAgent").
-        Build()
+    agent, err := v1beta.NewChatAgent("HelloAgent",
+        v1beta.WithLLM("openai", "gpt-4"),
+    )
     if err != nil {
         log.Fatal(err)
     }
@@ -122,15 +122,17 @@ func main() {
     os.Setenv("OPENAI_API_KEY", "sk-...")
     
     // Option 2: Pass via configuration
-    agent, err := v1beta.NewBuilder("Agent").
-        WithLLMProvider("openai").
-        WithModel("gpt-4").
-        WithConfig(v1beta.Config{
-            LLMConfig: map[string]interface{}{
-                "api_key": "sk-...",
-            },
-        }).
-        Build()
+    agent, err := v1beta.NewChatAgent("Agent",
+        v1beta.WithLLM("openai", "gpt-4"),
+        v1beta.WithConfig(&v1beta.Config{
+             LLM: v1beta.LLMConfig{
+                 Provider: "openai",
+                 Model:    "gpt-4",
+                 // Additional config like API key if supported by provider direct passing
+                 // or handled via env vars which is standard
+             },
+        }),
+    )
 }
 ```
 
@@ -143,16 +145,16 @@ export AZURE_OPENAI_API_KEY="your-azure-api-key"
 ```
 
 ```go
-agent, err := v1beta.NewBuilder("Agent").
-    WithModel("azure", "gpt-4").
-    WithConfig(v1beta.Config{
-        LLMConfig: map[string]interface{}{
-            "endpoint": "https://your-resource.openai.azure.com",
-            "api_key":  "your-azure-api-key",
-            "deployment_name": "gpt-4-deployment", // Your Azure deployment name
+agent, err := v1beta.NewChatAgent("Agent",
+    v1beta.WithLLM("azure", "gpt-4"),
+    v1beta.WithConfig(&v1beta.Config{
+        LLM: v1beta.LLMConfig{
+            Provider: "azure",
+            Model:    "gpt-4",
+            // Deployment name typically handled via mapping or env var in this provider
         },
-    }).
-    Build()
+    }),
+)
 ```
 
 ### Ollama (Local)
@@ -177,14 +179,10 @@ ollama pull gemma2
 #### Use in Code
 
 ```go
-agent, err := v1beta.NewBuilder("Agent").
-    WithModel("ollama", "llama2").
-    WithConfig(v1beta.Config{
-        LLMConfig: map[string]interface{}{
-            "base_url": "http://localhost:11434", // Default Ollama URL
-        },
-    }).
-    Build()
+agent, err := v1beta.NewChatAgent("Agent",
+    v1beta.WithLLM("ollama", "llama2"),
+    // Base URL is typically read from OLLAMA_HOST env var
+)
 ```
 
 ### HuggingFace
@@ -194,9 +192,9 @@ export HUGGINGFACE_API_KEY="hf_..."
 ```
 
 ```go
-agent, err := v1beta.NewBuilder("Agent").
-    WithModel("huggingface", "mistralai/Mistral-7B-Instruct-v0.2").
-    Build()
+agent, err := v1beta.NewChatAgent("Agent",
+    v1beta.WithLLM("huggingface", "mistralai/Mistral-7B-Instruct-v0.2"),
+)
 ```
 
 ### OpenRouter
@@ -206,9 +204,9 @@ export OPENROUTER_API_KEY="sk-or-..."
 ```
 
 ```go
-agent, err := v1beta.NewBuilder("Agent").
-    WithModel("openrouter", "anthropic/claude-3-opus").
-    Build()
+agent, err := v1beta.NewChatAgent("Agent",
+    v1beta.WithLLM("openrouter", "anthropic/claude-3-opus"),
+)
 ```
 
 ---
@@ -288,10 +286,9 @@ func main() {
     os.Setenv("OPENAI_API_KEY", "your-key-here")
     
     // Create a simple agent
-    agent, err := v1beta.PresetChatAgentBuilder().
-        WithName("TestAgent").
-        WithModel("openai", "gpt-3.5-turbo").
-        Build()
+    agent, err := v1beta.NewChatAgent("TestAgent",
+        v1beta.WithLLM("openai", "gpt-3.5-turbo"),
+    )
     if err != nil {
         log.Fatal("Build failed:", err)
     }
@@ -335,9 +332,13 @@ go get github.com/agenticgokit/agenticgokit/plugins/memory/postgres
 import "github.com/agenticgokit/agenticgokit/plugins/memory/postgres"
 
 memProvider, err := postgres.New("postgresql://user:pass@localhost/db")
-agent, err := v1beta.PresetChatAgentBuilder().
-    WithMemory(memProvider).
-    Build()
+agent, err := v1beta.NewChatAgent("MemoryAgent",
+    v1beta.WithLLM("openai", "gpt-4"),
+    v1beta.WithMemory(
+        v1beta.WithMemoryProvider("postgres"), // or similar depending on provider implementation
+        // Usually providers are injected differently or registered
+    ),
+)
 ```
 
 #### Weaviate

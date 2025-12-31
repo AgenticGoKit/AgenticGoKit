@@ -44,15 +44,17 @@ func main() {
 
 // testOpenRouterConnection verifies the API key works
 func testOpenRouterConnection(apiKey string) error {
-	testAgent, err := vnext.QuickChatAgentWithConfig("Test", &vnext.Config{
-		Name:    "test",
-		Timeout: 10 * time.Second,
-		LLM: vnext.LLMConfig{
-			Provider: "openrouter",
-			Model:    "openai/gpt-4o-mini",
-			APIKey:   apiKey,
-		},
-	})
+	testAgent, err := vnext.NewBuilder("test").
+		WithConfig(&vnext.Config{
+			Name:    "test",
+			Timeout: 10 * time.Second,
+			LLM: vnext.LLMConfig{
+				Provider: "openrouter",
+				Model:    "openai/gpt-4o-mini",
+				APIKey:   apiKey,
+			},
+		}).
+		Build()
 	if err != nil {
 		return err
 	}
@@ -72,6 +74,3 @@ func getPort() string {
 	}
 	return port
 }
-
-
-

@@ -11,9 +11,9 @@ Common issues and solutions when working with AgenticGoKit v1beta.
 ```go
 import "github.com/agenticgokit/agenticgokit/v1beta"
 
-agent, err := v1beta.NewBuilder("agent").
-    WithLLM("openai", "gpt-4").
-    Build()
+agent, err := v1beta.NewChatAgent("agent",
+    v1beta.WithLLM("openai", "gpt-4"),
+)
 
 if err != nil {
     fmt.Printf("Error: %v\n", err)
@@ -34,9 +34,12 @@ fmt.Printf("LLM: %s/%s\n", config.LLM.Provider, config.LLM.Model)
 
 ```go
 agent, _ := v1beta.NewBuilder("agent").
-    WithLLM("openai", "gpt-4").
     WithConfig(&v1beta.Config{
         DebugMode: true, // Enable verbose logging
+        LLM: v1beta.LLMConfig{
+            Provider: "openai",
+            Model:    "gpt-4",
+        },
     }).
     Build()
 ```
@@ -302,9 +305,9 @@ max_concurrent = 3
 3. Use different tier or model:
 ```go
 // Switch to higher tier model
-agent, _ := v1beta.NewBuilder("agent").
-    WithLLM("openai", "gpt-3.5-turbo"). // Fewer restrictions
-    Build()
+agent, _ := v1beta.NewChatAgent("agent",
+    v1beta.WithLLM("openai", "gpt-3.5-turbo"), // Fewer restrictions
+)
 ```
 
 ### Issue: Azure OpenAI Connection
@@ -364,9 +367,9 @@ ollama pull mistral
 
 3. Verify model name:
 ```go
-agent, _ := v1beta.NewBuilder("agent").
-    WithLLM("ollama", "llama2"). // Must match exact name
-    Build()
+agent, _ := v1beta.NewChatAgent("agent",
+    v1beta.WithLLM("ollama", "llama2"), // Must match exact name
+)
 ```
 
 ---
@@ -457,7 +460,6 @@ handler := func(ctx context.Context, input string, capabilities *v1beta.Capabili
 3. Enable tool discovery:
 ```go
 agent, _ := v1beta.NewBuilder("agent").
-    WithLLM("openai", "gpt-4").
     WithTools(
         v1beta.WithMCPDiscovery(8080, 8081, 8090),
     ).
@@ -476,7 +478,6 @@ TOOL_TIMEOUT: tool execution exceeded timeout
 1. Increase timeout:
 ```go
 agent, _ := v1beta.NewBuilder("agent").
-    WithLLM("openai", "gpt-4").
     WithTools(
         v1beta.WithMCP(servers...),
         v1beta.WithToolTimeout(60 * time.Second), // Increase
@@ -534,7 +535,6 @@ CREATE EXTENSION IF NOT EXISTS vector;
 4. Use fallback provider:
 ```go
 agent, _ := v1beta.NewBuilder("agent").
-    WithLLM("openai", "gpt-4").
     WithMemory(
         v1beta.WithMemoryProvider("memory"), // Fallback to in-memory
     ).
@@ -563,7 +563,6 @@ agent, _ := v1beta.NewBuilder("agent").
 2. Use persistent provider:
 ```go
 agent, _ := v1beta.NewBuilder("agent").
-    WithLLM("openai", "gpt-4").
     WithMemory(
         v1beta.WithMemoryProvider("pgvector"),
         v1beta.WithSessionScoped(),
@@ -744,9 +743,9 @@ export OPENAI_API_KEY="sk-..."
 **Solution:**
 ```go
 // Verify model name
-agent, _ := v1beta.NewBuilder("agent").
-    WithLLM("openai", "gpt-4"). // Check spelling
-    Build()
+agent, _ := v1beta.NewChatAgent("agent",
+    v1beta.WithLLM("openai", "gpt-4"), // Check spelling
+)
 ```
 
 ### "rate limit exceeded"
@@ -789,9 +788,9 @@ config := &v1beta.Config{
 ```go
 import "github.com/agenticgokit/agenticgokit/v1beta"
 
-agent, _ := v1beta.NewBuilder("agent").
-    WithLLM("openai", "gpt-4").
-    Build()
+agent, _ := v1beta.NewChatAgent("agent",
+    v1beta.WithLLM("openai", "gpt-4"),
+)
 
 // Check configuration
 config := agent.Config()

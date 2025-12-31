@@ -42,7 +42,12 @@ func main() {
 
     // Create agent with memory and RAG
     agent, err := v1beta.NewBuilder("QAAgent").
-        WithLLM("openai", "gpt-4").
+        WithConfig(&v1beta.Config{
+            LLM: v1beta.LLMConfig{
+                Provider: "openai",
+                Model:    "gpt-4",
+            },
+        }).
         WithMemory(
             v1beta.WithMemoryProvider("memory"),
             v1beta.WithSessionScoped(),
@@ -101,7 +106,9 @@ memory, _ := v1beta.NewMemoryBuilder().
     Build()
 
 agent, _ := v1beta.NewBuilder("Agent").
-    WithLLM("openai", "gpt-4").
+    WithConfig(&v1beta.Config{
+        LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+    }).
     WithMemory(
         v1beta.WithMemoryProvider("pgvector"),
     ).
@@ -117,7 +124,9 @@ export PG_CONNECTION_STRING="postgres://user:pass@localhost/db"
 
 ```go
 agent, _ := v1beta.NewBuilder("Agent").
-    WithLLM("openai", "gpt-4").
+    WithConfig(&v1beta.Config{
+        LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+    }).
     WithMemory(
         v1beta.WithMemoryProvider("memory"),
     ).
@@ -133,7 +142,9 @@ memory, _ := v1beta.NewMemoryBuilder().
     Build()
 
 agent, _ := v1beta.NewBuilder("Agent").
-    WithLLM("openai", "gpt-4").
+    WithConfig(&v1beta.Config{
+        LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+    }).
     WithMemory(
         v1beta.WithMemoryProvider("weaviate"),
     ).
@@ -245,7 +256,9 @@ memory, _ := v1beta.NewMemoryBuilder().
     Build()
 
 agent, _ := v1beta.NewBuilder("Agent").
-    WithLLM("openai", "gpt-4").
+    WithConfig(&v1beta.Config{
+        LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+    }).
     WithMemory(
         v1beta.WithMemoryProvider("memory"),
         v1beta.WithSessionScoped(), // Each session has isolated memory
@@ -264,7 +277,9 @@ agent.Run(sessionCtx, "What is my name?") // Remembers "Alice"
 
 ```go
 agent, _ := v1beta.NewBuilder("Agent").
-    WithLLM("openai", "gpt-4").
+    WithConfig(&v1beta.Config{
+        LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+    }).
     WithMemory(
         v1beta.WithMemoryProvider("memory"),
         // Without WithSessionScoped(), memory is shared
@@ -298,7 +313,9 @@ func buildKnowledgeBase() (v1beta.Agent, v1beta.Memory, error) {
 
     // Create agent with memory
     agent, err := v1beta.NewBuilder("KnowledgeBase").
-        WithLLM("openai", "gpt-4").
+        WithConfig(&v1beta.Config{
+            LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+        }).
         WithMemory(
             v1beta.WithMemoryProvider("pgvector"),
             v1beta.WithRAG(6000, 0.2, 0.8),
@@ -327,7 +344,9 @@ memory, _ := v1beta.NewMemoryBuilder().
     Build()
 
 agent, _ := v1beta.NewBuilder("ChatBot").
-    WithLLM("openai", "gpt-4").
+    WithConfig(&v1beta.Config{
+        LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+    }).
     WithMemory(
         v1beta.WithMemoryProvider("memory"),
         v1beta.WithSessionScoped(),
@@ -356,7 +375,9 @@ memory, _ := v1beta.NewMemoryBuilder().
     Build()
 
 analyzer, _ := v1beta.NewBuilder("Analyzer").
-    WithLLM("openai", "gpt-4").
+    WithConfig(&v1beta.Config{
+        LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+    }).
     WithMemory(
         v1beta.WithMemoryProvider("weaviate"),
         v1beta.WithRAG(8000, 0.3, 0.7),
@@ -413,7 +434,9 @@ memory, _ := v1beta.NewMemoryBuilder().
 
 // Use with agent
 agent, _ := v1beta.NewBuilder("Agent").
-    WithLLM("openai", "gpt-4").
+    WithConfig(&v1beta.Config{
+        LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+    }).
     WithMemory(
         v1beta.WithMemoryProvider("pgvector"),
         v1beta.WithRAG(4000, 0.3, 0.7),

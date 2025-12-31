@@ -30,7 +30,9 @@ import (
 func main() {
     // Create agent with custom handler
     agent, err := v1beta.NewBuilder("CustomAgent").
-        WithLLM("openai", "gpt-4").
+        WithConfig(&v1beta.Config{
+            LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+        }).
         WithHandler(customHandler).
         Build()
     if err != nil {
@@ -343,7 +345,9 @@ func chainHandlers(handlers ...v1beta.HandlerFunc) v1beta.HandlerFunc {
 
 // Usage
 agent, _ := v1beta.NewBuilder("Agent").
-    WithLLM("openai", "gpt-4").
+    WithConfig(&v1beta.Config{
+        LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+    }).
     WithHandler(chainHandlers(
         validationHandler,
         preprocessHandler,

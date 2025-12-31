@@ -85,7 +85,12 @@ func main() {
     // Create agent with memory
     agent, err := v1beta.NewBuilder("MemoryAgent").
         WithPreset(v1beta.ChatAgent).
-        WithLLM("openai", "gpt-4").
+        WithConfig(&v1beta.Config{
+            LLM: v1beta.LLMConfig{
+                Provider: "openai",
+                Model:    "gpt-4",
+            },
+        }).
         WithMemory(
             v1beta.WithMemoryProvider("memory"),
         ).
@@ -737,7 +742,12 @@ func main() {
     // Create agent with full RAG capabilities
     agent, err := v1beta.NewBuilder("RAGAssistant").
         WithPreset(v1beta.ResearchAgent).
-        WithLLM("openai", "gpt-4").
+        WithConfig(&v1beta.Config{
+            LLM: v1beta.LLMConfig{
+                Provider: "openai",
+                Model:    "gpt-4",
+            },
+        }).
         WithMemory(
             v1beta.WithMemoryProvider("pgvector"),
             v1beta.WithContextAware(),

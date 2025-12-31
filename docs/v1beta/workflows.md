@@ -126,12 +126,16 @@ func main() {
     
     analyzerAgent, _ := v1beta.NewBuilder("Analyzer").
         WithPreset(v1beta.ChatAgent).
-        WithSystemPrompt("You analyze and summarize research data").
+        WithConfig(&v1beta.Config{
+            SystemPrompt: "You analyze and summarize research data",
+        }).
         Build()
     
     writerAgent, _ := v1beta.NewBuilder("Writer").
         WithPreset(v1beta.ChatAgent).
-        WithSystemPrompt("You write clear, concise summaries").
+        WithConfig(&v1beta.Config{
+            SystemPrompt: "You write clear, concise summaries",
+        }).
         Build()
     
     // Create sequential workflow
@@ -211,9 +215,9 @@ result2, _ := workflow.Run(context.Background(), "Process dataset2.csv")
 
 ```go
 // Create specialized agents
-techAgent, _ := v1beta.QuickChatAgent("gpt-4")
-bizAgent, _ := v1beta.QuickChatAgent("gpt-4")
-legalAgent, _ := v1beta.QuickChatAgent("gpt-4")
+techAgent, _ := v1beta.NewChatAgent("TechAnalyst", v1beta.WithLLM("openai", "gpt-4"))
+bizAgent, _ := v1beta.NewChatAgent("BizAnalyst", v1beta.WithLLM("openai", "gpt-4"))
+legalAgent, _ := v1beta.NewChatAgent("LegalAnalyst", v1beta.WithLLM("openai", "gpt-4"))
 
 // Create parallel workflow
 config := &v1beta.WorkflowConfig{
@@ -274,7 +278,7 @@ for _, stepResult := range result.StepResults {
 }
 
 // Use aggregator agent to synthesize
-aggregator, _ := v1beta.QuickChatAgent("gpt-4")
+aggregator, _ := v1beta.NewChatAgent("Aggregator", v1beta.WithLLM("openai", "gpt-4"))
 final, _ := aggregator.Run(
     context.Background(),
     fmt.Sprintf("Synthesize these analyses: %v", allAnalyses),
@@ -311,10 +315,10 @@ if err == context.DeadlineExceeded {
 
 ```go
 // Create agents
-dataAgent, _ := v1beta.QuickChatAgent("gpt-4")
-processor1, _ := v1beta.QuickChatAgent("gpt-4")
-processor2, _ := v1beta.QuickChatAgent("gpt-4")
-aggregator, _ := v1beta.QuickChatAgent("gpt-4")
+dataAgent, _ := v1beta.NewChatAgent("DataFetcher", v1beta.WithLLM("openai", "gpt-4"))
+processor1, _ := v1beta.NewChatAgent("Processor1", v1beta.WithLLM("openai", "gpt-4"))
+processor2, _ := v1beta.NewChatAgent("Processor2", v1beta.WithLLM("openai", "gpt-4"))
+aggregator, _ := v1beta.NewChatAgent("Aggregator", v1beta.WithLLM("openai", "gpt-4"))
 
 // Define DAG structure
 config := &v1beta.WorkflowConfig{
@@ -442,8 +446,8 @@ validate
 
 ```go
 // Create agents for iterative refinement
-drafterAgent, _ := v1beta.QuickChatAgent("gpt-4")
-criticAgent, _ := v1beta.QuickChatAgent("gpt-4")
+drafterAgent, _ := v1beta.NewChatAgent("Drafter", v1beta.WithLLM("openai", "gpt-4"))
+criticAgent, _ := v1beta.NewChatAgent("Critic", v1beta.WithLLM("openai", "gpt-4"))
 
 // Define loop condition
 shouldContinue := func(ctx context.Context, iteration int, lastResult *v1beta.WorkflowResult) (bool, error) {

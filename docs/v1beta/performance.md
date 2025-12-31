@@ -192,7 +192,9 @@ Create agents per request:
 // ✅ Memory efficient
 func handleRequest(query string) (*v1beta.Result, error) {
     agent, _ := v1beta.NewBuilder("agent").
-        WithLLM("openai", "gpt-4").
+        WithConfig(&v1beta.Config{
+            LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+        }).
         Build()
     defer agent.Cleanup(context.Background())
     return agent.Run(context.Background(), query)
@@ -203,7 +205,9 @@ var globalAgent v1beta.Agent
 
 func init() {
     globalAgent, _ = v1beta.NewBuilder("agent").
-        WithLLM("openai", "gpt-4").
+        WithConfig(&v1beta.Config{
+            LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+        }).
         Build()
 }
 ```
@@ -262,7 +266,9 @@ for _, query := range queries {
     go func(q string) {
         defer wg.Done()
         agent, _ := v1beta.NewBuilder("agent").
-            WithLLM("openai", "gpt-4").
+            WithConfig(&v1beta.Config{
+                LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+            }).
             Build()
         result, _ := agent.Run(context.Background(), q)
         results <- result
@@ -287,7 +293,9 @@ Or programmatically:
 
 ```go
 agent, _ := v1beta.NewBuilder("agent").
-    WithLLM("openai", "gpt-4").
+    WithConfig(&v1beta.Config{
+        LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+    }).
     WithTools(
         v1beta.WithToolRateLimit(10),
         v1beta.WithMaxConcurrentTools(5),
@@ -322,7 +330,9 @@ func NewWorkerPool(workers int) *WorkerPool {
 
 func (p *WorkerPool) worker() {
     agent, _ := v1beta.NewBuilder("worker").
-        WithLLM("openai", "gpt-4").
+        WithConfig(&v1beta.Config{
+            LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+        }).
         Build()
     defer agent.Cleanup(context.Background())
     
@@ -434,17 +444,23 @@ Choose appropriate models:
 ```go
 // Fast, cheap (simple tasks)
 agent, _ := v1beta.NewBuilder("agent").
-    WithLLM("openai", "gpt-3.5-turbo").
+    WithConfig(&v1beta.Config{
+        LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-3.5-turbo"},
+    }).
     Build()
 
 // Balanced (most use cases)
 agent, _ := v1beta.NewBuilder("agent").
-    WithLLM("openai", "gpt-4").
+    WithConfig(&v1beta.Config{
+        LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+    }).
     Build()
 
 // Powerful (complex reasoning)
 agent, _ := v1beta.NewBuilder("agent").
-    WithLLM("openai", "gpt-4-turbo").
+    WithConfig(&v1beta.Config{
+        LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4-turbo"},
+    }).
     Build()
 ```
 
@@ -523,7 +539,9 @@ result, _ := agent.Run(ctx, fmt.Sprintf("Process these queries:\n%s", batchQuery
 
 ```go
 agent, _ := v1beta.NewBuilder("agent").
-    WithLLM("openai", "gpt-4").
+    WithConfig(&v1beta.Config{
+        LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+    }).
     WithTools(
         v1beta.WithMCP(servers...),
         v1beta.WithToolTimeout(30 * time.Second), // Adjust based on tools
@@ -667,7 +685,9 @@ ctx = context.WithValue(ctx, "workflow_context", wc)
 ```go
 func BenchmarkAgentRun(b *testing.B) {
     agent, _ := v1beta.NewBuilder("agent").
-        WithLLM("openai", "gpt-4").
+        WithConfig(&v1beta.Config{
+            LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+        }).
         Build()
     ctx := context.Background()
     
@@ -679,7 +699,9 @@ func BenchmarkAgentRun(b *testing.B) {
 
 func BenchmarkStreamingVsNonStreaming(b *testing.B) {
     agent, _ := v1beta.NewBuilder("agent").
-        WithLLM("openai", "gpt-4").
+        WithConfig(&v1beta.Config{
+            LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+        }).
         Build()
     ctx := context.Background()
     
@@ -714,7 +736,9 @@ func TestMemoryUsage(t *testing.T) {
     before := m.Alloc
     
     agent, _ := v1beta.NewBuilder("agent").
-        WithLLM("openai", "gpt-4").
+        WithConfig(&v1beta.Config{
+            LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+        }).
         Build()
     
     for i := 0; i < 100; i++ {
@@ -733,7 +757,9 @@ func TestMemoryUsage(t *testing.T) {
 ```go
 func LoadTest() {
     agent, _ := v1beta.NewBuilder("agent").
-        WithLLM("openai", "gpt-4").
+        WithConfig(&v1beta.Config{
+            LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+        }).
         Build()
     
     start := time.Now()

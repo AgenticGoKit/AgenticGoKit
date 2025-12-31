@@ -26,7 +26,9 @@ import (
 func main() {
     // Create refining agent
     refiner, err := v1beta.NewBuilder("Refiner").
-        WithLLM("openai", "gpt-4").
+        WithConfig(&v1beta.Config{
+            LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+        }).
         Build()
     if err != nil {
         log.Fatal(err)
@@ -119,7 +121,9 @@ workflow, _ := v1beta.NewLoopWorkflow(
 ### Code Review Loop
 
 ```go
-reviewer, _ := v1beta.NewBuilder("CodeReviewer").WithLLM("openai", "gpt-4").Build()
+reviewer, _ := v1beta.NewBuilder("CodeReviewer").WithConfig(&v1beta.Config{
+    LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+}).Build()
 
 converged := func(iteration int, result *v1beta.Result) bool {
     // Stop if no more issues found
@@ -138,7 +142,9 @@ workflow, _ := v1beta.NewLoopWorkflow(
 ### Iterative Research
 
 ```go
-researcher, _ := v1beta.NewBuilder("Researcher").WithLLM("openai", "gpt-4").Build()
+researcher, _ := v1beta.NewBuilder("Researcher").WithConfig(&v1beta.Config{
+    LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+}).Build()
 
 converged := func(iteration int, result *v1beta.Result) bool {
     // Stop when comprehensive
@@ -157,7 +163,9 @@ workflow, _ := v1beta.NewLoopWorkflow(
 ### Content Refinement
 
 ```go
-editor, _ := v1beta.NewBuilder("Editor").WithLLM("openai", "gpt-4").Build()
+editor, _ := v1beta.NewBuilder("Editor").WithConfig(&v1beta.Config{
+    LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+}).Build()
 
 converged := func(iteration int, result *v1beta.Result) bool {
     // Stop when polished

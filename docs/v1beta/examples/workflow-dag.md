@@ -24,11 +24,21 @@ import (
 
 func main() {
     // Create agents
-    dataFetcher, _ := v1beta.NewBuilder("DataFetcher").WithLLM("openai", "gpt-4").Build()
-    validator, _ := v1beta.NewBuilder("Validator").WithLLM("openai", "gpt-3.5-turbo").Build()
-    processor, _ := v1beta.NewBuilder("Processor").WithLLM("openai", "gpt-4").Build()
-    analyzer, _ := v1beta.NewBuilder("Analyzer").WithLLM("openai", "gpt-4").Build()
-    reporter, _ := v1beta.NewBuilder("Reporter").WithLLM("openai", "gpt-4").Build()
+    dataFetcher, _ := v1beta.NewBuilder("DataFetcher").WithConfig(&v1beta.Config{
+        LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+    }).Build()
+    validator, _ := v1beta.NewBuilder("Validator").WithConfig(&v1beta.Config{
+        LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-3.5-turbo"},
+    }).Build()
+    processor, _ := v1beta.NewBuilder("Processor").WithConfig(&v1beta.Config{
+        LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+    }).Build()
+    analyzer, _ := v1beta.NewBuilder("Analyzer").WithConfig(&v1beta.Config{
+        LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+    }).Build()
+    reporter, _ := v1beta.NewBuilder("Reporter").WithConfig(&v1beta.Config{
+        LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+    }).Build()
 
     // Create DAG workflow with dependencies
     workflow, err := v1beta.NewDAGWorkflow("DataPipeline",
@@ -166,7 +176,9 @@ func (d *ConditionalDAG) Run(ctx context.Context, input string) (map[string]*v1b
     
     // Check condition and potentially skip steps
     if needsReview(results["analyze"]) {
-        reviewAgent, _ := v1beta.NewBuilder("Reviewer").WithLLM("openai", "gpt-4").Build()
+        reviewAgent, _ := v1beta.NewBuilder("Reviewer").WithConfig(&v1beta.Config{
+            LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+        }).Build()
         reviewResult, _ := reviewAgent.Run(ctx, results["analyze"].Content)
         results["review"] = reviewResult
     }
@@ -183,7 +195,9 @@ func buildDAG(steps []StepConfig) (v1beta.Workflow, error) {
     
     for i, step := range steps {
         agent, _ := v1beta.NewBuilder(step.Name).
-            WithLLM(step.Provider, step.Model).
+            WithConfig(&v1beta.Config{
+                LLM: v1beta.LLMConfig{Provider: step.Provider, Model: step.Model},
+            }).
             Build()
         
         dagSteps[i] = v1beta.DAGStep(

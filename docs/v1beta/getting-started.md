@@ -54,10 +54,9 @@ func main() {
     os.Setenv("OPENAI_API_KEY", "your-api-key-here")
     
     // Create an agent with preset configuration
-    agent, err := v1beta.NewBuilder("Assistant").
-        WithPreset(v1beta.ChatAgent).
-        WithLLM("openai", "gpt-4").
-        Build()
+    agent, err := v1beta.NewChatAgent("Assistant",
+        v1beta.WithLLM("openai", "gpt-4"),
+    )
     if err != nil {
         log.Fatal(err)
     }
@@ -101,55 +100,61 @@ AgenticGoKit provides preset configurations for common agent types:
 For general-purpose chat agents:
 
 ```go
-agent, err := v1beta.NewBuilder("chat-assistant").
-    WithPreset(v1beta.ChatAgent).
-    WithName("ChatBot").
-    WithModel("openai", "gpt-4").
-    WithTemperature(0.7).
-    Build()
+agent, err := v1beta.NewChatAgent("ChatBot",
+    v1beta.WithLLMConfig("openai", "gpt-4", 0.7, 1024),
+)
 ```
 
 ### Research Agent Preset
 For research and analysis tasks:
 
 ```go
-agent, err := v1beta.NewBuilder("Researcher").
-    WithPreset(v1beta.ResearchAgent).
-    WithLLM("openai", "gpt-4").
-    Build()
+agent, err := v1beta.NewResearchAgent("Researcher",
+    v1beta.WithLLM("openai", "gpt-4"),
+)
 ```
 
-### QuickChatAgent
-For rapid prototyping:
 
-```go
-agent, _ := v1beta.QuickChatAgent("gpt-4")
-result, err := agent.Run(context.Background(), "Hello!")
-```
 
 ---
 
 ## 🔧 Builder Pattern
 
-AgenticGoKit uses a fluent builder pattern for configuration:
+AgenticGoKit uses a fluent builder pattern for custom configuration:
 
 ```go
 agent, err := v1beta.NewBuilder("MyAgent").
-    WithLLM("openai", "gpt-4").
-    WithSystemPrompt("You are a helpful assistant").
-    WithAgentTimeout(30 * time.Second).
+    WithConfig(&v1beta.Config{
+        SystemPrompt: "You are a helpful assistant",
+        Timeout:      30 * time.Second,
+        LLM: v1beta.LLMConfig{
+            Provider: "openai",
+            Model:    "gpt-4",
+        },
+    }).
     Build()
 ```
 
-### Common Builder Methods
+### Factory Function Options
+Used with `NewChatAgent`, `NewResearchAgent`, etc.
+
+| Option | Description | Example |
+|--------|-------------|---------|
+| `WithLLM(provider, model)` | Set LLM provider and model | `NewChatAgent("Bot", WithLLM("openai", "gpt-4"))` |
+| `WithLLMConfig(prov, mod, temp, ...)` | Set full LLM config | `NewChatAgent("Bot", WithLLMConfig("openai", "gpt-4", 0.7, 1000))` |
+| `WithSystemPrompt(string)` | Set system prompt | `NewChatAgent("Bot", WithSystemPrompt("You are helpful"))` |
+| `WithAgentTimeout(duration)` | Set timeout | `NewChatAgent("Bot", WithAgentTimeout(30*time.Second))` |
+
+### Builder Methods
+Used with `NewBuilder("name")` for fluent chaining.
 
 | Method | Description | Example |
 |--------|-------------|---------|
-| `WithLLM(provider, model string)` | Set LLM provider and model | `.WithLLM("openai", "gpt-4")` |
-| `WithSystemPrompt(string)` | Set system prompt | `.WithSystemPrompt("You are helpful")` |
-| `WithAgentTimeout(duration)` | Set timeout | `.WithAgentTimeout(30*time.Second)` |
-| `WithTools(opts ...ToolOption)` | Configure tools | `.WithTools(v1beta.WithMCP(servers...))` |
-| `WithMemory(opts ...MemoryOption)` | Configure memory | `.WithMemory(v1beta.WithMemoryProvider("memory"))` |
+| `WithConfig(*Config)` | Set core configuration | `.WithConfig(&v1beta.Config{...})` |
+| `WithPreset(PresetType)` | Apply a preset | `.WithPreset(v1beta.ChatAgent)` |
+| `WithTools(...ToolOption)` | Configure tools | `.WithTools(v1beta.WithMCP(servers...))` |
+| `WithMemory(...MemoryOption)` | Configure memory | `.WithMemory(v1beta.WithMemoryProvider("pgvector"))` |
+| `WithWorkflow(...WorkflowOption)` | Configure workflow | `.WithWorkflow(v1beta.WithWorkflowMode("parallel"))` |
 
 ---
 
@@ -200,7 +205,7 @@ if err == context.DeadlineExceeded {
 
 ## ⚡ Streaming Responses
 
-Get real-time streaming responses:
+GET real-time streaming responses:
 
 ### Channel-Based Streaming
 
@@ -258,15 +263,16 @@ Create workflows with multiple agents:
 
 ```go
 // Create agents
-agent1, _ := v1beta.QuickChatAgent("gpt-4")
-agent2, _ := v1beta.QuickChatAgent("gpt-4")
+agent1, _ := v1beta.NewChatAgent("Agent1", v1beta.WithLLM("openai", "gpt-4"))
+agent2, _ := v1beta.NewChatAgent("Agent2", v1beta.WithLLM("openai", "gpt-4"))
 
-// Create sequential workflow
+// Create workflow config
 config := &v1beta.WorkflowConfig{
     Mode:    v1beta.Sequential,
     Timeout: 60 * time.Second,
 }
 
+// Create sequential workflow
 workflow, err := v1beta.NewSequentialWorkflow(config)
 if err != nil {
     log.Fatal(err)
@@ -289,7 +295,7 @@ fmt.Println(result.FinalOutput)
 ### Parallel Workflow
 
 ```go
-// Create parallel workflow
+// Create workflow config
 config := &v1beta.WorkflowConfig{
     Mode:    v1beta.Parallel,
     Timeout: 90 * time.Second,
@@ -312,30 +318,33 @@ result, err := workflow.Run(context.Background(), "Analyze the product")
 Extend agent capabilities with tools:
 
 ```go
-// Define a custom tool
-weatherTool := v1beta.Tool{
-    Name:        "get_weather",
-    Description: "Get current weather for a location",
-    Parameters: map[string]interface{}{
-        "type": "object",
-        "properties": map[string]interface{}{
-            "location": map[string]interface{}{
-                "type":        "string",
-                "description": "City name",
-            },
-        },
-        "required": []string{"location"},
-    },
-    Handler: func(ctx context.Context, args map[string]interface{}) (interface{}, error) {
-        location := args["location"].(string)
-        // Call weather API...
-        return fmt.Sprintf("Weather in %s: Sunny, 72°F", location), nil
-    },
+// Define a custom tool struct
+type WeatherTool struct{}
+
+func (t *WeatherTool) Name() string { return "get_weather" }
+func (t *WeatherTool) Description() string { return "Get current weather for a location" }
+
+func (t *WeatherTool) Execute(ctx context.Context, args map[string]interface{}) (*v1beta.ToolResult, error) {
+    location, ok := args["location"].(string)
+    if !ok {
+        return &v1beta.ToolResult{Error: "location required"}, nil
+    }
+    // Call weather API...
+    return &v1beta.ToolResult{
+        Success: true,
+        Content: fmt.Sprintf("Weather in %s: Sunny, 72°F", location),
+    }, nil
 }
 
-// Create agent with tools
-// Note: Tools are typically integrated via MCP servers or tool managers
-// For custom tools, implement via CustomHandlerFunc
+// Register tool factory
+func init() {
+    v1beta.RegisterInternalTool("get_weather", func() v1beta.Tool {
+        return &WeatherTool{}
+    })
+}
+
+// Create agent
+// Internal tools are automatically discovered
 agent, err := v1beta.NewBuilder("WeatherBot").
     WithPreset(v1beta.ChatAgent).
     Build()
@@ -506,17 +515,17 @@ result, err := agent.Run(ctx, query)
 
 ### 3. Set Appropriate Timeouts
 ```go
-agent, err := v1beta.NewBuilder("Agent").
-    WithTimeout(15 * time.Second).
-    Build()
+agent, err := v1beta.NewChatAgent("Agent",
+    v1beta.WithAgentTimeout(15 * time.Second),
+)
 ```
 
 ### 4. Use Preset Builders for Common Cases
 ```go
-// Instead of manual configuration
-agent, err := v1beta.PresetChatAgentBuilder().
-    WithName("Assistant").
-    Build()
+// Use NewChatAgent for quick setup with sensible defaults
+agent, err := v1beta.NewChatAgent("Assistant",
+    v1beta.WithLLM("openai", "gpt-4"),
+)
 ```
 
 ### 5. Check Result Success

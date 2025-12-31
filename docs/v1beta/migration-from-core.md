@@ -71,8 +71,11 @@ agent, err := builder.Build()
 ```go
 agent, err := v1beta.NewBuilder("ChatBot").
     WithPreset(v1beta.ChatAgent).
-    WithLLM("openai", "gpt-4").
     WithConfig(&v1beta.Config{
+        LLM: v1beta.LLMConfig{
+            Provider: "openai",
+            Model:    "gpt-4",
+        },
         SystemPrompt: "You are a helpful assistant",
         Temperature:  0.7,
         MaxTokens:    1000,
@@ -107,10 +110,10 @@ researchAgent, _ := v1beta.NewBuilder("Researcher").
     Build()
 
 // Custom agent from scratch
-customAgent, _ := v1beta.NewBuilder("Custom").
-    WithLLM("openai", "gpt-4").
-    WithHandler(myCustomHandler).
-    Build()
+customAgent, _ := v1beta.NewChatAgent("Custom",
+    v1beta.WithLLM("openai", "gpt-4"),
+    v1beta.WithHandler(myCustomHandler),
+)
 ```
 
 ### Quick Agent Creation
@@ -126,7 +129,7 @@ agent, err := core.NewAgentBuilder().
 **After (v1beta):**
 ```go
 // Single line for common cases
-agent, err := v1beta.QuickChatAgent("gpt-4")
+agent, err := v1beta.NewChatAgent("ChatBot", v1beta.WithLLM("openai", "gpt-4"))
 ```
 
 ---
@@ -321,7 +324,6 @@ config, err := v1beta.LoadConfig("config.toml")
 
 // Use with builder
 agent, err := v1beta.NewBuilder("MyAgent").
-    WithLLM(config.LLM.Provider, config.LLM.Model).
     WithConfig(config).
     Build()
 ```

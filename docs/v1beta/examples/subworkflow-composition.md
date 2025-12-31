@@ -24,8 +24,12 @@ import (
 
 func main() {
     // Create analysis subworkflow (parallel)
-    sentimentAgent, _ := v1beta.NewBuilder("Sentiment").WithLLM("openai", "gpt-3.5-turbo").Build()
-    topicsAgent, _ := v1beta.NewBuilder("Topics").WithLLM("openai", "gpt-3.5-turbo").Build()
+    sentimentAgent, _ := v1beta.NewBuilder("Sentiment").WithConfig(&v1beta.Config{
+        LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-3.5-turbo"},
+    }).Build()
+    topicsAgent, _ := v1beta.NewBuilder("Topics").WithConfig(&v1beta.Config{
+        LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-3.5-turbo"},
+    }).Build()
     
     analysisWorkflow, _ := v1beta.NewParallelWorkflow(
         "Analysis",
@@ -34,8 +38,12 @@ func main() {
     )
 
     // Create processing subworkflow (sequential)
-    cleaner, _ := v1beta.NewBuilder("Cleaner").WithLLM("openai", "gpt-3.5-turbo").Build()
-    normalizer, _ := v1beta.NewBuilder("Normalizer").WithLLM("openai", "gpt-3.5-turbo").Build()
+    cleaner, _ := v1beta.NewBuilder("Cleaner").WithConfig(&v1beta.Config{
+        LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-3.5-turbo"},
+    }).Build()
+    normalizer, _ := v1beta.NewBuilder("Normalizer").WithConfig(&v1beta.Config{
+        LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-3.5-turbo"},
+    }).Build()
     
     processingWorkflow, _ := v1beta.NewSequentialWorkflow(
         "Processing",
@@ -193,7 +201,9 @@ func createDynamicWorkflow(needsReview bool) (v1beta.Workflow, error) {
 func createRecursiveWorkflow(depth int) (v1beta.Workflow, error) {
     if depth == 0 {
         // Base case: simple agent
-        agent, _ := v1beta.NewBuilder("Base").WithLLM("openai", "gpt-4").Build()
+        agent, _ := v1beta.NewBuilder("Base").WithConfig(&v1beta.Config{
+            LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+        }).Build()
         return v1beta.NewSequentialWorkflow("Base",
             v1beta.Step("process", agent, "Process"),
         )
@@ -202,7 +212,9 @@ func createRecursiveWorkflow(depth int) (v1beta.Workflow, error) {
     // Recursive case: nest subworkflows
     subWorkflow, _ := createRecursiveWorkflow(depth - 1)
     agent, _ := v1beta.NewBuilder(fmt.Sprintf("Level%d", depth)).
-        WithLLM("openai", "gpt-4").
+        WithConfig(&v1beta.Config{
+            LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+        }).
         Build()
     
     return v1beta.NewSequentialWorkflow(
