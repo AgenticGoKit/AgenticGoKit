@@ -7,7 +7,7 @@
 > - **v1.0 Release**: `v1beta` will become the primary `v1` package
 > - **Legacy APIs**: Both `core` and `core/vnext` packages will be removed in v1.0
 
-**Production-ready Go framework for building intelligent multi-agent AI systems**
+**Robust Go framework for building intelligent multi-agent AI systems**
 
 [![Go Version](https://img.shields.io/badge/Go-1.21+-blue.svg)](https://golang.org)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
@@ -25,6 +25,7 @@
 - **Multi-Agent Workflows**: Sequential, parallel, DAG, and loop orchestration patterns
 - **Multiple LLM Providers**: Seamlessly switch between OpenAI, Ollama, Azure OpenAI, HuggingFace, and more
 - **High Performance**: Compiled Go binaries with minimal overhead
+- **Batteries Included**: Built-in memory and RAG by default (zero config needed, swappable with pgvector/custom)
 - **Rich Integrations**: Memory providers, tool discovery, MCP protocol support
 - **Active Development**: Beta status with stable core APIs and ongoing improvements
 
@@ -52,7 +53,6 @@ func main() {
         WithConfig(&v1beta.Config{
             Name:         "ChatAgent",
             SystemPrompt: "You are a helpful assistant",
-            Timeout:      30 * time.Second,
             LLM: v1beta.LLMConfig{
                 Provider: "ollama",
                 Model:    "gemma3:1b",
@@ -71,134 +71,36 @@ func main() {
     }
     
     fmt.Println("Response:", result.Content)
-    fmt.Printf("Duration: %.2fs | Tokens: %d\n", result.Duration.Seconds(), result.TokensUsed)
 }
 ```
 
 > **Note:** The `agentcli` scaffolding tool is being deprecated and will be replaced by the `agk` CLI in a future release.
 
-## Streaming Workflows
+## Core Capabilities
 
-**Watch your multi-agent workflows execute in real-time:**
+AgenticGoKit handles the complexities of building AI systems so you can focus on logic.
 
-```go
-package main
+### 🔄 [Workflow Orchestration](docs/v1beta/workflows.md)
+Orchestrate multiple agents using robust patterns. Pass data between agents, handle errors, and manage state automatically.
+- **Patterns**: Sequential, Parallel, DAG, Loop.
+- **Example**: [Sequential Workflow Demo](examples/sequential-workflow-demo/)
 
-import (
-    "context"
-    "fmt" 
-    "log"
-    "time"
-    
-    "github.com/agenticgokit/agenticgokit/v1beta"
-)
+### ⚡ [Real-time Streaming](docs/v1beta/streaming.md)
+Built from the ground up for streaming. Receive tokens and tool updates as they happen, suitable for real-time UI experiences.
+- **Example**: [Streaming Workflow](examples/streaming_workflow/)
 
-func main() {
-    // Create specialized agents
-    researcher, _ := v1beta.NewBuilder("researcher").
-        WithConfig(&v1beta.Config{
-            Name:         "researcher",
-            SystemPrompt: "You are a research specialist",
-            Timeout:      60 * time.Second,
-            LLM: v1beta.LLMConfig{
-                Provider: "ollama",
-                Model:    "gemma3:1b",
-                BaseURL:  "http://localhost:11434",
-            },
-        }).
-        Build()
-    
-    analyzer, _ := v1beta.NewBuilder("analyzer").
-        WithConfig(&v1beta.Config{
-            Name:         "analyzer",
-            SystemPrompt: "You are a data analyst",
-            Timeout:      60 * time.Second,
-            LLM: v1beta.LLMConfig{
-                Provider: "ollama",
-                Model:    "gemma3:1b",
-                BaseURL:  "http://localhost:11434",
-            },
-        }).
-        Build()
-    
-    // Build workflow
-    workflow, _ := v1beta.NewSequentialWorkflow(&v1beta.WorkflowConfig{
-        Timeout: 300 * time.Second,
-    })
-    workflow.AddStep(v1beta.WorkflowStep{Name: "research", Agent: researcher})
-    workflow.AddStep(v1beta.WorkflowStep{Name: "analyze", Agent: analyzer})
-    
-    // Execute with streaming
-    stream, _ := workflow.RunStream(context.Background(), "Research Go best practices")
-    
-    for chunk := range stream.Chunks() {
-        if chunk.Type == v1beta.ChunkTypeDelta {
-            fmt.Print(chunk.Delta) // Real-time token streaming!
-        }
-    }
-    
-    result, _ := stream.Wait()
-    fmt.Printf("\nComplete: %s\n", result.Content)
-}
-```
+### 🧠 [Memory & RAG](docs/v1beta/memory-and-rag.md)
+**Batteries Included**: Agents come with valid memory out-of-the-box (`chromem` embedded vector DB).
+- **Features**: Chat history preservation, semantic search, and document ingestion.
+- **Configurable**: Swap the default with `pgvector` or custom providers easily.
 
-## Core Features
+### 👁️ [Multimodal Input](docs/v1beta/README.md#multimodal-capabilities)
+Native support for Images, Audio, and Video inputs. Works seamlessly with models like GPT-4 Vision, Gemini Pro Vision, etc.
 
-### v1beta APIs (Production-Ready)
-- **Unified Agent Interface**: Single API for all agent operations
-- **Real-time Streaming**: Watch tokens generate in real-time
-- **Multi-Agent Workflows**: Sequential, parallel, DAG, loop orchestration, and subworkflows
-- **Multimodal Input**: Support for images, audio, and video alongside text
-- **Memory & RAG**: Built-in persistence, retrieval, and direct memory access
-- **Tool Integration**: MCP protocol, function calling, tool discovery
-- **Subworkflows**: Compose workflows as agents for complex hierarchies
-- **Multiple LLM Providers**: OpenAI, Azure OpenAI, Ollama, HuggingFace, OpenRouter, and custom providers
-- **Flexible Configuration**: Builder pattern with type-safe options
+### 🛠️ [Tool Integration](docs/v1beta/tool-integration.md)
+Extend agents with tools using standard Go functions or the **Model Context Protocol (MCP)** for standardized tool discovery.
 
-### Multimodal Capabilities
-
-AgenticGoKit provides native support for multimodal inputs, allowing your agents to process images, audio, and video alongside text:
-
-```go
-// Create options with multimodal input
-opts := v1beta.NewRunOptions()
-opts.Images = []v1beta.ImageData{
-    {
-        URL:      "https://example.com/image.jpg",
-        Metadata: map[string]interface{}{"source": "web"},
-    },
-    {
-        Base64:   base64EncodedImageData,
-        Metadata: map[string]interface{}{"type": "screenshot"},
-    },
-}
-opts.Audio = []v1beta.AudioData{
-    {
-        URL:      "https://example.com/audio.mp3",
-        Format:   "mp3",
-        Metadata: map[string]interface{}{"duration": "30s"},
-    },
-}
-opts.Video = []v1beta.VideoData{
-    {
-        Base64:   base64EncodedVideoData,
-        Format:   "mp4",
-        Metadata: map[string]interface{}{"resolution": "1080p"},
-    },
-}
-
-// Run agent with multimodal input
-result, err := agent.RunWithOptions(ctx, "Describe this image and summarize the audio", opts)
-```
-
-**Supported Modalities:**
-- **Images**: JPG, PNG, GIF (via URL or Base64)
-- **Audio**: MP3, WAV, OGG (via URL or Base64)
-- **Video**: MP4, WebM (via URL or Base64)
-
-**Compatible Providers:** OpenAI GPT-4 Vision, Gemini Pro Vision, and other multimodal LLMs
-
-### Supported LLM Providers
+## Supported LLM Providers
 
 AgenticGoKit works with all major LLM providers out of the box:
 
@@ -211,232 +113,18 @@ AgenticGoKit works with all major LLM providers out of the box:
 | **OpenRouter** | Multiple models | Access to various providers via single API |
 | **Custom** | Any OpenAI-compatible API | Bring your own provider |
 
-Switch providers with a simple configuration change—no code modifications required.
-
-## API Usage
-
-**v1beta provides clean, modern APIs for building AI agents:**
-
-```go
-import "github.com/agenticgokit/agenticgokit/v1beta"
-
-// Single agent with configuration
-agent, _ := v1beta.NewBuilder("MyAgent").
-    WithConfig(&v1beta.Config{
-        Name: "MyAgent",
-        LLM:  v1beta.LLMConfig{Provider: "ollama", Model: "gemma3:1b"},
-    }).
-    Build()
-result, _ := agent.Run(ctx, "Hello world")
-
-// Streaming agent  
-stream, _ := agent.RunStream(ctx, "Write a story")
-for chunk := range stream.Chunks() { /* real-time output */ }
-
-// Multi-agent workflow
-workflow, _ := v1beta.NewSequentialWorkflow(config)
-stream, _ := workflow.RunStream(ctx, input) 
-```
-
-## Examples & Templates
-
-## Examples
-
-### Basic Agent
-```go
-// Basic chat agent using preset
-agent, _ := v1beta.NewBuilder("helper").
-    WithPreset(v1beta.ChatAgent).
-    Build()
-
-// With custom configuration  
-agent, _ := v1beta.NewBuilder("helper").
-    WithConfig(&v1beta.Config{
-        Name:         "helper",
-        SystemPrompt: "You are a helpful assistant",
-        LLM: v1beta.LLMConfig{
-            Provider: "ollama",
-            Model:    "gemma3:1b",
-            BaseURL:  "http://localhost:11434",
-        },
-    }).
-    WithMemory(
-        v1beta.WithMemoryProvider("memory"),
-        v1beta.WithRAG(4000, 0.3, 0.7),
-    ).
-    WithTools(
-        v1beta.WithMCPDiscovery(), // Enable MCP auto-discovery
-    ).
-    Build()
-```
-
-### Workflow Orchestration
-
-v1beta supports four workflow patterns for orchestrating multiple agents:
-
-```go
-// Sequential Workflow - Execute agents one after another
-sequential, _ := v1beta.NewSequentialWorkflow(&v1beta.WorkflowConfig{
-    Name: "research-pipeline",
-    Timeout: 300 * time.Second,
-})
-sequential.AddStep(v1beta.WorkflowStep{Name: "research", Agent: researchAgent})
-sequential.AddStep(v1beta.WorkflowStep{Name: "analyze", Agent: analyzerAgent})
-sequential.AddStep(v1beta.WorkflowStep{Name: "summarize", Agent: summarizerAgent})
-
-// Parallel Workflow - Execute agents concurrently
-parallel, _ := v1beta.NewParallelWorkflow(&v1beta.WorkflowConfig{
-    Name: "multi-analysis",
-})
-parallel.AddStep(v1beta.WorkflowStep{Name: "research", Agent: researchAgent})
-parallel.AddStep(v1beta.WorkflowStep{Name: "fact-check", Agent: factChecker})
-parallel.AddStep(v1beta.WorkflowStep{Name: "sentiment", Agent: sentimentAgent})
-
-// DAG Workflow - Execute with dependencies
-dag, _ := v1beta.NewDAGWorkflow(&v1beta.WorkflowConfig{
-    Name: "dependent-workflow",
-})
-dag.AddStep(v1beta.WorkflowStep{Name: "fetch", Agent: fetchAgent})
-dag.AddStep(v1beta.WorkflowStep{
-    Name: "analyze",
-    Agent: analyzerAgent,
-    Dependencies: []string{"fetch"},
-})
-dag.AddStep(v1beta.WorkflowStep{
-    Name: "report",
-    Agent: reportAgent,
-    Dependencies: []string{"analyze"},
-})
-
-// Loop Workflow - Iterate until condition met
-loop, _ := v1beta.NewLoopWorkflow(&v1beta.WorkflowConfig{
-    Name: "iterative-refinement",
-    MaxIterations: 5,
-})
-loop.AddStep(v1beta.WorkflowStep{Name: "generate", Agent: generatorAgent})
-loop.AddStep(v1beta.WorkflowStep{Name: "review", Agent: reviewAgent})
-loop.SetLoopCondition(v1beta.Conditions.OutputContains("APPROVED"))
-```
-
-### Subworkflows - Workflows as Agents
-
-Compose workflows as agents for complex hierarchical orchestration:
-
-```go
-// Create a research workflow
-researchWorkflow, _ := v1beta.NewParallelWorkflow(&v1beta.WorkflowConfig{
-    Name: "research-team",
-})
-researchWorkflow.AddStep(v1beta.WorkflowStep{Name: "web", Agent: webResearcher})
-researchWorkflow.AddStep(v1beta.WorkflowStep{Name: "academic", Agent: academicResearcher})
-
-// Wrap workflow as an agent
-researchAgent := v1beta.NewSubWorkflowAgent("research", researchWorkflow)
-
-// Use in main workflow
-mainWorkflow, _ := v1beta.NewSequentialWorkflow(&v1beta.WorkflowConfig{
-    Name: "report-generation",
-})
-mainWorkflow.AddStep(v1beta.WorkflowStep{
-    Name: "research",
-    Agent: researchAgent, // Workflow acting as agent!
-})
-mainWorkflow.AddStep(v1beta.WorkflowStep{Name: "write", Agent: writerAgent})
-
-// Execute with nested streaming
-stream, _ := mainWorkflow.RunStream(ctx, "Research AI safety")
-for chunk := range stream.Chunks() {
-    // Nested agent outputs are automatically forwarded
-    if chunk.Type == v1beta.ChunkTypeDelta {
-        fmt.Print(chunk.Delta)
-    }
-}
-```
-
-### Provider Support
-
-AgenticGoKit supports multiple LLM providers out of the box:
-
-```go
-// OpenAI
-agent, _ := v1beta.NewBuilder("OpenAIAgent").
-    WithConfig(&v1beta.Config{
-        Name: "OpenAIAgent",
-        LLM: v1beta.LLMConfig{
-            Provider: "openai",
-            Model:    "gpt-4",
-            APIKey:   os.Getenv("OPENAI_API_KEY"),
-        },
-    }).
-    Build()
-
-// Azure OpenAI
-agent, _ := v1beta.NewBuilder("AzureAgent").
-    WithConfig(&v1beta.Config{
-        Name: "AzureAgent",
-        LLM: v1beta.LLMConfig{
-            Provider: "azure",
-            Model:    "gpt-4",
-            BaseURL:  "https://your-resource.openai.azure.com",
-            APIKey:   os.Getenv("AZURE_OPENAI_API_KEY"),
-        },
-    }).
-    Build()
-
-// Ollama (Local)
-agent, _ := v1beta.NewBuilder("OllamaAgent").
-    WithConfig(&v1beta.Config{
-        Name: "OllamaAgent",
-        LLM: v1beta.LLMConfig{
-            Provider: "ollama",
-            Model:    "gemma3:1b",
-            BaseURL:  "http://localhost:11434",
-        },
-    }).
-    Build()
-
-// HuggingFace
-agent, _ := v1beta.NewBuilder("HFAgent").
-    WithConfig(&v1beta.Config{
-        Name: "HFAgent",
-        LLM: v1beta.LLMConfig{
-            Provider: "huggingface",
-            Model:    "meta-llama/Llama-2-7b-chat-hf",
-            APIKey:   os.Getenv("HUGGINGFACE_API_KEY"),
-        },
-    }).
-    Build()
-```
-
 ## Learning Resources
 
-### Working Examples ([`examples/`](examples/))
-- **[Story Writer Chat v2](examples/story-writer-chat-v2/)** - Real-time multi-agent workflow with streaming
-- **[HuggingFace Integration](examples/huggingface-quickstart/)** - Using HuggingFace models
-- **[MCP Integration](examples/mcp-integration/)** - Model Context Protocol tools
-- **[Streaming Workflow](examples/streaming_workflow/)** - Streaming multi-agent workflows
-- **[Simple Streaming](examples/simple-streaming/)** - Basic streaming examples
-- **[Ollama Quickstart](examples/ollama-quickstart/)** - Getting started with Ollama
+### 📚 Documentation
+- **[Getting Started](docs/v1beta/getting-started.md)** - Build your first agent
+- **[API Reference](v1beta/README.md)** - Comprehensive API docs
+- **[Memory & RAG](docs/v1beta/memory-and-rag.md)** - Deep dive into memory systems
 
-### Documentation
-- **[v1beta API Reference](v1beta/README.md)** - Complete API documentation
-- **[Examples Directory](examples/)** - Full collection of working examples
-
-## Development
-
-```bash
-# Clone and build
-git clone https://github.com/kunalkushwaha/agenticgokit.git
-cd agenticgokit
-make build
-
-# Run tests
-make test
-
-# Run examples
-cd examples/ollama-quickstart
-go run .
-```
+### 💡 Examples
+- **[Story Writer Chat v2](examples/story-writer-chat-v2/)** - Complete Real-time collaborative writing app
+- **[Ollama Quickstart](examples/ollama-quickstart/)** - Local LLM development
+- **[MCP Integration](examples/mcp-integration/)** - Using Model Context Protocol
+- **[HuggingFace Quickstart](examples/huggingface-quickstart/)** - Using HF Inference Endpoints
 
 ## API Versioning & Roadmap
 

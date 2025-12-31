@@ -20,7 +20,20 @@ AgenticGoKit v1beta provides flexible memory integration that enables:
 
 AgenticGoKit uses a layered approach to memory. When multiple memory types are enabled, they are prioritized and mixed to provide the best context for the LLM.
 
-### 1. The Three Tiers of Memory
+### 1. Default Memory Behavior ("Batteries Included")
+
+Starting from `v1beta`, memory is **enabled by default** using the `chromem` provider (an embedded vector database). This provides an "out-of-the-box" experience where agents can remember recent conversation history and facts without any extra configuration.
+
+| Scenario | Configuration | Resulting Memory |
+| :--- | :--- | :--- |
+| **Implicit (Default)** | Omitted `Memory` config | **`chromem` enabled** |
+| **Explicit (Custom)** | `Memory: { Provider: "pgvector" }` | `pgvector` enabled |
+| **Opting Out** | `Memory: { Enabled: false }` | `nil` (No memory) |
+
+> [!NOTE]
+> If you want to completely disable memory for an agent (making it purely ephemeral), you must explicitly set `Enabled: false` in your `MemoryConfig`.
+
+### 2. The Three Tiers of Memory
 
 | Memory Type | Scope | How it Works | Primary Purpose |
 | :--- | :--- | :--- | :--- |

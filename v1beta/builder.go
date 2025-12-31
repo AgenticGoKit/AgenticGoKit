@@ -330,7 +330,8 @@ func (b *streamlinedBuilder) WithPreset(preset PresetType) Builder {
 		b.config.LLM.Temperature = 0.8
 		b.config.LLM.MaxTokens = 1024
 		b.config.Memory = &MemoryConfig{
-			Provider: "memory",
+			Enabled:  true,
+			Provider: "chromem",
 			Options: map[string]string{
 				"context_aware":  "true",
 				"session_scoped": "true",
@@ -343,7 +344,8 @@ func (b *streamlinedBuilder) WithPreset(preset PresetType) Builder {
 		b.config.LLM.MaxTokens = 4096
 		b.config.Timeout = 60 * time.Second
 		b.config.Memory = &MemoryConfig{
-			Provider: "memory",
+			Enabled:  true,
+			Provider: "chromem",
 			Options: map[string]string{
 				"context_aware":  "true",
 				"session_scoped": "true",
@@ -361,7 +363,8 @@ func (b *streamlinedBuilder) WithPreset(preset PresetType) Builder {
 		b.config.LLM.MaxTokens = 2048
 		b.config.Timeout = 45 * time.Second
 		b.config.Memory = &MemoryConfig{
-			Provider: "memory",
+			Enabled:  true,
+			Provider: "chromem",
 			Options: map[string]string{
 				"context_aware": "false",
 			},
@@ -382,7 +385,8 @@ func (b *streamlinedBuilder) WithPreset(preset PresetType) Builder {
 			MaxIterations: 10,
 		}
 		b.config.Memory = &MemoryConfig{
-			Provider: "memory",
+			Enabled:  true,
+			Provider: "chromem",
 			Options: map[string]string{
 				"context_aware":  "true",
 				"session_scoped": "false",
@@ -450,7 +454,8 @@ func (b *streamlinedBuilder) WithMemory(opts ...MemoryOption) Builder {
 	// Initialize memory config if not exists
 	if b.config.Memory == nil {
 		b.config.Memory = &MemoryConfig{
-			Provider: "memory",
+			Enabled:  true,
+			Provider: "chromem",
 			Options: map[string]string{
 				"context_aware":  "true",
 				"session_scoped": "false",

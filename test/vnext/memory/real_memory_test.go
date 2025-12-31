@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/agenticgokit/agenticgokit/core"
-	vnext "github.com/agenticgokit/agenticgokit/v1beta"
 	"github.com/agenticgokit/agenticgokit/internal/memory/providers"
+	vnext "github.com/agenticgokit/agenticgokit/v1beta"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -75,7 +75,7 @@ func TestRealMemoryProvider_EnrichWithMemory(t *testing.T) {
 
 		// Test enrichment
 		query := "How do I deploy Go microservices?"
-		enriched := vnext.EnrichWithMemory(ctx, memProvider, query, ragConfig)
+		enriched, _, _, _ := vnext.EnrichWithMemory(ctx, memProvider, query, ragConfig)
 
 		// Verify enrichment
 		assert.NotEmpty(t, enriched, "Enriched prompt should not be empty")
@@ -111,7 +111,7 @@ func TestRealMemoryProvider_EnrichWithMemory(t *testing.T) {
 		}
 
 		query := "What is quantum computing?"
-		enriched := vnext.EnrichWithMemory(ctx, memProvider, query, ragConfig)
+		enriched, _, _, _ := vnext.EnrichWithMemory(ctx, memProvider, query, ragConfig)
 
 		// With no relevant matches, should return original query
 		assert.Equal(t, query, enriched, "Should return original query when no relevant memories")
@@ -163,7 +163,7 @@ func TestRealMemoryProvider_BuildEnrichedPrompt(t *testing.T) {
 		}
 
 		// Build enriched prompt
-		result := vnext.BuildEnrichedPrompt(
+		result, _, _ := vnext.BuildEnrichedPrompt(
 			ctx,
 			"You are a helpful Go programming assistant",
 			"Can you explain channels?",
@@ -217,7 +217,7 @@ func TestRealMemoryProvider_BuildEnrichedPrompt(t *testing.T) {
 			},
 		}
 
-		result := vnext.BuildEnrichedPrompt(
+		result, _, _ := vnext.BuildEnrichedPrompt(
 			ctx,
 			"System",
 			"Current question",
@@ -487,6 +487,3 @@ func min(a, b int) int {
 	}
 	return b
 }
-
-
-

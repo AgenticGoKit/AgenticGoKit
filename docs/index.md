@@ -63,7 +63,7 @@ func main() {
 <div class="feature-card">
 
 ### 🤖 **For AI Systems**
-- **Production-Ready**: Built from 2+ years of real-world use
+- **Battle-Tested**: Built from 2+ years of real-world use
 - **Memory & RAG**: Built-in vector databases and knowledge management
 - **Tool Integration**: MCP protocol for dynamic tool discovery
 - **4 Workflow Types**: Sequential, Parallel, DAG, Loop + Subworkflows
@@ -121,7 +121,7 @@ Moving from core or vnext?
 
 ### **🌟 Start Here**
 
-Production-ready API designed for building real-world agent systems:
+Modern API designed for building real-world agent systems:
 
 | Guide | Description |
 |-------|-------------|

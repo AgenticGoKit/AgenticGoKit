@@ -94,7 +94,11 @@ func (m *mockMemoryProvider) SearchKnowledge(ctx context.Context, query string, 
 	return nil, nil
 }
 func (m *mockMemoryProvider) SearchAll(ctx context.Context, query string, options ...core.SearchOption) (*core.HybridResult, error) {
-	return nil, nil
+	return &core.HybridResult{
+		PersonalMemory: m.memories,
+		Knowledge:      nil,
+		TotalResults:   len(m.memories),
+	}, nil
 }
 func (m *mockMemoryProvider) BuildContext(ctx context.Context, query string, options ...core.ContextOption) (*core.RAGContext, error) {
 	return nil, nil
@@ -126,7 +130,7 @@ func TestMemoryEnrichment(t *testing.T) {
 			},
 		}
 
-		result := vnext.EnrichWithMemory(ctx, mock, "How do I build a web server?", config)
+		result, _, _, _ := vnext.EnrichWithMemory(ctx, mock, "How do I build a web server?", config)
 
 		// Verify enrichment happened
 		assert.Contains(t, result, "Relevant Context", "Should include context header")
@@ -149,7 +153,7 @@ func TestMemoryEnrichment(t *testing.T) {
 			// No RAG config - should use simple formatting
 		}
 
-		result := vnext.EnrichWithMemory(ctx, mock, "test query", config)
+		result, _, _, _ := vnext.EnrichWithMemory(ctx, mock, "test query", config)
 
 		// Should use simple context formatting
 		assert.Contains(t, result, "Relevant previous information")
@@ -168,7 +172,7 @@ func TestMemoryEnrichment(t *testing.T) {
 			Provider: "memory",
 		}
 
-		result := vnext.EnrichWithMemory(ctx, mock, "test query", config)
+		result, _, _, _ := vnext.EnrichWithMemory(ctx, mock, "test query", config)
 
 		// Should return original query unchanged
 		assert.Equal(t, "test query", result)
@@ -197,7 +201,7 @@ func TestBuildEnrichedPrompt(t *testing.T) {
 			},
 		}
 
-		result := vnext.BuildEnrichedPrompt(
+		result, _, _ := vnext.BuildEnrichedPrompt(
 			ctx,
 			"You are a helpful assistant",
 			"Tell me more about Go",
@@ -219,7 +223,7 @@ func TestBuildEnrichedPrompt(t *testing.T) {
 	t.Run("without memory provider", func(t *testing.T) {
 		ctx := context.Background()
 
-		result := vnext.BuildEnrichedPrompt(
+		result, _, _ := vnext.BuildEnrichedPrompt(
 			ctx,
 			"You are a helper",
 			"Hello",
@@ -300,6 +304,3 @@ func TestMemoryStorage(t *testing.T) {
 		assert.Equal(t, output, messages[1].Content)
 	})
 }
-
-
-

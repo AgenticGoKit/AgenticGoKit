@@ -350,7 +350,36 @@ agent, err := v1beta.NewBuilder("MCPAgent").
 
 ## 💾 Memory
 
-Memory provides context retention and knowledge storage.
+Memory provides context retention and knowledge storage. Starting from `v1beta`, memory is **enabled by default** using the `chromem` embedded provider.
+
+### Memory Configuration
+
+You can customize memory behavior or swap providers using the `WithMemory` option:
+
+```go
+agent, _ := v1beta.NewBuilder("Assistant").
+    WithMemory(
+        // Use a different provider
+        v1beta.WithMemoryProvider("pgvector"),
+        // Enable RAG with custom weights
+        v1beta.WithRAG(4000, 0.3, 0.7),
+        // Enable session-scoped isolation
+        v1beta.WithSessionScoped(),
+    ).
+    Build()
+```
+
+If you need to strictly disable memory, use the `Enabled` flag:
+
+```go
+agent, _ := v1beta.NewBuilder("EphemeralAgent").
+    WithConfig(&v1beta.Config{
+        Memory: &v1beta.MemoryConfig{
+            Enabled: false,
+        },
+    }).
+    Build()
+```
 
 ### Memory Interface
 
@@ -396,60 +425,31 @@ agent, err := v1beta.NewBuilder("MemoryAgent").
 #### PostgreSQL with pgvector (Production)
 
 ```go
-import "github.com/agenticgokit/agenticgokit/plugins/memory/postgres"
-
-memProvider, err := postgres.New(
-    "postgresql://user:pass@localhost/db",
-    postgres.WithTableName("agent_memory"),
-    postgres.WithEmbeddingDim(1536),
-)
+// Register pgvector provider
+import _ "github.com/agenticgokit/agenticgokit/plugins/memory/pgvector"
 
 agent, err := v1beta.NewBuilder("PostgresAgent").
     WithPreset(v1beta.ChatAgent).
-    WithMemory(&v1beta.MemoryOptions{
-        Type:     "postgres",
-        Provider: memProvider,
-    }).
+    WithMemory(
+        v1beta.WithMemoryProvider("pgvector"),
+        v1beta.WithConnection("postgresql://user:pass@localhost/db"),
+    ).
     Build()
 ```
 
-#### Weaviate (Vector DB)
-
-```go
-import "github.com/agenticgokit/agenticgokit/plugins/memory/weaviate"
-
-memProvider, err := weaviate.New(
-    "http://localhost:8080",
-    weaviate.WithClassName("AgentMemory"),
-)
-
-agent, err := v1beta.NewBuilder("WeaviateAgent").
-    WithPreset(v1beta.ChatAgent).
-    WithMemory(&v1beta.MemoryOptions{
-        Type:     "weaviate",
-        Provider: memProvider,
-    }).
-    Build()
-```
+#### Other Providers
+AgenticGoKit also supports **Weaviate** and a generic **In-Memory** provider for testing.
 
 ### RAG (Retrieval-Augmented Generation)
 
-Memory automatically enables RAG when configured:
+Memory automatically enables RAG context enrichment when configured:
 
 ```go
-memProvider := memory.NewInMemory()
-
 agent, err := v1beta.NewBuilder("RAGAgent").
     WithPreset(v1beta.ChatAgent).
-    WithMemory(&v1beta.MemoryOptions{
-        Type:     "simple",
-        Provider: memProvider,
-        RAG: &v1beta.RAGConfig{
-            Enabled:    true,
-            TopK:       5,    // Retrieve top 5 memories
-            Threshold:  0.7,  // Similarity threshold
-        },
-    }).
+    WithMemory(
+        v1beta.WithRAG(2000, 0.5, 0.5), // maxTokens, personalWeight, knowledgeWeight
+    ).
     Build()
 
 // Agent automatically retrieves relevant context
