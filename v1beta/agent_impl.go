@@ -144,7 +144,22 @@ func newRealAgent(config *Config, handler HandlerFunc) (Agent, error) {
 	}
 	agent.llmProvider = llmProvider
 
-	// Initialize memory provider (defaults to chromem if enabled)
+	// Initialize memory configuration defaults if not present
+	// This ensures we get "smart" behavior (RAG + History) by default
+	if config.Memory == nil {
+		config.Memory = &MemoryConfig{
+			Enabled:  true,
+			Provider: "chromem",
+			RAG: &RAGConfig{
+				HistoryLimit:    10,
+				MaxTokens:       2000,
+				PersonalWeight:  0.3,
+				KnowledgeWeight: 0.7,
+			},
+		}
+	}
+
+	// Initialize memory provider
 	memoryProvider, err := createMemoryProvider(config.Memory)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create memory provider: %w", err)
