@@ -120,7 +120,8 @@ func NewMemory(config *MemoryConfig) (Memory, error) {
 	// Set defaults
 	if config == nil {
 		config = &MemoryConfig{
-			Provider: "memory",
+			Enabled:  true,
+			Provider: "chromem",
 		}
 	}
 
@@ -175,7 +176,7 @@ func getMemoryFactory(name string) MemoryFactory {
 // applyMemoryDefaults applies default values to memory configuration
 func applyMemoryDefaults(config *MemoryConfig) {
 	if config.Provider == "" {
-		config.Provider = "memory"
+		config.Provider = "chromem"
 	}
 	if config.Connection == "" && config.Provider == "memory" {
 		config.Connection = "memory"

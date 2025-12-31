@@ -347,23 +347,46 @@ result, err := agent.Run(context.Background(), "What's the weather in San Franci
 
 ## 💾 Adding Memory
 
-Give your agent memory capabilities:
+Starting from `v1beta`, memory is **enabled by default** using the `chromem` embedded provider. This means your agents will remember context automatically without extra configuration.
+
+### Default Memory Example
 
 ```go
-// Create agent with memory
-agent, err := v1beta.NewBuilder("MemoryBot").
+agent, _ := v1beta.NewBuilder("Assistant").
     WithPreset(v1beta.ChatAgent).
-    WithMemory(
-        v1beta.WithMemoryProvider("memory"),
-        v1beta.WithSessionScoped(),
-        v1beta.WithContextAware(),
-    ).
     Build()
 
-// Agent remembers context across calls
+// Agent remembers context across calls automatically!
 result1, _ := agent.Run(context.Background(), "My name is Alice")
 result2, _ := agent.Run(context.Background(), "What is my name?")
 // Response: "Your name is Alice"
+```
+
+### Disabling Memory
+
+If you want a purely ephemeral agent with no memory, you can explicitly disable it:
+
+```go
+agent, _ := v1beta.NewBuilder("EphemeralBot").
+    WithConfig(&v1beta.Config{
+        Memory: &v1beta.MemoryConfig{
+            Enabled: false,
+        },
+    }).
+    Build()
+```
+
+### Customizing Memory
+
+You can still customize memory or use production providers like `pgvector`:
+
+```go
+agent, _ := v1beta.NewBuilder("CustomMemoryBot").
+    WithMemory(
+        v1beta.WithMemoryProvider("pgvector"),
+        v1beta.WithSessionScoped(),
+    ).
+    Build()
 ```
 
 **Learn more**: [Memory & RAG Guide](./memory-and-rag.md)

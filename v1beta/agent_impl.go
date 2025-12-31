@@ -144,14 +144,12 @@ func newRealAgent(config *Config, handler HandlerFunc) (Agent, error) {
 	}
 	agent.llmProvider = llmProvider
 
-	// Initialize memory provider if configured
-	if config.Memory != nil {
-		memoryProvider, err := createMemoryProvider(config.Memory)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create memory provider: %w", err)
-		}
-		agent.memoryProvider = memoryProvider
+	// Initialize memory provider (defaults to chromem if enabled)
+	memoryProvider, err := createMemoryProvider(config.Memory)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create memory provider: %w", err)
 	}
+	agent.memoryProvider = memoryProvider
 
 	// Initialize tools if configured
 	if config.Tools != nil && config.Tools.Enabled {

@@ -53,9 +53,22 @@ func createLLMProvider(config LLMConfig) (llm.ModelProvider, error) {
 //
 // Returns the initialized provider, nil (if disabled), or an error.
 func createMemoryProvider(config *MemoryConfig) (core.Memory, error) {
-	// Memory is optional - return nil if not configured
+	// If config is nil, we default to enabled chromem memory
 	if config == nil {
+		config = &MemoryConfig{
+			Enabled:  true,
+			Provider: "chromem",
+		}
+	}
+
+	// If explicitly disabled, return nil
+	if !config.Enabled {
 		return nil, nil
+	}
+
+	// Default to chromem if provider is not specified
+	if config.Provider == "" {
+		config.Provider = "chromem"
 	}
 
 	// Map vNext MemoryConfig to core.AgentMemoryConfig

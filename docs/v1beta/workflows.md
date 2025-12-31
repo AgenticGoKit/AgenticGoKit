@@ -15,6 +15,7 @@ Workflows solve several key challenges:
 - **Error handling** - Isolate failures and enable recovery
 - **Progress tracking** - Monitor execution through streaming
 - **Reusability** - Compose workflows as building blocks
+- **Embedded Memory** - Automatic context sharing across all agents in the workflow (powered by `chromem` by default)
 
 ---
 

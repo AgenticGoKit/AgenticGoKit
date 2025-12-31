@@ -149,7 +149,7 @@ func main() {
 - **Real-time Streaming**: Watch tokens generate in real-time
 - **Multi-Agent Workflows**: Sequential, parallel, DAG, loop orchestration, and subworkflows
 - **Multimodal Input**: Support for images, audio, and video alongside text
-- **Memory & RAG**: Built-in persistence, retrieval, and direct memory access
+- **Memory & RAG**: Built-in persistence, retrieval, and direct memory access (**chromem enabled by default**)
 - **Tool Integration**: MCP protocol, function calling, tool discovery
 - **Subworkflows**: Compose workflows as agents for complex hierarchies
 - **Multiple LLM Providers**: OpenAI, Azure OpenAI, Ollama, HuggingFace, OpenRouter, and custom providers
@@ -249,7 +249,7 @@ agent, _ := v1beta.NewBuilder("helper").
     WithPreset(v1beta.ChatAgent).
     Build()
 
-// With custom configuration  
+// With custom configuration and RAG
 agent, _ := v1beta.NewBuilder("helper").
     WithConfig(&v1beta.Config{
         Name:         "helper",
@@ -259,9 +259,10 @@ agent, _ := v1beta.NewBuilder("helper").
             Model:    "gemma3:1b",
             BaseURL:  "http://localhost:11434",
         },
+        // Memory is ENABLED by default using chromem!
+        // You only need to add config if you want to customize it or use RAG settings.
     }).
     WithMemory(
-        v1beta.WithMemoryProvider("memory"),
         v1beta.WithRAG(4000, 0.3, 0.7),
     ).
     WithTools(

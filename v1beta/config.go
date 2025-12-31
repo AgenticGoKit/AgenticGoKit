@@ -52,7 +52,8 @@ type LLMConfig struct {
 
 // MemoryConfig contains memory and RAG configuration
 type MemoryConfig struct {
-	Provider   string            `toml:"provider"`   // "memory", "pgvector", "weaviate"
+	Enabled    bool              `toml:"enabled"`    // Enable or disable memory
+	Provider   string            `toml:"provider"`   // "chromem", "memory", "pgvector", "weaviate"
 	Connection string            `toml:"connection"` // Connection string
 	RAG        *RAGConfig        `toml:"rag,omitempty"`
 	Options    map[string]string `toml:"options,omitempty"`
@@ -640,7 +641,7 @@ func validateMemoryConfig(memory *MemoryConfig) []ValidationError {
 		errors = append(errors, ValidationError{
 			Field:      "memory.provider",
 			Message:    "Memory provider is required",
-			Suggestion: "Set memory.provider to one of: memory, pgvector, weaviate",
+			Suggestion: "Set memory.provider to one of: chromem, memory, pgvector, weaviate",
 			Severity:   "critical",
 		})
 	}
