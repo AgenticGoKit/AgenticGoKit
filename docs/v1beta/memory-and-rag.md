@@ -20,7 +20,7 @@ AgenticGoKit v1beta provides flexible memory integration that enables:
 
 AgenticGoKit uses a layered approach to memory. When multiple memory types are enabled, they are prioritized and mixed to provide the best context for the LLM.
 
-### 1. Default Memory Behavior
+### 1. Default Memory Behavior ("Batteries Included")
 
 Starting from `v1beta`, memory is **enabled by default** using the `chromem` provider (an embedded vector database). This provides an "out-of-the-box" experience where agents can remember recent conversation history and facts without any extra configuration.
 

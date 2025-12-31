@@ -62,6 +62,9 @@ func main() {
         log.Fatal(err)
     }
     
+    // NOTE: Memory is enabled by default! 
+    // This agent automatically remembers conversation history.
+    
     // Run a simple query
     result, err := agent.Run(context.Background(), "What is Go programming language?")
     if err != nil {

@@ -1,6 +1,6 @@
 # AgenticGoKit v1beta API
 
-The v1beta API is an advanced, production-ready agent framework that provides flexible and powerful capabilities for building custom AI agents. It offers streamlined APIs, real-time streaming, multi-agent workflows, and comprehensive tooling support.
+The v1beta API is an advanced, comprehensive agent framework that provides flexible and powerful capabilities for building custom AI agents. It offers streamlined APIs, real-time streaming, multi-agent workflows, and comprehensive tooling support.
 
 ## 🚀 Quick Start
 

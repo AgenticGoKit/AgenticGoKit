@@ -7,7 +7,7 @@
 > - **v1.0 Release**: `v1beta` will become the primary `v1` package
 > - **Legacy APIs**: Both `core` and `core/vnext` packages will be removed in v1.0
 
-**Production-ready Go framework for building intelligent multi-agent AI systems**
+**Robust Go framework for building intelligent multi-agent AI systems**
 
 [![Go Version](https://img.shields.io/badge/Go-1.21+-blue.svg)](https://golang.org)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
@@ -25,6 +25,7 @@
 - **Multi-Agent Workflows**: Sequential, parallel, DAG, and loop orchestration patterns
 - **Multiple LLM Providers**: Seamlessly switch between OpenAI, Ollama, Azure OpenAI, HuggingFace, and more
 - **High Performance**: Compiled Go binaries with minimal overhead
+- **Batteries Included**: Built-in memory and RAG by default (zero config needed, swappable with pgvector/custom)
 - **Rich Integrations**: Memory providers, tool discovery, MCP protocol support
 - **Active Development**: Beta status with stable core APIs and ongoing improvements
 
@@ -144,7 +145,7 @@ func main() {
 
 ## Core Features
 
-### v1beta APIs (Production-Ready)
+### v1beta APIs (Beta)
 - **Unified Agent Interface**: Single API for all agent operations
 - **Real-time Streaming**: Watch tokens generate in real-time
 - **Multi-Agent Workflows**: Sequential, parallel, DAG, loop orchestration, and subworkflows
