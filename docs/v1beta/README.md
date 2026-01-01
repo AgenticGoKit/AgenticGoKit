@@ -6,33 +6,29 @@ Welcome to the AgenticGoKit documentation - the production-ready framework for b
 
 ---
 
-## 🚀 Quick Links
+## Quick Links
 
-- **[Getting Started](./getting-started.md)** - Start here! Build your first v1beta agent
-- **[Installation](./installation.md)** - Setup and installation instructions
+- **[Getting Started](./getting-started.md)** - Start here! Build your first v1beta agent (includes setup)
 - **[Core Concepts](./core-concepts.md)** - Understand agents, handlers, tools, and memory
 - **[Streaming](./streaming.md)** - Real-time streaming patterns and chunk types
 - **[Workflows](./workflows.md)** - Sequential, Parallel, DAG, Loop, and Subworkflows
-- **[Migration Guide](./migration-from-core.md)** - Migrate from core/vnext to v1beta
 
 ---
 
-## 📚 Documentation Overview
+## Documentation Overview
 
 ### Getting Started
 Start your journey with v1beta APIs:
-- [Installation](./installation.md) - Install v1beta and set up your environment
-- [Getting Started](./getting-started.md) - Your first v1beta agent in 5 minutes
+- [Getting Started](./getting-started.md) - Your first v1beta agent in 5 minutes (includes setup)
 - [Core Concepts](./core-concepts.md) - Fundamental concepts and architecture
 
 ### Core Features
 Explore the main features:
 - [Custom Handlers](./custom-handlers.md) - CustomHandlerFunc and AgentHandlerFunc patterns
-- [Streaming](./streaming.md) - Real-time streaming with 8 chunk types
+- [Streaming](./streaming.md) - Real-time streaming with 13 chunk types
 - [Workflows](./workflows.md) - Multi-agent orchestration patterns
 - [Memory & RAG](./memory-and-rag.md) - Memory integration and retrieval-augmented generation
 - [Tool Integration](./tool-integration.md) - Tool registration and MCP support
-- [Configuration](./configuration.md) - Builder patterns and functional options
 
 ### Advanced Topics
 - [Error Handling](./error-handling.md) - Error patterns and best practices
@@ -53,33 +49,33 @@ Complete, runnable examples:
 
 ---
 
-## ✨ Why AgenticGoKit?
+## Why AgenticGoKit?
 
 AgenticGoKit provides a modern, streamlined API with:
 
-### 🎯 Streamlined API Surface
+### Streamlined API Surface
 - **8 core methods** (reduced from 30+)
 - **Unified RunOptions** for all execution modes
 - **Preset builders** for common agent types
 - **Functional options** for clean configuration
 
-### ⚡ Built-in Streaming
-- **8 chunk types**: Text, Delta, Thought, ToolCall, ToolResult, Metadata, Error, Done
+### Built-in Streaming
+- **13 chunk types**: Content, Delta, Thought, ToolCall, ToolResult, Metadata, Error, Done, AgentStart, AgentComplete, Image, Audio, Video
 - **Multiple patterns**: Channel-based, callback-based, io.Reader
 - **Full lifecycle control** with cancellation and error handling
 
-### 🔄 Multi-Agent Workflows
+### Multi-Agent Workflows
 - **4 workflow types**: Sequential, Parallel, DAG, Loop
 - **Subworkflow composition** for nested patterns
 - **Context sharing** between agents
 - **Step-by-step streaming** with progress tracking
 
-### 💾 Flexible Memory & RAG
+### Flexible Memory & RAG
 - **Multiple backends**: In-memory, PostgreSQL (pgvector), Weaviate
 - **RAG support** with configurable weights
 - **Session management** and history tracking
 
-### 🛠️ Comprehensive Tooling
+### Comprehensive Tooling
 - **Tool registration** and discovery
 - **MCP integration** for Model Context Protocol
 - **Caching** and rate limiting
@@ -87,19 +83,14 @@ AgenticGoKit provides a modern, streamlined API with:
 
 ---
 
-## 🔄 Migrating from core/vnext?
+## � Note: Deprecated Packages
 
-If you're using the deprecated `core` or `core/vnext` packages:
+The `core` and `core/vnext` packages are deprecated. New projects should use v1beta. For existing projects, gradual migration is recommended—both versions can coexist in your codebase.
 
-1. **Read the [Migration Guide](./migration-from-core.md)** - Step-by-step instructions
-2. **Check the [API Comparison](./migration-from-core.md#api-comparison)** - Side-by-side examples
-3. **Review [Breaking Changes](./migration-from-core.md#breaking-changes)** - What's different
-4. **Explore [Examples](./examples/)** - See v1beta in action
-
-### Quick Migration Overview
+### Quick Start with v1beta
 
 ```go
-// ❌ Old (core/vnext - Deprecated)
+// ✅ New (v1beta - Current)
 import "github.com/agenticgokit/agenticgokit/core/vnext"
 
 agent := vnext.NewBuilder("agent").
@@ -125,7 +116,7 @@ AgenticGoKit supports the following LLM providers:
 - **HuggingFace** - Inference API for HuggingFace models
 - **OpenRouter** - Access to multiple LLM providers
 
-See [Installation](./installation.md) for setup instructions for each provider.
+See [Getting Started](./getting-started.md) for setup instructions for each provider.
 
 ---
 
@@ -137,7 +128,7 @@ For complete API documentation, see:
 
 ---
 
-## 🆘 Need Help?
+## Need Help?
 
 - **[Troubleshooting Guide](./troubleshooting.md)** - Common issues and solutions
 - **[Examples](./examples/)** - Complete, runnable code examples
@@ -146,13 +137,12 @@ For complete API documentation, see:
 
 ---
 
-## 🗺️ Documentation Navigation
+## Documentation Navigation
 
 ```
 v1beta/
 ├── README.md (you are here)
 ├── getting-started.md
-├── installation.md
 ├── core-concepts.md
 ├── streaming.md
 ├── workflows.md
@@ -163,7 +153,6 @@ v1beta/
 ├── error-handling.md
 ├── performance.md
 ├── troubleshooting.md
-├── migration-from-core.md
 ├── api-reference.md
 └── examples/
     ├── basic-agent.md
@@ -179,9 +168,9 @@ v1beta/
 
 ---
 
-## 🚦 Getting Started Checklist
+## Getting Started Checklist
 
-- [ ] [Install v1beta](./installation.md)
+- [ ] [Install and setup v1beta](./getting-started.md#installation)
 - [ ] [Build your first agent](./getting-started.md)
 - [ ] [Understand core concepts](./core-concepts.md)
 - [ ] [Try streaming](./streaming.md)

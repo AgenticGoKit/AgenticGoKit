@@ -1,117 +1,50 @@
 # Workflows Guide
 
-Multi-agent workflows enable complex task orchestration by connecting multiple agents in different execution patterns. This guide covers all workflow types and composition strategies.
+Connect multiple agents in different execution patterns to orchestrate complex tasks. This guide covers sequential, parallel, DAG, loop, and subworkflow composition.
 
 ---
 
-## 🎯 Why Workflows?
+## What You Get
 
-Workflows solve several key challenges:
-
-- **Complex tasks** - Break down large problems into specialized steps
-- **Parallel processing** - Run multiple agents simultaneously
-- **Conditional logic** - Execute different paths based on results
-- **Dependency management** - Handle step dependencies automatically
-- **Error handling** - Isolate failures and enable recovery
-- **Progress tracking** - Monitor execution through streaming
-- **Reusability** - Compose workflows as building blocks
-- **Embedded Memory** - Automatic context sharing across all agents in the workflow (powered by `chromem` by default)
+- Sequential, parallel, DAG, and loop execution modes
+- Automatic dependency management and execution ordering
+- Stream workflow progress in real-time
+- Reusable subworkflow composition
+- Shared memory across all workflow agents (chromem by default)
+- Error isolation and partial result tracking
 
 ---
 
-## 📊 Workflow Types
+## Execution Modes
 
-AgenticGoKit provides **4 workflow execution patterns** plus **subworkflow composition**:
+AgenticGoKit provides 4 workflow execution patterns plus subworkflow composition:
 
-### 1. Sequential Workflow
-Execute agents one after another, passing results forward.
+### Sequential
+Steps execute one after another, with each step receiving previous results. Use for data pipelines and multi-stage processing.
 
-```
-Agent 1 → Agent 2 → Agent 3 → Result
-```
+### Parallel
+All steps run concurrently and results are collected. Use for independent tasks, parallel analysis, or when speed matters.
 
-**Use when:**
-- Steps must execute in order
-- Each step depends on previous results
-- Building data pipelines
-- Multi-stage processing
+### DAG (Directed Acyclic Graph)
+Steps execute based on explicit dependencies. Use for complex workflows with both parallel and sequential phases.
 
-### 2. Parallel Workflow
-Execute multiple agents simultaneously, collect all results.
+### Loop
+Steps repeat until a condition is met. Use for iterative refinement, retry logic, or convergence-based processing.
 
-```
-       → Agent 1 →
-Start → Agent 2 → Collect → Result
-       → Agent 3 →
-```
-
-**Use when:**
-- Independent tasks can run concurrently
-- Gathering multiple perspectives
-- Parallel data processing
-- Speed is critical
-
-### 3. DAG Workflow (Directed Acyclic Graph)
-Execute agents based on explicit dependencies.
-
-```
-    → Agent 2 →
-Agent 1 →         → Agent 4 → Result
-    → Agent 3 →
-```
-
-**Use when:**
-- Complex dependency relationships
-- Some parallel, some sequential steps
-- Conditional execution paths
-- Advanced orchestration
-
-### 4. Loop Workflow
-Execute agents iteratively until a condition is met.
-
-```
-Agent 1 → Agent 2 → Check Condition
-    ↑                      ↓
-    └──────── Continue ────┘
-                ↓
-            Complete
-```
-
-**Use when:**
-- Iterative refinement needed
-- Quality thresholds must be met
-- Retry logic required
-- Convergence-based tasks
-
-### 5. Subworkflow Composition
-Nest workflows within workflows for modular design.
-
-```
-Main Workflow:
-  Step 1 → Subworkflow → Step 3
-              ↓
-          [Sequential:
-           Sub-A → Sub-B]
-```
-
-**Use when:**
-- Reusing workflow logic
-- Hierarchical task decomposition
-- Encapsulating complex steps
-- Building workflow libraries
+### Subworkflow Composition
+Nest workflows within workflows for modular, reusable design. Use for hierarchical task decomposition and workflow libraries.
 
 ---
 
-## 🔄 Sequential Workflow
+## Sequential Workflow
 
-### Basic Sequential Workflow
+Execute steps one after another, passing results forward. Perfect for data pipelines and multi-stage processing.
 
 ```go
 package main
 
 import (
     "context"
-    "fmt"
     "log"
     "time"
     
@@ -119,26 +52,12 @@ import (
 )
 
 func main() {
-    // Create specialized agents
-    researchAgent, _ := v1beta.NewBuilder("Researcher").
-        WithPreset(v1beta.ResearchAgent).
-        Build()
+    // Create agents
+    extract, _ := v1beta.NewChatAgent("Extractor", v1beta.WithLLM("openai", "gpt-4"))
+    transform, _ := v1beta.NewChatAgent("Transformer", v1beta.WithLLM("openai", "gpt-4"))
+    load, _ := v1beta.NewChatAgent("Loader", v1beta.WithLLM("openai", "gpt-4"))
     
-    analyzerAgent, _ := v1beta.NewBuilder("Analyzer").
-        WithPreset(v1beta.ChatAgent).
-        WithConfig(&v1beta.Config{
-            SystemPrompt: "You analyze and summarize research data",
-        }).
-        Build()
-    
-    writerAgent, _ := v1beta.NewBuilder("Writer").
-        WithPreset(v1beta.ChatAgent).
-        WithConfig(&v1beta.Config{
-            SystemPrompt: "You write clear, concise summaries",
-        }).
-        Build()
-    
-    // Create sequential workflow
+    // Create workflow
     config := &v1beta.WorkflowConfig{
         Mode:    v1beta.Sequential,
         Timeout: 60 * time.Second,
@@ -149,143 +68,58 @@ func main() {
         log.Fatal(err)
     }
     
-    // Add steps
-    workflow.AddStep(v1beta.WorkflowStep{
-        Name:  "research",
-        Agent: researchAgent,
-    })
-    workflow.AddStep(v1beta.WorkflowStep{
-        Name:  "analyze",
-        Agent: analyzerAgent,
-    })
-    workflow.AddStep(v1beta.WorkflowStep{
-        Name:  "write",
-        Agent: writerAgent,
-    })
+    // Add steps in order
+    workflow.AddStep(v1beta.WorkflowStep{Name: "extract", Agent: extract})
+    workflow.AddStep(v1beta.WorkflowStep{Name: "transform", Agent: transform})
+    workflow.AddStep(v1beta.WorkflowStep{Name: "load", Agent: load})
     
-    // Execute workflow
-    result, err := workflow.Run(context.Background(), "Research quantum computing")
+    // Execute
+    result, err := workflow.Run(context.Background(), "Process data")
     if err != nil {
         log.Fatal(err)
     }
     
-    // Access final result
-    fmt.Println("Final Output:", result.FinalOutput)
-    fmt.Println("Duration:", result.Duration)
+    // Access results
+    for _, stepResult := range result.StepResults {
+        if !stepResult.Skipped {
+            log.Printf("%s: %s", stepResult.StepName, stepResult.Output)
+        }
+    }
 }
-```
-
-### Sequential Workflow with Step Results
-
-Access results from previous steps:
-
-```go
-// Step results are available in WorkflowResult
-result, _ := workflow.Run(context.Background(), "Initial input")
-
-for _, stepResult := range result.StepResults {
-    fmt.Printf("Step %s: %s\n", stepResult.StepName, stepResult.Output)
-}
-```
-
-### Sequential with Multiple Runs
-
-```go
-// Build workflow once
-config := &v1beta.WorkflowConfig{
-    Mode:    v1beta.Sequential,
-    Timeout: 60 * time.Second,
-}
-
-workflow, _ := v1beta.NewSequentialWorkflow(config)
-workflow.AddStep(v1beta.WorkflowStep{Name: "extract", Agent: extractAgent})
-workflow.AddStep(v1beta.WorkflowStep{Name: "transform", Agent: transformAgent})
-workflow.AddStep(v1beta.WorkflowStep{Name: "load", Agent: loadAgent})
-
-// Run with different inputs
-result1, _ := workflow.Run(context.Background(), "Process dataset1.csv")
-result2, _ := workflow.Run(context.Background(), "Process dataset2.csv")
 ```
 
 ---
 
-## ⚡ Parallel Workflow
+## Parallel Workflow
 
-### Basic Parallel Workflow
+Run multiple agents concurrently. Perfect for independent tasks and gathering multiple perspectives.
 
 ```go
-// Create specialized agents
-techAgent, _ := v1beta.NewChatAgent("TechAnalyst", v1beta.WithLLM("openai", "gpt-4"))
-bizAgent, _ := v1beta.NewChatAgent("BizAnalyst", v1beta.WithLLM("openai", "gpt-4"))
-legalAgent, _ := v1beta.NewChatAgent("LegalAnalyst", v1beta.WithLLM("openai", "gpt-4"))
-
-// Create parallel workflow
 config := &v1beta.WorkflowConfig{
     Mode:    v1beta.Parallel,
     Timeout: 90 * time.Second,
 }
 
-workflow, err := v1beta.NewParallelWorkflow(config)
-if err != nil {
-    log.Fatal(err)
-}
-
-// Add parallel steps
-workflow.AddStep(v1beta.WorkflowStep{Name: "technical", Agent: techAgent})
-workflow.AddStep(v1beta.WorkflowStep{Name: "business", Agent: bizAgent})
-workflow.AddStep(v1beta.WorkflowStep{Name: "legal", Agent: legalAgent})
-
-// Execute all agents concurrently
-result, err := workflow.Run(context.Background(), "Analyze the product launch")
-if err != nil {
-    log.Fatal(err)
-}
-
-// Access results
-for _, stepResult := range result.StepResults {
-    fmt.Printf("%s: %s\n", stepResult.StepName, stepResult.Output)
-}
-```
-
-### Parallel with Aggregation
-
-```go
-// Analysis agents
-agents := []v1beta.Agent{analyst1, analyst2, analyst3}
-
-// Create parallel workflow
-config := &v1beta.WorkflowConfig{
-    Mode:    v1beta.Parallel,
-    Timeout: 120 * time.Second,
-}
-
 workflow, _ := v1beta.NewParallelWorkflow(config)
 
-// Add steps
-for i, agent := range agents {
-    workflow.AddStep(v1beta.WorkflowStep{
-        Name:  fmt.Sprintf("analyst_%d", i),
-        Agent: agent,
-    })
-}
+// Add steps - all run concurrently
+tech, _ := v1beta.NewChatAgent("Tech", v1beta.WithLLM("openai", "gpt-4"))
+biz, _ := v1beta.NewChatAgent("Biz", v1beta.WithLLM("openai", "gpt-4"))
+legal, _ := v1beta.NewChatAgent("Legal", v1beta.WithLLM("openai", "gpt-4"))
 
-result, _ := workflow.Run(context.Background(), "Analyze the product launch strategy")
+workflow.AddStep(v1beta.WorkflowStep{Name: "technical", Agent: tech})
+workflow.AddStep(v1beta.WorkflowStep{Name: "business", Agent: biz})
+workflow.AddStep(v1beta.WorkflowStep{Name: "legal", Agent: legal})
 
-// Aggregate all analyses
-var allAnalyses []string
+result, _ := workflow.Run(context.Background(), "Analyze the product launch")
+
+// All results available
 for _, stepResult := range result.StepResults {
-    allAnalyses = append(allAnalyses, stepResult.Output)
+    log.Printf("%s: %s", stepResult.StepName, stepResult.Output)
 }
-
-// Use aggregator agent to synthesize
-aggregator, _ := v1beta.NewChatAgent("Aggregator", v1beta.WithLLM("openai", "gpt-4"))
-final, _ := aggregator.Run(
-    context.Background(),
-    fmt.Sprintf("Synthesize these analyses: %v", allAnalyses),
-)
 ```
 
-### Parallel with Timeout
+### With Timeout
 
 ```go
 ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -297,74 +131,67 @@ config := &v1beta.WorkflowConfig{
 }
 
 workflow, _ := v1beta.NewParallelWorkflow(config)
-workflow.AddStep(v1beta.WorkflowStep{Name: "slow_task", Agent: slowAgent})
-workflow.AddStep(v1beta.WorkflowStep{Name: "fast_task", Agent: fastAgent})
+workflow.AddStep(v1beta.WorkflowStep{Name: "task1", Agent: agent1})
+workflow.AddStep(v1beta.WorkflowStep{Name: "task2", Agent: agent2})
 
-result, err := workflow.Run(ctx, "Analyze data")
+result, err := workflow.Run(ctx, "Process tasks")
 if err == context.DeadlineExceeded {
-    // Handle timeout - may have partial results
-    fmt.Println("Timeout! Completed:", len(result.StepResults), "tasks")
+    log.Printf("Timeout: %d tasks completed", len(result.StepResults))
 }
 ```
 
 ---
 
-## 🕸️ DAG Workflow
+## DAG Workflow
 
-### Basic DAG Workflow
+Execute steps based on explicit dependencies. Steps with no dependencies run in parallel; dependent steps wait for prerequisites.
 
 ```go
-// Create agents
-dataAgent, _ := v1beta.NewChatAgent("DataFetcher", v1beta.WithLLM("openai", "gpt-4"))
-processor1, _ := v1beta.NewChatAgent("Processor1", v1beta.WithLLM("openai", "gpt-4"))
-processor2, _ := v1beta.NewChatAgent("Processor2", v1beta.WithLLM("openai", "gpt-4"))
-aggregator, _ := v1beta.NewChatAgent("Aggregator", v1beta.WithLLM("openai", "gpt-4"))
-
-// Define DAG structure
 config := &v1beta.WorkflowConfig{
     Mode:    v1beta.DAG,
     Timeout: 120 * time.Second,
 }
 
-workflow, err := v1beta.NewDAGWorkflow(config)
-if err != nil {
-    log.Fatal(err)
-}
+workflow, _ := v1beta.NewDAGWorkflow(config)
 
-// Step 1: Collect data (no dependencies)
+// Create agents
+data, _ := v1beta.NewChatAgent("DataFetcher", v1beta.WithLLM("openai", "gpt-4"))
+proc1, _ := v1beta.NewChatAgent("Processor1", v1beta.WithLLM("openai", "gpt-4"))
+proc2, _ := v1beta.NewChatAgent("Processor2", v1beta.WithLLM("openai", "gpt-4"))
+agg, _ := v1beta.NewChatAgent("Aggregator", v1beta.WithLLM("openai", "gpt-4"))
+
+// Step 1: collect data (no dependencies)
 workflow.AddStep(v1beta.WorkflowStep{
     Name:         "collect",
-    Agent:        dataAgent,
+    Agent:        data,
     Dependencies: nil,
 })
 
-// Steps 2 & 3: Process in parallel (both depend on collect)
+// Steps 2 & 3: process in parallel (depend on collect)
 workflow.AddStep(v1beta.WorkflowStep{
     Name:         "process1",
-    Agent:        processor1,
+    Agent:        proc1,
     Dependencies: []string{"collect"},
 })
 workflow.AddStep(v1beta.WorkflowStep{
     Name:         "process2",
-    Agent:        processor2,
+    Agent:        proc2,
     Dependencies: []string{"collect"},
 })
 
-// Step 4: Aggregate (depends on both processors)
+// Step 4: aggregate (depends on both processors)
 workflow.AddStep(v1beta.WorkflowStep{
     Name:         "aggregate",
-    Agent:        aggregator,
+    Agent:        agg,
     Dependencies: []string{"process1", "process2"},
 })
 
-// Execute - automatically handles dependencies
-result, err := workflow.Run(context.Background(), "Collect data from sources")
+result, _ := workflow.Run(context.Background(), "Collect and process data")
 ```
 
-### Complex DAG Example
+### Complex Example: E-commerce Order Processing
 
 ```go
-// E-commerce order processing pipeline
 config := &v1beta.WorkflowConfig{
     Mode:    v1beta.DAG,
     Timeout: 180 * time.Second,
@@ -422,33 +249,16 @@ workflow.AddStep(v1beta.WorkflowStep{
     Dependencies: []string{"reserve", "notify"},
 })
 
-result, _ := workflow.Run(context.Background(), "Process order #12345")
-```
-
-### DAG Execution Flow
-
-```
-validate
-    ↓
-    ├─→ check_inventory ─┐
-    ├─→ check_payment ───┼─→ authorize
-    └─→ check_fraud ─────┘       ↓
-                               ├─→ reserve ─┐
-                               └─→ notify ──┼─→ confirm
-                                            ┘
+result, _ := workflow.Run(context.Background(), "Process order")
 ```
 
 ---
 
-## 🔁 Loop Workflow
+## Loop Workflow
 
-### Basic Loop Workflow
+Execute steps iteratively until a condition is met. Perfect for iterative refinement and convergence-based processing.
 
 ```go
-// Create agents for iterative refinement
-drafterAgent, _ := v1beta.NewChatAgent("Drafter", v1beta.WithLLM("openai", "gpt-4"))
-criticAgent, _ := v1beta.NewChatAgent("Critic", v1beta.WithLLM("openai", "gpt-4"))
-
 // Define loop condition
 shouldContinue := func(ctx context.Context, iteration int, lastResult *v1beta.WorkflowResult) (bool, error) {
     // Stop after 5 iterations
@@ -468,43 +278,38 @@ shouldContinue := func(ctx context.Context, iteration int, lastResult *v1beta.Wo
     return true, nil
 }
 
-// Create loop workflow
 config := &v1beta.WorkflowConfig{
     Mode:          v1beta.Loop,
     Timeout:       300 * time.Second,
     MaxIterations: 5,
 }
 
-workflow, err := v1beta.NewLoopWorkflowWithCondition(config, shouldContinue)
-if err != nil {
-    log.Fatal(err)
-}
+workflow, _ := v1beta.NewLoopWorkflowWithCondition(config, shouldContinue)
 
-workflow.AddStep(v1beta.WorkflowStep{Name: "draft", Agent: drafterAgent})
-workflow.AddStep(v1beta.WorkflowStep{Name: "critique", Agent: criticAgent})
-workflow.AddStep(v1beta.WorkflowStep{Name: "refine", Agent: drafterAgent})
+draft, _ := v1beta.NewChatAgent("Drafter", v1beta.WithLLM("openai", "gpt-4"))
+critic, _ := v1beta.NewChatAgent("Critic", v1beta.WithLLM("openai", "gpt-4"))
 
-// Execute loop
-result, err := workflow.Run(context.Background(), "Write essay on artificial intelligence")
-if err != nil {
-    log.Fatal(err)
-}
+workflow.AddStep(v1beta.WorkflowStep{Name: "draft", Agent: draft})
+workflow.AddStep(v1beta.WorkflowStep{Name: "critique", Agent: critic})
+workflow.AddStep(v1beta.WorkflowStep{Name: "refine", Agent: draft})
+
+result, _ := workflow.Run(context.Background(), "Write essay on artificial intelligence")
 
 // Get final result
-fmt.Println("Final output:", result.FinalOutput)
+log.Printf("Final output: %s", result.FinalOutput)
 if result.IterationInfo != nil {
-    fmt.Println("Iterations:", result.IterationInfo.TotalIterations)
-    fmt.Println("Exit reason:", result.IterationInfo.ExitReason)
+    log.Printf("Iterations: %d, Exit reason: %s", 
+        result.IterationInfo.TotalIterations,
+        result.IterationInfo.ExitReason)
 }
 ```
 
-### Loop with Convergence Detection
+### With Convergence Detection
 
 ```go
 var previousOutput string
 
 shouldContinue := func(ctx context.Context, iteration int, lastResult *v1beta.WorkflowResult) (bool, error) {
-    // Maximum iterations safeguard
     if iteration >= 10 {
         return false, nil
     }
@@ -513,14 +318,10 @@ shouldContinue := func(ctx context.Context, iteration int, lastResult *v1beta.Wo
         return true, nil
     }
     
-    // Check if improvement is minimal (convergence)
+    // Stop if output unchanged (converged)
     currentOutput := lastResult.FinalOutput
-    
-    if previousOutput != "" {
-        // Simple similarity check
-        if currentOutput == previousOutput {
-            return false, nil // Converged - no change
-        }
+    if previousOutput != "" && currentOutput == previousOutput {
+        return false, nil
     }
     
     previousOutput = currentOutput
@@ -534,14 +335,11 @@ config := &v1beta.WorkflowConfig{
 }
 
 workflow, _ := v1beta.NewLoopWorkflowWithCondition(config, shouldContinue)
-workflow.AddStep(v1beta.WorkflowStep{Name: "analyze", Agent: analyzerAgent})
-workflow.AddStep(v1beta.WorkflowStep{Name: "optimize", Agent: optimizerAgent})
-workflow.AddStep(v1beta.WorkflowStep{Name: "process", Agent: processorAgent})
-
+// ... add steps
 result, _ := workflow.Run(context.Background(), "Optimize the algorithm")
 ```
 
-### Loop with Error Recovery
+### With Error Recovery
 
 ```go
 shouldContinue := func(ctx context.Context, iteration int, lastResult *v1beta.WorkflowResult) (bool, error) {
@@ -554,14 +352,9 @@ shouldContinue := func(ctx context.Context, iteration int, lastResult *v1beta.Wo
         return true, nil
     }
     
-    // Check if last attempt failed
+    // Retry if last attempt failed
     if !lastResult.Success {
-        return true, nil // Retry on failure
-    }
-    
-    // Check success criteria from metadata
-    if validated, ok := lastResult.Metadata["validated"].(bool); ok {
-        return !validated, nil // Continue if not validated
+        return true, nil
     }
     
     return false, nil
@@ -574,15 +367,15 @@ config := &v1beta.WorkflowConfig{
 }
 
 workflow, _ := v1beta.NewLoopWorkflowWithCondition(config, shouldContinue)
-workflow.AddStep(v1beta.WorkflowStep{Name: "attempt", Agent: taskAgent})
-workflow.AddStep(v1beta.WorkflowStep{Name: "validate", Agent: validatorAgent})
-
+// ... add steps
 result, _ := workflow.Run(context.Background(), "Execute complex task")
 ```
 
 ---
 
-## 🎨 Subworkflow Composition
+## Subworkflow Composition
+
+Nest workflows as agents for modular, reusable design.
 
 ### Basic Subworkflow
 
@@ -598,7 +391,7 @@ researchWorkflow.AddStep(v1beta.WorkflowStep{Name: "search", Agent: searchAgent}
 researchWorkflow.AddStep(v1beta.WorkflowStep{Name: "analyze", Agent: analyzerAgent})
 researchWorkflow.AddStep(v1beta.WorkflowStep{Name: "summarize", Agent: summarizerAgent})
 
-// Wrap workflow as an agent using SubWorkflowAgent
+// Wrap workflow as agent
 researchAsAgent := v1beta.NewSubWorkflowAgent("research", researchWorkflow)
 
 // Use in main workflow
@@ -615,44 +408,32 @@ mainWorkflow.AddStep(v1beta.WorkflowStep{Name: "compare", Agent: compareAgent})
 result, _ := mainWorkflow.Run(context.Background(), "Research AI trends")
 ```
 
-### Nested Subworkflows
+### Nested Levels
 
 ```go
-// Level 3: Data validation subworkflow
-validationConfig := &v1beta.WorkflowConfig{
+// Level 3: Validation (parallel)
+validationWorkflow, _ := v1beta.NewParallelWorkflow(&v1beta.WorkflowConfig{
     Mode:    v1beta.Parallel,
     Timeout: 30 * time.Second,
-}
-
-validationWorkflow, _ := v1beta.NewParallelWorkflow(validationConfig)
+})
 validationWorkflow.AddStep(v1beta.WorkflowStep{Name: "format", Agent: formatValidator})
 validationWorkflow.AddStep(v1beta.WorkflowStep{Name: "integrity", Agent: integrityValidator})
-validationWorkflow.AddStep(v1beta.WorkflowStep{Name: "completeness", Agent: completenessValidator})
-
-// Wrap as agent
 validationAsAgent := v1beta.NewSubWorkflowAgent("validation", validationWorkflow)
 
-// Level 2: Data processing subworkflow
-processingConfig := &v1beta.WorkflowConfig{
+// Level 2: Processing (sequential, uses validation)
+processingWorkflow, _ := v1beta.NewSequentialWorkflow(&v1beta.WorkflowConfig{
     Mode:    v1beta.Sequential,
     Timeout: 60 * time.Second,
-}
-
-processingWorkflow, _ := v1beta.NewSequentialWorkflow(processingConfig)
+})
 processingWorkflow.AddStep(v1beta.WorkflowStep{Name: "validate", Agent: validationAsAgent})
 processingWorkflow.AddStep(v1beta.WorkflowStep{Name: "transform", Agent: transformAgent})
-processingWorkflow.AddStep(v1beta.WorkflowStep{Name: "enrich", Agent: enrichAgent})
-
-// Wrap as agent
 processingAsAgent := v1beta.NewSubWorkflowAgent("processing", processingWorkflow)
 
-// Level 1: Main ETL workflow
-etlConfig := &v1beta.WorkflowConfig{
+// Level 1: Main ETL (uses processing)
+etlWorkflow, _ := v1beta.NewSequentialWorkflow(&v1beta.WorkflowConfig{
     Mode:    v1beta.Sequential,
     Timeout: 120 * time.Second,
-}
-
-etlWorkflow, _ := v1beta.NewSequentialWorkflow(etlConfig)
+})
 etlWorkflow.AddStep(v1beta.WorkflowStep{Name: "extract", Agent: extractAgent})
 etlWorkflow.AddStep(v1beta.WorkflowStep{Name: "process", Agent: processingAsAgent})
 etlWorkflow.AddStep(v1beta.WorkflowStep{Name: "load", Agent: loadAgent})
@@ -660,30 +441,23 @@ etlWorkflow.AddStep(v1beta.WorkflowStep{Name: "load", Agent: loadAgent})
 result, _ := etlWorkflow.Run(context.Background(), "Process dataset")
 ```
 
-### Subworkflow with Different Types
+### Mixing Workflow Types
 
 ```go
 // Parallel analysis subworkflow
-analysisConfig := &v1beta.WorkflowConfig{
+analysisWorkflow, _ := v1beta.NewParallelWorkflow(&v1beta.WorkflowConfig{
     Mode:    v1beta.Parallel,
     Timeout: 60 * time.Second,
-}
-
-analysisWorkflow, _ := v1beta.NewParallelWorkflow(analysisConfig)
+})
 analysisWorkflow.AddStep(v1beta.WorkflowStep{Name: "sentiment", Agent: sentimentAgent})
 analysisWorkflow.AddStep(v1beta.WorkflowStep{Name: "entities", Agent: entityAgent})
-analysisWorkflow.AddStep(v1beta.WorkflowStep{Name: "topics", Agent: topicAgent})
-
-// Wrap as agent
 analysisAsAgent := v1beta.NewSubWorkflowAgent("analysis", analysisWorkflow)
 
-// Main DAG workflow using subworkflow
-mainConfig := &v1beta.WorkflowConfig{
+// Main DAG workflow
+mainWorkflow, _ := v1beta.NewDAGWorkflow(&v1beta.WorkflowConfig{
     Mode:    v1beta.DAG,
     Timeout: 120 * time.Second,
-}
-
-mainWorkflow, _ := v1beta.NewDAGWorkflow(mainConfig)
+})
 mainWorkflow.AddStep(v1beta.WorkflowStep{
     Name:         "fetch",
     Agent:        fetchAgent,
@@ -705,11 +479,9 @@ result, _ := mainWorkflow.Run(context.Background(), "Fetch and analyze content")
 
 ---
 
-## 📡 Workflow Streaming
+## Workflow Streaming
 
-Monitor workflow execution in real-time:
-
-### Sequential Workflow Streaming
+Monitor workflow execution in real-time with streaming chunks.
 
 ```go
 config := &v1beta.WorkflowConfig{
@@ -720,7 +492,6 @@ config := &v1beta.WorkflowConfig{
 workflow, _ := v1beta.NewSequentialWorkflow(config)
 workflow.AddStep(v1beta.WorkflowStep{Name: "step1", Agent: agent1})
 workflow.AddStep(v1beta.WorkflowStep{Name: "step2", Agent: agent2})
-workflow.AddStep(v1beta.WorkflowStep{Name: "step3", Agent: agent3})
 
 stream, err := workflow.RunStream(context.Background(), "First task")
 if err != nil {
@@ -731,204 +502,102 @@ for chunk := range stream.Chunks() {
     switch chunk.Type {
     case v1beta.ChunkTypeMetadata:
         if step, ok := chunk.Metadata["step_name"].(string); ok {
-            fmt.Printf("→ Executing: %s\n", step)
+            log.Printf("→ Executing: %s", step)
         }
     case v1beta.ChunkTypeDelta:
         fmt.Print(chunk.Delta)
     case v1beta.ChunkTypeDone:
-        fmt.Println("\n✓ Workflow complete")
-    }
-}
-```
-
-### Parallel Workflow Progress
-
-```go
-config := &v1beta.WorkflowConfig{
-    Mode:    v1beta.Parallel,
-    Timeout: 90 * time.Second,
-}
-
-workflow, _ := v1beta.NewParallelWorkflow(config)
-workflow.AddStep(v1beta.WorkflowStep{Name: "task1", Agent: agent1})
-workflow.AddStep(v1beta.WorkflowStep{Name: "task2", Agent: agent2})
-workflow.AddStep(v1beta.WorkflowStep{Name: "task3", Agent: agent3})
-
-stream, _ := workflow.RunStream(context.Background(), "Process tasks")
-completedTasks := make(map[string]bool)
-
-for chunk := range stream.Chunks() {
-    if chunk.Type == v1beta.ChunkTypeMetadata {
-        if step, ok := chunk.Metadata["step_name"].(string); ok {
-            if status, ok := chunk.Metadata["status"].(string); ok && status == "completed" {
-                completedTasks[step] = true
-                fmt.Printf("✓ Completed: %s (%d/3)\n", step, len(completedTasks))
-            }
-        }
+        log.Println("✓ Workflow complete")
     }
 }
 ```
 
 ---
 
-## 🎯 Best Practices
+## Best Practices
 
-### 1. Choose the Right Workflow Type
+**Choose the right mode:**
+- Sequential: dependent steps, data pipelines
+- Parallel: independent tasks, speed important
+- DAG: complex dependencies
+- Loop: iterative refinement, error recovery
+- Subworkflow: reusable logic, hierarchical design
 
+**Error handling:**
 ```go
-// ✅ Good - Sequential for dependent steps
-config := &v1beta.WorkflowConfig{
-    Mode:    v1beta.Sequential,
-    Timeout: 60 * time.Second,
-}
-workflow, _ := v1beta.NewSequentialWorkflow(config)
-workflow.AddStep(v1beta.WorkflowStep{Name: "fetch", Agent: fetchAgent})
-workflow.AddStep(v1beta.WorkflowStep{Name: "process", Agent: processAgent})
-
-// ✅ Good - Parallel for independent tasks
-config2 := &v1beta.WorkflowConfig{
-    Mode:    v1beta.Parallel,
-    Timeout: 60 * time.Second,
-}
-workflow2, _ := v1beta.NewParallelWorkflow(config2)
-workflow2.AddStep(v1beta.WorkflowStep{Name: "tech", Agent: techAgent})
-workflow2.AddStep(v1beta.WorkflowStep{Name: "biz", Agent: bizAgent})
-```
-
-### 2. Handle Errors at Workflow Level
-
-```go
-// ✅ Good - Error handling
-result, err := workflow.Run(ctx, "Task input")
+result, err := workflow.Run(ctx, "input")
 if err != nil {
-    log.Printf("Workflow failed: %v", err)
     // Check partial results
-    if result != nil && result.StepResults != nil {
-        for step, stepResult := range result.StepResults {
-            if stepResult.Success {
-                log.Printf("Step %s succeeded", step)
+    if result != nil {
+        for _, stepResult := range result.StepResults {
+            if !stepResult.Success {
+                log.Printf("Failed step: %s - %s", stepResult.StepName, stepResult.Error)
             }
         }
     }
 }
 ```
 
-### 3. Set Appropriate Timeouts
-
+**Set appropriate timeouts:**
 ```go
-// ✅ Good - Reasonable timeout
 ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 defer cancel()
 
 result, err := workflow.Run(ctx, "Task")
 ```
 
-### 4. Use Subworkflows for Reusability
-
+**Reuse subworkflows:**
 ```go
-// ✅ Good - Reusable validation logic
-validationConfig := &v1beta.WorkflowConfig{
-    Mode:    v1beta.Parallel,
-    Timeout: 30 * time.Second,
-}
+// Define validation once, use in multiple workflows
+validationConfig := &v1beta.WorkflowConfig{Mode: v1beta.Parallel, Timeout: 30*time.Second}
 validationWorkflow, _ := v1beta.NewParallelWorkflow(validationConfig)
-validationWorkflow.AddStep(v1beta.WorkflowStep{Name: "format", Agent: formatAgent})
-validationWorkflow.AddStep(v1beta.WorkflowStep{Name: "data", Agent: dataAgent})
-
-// Wrap and use in multiple places
+// ... add steps
 validationAsAgent := v1beta.NewSubWorkflowAgent("validation", validationWorkflow)
 
-config1 := &v1beta.WorkflowConfig{Mode: v1beta.Sequential, Timeout: 60 * time.Second}
+// Use in multiple pipelines
 pipeline1, _ := v1beta.NewSequentialWorkflow(config1)
 pipeline1.AddStep(v1beta.WorkflowStep{Name: "validate", Agent: validationAsAgent})
-pipeline1.AddStep(v1beta.WorkflowStep{Name: "process", Agent: processAgent})
 
-config2 := &v1beta.WorkflowConfig{Mode: v1beta.Sequential, Timeout: 60 * time.Second}
 pipeline2, _ := v1beta.NewSequentialWorkflow(config2)
 pipeline2.AddStep(v1beta.WorkflowStep{Name: "validate", Agent: validationAsAgent})
-pipeline2.AddStep(v1beta.WorkflowStep{Name: "transform", Agent: transformAgent})
-```
-)
-```
-
-### 6. Track Loop Iterations
-
-```go
-// ✅ Good - Safeguard against infinite loops
-shouldContinue := func(results map[string]*v1beta.AgentResult, iteration int) bool {
-    if iteration >= 10 {
-        return false // Maximum iterations
-    }
-    // ... other conditions
-}
 ```
 
 ---
 
-## 🔍 Troubleshooting
+## Troubleshooting
 
-### Issue: DAG Circular Dependency
-
-**Symptoms**: Workflow fails to start with dependency error
-
-**Solution**: Check dependencies don't form cycles
-
+**DAG circular dependency**: Check dependencies don't form cycles
 ```go
-// ❌ Bad - Circular dependency
-workflow.AddStep(v1beta.WorkflowStep{
-    Name:         "a",
-    Agent:        agentA,
-    Dependencies: []string{"b"}, // Circular!
-})
-workflow.AddStep(v1beta.WorkflowStep{
-    Name:         "b",
-    Agent:        agentB,
-    Dependencies: []string{"a"},
-})
-
-// ✅ Good - Acyclic dependencies
-workflow.AddStep(v1beta.WorkflowStep{
-    Name:         "a",
-    Agent:        agentA,
-    Dependencies: nil,
-})
-workflow.AddStep(v1beta.WorkflowStep{
-    Name:         "b",
-    Agent:        agentB,
-    Dependencies: []string{"a"},
-})
+// Bad: A depends on B, B depends on A
+// Good: Ensure acyclic relationships (A → B → C)
 ```
 
-### Issue: Step Result Access
-
-**Symptoms**: Need to access previous step results
-
-**Solution**: Results available in WorkflowResult.StepResults map
-
+**Step result access**: Results available in WorkflowResult.StepResults
 ```go
 result, _ := workflow.Run(ctx, "Input")
-for stepName, stepResult := range result.StepResults {
-    fmt.Printf("Step %s: %s\n", stepName, stepResult.FinalOutput)
+for _, stepResult := range result.StepResults {
+    log.Printf("Step %s: %s", stepResult.StepName, stepResult.Output)
 }
 ```
 
-### Issue: Parallel Workflow Hangs
-
-**Symptoms**: Some tasks complete but workflow doesn't finish
-
-**Solution**: Check for agent deadlocks or infinite waits
-
+**Parallel workflow hangs**: Set context timeouts to prevent deadlocks
 ```go
-// ✅ Good - Set timeouts
 ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 defer cancel()
+workflow.Run(ctx, "input")
+```
 
-workflow.Run(ctx)
+**Loop infinite execution**: Always set MaxIterations safeguard
+```go
+config := &v1beta.WorkflowConfig{
+    Mode:          v1beta.Loop,
+    MaxIterations: 10,  // Required
+}
 ```
 
 ---
 
-## 📚 Complete Examples
+## Examples & Further Reading
 
 See full workflow examples:
 - [Sequential Workflow Example](./examples/workflow-sequential.md)
@@ -939,11 +608,11 @@ See full workflow examples:
 
 ---
 
-## 🔗 Related Topics
+## Related Topics
 
-- **[Core Concepts](./core-concepts.md)** - Understanding agents
-- **[Streaming](./streaming.md)** - Workflow streaming patterns
-- **[Custom Handlers](./custom-handlers.md)** - Advanced agent logic
+- [Core Concepts](./core-concepts.md) - Understanding agents
+- [Streaming](./streaming.md) - Real-time workflow streaming
+- [Custom Handlers](./custom-handlers.md) - Advanced agent logic
 
 ---
 

@@ -6,34 +6,27 @@ AgenticGoKit is a production-ready framework for building AI agents in Go. An **
 
 ---
 
-## 📋 Prerequisites
+## Installation
 
-Before you begin, make sure you have:
+```bash
+# Install the library
+go get github.com/agenticgokit/agenticgokit/v1beta
 
-- **Go 1.21 or later** installed
-- **An LLM API key** from one of: [OpenAI](https://platform.openai.com), [Azure AI](https://azure.microsoft.com/en-us/services/cognitive-services/openai-service/), [Ollama](https://ollama.com), [HuggingFace](https://huggingface.co), or [OpenRouter](https://openrouter.ai)
-- **Basic Go knowledge** (packages, functions, error handling)
+# Set your LLM provider API key
+export OPENAI_API_KEY="sk-..."          # OpenAI
+export OLLAMA_HOST="http://localhost:11434"  # Ollama (local)
+```
 
-**First time setting up an LLM provider?** See the [Installation Guide](./installation.md).
+For Ollama, install from [ollama.com](https://ollama.com) and pull a model:
+```bash
+ollama pull llama2
+```
 
 ---
 
-## 🚀 Your First Agent (5 Minutes)
+## Your First Agent
 
-### Step 1: Install AgenticGoKit
-
-```bash
-go get github.com/agenticgokit/agenticgokit/v1beta
-```
-
-Initialize your Go module (if needed):
-
-```bash
-go mod init myagent
-go mod tidy
-```
-
-### Step 2: Create Your Agent
+### Step 1: Create Your Agent
 
 Create a file called `main.go`:
 
@@ -73,7 +66,7 @@ func main() {
 }
 ```
 
-### Step 3: Run It
+### Step 2: Run It
 
 ```bash
 go run main.go
@@ -153,8 +146,6 @@ agent, err := v1beta.NewChatAgent("Assistant",
 )
 ```
 
-**See [Installation Guide](./installation.md) for all supported providers.**
-
 ### Add a Custom System Prompt
 
 ```go
@@ -224,15 +215,14 @@ We recommend exploring in this order:
 
 1. **✅ You are here**: Getting Started (5 min) - Build and run an agent
 2. **[Core Concepts](./core-concepts.md)** (15 min) - Understand agents, handlers, tools, and memory
-3. **[Installation](./installation.md)** (5 min) - Set up your preferred LLM provider
-4. **Pick your path:**
+3. **Pick your path:**
    - Want real-time responses? → [Streaming Guide](./streaming.md)
    - Multiple agents? → [Workflows Guide](./workflows.md)
    - External APIs? → [Tool Integration](./tool-integration.md)
    - Knowledge base? → [Memory & RAG](./memory-and-rag.md)
    - Custom behavior? → [Custom Handlers](./custom-handlers.md)
-5. **Explore examples** - See complete projects in [examples/](../examples/)
-6. **Troubleshoot** - Visit [Troubleshooting](./troubleshooting.md) if something breaks
+4. **Explore examples** - See complete projects in [examples/](../examples/)
+5. **Troubleshoot** - Visit [Troubleshooting](./troubleshooting.md) if something breaks
 
 ---
 

@@ -103,14 +103,14 @@ Understand the architecture and patterns
 </div>
 <div class="quickstart-card">
 
-### 🔄 **Migrating?**
-Moving from core or vnext?
+### � **Starting with v1beta**
+v1beta is the current production API. Core and vnext packages are deprecated.
 
-- [Migration Guide](v1beta/migration-from-core.md)
-- [API Changes](MIGRATION.md)
-- [What's New](v1beta/README.md#whats-new)
+- [Getting Started](v1beta/getting-started.md)
+- [Core Concepts](v1beta/core-concepts.md)
+- [Examples](v1beta/examples/)
 
-**[→ Migration Help](MIGRATION.md)**
+**[→ v1beta Documentation](v1beta/README.md)**
 
 </div>
 </div>
@@ -269,7 +269,6 @@ Task-oriented guides:
 Technical documentation:
 - **[v1beta API](reference/v1beta-api/README.md)** - Complete v1beta reference
 - **[Configuration Reference](reference/api/configuration.md)** - All config options
-- **[Migration Guide](MIGRATION.md)** - Upgrade from core/vnext
 
 </div>
 <div class="docs-section">
@@ -332,7 +331,7 @@ agent, err := v1beta.NewBuilder("agent").
     Build()
 ```
 
-**[→ Complete Migration Guide](MIGRATION.md)** • **[→ What Changed](v1beta/migration-from-core.md)**
+**[→ See More Examples](v1beta/examples/)**
 
 ---
 
