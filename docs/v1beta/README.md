@@ -111,12 +111,15 @@ agent, err := v1beta.NewChatAgent("agent",
 
 AgenticGoKit supports the following LLM providers:
 - **OpenAI** - GPT-4, GPT-3.5-turbo, and other OpenAI models
-- **Azure AI** - Azure OpenAI Service with your deployments
+- **Azure OpenAI** - Azure OpenAI Service with your deployments
 - **Ollama** - Local models (Llama, Mistral, Gemma, etc.)
 - **HuggingFace** - Inference API for HuggingFace models
 - **OpenRouter** - Access to multiple LLM providers
+- **BentoML** - Self-hosted ML models with production features (batching, observability)
+- **MLFlow** - Models deployed via MLFlow AI Gateway
+- **vLLM** - High-throughput LLM serving with PagedAttention optimization
 
-See [Getting Started](./getting-started.md) for setup instructions for each provider.
+See [Getting Started](./getting-started.md) for setup instructions and [examples/](../../examples/) for provider-specific quickstarts.
 
 ---
 
