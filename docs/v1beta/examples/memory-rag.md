@@ -49,7 +49,7 @@ func main() {
             },
         }).
         WithMemory(
-            v1beta.WithMemoryProvider("memory"),
+            v1beta.WithMemoryProvider("chromem"),
             v1beta.WithSessionScoped(),
             v1beta.WithRAG(4000, 0.3, 0.7), // contextSize, personalWeight, knowledgeWeight
         ).
@@ -128,7 +128,7 @@ agent, _ := v1beta.NewBuilder("Agent").
         LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
     }).
     WithMemory(
-        v1beta.WithMemoryProvider("memory"),
+        v1beta.WithMemoryProvider("chromem"),
     ).
     Build()
 ```
@@ -260,7 +260,7 @@ agent, _ := v1beta.NewBuilder("Agent").
         LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
     }).
     WithMemory(
-        v1beta.WithMemoryProvider("memory"),
+        v1beta.WithMemoryProvider("chromem"),
         v1beta.WithSessionScoped(), // Each session has isolated memory
     ).
     Build()
@@ -281,7 +281,7 @@ agent, _ := v1beta.NewBuilder("Agent").
         LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
     }).
     WithMemory(
-        v1beta.WithMemoryProvider("memory"),
+        v1beta.WithMemoryProvider("chromem"),
         // Without WithSessionScoped(), memory is shared
     ).
     Build()
@@ -348,7 +348,7 @@ agent, _ := v1beta.NewBuilder("ChatBot").
         LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
     }).
     WithMemory(
-        v1beta.WithMemoryProvider("memory"),
+        v1beta.WithMemoryProvider("chromem"),
         v1beta.WithSessionScoped(),
         v1beta.WithRAG(4000, 0.5, 0.5), // Include conversation history
     ).

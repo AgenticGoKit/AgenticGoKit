@@ -56,7 +56,7 @@ agent, err := v1beta.NewBuilder("AdvancedAgent").
     }).
     WithTools(tools).
     WithMemory(
-        v1beta.WithMemoryProvider("memory"),
+        v1beta.WithMemoryProvider("chromem"),
         v1beta.WithRAG(2000, 0.3, 0.7),
     ).
     WithHandler(customHandler).
@@ -141,7 +141,7 @@ Enable memory and RAG:
 ```go
 agent, _ := v1beta.NewBuilder("MemoryAgent").
     WithMemory(
-        v1beta.WithMemoryProvider("memory"),
+        v1beta.WithMemoryProvider("chromem"),
         v1beta.WithRAG(2000, 0.3, 0.7), // maxTokens, personalWeight, knowledgeWeight
         v1beta.WithSessionScoped(),
         v1beta.WithContextAware(),

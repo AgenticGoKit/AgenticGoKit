@@ -277,7 +277,7 @@ agent, _ := v1beta.NewBuilder("MemoryAgent").
         LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
     }).
     WithMemory(
-        v1beta.WithMemoryProvider("memory"),
+        v1beta.WithMemoryProvider("chromem"),
     ).
     WithHandler(handler).
     Build()
@@ -531,7 +531,7 @@ func createResearchAssistant() (v1beta.Agent, error) {
             v1beta.WithMCP(/* web search server */),
         ).
         WithMemory(
-            v1beta.WithMemoryProvider("memory"),
+            v1beta.WithMemoryProvider("chromem"),
         ).
         WithHandler(handler).
         Build()

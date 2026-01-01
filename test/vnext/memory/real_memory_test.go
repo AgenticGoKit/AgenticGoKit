@@ -45,7 +45,7 @@ func TestRealMemoryProvider_EnrichWithMemory(t *testing.T) {
 
 		// Create real in-memory provider
 		memConfig := core.AgentMemoryConfig{
-			Provider:   "inmemory",
+			Provider:   "chromem",
 			MaxResults: 10,
 		}
 		memProvider, err := providers.NewInMemoryProvider(memConfig)
@@ -64,7 +64,7 @@ func TestRealMemoryProvider_EnrichWithMemory(t *testing.T) {
 
 		// Create memory config with RAG settings
 		ragConfig := &vnext.MemoryConfig{
-			Provider: "inmemory",
+			Provider: "chromem",
 			RAG: &vnext.RAGConfig{
 				MaxTokens:       2000,
 				PersonalWeight:  0.4,
@@ -95,7 +95,7 @@ func TestRealMemoryProvider_EnrichWithMemory(t *testing.T) {
 		ctx := context.Background()
 
 		memConfig := core.AgentMemoryConfig{
-			Provider:   "inmemory",
+			Provider:   "chromem",
 			MaxResults: 10,
 		}
 		memProvider, err := providers.NewInMemoryProvider(memConfig)
@@ -107,7 +107,7 @@ func TestRealMemoryProvider_EnrichWithMemory(t *testing.T) {
 		require.NoError(t, err)
 
 		ragConfig := &vnext.MemoryConfig{
-			Provider: "inmemory",
+			Provider: "chromem",
 		}
 
 		query := "What is quantum computing?"
@@ -124,7 +124,7 @@ func TestRealMemoryProvider_BuildEnrichedPrompt(t *testing.T) {
 
 		// Create real in-memory provider
 		memConfig := core.AgentMemoryConfig{
-			Provider:   "inmemory",
+			Provider:   "chromem",
 			MaxResults: 10,
 		}
 		memProvider, err := providers.NewInMemoryProvider(memConfig)
@@ -153,7 +153,7 @@ func TestRealMemoryProvider_BuildEnrichedPrompt(t *testing.T) {
 
 		// Create memory config
 		ragConfig := &vnext.MemoryConfig{
-			Provider: "inmemory",
+			Provider: "chromem",
 			RAG: &vnext.RAGConfig{
 				MaxTokens:       3000,
 				PersonalWeight:  0.5,
@@ -194,7 +194,7 @@ func TestRealMemoryProvider_BuildEnrichedPrompt(t *testing.T) {
 		ctx := context.Background()
 
 		memConfig := core.AgentMemoryConfig{
-			Provider:   "inmemory",
+			Provider:   "chromem",
 			MaxResults: 10,
 		}
 		memProvider, err := providers.NewInMemoryProvider(memConfig)
@@ -210,7 +210,7 @@ func TestRealMemoryProvider_BuildEnrichedPrompt(t *testing.T) {
 		}
 
 		ragConfig := &vnext.MemoryConfig{
-			Provider: "inmemory",
+			Provider: "chromem",
 			RAG: &vnext.RAGConfig{
 				MaxTokens:    2000,
 				HistoryLimit: 4, // Only last 4 messages
@@ -241,7 +241,7 @@ func TestRealMemoryProvider_DualStorage(t *testing.T) {
 		ctx := context.Background()
 
 		memConfig := core.AgentMemoryConfig{
-			Provider:   "inmemory",
+			Provider:   "chromem",
 			MaxResults: 10,
 		}
 		memProvider, err := providers.NewInMemoryProvider(memConfig)
@@ -293,7 +293,7 @@ func TestRealMemoryProvider_Sessions(t *testing.T) {
 		baseCtx := context.Background()
 
 		memConfig := core.AgentMemoryConfig{
-			Provider:   "inmemory",
+			Provider:   "chromem",
 			MaxResults: 10,
 		}
 		memProvider, err := providers.NewInMemoryProvider(memConfig)
@@ -335,7 +335,7 @@ func TestRealMemoryProvider_Sessions(t *testing.T) {
 		baseCtx := context.Background()
 
 		memConfig := core.AgentMemoryConfig{
-			Provider:   "inmemory",
+			Provider:   "chromem",
 			MaxResults: 10,
 		}
 		memProvider, err := providers.NewInMemoryProvider(memConfig)
@@ -372,7 +372,7 @@ func TestRealMemoryProvider_KnowledgeBase(t *testing.T) {
 		ctx := context.Background()
 
 		memConfig := core.AgentMemoryConfig{
-			Provider:                "inmemory",
+			Provider:                "chromem",
 			KnowledgeMaxResults:     10,
 			KnowledgeScoreThreshold: 0.1,
 		}
@@ -441,7 +441,7 @@ func TestRealMemoryProvider_HybridSearch(t *testing.T) {
 		ctx := context.Background()
 
 		memConfig := core.AgentMemoryConfig{
-			Provider:                "inmemory",
+			Provider:                "chromem",
 			MaxResults:              10,
 			KnowledgeMaxResults:     10,
 			KnowledgeScoreThreshold: 0.1,

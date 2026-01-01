@@ -9,7 +9,7 @@ import (
 	_ "github.com/agenticgokit/agenticgokit/plugins/mcp/default"
 	_ "github.com/agenticgokit/agenticgokit/plugins/mcp/registry/memory"
 	_ "github.com/agenticgokit/agenticgokit/plugins/mcp/tcp"
-	_ "github.com/agenticgokit/agenticgokit/plugins/memory/memory"
+	_ "github.com/agenticgokit/agenticgokit/plugins/memory/chromem"
 	_ "github.com/agenticgokit/agenticgokit/plugins/memory/pgvector"
 	_ "github.com/agenticgokit/agenticgokit/plugins/memory/weaviate"
 	_ "github.com/agenticgokit/agenticgokit/plugins/orchestrator/default"

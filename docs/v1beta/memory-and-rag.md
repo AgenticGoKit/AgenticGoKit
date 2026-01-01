@@ -78,7 +78,7 @@ import (
     "context"
     "log"
     "github.com/agenticgokit/agenticgokit/v1beta"
-    _ "github.com/agenticgokit/agenticgokit/plugins/memory/memory" // Register provider
+    _ "github.com/agenticgokit/agenticgokit/plugins/memory/chromem" // Register provider
 )
 
 func main() {
@@ -92,7 +92,7 @@ func main() {
             },
         }).
         WithMemory(
-            v1beta.WithMemoryProvider("memory"),
+            v1beta.WithMemoryProvider("chromem"),
         ).
         Build()
     if err != nil {
@@ -113,41 +113,40 @@ func main() {
 
 ## 💾 Memory Providers
 
-AgenticGoKit v1beta includes two production-ready memory providers:
+AgenticGoKit v1beta includes production-ready memory providers with vector search capabilities:
 
-### 1. In-Memory Provider (Development/Testing)
+### 1. Chromem (Default - Embedded Vector Database)
 
-Perfect for development, testing, and prototyping:
+The default provider using chromem-go for embedded vector search:
 
 ```go
 import (
     "github.com/agenticgokit/agenticgokit/v1beta"
-    _ "github.com/agenticgokit/agenticgokit/plugins/memory/memory"
+    _ "github.com/agenticgokit/agenticgokit/plugins/memory/chromem"
 )
 
 agent, _ := v1beta.NewBuilder("DevAgent").
     WithPreset(v1beta.ChatAgent).
-    WithMemory(
-        v1beta.WithMemoryProvider("memory"),
-    ).
+    // Memory defaults to chromem - no explicit configuration needed
     Build()
 ```
 
 **Pros:**
 - ✅ No external dependencies
 - ✅ Fast and simple
-- ✅ Good for testing and development
+- ✅ True vector embeddings for semantic search
+- ✅ Optional persistence to disk
+- ✅ Good for development and production
 
 **Cons:**
-- ❌ Lost on restart
-- ❌ Not suitable for production
-- ❌ No persistence across sessions
+- ⚠️ Single-instance only (not distributed)
+- ⚠️ Limited to in-process memory
 
 **Use Cases:**
 - Local development
-- Unit testing
-- Prototyping
-- Simple demos
+- Single-instance deployments
+- Embedded applications
+- Prototyping and demos
 
 ### 2. PostgreSQL with pgvector (Production)
 
@@ -228,14 +227,14 @@ import (
     "context"
     "github.com/agenticgokit/agenticgokit/v1beta"
     "github.com/agenticgokit/agenticgokit/core"
-    _ "github.com/agenticgokit/agenticgokit/plugins/memory/memory"
+    _ "github.com/agenticgokit/agenticgokit/plugins/memory/chromem"
 )
 
 func main() {
     agent, _ := v1beta.NewBuilder("RAGAgent").
         WithPreset(v1beta.ResearchAgent).
         WithMemory(
-            v1beta.WithMemoryProvider("memory"),
+            v1beta.WithMemoryProvider("chromem"),
             v1beta.WithRAG(2000, 0.3, 0.7), // maxTokens, personalWeight, knowledgeWeight
         ).
         Build()
@@ -479,7 +478,7 @@ func sessionExample() {
     agent, _ := v1beta.NewBuilder("SessionAgent").
         WithPreset(v1beta.ChatAgent).
         WithMemory(
-            v1beta.WithMemoryProvider("memory"),
+            v1beta.WithMemoryProvider("chromem"),
             v1beta.WithSessionScoped(),
         ).
         Build()
@@ -516,7 +515,7 @@ Enable context awareness for better conversations:
 agent, _ := v1beta.NewBuilder("ChatAgent").
     WithPreset(v1beta.ChatAgent).
     WithMemory(
-        v1beta.WithMemoryProvider("memory"),
+        v1beta.WithMemoryProvider("chromem"),
         v1beta.WithContextAware(),
     ).
     Build()
@@ -608,7 +607,7 @@ if result.MemoryUsed {
 
 ```go
 // Development & Testing
-v1beta.WithMemoryProvider("memory") // Fast, no setup
+v1beta.WithMemoryProvider("chromem") // Fast, no setup
 
 // Production
 v1beta.WithMemoryProvider("pgvector") // Persistent, scalable, vector search
@@ -679,7 +678,7 @@ The pgvector provider automatically configures connection pooling:
 **Solution**: Use pgvector for persistence
 ```go
 // ❌ Not persistent
-v1beta.WithMemoryProvider("memory")
+v1beta.WithMemoryProvider("chromem")
 
 // ✅ Persistent
 v1beta.WithMemoryProvider("pgvector")

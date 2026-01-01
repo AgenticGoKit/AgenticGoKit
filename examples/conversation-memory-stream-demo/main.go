@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	vnext "github.com/agenticgokit/agenticgokit/v1beta"
 	_ "github.com/agenticgokit/agenticgokit/plugins/llm/ollama"
-	_ "github.com/agenticgokit/agenticgokit/plugins/memory/memory" // Register memory provider
+	_ "github.com/agenticgokit/agenticgokit/plugins/memory/chromem" // Register chromem provider
+	vnext "github.com/agenticgokit/agenticgokit/v1beta"
 )
 
 func main() {
@@ -45,7 +45,7 @@ Be conversational and engaging while being helpful.`,
 				MaxTokens:   2000, // Allow detailed responses
 			},
 			Memory: &vnext.MemoryConfig{
-				Provider: "memory", // Use in-memory provider
+				// Provider defaults to "chromem" - embedded vector database
 				RAG: &vnext.RAGConfig{
 					MaxTokens:       1000,
 					PersonalWeight:  0.8, // Prioritize conversation history
@@ -172,6 +172,3 @@ Be conversational and engaging while being helpful.`,
 
 	fmt.Println("\n✅ Demo completed! The agent streamed responses while remembering conversation history.")
 }
-
-
-

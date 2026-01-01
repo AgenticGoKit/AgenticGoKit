@@ -536,7 +536,7 @@ CREATE EXTENSION IF NOT EXISTS vector;
 ```go
 agent, _ := v1beta.NewBuilder("agent").
     WithMemory(
-        v1beta.WithMemoryProvider("memory"), // Fallback to in-memory
+        v1beta.WithMemoryProvider("chromem"), // Fallback to in-memory
     ).
     Build()
 ```
@@ -554,7 +554,7 @@ agent, _ := v1beta.NewBuilder("agent").
 agent, _ := v1beta.NewBuilder("agent").
     WithLLM("openai", "gpt-4").
     WithMemory(
-        v1beta.WithMemoryProvider("memory"),
+        v1beta.WithMemoryProvider("chromem"),
         v1beta.WithSessionScoped(),
     ).
     Build()
