@@ -40,7 +40,7 @@ You remember details from our conversation and provide personalized responses.
 Be conversational and engaging while being helpful.`,
 			LLM: vnext.LLMConfig{
 				Provider:    "ollama",
-				Model:       "qwen3:0.6b",
+				Model:       "gemma3:1b",
 				Temperature: 0.7,
 				MaxTokens:   2000, // Allow detailed responses
 			},

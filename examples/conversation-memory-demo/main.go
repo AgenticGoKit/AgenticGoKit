@@ -39,11 +39,12 @@ You remember details from our conversation and provide personalized responses.
 Be conversational and engaging while being helpful.`,
 			LLM: vnext.LLMConfig{
 				Provider:    "ollama",
-				Model:       "gpt-oss:120b-cloud",
+				Model:       "gemma3:1b",
 				Temperature: 0.7,
 				MaxTokens:   2000, // Allow detailed responses
 			},
 			Memory: &vnext.MemoryConfig{
+				Enabled: true, // Explicitly enable memory
 				// Provider defaults to "chromem" - embedded vector database
 				RAG: &vnext.RAGConfig{
 					MaxTokens:       1000,
