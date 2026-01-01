@@ -82,15 +82,15 @@ import (
 ### 2. Create Agent with Builder
 
 ```go
-agent, err := v1beta.NewBuilder("ChatAssistant").
-    WithLLM("openai", "gpt-4").
-    Build()
+agent, err := v1beta.NewChatAgent("ChatAssistant",
+    v1beta.WithLLM("openai", "gpt-4"),
+)
 ```
 
 **Key Points:**
-- `NewBuilder(name)` - Creates a new agent builder with a name
+- `NewChatAgent(name, options...)` - Creates a new chat agent with options
 - `WithLLM(provider, model)` - Configures the LLM provider and model
-- `Build()` - Constructs the agent instance
+- `Build()` is handled internally by factory functions
 
 ### 3. Execute Query
 
@@ -140,11 +140,14 @@ go run main.go
 
 ```go
 agent, err := v1beta.NewBuilder("CustomAgent").
-    WithLLM("openai", "gpt-4").
     WithConfig(&v1beta.Config{
         SystemPrompt: "You are a helpful assistant specialized in Go programming.",
-        Temperature:  0.7,
-        MaxTokens:    1000,
+        LLM: v1beta.LLMConfig{
+            Provider: "openai", 
+            Model:    "gpt-4",
+            Temperature: 0.7,
+            MaxTokens: 1000,
+        },
     }).
     Build()
 ```
@@ -152,9 +155,9 @@ agent, err := v1beta.NewBuilder("CustomAgent").
 ### With Azure OpenAI
 
 ```go
-agent, err := v1beta.NewBuilder("AzureAgent").
-    WithLLM("azure", "gpt-4").
-    Build()
+agent, err := v1beta.NewChatAgent("AzureAgent",
+    v1beta.WithLLM("azure", "gpt-4"),
+)
 ```
 
 **Environment Variables:**
@@ -167,9 +170,9 @@ export AZURE_OPENAI_DEPLOYMENT="gpt-4"
 ### With Ollama (Local)
 
 ```go
-agent, err := v1beta.NewBuilder("LocalAgent").
-    WithLLM("ollama", "llama2").
-    Build()
+agent, err := v1beta.NewChatAgent("LocalAgent",
+    v1beta.WithLLM("ollama", "llama2"),
+)
 ```
 
 **Environment Variables:**
@@ -184,9 +187,9 @@ export OLLAMA_HOST="http://localhost:11434"
 ### Basic Error Handling
 
 ```go
-agent, err := v1beta.NewBuilder("Agent").
-    WithLLM("openai", "gpt-4").
-    Build()
+agent, err := v1beta.NewChatAgent("Agent",
+    v1beta.WithLLM("openai", "gpt-4"),
+)
 if err != nil {
     log.Fatalf("Build failed: %v", err)
 }

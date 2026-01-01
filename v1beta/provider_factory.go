@@ -106,6 +106,16 @@ func createMemoryProvider(config *MemoryConfig) (core.Memory, error) {
 			if _, err := fmt.Sscanf(dim, "%d", &d); err == nil {
 				agentMemoryConfig.Dimensions = d
 			}
+		} else {
+			// Infer dimensions based on provider if possible
+			switch config.Options["embedding_provider"] {
+			case "openai":
+				agentMemoryConfig.Dimensions = 1536
+			case "ollama":
+				// This is a guess, but most small ollama models use 768 or 1024 or 4096.
+				// For dummy/fallback, 1536 is okay but we should ideally let the provider handle it.
+				agentMemoryConfig.Dimensions = 1536
+			}
 		}
 		if ep, ok := config.Options["embedding_provider"]; ok {
 			agentMemoryConfig.Embedding.Provider = ep

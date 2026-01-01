@@ -29,7 +29,9 @@ import (
 func main() {
     // Create agent
     agent, err := v1beta.NewBuilder("StreamingAgent").
-        WithLLM("openai", "gpt-4").
+        WithConfig(&v1beta.Config{
+            LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+        }).
         Build()
     if err != nil {
         log.Fatalf("Failed to create agent: %v", err)
@@ -78,7 +80,9 @@ func main() {
 
 ```go
 agent, err := v1beta.NewBuilder("StreamingAgent").
-    WithLLM("openai", "gpt-4").
+    WithConfig(&v1beta.Config{
+        LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+    }).
     Build()
 ```
 
@@ -311,8 +315,8 @@ go run main.go
 
 ```go
 agent, err := v1beta.NewBuilder("Agent").
-    WithLLM("openai", "gpt-4").
     WithConfig(&v1beta.Config{
+        LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
         StreamBufferSize: 100,  // Increase for high-throughput streams
         StreamFlushInterval: 50 * time.Millisecond,
     }).

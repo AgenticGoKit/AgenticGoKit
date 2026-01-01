@@ -46,8 +46,8 @@ import (
     _ "github.com/agenticgokit/agenticgokit/plugins/memory/pgvector"
         {{- else if eq .Config.MemoryProvider "weaviate" }}
     _ "github.com/agenticgokit/agenticgokit/plugins/memory/weaviate"
-        {{- else if eq .Config.MemoryProvider "memory" }}
-    _ "github.com/agenticgokit/agenticgokit/plugins/memory/memory"
+        {{- else if eq .Config.MemoryProvider "chromem" }}
+    _ "github.com/agenticgokit/agenticgokit/plugins/memory/chromem"
         {{- end }}
     {{- end }}
 
@@ -70,4 +70,3 @@ import (
     {{- end }}
 )
 `
-

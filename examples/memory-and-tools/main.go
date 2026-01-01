@@ -6,9 +6,9 @@ import (
 	"log"
 	"time"
 
-	vnext "github.com/agenticgokit/agenticgokit/v1beta"
 	_ "github.com/agenticgokit/agenticgokit/plugins/llm/ollama"
-	_ "github.com/agenticgokit/agenticgokit/plugins/memory/memory" // Register memory provider
+	_ "github.com/agenticgokit/agenticgokit/plugins/memory/chromem" // Register chromem provider
+	vnext "github.com/agenticgokit/agenticgokit/v1beta"
 )
 
 func main() {
@@ -31,7 +31,7 @@ Remember information from our conversation and provide personalized responses.`,
 				MaxTokens:   80, // Short responses for faster demo
 			},
 			Memory: &vnext.MemoryConfig{
-				Provider: "memory", // Use "memory" provider (registered by plugin)
+				// Provider defaults to "chromem" - embedded vector database
 				RAG: &vnext.RAGConfig{
 					MaxTokens:       500,
 					PersonalWeight:  0.6,
@@ -121,6 +121,3 @@ Remember information from our conversation and provide personalized responses.`,
 	fmt.Println("   ✅ Memory integration with LLM (enriched prompts)")
 	fmt.Println("\n💡 Try modifying the stored preferences and see how responses change!")
 }
-
-
-

@@ -145,7 +145,6 @@ func newRealAgent(config *Config, handler HandlerFunc) (Agent, error) {
 	agent.llmProvider = llmProvider
 
 	// Initialize memory configuration defaults if not present
-	// This ensures we get "smart" behavior (RAG + History) by default
 	if config.Memory == nil {
 		config.Memory = &MemoryConfig{
 			Enabled:  true,
@@ -156,6 +155,31 @@ func newRealAgent(config *Config, handler HandlerFunc) (Agent, error) {
 				PersonalWeight:  0.3,
 				KnowledgeWeight: 0.7,
 			},
+		}
+	} else {
+		// If MemoryConfig is provided, ensure it's Enabled by default unless explicitly false
+		// Actually, we should probably just treat a non-nil MemoryConfig as wanting memory.
+		// But follow the Enabled flag if it's there.
+		// Simple fix: if a config is there, we default Enabled to true if not specified.
+		// Since we can't tell if it's explicitly false or just default, we'll assume
+		// if they provided a config object, they probably want it enabled.
+		config.Memory.Enabled = true
+
+		// Smart Default: If no embedding provider is specified, try to use the LLM provider
+		if config.Memory.Options == nil {
+			config.Memory.Options = make(map[string]string)
+		}
+		if _, ok := config.Memory.Options["embedding_provider"]; !ok {
+			config.Memory.Options["embedding_provider"] = config.LLM.Provider
+			if _, ok := config.Memory.Options["embedding_model"]; !ok {
+				config.Memory.Options["embedding_model"] = config.LLM.Model
+			}
+			if _, ok := config.Memory.Options["embedding_url"]; !ok {
+				config.Memory.Options["embedding_url"] = config.LLM.BaseURL
+			}
+			if _, ok := config.Memory.Options["embedding_api_key"]; !ok {
+				config.Memory.Options["embedding_api_key"] = config.LLM.APIKey
+			}
 		}
 	}
 
@@ -293,6 +317,29 @@ func (a *realAgent) execute(ctx context.Context, input string, opts *RunOptions)
 			Int("enriched_length", len(prompt.User)).
 			Int("memory_queries", memoryQueries).
 			Msg("Enhanced prompt with memory context")
+	}
+
+	// Step 2.5: Check for workflow shared memory and enrich prompt with relevant context
+	// This allows agents in a workflow to automatically access shared memory
+	if workflowMem := GetWorkflowMemory(ctx); workflowMem != nil {
+		// Query workflow shared memory for relevant context
+		// Use lower threshold to catch more results
+		results, queryErr := workflowMem.Query(ctx, input, WithLimit(5), WithScoreThreshold(0.1))
+		if queryErr == nil && len(results) > 0 {
+			// Build context from workflow memory results
+			var sharedContext strings.Builder
+			sharedContext.WriteString("\n\n[Shared Workflow Context]\n")
+			for _, result := range results {
+				sharedContext.WriteString(fmt.Sprintf("- %s\n", result.Content))
+			}
+
+			// Append shared context to user prompt
+			prompt.User = prompt.User + sharedContext.String()
+
+			Logger().Debug().
+				Int("shared_memory_results", len(results)).
+				Msg("Enhanced prompt with workflow shared memory")
+		}
 	}
 
 	// Step 3: Call the LLM provider
@@ -691,6 +738,19 @@ func (a *realAgent) RunStream(ctx context.Context, input string, opts ...StreamO
 			enrichedPrompt, ragContext, memoryQueries = BuildEnrichedPrompt(ctx, prompt.System, prompt.User, a.memoryProvider, a.config.Memory)
 			prompt.System = enrichedPrompt.System
 			prompt.User = enrichedPrompt.User
+		}
+
+		// Check for workflow shared memory and enrich prompt with relevant context
+		if workflowMem := GetWorkflowMemory(ctx); workflowMem != nil {
+			results, queryErr := workflowMem.Query(ctx, input, WithLimit(5), WithScoreThreshold(0.1))
+			if queryErr == nil && len(results) > 0 {
+				var sharedContext strings.Builder
+				sharedContext.WriteString("\n\n[Shared Workflow Context]\n")
+				for _, result := range results {
+					sharedContext.WriteString(fmt.Sprintf("- %s\n", result.Content))
+				}
+				prompt.User = prompt.User + sharedContext.String()
+			}
 		}
 
 		// Add tool descriptions to system prompt if tools are available

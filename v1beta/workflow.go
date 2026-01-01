@@ -663,6 +663,11 @@ func (w *basicWorkflow) executeLoopStreaming(ctx context.Context, input string, 
 func (w *basicWorkflow) executeStepStreaming(ctx context.Context, step WorkflowStep, input string, writer StreamWriter) (StepResult, string, error) {
 	startTime := time.Now()
 
+	// Inject shared memory into context so agent can access it
+	if w.memory != nil {
+		ctx = WithWorkflowMemory(ctx, w.memory)
+	}
+
 	// Check context cancellation before step execution
 	select {
 	case <-ctx.Done():
@@ -1171,6 +1176,11 @@ func (w *basicWorkflow) executeLoop(ctx context.Context, input string) ([]StepRe
 func (w *basicWorkflow) executeStep(ctx context.Context, step *WorkflowStep, input string) StepResult {
 	startTime := time.Now()
 	w.context.CurrentStep = step.Name
+
+	// Inject shared memory into context so agent can access it
+	if w.memory != nil {
+		ctx = WithWorkflowMemory(ctx, w.memory)
+	}
 
 	// Store input in workflow memory if available
 	if w.memory != nil {

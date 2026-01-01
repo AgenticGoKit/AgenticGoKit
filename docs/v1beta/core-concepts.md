@@ -1,724 +1,255 @@
 # Core Concepts
 
-Understanding the fundamental concepts of AgenticGoKit will help you build powerful AI agents. This guide covers the architecture and key components.
+This guide explains the major building blocks in AgenticGoKit v1beta and how they relate. It stays high-level and points to the right detailed guides (configuration, streaming, tools, memory/RAG, workflows).
 
 ---
 
-## 🎯 Overview
+## What You Will Learn
 
-AgenticGoKit is built around four core concepts:
-
-1. **Agents** - The primary interface for AI interactions
-2. **Handlers** - Custom logic and augmentation functions
-3. **Tools** - Extensible capabilities for agents
-4. **Memory** - Context and knowledge retention
+- What an agent is and how to create one (presets vs builder)
+- How handlers plug in custom logic with access to LLM, tools, and memory
+- How tools and memory are configured via functional options
+- How runtime execution works (Run/RunWithOptions and streaming)
+- Where to go next for deeper topics
 
 ---
 
-## 🤖 Agents
+## Components at a Glance
 
-An **Agent** is the primary abstraction in v1beta. It encapsulates:
-- LLM provider configuration
-- Execution logic (handlers)
-- Tool access
-- Memory integration
-- Middleware chain
+- **Agents**: The runtime unit that executes LLM calls, tools, and memory.
+- **Handlers**: Your custom logic; you control how the agent responds.
+- **Tools**: Extend capabilities (MCP, discovery, timeouts, concurrency, caching).
+- **Memory**: Context retention (chromem default) with RAG options.
 
-### Agent Interface
+For detailed configuration of knobs, see the dedicated [configuration guide](configuration.md).
 
-Every agent implements this interface:
+---
+
+## Agents
+
+Agents can be created quickly with presets or assembled with the builder.
+
+### Preset Constructors (fastest)
 
 ```go
-type Agent interface {
-    // Run executes the agent with the given query
-    Run(ctx context.Context, query string) (*Result, error)
-    
-    // RunWithOptions executes with additional options
-    RunWithOptions(ctx context.Context, query string, opts *RunOptions) (*Result, error)
-    
-    // RunStream executes with streaming responses
-    RunStream(ctx context.Context, query string) (Stream, error)
-    
-    // Config returns the agent's configuration
-    Config() *Config
-    
-    // Capabilities returns available features
-    Capabilities() []string
-}
+agent, err := v1beta.NewChatAgent("Assistant",
+    v1beta.WithLLM("openai", "gpt-4"),
+)
+
+// Other presets
+v1beta.NewResearchAgent("Researcher")
+v1beta.NewDataAgent("Analyst")
+v1beta.NewWorkflowAgent("Orchestrator")
 ```
 
-### Agent Types
+Use a preset when you want sensible defaults for temperature, memory, and (where relevant) tools/workflow.
 
-AgenticGoKit provides several ways to create agents:
-
-#### 1. Preset Builders (Recommended for Common Cases)
+### Builder (full control)
 
 ```go
-// Chat agent - general purpose conversation
-chatAgent, err := v1beta.NewBuilder("Assistant").
-    WithPreset(v1beta.ChatAgent).
-    Build()
-
-// Research agent - optimized for analysis
-researchAgent, err := v1beta.NewBuilder("Researcher").
-    WithPreset(v1beta.ResearchAgent).
-    Build()
-
-// Quick agent - rapid prototyping (single parameter: model)
-quickAgent, _ := v1beta.QuickChatAgent("gpt-4")
-```
-
-#### 2. Custom Builder (Full Control)
-
-```go
-// Create agent with full customization
 agent, err := v1beta.NewBuilder("CustomAgent").
-    WithLLM("openai", "gpt-4").
-    WithConfig(&v1beta.Config{
-        SystemPrompt: "You are a helpful assistant",
-        Temperature:  0.7,
-        MaxTokens:    2000,
-    }).
-    WithTools(myTools).
-    WithMemory(&v1beta.MemoryOptions{
-        Type:     "simple",
-        Provider: memProvider,
-    }).
+    WithPreset(v1beta.ChatAgent). // or WithConfig(cfg) or WithLLM(provider, model) via options
+    WithTools(
+        v1beta.WithMCPDiscovery(),
+        v1beta.WithToolTimeout(30 * time.Second),
+    ).
+    WithMemory(
+        v1beta.WithMemoryProvider("chromem"),
+        v1beta.WithRAG(4096, 0.7, 0.3),
+    ).
     WithHandler(myHandler).
     Build()
 ```
 
-### Agent Lifecycle
+- Start with **one** of: `WithPreset`, or `WithConfig`, or the preset constructors plus `WithLLM` options.
+- Add features with `WithTools`, `WithMemory`, `WithWorkflow`, `WithSubWorkflow`, then set `WithHandler`.
+- Prefer presets for consistency; drop to `WithConfig` only when composing config programmatically.
 
-```
-Create Agent → Configure → Run/Stream → Process Result
-     ↓            ↓           ↓              ↓
-  Builder      Options    Middleware      Handler
-```
+### Agent Interface (for reference)
 
-1. **Create**: Use builder to construct agent
-2. **Configure**: Set LLM, tools, memory, handlers
-3. **Run/Stream**: Execute with context and query
-4. **Process**: Handle result or stream chunks
+```go
+type Agent interface {
+    Name() string
+    Run(ctx context.Context, input string) (*Result, error)
+    RunWithOptions(ctx context.Context, input string, opts *RunOptions) (*Result, error)
+    RunStream(ctx context.Context, input string, opts ...StreamOption) (Stream, error)
+    RunStreamWithOptions(ctx context.Context, input string, runOpts *RunOptions, streamOpts ...StreamOption) (Stream, error)
+    Config() *Config
+    Capabilities() []string
+    Memory() Memory
+    Initialize(ctx context.Context) error
+    Cleanup(ctx context.Context) error
+}
+```
 
 ---
 
-## 🎨 Handlers
+## Handlers
 
-Handlers define how agents process queries. AgenticGoKit provides two handler types:
-
-### 1. CustomHandlerFunc
-
-Simple handler with LLM fallback capability:
+Handlers are your customization point. v1beta uses a single handler signature with capabilities.
 
 ```go
-type CustomHandlerFunc func(
-    ctx context.Context,
-    query string,
-    llmCall func(systemPrompt, userPrompt string) (string, error),
-) (string, error)
-```
-
-**Use when:**
-- You need simple custom logic
-- You want automatic LLM fallback
-- You don't need tool or memory access
-
-**Example:**
-
-```go
-handler := func(ctx context.Context, query string, llmCall func(string, string) (string, error)) (string, error) {
-    // Custom logic for specific patterns
-    if strings.Contains(strings.ToLower(query), "time") {
-        return fmt.Sprintf("Current time: %s", time.Now().Format(time.RFC3339)), nil
-    }
-    
-    // Return empty string to fall back to LLM
-    return "", nil
-}
-
-agent, _ := v1beta.NewBuilder("TimeAgent").
-    WithPreset(v1beta.ChatAgent).
-    WithHandler(handler).
-    Build()
-```
-
-### 2. EnhancedHandlerFunc (AgentHandlerFunc)
-
-Advanced handler with full capabilities:
-
-```go
-type EnhancedHandlerFunc func(
-    ctx context.Context,
-    query string,
-    capabilities *HandlerCapabilities,
-) (string, error)
-
-type HandlerCapabilities struct {
-    LLMCall  func(systemPrompt, userPrompt string) (string, error)
-    ToolCall func(toolName string, args map[string]interface{}) (interface{}, error)
-    Memory   MemoryProvider // Access to memory storage
-    Config   *Config        // Agent configuration
-}
-```
-
-**Use when:**
-- You need access to tools
-- You need memory integration
-- You need full control over agent logic
-
-**Example:**
-
-```go
-handler := func(ctx context.Context, query string, cap *v1beta.HandlerCapabilities) (string, error) {
-    // Use tools
-    weatherData, err := cap.ToolCall("get_weather", map[string]interface{}{
-        "location": "New York",
-    })
+handler := func(ctx context.Context, input string, caps *v1beta.Capabilities) (string, error) {
+    // Call LLM
+    text, err := caps.LLM("You are helpful", input)
     if err != nil {
         return "", err
     }
-    
-    // Use LLM with tool data
-    response, err := cap.LLMCall(
-        "You are a weather assistant",
-        fmt.Sprintf("Weather data: %v\nUser query: %s", weatherData, query),
-    )
-    
-    return response, err
+
+    // Optional tools
+    if caps.Tools != nil {
+        // caps.Tools.Execute(ctx, name, args) or higher-level helpers
+    }
+
+    // Optional memory
+    if caps.Memory != nil {
+        // Use memory to build context or store signals
+    }
+
+    return text, nil
 }
 
-agent, _ := v1beta.NewBuilder("WeatherAgent").
+agent, err := v1beta.NewBuilder("Custom").
     WithPreset(v1beta.ChatAgent).
     WithHandler(handler).
-    WithTools(weatherTools).
     Build()
 ```
 
-### Handler Augmentation
-
-Pre-built augmentation functions automatically enhance handlers:
-
-#### CreateToolAugmentedHandler
-
-Automatically includes tool information in prompts:
-
-```go
-handler := v1beta.CreateToolAugmentedHandler(
-    func(ctx context.Context, query, toolPrompt string, llmCall func(string, string) (string, error)) (string, error) {
-        // toolPrompt contains formatted tool descriptions
-        return llmCall("You are an assistant with tools", query)
-    },
-)
-```
-
-#### CreateMemoryAugmentedHandler
-
-Automatically includes relevant memory context:
-
-```go
-handler := v1beta.CreateMemoryAugmentedHandler(
-    func(ctx context.Context, query, memoryContext string, llmCall func(string, string) (string, error)) (string, error) {
-        // memoryContext contains relevant past interactions
-        return llmCall("You are an assistant with memory", query)
-    },
-)
-```
-
-#### CreateFullAugmentedHandler
-
-Combines tool and memory augmentation:
-
-```go
-handler := v1beta.CreateFullAugmentedHandler(
-    func(ctx context.Context, query, toolPrompt, memoryContext string, llmCall func(string, string) (string, error)) (string, error) {
-        // Both toolPrompt and memoryContext available
-        systemPrompt := fmt.Sprintf("Assistant with:\nTools: %s\nContext: %s", toolPrompt, memoryContext)
-        return llmCall(systemPrompt, query)
-    },
-)
-```
+- `Capabilities` exposes `LLM`, `Tools`, and `Memory`—no separate handler types are required.
+- Keep handlers small; delegate heavy lifting to tools and memory.
 
 ---
 
-## 🛠️ Tools
+## Tools
 
-Tools extend agent capabilities beyond LLM interactions.
+Tools add capabilities beyond plain LLM responses.
 
-### Tool Structure
-
+**Tool interface (brief):**
 ```go
-type Tool struct {
-    Name        string                 // Unique tool identifier
-    Description string                 // What the tool does
-    Parameters  map[string]interface{} // JSON Schema for parameters
-    Handler     ToolHandler            // Function to execute
-}
-
-type ToolHandler func(ctx context.Context, args map[string]interface{}) (interface{}, error)
-```
-
-### Creating Tools
-
-```go
-searchTool := v1beta.Tool{
-    Name:        "web_search",
-    Description: "Search the web for information",
-    Parameters: map[string]interface{}{
-        "type": "object",
-        "properties": map[string]interface{}{
-            "query": map[string]interface{}{
-                "type":        "string",
-                "description": "Search query",
-            },
-            "max_results": map[string]interface{}{
-                "type":        "integer",
-                "description": "Maximum number of results",
-                "default":     5,
-            },
-        },
-        "required": []string{"query"},
-    },
-    Handler: func(ctx context.Context, args map[string]interface{}) (interface{}, error) {
-        query := args["query"].(string)
-        maxResults := 5
-        if mr, ok := args["max_results"].(int); ok {
-            maxResults = mr
-        }
-        
-        // Implement search logic
-        results := performSearch(query, maxResults)
-        return results, nil
-    },
+type Tool interface {
+    Name() string
+    Description() string
+    Execute(ctx context.Context, args map[string]interface{}) (*ToolResult, error)
 }
 ```
 
-### Adding Tools to Agents
+**Configure tools with ToolOption:**
+- `WithMCP(servers ...MCPServer)` – attach MCP servers
+- `WithMCPDiscovery(scanPorts ...int)` – auto-discover servers
+- `WithToolTimeout(timeout time.Duration)` – per-call timeout
+- `WithMaxConcurrentTools(max int)` – concurrency cap
+- `WithToolCaching(ttl time.Duration)` – cache tool results
 
+**Example:**
 ```go
-agent, err := v1beta.NewBuilder("SearchBot").
+agent, err := v1beta.NewBuilder("ToolAgent").
     WithPreset(v1beta.ChatAgent).
-    WithTools([]v1beta.Tool{searchTool, calculatorTool}).
+    WithTools(
+        v1beta.WithMCPDiscovery(),
+        v1beta.WithToolTimeout(30 * time.Second),
+    ).
     Build()
 ```
 
-### ToolCallHelper
-
-Simplified tool execution in handlers:
-
-```go
-handler := func(ctx context.Context, query string, cap *v1beta.HandlerCapabilities) (string, error) {
-    helper := v1beta.NewToolCallHelper(cap)
-    
-    // Call with map
-    result, err := helper.Call("web_search", map[string]interface{}{
-        "query": "Go programming",
-        "max_results": 10,
-    })
-    
-    // Call with struct
-    type SearchParams struct {
-        Query      string `json:"query"`
-        MaxResults int    `json:"max_results"`
-    }
-    result, err = helper.CallWithStruct("web_search", SearchParams{
-        Query:      "Go programming",
-        MaxResults: 10,
-    })
-    
-    return fmt.Sprintf("Search results: %v", result), nil
-}
-```
-
-### MCP (Model Context Protocol) Tools
-
-AgenticGoKit supports MCP for tool discovery:
-
-```go
-import "github.com/agenticgokit/agenticgokit/plugins/mcp"
-
-// Discover tools from MCP servers
-mcpTools, err := mcp.DiscoverTools(ctx, mcpServers...)
-
-agent, err := v1beta.NewBuilder("MCPAgent").
-    WithPreset(v1beta.ChatAgent).
-    WithTools(mcpTools).
-    Build()
-```
+See the [tool integration guide](tool-integration.md) for deeper examples.
 
 ---
 
-## 💾 Memory
+## Memory
 
-Memory provides context retention and knowledge storage. Starting from `v1beta`, memory is **enabled by default** using the `chromem` embedded provider.
+Memory is enabled by default with the embedded `chromem` provider. Configure it with MemoryOption.
 
-### Memory Configuration
+- `WithMemoryProvider(provider string)` – e.g., "chromem", "pgvector", "weaviate"
+- `WithRAG(maxTokens, personalWeight, knowledgeWeight)` – enable retrieval augmentation
+- `WithSessionScoped()` – session-isolated memory
+- `WithContextAware()` – context-aware retrieval
 
-You can customize memory behavior or swap providers using the `WithMemory` option:
-
+**Example:**
 ```go
-agent, _ := v1beta.NewBuilder("Assistant").
+agent, err := v1beta.NewBuilder("Memo").
+    WithPreset(v1beta.ChatAgent).
     WithMemory(
-        // Use a different provider
         v1beta.WithMemoryProvider("pgvector"),
-        // Enable RAG with custom weights
-        v1beta.WithRAG(4000, 0.3, 0.7),
-        // Enable session-scoped isolation
+        v1beta.WithRAG(4000, 0.6, 0.4),
         v1beta.WithSessionScoped(),
     ).
     Build()
 ```
 
-If you need to strictly disable memory, use the `Enabled` flag:
+To disable memory entirely, pass a Config with `Memory.Enabled = false` via `WithConfig`.
 
-```go
-agent, _ := v1beta.NewBuilder("EphemeralAgent").
-    WithConfig(&v1beta.Config{
-        Memory: &v1beta.MemoryConfig{
-            Enabled: false,
-        },
-    }).
-    Build()
-```
-
-### Memory Interface
-
-```go
-type MemoryProvider interface {
-    // Store saves a memory entry
-    Store(ctx context.Context, entry MemoryEntry) error
-    
-    // Retrieve gets relevant memories
-    Retrieve(ctx context.Context, query string, limit int) ([]MemoryEntry, error)
-    
-    // Clear removes all memories (optional)
-    Clear(ctx context.Context) error
-}
-
-type MemoryEntry struct {
-    ID        string                 // Unique identifier
-    Content   string                 // Memory content
-    Metadata  map[string]interface{} // Additional data
-    Timestamp time.Time              // When stored
-    Embedding []float64              // Vector embedding (optional)
-}
-```
-
-### Memory Backends
-
-#### In-Memory (Development)
-
-```go
-import "github.com/agenticgokit/agenticgokit/v1beta/memory"
-
-memProvider := memory.NewInMemory()
-
-agent, err := v1beta.NewBuilder("MemoryAgent").
-    WithPreset(v1beta.ChatAgent).
-    WithMemory(&v1beta.MemoryOptions{
-        Type:     "simple",
-        Provider: memProvider,
-    }).
-    Build()
-```
-
-#### PostgreSQL with pgvector (Production)
-
-```go
-// Register pgvector provider
-import _ "github.com/agenticgokit/agenticgokit/plugins/memory/pgvector"
-
-agent, err := v1beta.NewBuilder("PostgresAgent").
-    WithPreset(v1beta.ChatAgent).
-    WithMemory(
-        v1beta.WithMemoryProvider("pgvector"),
-        v1beta.WithConnection("postgresql://user:pass@localhost/db"),
-    ).
-    Build()
-```
-
-#### Other Providers
-AgenticGoKit also supports **Weaviate** and a generic **In-Memory** provider for testing.
-
-### RAG (Retrieval-Augmented Generation)
-
-Memory automatically enables RAG context enrichment when configured:
-
-```go
-agent, err := v1beta.NewBuilder("RAGAgent").
-    WithPreset(v1beta.ChatAgent).
-    WithMemory(
-        v1beta.WithRAG(2000, 0.5, 0.5), // maxTokens, personalWeight, knowledgeWeight
-    ).
-    Build()
-
-// Agent automatically retrieves relevant context
-result, err := agent.Run(context.Background(), "What did we discuss about Go?")
-// Agent searches memory and augments query with relevant context
-```
+See the [memory & RAG guide](memory-and-rag.md) for details.
 
 ---
 
-## 🔧 Configuration
+## Configuration (where it fits)
 
-### Builder Configuration
-
-```go
-agent, err := v1beta.NewBuilder("Agent").
-    // LLM Configuration
-    WithLLM("openai", "gpt-4").
-    WithConfig(&v1beta.Config{
-        SystemPrompt: "You are helpful",
-        Temperature:  0.7,
-        MaxTokens:    2000,
-        TopP:         0.9,
-        Timeout:      30 * time.Second,
-        MaxRetries:   3,
-        RetryDelay:   time.Second,
-    }).
-    
-    // Components
-    WithTools(tools).
-    WithMemory(&v1beta.MemoryOptions{
-        Type:     "simple",
-        Provider: memProvider,
-    }).
-    WithHandler(handler).
-    WithMiddleware(middleware).
-    
-    Build()
-```
-
-### Runtime Options
-
-Override configuration at runtime:
-
-```go
-result, err := agent.RunWithOptions(
-    ctx,
-    "query",
-    &v1beta.RunOptions{
-        Temperature:  0.5,    // Override temperature
-        MaxTokens:    1000,   // Override max tokens
-        SystemPrompt: "...",  // Override system prompt
-    },
-)
-```
-
-### Config Struct
-
-Direct configuration access:
-
-```go
-cfg := &v1beta.Config{
-    SystemPrompt: "You are helpful",
-    Temperature:  0.7,
-    MaxTokens:    2000,
-    Timeout:      30 * time.Second,
-}
-
-agent, err := v1beta.NewBuilder("Agent").
-    WithLLM("openai", "gpt-4").
-    WithConfig(cfg).
-    WithTools(tools).
-    WithMemory(&v1beta.MemoryOptions{
-        Type:     "simple",
-        Provider: memProvider,
-    }).
-    WithHandler(handler).
-    Build()
-```
+Core concepts focus on what the pieces are. For how to wire every knob (builder options, Config struct, TOML), see the dedicated [configuration guide](configuration.md). Use presets or the builder with functional options for most cases; drop to `Config` when assembling settings programmatically.
 
 ---
 
-## 🔄 Execution Flow
+## Runtime Execution
 
-### Standard Run Flow
+- `Run(ctx, input)` – simplest path
+- `RunWithOptions(ctx, input, opts)` – per-call overrides via `RunOptions`
+- `RunStream` / `RunStreamWithOptions` – streaming responses (see streaming guide)
 
-```
-User Query
-    ↓
-Context + Options
-    ↓
-Middleware (Before)
-    ↓
-Handler Selection
-    ↓
-Custom Handler?
-    ↓ No
-Default LLM Handler
-    ↓ Yes
-Custom Logic
-    ↓
-Tool Calls? ←---→ Tool Execution
-    ↓
-Memory Access? ←---→ Memory Retrieval
-    ↓
-LLM Call
-    ↓
-Response Processing
-    ↓
-Middleware (After)
-    ↓
-AgentResult
-```
-
-### Streaming Flow
-
-```
-User Query
-    ↓
-Context + Options + Channel
-    ↓
-Middleware (Before)
-    ↓
-Handler with Streaming
-    ↓
-LLM Stream
-    ↓
-Chunk Processing
-    ↓
-    ├→ ChunkTypeText ----→ Content chunks
-    ├→ ChunkTypeDelta ---→ Token chunks
-    ├→ ChunkTypeThought -→ Reasoning
-    ├→ ChunkTypeToolCall → Tool execution
-    ├→ ChunkTypeMetadata → Extra info
-    ├→ ChunkTypeError ---→ Error handling
-    └→ ChunkTypeDone ----→ Completion
-    ↓
-Middleware (After)
-    ↓
-Close Channel
-```
-
----
-
-## 🎭 Middleware
-
-Middleware intercepts agent execution:
-
+**RunOptions (key fields):**
 ```go
-type Middleware interface {
-    BeforeRun(ctx context.Context, input string) (context.Context, string, error)
-    AfterRun(ctx context.Context, input string, result *AgentResult, err error) (*AgentResult, error)
+type RunOptions struct {
+    Tools       []string
+    ToolMode    string // "auto", "specific", "none"
+    Memory      *MemoryOptions
+    SessionID   string
+    Timeout     time.Duration
+    Context     map[string]interface{}
+    MaxRetries  int
+    MaxTokens   int
+    Temperature *float64
+    DetailedResult bool
+    IncludeTrace   bool
+    IncludeSources bool
+    Images      []ImageData
+    Audio       []AudioData
+    Video       []VideoData
 }
 ```
 
-### Example: Logging Middleware
-
+**Example override:**
 ```go
-type LoggingMiddleware struct{}
-
-func (m *LoggingMiddleware) BeforeRun(ctx context.Context, input string) (context.Context, string, error) {
-    log.Printf("Agent executing: %s", input)
-    ctx = context.WithValue(ctx, "start_time", time.Now())
-    return ctx, input, nil
+temp := 0.8
+opts := &v1beta.RunOptions{
+    Temperature: &temp,
+    MaxTokens:   800,
+    SessionID:   "user-42",
 }
 
-func (m *LoggingMiddleware) AfterRun(ctx context.Context, input string, result *v1beta.Result, err error) (*v1beta.Result, error) {
-    startTime := ctx.Value("start_time").(time.Time)
-    duration := time.Since(startTime)
-    log.Printf("Agent completed in %v: success=%t", duration, result.Success)
-    return result, err
-}
-
-agent, err := v1beta.NewBuilder("LogAgent").
-    WithPreset(v1beta.ChatAgent).
-    WithMiddleware(&LoggingMiddleware{}).
-    Build()
+result, err := agent.RunWithOptions(ctx, "Summarize this", opts)
 ```
 
----
-
-## 📊 Result Types
-
-### Result
-
-```go
-type Result struct {
-    FinalOutput  string                   // Response content
-    Success      bool                     // Execution success
-    Error        error                    // Error if failed
-    Metadata     map[string]interface{}   // Additional data
-    ToolCalls    []ToolCall               // Tools executed
-    TokenUsage   *TokenUsage              // Token statistics
-    StepResults  map[string]*StepResult   // For workflows
-    IterationInfo *IterationInfo          // For loop workflows
-}
-
-type TokenUsage struct {
-    PromptTokens     int
-    CompletionTokens int
-    TotalTokens      int
-}
-```
-
-### StreamChunk
-
-```go
-type StreamChunk struct {
-    Type     ChunkType              // Chunk type
-    Delta    string                 // Incremental content
-    Content  string                 // Complete content (for non-delta)
-    Metadata map[string]interface{} // Additional data
-    Error    error                  // Error if any
-    Done     bool                   // Is final chunk
-}
-
-// Chunk types
-const (
-    ChunkTypeDelta      ChunkType = "delta"       // Incremental token
-    ChunkTypeContent    ChunkType = "content"     // Complete text
-    ChunkTypeThought    ChunkType = "thought"     // Agent reasoning
-    ChunkTypeToolCall   ChunkType = "tool_call"   // Tool execution
-    ChunkTypeToolResult ChunkType = "tool_result" // Tool result
-    ChunkTypeMetadata   ChunkType = "metadata"    // Extra information
-    ChunkTypeError      ChunkType = "error"       // Error chunk
-    ChunkTypeDone       ChunkType = "done"        // Completion marker
-)
-```
+See the [streaming guide](streaming.md) for chunking patterns and stream options.
 
 ---
 
-## 🎯 Best Practices
+## Results (high level)
 
-### 1. Choose the Right Handler Type
-- Use **CustomHandlerFunc** for simple logic
-- Use **EnhancedHandlerFunc** when you need tools/memory
-
-### 2. Use Preset Builders
-- Leverage `NewBuilder(name).WithPreset(ChatAgent)` for common cases
-- Use `QuickChatAgent(model)` for rapid prototyping
-- Use custom builder with full configuration for complex needs
-
-### 3. Configure Timeouts
-- Always set appropriate timeout values
-- Use context cancellation for user-initiated stops
-
-### 4. Handle Errors Properly
-- Check both `err` and `result.Success`
-- Use typed errors for specific handling
-
-### 5. Leverage Middleware
-- Add logging for debugging
-- Add metrics for monitoring
-- Add validation for input checking
-
-### 6. Memory Management
-- Use in-memory for development
-- Use vector DB for production
-- Configure appropriate retrieval limits
+`Result` includes core fields like `Content`, `Success`, `Duration`, `Metadata`, and modality fields (`Images`, `Audio`, `Video`). For tool calls, memory context, and tracing, inspect `Metadata` or use detailed results. Streaming returns chunks (delta, thought, tool_call, tool_result, metadata, error, done); see the streaming guide for full types.
 
 ---
 
-## 📚 Next Steps
+## Middleware
 
-- **[Streaming Guide](./streaming.md)** - Learn real-time streaming
-- **[Workflows](./workflows.md)** - Multi-agent orchestration
-- **[Tool Integration](./tool-integration.md)** - Extend capabilities
-- **[Memory & RAG](./memory-and-rag.md)** - Add knowledge
-- **[Examples](./examples/)** - See it in action
+v1beta defines an `AgentMiddleware` interface with `BeforeRun/AfterRun`. It is not wired through the streamlined builder yet; you can wrap handlers or compose at the workflow layer. If you add middleware, ensure you propagate context and respect timeouts.
 
 ---
 
-**Ready to dive deeper?** Continue to [Streaming Guide](./streaming.md) →
+## Next Steps
+
+- Configuration details: [configuration.md](configuration.md)
+- Streaming: [streaming.md](streaming.md)
+- Tools: [tool-integration.md](tool-integration.md)
+- Memory & RAG: [memory-and-rag.md](memory-and-rag.md)
+- Workflows: [workflows.md](workflows.md)
+- Examples: [examples/](examples/)
+
+Use this overview to pick your path: start with a preset + handler, add tools and memory via options, then refine with runtime options and workflows as needed.

@@ -121,7 +121,7 @@ func TestMemoryEnrichment(t *testing.T) {
 		}
 
 		config := &vnext.MemoryConfig{
-			Provider: "memory",
+			Provider: "chromem",
 			RAG: &vnext.RAGConfig{
 				MaxTokens:       1000,
 				PersonalWeight:  0.3,
@@ -149,7 +149,7 @@ func TestMemoryEnrichment(t *testing.T) {
 		}
 
 		config := &vnext.MemoryConfig{
-			Provider: "memory",
+			Provider: "chromem",
 			// No RAG config - should use simple formatting
 		}
 
@@ -169,7 +169,7 @@ func TestMemoryEnrichment(t *testing.T) {
 		}
 
 		config := &vnext.MemoryConfig{
-			Provider: "memory",
+			Provider: "chromem",
 		}
 
 		result, _, _, _ := vnext.EnrichWithMemory(ctx, mock, "test query", config)
@@ -194,7 +194,7 @@ func TestBuildEnrichedPrompt(t *testing.T) {
 		}
 
 		config := &vnext.MemoryConfig{
-			Provider: "memory",
+			Provider: "chromem",
 			RAG: &vnext.RAGConfig{
 				MaxTokens:    2000,
 				HistoryLimit: 10, // Enable history

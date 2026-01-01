@@ -87,6 +87,35 @@ func WithIncludeMetadata(include bool) QueryOption {
 // CONTEXT OPTIONS
 // =============================================================================
 
+// workflowMemoryKey is the context key for workflow shared memory
+type workflowMemoryKey struct{}
+
+// WithWorkflowMemory attaches a shared memory instance to the context
+// This allows agents in a workflow to access the same memory store
+func WithWorkflowMemory(ctx context.Context, memory Memory) context.Context {
+	if memory == nil {
+		return ctx
+	}
+	return context.WithValue(ctx, workflowMemoryKey{}, memory)
+}
+
+// GetWorkflowMemory retrieves the shared workflow memory from context
+// Returns nil if no workflow memory is attached
+func GetWorkflowMemory(ctx context.Context) Memory {
+	if ctx == nil {
+		return nil
+	}
+	if memory, ok := ctx.Value(workflowMemoryKey{}).(Memory); ok {
+		return memory
+	}
+	return nil
+}
+
+// HasWorkflowMemory checks if context has workflow memory attached
+func HasWorkflowMemory(ctx context.Context) bool {
+	return GetWorkflowMemory(ctx) != nil
+}
+
 // WithMaxTokens sets the maximum token count for RAG context
 func WithMaxTokens(maxTokens int) ContextOption {
 	return func(config *ContextConfig) {
@@ -128,9 +157,16 @@ func NewMemory(config *MemoryConfig) (Memory, error) {
 	// Apply defaults from configuration
 	applyMemoryDefaults(config)
 
-	// Try to create memory using registered factory
+	// Try to create memory using v1beta registered factory
 	if factory := getMemoryFactory(config.Provider); factory != nil {
 		return factory(config)
+	}
+
+	// Bridge to core memory factory (for plugins like chromem)
+	coreMem, err := createMemoryProvider(config)
+	if err == nil && coreMem != nil {
+		// Wrap core.Memory with v1beta adapter
+		return &coreMemoryAdapter{mem: coreMem}, nil
 	}
 
 	// Fallback to no-op implementation

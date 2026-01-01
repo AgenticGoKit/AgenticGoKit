@@ -10,7 +10,7 @@ import (
 	// Import HuggingFace plugin
 	_ "github.com/agenticgokit/agenticgokit/plugins/llm/huggingface"
 	// Import memory provider plugin for in-memory storage
-	_ "github.com/agenticgokit/agenticgokit/plugins/memory/memory"
+	_ "github.com/agenticgokit/agenticgokit/plugins/memory/chromem"
 )
 
 func main() {

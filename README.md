@@ -111,6 +111,9 @@ AgenticGoKit works with all major LLM providers out of the box:
 | **Ollama** | Llama 3, Gemma, Mistral, Phi | Local development and privacy-focused apps |
 | **HuggingFace** | Llama-2, Mistral, Falcon | Open-source model experimentation |
 | **OpenRouter** | Multiple models | Access to various providers via single API |
+| **BentoML** | Any model packaged as Bento | Self-hosted ML models with production features |
+| **MLFlow** | Models via MLFlow AI Gateway | ML model deployment and management |
+| **vLLM** | Llama-2, Mistral, etc. | High-throughput LLM serving with PagedAttention |
 | **Custom** | Any OpenAI-compatible API | Bring your own provider |
 
 ## Learning Resources
@@ -125,6 +128,9 @@ AgenticGoKit works with all major LLM providers out of the box:
 - **[Ollama Quickstart](examples/ollama-quickstart/)** - Local LLM development
 - **[MCP Integration](examples/mcp-integration/)** - Using Model Context Protocol
 - **[HuggingFace Quickstart](examples/huggingface-quickstart/)** - Using HF Inference Endpoints
+- **[BentoML Quickstart](examples/bentoml-quickstart/)** - Self-hosted ML models
+- **[MLFlow Gateway Demo](examples/mlflow-gateway-demo/)** - MLFlow AI Gateway integration
+- **[vLLM Quickstart](examples/vllm-quickstart/)** - High-throughput inference
 
 ## API Versioning & Roadmap
 

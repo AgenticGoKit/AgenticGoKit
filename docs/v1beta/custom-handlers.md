@@ -1,343 +1,199 @@
 # Custom Handlers
 
-Learn how to create custom agent logic with handlers that give you full control over agent behavior while still leveraging LLM, tools, and memory capabilities.
+Create custom agent logic with full control over execution flow while leveraging LLM, tools, and memory.
 
 ---
 
-## 🎯 Overview
+## Handler Basics
 
-Custom handlers in v1beta allow you to:
-
-- **Control Execution Flow** - Define exactly how your agent processes input
-- **Access Capabilities** - Use LLM, tools, and memory within your logic
-- **Compose Handlers** - Chain, parallelize, and combine handler logic
-- **Add Middleware** - Apply cross-cutting concerns like logging and retries
-
----
-
-## 🚀 Quick Start
-
-### Basic Handler
-
-```go
-package main
-
-import (
-    "context"
-    "github.com/agenticgokit/agenticgokit/v1beta"
-)
-
-func main() {
-    // Define custom handler
-    handler := func(ctx context.Context, input string, capabilities *v1beta.Capabilities) (string, error) {
-        return "You said: " + input, nil
-    }
-    
-    // Create agent with custom handler
-    agent, _ := v1beta.NewBuilder("CustomAgent").
-        WithLLM("openai", "gpt-4").
-        WithHandler(handler).
-        Build()
-    
-    result, _ := agent.Run(context.Background(), "Hello")
-    // Output: "You said: Hello"
-}
-```
-
----
-
-## 📋 Handler Signature
-
-### HandlerFunc Type
+### Signature
 
 ```go
 type HandlerFunc func(ctx context.Context, input string, capabilities *Capabilities) (string, error)
 ```
 
-**Parameters:**
-- `ctx` - Context for cancellation and deadlines
-- `input` - User input string
-- `capabilities` - Access to LLM, tools, and memory
-
-**Returns:**
-- `string` - Agent response
-- `error` - Error if processing fails
-
-### Capabilities Structure
+### Simple Handler
 
 ```go
-type Capabilities struct {
-    LLM    func(system, user string) (string, error)
-    Tools  ToolManager
-    Memory Memory
-}
-```
-
-**Fields:**
-- `LLM` - Function to call the configured language model
-- `Tools` - Interface to discover and execute tools
-- `Memory` - Interface to store and query memory
-
----
-
-## 🎨 Handler Patterns
-
-### Pattern 1: LLM-Only Handler
-
-Direct LLM calls with custom prompts:
-
-```go
-handler := func(ctx context.Context, input string, capabilities *v1beta.Capabilities) (string, error) {
-    systemPrompt := "You are a helpful coding assistant specializing in Go."
-    return capabilities.LLM(systemPrompt, input)
+handler := func(ctx context.Context, input string, capabilities *Capabilities) (string, error) {
+    return "Echo: " + input, nil
 }
 
-agent, _ := v1beta.NewBuilder("CodingAssistant").
+agent, _ := v1beta.NewBuilder("SimpleAgent").
     WithLLM("openai", "gpt-4").
     WithHandler(handler).
     Build()
 ```
 
-### Pattern 2: Tool-Augmented Handler
+---
 
-Execute tools based on input analysis:
+## Core Patterns
+
+### LLM-Only
 
 ```go
-handler := func(ctx context.Context, input string, capabilities *v1beta.Capabilities) (string, error) {
-    // Check if input requires calculation
-    if strings.Contains(strings.ToLower(input), "calculate") {
-        // Execute calculator tool
-        result, err := capabilities.Tools.Execute(ctx, "calculator", map[string]interface{}{
-            "expression": extractExpression(input),
-        })
-        if err != nil {
-            return "", err
-        }
-        
-        return fmt.Sprintf("The result is: %v", result.Content), nil
-    }
-    
-    // Otherwise use LLM
+handler := func(ctx context.Context, input string, capabilities *Capabilities) (string, error) {
     return capabilities.LLM("You are a helpful assistant.", input)
 }
 ```
 
-### Pattern 3: Memory-Aware Handler
-
-Store and retrieve context from memory:
+### Tool-Augmented
 
 ```go
-import "github.com/agenticgokit/agenticgokit/core"
+handler := func(ctx context.Context, input string, capabilities *Capabilities) (string, error) {
+    if strings.Contains(input, "calculate") {
+        result, err := capabilities.Tools.Execute(ctx, "calculator", map[string]interface{}{
+            "expression": extractExpression(input),
+        })
+        if err == nil {
+            return fmt.Sprintf("Result: %v", result.Content), nil
+        }
+    }
+    return capabilities.LLM("Answer this.", input)
+}
+```
 
-handler := func(ctx context.Context, input string, capabilities *v1beta.Capabilities) (string, error) {
-    if capabilities.Memory == nil {
-        return capabilities.LLM("You are a helpful assistant.", input)
+### Memory-Aware
+
+```go
+handler := func(ctx context.Context, input string, capabilities *Capabilities) (string, error) {
+    var context string
+    if capabilities.Memory != nil {
+        memories, _ := capabilities.Memory.Query(ctx, input, 3)
+        for _, mem := range memories {
+            context += "- " + mem.Content + "\n"
+        }
     }
     
-    // Query relevant memories
-    memories, err := capabilities.Memory.Query(ctx, input, 5)
-    if err != nil {
-        return "", err
-    }
+    systemPrompt := "You are helpful. Context:\n" + context
+    response, _ := capabilities.LLM(systemPrompt, input)
     
-    // Build context from memories
-    var context strings.Builder
-    for _, mem := range memories {
-        context.WriteString(fmt.Sprintf("- %s\n", mem.Content))
+    if capabilities.Memory != nil {
+        capabilities.Memory.Store(ctx, fmt.Sprintf("Q: %s\nA: %s", input, response))
     }
-    
-    // Call LLM with memory context
-    systemPrompt := fmt.Sprintf("You are a helpful assistant. Context:\n%s", context.String())
-    response, err := capabilities.LLM(systemPrompt, input)
-    if err != nil {
-        return "", err
-    }
-    
-    // Store interaction in memory
-    interaction := fmt.Sprintf("User: %s\nAssistant: %s", input, response)
-    capabilities.Memory.Store(ctx, interaction)
     
     return response, nil
 }
 ```
 
-### Pattern 4: Multi-Step Processing
-
-Chain multiple processing steps:
+### Multi-Step Processing
 
 ```go
-handler := func(ctx context.Context, input string, capabilities *v1beta.Capabilities) (string, error) {
+handler := func(ctx context.Context, input string, capabilities *Capabilities) (string, error) {
     // Step 1: Analyze intent
-    intent, err := capabilities.LLM(
-        "Classify the user's intent: question, command, or statement",
-        input,
-    )
+    intent, err := capabilities.LLM("Classify as: question, command, or statement", input)
     if err != nil {
         return "", err
     }
     
-    // Step 2: Process based on intent
-    var response string
+    // Step 2: Route based on intent
     switch strings.TrimSpace(intent) {
     case "question":
-        response, err = handleQuestion(ctx, input, capabilities)
+        return capabilities.LLM("Answer this question.", input)
     case "command":
-        response, err = handleCommand(ctx, input, capabilities)
+        return "Executing: " + input, nil
     default:
-        response, err = handleStatement(ctx, input, capabilities)
+        return "Understood: " + input, nil
     }
-    
-    return response, err
-}
-```
-
-### Pattern 5: Hybrid Tool + LLM
-
-Intelligently route between tools and LLM:
-
-```go
-handler := func(ctx context.Context, input string, capabilities *v1beta.Capabilities) (string, error) {
-    // First, ask LLM if tools are needed
-    decision, err := capabilities.LLM(
-        "You are a routing assistant. Reply ONLY 'TOOL:toolname' if a tool is needed, or 'LLM' otherwise.",
-        input,
-    )
-    if err != nil {
-        return "", err
-    }
-    
-    // Route based on decision
-    if strings.HasPrefix(decision, "TOOL:") {
-        toolName := strings.TrimPrefix(decision, "TOOL:")
-        result, err := capabilities.Tools.Execute(ctx, strings.TrimSpace(toolName), map[string]interface{}{
-            "query": input,
-        })
-        if err != nil {
-            return "", err
-        }
-        return fmt.Sprintf("%v", result.Content), nil
-    }
-    
-    // Use LLM for general queries
-    return capabilities.LLM("You are a helpful assistant.", input)
 }
 ```
 
 ---
 
-## 🔧 Handler Augmentation
+## Handler Augmentation
 
-v1beta provides pre-built augmentations to enhance handlers:
+Enhance handlers with pre-built functionality:
 
 ### WithToolAugmentation
 
-Automatically adds tool-calling capability:
+Automatic tool discovery and calling:
 
 ```go
-import "github.com/agenticgokit/agenticgokit/v1beta"
-
-// Base handler
-baseHandler := func(ctx context.Context, input string, capabilities *v1beta.Capabilities) (string, error) {
-    return capabilities.LLM("You are a helpful assistant.", input)
+baseHandler := func(ctx context.Context, input string, capabilities *Capabilities) (string, error) {
+    return capabilities.LLM("You are helpful.", input)
 }
 
-// Augment with automatic tool discovery and calling
 handler := v1beta.WithToolAugmentation(baseHandler)
 
 agent, _ := v1beta.NewBuilder("ToolAgent").
     WithLLM("openai", "gpt-4").
-    WithTools(
-        v1beta.WithMCP(mcpServers...),
-    ).
+    WithTools(v1beta.WithMCP(servers...)).
     WithHandler(handler).
     Build()
 ```
 
 ### WithMemoryAugmentation
 
-Automatically adds memory storage and retrieval:
+Automatic memory integration:
 
 ```go
-// Base handler
-baseHandler := func(ctx context.Context, input string, capabilities *v1beta.Capabilities) (string, error) {
-    return capabilities.LLM("You are a helpful assistant.", input)
+baseHandler := func(ctx context.Context, input string, capabilities *Capabilities) (string, error) {
+    return capabilities.LLM("You are helpful.", input)
 }
 
-// Augment with automatic memory integration
 handler := v1beta.WithMemoryAugmentation(baseHandler)
 
 agent, _ := v1beta.NewBuilder("MemoryAgent").
     WithLLM("openai", "gpt-4").
-    WithMemory(
-        v1beta.WithMemoryProvider("memory"),
-    ).
-    WithHandler(handler).
-    Build()
-```
-
-### WithRAGAugmentation
-
-Automatically adds RAG knowledge retrieval:
-
-```go
-// Base handler
-baseHandler := func(ctx context.Context, input string, capabilities *v1beta.Capabilities) (string, error) {
-    return capabilities.LLM("Answer based on the provided knowledge.", input)
-}
-
-// Augment with RAG - retrieves top 5 relevant documents
-handler := v1beta.WithRAGAugmentation(baseHandler, "knowledge_base", 5)
-
-agent, _ := v1beta.NewBuilder("RAGAgent").
-    WithLLM("openai", "gpt-4").
-    WithMemory(
-        v1beta.WithMemoryProvider("pgvector"),
-        v1beta.WithRAG(4000, 0.3, 0.7),
-    ).
+    WithMemory(v1beta.WithMemoryProvider("chromem")).
     WithHandler(handler).
     Build()
 ```
 
 ### WithLLMAugmentation
 
-Adds retry logic and error handling to LLM calls:
+Retry logic for LLM calls:
 
 ```go
-baseHandler := func(ctx context.Context, input string, capabilities *v1beta.Capabilities) (string, error) {
-    return capabilities.LLM("You are a helpful assistant.", input)
+baseHandler := func(ctx context.Context, input string, capabilities *Capabilities) (string, error) {
+    return capabilities.LLM("You are helpful.", input)
 }
 
-// Augment with retry logic (max 3 retries)
+// Retry up to 3 times
 handler := v1beta.WithLLMAugmentation(baseHandler, 3)
+```
+
+### WithRAGAugmentation
+
+Automatic RAG knowledge retrieval:
+
+```go
+baseHandler := func(ctx context.Context, input string, capabilities *Capabilities) (string, error) {
+    return capabilities.LLM("Answer based on provided knowledge.", input)
+}
+
+// Retrieve top 5 relevant documents
+handler := v1beta.WithRAGAugmentation(baseHandler, "knowledge_base", 5)
+
+agent, _ := v1beta.NewBuilder("RAGAgent").
+    WithLLM("openai", "gpt-4").
+    WithMemory(v1beta.WithMemoryProvider("pgvector")).
+    WithHandler(handler).
+    Build()
 ```
 
 ---
 
-## 🔗 Handler Composition
+## Handler Composition
 
-Combine multiple handlers using composition functions:
+### Chain Handlers
 
-### Chain
-
-Execute handlers in sequence:
+Execute in sequence (output of one is input to next):
 
 ```go
-import "github.com/agenticgokit/agenticgokit/v1beta"
-
-preprocessHandler := func(ctx context.Context, input string, capabilities *v1beta.Capabilities) (string, error) {
+preprocess := func(ctx context.Context, input string, capabilities *Capabilities) (string, error) {
     return strings.ToLower(input), nil
 }
 
-processHandler := func(ctx context.Context, input string, capabilities *v1beta.Capabilities) (string, error) {
-    return capabilities.LLM("You are a helpful assistant.", input)
+process := func(ctx context.Context, input string, capabilities *Capabilities) (string, error) {
+    return capabilities.LLM("Help with this.", input)
 }
 
-postprocessHandler := func(ctx context.Context, input string, capabilities *v1beta.Capabilities) (string, error) {
+postprocess := func(ctx context.Context, input string, capabilities *Capabilities) (string, error) {
     return strings.ToUpper(input), nil
 }
 
-// Chain handlers: preprocess -> process -> postprocess
-handler := v1beta.Chain(preprocessHandler, processHandler, postprocessHandler)
+handler := v1beta.Chain(preprocess, process, postprocess)
 
 agent, _ := v1beta.NewBuilder("ChainedAgent").
     WithLLM("openai", "gpt-4").
@@ -347,23 +203,23 @@ agent, _ := v1beta.NewBuilder("ChainedAgent").
 
 ### ParallelHandlers
 
-Run handlers in parallel and combine results:
+Run multiple handlers and combine results:
 
 ```go
-summaryHandler := func(ctx context.Context, input string, capabilities *v1beta.Capabilities) (string, error) {
-    return capabilities.LLM("Summarize this in one sentence.", input)
+summary := func(ctx context.Context, input string, capabilities *Capabilities) (string, error) {
+    return capabilities.LLM("Summarize in one sentence.", input)
 }
 
-keywordsHandler := func(ctx context.Context, input string, capabilities *v1beta.Capabilities) (string, error) {
+keywords := func(ctx context.Context, input string, capabilities *Capabilities) (string, error) {
     return capabilities.LLM("Extract 5 keywords.", input)
 }
 
-sentimentHandler := func(ctx context.Context, input string, capabilities *v1beta.Capabilities) (string, error) {
-    return capabilities.LLM("Analyze sentiment: positive, negative, or neutral.", input)
+sentiment := func(ctx context.Context, input string, capabilities *Capabilities) (string, error) {
+    return capabilities.LLM("Analyze sentiment.", input)
 }
 
-// Run all handlers in parallel, combine with separator
-handler := v1beta.ParallelHandlers("\n---\n", summaryHandler, keywordsHandler, sentimentHandler)
+// Combine with separator
+handler := v1beta.ParallelHandlers("\n---\n", summary, keywords, sentiment)
 
 agent, _ := v1beta.NewBuilder("AnalysisAgent").
     WithLLM("openai", "gpt-4").
@@ -371,319 +227,147 @@ agent, _ := v1beta.NewBuilder("AnalysisAgent").
     Build()
 ```
 
-### Conditional
-
-Execute handler only if condition is met:
-
-```go
-isQuestion := func(ctx context.Context, input string) bool {
-    return strings.HasSuffix(strings.TrimSpace(input), "?")
-}
-
-questionHandler := func(ctx context.Context, input string, capabilities *v1beta.Capabilities) (string, error) {
-    return capabilities.LLM("You are an expert at answering questions.", input)
-}
-
-// Only run questionHandler if input is a question
-handler := v1beta.Conditional(isQuestion, questionHandler)
-```
-
-### Fallback
-
-Try primary handler, fall back if it fails:
-
-```go
-primaryHandler := func(ctx context.Context, input string, capabilities *v1beta.Capabilities) (string, error) {
-    // Try using expensive GPT-4
-    return capabilities.LLM("You are a helpful assistant.", input)
-}
-
-fallbackHandler := func(ctx context.Context, input string, capabilities *v1beta.Capabilities) (string, error) {
-    // Fall back to cheaper GPT-3.5
-    // In practice, you'd need to switch models here
-    return "I'm experiencing high load. Here's a basic response: " + input, nil
-}
-
-handler := v1beta.Fallback(primaryHandler, fallbackHandler)
-```
-
-### Retry
-
-Add retry logic to handlers:
-
-```go
-unreliableHandler := func(ctx context.Context, input string, capabilities *v1beta.Capabilities) (string, error) {
-    // Handler that might fail occasionally
-    return capabilities.LLM("You are a helpful assistant.", input)
-}
-
-// Retry up to 3 times with exponential backoff
-handler := v1beta.Retry(unreliableHandler, 3)
-```
-
-### WithTimeout
-
-Add timeout to handler execution:
-
-```go
-slowHandler := func(ctx context.Context, input string, capabilities *v1beta.Capabilities) (string, error) {
-    return capabilities.LLM("You are a helpful assistant.", input)
-}
-
-// Timeout after 30 seconds
-handler := v1beta.WithTimeout(slowHandler, 30*time.Second)
-```
-
-### WithLogging
-
-Add logging to handlers:
-
-```go
-import "log"
-
-businessLogicHandler := func(ctx context.Context, input string, capabilities *v1beta.Capabilities) (string, error) {
-    return capabilities.LLM("You are a helpful assistant.", input)
-}
-
-// Add logging
-handler := v1beta.WithLogging(businessLogicHandler, func(format string, args ...interface{}) {
-    log.Printf(format, args...)
-})
-```
-
 ---
 
-## 🎯 Complete Examples
+## Complete Examples
 
-### Example 1: Research Assistant
+### Research Assistant
 
 ```go
-package main
+handler := func(ctx context.Context, input string, capabilities *Capabilities) (string, error) {
+    // Check if web search needed
+    decision, _ := capabilities.LLM("Determine if web search needed. Reply YES or NO.", input)
+    
+    var context string
+    if strings.TrimSpace(decision) == "YES" {
+        result, err := capabilities.Tools.Execute(ctx, "web_search", map[string]interface{}{
+            "query": input,
+        })
+        if err == nil {
+            context = fmt.Sprintf("Search results:\n%v", result.Content)
+        }
+    }
+    
+    systemPrompt := "You are a researcher."
+    if context != "" {
+        systemPrompt += "\n\nContext:\n" + context
+    }
+    
+    response, _ := capabilities.LLM(systemPrompt, input)
+    
+    if capabilities.Memory != nil {
+        capabilities.Memory.Store(ctx, fmt.Sprintf("Q: %s\nA: %s", input, response))
+    }
+    
+    return response, nil
+}
 
-import (
-    "context"
-    "fmt"
-    "strings"
-    "github.com/agenticgokit/agenticgokit/v1beta"
-    "github.com/agenticgokit/agenticgokit/v1beta"
+agent, _ := v1beta.NewBuilder("ResearchAssistant").
+    WithLLM("openai", "gpt-4").
+    WithTools(v1beta.WithMCP(servers...)).
+    WithMemory(v1beta.WithMemoryProvider("chromem")).
+    WithHandler(handler).
+    Build()
+```
+
+### Code Review Agent
+
+```go
+handler := v1beta.ParallelHandlers("\n\n",
+    func(ctx context.Context, input string, capabilities *Capabilities) (string, error) {
+        return capabilities.LLM("Analyze for security issues.", input)
+    },
+    func(ctx context.Context, input string, capabilities *Capabilities) (string, error) {
+        return capabilities.LLM("Analyze for performance issues.", input)
+    },
+    func(ctx context.Context, input string, capabilities *Capabilities) (string, error) {
+        return capabilities.LLM("Review for best practices.", input)
+    },
 )
 
-func createResearchAssistant() (v1beta.Agent, error) {
-    handler := func(ctx context.Context, input string, capabilities *v1beta.Capabilities) (string, error) {
-        // Step 1: Analyze if web search is needed
-        decision, err := capabilities.LLM(
-            "Determine if this query requires web search. Reply 'YES' or 'NO'.",
-            input,
-        )
-        if err != nil {
-            return "", err
-        }
-        
-        var context string
-        if strings.TrimSpace(decision) == "YES" {
-            // Step 2: Execute web search tool
-            searchResult, err := capabilities.Tools.Execute(ctx, "web_search", map[string]interface{}{
-                "query": input,
-            })
-            if err == nil {
-                context = fmt.Sprintf("Search results: %v", searchResult.Content)
-            }
-        }
-        
-        // Step 3: Generate response with context
-        systemPrompt := "You are a research assistant. Use the provided context to answer."
-        if context != "" {
-            systemPrompt += "\n\nContext: " + context
-        }
-        
-        response, err := capabilities.LLM(systemPrompt, input)
-        if err != nil {
-            return "", err
-        }
-        
-        // Step 4: Store in memory for future reference
-        if capabilities.Memory != nil {
-            capabilities.Memory.Store(ctx, fmt.Sprintf("Q: %s\nA: %s", input, response))
-        }
-        
-        return response, nil
-    }
-    
-    return v1beta.NewBuilder("ResearchAssistant").
-        WithLLM("openai", "gpt-4").
-        WithTools(
-            v1beta.WithMCP(/* web search server */),
-        ).
-        WithMemory(
-            v1beta.WithMemoryProvider("memory"),
-        ).
-        WithHandler(handler).
-        Build()
-}
+agent, _ := v1beta.NewBuilder("CodeReviewer").
+    WithLLM("openai", "gpt-4").
+    WithHandler(handler).
+    Build()
 ```
 
-### Example 2: Code Review Agent
+### Customer Support
 
 ```go
-func createCodeReviewAgent() (v1beta.Agent, error) {
-    handler := func(ctx context.Context, input string, capabilities *v1beta.Capabilities) (string, error) {
-        // Parallel analysis
-        analysisHandlers := v1beta.ParallelHandlers("\n\n",
-            // Security analysis
-            func(ctx context.Context, input string, capabilities *v1beta.Capabilities) (string, error) {
-                return capabilities.LLM(
-                    "Analyze this code for security vulnerabilities.",
-                    input,
-                )
-            },
-            // Performance analysis
-            func(ctx context.Context, input string, capabilities *v1beta.Capabilities) (string, error) {
-                return capabilities.LLM(
-                    "Analyze this code for performance issues.",
-                    input,
-                )
-            },
-            // Best practices
-            func(ctx context.Context, input string, capabilities *v1beta.Capabilities) (string, error) {
-                return capabilities.LLM(
-                    "Review this code for best practices and style.",
-                    input,
-                )
-            },
-        )
+handler := func(ctx context.Context, input string, capabilities *Capabilities) (string, error) {
+    var context string
+    if capabilities.Memory != nil {
+        // Get customer history
+        memories, _ := capabilities.Memory.Query(ctx, "customer history", 5)
+        for _, mem := range memories {
+            context += "- " + mem.Content + "\n"
+        }
         
-        // Run parallel analysis with timeout and retry
-        robustHandler := v1beta.WithTimeout(
-            v1beta.Retry(analysisHandlers, 2),
-            60*time.Second,
-        )
-        
-        return robustHandler(ctx, input, capabilities)
+        // Get KB articles
+        docs, _ := capabilities.Memory.Query(ctx, input, 3)
+        for _, doc := range docs {
+            context += "- " + doc.Content + "\n"
+        }
     }
     
-    return v1beta.NewBuilder("CodeReviewer").
-        WithLLM("openai", "gpt-4").
-        WithHandler(handler).
-        Build()
-}
-```
-
-### Example 3: Customer Support Bot
-
-```go
-func createSupportBot() (v1beta.Agent, error) {
-    handler := func(ctx context.Context, input string, capabilities *v1beta.Capabilities) (string, error) {
-        // Check memory for previous interactions
-        var customerHistory string
-        if capabilities.Memory != nil {
-            memories, err := capabilities.Memory.Query(ctx, "customer history", 5)
-            if err == nil && len(memories) > 0 {
-                customerHistory = "Previous interactions:\n"
-                for _, mem := range memories {
-                    customerHistory += "- " + mem.Content + "\n"
-                }
-            }
-        }
-        
-        // Check knowledge base for relevant documentation
-        var knowledgeContext string
-        if capabilities.Memory != nil {
-            // Query knowledge base (assuming documents were ingested)
-            docs, err := capabilities.Memory.Query(ctx, input, 3)
-            if err == nil && len(docs) > 0 {
-                knowledgeContext = "Relevant documentation:\n"
-                for _, doc := range docs {
-                    knowledgeContext += "- " + doc.Content + "\n"
-                }
-            }
-        }
-        
-        // Build context-aware prompt
-        systemPrompt := "You are a helpful customer support agent."
-        if customerHistory != "" {
-            systemPrompt += "\n\n" + customerHistory
-        }
-        if knowledgeContext != "" {
-            systemPrompt += "\n\n" + knowledgeContext
-        }
-        
-        // Generate response
-        response, err := capabilities.LLM(systemPrompt, input)
-        if err != nil {
-            return "", err
-        }
-        
-        // Store interaction
-        if capabilities.Memory != nil {
-            capabilities.Memory.Store(ctx, fmt.Sprintf("User: %s\nAgent: %s", input, response))
-        }
-        
-        return response, nil
+    systemPrompt := "You are a support agent."
+    if context != "" {
+        systemPrompt += "\n\nKnowledge:\n" + context
     }
     
-    // Add memory augmentation for automatic context handling
-    augmentedHandler := v1beta.WithMemoryAugmentation(handler)
+    response, _ := capabilities.LLM(systemPrompt, input)
     
-    return v1beta.NewBuilder("SupportBot").
-        WithLLM("openai", "gpt-4").
-        WithMemory(
-            v1beta.WithMemoryProvider("pgvector"),
-            v1beta.WithRAG(4000, 0.3, 0.7),
-            v1beta.WithSessionScoped(),
-        ).
-        WithHandler(augmentedHandler).
-        Build()
+    if capabilities.Memory != nil {
+        capabilities.Memory.Store(ctx, fmt.Sprintf("User: %s\nAgent: %s", input, response))
+    }
+    
+    return response, nil
 }
+
+agent, _ := v1beta.NewBuilder("SupportBot").
+    WithLLM("openai", "gpt-4").
+    WithMemory(v1beta.WithMemoryProvider("pgvector")).
+    WithHandler(v1beta.WithMemoryAugmentation(handler)).
+    Build()
 ```
 
 ---
 
-## 🎯 Best Practices
+## Best Practices
 
-### 1. Error Handling
-
-Always handle errors gracefully:
+### Error Handling
 
 ```go
-handler := func(ctx context.Context, input string, capabilities *v1beta.Capabilities) (string, error) {
-    response, err := capabilities.LLM("You are a helpful assistant.", input)
+handler := func(ctx context.Context, input string, capabilities *Capabilities) (string, error) {
+    response, err := capabilities.LLM("Be helpful.", input)
     if err != nil {
-        // Log error
         log.Printf("LLM error: %v", err)
-        
-        // Return fallback response
-        return "I'm experiencing technical difficulties. Please try again.", nil
+        return "Technical difficulties. Please try again.", nil
     }
     return response, nil
 }
 ```
 
-### 2. Context Timeout
-
-Respect context deadlines:
+### Context Timeout
 
 ```go
-handler := func(ctx context.Context, input string, capabilities *v1beta.Capabilities) (string, error) {
-    // Check if context is already cancelled
+handler := func(ctx context.Context, input string, capabilities *Capabilities) (string, error) {
     select {
     case <-ctx.Done():
         return "", ctx.Err()
     default:
     }
     
-    // Perform work...
-    return capabilities.LLM("You are a helpful assistant.", input)
+    return capabilities.LLM("Be helpful.", input)
 }
 ```
 
-### 3. Capability Checks
-
-Verify capabilities before using them:
+### Capability Checks
 
 ```go
-handler := func(ctx context.Context, input string, capabilities *v1beta.Capabilities) (string, error) {
+handler := func(ctx context.Context, input string, capabilities *Capabilities) (string, error) {
     if capabilities.Memory == nil {
-        return capabilities.LLM("You are a helpful assistant.", input)
+        return capabilities.LLM("Be helpful.", input)
     }
     
     // Use memory...
@@ -692,53 +376,20 @@ handler := func(ctx context.Context, input string, capabilities *v1beta.Capabili
 }
 ```
 
-### 4. Structured Output
-
-Return well-formatted responses:
+### Logging
 
 ```go
-handler := func(ctx context.Context, input string, capabilities *v1beta.Capabilities) (string, error) {
-    response, err := capabilities.LLM("You are a helpful assistant.", input)
-    if err != nil {
-        return "", err
-    }
-    
-    // Format output consistently
-    return fmt.Sprintf("Response: %s\nTimestamp: %s", response, time.Now().Format(time.RFC3339)), nil
-}
-```
-
-### 5. Logging and Observability
-
-Add logging for debugging:
-
-```go
-handler := func(ctx context.Context, input string, capabilities *v1beta.Capabilities) (string, error) {
-    log.Printf("Processing input: %s", input)
-    
+handler := func(ctx context.Context, input string, capabilities *Capabilities) (string, error) {
+    log.Printf("Processing: %s", input)
     start := time.Now()
-    response, err := capabilities.LLM("You are a helpful assistant.", input)
-    duration := time.Since(start)
     
-    if err != nil {
-        log.Printf("LLM call failed after %v: %v", duration, err)
-        return "", err
-    }
+    response, err := capabilities.LLM("Be helpful.", input)
     
-    log.Printf("LLM call completed in %v", duration)
-    return response, nil
+    log.Printf("Completed in %v", time.Since(start))
+    return response, err
 }
 ```
 
 ---
 
-## 📚 Next Steps
-
-- **[Tool Integration](./tool-integration.md)** - Add tools to your handlers
-- **[Memory and RAG](./memory-and-rag.md)** - Use memory in handlers
-- **[Workflows](./workflows.md)** - Combine agents with custom handlers
-- **[Error Handling](./error-handling.md)** - Advanced error patterns
-
----
-
-**Ready to integrate tools?** Continue to [Tool Integration](./tool-integration.md) →
+**Next:** [Error Handling](./error-handling.md) → [Memory and RAG](./memory-and-rag.md)
