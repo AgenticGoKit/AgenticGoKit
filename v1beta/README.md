@@ -15,15 +15,14 @@ import (
 )
 
 func main() {
-    // Create an agent with preset configuration
-    agent, err := v1beta.PresetChatAgentBuilder().
-        WithName("Assistant").
-        Build()
+    // Create a chat agent with the convenience constructor
+    agent, err := v1beta.NewChatAgent("Assistant",
+        v1beta.WithLLM("openai", "gpt-4"),
+    )
     if err != nil {
         log.Fatal(err)
     }
 
-    // Run a simple query
     result, err := agent.Run(context.Background(), "Hello, world!")
     if err != nil {
         log.Fatal(err)
@@ -94,71 +93,29 @@ go get github.com/agenticgokit/agenticgokit/v1beta
 
 ### 1. Custom Handler Functions
 
-The framework provides two types of custom handlers:
-
-#### CustomHandlerFunc
-A simple handler function that receives user input and an LLM call function. It's perfect for basic custom logic with LLM fallback.
+Use the streamlined builder `WithHandler` to inject custom logic. The handler receives a capabilities bridge for LLM, tools, and memory.
 
 ```go
-customHandler := func(ctx context.Context, query string, llmCall func(string, string) (string, error)) (string, error) {
-    if strings.Contains(query, "weather") {
-        return "I can help with weather queries!", nil
+handler := func(ctx context.Context, input string, caps *v1beta.Capabilities) (string, error) {
+    // Basic LLM call
+    text, err := caps.LLM("You are helpful", input)
+    if err != nil {
+        return "", err
     }
-    // Return empty string to fall back to default LLM processing
-    return "", nil
+
+    // Optional tools
+    if caps.Tools != nil && caps.Tools.IsAvailable("weather_lookup") {
+        toolRes, _ := caps.Tools.Execute(ctx, "weather_lookup", map[string]interface{}{"location": "NYC"})
+        return fmt.Sprintf("LLM: %s\nTool: %v", text, toolRes.Content), nil
+    }
+
+    return text, nil
 }
 
-builder := v1beta.PresetChatAgentBuilder().WithCustomHandler(customHandler)
-```
-
-#### EnhancedHandlerFunc
-An advanced handler with full access to agent capabilities through HandlerCapabilities, including LLM, tools, and memory systems.
-
-```go
-enhancedHandler := func(ctx context.Context, query string, capabilities *v1beta.HandlerCapabilities) (string, error) {
-    // Use LLM
-    llmResponse, err := capabilities.LLMCall("You are a helpful assistant", query)
-    if err != nil {
-        return "", err
-    }
-
-    // Use tools
-    toolResult, err := capabilities.ToolCall("weather_lookup", map[string]interface{}{
-        "location": "New York",
-    })
-    if err != nil {
-        return "", err
-    }
-
-    return fmt.Sprintf("LLM: %s\nTool: %v", llmResponse, toolResult), nil
-}
-
-builder := v1beta.PresetChatAgentBuilder().WithEnhancedHandler(enhancedHandler)
-```
-
-### 2. Handler Augmentation Functions
-
-Pre-built handlers that automatically integrate common capabilities:
-
-#### CreateToolAugmentedHandler
-Creates a handler that automatically includes tool information in LLM prompts.
-
-#### CreateMemoryAugmentedHandler
-Creates a handler that automatically includes relevant memory context.
-
-#### CreateFullAugmentedHandler
-Creates a handler with both tool and memory augmentation.
-
-```go
-toolHandler := v1beta.CreateToolAugmentedHandler(func(ctx context.Context, query, toolPrompt string, llmCall func(string, string) (string, error)) (string, error) {
-    response, err := llmCall("You are a helpful assistant with tool access", query)
-    if err != nil {
-        return "", err
-    }
-    return fmt.Sprintf("LLM Response: %s\nTool Context was available", response), nil
-})
-
-builder := v1beta.PresetChatAgentBuilder().WithEnhancedHandler(toolHandler)
+agent, err := v1beta.NewBuilder("assistant").
+    WithPreset(v1beta.ChatAgent).
+    WithHandler(handler).
+    Build()
 ```
 
 ### 3. ToolCallHelper
@@ -184,25 +141,7 @@ enhancedHandler := func(ctx context.Context, query string, capabilities *v1beta.
 
 ### 4. Middleware Support
 
-Flexible middleware system with BeforeRun and AfterRun hooks:
-
-```go
-type LoggingMiddleware struct{}
-
-func (m *LoggingMiddleware) BeforeRun(ctx context.Context, input string) (context.Context, string, error) {
-    fmt.Printf("Processing input: %s\n", input)
-    return ctx, input, nil
-}
-
-func (m *LoggingMiddleware) AfterRun(ctx context.Context, input string, result *v1beta.AgentResult, err error) (*v1beta.AgentResult, error) {
-    fmt.Printf("Result success: %t\n", result.Success)
-    return result, err
-}
-
-builder := v1beta.PresetChatAgentBuilder().
-    WithCustomHandler(customHandler).
-    WithMiddlewares([]v1beta.AgentMiddleware{&LoggingMiddleware{}})
-```
+The `AgentMiddleware` interface provides `BeforeRun`/`AfterRun` hooks. Middleware registration hooks are not exposed on the streamlined builder; for cross-cutting logic today, wrap your own `WithHandler` or compose at the workflow layer.
 
 ## 🌊 Streaming
 
@@ -216,7 +155,6 @@ if err != nil {
     log.Fatal(err)
 }
 
-// Process chunks as they arrive
 for chunk := range stream.Chunks() {
     switch chunk.Type {
     case v1beta.ChunkTypeDelta:
@@ -236,26 +174,27 @@ result, err := stream.Wait()
 ```go
 stream, err := agent.RunStream(ctx, query,
     v1beta.WithBufferSize(200),
-    v1beta.WithThoughts(true),
-    v1beta.WithToolCalls(true),
-    v1beta.WithTimeout(5*time.Minute),
+    v1beta.WithThoughts(),
+    v1beta.WithToolCalls(),
+    v1beta.WithStreamTimeout(5*time.Minute),
 )
 ```
 
 ### Callback Handler
 
 ```go
-handler := func(chunk *v1beta.StreamChunk) error {
+handler := func(chunk *v1beta.StreamChunk) bool {
     if chunk.Type == v1beta.ChunkTypeDelta {
         sendToWebSocket(chunk.Delta)
     }
-    return nil
+    return true // continue streaming
 }
 
-result, err := agent.Run(ctx, query, v1beta.WithStreamHandler(handler))
+stream, err := agent.RunStream(ctx, query, v1beta.WithStreamHandler(handler))
+result, err := stream.Wait()
 ```
 
-**[📖 Complete Streaming Guide →](STREAMING_GUIDE.md)**
+**[📖 Complete Streaming Guide →](../docs/v1beta/streaming.md)**
 
 ## 🔄 Workflows
 
@@ -264,11 +203,14 @@ Build multi-agent systems with different execution patterns:
 ### Sequential Workflow
 
 ```go
-workflow, err := v1beta.NewSequentialWorkflow("DataPipeline",
-    v1beta.Step("extract", extractAgent, "Extract data"),
-    v1beta.Step("transform", transformAgent, "Transform data"),
-    v1beta.Step("load", loadAgent, "Load data"),
-)
+workflow, err := v1beta.NewSequentialWorkflow(&v1beta.WorkflowConfig{Timeout: 60 * time.Second})
+if err != nil {
+    log.Fatal(err)
+}
+
+_ = workflow.AddStep(v1beta.WorkflowStep{Name: "extract", Agent: extractAgent})
+_ = workflow.AddStep(v1beta.WorkflowStep{Name: "transform", Agent: transformAgent})
+_ = workflow.AddStep(v1beta.WorkflowStep{Name: "load", Agent: loadAgent})
 
 result, err := workflow.Run(ctx, "Process dataset.csv")
 ```
@@ -276,11 +218,14 @@ result, err := workflow.Run(ctx, "Process dataset.csv")
 ### Parallel Workflow
 
 ```go
-workflow, err := v1beta.NewParallelWorkflow("Analysis",
-    v1beta.Step("sentiment", sentimentAgent, "Analyze sentiment"),
-    v1beta.Step("summary", summaryAgent, "Summarize content"),
-    v1beta.Step("keywords", keywordAgent, "Extract keywords"),
-)
+workflow, err := v1beta.NewParallelWorkflow(&v1beta.WorkflowConfig{Timeout: 90 * time.Second})
+if err != nil {
+    log.Fatal(err)
+}
+
+_ = workflow.AddStep(v1beta.WorkflowStep{Name: "sentiment", Agent: sentimentAgent})
+_ = workflow.AddStep(v1beta.WorkflowStep{Name: "summary", Agent: summaryAgent})
+_ = workflow.AddStep(v1beta.WorkflowStep{Name: "keywords", Agent: keywordAgent})
 
 result, err := workflow.Run(ctx, "Analyze this article")
 ```
@@ -349,12 +294,14 @@ for chunk := range stream.Chunks() {
 ### Programmatic Configuration
 
 ```go
-agent, err := v1beta.PresetChatAgentBuilder().
-    WithName("Assistant").
-    WithSystemPrompt("You are a helpful assistant").
-    WithLLM("openai", "gpt-4").
-    WithMemory("memory", "inmemory").
-    WithTools(myTools).
+agent, err := v1beta.NewBuilder("Assistant").
+    WithPreset(v1beta.ChatAgent).
+    WithConfig(&v1beta.Config{
+        SystemPrompt: "You are a helpful assistant",
+        LLM: v1beta.LLMConfig{Provider: "openai", Model: "gpt-4"},
+        Memory: &v1beta.MemoryConfig{Enabled: true, Provider: "chromem"},
+    }).
+    WithTools(v1beta.WithMCP()).
     Build()
 ```
 
@@ -371,8 +318,8 @@ temperature = 0.7
 max_tokens = 1000
 
 [memory]
-provider = "memory"
-connection = "inmemory"
+provider = "chromem"
+enabled = true
 
 [streaming]
 enabled = true
@@ -389,15 +336,21 @@ timeout = "30s"
 Load configuration:
 
 ```go
-config, err := v1beta.LoadConfig("config.toml")
-agent, err := v1beta.NewAgentFromConfig(config)
+cfg, err := v1beta.LoadConfigFromTOML("config.toml")
+if err != nil {
+    log.Fatal(err)
+}
+
+agent, err := v1beta.NewBuilder(cfg.Name).
+    WithConfig(cfg).
+    Build()
 ```
 
 ## 📚 Documentation
 
-- **[Streaming Guide](STREAMING_GUIDE.md)** - Complete streaming documentation with examples
-- **[Migration Guide](MIGRATION_GUIDE.md)** - Migrating from older APIs
-- **[Troubleshooting Guide](TROUBLESHOOTING.md)** - Common issues and solutions
+- **[Streaming Guide](../docs/v1beta/streaming.md)** - Complete streaming documentation with examples
+- **[Migration Guide](../docs/v1beta/migration-from-core.md)** - Migrating from older APIs
+- **[Troubleshooting Guide](../docs/v1beta/troubleshooting.md)** - Common issues and solutions
 - **[API Reference](https://pkg.go.dev/github.com/agenticgokit/agenticgokit/v1beta)** - Go package documentation
 
 ## 💡 Examples
@@ -468,21 +421,10 @@ type Stream interface {
 }
 ```
 
-### Preset Builders
+### Presets
 
-```go
-// Chat-focused agent
-v1beta.PresetChatAgentBuilder()
-
-// Research agent with memory and tools
-v1beta.PresetResearchAgentBuilder()
-
-// Data processing agent
-v1beta.PresetDataAgentBuilder()
-
-// Workflow orchestration agent
-v1beta.PresetWorkflowAgentBuilder()
-```
+- Convenience constructors: `NewChatAgent`, `NewResearchAgent`, `NewDataAgent`, `NewWorkflowAgent`
+- Generic builder + preset: `NewBuilder(name).WithPreset(v1beta.ChatAgent /* or ResearchAgent, DataAgent, WorkflowAgent */)`
 
 ## 🚀 Performance
 

@@ -1,6 +1,8 @@
 # Getting Started
 
-Welcome to AgenticGoKit! This guide will help you build your first AI agent in just a few minutes.
+Welcome to AgenticGoKit! You'll build and run your first AI agent in just 5 minutes.
+
+AgenticGoKit is a production-ready framework for building AI agents in Go. An **agent** is a program that takes user input, thinks about it (optionally with tools and memory), and returns a response from an LLM.
 
 ---
 
@@ -9,33 +11,31 @@ Welcome to AgenticGoKit! This guide will help you build your first AI agent in j
 Before you begin, make sure you have:
 
 - **Go 1.21 or later** installed
-- **An LLM API key** (OpenAI, Azure AI, Ollama, HuggingFace, or OpenRouter)
-- **Basic Go knowledge** (functions, structs, error handling)
+- **An LLM API key** from one of: [OpenAI](https://platform.openai.com), [Azure AI](https://azure.microsoft.com/en-us/services/cognitive-services/openai-service/), [Ollama](https://ollama.com), [HuggingFace](https://huggingface.co), or [OpenRouter](https://openrouter.ai)
+- **Basic Go knowledge** (packages, functions, error handling)
+
+**First time setting up an LLM provider?** See the [Installation Guide](./installation.md).
 
 ---
 
-## 📦 Installation
+## 🚀 Your First Agent (5 Minutes)
 
-Install AgenticGoKit:
+### Step 1: Install AgenticGoKit
 
 ```bash
 go get github.com/agenticgokit/agenticgokit/v1beta
 ```
 
-Initialize your Go module (if you haven't already):
+Initialize your Go module (if needed):
 
 ```bash
 go mod init myagent
 go mod tidy
 ```
 
----
+### Step 2: Create Your Agent
 
-## 🚀 Your First Agent (5 Minutes)
-
-### Step 1: Create a Basic Agent
-
-Create a file named `main.go`:
+Create a file called `main.go`:
 
 ```go
 package main
@@ -45,525 +45,204 @@ import (
     "fmt"
     "log"
     "os"
-    
+
     "github.com/agenticgokit/agenticgokit/v1beta"
 )
 
 func main() {
-    // Set your OpenAI API key
+    // Set your LLM API key (or use environment variables)
     os.Setenv("OPENAI_API_KEY", "your-api-key-here")
-    
-    // Create an agent with preset configuration
+
+    // Create an agent
     agent, err := v1beta.NewChatAgent("Assistant",
         v1beta.WithLLM("openai", "gpt-4"),
     )
     if err != nil {
         log.Fatal(err)
     }
-    
-    // NOTE: Memory is enabled by default! 
-    // This agent automatically remembers conversation history.
-    
-    // Run a simple query
-    result, err := agent.Run(context.Background(), "What is Go programming language?")
+
+    // Run the agent
+    result, err := agent.Run(context.Background(), "What is Go?")
     if err != nil {
         log.Fatal(err)
     }
-    
-    // Print the response
-    fmt.Printf("Response: %s\n", result.Content)
-    fmt.Printf("Success: %t\n", result.Success)
+
+    // Print the result
+    fmt.Println("Response:", result.Content)
+    fmt.Println("Success:", result.Success)
 }
 ```
 
-### Step 2: Run Your Agent
+### Step 3: Run It
 
 ```bash
 go run main.go
 ```
 
 **Output:**
+
 ```
-Response: Go is a statically typed, compiled programming language designed at Google...
+Response: Go is a statically typed, compiled programming language developed at Google...
 Success: true
 ```
 
-Congratulations! You've built your first AgenticGoKit agent! 🎉
+**Congratulations!** You just built your first AgenticGoKit agent! 🎉
 
 ---
 
-## 🎯 Preset Builders
+## 🎯 What Just Happened?
 
-AgenticGoKit provides preset configurations for common agent types:
-
-### Chat Agent Preset
-For general-purpose chat agents:
+### Agent
+An **Agent** is your interface to an LLM. You create it once with configuration (which model, what to remember, which tools to use), then call it repeatedly.
 
 ```go
-agent, err := v1beta.NewChatAgent("ChatBot",
-    v1beta.WithLLMConfig("openai", "gpt-4", 0.7, 1024),
-)
+agent, err := v1beta.NewChatAgent("Assistant", v1beta.WithLLM("openai", "gpt-4"))
+// Result: An Agent that uses OpenAI's GPT-4 model
 ```
 
-### Research Agent Preset
-For research and analysis tasks:
+### Run
+**Run** executes the agent with user input and waits for the complete response.
 
 ```go
-agent, err := v1beta.NewResearchAgent("Researcher",
-    v1beta.WithLLM("openai", "gpt-4"),
-)
+result, err := agent.Run(context.Background(), "Your question here")
+// Returns: Complete response + metadata (tokens used, execution time, etc.)
 ```
 
+### Result
+The **Result** contains:
+- `Content` - The LLM's response text
+- `Success` - Whether execution succeeded
+- `Duration` - How long it took
+- `TokensUsed` - LLM tokens consumed
+- `Memory` - Whether memory was used
+- Other metadata
 
+```go
+if result.Success {
+    fmt.Println(result.Content)      // The response
+    fmt.Println(result.TokensUsed)   // Cost indicator
+}
+```
+
+### Memory
+**By default, agents remember the conversation.** Each agent automatically stores interactions using an embedded memory provider (`chromem`). Call the same agent multiple times and it remembers what you said.
+
+```go
+result1, _ := agent.Run(ctx, "My name is Alice")
+result2, _ := agent.Run(ctx, "What is my name?")
+// Result2 will answer: "Your name is Alice" ← From memory!
+```
+
+If you prefer stateless agents (no memory), you can disable it—see [Memory & RAG](./memory-and-rag.md).
 
 ---
 
-## 🔧 Builder Pattern
+## 🔧 Common Customizations
 
-AgenticGoKit uses a fluent builder pattern for custom configuration:
+### Use a Different Model
 
 ```go
-agent, err := v1beta.NewBuilder("MyAgent").
+// Use GPT-3.5-turbo instead
+agent, err := v1beta.NewChatAgent("Assistant",
+    v1beta.WithLLM("openai", "gpt-3.5-turbo"),
+)
+
+// Or use Ollama locally
+agent, err := v1beta.NewChatAgent("Assistant",
+    v1beta.WithLLM("ollama", "llama2"),
+)
+```
+
+**See [Installation Guide](./installation.md) for all supported providers.**
+
+### Add a Custom System Prompt
+
+```go
+agent, err := v1beta.NewBuilder("Assistant").
+    WithPreset(v1beta.ChatAgent).
     WithConfig(&v1beta.Config{
-        SystemPrompt: "You are a helpful assistant",
-        Timeout:      30 * time.Second,
-        LLM: v1beta.LLMConfig{
-            Provider: "openai",
-            Model:    "gpt-4",
-        },
+        SystemPrompt: "You are a friendly pirate",
     }).
     Build()
+
+result, _ := agent.Run(ctx, "Hello!")
+// Response: "Ahoy, matey! What be bringin' ye to these waters?"
 ```
 
-### Factory Function Options
-Used with `NewChatAgent`, `NewResearchAgent`, etc.
-
-| Option | Description | Example |
-|--------|-------------|---------|
-| `WithLLM(provider, model)` | Set LLM provider and model | `NewChatAgent("Bot", WithLLM("openai", "gpt-4"))` |
-| `WithLLMConfig(prov, mod, temp, ...)` | Set full LLM config | `NewChatAgent("Bot", WithLLMConfig("openai", "gpt-4", 0.7, 1000))` |
-| `WithSystemPrompt(string)` | Set system prompt | `NewChatAgent("Bot", WithSystemPrompt("You are helpful"))` |
-| `WithAgentTimeout(duration)` | Set timeout | `NewChatAgent("Bot", WithAgentTimeout(30*time.Second))` |
-
-### Builder Methods
-Used with `NewBuilder("name")` for fluent chaining.
-
-| Method | Description | Example |
-|--------|-------------|---------|
-| `WithConfig(*Config)` | Set core configuration | `.WithConfig(&v1beta.Config{...})` |
-| `WithPreset(PresetType)` | Apply a preset | `.WithPreset(v1beta.ChatAgent)` |
-| `WithTools(...ToolOption)` | Configure tools | `.WithTools(v1beta.WithMCP(servers...))` |
-| `WithMemory(...MemoryOption)` | Configure memory | `.WithMemory(v1beta.WithMemoryProvider("pgvector"))` |
-| `WithWorkflow(...WorkflowOption)` | Configure workflow | `.WithWorkflow(v1beta.WithWorkflowMode("parallel"))` |
-
----
-
-## 📝 Running Agents
-
-### Simple Run
-Execute a single query and get the complete response:
+### Set a Timeout
 
 ```go
-result, err := agent.Run(context.Background(), "Explain quantum computing")
-if err != nil {
-    log.Fatal(err)
-}
-
-fmt.Println(result.Content)
-```
-
-### Run with Options
-Pass additional options at runtime:
-
-```go
-opts := &v1beta.RunOptions{
-    MaxTokens:   1000,
-    Temperature: func(t float64) *float64 { return &t }(0.5),
-}
-
-result, err := agent.RunWithOptions(
-    context.Background(),
-    "Explain quantum computing",
-    opts,
-)
-```
-
-### Context with Cancellation
-Use context for timeouts and cancellation:
-
-```go
-ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-defer cancel()
-
-result, err := agent.Run(ctx, "Long computation task")
-if err == context.DeadlineExceeded {
-    fmt.Println("Request timed out!")
-}
-```
-
----
-
-## ⚡ Streaming Responses
-
-GET real-time streaming responses:
-
-### Channel-Based Streaming
-
-```go
-stream, err := agent.RunStream(context.Background(), "Write a story")
-if err != nil {
-    log.Fatal(err)
-}
-
-for chunk := range stream.Chunks() {
-    switch chunk.Type {
-    case v1beta.ChunkTypeText, v1beta.ChunkTypeDelta:
-        if chunk.Delta != "" {
-            fmt.Print(chunk.Delta)
-        } else {
-            fmt.Print(chunk.Content)
-        }
-    case v1beta.ChunkTypeDone:
-        fmt.Println("\n✓ Done!")
-    case v1beta.ChunkTypeError:
-        fmt.Println("Error:", chunk.Error)
-    }
-}
-
-result, err := stream.Wait()
-```
-
-### Callback-Based Streaming
-
-```go
-handler := func(chunk *v1beta.StreamChunk) bool {
-    if chunk.Type == v1beta.ChunkTypeDelta {
-        fmt.Print(chunk.Delta)
-    }
-    return true // continue streaming
-}
-
-stream, err := agent.RunStream(
-    context.Background(),
-    "Explain AI",
-    v1beta.WithStreamHandler(handler),
-)
-result, _ := stream.Wait()
-```
-
-**Learn more**: [Streaming Guide](./streaming.md)
-
----
-
-## 🔄 Multi-Agent Workflows
-
-Create workflows with multiple agents:
-
-### Sequential Workflow
-
-```go
-// Create agents
-agent1, _ := v1beta.NewChatAgent("Agent1", v1beta.WithLLM("openai", "gpt-4"))
-agent2, _ := v1beta.NewChatAgent("Agent2", v1beta.WithLLM("openai", "gpt-4"))
-
-// Create workflow config
-config := &v1beta.WorkflowConfig{
-    Mode:    v1beta.Sequential,
-    Timeout: 60 * time.Second,
-}
-
-// Create sequential workflow
-workflow, err := v1beta.NewSequentialWorkflow(config)
-if err != nil {
-    log.Fatal(err)
-}
-
-workflow.AddStep(v1beta.WorkflowStep{
-    Name:  "research",
-    Agent: agent1,
-})
-workflow.AddStep(v1beta.WorkflowStep{
-    Name:  "write",
-    Agent: agent2,
-})
-
-// Execute workflow
-result, err := workflow.Run(context.Background(), "Research quantum computing")
-fmt.Println(result.FinalOutput)
-```
-
-### Parallel Workflow
-
-```go
-// Create workflow config
-config := &v1beta.WorkflowConfig{
-    Mode:    v1beta.Parallel,
-    Timeout: 90 * time.Second,
-}
-
-workflow, err := v1beta.NewParallelWorkflow(config)
-workflow.AddStep(v1beta.WorkflowStep{Name: "tech", Agent: techAgent})
-workflow.AddStep(v1beta.WorkflowStep{Name: "business", Agent: bizAgent})
-workflow.AddStep(v1beta.WorkflowStep{Name: "legal", Agent: legalAgent})
-
-result, err := workflow.Run(context.Background(), "Analyze the product")
-```
-
-**Learn more**: [Workflows Guide](./workflows.md)
-
----
-
-## 🛠️ Adding Tools
-
-Extend agent capabilities with tools:
-
-```go
-// Define a custom tool struct
-type WeatherTool struct{}
-
-func (t *WeatherTool) Name() string { return "get_weather" }
-func (t *WeatherTool) Description() string { return "Get current weather for a location" }
-
-func (t *WeatherTool) Execute(ctx context.Context, args map[string]interface{}) (*v1beta.ToolResult, error) {
-    location, ok := args["location"].(string)
-    if !ok {
-        return &v1beta.ToolResult{Error: "location required"}, nil
-    }
-    // Call weather API...
-    return &v1beta.ToolResult{
-        Success: true,
-        Content: fmt.Sprintf("Weather in %s: Sunny, 72°F", location),
-    }, nil
-}
-
-// Register tool factory
-func init() {
-    v1beta.RegisterInternalTool("get_weather", func() v1beta.Tool {
-        return &WeatherTool{}
-    })
-}
-
-// Create agent
-// Internal tools are automatically discovered
-agent, err := v1beta.NewBuilder("WeatherBot").
-    WithPreset(v1beta.ChatAgent).
-    Build()
-
-// Agent can now use the weather tool
-result, err := agent.Run(context.Background(), "What's the weather in San Francisco?")
-```
-
-**Learn more**: [Tool Integration Guide](./tool-integration.md)
-
----
-
-## 💾 Adding Memory
-
-Starting from `v1beta`, memory is **enabled by default** using the `chromem` embedded provider. This means your agents will remember context automatically without extra configuration.
-
-### Default Memory Example
-
-```go
-agent, _ := v1beta.NewBuilder("Assistant").
-    WithPreset(v1beta.ChatAgent).
-    Build()
-
-// Agent remembers context across calls automatically!
-result1, _ := agent.Run(context.Background(), "My name is Alice")
-result2, _ := agent.Run(context.Background(), "What is my name?")
-// Response: "Your name is Alice"
-```
-
-### Disabling Memory
-
-If you want a purely ephemeral agent with no memory, you can explicitly disable it:
-
-```go
-agent, _ := v1beta.NewBuilder("EphemeralBot").
-    WithConfig(&v1beta.Config{
-        Memory: &v1beta.MemoryConfig{
-            Enabled: false,
-        },
-    }).
-    Build()
-```
-
-### Customizing Memory
-
-You can still customize memory or use production providers like `pgvector`:
-
-```go
-agent, _ := v1beta.NewBuilder("CustomMemoryBot").
-    WithMemory(
-        v1beta.WithMemoryProvider("pgvector"),
-        v1beta.WithSessionScoped(),
-    ).
-    Build()
-```
-
-**Learn more**: [Memory & RAG Guide](./memory-and-rag.md)
-
----
-
-## 🎨 Custom Handlers
-
-Implement custom logic with handlers:
-
-### CustomHandlerFunc
-Simple handler with LLM fallback:
-
-```go
-customHandler := func(ctx context.Context, query string, llmCall func(string, string) (string, error)) (string, error) {
-    // Custom logic
-    if strings.Contains(query, "time") {
-        return fmt.Sprintf("Current time: %s", time.Now().Format(time.RFC3339)), nil
-    }
-    
-    // Fallback to LLM (return empty string)
-    return "", nil
-}
-
-agent, err := v1beta.NewBuilder("custom-agent").
-    WithHandler(customHandler).
-    Build()
-```
-
-### EnhancedHandlerFunc
-Advanced handler with full capabilities:
-
-```go
-enhancedHandler := func(ctx context.Context, query string, capabilities *v1beta.Capabilities) (string, error) {
-    // Access LLM
-    llmResponse, err := capabilities.LLM("system prompt", query)
-    if err != nil {
-        return "", err
-    }
-    
-    // Access tools if available
-    if capabilities.Tools != nil {
-        toolResult, _ := capabilities.Tools.Execute(ctx, "search", map[string]interface{}{
-            "query": query,
-        })
-        return fmt.Sprintf("LLM: %s\nTool: %v", llmResponse, toolResult.Content), nil
-    }
-    
-    return llmResponse, nil
-}
-
-agent, err := v1beta.NewBuilder("enhanced-agent").
-    WithHandler(enhancedHandler).
-    Build()
-```
-
-**Learn more**: [Custom Handlers Guide](./custom-handlers.md)
-
----
-
-## 📊 Error Handling
-
-AgenticGoKit provides clear error types:
-
-```go
-result, err := agent.Run(context.Background(), "query")
-if err != nil {
-    // Check for structured error
-    if agentErr, ok := err.(*v1beta.AgentError); ok {
-        switch agentErr.Code {
-        case v1beta.ErrConfigInvalid:
-            log.Println("Configuration error")
-        case v1beta.ErrLLMCallFailed:
-            log.Println("LLM provider error")
-        case v1beta.ErrContextTimeout:
-            log.Println("Request timeout")
-        default:
-            log.Println("Error:", agentErr.Message)
-        }
-    } else {
-        log.Println("Unknown error:", err)
-    }
-}
-
-// Check result status
-if !result.Success {
-    log.Printf("Agent failed: %v", result.Error)
-}
-```
-
-**Learn more**: [Error Handling Guide](./error-handling.md)
-
----
-
-## 🎯 Best Practices
-
-### 1. Always Handle Errors
-```go
-agent, err := v1beta.NewBuilder("my-agent").
-    WithPreset(v1beta.ChatAgent).
-    Build()
-if err != nil {
-    log.Fatal(err)
-}
-```
-
-### 2. Use Context for Cancellation
-```go
-ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-defer cancel()
-
-result, err := agent.Run(ctx, query)
-```
-
-### 3. Set Appropriate Timeouts
-```go
-agent, err := v1beta.NewChatAgent("Agent",
-    v1beta.WithAgentTimeout(15 * time.Second),
-)
-```
-
-### 4. Use Preset Builders for Common Cases
-```go
-// Use NewChatAgent for quick setup with sensible defaults
 agent, err := v1beta.NewChatAgent("Assistant",
     v1beta.WithLLM("openai", "gpt-4"),
+    v1beta.WithAgentTimeout(15 * time.Second), // Max 15 seconds
 )
 ```
 
-### 5. Check Result Success
-```go
-result, err := agent.Run(ctx, query)
-if err != nil || !result.Success {
-    // Handle failure
-}
-```
+**Want more control?** See the [Configuration Guide](./configuration.md) for all builder options, presets, and advanced settings.
 
 ---
 
-## 📚 Next Steps
+## ⚡ What's Next?
 
-Now that you've built your first agent, explore more features:
+The agent you just built is functional but basic. Here's what you can add depending on your needs:
 
-1. **[Core Concepts](./core-concepts.md)** - Deep dive into architecture
-2. **[Streaming Guide](./streaming.md)** - Real-time responses
-3. **[Workflows](./workflows.md)** - Multi-agent orchestration
-4. **[Tool Integration](./tool-integration.md)** - Extend agent capabilities
-5. **[Memory & RAG](./memory-and-rag.md)** - Add memory and knowledge
-6. **[Examples](./examples/)** - Complete code examples
+### 🌊 Real-Time Streaming
+Display responses token-by-token as they're generated (instead of waiting for the complete response).
+
+**→ [Streaming Guide](./streaming.md)**
+
+### 🔄 Multi-Agent Workflows
+Build pipelines where multiple agents work together (one researches, another writes, another reviews).
+
+**→ [Workflows Guide](./workflows.md)**
+
+### 🛠️ Tool Integration
+Give agents the ability to call external APIs, databases, file systems, etc. via the Model Context Protocol (MCP).
+
+**→ [Tool Integration](./tool-integration.md)**
+
+### 💾 Memory & RAG
+Enable agents to store and retrieve custom knowledge, documents, and long-term facts.
+
+**→ [Memory & RAG](./memory-and-rag.md)**
+
+### 🎨 Custom Logic
+Write handlers to control exactly how agents process input (bypass LLM for certain queries, apply custom rules, etc.).
+
+**→ [Custom Handlers](./custom-handlers.md)**
+
+### 📊 Deeper Configuration
+Fine-tune temperature, max tokens, timeouts, caching, and more.
+
+**→ [Configuration Guide](./configuration.md)**
+
+---
+
+## 📚 Suggested Learning Path
+
+We recommend exploring in this order:
+
+1. **✅ You are here**: Getting Started (5 min) - Build and run an agent
+2. **[Core Concepts](./core-concepts.md)** (15 min) - Understand agents, handlers, tools, and memory
+3. **[Installation](./installation.md)** (5 min) - Set up your preferred LLM provider
+4. **Pick your path:**
+   - Want real-time responses? → [Streaming Guide](./streaming.md)
+   - Multiple agents? → [Workflows Guide](./workflows.md)
+   - External APIs? → [Tool Integration](./tool-integration.md)
+   - Knowledge base? → [Memory & RAG](./memory-and-rag.md)
+   - Custom behavior? → [Custom Handlers](./custom-handlers.md)
+5. **Explore examples** - See complete projects in [examples/](../examples/)
+6. **Troubleshoot** - Visit [Troubleshooting](./troubleshooting.md) if something breaks
 
 ---
 
 ## 🆘 Need Help?
 
-- **[Troubleshooting](./troubleshooting.md)** - Common issues
-- **[API Reference](./api-reference.md)** - Complete API docs
-- **[GitHub Issues](https://github.com/agenticgokit/agenticgokit/issues)** - Report bugs
-- **[Discussions](https://github.com/agenticgokit/agenticgokit/discussions)** - Ask questions
+- **Problems?** → [Troubleshooting Guide](./troubleshooting.md)
+- **See it in action** → [Examples & Tutorials](../examples/)
+- **Questions?** → [GitHub Discussions](https://github.com/agenticgokit/agenticgokit/discussions)
+- **Found a bug?** → [GitHub Issues](https://github.com/agenticgokit/agenticgokit/issues)
 
 ---
 
-## 🔄 Migrating from core/vnext?
-
-If you're upgrading from the deprecated `core` or `core/vnext` packages, see the **[Migration Guide](./migration-from-core.md)** for step-by-step instructions.
-
----
-
-**Ready for more?** Continue to [Core Concepts](./core-concepts.md) →
+**Ready to learn more?** Continue to [Core Concepts](./core-concepts.md) →
