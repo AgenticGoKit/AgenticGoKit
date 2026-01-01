@@ -194,9 +194,25 @@ cd memory-and-tools
 go run main.go
 ```
 
+#### 13. [Workflow Shared Memory](./workflow-shared-memory/)
+**Best for: Multi-Agent Memory Collaboration**
+
+Demonstrates workflow-level shared memory with multiple agents.
+
+- ✅ Shared memory across workflow steps
+- ✅ Two agents accessing same memory
+- ✅ Workflow memory configuration
+- ✅ Default memory provider (chromem)
+- ✅ Cross-agent data sharing
+
+```bash
+cd workflow-shared-memory
+go run main.go
+```
+
 ### Multimodal & Advanced
 
-#### 13. [Multimodal Demo](./multimodal-demo/)
+#### 14. [Multimodal Demo](./multimodal-demo/)
 **Best for: Images, Audio, Video Processing**
 
 Demonstrates multimodal capabilities with images, audio, and video inputs.
@@ -214,7 +230,7 @@ go run main.go
 
 ### Tools & Integrations
 
-#### 14. [MCP Integration](./mcp-integration/)
+#### 15. [MCP Integration](./mcp-integration/)
 **Best for: Model Context Protocol**
 
 Shows how to integrate MCP (Model Context Protocol) servers and tools.
@@ -229,7 +245,7 @@ cd mcp-integration
 go run main.go
 ```
 
-#### 15. [MCP Tools Blog Demo](./mcp-tools-blog-demo/)
+#### 16. [MCP Tools Blog Demo](./mcp-tools-blog-demo/)
 **Best for: MCP Blog-specific Tools**
 
 Specific example of MCP tools for blog operations.
@@ -243,7 +259,7 @@ cd mcp-tools-blog-demo
 go run main.go
 ```
 
-#### 16. [Marketplace Order Agent](./marketplace-order-agent/)
+#### 17. [Marketplace Order Agent](./marketplace-order-agent/)
 **Best for: E-commerce Integration**
 
 Demonstrates an agent handling marketplace orders.
@@ -259,7 +275,7 @@ go run main.go
 
 ### Provider Examples
 
-#### 17. [HuggingFace Quickstart](./huggingface-quickstart/)
+#### 18. [HuggingFace Quickstart](./huggingface-quickstart/)
 **Best for: HuggingFace Models**
 
 Quick start with HuggingFace model integration.
@@ -273,7 +289,7 @@ cd huggingface-quickstart
 go run main.go
 ```
 
-#### 18. [OpenRouter Quickstart](./openrouter-quickstart/)
+#### 19. [OpenRouter Quickstart](./openrouter-quickstart/)
 **Best for: OpenRouter API**
 
 Getting started with OpenRouter for multi-model access.
@@ -287,7 +303,7 @@ cd openrouter-quickstart
 go run main.go
 ```
 
-#### 19. [Story Writer Chat (v1)](./story-writer-chat/)
+#### 20. [Story Writer Chat (v1)](./story-writer-chat/)
 **Best for: Legacy Story Writer**
 
 Earlier version of story writer for comparison.
@@ -305,6 +321,7 @@ go run main.go
 | **Learning builders** | Ollama Short Answer | ⭐⭐ Moderate |
 | **Real-time streaming** | Streaming Demo | ⭐⭐ Moderate |
 | **Multi-agent workflows** | Sequential Workflow | ⭐⭐⭐ Advanced |
+| **Shared memory in workflows** | Workflow Shared Memory | ⭐⭐⭐ Advanced |
 | **Production app** | Story Writer Chat v2 | ⭐⭐⭐⭐ Complex |
 | **Images/Audio/Video** | Multimodal Demo | ⭐⭐ Moderate |
 | **Memory/Context** | Conversation Memory | ⭐⭐ Moderate |

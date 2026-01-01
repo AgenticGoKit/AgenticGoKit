@@ -10,7 +10,7 @@ Connect multiple agents in different execution patterns to orchestrate complex t
 - Automatic dependency management and execution ordering
 - Stream workflow progress in real-time
 - Reusable subworkflow composition
-- Shared memory across all workflow agents (chromem by default)
+- **Shared memory across agents with automatic context querying**
 - Error isolation and partial result tracking
 
 ---
@@ -370,6 +370,201 @@ workflow, _ := v1beta.NewLoopWorkflowWithCondition(config, shouldContinue)
 // ... add steps
 result, _ := workflow.Run(context.Background(), "Execute complex task")
 ```
+
+---
+
+## Shared Memory
+
+Enable agents in a workflow to access the same memory store. Agents automatically query workflow memory for relevant context, enabling true multi-agent collaboration.
+
+### How It Works
+
+1. Workflow stores step inputs/outputs in shared memory
+2. Memory is passed to agents via context
+3. Agents automatically query shared memory when processing input
+4. Relevant context is injected into prompts
+
+### Basic Shared Memory
+
+```go
+package main
+
+import (
+    "context"
+    "log"
+    "time"
+    
+    _ "github.com/agenticgokit/agenticgokit/plugins/memory/chromem"
+    "github.com/agenticgokit/agenticgokit/v1beta"
+)
+
+func main() {
+    // Create shared memory
+    sharedMemory, _ := v1beta.NewMemory(&v1beta.MemoryConfig{
+        Enabled:  true,
+        Provider: "chromem",
+    })
+    
+    // Create agents
+    learner, _ := v1beta.NewChatAgent("Learner", v1beta.WithLLM("openai", "gpt-4"))
+    answerer, _ := v1beta.NewChatAgent("Answerer", v1beta.WithLLM("openai", "gpt-4"))
+    
+    // Create workflow
+    workflow, _ := v1beta.NewSequentialWorkflow(&v1beta.WorkflowConfig{
+        Mode:    v1beta.Sequential,
+        Timeout: 60 * time.Second,
+    })
+    
+    // Attach shared memory to workflow
+    workflow.SetMemory(sharedMemory)
+    
+    // Add steps
+    workflow.AddStep(v1beta.WorkflowStep{Name: "learn", Agent: learner})
+    workflow.AddStep(v1beta.WorkflowStep{Name: "answer", Agent: answerer})
+    
+    // Agent 1 learns facts, Agent 2 automatically has access via shared memory
+    result, _ := workflow.Run(context.Background(), "Company data...")
+    
+    log.Printf("Result: %s", result.FinalOutput)
+}
+```
+
+### With Custom Question Transform
+
+Pass different input to Agent 2 while maintaining shared memory access:
+
+```go
+workflow.AddStep(v1beta.WorkflowStep{
+    Name:  "learn",
+    Agent: learner,
+})
+
+workflow.AddStep(v1beta.WorkflowStep{
+    Name:  "answer",
+    Agent: answerer,
+    Transform: func(_ string) string {
+        // Agent 2 gets only the question,
+        // but automatically accesses Agent 1's learned facts via shared memory
+        return "What company was founded in 2020?"
+    },
+})
+
+result, _ := workflow.Run(ctx, "Company: TechStart Inc\nFounded: 2020\nFocus: AI tools")
+// Agent 2 will answer "TechStart Inc" using facts from shared memory
+```
+
+### Parallel Workflow with Shared Memory
+
+All agents can access shared knowledge:
+
+```go
+sharedMemory, _ := v1beta.NewMemory(&v1beta.MemoryConfig{
+    Provider: "chromem",
+})
+
+workflow, _ := v1beta.NewParallelWorkflow(&v1beta.WorkflowConfig{
+    Mode:    v1beta.Parallel,
+    Timeout: 90 * time.Second,
+})
+
+workflow.SetMemory(sharedMemory)
+
+// All analysts can access shared research data
+workflow.AddStep(v1beta.WorkflowStep{Name: "financial", Agent: financialAnalyst})
+workflow.AddStep(v1beta.WorkflowStep{Name: "technical", Agent: technicalAnalyst})
+workflow.AddStep(v1beta.WorkflowStep{Name: "market", Agent: marketAnalyst})
+
+result, _ := workflow.Run(ctx, "Analyze TechStart Inc")
+// All analysts query shared memory for relevant context
+```
+
+### DAG Workflow with Shared Memory
+
+Complex dependencies with shared context:
+
+```go
+workflow, _ := v1beta.NewDAGWorkflow(&v1beta.WorkflowConfig{
+    Mode:    v1beta.DAG,
+    Timeout: 120 * time.Second,
+})
+
+workflow.SetMemory(sharedMemory)
+
+// Research agent gathers data
+workflow.AddStep(v1beta.WorkflowStep{
+    Name:  "research",
+    Agent: researcher,
+})
+
+// Both analysis agents depend on research and can access shared memory
+workflow.AddStep(v1beta.WorkflowStep{
+    Name:         "analyze_a",
+    Agent:        analyzerA,
+    Dependencies: []string{"research"},
+})
+
+workflow.AddStep(v1beta.WorkflowStep{
+    Name:         "analyze_b",
+    Agent:        analyzerB,
+    Dependencies: []string{"research"},
+})
+
+// Final synthesis accesses all previous context via shared memory
+workflow.AddStep(v1beta.WorkflowStep{
+    Name:         "synthesize",
+    Agent:        synthesizer,
+    Dependencies: []string{"analyze_a", "analyze_b"},
+})
+```
+
+### Advanced: Direct Memory Access
+
+Agents automatically query workflow memory, but you can also access it directly:
+
+```go
+// In your code
+if workflowMem := v1beta.GetWorkflowMemory(ctx); workflowMem != nil {
+    results, _ := workflowMem.Query(ctx, "company founded in 2020", 
+        v1beta.WithLimit(5),
+        v1beta.WithScoreThreshold(0.3))
+    
+    for _, result := range results {
+        log.Printf("Found: %s (score: %.2f)", result.Content, result.Score)
+    }
+}
+```
+
+### Memory Providers
+
+Choose the right provider for your use case:
+
+**chromem** (default): Embedded vector database
+```go
+sharedMemory, _ := v1beta.NewMemory(&v1beta.MemoryConfig{
+    Provider: "chromem",  // No external dependencies
+})
+```
+
+**pgvector**: PostgreSQL for production
+```go
+sharedMemory, _ := v1beta.NewMemory(&v1beta.MemoryConfig{
+    Provider:   "pgvector",
+    Connection: "postgresql://user:pass@localhost:5432/db",
+})
+```
+
+### When to Use Shared Memory
+
+**Use shared memory when:**
+- Agents need to reference previous steps' outputs
+- Building knowledge progressively across steps
+- Multiple agents collaborate on the same problem
+- Context needs to persist across workflow runs (with persistent providers)
+
+**Skip shared memory when:**
+- Steps are completely independent
+- Each step has all needed context in input
+- Workflow is simple sequential passthrough
 
 ---
 

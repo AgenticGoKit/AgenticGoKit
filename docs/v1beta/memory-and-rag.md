@@ -242,6 +242,83 @@ handler := func(ctx context.Context, input string, caps *v1beta.Capabilities) (s
 
 ---
 
+## Workflow Shared Memory
+
+Enable multiple agents in a workflow to share the same memory store. Agents automatically query workflow memory for relevant context.
+
+### Automatic Context Querying
+
+When a workflow has shared memory, agents automatically receive relevant context:
+
+```go
+import (
+    _ "github.com/agenticgokit/agenticgokit/plugins/memory/chromem"
+    "github.com/agenticgokit/agenticgokit/v1beta"
+)
+
+// Create shared memory
+sharedMemory, _ := v1beta.NewMemory(&v1beta.MemoryConfig{
+    Provider: "chromem",
+})
+
+// Create workflow
+workflow, _ := v1beta.NewSequentialWorkflow(&v1beta.WorkflowConfig{
+    Mode: v1beta.Sequential,
+})
+
+// Attach shared memory - agents will automatically query it
+workflow.SetMemory(sharedMemory)
+
+workflow.AddStep(v1beta.WorkflowStep{Name: "learn", Agent: learner})
+workflow.AddStep(v1beta.WorkflowStep{Name: "answer", Agent: answerer})
+
+// Agent 1 stores facts → Agent 2 automatically queries them
+result, _ := workflow.Run(ctx, "Company data...")
+```
+
+### How It Works
+
+1. Workflow stores step inputs/outputs in shared memory via `SetMemory()`
+2. Memory reference is passed to agents through context
+3. Agents call `GetWorkflowMemory(ctx)` internally
+4. Relevant content is queried and added to prompts automatically
+
+### Direct Access
+
+Access workflow memory directly from custom handlers:
+
+```go
+import "github.com/agenticgokit/agenticgokit/v1beta"
+
+handler := func(ctx context.Context, input string, caps *v1beta.Capabilities) (string, error) {
+    // Check for workflow shared memory
+    if workflowMem := v1beta.GetWorkflowMemory(ctx); workflowMem != nil {
+        results, _ := workflowMem.Query(ctx, input, 
+            v1beta.WithLimit(5),
+            v1beta.WithScoreThreshold(0.3))
+        
+        // Use results to enrich prompt
+        for _, result := range results {
+            // Process shared context
+        }
+    }
+    
+    // Continue with LLM call
+    return caps.LLM("system", input)
+}
+```
+
+### Use Cases
+
+**Multi-agent collaboration:**
+- Research agent gathers data → Analysis agents query shared knowledge
+- Data extraction → Multiple processors access extracted entities
+- Progressive knowledge building across workflow steps
+
+**See [Workflows Guide](./workflows.md#shared-memory) for complete examples.**
+
+---
+
 ## Troubleshooting
 
 - Memory is nil: ensure the provider import is present (`plugins/memory/chromem` or `plugins/memory/pgvector`) and memory is not disabled in config.

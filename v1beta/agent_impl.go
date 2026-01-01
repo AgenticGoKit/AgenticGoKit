@@ -319,6 +319,29 @@ func (a *realAgent) execute(ctx context.Context, input string, opts *RunOptions)
 			Msg("Enhanced prompt with memory context")
 	}
 
+	// Step 2.5: Check for workflow shared memory and enrich prompt with relevant context
+	// This allows agents in a workflow to automatically access shared memory
+	if workflowMem := GetWorkflowMemory(ctx); workflowMem != nil {
+		// Query workflow shared memory for relevant context
+		// Use lower threshold to catch more results
+		results, queryErr := workflowMem.Query(ctx, input, WithLimit(5), WithScoreThreshold(0.1))
+		if queryErr == nil && len(results) > 0 {
+			// Build context from workflow memory results
+			var sharedContext strings.Builder
+			sharedContext.WriteString("\n\n[Shared Workflow Context]\n")
+			for _, result := range results {
+				sharedContext.WriteString(fmt.Sprintf("- %s\n", result.Content))
+			}
+
+			// Append shared context to user prompt
+			prompt.User = prompt.User + sharedContext.String()
+
+			Logger().Debug().
+				Int("shared_memory_results", len(results)).
+				Msg("Enhanced prompt with workflow shared memory")
+		}
+	}
+
 	// Step 3: Call the LLM provider
 	response, err := a.llmProvider.Call(ctx, prompt)
 	if err != nil {
@@ -715,6 +738,19 @@ func (a *realAgent) RunStream(ctx context.Context, input string, opts ...StreamO
 			enrichedPrompt, ragContext, memoryQueries = BuildEnrichedPrompt(ctx, prompt.System, prompt.User, a.memoryProvider, a.config.Memory)
 			prompt.System = enrichedPrompt.System
 			prompt.User = enrichedPrompt.User
+		}
+
+		// Check for workflow shared memory and enrich prompt with relevant context
+		if workflowMem := GetWorkflowMemory(ctx); workflowMem != nil {
+			results, queryErr := workflowMem.Query(ctx, input, WithLimit(5), WithScoreThreshold(0.1))
+			if queryErr == nil && len(results) > 0 {
+				var sharedContext strings.Builder
+				sharedContext.WriteString("\n\n[Shared Workflow Context]\n")
+				for _, result := range results {
+					sharedContext.WriteString(fmt.Sprintf("- %s\n", result.Content))
+				}
+				prompt.User = prompt.User + sharedContext.String()
+			}
 		}
 
 		// Add tool descriptions to system prompt if tools are available
