@@ -80,7 +80,7 @@ func main() {
 export AGK_TRACE=true  # Automatic tracing to .agk/runs/<run-id>/trace.jsonl
 ```
 
-> **Note:** The `agentcli` scaffolding tool is being deprecated and will be replaced by the `agk` CLI in a future release.
+> **Note:** CLI tooling for AgenticGoKit is provided by the [`agk`](https://github.com/agenticgokit/agk) package. Install with: `go install github.com/agenticgokit/agk@latest`
 
 ## Core Capabilities
 
