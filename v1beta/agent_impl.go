@@ -309,6 +309,14 @@ func (a *realAgent) execute(ctx context.Context, input string, opts *RunOptions)
 		User:   input,
 	}
 
+	// Capture prompt content at detailed trace level for evaluation/debugging
+	if observability.IsDetailedTracing() {
+		span.SetAttributes(
+			attribute.String(observability.AttrPromptUser, observability.TruncateForTrace(input, observability.MaxContentLength)),
+			attribute.String(observability.AttrPromptSystem, observability.TruncateForTrace(a.config.SystemPrompt, observability.MaxContentLength)),
+		)
+	}
+
 	// Add multimodal data if present in opts
 	addMultimodalDataToPrompt(&prompt, opts)
 
@@ -400,6 +408,13 @@ func (a *realAgent) execute(ctx context.Context, input string, opts *RunOptions)
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		return nil, fmt.Errorf("LLM call failed: %w", err)
+	}
+
+	// Capture LLM response at detailed trace level for evaluation/debugging
+	if observability.IsDetailedTracing() {
+		span.SetAttributes(
+			attribute.String(observability.AttrLLMResponse, observability.TruncateForTrace(response.Content, observability.MaxContentLength)),
+		)
 	}
 
 	// Step 3.5: Execute tool calls if any are detected in the response (native or text)
@@ -852,6 +867,14 @@ func (a *realAgent) RunStream(ctx context.Context, input string, opts ...StreamO
 			},
 		}
 
+		// Capture prompt content at detailed trace level for evaluation/debugging
+		if observability.IsDetailedTracing() {
+			span.SetAttributes(
+				attribute.String(observability.AttrPromptUser, observability.TruncateForTrace(input, observability.MaxContentLength)),
+				attribute.String(observability.AttrPromptSystem, observability.TruncateForTrace(a.config.SystemPrompt, observability.MaxContentLength)),
+			)
+		}
+
 		// Add memory context if available
 		memoryQueries := 0
 		var ragContext *RAGContext
@@ -925,6 +948,13 @@ func (a *realAgent) RunStream(ctx context.Context, input string, opts ...StreamO
 
 		finalContent := contentBuilder.String()
 		duration := time.Since(startTime)
+
+		// Capture LLM response at detailed trace level for evaluation/debugging
+		if observability.IsDetailedTracing() {
+			span.SetAttributes(
+				attribute.String(observability.AttrLLMResponse, observability.TruncateForTrace(finalContent, observability.MaxContentLength)),
+			)
+		}
 
 		// Create final result
 		finalResult := &Result{
@@ -1408,15 +1438,23 @@ func (a *realAgent) executeTool(ctx context.Context, toolCall ToolCall) ToolCall
 		defer span.End()
 	}
 
-	// Record input size
+	// Record input size and serialize arguments for tracing
 	inputSize := 0
+	var jsonBytes []byte
 	if toolCall.Arguments != nil {
-		if jsonBytes, err := json.Marshal(toolCall.Arguments); err == nil {
+		if bytes, err := json.Marshal(toolCall.Arguments); err == nil {
+			jsonBytes = bytes
 			inputSize = len(jsonBytes)
 		}
 	}
 	if span != nil {
 		span.SetAttributes(attribute.Int("agk.tool.input_bytes", inputSize))
+		// Capture tool arguments at detailed trace level for evaluation/debugging
+		if observability.IsDetailedTracing() && len(jsonBytes) > 0 {
+			span.SetAttributes(
+				attribute.String(observability.AttrToolArguments, observability.TruncateForTrace(string(jsonBytes), observability.MaxContentLength)),
+			)
+		}
 	}
 
 	// Execute the tool
@@ -1474,6 +1512,13 @@ func (a *realAgent) executeTool(ctx context.Context, toolCall ToolCall) ToolCall
 			attribute.Int("agk.tool.output_bytes", outputSize),
 			attribute.Bool("agk.tool.success", toolCall.Success),
 		)
+		// Capture tool result at detailed trace level for evaluation/debugging
+		if observability.IsDetailedTracing() && toolCall.Result != nil {
+			resultStr := fmt.Sprintf("%v", toolCall.Result)
+			span.SetAttributes(
+				attribute.String(observability.AttrToolResult, observability.TruncateForTrace(resultStr, observability.MaxContentLength)),
+			)
+		}
 	}
 
 	return toolCall
