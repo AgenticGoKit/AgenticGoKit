@@ -210,6 +210,12 @@ type PublicLLMProviderConfig struct {
 	MLFlowTopP             float64           `json:"mlflow_top_p,omitempty" toml:"mlflow_top_p,omitempty"`
 	MLFlowStop             []string          `json:"mlflow_stop,omitempty" toml:"mlflow_stop,omitempty"`
 
+	// Anthropic-specific fields
+	AnthropicTopP       float64  `json:"anthropic_top_p,omitempty" toml:"anthropic_top_p,omitempty"`
+	AnthropicTopK       int      `json:"anthropic_top_k,omitempty" toml:"anthropic_top_k,omitempty"`
+	AnthropicStop       []string `json:"anthropic_stop,omitempty" toml:"anthropic_stop,omitempty"`
+	AnthropicAPIVersion string   `json:"anthropic_api_version,omitempty" toml:"anthropic_api_version,omitempty"`
+
 	// HTTP client configuration
 	HTTPTimeout time.Duration `json:"http_timeout,omitempty" toml:"http_timeout,omitempty"`
 }
@@ -340,6 +346,26 @@ func NewBentoMLAdapterWrapped(config BentoMLConfig) (PublicModelProvider, error)
 	return NewModelProviderWrapper(adapter), nil
 }
 
+// NewAnthropicAdapterWrapped creates a wrapped Anthropic adapter
+func NewAnthropicAdapterWrapped(apiKey, model string, maxTokens int, temperature float32) (PublicModelProvider, error) {
+	adapter, err := NewAnthropicAdapter(apiKey, model, maxTokens, temperature)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewModelProviderWrapper(adapter), nil
+}
+
+// NewAnthropicAdapterWithConfigWrapped creates a wrapped Anthropic adapter with extended config
+func NewAnthropicAdapterWithConfigWrapped(config AnthropicAdapterConfig) (PublicModelProvider, error) {
+	adapter, err := NewAnthropicAdapterWithConfig(config)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewModelProviderWrapper(adapter), nil
+}
+
 func NewModelProviderFromConfigWrapped(config PublicLLMProviderConfig) (PublicModelProvider, error) {
 	internalConfig := ProviderConfig{
 		Type:                ProviderType(config.Type),
@@ -385,6 +411,11 @@ func NewModelProviderFromConfigWrapped(config PublicLLMProviderConfig) (PublicMo
 		MLFlowRetryDelay:       config.MLFlowRetryDelay,
 		MLFlowTopP:             float32(config.MLFlowTopP),
 		MLFlowStop:             config.MLFlowStop,
+		// Anthropic fields
+		AnthropicTopP:       float32(config.AnthropicTopP),
+		AnthropicTopK:       config.AnthropicTopK,
+		AnthropicStop:       config.AnthropicStop,
+		AnthropicAPIVersion: config.AnthropicAPIVersion,
 	}
 
 	adapter, err := CreateProviderFromConfig(internalConfig)

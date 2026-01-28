@@ -19,6 +19,7 @@ const (
 	ProviderTypeVLLM          ProviderType = "vllm"
 	ProviderTypeMLFlowGateway ProviderType = "mlflow"
 	ProviderTypeBentoML       ProviderType = "bentoml"
+	ProviderTypeAnthropic     ProviderType = "anthropic"
 	// Test-only/mock provider for unit tests
 	ProviderTypeMock ProviderType = "mock"
 )
@@ -90,6 +91,12 @@ type ProviderConfig struct {
 	BentoMLMaxRetries       int               `json:"bentoml_max_retries,omitempty" toml:"bentoml_max_retries,omitempty"`
 	BentoMLRetryDelay       time.Duration     `json:"bentoml_retry_delay,omitempty" toml:"bentoml_retry_delay,omitempty"`
 
+	// Anthropic-specific fields
+	AnthropicTopP       float32  `json:"anthropic_top_p,omitempty" toml:"anthropic_top_p,omitempty"`
+	AnthropicTopK       int      `json:"anthropic_top_k,omitempty" toml:"anthropic_top_k,omitempty"`
+	AnthropicStop       []string `json:"anthropic_stop,omitempty" toml:"anthropic_stop,omitempty"`
+	AnthropicAPIVersion string   `json:"anthropic_api_version,omitempty" toml:"anthropic_api_version,omitempty"`
+
 	// HTTP client configuration
 	HTTPTimeout time.Duration `json:"http_timeout,omitempty" toml:"http_timeout,omitempty"`
 }
@@ -141,6 +148,8 @@ func (f *ProviderFactory) CreateProvider(config ProviderConfig) (ModelProvider, 
 		return f.createMLFlowGatewayProvider(config)
 	case ProviderTypeBentoML:
 		return f.createBentoMLProvider(config)
+	case ProviderTypeAnthropic:
+		return f.createAnthropicProvider(config)
 	case ProviderTypeMock:
 		return f.createMockProvider(config)
 	default:
@@ -371,6 +380,33 @@ func (f *ProviderFactory) createBentoMLProvider(config ProviderConfig) (ModelPro
 	}
 
 	return NewBentoMLAdapter(bentomlConfig)
+}
+
+// createAnthropicProvider creates an Anthropic Claude provider
+func (f *ProviderFactory) createAnthropicProvider(config ProviderConfig) (ModelProvider, error) {
+	if config.APIKey == "" {
+		return nil, fmt.Errorf("API key is required for Anthropic provider")
+	}
+
+	model := config.Model
+	if model == "" {
+		model = "claude-sonnet-4-20250514" // Default model
+	}
+
+	anthropicConfig := AnthropicAdapterConfig{
+		APIKey:      config.APIKey,
+		Model:       model,
+		MaxTokens:   config.MaxTokens,
+		Temperature: config.Temperature,
+		BaseURL:     config.BaseURL,
+		APIVersion:  config.AnthropicAPIVersion,
+		TopP:        config.AnthropicTopP,
+		TopK:        config.AnthropicTopK,
+		Stop:        config.AnthropicStop,
+		HTTPTimeout: config.HTTPTimeout,
+	}
+
+	return NewAnthropicAdapterWithConfig(anthropicConfig)
 }
 
 // DefaultFactory is a global factory instance for convenience
