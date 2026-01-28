@@ -29,13 +29,20 @@ func createLLMProvider(config LLMConfig) (llm.ModelProvider, error) {
 	providerType := llm.ProviderType(strings.ToLower(strings.TrimSpace(config.Provider)))
 
 	llmConfig := llm.ProviderConfig{
-		Type:        providerType,
-		APIKey:      config.APIKey,
-		Model:       config.Model,
-		MaxTokens:   config.MaxTokens,
-		Temperature: config.Temperature,
-		BaseURL:     config.BaseURL,
-		Endpoint:    config.BaseURL, // For Azure
+		Type:                providerType,
+		APIKey:              config.APIKey,
+		Model:               config.Model,
+		MaxTokens:           config.MaxTokens,
+		Temperature:         config.Temperature,
+		BaseURL:             config.BaseURL,
+		Endpoint:            config.Endpoint,            // For Azure
+		ChatDeployment:      config.ChatDeployment,      // For Azure
+		EmbeddingDeployment: config.EmbeddingDeployment, // For Azure
+		APIVersion:          config.APIVersion,          // For Azure
+	}
+
+	if llmConfig.Type == llm.ProviderTypeAzureOpenAI && llmConfig.Endpoint == "" && llmConfig.BaseURL != "" {
+		llmConfig.Endpoint = llmConfig.BaseURL
 	}
 
 	// Use the internal/llm factory to create the provider

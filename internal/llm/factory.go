@@ -36,6 +36,7 @@ type ProviderConfig struct {
 	Endpoint            string `json:"endpoint,omitempty" toml:"endpoint,omitempty"`
 	ChatDeployment      string `json:"chat_deployment,omitempty" toml:"chat_deployment,omitempty"`
 	EmbeddingDeployment string `json:"embedding_deployment,omitempty" toml:"embedding_deployment,omitempty"`
+	APIVersion          string `json:"api_version,omitempty" toml:"api_version,omitempty"`
 
 	// Ollama-specific fields
 	BaseURL string `json:"base_url,omitempty" toml:"base_url,omitempty"`
@@ -190,6 +191,7 @@ func (f *ProviderFactory) createAzureProvider(config ProviderConfig) (ModelProvi
 		ChatDeployment:      config.ChatDeployment,
 		EmbeddingDeployment: config.EmbeddingDeployment,
 		HTTPClient:          f.httpClient,
+		APIVersion:          config.APIVersion,
 	}
 
 	return NewAzureOpenAIAdapter(options)

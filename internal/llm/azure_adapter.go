@@ -21,10 +21,10 @@ import (
 
 // --- API Specific Structs ---
 
-const (
-	// Define a specific API version to use
-	azureAPIVersion = "2024-02-15-preview" // Or choose another appropriate version
-)
+// const (
+// 	// Define a specific API version to use
+// 	azureAPIVersion = "2024-02-15-preview" // Or choose another appropriate version
+// )
 
 // Structure for chat messages sent to the API
 type azureChatMessage struct {
@@ -111,6 +111,7 @@ type AzureOpenAIAdapter struct {
 	apiKey              string
 	chatDeployment      string // Deployment name for chat models
 	embeddingDeployment string // Deployment name for embedding models
+	azureAPIVersion     string
 }
 
 // AzureOpenAIAdapterOptions holds configuration options for the AzureOpenAIAdapter.
@@ -120,12 +121,16 @@ type AzureOpenAIAdapterOptions struct {
 	ChatDeployment      string       // Deployment name for chat models
 	EmbeddingDeployment string       // Deployment name for embedding models
 	HTTPClient          *http.Client // Optional: Provide a custom client
+	APIVersion          string       // API version to use
 }
 
 // NewAzureOpenAIAdapter creates a new adapter for Azure OpenAI using direct HTTP calls.
 func NewAzureOpenAIAdapter(opts AzureOpenAIAdapterOptions) (*AzureOpenAIAdapter, error) {
 	if opts.Endpoint == "" || opts.APIKey == "" || opts.ChatDeployment == "" || opts.EmbeddingDeployment == "" {
 		return nil, errors.New("azure adapter requires endpoint, api key, chat deployment, and embedding deployment")
+	}
+	if opts.APIVersion == "" {
+		opts.APIVersion = "2024-02-15-preview"
 	}
 
 	// Ensure endpoint doesn't have trailing slash for easier URL joining
@@ -142,11 +147,12 @@ func NewAzureOpenAIAdapter(opts AzureOpenAIAdapterOptions) (*AzureOpenAIAdapter,
 		apiKey:              opts.APIKey,
 		chatDeployment:      opts.ChatDeployment,
 		embeddingDeployment: opts.EmbeddingDeployment,
+		azureAPIVersion:     opts.APIVersion,
 	}, nil
 }
 
 // Helper to build the full API URL
-func (a *AzureOpenAIAdapter) buildURL(deploymentName, pathSegment string) string {
+func (a *AzureOpenAIAdapter) buildURL(deploymentName, azureAPIVersion, pathSegment string) string {
 	// Example: https://{endpoint}/openai/deployments/{deployment}/chat/completions?api-version={version}
 	return fmt.Sprintf("%s/openai/deployments/%s/%s?api-version=%s",
 		a.endpointBaseURL, deploymentName, pathSegment, azureAPIVersion)
@@ -257,7 +263,7 @@ func (a *AzureOpenAIAdapter) Call(ctx context.Context, prompt Prompt) (Response,
 		MaxTokens:   prompt.Parameters.MaxTokens,
 	}
 
-	url := a.buildURL(a.chatDeployment, "chat/completions")
+	url := a.buildURL(a.chatDeployment, a.azureAPIVersion, "chat/completions")
 	httpResp, err := a.doRequest(ctx, http.MethodPost, url, apiReq)
 	if err != nil {
 		span.RecordError(err)
@@ -370,7 +376,7 @@ func (a *AzureOpenAIAdapter) Stream(ctx context.Context, prompt Prompt) (<-chan 
 		MaxTokens:   prompt.Parameters.MaxTokens,
 	}
 
-	url := a.buildURL(a.chatDeployment, "chat/completions")
+	url := a.buildURL(a.chatDeployment, a.azureAPIVersion, "chat/completions")
 	httpResp, err := a.doRequest(ctx, http.MethodPost, url, apiReq)
 	if err != nil {
 		span.RecordError(err)
@@ -481,7 +487,7 @@ func (a *AzureOpenAIAdapter) Embeddings(ctx context.Context, texts []string) ([]
 		Input: texts,
 	}
 
-	url := a.buildURL(a.embeddingDeployment, "embeddings")
+	url := a.buildURL(a.embeddingDeployment, a.azureAPIVersion, "embeddings")
 	httpResp, err := a.doRequest(ctx, http.MethodPost, url, apiReq)
 	if err != nil {
 		return nil, err
