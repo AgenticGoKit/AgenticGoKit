@@ -111,7 +111,7 @@ type AzureOpenAIAdapter struct {
 	apiKey              string
 	chatDeployment      string // Deployment name for chat models
 	embeddingDeployment string // Deployment name for embedding models
-	azureAPIVersion     string
+	apiVersion          string
 }
 
 // AzureOpenAIAdapterOptions holds configuration options for the AzureOpenAIAdapter.
@@ -147,15 +147,15 @@ func NewAzureOpenAIAdapter(opts AzureOpenAIAdapterOptions) (*AzureOpenAIAdapter,
 		apiKey:              opts.APIKey,
 		chatDeployment:      opts.ChatDeployment,
 		embeddingDeployment: opts.EmbeddingDeployment,
-		azureAPIVersion:     opts.APIVersion,
+		apiVersion:          opts.APIVersion,
 	}, nil
 }
 
 // Helper to build the full API URL
-func (a *AzureOpenAIAdapter) buildURL(deploymentName, azureAPIVersion, pathSegment string) string {
+func (a *AzureOpenAIAdapter) buildURL(deploymentName, apiVersion, pathSegment string) string {
 	// Example: https://{endpoint}/openai/deployments/{deployment}/chat/completions?api-version={version}
 	return fmt.Sprintf("%s/openai/deployments/%s/%s?api-version=%s",
-		a.endpointBaseURL, deploymentName, pathSegment, azureAPIVersion)
+		a.endpointBaseURL, deploymentName, pathSegment, apiVersion)
 }
 
 // Helper to execute HTTP requests
@@ -263,7 +263,7 @@ func (a *AzureOpenAIAdapter) Call(ctx context.Context, prompt Prompt) (Response,
 		MaxTokens:   prompt.Parameters.MaxTokens,
 	}
 
-	url := a.buildURL(a.chatDeployment, a.azureAPIVersion, "chat/completions")
+	url := a.buildURL(a.chatDeployment, a.apiVersion, "chat/completions")
 	httpResp, err := a.doRequest(ctx, http.MethodPost, url, apiReq)
 	if err != nil {
 		span.RecordError(err)
@@ -376,7 +376,7 @@ func (a *AzureOpenAIAdapter) Stream(ctx context.Context, prompt Prompt) (<-chan 
 		MaxTokens:   prompt.Parameters.MaxTokens,
 	}
 
-	url := a.buildURL(a.chatDeployment, a.azureAPIVersion, "chat/completions")
+	url := a.buildURL(a.chatDeployment, a.apiVersion, "chat/completions")
 	httpResp, err := a.doRequest(ctx, http.MethodPost, url, apiReq)
 	if err != nil {
 		span.RecordError(err)
@@ -487,7 +487,7 @@ func (a *AzureOpenAIAdapter) Embeddings(ctx context.Context, texts []string) ([]
 		Input: texts,
 	}
 
-	url := a.buildURL(a.embeddingDeployment, a.azureAPIVersion, "embeddings")
+	url := a.buildURL(a.embeddingDeployment, a.apiVersion, "embeddings")
 	httpResp, err := a.doRequest(ctx, http.MethodPost, url, apiReq)
 	if err != nil {
 		return nil, err
