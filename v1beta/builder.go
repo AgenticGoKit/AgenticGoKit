@@ -77,12 +77,22 @@ func WithLLM(provider, model string) Option {
 // WithLLMConfig configures the complete LLM settings
 func WithLLMConfig(provider, model string, temperature float64, maxTokens int) Option {
 	return func(c *Config) {
-		c.LLM = LLMConfig{
-			Provider:    provider,
-			Model:       model,
-			Temperature: float32(temperature),
-			MaxTokens:   maxTokens,
-		}
+		c.LLM.Provider = provider
+		c.LLM.Model = model
+		c.LLM.Temperature = float32(temperature)
+		c.LLM.MaxTokens = maxTokens
+	}
+}
+
+// WithAzureConfig configures the Azure OpenAI settings
+func WithAzureConfig(endpoint, apiKey, chatDeployment, embeddingDeployment, apiVersion string) Option {
+	return func(c *Config) {
+		c.LLM.Provider = "azure"
+		c.LLM.Endpoint = endpoint
+		c.LLM.APIKey = apiKey
+		c.LLM.ChatDeployment = chatDeployment
+		c.LLM.EmbeddingDeployment = embeddingDeployment
+		c.LLM.APIVersion = apiVersion
 	}
 }
 

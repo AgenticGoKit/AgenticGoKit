@@ -45,15 +45,15 @@ type LLMConfig struct {
 	APIKey      string  `toml:"api_key,omitempty"`   // API key (prefer env vars)
 	SiteURL     string  `toml:"site_url,omitempty"`  // OpenRouter: Site URL for rankings
 	SiteName    string  `toml:"site_name,omitempty"` // OpenRouter: Site name for analytics
-	// New fields for multimodal support
-	Modalities  []string `toml:"modalities,omitempty"`   // Supported modalities (text, image, audio, video)
-	OutputTypes []string `toml:"output_types,omitempty"` // Desired output types
-
 	// Azure specific fields
 	Endpoint            string `toml:"endpoint,omitempty"`
 	ChatDeployment      string `toml:"chat_deployment,omitempty"`
 	EmbeddingDeployment string `toml:"embedding_deployment,omitempty"`
 	APIVersion          string `toml:"api_version,omitempty"`
+	// New fields for multimodal support
+	Modalities  []string `toml:"modalities,omitempty"`   // Supported modalities (text, image, audio, video)
+	OutputTypes []string `toml:"output_types,omitempty"` // Desired output types
+
 }
 
 // MemoryConfig contains memory and RAG configuration
@@ -488,6 +488,11 @@ func (pcr *ProjectConfigResolver) ResolveConfig() *ProjectConfig {
 		agent.LLM.Model = pcr.resolveString(agent.LLM.Model)
 		agent.LLM.BaseURL = pcr.resolveString(agent.LLM.BaseURL)
 		agent.LLM.APIKey = pcr.resolveString(agent.LLM.APIKey)
+		// Azure specific fields
+		agent.LLM.Endpoint = pcr.resolveString(agent.LLM.Endpoint)
+		agent.LLM.ChatDeployment = pcr.resolveString(agent.LLM.ChatDeployment)
+		agent.LLM.EmbeddingDeployment = pcr.resolveString(agent.LLM.EmbeddingDeployment)
+		agent.LLM.APIVersion = pcr.resolveString(agent.LLM.APIVersion)
 
 		// Resolve agent-specific memory config if present
 		if agent.Memory != nil {
