@@ -540,31 +540,31 @@ type basicRunner struct {
 }
 
 func (r *basicRunner) Emit(event Event) error {
-	Logger().Warn().Msg("Using basic runner - import internal/factory for full functionality")
+	Logger().Warn().Msg("Using basic runner - full runner implementation not registered")
 	return nil
 }
 
 func (r *basicRunner) RegisterAgent(name string, handler AgentHandler) error {
-	Logger().Warn().Msg("Using basic runner - import internal/factory for full functionality")
+	Logger().Warn().Msg("Using basic runner - full runner implementation not registered")
 	return nil
 }
 
 func (r *basicRunner) RegisterCallback(hook HookPoint, name string, cb CallbackFunc) error {
-	Logger().Warn().Msg("Using basic runner - import internal/factory for full functionality")
+	Logger().Warn().Msg("Using basic runner - full runner implementation not registered")
 	return nil
 }
 
 func (r *basicRunner) UnregisterCallback(hook HookPoint, name string) {
-	Logger().Warn().Msg("Using basic runner - import internal/factory for full functionality")
+	Logger().Warn().Msg("Using basic runner - full runner implementation not registered")
 }
 
 func (r *basicRunner) Start(ctx context.Context) error {
-	Logger().Warn().Msg("Using basic runner - import internal/factory for full functionality")
+	Logger().Warn().Msg("Using basic runner - full runner implementation not registered")
 	return nil
 }
 
 func (r *basicRunner) Stop() {
-	Logger().Warn().Msg("Using basic runner - import internal/factory for full functionality")
+	Logger().Warn().Msg("Using basic runner - full runner implementation not registered")
 }
 
 func (r *basicRunner) GetCallbackRegistry() *CallbackRegistry {
@@ -572,12 +572,12 @@ func (r *basicRunner) GetCallbackRegistry() *CallbackRegistry {
 }
 
 func (r *basicRunner) GetTraceLogger() TraceLogger {
-	Logger().Warn().Msg("Using basic runner - import internal/factory for full functionality")
+	Logger().Warn().Msg("Using basic runner - full runner implementation not registered")
 	return &basicTraceLogger{}
 }
 
 func (r *basicRunner) DumpTrace(sessionID string) ([]TraceEntry, error) {
-	Logger().Warn().Msg("Using basic runner - import internal/factory for full functionality")
+	Logger().Warn().Msg("Using basic runner - full runner implementation not registered")
 	return []TraceEntry{}, nil
 }
 
