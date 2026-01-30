@@ -2,7 +2,7 @@
 
 The v1beta API is an advanced, comprehensive agent framework that provides flexible and powerful capabilities for building custom AI agents. It offers streamlined APIs, real-time streaming, multi-agent workflows, and comprehensive tooling support.
 
-## 🚀 Quick Start
+## Quick Start
 
 ```go
 package main
@@ -32,7 +32,7 @@ func main() {
 }
 ```
 
-## 📋 Table of Contents
+## Table of Contents
 
 - [Features](#features)
 - [Installation](#installation)
@@ -45,51 +45,51 @@ func main() {
 - [Performance](#performance)
 - [Testing](#testing)
 
-## ✨ Features
+## Features
 
-### 🎯 Streamlined API
+### Streamlined API
 - **8 core methods** (reduced from 30+)
 - **Unified RunOptions** for all execution modes
 - **Preset builders** for common agent types
 - **Functional options** pattern for clean configuration
 
-### ⚡ Real-Time Streaming
+### Real-Time Streaming
 - **8 chunk types**: Text, Delta, Thought, ToolCall, ToolResult, Metadata, Error, Done
 - **Multiple patterns**: Channel-based, callback-based, io.Reader
 - **Configurable buffering** and flush intervals
 - **Full lifecycle control** with cancellation support
 
-### 🔄 Multi-Agent Workflows
-- **4 workflow modes**: Sequential, Parallel, DAG, Loop
+### Multi-Agent Workflows
+- **4 workflow modes**: Sequential, Parallel, DAG, Loop, and **SubWorkflows**
 - **Step-by-step streaming** with progress tracking
 - **Context sharing** between agents
 - **Error handling** and recovery
 
-### 🛠️ Comprehensive Tooling
+### Comprehensive Tooling
 - **Tool registration** and discovery
 - **MCP integration** for Model Context Protocol
 - **Caching** and rate limiting
 - **Timeout** and retry handling
 
-### 💾 Memory & RAG
+### Memory & RAG
 - **Multiple backends**: In-memory, PostgreSQL (pgvector), Weaviate
 - **RAG support** with configurable weights
 - **Session management** and history tracking
 - **Context augmentation** for handlers
 
-### 🎛️ Flexible Configuration
+### Flexible Configuration
 - **TOML-based** configuration files
 - **Environment variables** support
 - **Functional options** for programmatic config
 - **Validation** and defaults
 
-## 📦 Installation
+## Installation
 
 ```bash
 go get github.com/agenticgokit/agenticgokit/v1beta
 ```
 
-## 🎓 Core Concepts
+## Core Concepts
 
 ### 1. Custom Handler Functions
 
@@ -143,7 +143,7 @@ enhancedHandler := func(ctx context.Context, query string, capabilities *v1beta.
 
 The `AgentMiddleware` interface provides `BeforeRun`/`AfterRun` hooks. Middleware registration hooks are not exposed on the streamlined builder; for cross-cutting logic today, wrap your own `WithHandler` or compose at the workflow layer.
 
-## 🌊 Streaming
+## Streaming
 
 Real-time streaming for responsive UIs and long-running operations:
 
@@ -196,7 +196,7 @@ result, err := stream.Wait()
 
 **[📖 Complete Streaming Guide →](../docs/v1beta/streaming.md)**
 
-## 🔄 Workflows
+## Workflows
 
 Build multi-agent systems with different execution patterns:
 
@@ -289,7 +289,7 @@ for chunk := range stream.Chunks() {
 }
 ```
 
-## ⚙️ Configuration
+## Configuration
 
 ### Programmatic Configuration
 
@@ -346,14 +346,14 @@ agent, err := v1beta.NewBuilder(cfg.Name).
     Build()
 ```
 
-## 📚 Documentation
+## Documentation
 
 - **[Streaming Guide](../docs/v1beta/streaming.md)** - Complete streaming documentation with examples
 - **[Migration Guide](../docs/v1beta/migration-from-core.md)** - Migrating from older APIs
 - **[Troubleshooting Guide](../docs/v1beta/troubleshooting.md)** - Common issues and solutions
 - **[API Reference](https://pkg.go.dev/github.com/agenticgokit/agenticgokit/v1beta)** - Go package documentation
 
-## 💡 Examples
+## Examples
 
 Complete working examples in the `examples/` directory:
 
@@ -373,7 +373,7 @@ Complete working examples in the `examples/` directory:
 - `examples/mcp-integration/` - MCP protocol integration
 - `examples/conversation-memory-demo/` - Memory management
 
-## 🎯 Core API Reference
+## Core API Reference
 
 ### Agent Interface
 
@@ -426,7 +426,7 @@ type Stream interface {
 - Convenience constructors: `NewChatAgent`, `NewResearchAgent`, `NewDataAgent`, `NewWorkflowAgent`
 - Generic builder + preset: `NewBuilder(name).WithPreset(v1beta.ChatAgent /* or ResearchAgent, DataAgent, WorkflowAgent */)`
 
-## 🚀 Performance
+## Performance
 
 ### Benchmarks
 
@@ -471,7 +471,7 @@ type Stream interface {
 
 **[📖 Performance Optimization Guide →](STREAMING_GUIDE.md#performance-considerations)**
 
-## 🧪 Testing
+## Testing
 
 Run the test suite:
 

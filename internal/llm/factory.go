@@ -4,6 +4,7 @@ package llm
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -161,6 +162,9 @@ func (f *ProviderFactory) CreateProvider(config ProviderConfig) (ModelProvider, 
 // createOpenAIProvider creates an OpenAI provider
 func (f *ProviderFactory) createOpenAIProvider(config ProviderConfig) (ModelProvider, error) {
 	if config.APIKey == "" {
+		config.APIKey = os.Getenv("OPENAI_API_KEY")
+	}
+	if config.APIKey == "" {
 		return nil, fmt.Errorf("API key is required for OpenAI provider")
 	}
 	if config.Model == "" {
@@ -172,6 +176,17 @@ func (f *ProviderFactory) createOpenAIProvider(config ProviderConfig) (ModelProv
 
 // createAzureProvider creates an Azure OpenAI provider
 func (f *ProviderFactory) createAzureProvider(config ProviderConfig) (ModelProvider, error) {
+	if config.APIKey == "" {
+		config.APIKey = os.Getenv("AZURE_OPENAI_API_KEY")
+	}
+	if config.Endpoint == "" {
+		config.Endpoint = os.Getenv("AZURE_OPENAI_ENDPOINT")
+	}
+	if config.ChatDeployment == "" {
+		config.ChatDeployment = os.Getenv("AZURE_OPENAI_DEPLOYMENT_NAME")
+	}
+	// Embedding deployment doesn't have a standard env var, leaving as required if not in config
+
 	if config.APIKey == "" {
 		return nil, fmt.Errorf("API key is required for Azure OpenAI provider")
 	}
@@ -215,6 +230,9 @@ func (f *ProviderFactory) createOllamaProvider(config ProviderConfig) (ModelProv
 // createOpenRouterProvider creates an OpenRouter provider
 func (f *ProviderFactory) createOpenRouterProvider(config ProviderConfig) (ModelProvider, error) {
 	if config.APIKey == "" {
+		config.APIKey = os.Getenv("OPENROUTER_API_KEY")
+	}
+	if config.APIKey == "" {
 		return nil, fmt.Errorf("API key is required for OpenRouter provider")
 	}
 
@@ -245,6 +263,10 @@ func (f *ProviderFactory) createHuggingFaceProvider(config ProviderConfig) (Mode
 	apiType := HFAPIType(config.HFAPIType)
 	if apiType == "" {
 		apiType = HFAPITypeInference
+	}
+
+	if apiType != HFAPITypeTGI && config.APIKey == "" {
+		config.APIKey = os.Getenv("HUGGINGFACE_API_KEY")
 	}
 
 	if apiType != HFAPITypeTGI && config.APIKey == "" {
@@ -386,6 +408,9 @@ func (f *ProviderFactory) createBentoMLProvider(config ProviderConfig) (ModelPro
 
 // createAnthropicProvider creates an Anthropic Claude provider
 func (f *ProviderFactory) createAnthropicProvider(config ProviderConfig) (ModelProvider, error) {
+	if config.APIKey == "" {
+		config.APIKey = os.Getenv("ANTHROPIC_API_KEY")
+	}
 	if config.APIKey == "" {
 		return nil, fmt.Errorf("API key is required for Anthropic provider")
 	}

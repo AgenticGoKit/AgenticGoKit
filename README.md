@@ -86,27 +86,30 @@ export AGK_TRACE=true  # Automatic tracing to .agk/runs/<run-id>/trace.jsonl
 
 AgenticGoKit handles the complexities of building AI systems so you can focus on logic.
 
-### 🔄 [Workflow Orchestration](docs/v1beta/workflows.md)
+### [Workflow Orchestration](docs/v1beta/workflows.md)
 Orchestrate multiple agents using robust patterns. Pass data between agents, handle errors, and manage state automatically.
-- **Patterns**: Sequential, Parallel, DAG, Loop.
+- **Patterns**: Sequential, Parallel, DAG, Loop, and **SubWorkflows**.
+- **Visuals**: Auto-generate [Mermaid diagrams](docs/v1beta/observability.md#visualizing-workflows) for your flows.
 - **Example**: [Sequential Workflow Demo](examples/sequential-workflow-demo/)
 
-### ⚡ [Real-time Streaming](docs/v1beta/streaming.md)
+### [Real-time Streaming](docs/v1beta/streaming.md)
 Built from the ground up for streaming. Receive tokens and tool updates as they happen, suitable for real-time UI experiences.
 - **Example**: [Streaming Workflow](examples/streaming_workflow/)
 
-### 🧠 [Memory & RAG](docs/v1beta/memory-and-rag.md)
+### [Memory & RAG](docs/v1beta/memory-and-rag.md)
 **Batteries Included**: Agents come with valid memory out-of-the-box (`chromem` embedded vector DB).
 - **Features**: Chat history preservation, semantic search, and document ingestion.
 - **Configurable**: Swap the default with `pgvector` or custom providers easily.
 
-### 👁️ [Multimodal Input](docs/v1beta/README.md#multimodal-capabilities)
+### [Multimodal Input](docs/v1beta/README.md#multimodal-capabilities)
 Native support for Images, Audio, and Video inputs. Works seamlessly with models like GPT-4 Vision, Gemini Pro Vision, etc.
 
-### 🛠️ [Tool Integration](docs/v1beta/tool-integration.md)
-Extend agents with tools using standard Go functions or the **Model Context Protocol (MCP)** for standardized tool discovery.
+### [Tool Integration & MCP](docs/v1beta/tool-integration.md)
+Extend agents with tools using standard Go functions or the **Model Context Protocol (MCP)**.
+- **Dynamic Discovery**: Automatically find and register tools from MCP servers.
+- **Standardized**: Support for the emerging standard for LLM tool interoperability.
 
-### 👁️ [Observability & Tracing](docs/v1beta/observability.md)
+### [Observability & Tracing](docs/v1beta/observability.md)
 **Production-Ready**: Built-in distributed tracing with zero configuration required.
 - **Features**: OpenTelemetry integration, workflow trace hierarchies, OTLP/Jaeger support.
 - **Exporters**: Console, file, and OTLP for complete visibility into agent execution.
@@ -130,13 +133,13 @@ AgenticGoKit works with all major LLM providers out of the box:
 
 ## Learning Resources
 
-### 📚 Documentation
+### Documentation
 - **[Getting Started](docs/v1beta/getting-started.md)** - Build your first agent
 - **[API Reference](v1beta/README.md)** - Comprehensive API docs
 - **[Observability Guide](docs/v1beta/observability.md)** - Distributed tracing and monitoring
 - **[Memory & RAG](docs/v1beta/memory-and-rag.md)** - Deep dive into memory systems
 
-### 💡 Examples
+### Examples
 - **[Story Writer Chat v2](examples/story-writer-chat-v2/)** - Complete Real-time collaborative writing app
 - **[Ollama Quickstart](examples/ollama-quickstart/)** - Local LLM development
 - **[MCP Integration](examples/mcp-integration/)** - Using Model Context Protocol
@@ -152,8 +155,8 @@ AgenticGoKit works with all major LLM providers out of the box:
 - **Recommended**: Use `v1beta` package for all new projects
 - **Import Path**: `github.com/agenticgokit/agenticgokit/v1beta`
 - **Stability**: Beta - Core APIs are stable and functional, suitable for testing and development
-- **Status**: APIs may evolve based on feedback before v1.0 release
-- **Note**: `v1beta` is the evolution of the former `core/vnext` package
+- **Status**: Beta - Core APIs are stable; `v1beta` is the evolution of the former `core/vnext` package
+- **Note**: `core` package is legacy and will be removed in v1.0
 
 ### v1.0 Release Plan
 
