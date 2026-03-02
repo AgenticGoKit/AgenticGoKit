@@ -260,6 +260,20 @@ func NewOllamaAdapterWrapped(baseURL, model string, maxTokens int, temperature f
 	return NewModelProviderWrapper(adapter), nil
 }
 
+func NewFoundryLocalAdapterWrapped(baseURL, model string, maxTokens int, temperature float32) (PublicModelProvider, error) {
+	adapter, err := NewFoundryLocalAdapter(FoundryLocalConfig{
+		BaseURL:     baseURL,
+		Model:       model,
+		MaxTokens:   maxTokens,
+		Temperature: temperature,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return NewModelProviderWrapper(adapter), nil
+}
+
 func NewOpenRouterAdapterWrapped(
 	apiKey, model, baseURL string,
 	maxTokens int,

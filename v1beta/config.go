@@ -647,7 +647,7 @@ func ValidateConfig(config *Config) error {
 
 // validateLLMProvider validates provider-specific LLM configuration
 func validateLLMProvider(llm LLMConfig) *ValidationError {
-	validProviders := []string{"openai", "ollama", "azure", "anthropic", "mock"}
+	validProviders := []string{"openai", "ollama", "azure", "anthropic", "foundrylocal", "mock"}
 	isValid := false
 	for _, provider := range validProviders {
 		if llm.Provider == provider {

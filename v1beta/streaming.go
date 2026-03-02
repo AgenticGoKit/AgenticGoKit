@@ -447,6 +447,17 @@ func CollectStream(stream Stream) (string, *Result, error) {
 				content = chunk.Delta
 			}
 			buffer = append(buffer, content)
+		} else if chunk.Type == ChunkTypeToolRes {
+			// Format tool result so the agent sees the outcome of its tools
+			var resultStr string
+			if chunk.Error != nil {
+				resultStr = fmt.Sprintf("\nTool %q failed with error: %v\n", chunk.ToolName, chunk.Error)
+			} else {
+				resultStr = fmt.Sprintf("\nTool %q returned: %v\n", chunk.ToolName, chunk.Content)
+			}
+			buffer = append(buffer, resultStr)
+		} else if chunk.Type == ChunkTypeError && chunk.Error != nil {
+			buffer = append(buffer, fmt.Sprintf("\nStream error: %v\n", chunk.Error))
 		}
 	}
 

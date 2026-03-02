@@ -21,6 +21,7 @@ const (
 	ProviderTypeMLFlowGateway ProviderType = "mlflow"
 	ProviderTypeBentoML       ProviderType = "bentoml"
 	ProviderTypeAnthropic     ProviderType = "anthropic"
+	ProviderTypeFoundryLocal  ProviderType = "foundrylocal"
 	// Test-only/mock provider for unit tests
 	ProviderTypeMock ProviderType = "mock"
 )
@@ -152,6 +153,8 @@ func (f *ProviderFactory) CreateProvider(config ProviderConfig) (ModelProvider, 
 		return f.createBentoMLProvider(config)
 	case ProviderTypeAnthropic:
 		return f.createAnthropicProvider(config)
+	case ProviderTypeFoundryLocal:
+		return f.createFoundryLocalProvider(config)
 	case ProviderTypeMock:
 		return f.createMockProvider(config)
 	default:
@@ -171,7 +174,17 @@ func (f *ProviderFactory) createOpenAIProvider(config ProviderConfig) (ModelProv
 		config.Model = "gpt-4o-mini" // Default model
 	}
 
-	return NewOpenAIAdapter(config.APIKey, config.Model, config.MaxTokens, config.Temperature)
+	// Use NewOpenAIAdapterWithConfig to support BaseURL and other options
+	adapterConfig := OpenAIAdapterConfig{
+		APIKey:      config.APIKey,
+		Model:       config.Model,
+		MaxTokens:   config.MaxTokens,
+		Temperature: config.Temperature,
+		BaseURL:     config.BaseURL,
+		HTTPTimeout: config.HTTPTimeout,
+	}
+
+	return NewOpenAIAdapterWithConfig(adapterConfig)
 }
 
 // createAzureProvider creates an Azure OpenAI provider
@@ -434,6 +447,22 @@ func (f *ProviderFactory) createAnthropicProvider(config ProviderConfig) (ModelP
 	}
 
 	return NewAnthropicAdapterWithConfig(anthropicConfig)
+}
+
+// createFoundryLocalProvider creates a Foundry Local provider
+func (f *ProviderFactory) createFoundryLocalProvider(config ProviderConfig) (ModelProvider, error) {
+	baseURL := config.BaseURL
+	if baseURL == "" {
+		baseURL = DefaultFoundryLocalBaseURL
+	}
+
+	return NewFoundryLocalAdapter(FoundryLocalConfig{
+		BaseURL:     baseURL,
+		Model:       config.Model,
+		MaxTokens:   config.MaxTokens,
+		Temperature: config.Temperature,
+		HTTPTimeout: config.HTTPTimeout,
+	})
 }
 
 // DefaultFactory is a global factory instance for convenience

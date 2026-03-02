@@ -333,6 +333,9 @@ type Memory interface {
 	IngestDocuments(ctx context.Context, docs []Document) error
 	SearchKnowledge(ctx context.Context, query string, opts ...QueryOption) ([]MemoryResult, error)
 	BuildContext(ctx context.Context, query string, opts ...ContextOption) (*RAGContext, error)
+
+	// History management
+	AddMessage(ctx context.Context, role, content string) error
 }
 
 // StoreOption defines options for storing content in memory

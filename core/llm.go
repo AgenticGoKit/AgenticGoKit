@@ -541,6 +541,12 @@ func NewLLMProvider(config AgentLLMConfig) (ModelProvider, error) {
 		} else {
 			providerConfig.HFUseCache = true // Default to true
 		}
+	case "foundrylocal":
+		if baseURL := os.Getenv("FOUNDRY_LOCAL_BASE_URL"); baseURL != "" {
+			providerConfig.BaseURL = baseURL
+		} else {
+			providerConfig.BaseURL = "http://localhost:5272/v1"
+		}
 	}
 
 	return NewModelProviderFromConfig(providerConfig)

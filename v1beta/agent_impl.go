@@ -322,16 +322,14 @@ func (a *realAgent) execute(ctx context.Context, input string, opts *RunOptions)
 
 	// Step 1.5: Add tool definitions (native) and descriptions (text fallback)
 	if len(a.tools) > 0 {
-		// Check if reasoning is enabled - if so, only use text descriptions, not native tools
 		reasoningEnabled := a.config.Tools != nil &&
 			a.config.Tools.Reasoning != nil &&
 			a.config.Tools.Reasoning.Enabled
 
-		// Only pass native tools if reasoning is NOT enabled
-		// When reasoning is enabled, we rely on explicit TOOL_CALL patterns instead
-		if !reasoningEnabled {
-			prompt.Tools = convertToolsToLLMFormat(a.tools)
-		}
+		// Always pass native tools — the reasoning continuation loop
+		// (executeNativeToolsAndContinue) handles them properly.
+		// Text descriptions are also added as a fallback for all models.
+		prompt.Tools = convertToolsToLLMFormat(a.tools)
 
 		// Always add text descriptions for reference (works with all models)
 		toolDescriptions := FormatToolsForPrompt(a.tools)
@@ -340,7 +338,7 @@ func (a *realAgent) execute(ctx context.Context, input string, opts *RunOptions)
 		Logger().Debug().
 			Int("tool_count", len(a.tools)).
 			Bool("reasoning_enabled", reasoningEnabled).
-			Bool("native_tools_passed", !reasoningEnabled).
+			Bool("native_tools_passed", true).
 			Msg("Added tool information to prompt")
 	}
 
@@ -457,8 +455,10 @@ func (a *realAgent) execute(ctx context.Context, input string, opts *RunOptions)
 			toolCalls = []ToolCall{best}
 		}
 
-		// Prefer concise tool results over generic LLM filler to keep responses coherent
-		if len(toolCalls) > 0 {
+		// When reasoning is disabled (fast path), prefer concise tool results
+		// over empty/generic LLM filler. When reasoning IS enabled, the LLM
+		// has already synthesized tool results into a natural response — do NOT overwrite it.
+		if !reasoningEnabled && len(toolCalls) > 0 {
 			summary := formatToolCallsAsContent(toolCalls)
 			if summary != "" {
 				finalResponse = summary
@@ -588,6 +588,10 @@ func (a *realAgent) storeInMemory(ctx context.Context, input, output string) err
 	if a.memoryProvider == nil {
 		return nil
 	}
+
+	// DEBUG: Check session ID
+	sessionID := ctx.Value("session_id")
+	Logger().Info().Interface("session_id", sessionID).Msg("storeInMemory: Attempting to store interaction")
 
 	// Store as personal memory for RAG retrieval
 	// This allows the agent to recall facts and context from past conversations
@@ -1732,10 +1736,22 @@ func (a *realAgent) executeNativeToolsAndContinue(
 			continuationPrompt.Tools = originalPrompt.Tools
 		}
 
+		// Debug: log what we're sending to the LLM for continuation
+		toolResultStr := toolResults.String()
+		Logger().Debug().
+			Int("tool_result_length", len(toolResultStr)).
+			Str("tool_result_preview", truncateDebug(toolResultStr, 300)).
+			Msg("[REASONING] Sending tool results to LLM for synthesis")
+
 		resp, err := a.llmProvider.Call(ctx, continuationPrompt)
 		if err != nil {
 			return currentResponse, allToolCalls, fmt.Errorf("LLM call failed after tool execution: %w", err)
 		}
+
+		Logger().Debug().
+			Int("response_length", len(resp.Content)).
+			Str("response_preview", truncateDebug(resp.Content, 300)).
+			Msg("[REASONING] LLM continuation response received")
 
 		response = resp
 		currentResponse = resp.Content
@@ -2188,4 +2204,17 @@ func (a *coreMemoryAdapter) BuildContext(ctx context.Context, query string, opts
 		TotalTokens:       coreCtx.TokenCount, // Mapped from TokenCount
 		SourceAttribution: coreCtx.Sources,    // Mapped from Sources
 	}, nil
+}
+
+// AddMessage adds a message to the chat history
+func (a *coreMemoryAdapter) AddMessage(ctx context.Context, role, content string) error {
+	return a.mem.AddMessage(ctx, role, content)
+}
+
+// truncateDebug truncates a string for debug logging purposes
+func truncateDebug(s string, maxLen int) string {
+	if len(s) <= maxLen {
+		return s
+	}
+	return s[:maxLen] + "..."
 }

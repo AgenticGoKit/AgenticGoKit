@@ -77,12 +77,21 @@ func OptimizedTransport() *http.Transport {
 //	client := NewOptimizedHTTPClient(120 * time.Second)
 //	// This client can handle hundreds of concurrent LLM requests efficiently
 func NewOptimizedHTTPClient(timeout time.Duration) *http.Client {
+	// Default 2 minutes for LLM requests
 	if timeout == 0 {
-		timeout = 120 * time.Second // Default 2 minutes for LLM requests
+		timeout = 120 * time.Second
+	}
+
+	transport := OptimizedTransport()
+	// Ensure ResponseHeaderTimeout matches the client timeout if it's larger than the default 30s
+	// This prevents the transport from killing connection to slow LLMs (like reasoning models)
+	// while waiting for the first byte/header.
+	if timeout > transport.ResponseHeaderTimeout {
+		transport.ResponseHeaderTimeout = timeout
 	}
 
 	return &http.Client{
-		Transport: OptimizedTransport(),
+		Transport: transport,
 		Timeout:   timeout,
 	}
 }

@@ -288,6 +288,10 @@ func (m *noOpMemory) Close() error {
 	return nil
 }
 
+func (m *noOpMemory) AddMessage(ctx context.Context, role, content string) error {
+	return nil
+}
+
 // =============================================================================
 // UTILITY FUNCTIONS
 // =============================================================================
