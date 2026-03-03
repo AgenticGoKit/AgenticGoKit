@@ -24,7 +24,7 @@
 - **Real-time Streaming**: Watch your agents think and respond in real-time  
 - **Multi-Agent Workflows**: Sequential, parallel, DAG, and loop orchestration patterns
 - **Production-Ready Observability**: Built-in distributed tracing with OpenTelemetry support
-- **Multiple LLM Providers**: Seamlessly switch between OpenAI, Ollama, Azure OpenAI, HuggingFace, and more
+- **Multiple LLM Providers**: Seamlessly switch between OpenAI, Anthropic, Ollama, Azure OpenAI, Azure AI Foundry Local, HuggingFace, OpenRouter, vLLM, BentoML, MLFlow, and more
 - **High Performance**: Compiled Go binaries with minimal overhead
 - **Batteries Included**: Built-in memory and RAG by default (zero config needed, swappable with pgvector/custom)
 - **Rich Integrations**: Memory providers, tool discovery, MCP protocol support
@@ -135,17 +135,19 @@ Extend agents with tools using standard Go functions or the **Model Context Prot
 
 AgenticGoKit works with all major LLM providers out of the box:
 
-| Provider | Model Examples | Use Case |
-|----------|---------------|----------|
-| **OpenAI** | GPT-4, GPT-4 Vision, GPT-3.5-turbo | Production-grade conversational and multimodal AI |
-| **Azure OpenAI** | GPT-4, GPT-3.5-turbo | Enterprise deployments with Azure |
-| **Ollama** | Llama 3, Gemma, Mistral, Phi | Local development and privacy-focused apps |
-| **HuggingFace** | Llama-2, Mistral, Falcon | Open-source model experimentation |
-| **OpenRouter** | Multiple models | Access to various providers via single API |
-| **BentoML** | Any model packaged as Bento | Self-hosted ML models with production features |
-| **MLFlow** | Models via MLFlow AI Gateway | ML model deployment and management |
-| **vLLM** | Llama-2, Mistral, etc. | High-throughput LLM serving with PagedAttention |
-| **Custom** | Any OpenAI-compatible API | Bring your own provider |
+| Provider | Plugin Import | Model Examples | Use Case |
+|----------|--------------|---------------|----------|
+| **OpenAI** | `plugins/llm/openai` | GPT-4o, GPT-4 Vision, GPT-3.5-turbo | Production-grade conversational and multimodal AI |
+| **Anthropic** | `plugins/llm/anthropic` | Claude 3.5 Sonnet, Claude 3 Opus, Haiku | Advanced reasoning and long-context tasks |
+| **Azure OpenAI** | `plugins/llm/azureopenai` | GPT-4, GPT-3.5-turbo | Enterprise deployments with Azure |
+| **Azure AI Foundry Local** | `plugins/llm/foundrylocal` | Phi-3.5 Mini, Qwen 2.5, Mistral, Llama | On-device / local inference via Foundry Local (no auth required) |
+| **Ollama** | `plugins/llm/ollama` | Llama 3, Gemma, Mistral, Phi | Local development and privacy-focused apps |
+| **HuggingFace** | `plugins/llm/huggingface` | Llama-2, Mistral, Falcon | Open-source model experimentation via HF Inference API |
+| **OpenRouter** | `plugins/llm/openrouter` | GPT-4, Claude, Llama, Mixtral | Access to 100+ models via a single API key |
+| **BentoML** | `plugins/llm/bentoml` | Any model packaged as Bento | Self-hosted ML models with production features |
+| **MLFlow** | `plugins/llm/mlflow` | Models via MLFlow AI Gateway | ML model deployment and management |
+| **vLLM** | `plugins/llm/vllm` | Llama-2, Mistral, Qwen, etc. | High-throughput LLM serving with PagedAttention |
+| **Custom** | — | Any OpenAI-compatible API | Bring your own provider |
 
 ## Learning Resources
 
@@ -158,6 +160,7 @@ AgenticGoKit works with all major LLM providers out of the box:
 ### Examples
 - **[Story Writer Chat v2](examples/story-writer-chat-v2/)** - Complete Real-time collaborative writing app
 - **[Ollama Quickstart](examples/ollama-quickstart/)** - Local LLM development
+- **[Foundry Local Quickstart](examples/foundrylocal-quickstart/)** - On-device inference with Azure AI Foundry Local
 - **[MCP Integration](examples/mcp-integration/)** - Using Model Context Protocol
 - **[HuggingFace Quickstart](examples/huggingface-quickstart/)** - Using HF Inference Endpoints
 - **[BentoML Quickstart](examples/bentoml-quickstart/)** - Self-hosted ML models

@@ -118,14 +118,16 @@ agent, err := v1beta.NewChatAgent("agent",
 ## 🔌 Supported LLM Providers
 
 AgenticGoKit supports the following LLM providers:
-- **OpenAI** - GPT-4, GPT-3.5-turbo, and other OpenAI models
-- **Azure OpenAI** - Azure OpenAI Service with your deployments
-- **Ollama** - Local models (Llama, Mistral, Gemma, etc.)
-- **HuggingFace** - Inference API for HuggingFace models
-- **OpenRouter** - Access to multiple LLM providers
-- **BentoML** - Self-hosted ML models with production features (batching, observability)
-- **MLFlow** - Models deployed via MLFlow AI Gateway
-- **vLLM** - High-throughput LLM serving with PagedAttention optimization
+- **OpenAI** (`plugins/llm/openai`) - GPT-4o, GPT-4 Vision, GPT-3.5-turbo
+- **Anthropic** (`plugins/llm/anthropic`) - Claude 3.5 Sonnet, Claude 3 Opus, Haiku
+- **Azure OpenAI** (`plugins/llm/azureopenai`) - Azure OpenAI Service with your deployments
+- **Azure AI Foundry Local** (`plugins/llm/foundrylocal`) - On-device inference via Foundry Local; supports Phi, Qwen, Mistral, Llama and any model loaded locally (no API key required)
+- **Ollama** (`plugins/llm/ollama`) - Local models (Llama 3, Mistral, Gemma, Phi, etc.)
+- **HuggingFace** (`plugins/llm/huggingface`) - Inference API for HuggingFace models
+- **OpenRouter** (`plugins/llm/openrouter`) - Access to 100+ models via a single API key
+- **BentoML** (`plugins/llm/bentoml`) - Self-hosted ML models with production features (batching, observability)
+- **MLFlow** (`plugins/llm/mlflow`) - Models deployed via MLFlow AI Gateway
+- **vLLM** (`plugins/llm/vllm`) - High-throughput LLM serving with PagedAttention optimization
 
 See [Getting Started](./getting-started.md) for setup instructions and [examples/](../../examples/) for provider-specific quickstarts.
 
