@@ -5,9 +5,22 @@ import (
 	"time"
 )
 
+// resolveResponseHeaderTimeout returns the first positive override, or 30s as the default.
+func resolveResponseHeaderTimeout(overrides []time.Duration) time.Duration {
+	if len(overrides) > 0 && overrides[0] > 0 {
+		return overrides[0]
+	}
+	return 30 * time.Second
+}
+
 // OptimizedTransport returns a production-ready HTTP transport configured
 // for high-performance LLM API communication with proper connection pooling,
 // keep-alive, and timeout settings.
+//
+// An optional responseHeaderTimeout may be provided to override the default
+// 30-second ResponseHeaderTimeout. This is important for slow LLM providers
+// (e.g. Ollama with thinking models) where the first response header may
+// take longer than 30 seconds.
 //
 // This transport is optimized to:
 // - Reuse connections efficiently (avoid TCP handshake overhead)
@@ -16,7 +29,7 @@ import (
 // - Set reasonable timeouts to prevent hanging
 //
 // Performance Impact: 30-50% improvement over default transport settings
-func OptimizedTransport() *http.Transport {
+func OptimizedTransport(responseHeaderTimeout ...time.Duration) *http.Transport {
 	return &http.Transport{
 		// Connection pooling configuration
 		// MaxIdleConns: Total idle connections across all hosts
@@ -40,8 +53,8 @@ func OptimizedTransport() *http.Transport {
 		TLSHandshakeTimeout: 10 * time.Second,
 
 		// ResponseHeaderTimeout: Time to wait for response headers
-		// Protects against slow or unresponsive servers
-		ResponseHeaderTimeout: 30 * time.Second,
+		// Defaults to 30s but can be overridden for slow providers
+		ResponseHeaderTimeout: resolveResponseHeaderTimeout(responseHeaderTimeout),
 
 		// ExpectContinueTimeout: Time to wait for 100-Continue response
 		// Small value to avoid delays when server doesn't support it
@@ -82,13 +95,7 @@ func NewOptimizedHTTPClient(timeout time.Duration) *http.Client {
 		timeout = 120 * time.Second
 	}
 
-	transport := OptimizedTransport()
-	// Ensure ResponseHeaderTimeout matches the client timeout if it's larger than the default 30s
-	// This prevents the transport from killing connection to slow LLMs (like reasoning models)
-	// while waiting for the first byte/header.
-	if timeout > transport.ResponseHeaderTimeout {
-		transport.ResponseHeaderTimeout = timeout
-	}
+	transport := OptimizedTransport(timeout)
 
 	return &http.Client{
 		Transport: transport,
@@ -121,7 +128,7 @@ func NewCustomHTTPClient(config LLMClientConfig) *http.Client {
 		config.Timeout = 120 * time.Second
 	}
 
-	transport := OptimizedTransport()
+	transport := OptimizedTransport(config.Timeout)
 
 	// Apply custom overrides if specified
 	if config.MaxIdleConnsPerHost > 0 {
@@ -149,7 +156,7 @@ func GetDefaultTransportSettings() map[string]interface{} {
 		"MaxConnsPerHost":       50,
 		"IdleConnTimeout":       "90s",
 		"TLSHandshakeTimeout":   "10s",
-		"ResponseHeaderTimeout": "30s",
+		"ResponseHeaderTimeout": "30s (overridden by client timeout when larger)",
 		"ExpectContinueTimeout": "1s",
 		"ForceAttemptHTTP2":     true,
 		"DisableKeepAlives":     false,
