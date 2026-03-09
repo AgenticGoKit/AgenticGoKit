@@ -1008,6 +1008,27 @@ func (a *realAgent) RunStream(ctx context.Context, input string, opts ...StreamO
 			}
 		}
 
+		// Call custom handler if configured (mirrors execute() behaviour)
+		if a.handler != nil {
+			capabilities := &Capabilities{
+				LLM: func(system, user string) (string, error) {
+					p := llm.Prompt{System: system, User: user}
+					resp, err := a.llmProvider.Call(streamCtx, p)
+					if err != nil {
+						return "", err
+					}
+					return resp.Content, nil
+				},
+			}
+			handlerResponse, err := a.handler(streamCtx, finalContent, capabilities)
+			if err != nil {
+				Logger().Warn().Err(err).Msg("Custom handler returned error during stream")
+			} else if handlerResponse != "" {
+				finalContent = handlerResponse
+				finalResult.Content = finalContent
+			}
+		}
+
 		// Update metrics
 		a.updateMetrics(startTime, false)
 		span.SetAttributes(
