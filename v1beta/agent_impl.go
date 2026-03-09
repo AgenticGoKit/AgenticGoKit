@@ -2032,8 +2032,9 @@ func (a *realAgent) executeToolsAndStream(ctx context.Context, userInput, llmRes
 		if executedCall.Error != "" {
 			// Send error result
 			writer.Write(&StreamChunk{
-				Type:  ChunkTypeToolRes,
-				Error: fmt.Errorf("tool %s failed: %s", toolCall.Name, executedCall.Error),
+				Type:     ChunkTypeToolRes,
+				ToolName: toolCall.Name,
+				Error:    fmt.Errorf("tool %s failed: %s", toolCall.Name, executedCall.Error),
 			})
 			continue
 		}

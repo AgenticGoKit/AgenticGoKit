@@ -500,6 +500,14 @@ func StreamToChannel(stream Stream) <-chan string {
 				if content != "" {
 					textChan <- content
 				}
+			} else if chunk.Type == ChunkTypeToolRes {
+				if chunk.Error != nil {
+					textChan <- fmt.Sprintf("\nTool %q failed with error: %v\n", chunk.ToolName, chunk.Error)
+				} else {
+					textChan <- fmt.Sprintf("\nTool %q returned: %v\n", chunk.ToolName, chunk.Content)
+				}
+			} else if chunk.Type == ChunkTypeError && chunk.Error != nil {
+				textChan <- fmt.Sprintf("\nStream error: %v\n", chunk.Error)
 			}
 		}
 	}()
@@ -528,8 +536,16 @@ func PrintStream(stream Stream) (*Result, error) {
 			fmt.Printf("\n[Thinking: %s]\n", chunk.Content)
 		case ChunkTypeToolCall:
 			fmt.Printf("\n[Tool: %s]\n", chunk.ToolName)
+		case ChunkTypeToolRes:
+			if chunk.Error != nil {
+				fmt.Printf("\n[Tool %s error: %v]\n", chunk.ToolName, chunk.Error)
+			} else {
+				fmt.Printf("\n[Tool %s result: %v]\n", chunk.ToolName, chunk.Content)
+			}
 		case ChunkTypeError:
-			fmt.Printf("\n[Error: %v]\n", chunk.Error)
+			if chunk.Error != nil {
+				fmt.Printf("\n[Error: %v]\n", chunk.Error)
+			}
 		}
 	}
 

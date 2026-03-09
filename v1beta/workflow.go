@@ -1173,7 +1173,7 @@ func (w *basicWorkflow) executeSequential(ctx context.Context, input string) ([]
 		// Handle step errors
 		if !result.Success {
 			stepSpan.SetStatus(codes.Error, result.Error)
-			stepSpan.RecordError(fmt.Errorf(result.Error))
+			stepSpan.RecordError(fmt.Errorf("%s", result.Error))
 			stepSpan.End()
 			span.SetStatus(codes.Error, fmt.Sprintf("step %s failed", step.Name))
 			span.RecordError(fmt.Errorf("step %s failed: %s", step.Name, result.Error))
@@ -1291,7 +1291,7 @@ func (w *basicWorkflow) executeParallel(ctx context.Context, input string) ([]St
 
 			if !result.Success {
 				stepSpan.SetStatus(codes.Error, result.Error)
-				stepSpan.RecordError(fmt.Errorf(result.Error))
+				stepSpan.RecordError(fmt.Errorf("%s", result.Error))
 			} else {
 				stepSpan.SetStatus(codes.Ok, "success")
 			}
@@ -1455,7 +1455,7 @@ func (w *basicWorkflow) executeDAG(ctx context.Context, input string) ([]StepRes
 
 			if !result.Success {
 				stepSpan.SetStatus(codes.Error, result.Error)
-				stepSpan.RecordError(fmt.Errorf(result.Error))
+				stepSpan.RecordError(fmt.Errorf("%s", result.Error))
 				stepSpan.End()
 				stageSpan.SetStatus(codes.Error, result.Error)
 				stageSpan.End()
