@@ -1,5 +1,5 @@
 # AgenticGoKit
-
+-- Test feature
 > **🚀 BETA RELEASE** - The v1beta API is now stable and recommended for all new projects. While still in beta, the core APIs are working well and ready for testing. We continue to refine features and welcome feedback and contributions!
 >
 > **📋 API Versioning Plan:**
