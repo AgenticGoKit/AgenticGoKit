@@ -14,7 +14,7 @@ Welcome to AgenticGoKit! This guide will help you get started with contributing 
 
 ```bash
 # Clone the repository
-git clone https://github.com/kunalkushwaha/agenticgokit.git
+git clone https://github.com/AgenticGoKit/AgenticGoKit.git
 cd agenticgokit
 
 # Install dependencies
@@ -52,7 +52,7 @@ agenticgokit/
 ### 3. Core vs Internal Architecture
 
 **`core/` Package (Public API):**
-- This is what users import: `import "github.com/kunalkushwaha/agenticgokit/core"`
+- This is what users import: `import "github.com/agenticgokit/agenticgokit/core"`
 - Contains interfaces, types, and factory functions
 - Must maintain backward compatibility
 - All functions here should be well-documented and tested
