@@ -52,7 +52,7 @@ agenticgokit/
 ### 3. Core vs Internal Architecture
 
 **`core/` Package (Public API):**
-- This is what users import: `import "github.com/agenticgokit/agenticgokit/core"`
+- This is what users import: `import "github.com/agenticgokit/agenticgokit/v1beta"`
 - Contains interfaces, types, and factory functions
 - Must maintain backward compatibility
 - All functions here should be well-documented and tested
