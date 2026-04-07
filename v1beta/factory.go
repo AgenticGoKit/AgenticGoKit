@@ -3,7 +3,11 @@ package v1beta
 
 import (
 	"fmt"
+	"os"
+	"strings"
 	"sync"
+
+	"github.com/agenticgokit/agenticgokit/internal/logging"
 )
 
 // =============================================================================
@@ -187,19 +191,40 @@ func registerBuiltinPresets() error {
 //
 // Valid levels: "debug", "info", "warn", "error"
 func SetupLogging(level string) error {
-	validLevels := map[string]bool{
-		"debug": true,
-		"info":  true,
-		"warn":  true,
-		"error": true,
-	}
+	level = strings.ToLower(level)
+	var logLevel logging.LogLevel
 
-	if !validLevels[level] {
+	switch level {
+	case "debug":
+		logLevel = logging.DEBUG
+	case "info":
+		logLevel = logging.INFO
+	case "warn":
+		logLevel = logging.WARN
+	case "error":
+		logLevel = logging.ERROR
+	default:
 		err := ConfigError("logging", "level", nil)
 		err.Details["message"] = fmt.Sprintf("Invalid log level '%s'. Valid levels: debug, info, warn, error", level)
 		return err
 	}
 
-	// TODO: Implement actual logging configuration
+	logging.SetLogLevel(logLevel)
 	return nil
+}
+
+// InitLoggingFromEnv initializes logging from environment variable
+// Checks AGENTICGOKIT_LOG_LEVEL or defaults to INFO
+func InitLoggingFromEnv() {
+	if level := os.Getenv("AGENTICGOKIT_LOG_LEVEL"); level != "" {
+		if err := SetupLogging(level); err != nil {
+			// Silently default to INFO on invalid level
+			logging.SetLogLevel(logging.INFO)
+		}
+	}
+}
+
+func init() {
+	// Auto-initialize logging from environment on package load
+	InitLoggingFromEnv()
 }

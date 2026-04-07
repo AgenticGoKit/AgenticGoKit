@@ -15,10 +15,17 @@ import (
 	"time"
 
 	"github.com/agenticgokit/agenticgokit/core"
+	"github.com/agenticgokit/agenticgokit/internal/logging"
 	"github.com/kunalkushwaha/mcp-navigator-go/pkg/client"
 	"github.com/kunalkushwaha/mcp-navigator-go/pkg/mcp"
 	"github.com/kunalkushwaha/mcp-navigator-go/pkg/transport"
+	"github.com/rs/zerolog"
 )
+
+// logger gets the zerolog logger for MCP plugin
+func logger() *zerolog.Logger {
+	return logging.GetLogger()
+}
 
 // unifiedMCPManager supports multiple transport types: TCP, HTTP SSE, HTTP Streaming, WebSocket, STDIO
 type unifiedMCPManager struct {
@@ -90,12 +97,12 @@ func (h *authStreamingHTTPTransport) Send(message *mcp.Message) error {
 		return fmt.Errorf("transport not connected")
 	}
 
-	log.Printf("[Streaming] Sending message: method=%s, id=%v", message.Method, message.ID)
+	logger().Debug().Str("method", message.Method).Interface("id", message.ID).Msg("[Streaming] Sending message")
 
 	// Check if this is a notification (no ID field) - notifications don't get responses
 	isNotification := message.ID == nil
 	if isNotification {
-		log.Printf("[Streaming] Message is a notification (no ID) - no response expected")
+		logger().Debug().Msg("[Streaming] Message is a notification (no ID) - no response expected")
 	}
 
 	url := h.baseURL + h.endpoint
@@ -104,8 +111,8 @@ func (h *authStreamingHTTPTransport) Send(message *mcp.Message) error {
 		return fmt.Errorf("failed to marshal message: %w", err)
 	}
 
-	log.Printf("[Streaming] POST %s", url)
-	log.Printf("[Streaming] Request JSON: %s", string(data))
+	logger().Debug().Str("url", url).Msg("[Streaming] POST")
+	logger().Debug().Str("json", string(data)).Msg("[Streaming] Request JSON")
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(data))
 	if err != nil {
@@ -118,13 +125,13 @@ func (h *authStreamingHTTPTransport) Send(message *mcp.Message) error {
 	// Add authorization header if token is present
 	if h.authToken != "" {
 		req.Header.Set("Authorization", "Bearer "+h.authToken)
-		log.Printf("[Streaming] Using auth token (length: %d)", len(h.authToken))
+		logger().Debug().Int("tokenLength", len(h.authToken)).Msg("[Streaming] Using auth token")
 	}
 
 	// Add session ID to subsequent requests
 	if h.sessionID != "" {
 		req.Header.Set("Mcp-Session-Id", h.sessionID)
-		log.Printf("[Streaming] Using session ID: %s", h.sessionID)
+		logger().Debug().Str("sessionID", h.sessionID).Msg("[Streaming] Using session ID")
 	}
 
 	resp, err := h.client.Do(req)
@@ -133,13 +140,13 @@ func (h *authStreamingHTTPTransport) Send(message *mcp.Message) error {
 	}
 	defer resp.Body.Close()
 
-	log.Printf("[Streaming] Response status: %d", resp.StatusCode)
+	logger().Debug().Int("status", resp.StatusCode).Msg("[Streaming] Response status")
 
 	// Extract session ID from response headers
 	sessionID := resp.Header.Get("Mcp-Session-Id")
 	if sessionID != "" {
 		h.sessionID = sessionID
-		log.Printf("[Streaming] Got session ID: %s", sessionID)
+		logger().Debug().Str("sessionID", sessionID).Msg("[Streaming] Got session ID")
 	}
 
 	// Read response body and store for Receive()
@@ -148,18 +155,18 @@ func (h *authStreamingHTTPTransport) Send(message *mcp.Message) error {
 		return fmt.Errorf("failed to read response: %w", err)
 	}
 
-	log.Printf("[Streaming] Response body: %s", string(body))
+	logger().Debug().Str("body", string(body)).Msg("[Streaming] Response body")
 
 	// Handle notifications - no response expected
 	if isNotification {
-		log.Printf("[Streaming] Notification sent, not waiting for response")
+		logger().Debug().Msg("[Streaming] Notification sent, not waiting for response")
 		h.lastResponse = nil
 		return nil
 	}
 
 	// Handle empty responses
 	if len(body) == 0 {
-		log.Printf("[Streaming] Empty response body")
+		logger().Debug().Msg("[Streaming] Empty response body")
 		h.lastResponse = nil
 		return nil
 	}
@@ -167,7 +174,7 @@ func (h *authStreamingHTTPTransport) Send(message *mcp.Message) error {
 	// Check if response is in SSE format (starts with "event:" or "data:")
 	bodyStr := string(body)
 	if strings.HasPrefix(bodyStr, "event:") || strings.HasPrefix(bodyStr, "data:") {
-		log.Printf("[Streaming] Response is in SSE format, parsing...")
+		logger().Debug().Msg("[Streaming] Response is in SSE format, parsing...")
 
 		// Parse SSE format to extract JSON data
 		scanner := bufio.NewScanner(bytes.NewReader(body))
@@ -188,7 +195,7 @@ func (h *authStreamingHTTPTransport) Send(message *mcp.Message) error {
 		}
 
 		if messageData == "" {
-			log.Printf("[Streaming] No message data found in SSE response")
+			logger().Debug().Msg("[Streaming] No message data found in SSE response")
 			h.lastResponse = nil
 			return nil
 		}
@@ -198,7 +205,7 @@ func (h *authStreamingHTTPTransport) Send(message *mcp.Message) error {
 			return fmt.Errorf("failed to unmarshal SSE message data: %w", err)
 		}
 
-		log.Printf("[Streaming] Parsed SSE response: method=%s, result present=%v", response.Method, response.Result != nil)
+		logger().Debug().Str("method", response.Method).Bool("hasResult", response.Result != nil).Msg("[Streaming] Parsed SSE response")
 		h.lastResponse = &response
 		return nil
 	}
@@ -209,7 +216,7 @@ func (h *authStreamingHTTPTransport) Send(message *mcp.Message) error {
 		return fmt.Errorf("failed to unmarshal response: %w", err)
 	}
 
-	log.Printf("[Streaming] Parsed response: method=%s, result present=%v", response.Method, response.Result != nil)
+	logger().Debug().Str("method", response.Method).Bool("hasResult", response.Result != nil).Msg("[Streaming] Parsed response")
 
 	h.lastResponse = &response
 	return nil
@@ -302,7 +309,7 @@ func (h *authSSETransport) sendInitializeRequest(message *mcp.Message) error {
 	// First, establish SSE connection to get session endpoint
 	sseURL := h.baseURL + h.endpoint
 
-	log.Printf("[SSE] Connecting to %s", sseURL)
+	logger().Debug().Str("url", sseURL).Msg("[SSE] Connecting")
 
 	req, err := http.NewRequest("GET", sseURL, nil)
 	if err != nil {
@@ -312,7 +319,7 @@ func (h *authSSETransport) sendInitializeRequest(message *mcp.Message) error {
 	req.Header.Set("Accept", "text/event-stream")
 	if h.authToken != "" {
 		req.Header.Set("Authorization", "Bearer "+h.authToken)
-		log.Printf("[SSE] Using auth token (length: %d)", len(h.authToken))
+		logger().Debug().Int("tokenLength", len(h.authToken)).Msg("[SSE] Using auth token")
 	}
 
 	resp, err := h.client.Do(req)
@@ -320,7 +327,7 @@ func (h *authSSETransport) sendInitializeRequest(message *mcp.Message) error {
 		return fmt.Errorf("failed to establish SSE connection: %w", err)
 	}
 
-	log.Printf("[SSE] Connection established, status: %d", resp.StatusCode)
+	logger().Debug().Int("status", resp.StatusCode).Msg("[SSE] Connection established")
 
 	if resp.StatusCode != http.StatusOK {
 		resp.Body.Close()
@@ -337,15 +344,15 @@ func (h *authSSETransport) sendInitializeRequest(message *mcp.Message) error {
 
 	for scanner.Scan() {
 		line := scanner.Text()
-		log.Printf("[SSE] Received line: %q", line)
+		logger().Debug().Str("line", line).Msg("[SSE] Received line")
 
 		// Parse SSE event format
 		if strings.HasPrefix(line, "event: ") {
 			currentEvent = strings.TrimSpace(line[7:]) // Remove "event: " prefix
-			log.Printf("[SSE] Event type: %s", currentEvent)
+			logger().Debug().Str("event", currentEvent).Msg("[SSE] Event type")
 		} else if strings.HasPrefix(line, "data: ") {
 			data := strings.TrimSpace(line[6:]) // Remove "data: " prefix
-			log.Printf("[SSE] Event data: %s", data)
+			logger().Debug().Str("data", data).Msg("[SSE] Event data")
 
 			// Only process data for "endpoint" event
 			if currentEvent == "endpoint" {
@@ -367,7 +374,7 @@ func (h *authSSETransport) sendInitializeRequest(message *mcp.Message) error {
 		return fmt.Errorf("failed to get session endpoint from SSE stream")
 	}
 
-	log.Printf("[SSE] Extracted session endpoint: %s", sessionEndpoint)
+	logger().Debug().Str("endpoint", sessionEndpoint).Msg("[SSE] Extracted session endpoint")
 
 	// Build session URL
 	// Check if sessionEndpoint is already a full URL or just a path
@@ -378,24 +385,24 @@ func (h *authSSETransport) sendInitializeRequest(message *mcp.Message) error {
 		h.sessionURL = h.baseURL + sessionEndpoint
 	}
 
-	log.Printf("[SSE] Session URL: %s", h.sessionURL)
+	logger().Debug().Str("sessionURL", h.sessionURL).Msg("[SSE] Session URL")
 
 	h.sseConnection = resp
 
 	// Now send the initialize request to the session endpoint
-	log.Printf("[SSE] Sending initialize request to session")
+	logger().Debug().Msg("[SSE] Sending initialize request to session")
 	return h.sendMessageToSession(message)
 }
 
 func (h *authSSETransport) sendMessageToSession(message *mcp.Message) error {
-	log.Printf("[SSE] Sending message to session: method=%s, id=%v", message.Method, message.ID)
+	logger().Debug().Str("method", message.Method).Interface("id", message.ID).Msg("[SSE] Sending message to session")
 
 	data, err := json.Marshal(message)
 	if err != nil {
 		return fmt.Errorf("failed to marshal message: %w", err)
 	}
 
-	log.Printf("[SSE] Request JSON: %s", string(data))
+	logger().Debug().Str("json", string(data)).Msg("[SSE] Request JSON")
 
 	req, err := http.NewRequest("POST", h.sessionURL, bytes.NewBuffer(data))
 	if err != nil {
@@ -408,7 +415,7 @@ func (h *authSSETransport) sendMessageToSession(message *mcp.Message) error {
 		req.Header.Set("Authorization", "Bearer "+h.authToken)
 	}
 
-	log.Printf("[SSE] POST %s", h.sessionURL)
+	logger().Debug().Str("url", h.sessionURL).Msg("[SSE] POST")
 
 	resp, err := h.client.Do(req)
 	if err != nil {
@@ -416,26 +423,26 @@ func (h *authSSETransport) sendMessageToSession(message *mcp.Message) error {
 	}
 	defer resp.Body.Close()
 
-	log.Printf("[SSE] Response status: %d", resp.StatusCode)
+	logger().Debug().Int("status", resp.StatusCode).Msg("[SSE] Response status")
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("failed to read response: %w", err)
 	}
 
-	log.Printf("[SSE] Response body: %s", string(body))
+	logger().Debug().Str("body", string(body)).Msg("[SSE] Response body")
 
 	// Check if this is a notification (no ID field) - notifications don't get responses
 	isNotification := message.ID == nil
 	if isNotification {
-		log.Printf("[SSE] Message is a notification (no ID) - no response expected")
+		logger().Debug().Msg("[SSE] Message is a notification (no ID) - no response expected")
 		h.lastResponse = nil
 		return nil
 	}
 
 	// Handle SSE protocol: POST returns 202 Accepted, actual response comes via SSE stream
 	if resp.StatusCode == http.StatusAccepted || len(body) == 0 {
-		log.Printf("[SSE] Status 202/empty body - reading response from SSE stream")
+		logger().Debug().Msg("[SSE] Status 202/empty body - reading response from SSE stream")
 
 		// Read response from the SSE connection
 		if h.sseConnection == nil {
@@ -449,18 +456,18 @@ func (h *authSSETransport) sendMessageToSession(message *mcp.Message) error {
 
 		for scanner.Scan() {
 			line := scanner.Text()
-			log.Printf("[SSE] Stream line: %q", line)
+			logger().Debug().Str("line", line).Msg("[SSE] Stream line")
 
 			if strings.HasPrefix(line, "event: ") {
 				currentEvent = strings.TrimSpace(line[7:])
-				log.Printf("[SSE] Stream event type: %s", currentEvent)
+				logger().Debug().Str("event", currentEvent).Msg("[SSE] Stream event type")
 			} else if strings.HasPrefix(line, "data: ") {
 				data := strings.TrimSpace(line[6:])
 
 				// Look for message or response events
 				if currentEvent == "message" || currentEvent == "response" {
 					messageData = data
-					log.Printf("[SSE] Got message data: %s", messageData)
+					logger().Debug().Str("data", messageData).Msg("[SSE] Got message data")
 					break
 				}
 			} else if line == "" {
@@ -476,7 +483,7 @@ func (h *authSSETransport) sendMessageToSession(message *mcp.Message) error {
 		}
 
 		if messageData == "" {
-			log.Printf("[SSE] No message found in SSE stream")
+			logger().Debug().Msg("[SSE] No message found in SSE stream")
 			h.lastResponse = nil
 			return nil
 		}
@@ -487,7 +494,7 @@ func (h *authSSETransport) sendMessageToSession(message *mcp.Message) error {
 			return fmt.Errorf("failed to unmarshal SSE message: %w", err)
 		}
 
-		log.Printf("[SSE] Parsed SSE response: method=%s, result present=%v", response.Method, response.Result != nil)
+		logger().Debug().Str("method", response.Method).Bool("hasResult", response.Result != nil).Msg("[SSE] Parsed SSE response")
 		h.lastResponse = &response
 		return nil
 	}
@@ -498,7 +505,7 @@ func (h *authSSETransport) sendMessageToSession(message *mcp.Message) error {
 		return fmt.Errorf("failed to unmarshal response: %w", err)
 	}
 
-	log.Printf("[SSE] Parsed response: method=%s, result present=%v", response.Method, response.Result != nil)
+	logger().Debug().Str("method", response.Method).Bool("hasResult", response.Result != nil).Msg("[SSE] Parsed response")
 
 	h.lastResponse = &response
 	return nil
@@ -810,7 +817,7 @@ func (m *unifiedMCPManager) ExecuteTool(ctx context.Context, toolName string, ar
 }
 
 func (m *unifiedMCPManager) discoverToolsFromServer(ctx context.Context, serverName string) ([]core.MCPToolInfo, error) {
-	log.Printf("[MCP] Starting tool discovery for server: %s", serverName)
+	logger().Debug().Str("server", serverName).Msg("[MCP] Starting tool discovery")
 
 	// Find server config
 	var server *core.MCPServerConfig
@@ -824,7 +831,7 @@ func (m *unifiedMCPManager) discoverToolsFromServer(ctx context.Context, serverN
 		return nil, fmt.Errorf("server %s not found", serverName)
 	}
 
-	log.Printf("[MCP] Server config: type=%s, host=%s, port=%d", server.Type, server.Host, server.Port)
+	logger().Debug().Str("type", server.Type).Str("host", server.Host).Int("port", server.Port).Msg("[MCP] Server config")
 
 	// Create client for this server
 	client, err := m.createClientForServer(server)
@@ -832,31 +839,31 @@ func (m *unifiedMCPManager) discoverToolsFromServer(ctx context.Context, serverN
 		return nil, fmt.Errorf("failed to create client for %s: %w", serverName, err)
 	}
 
-	log.Printf("[MCP] Client created, connecting...")
+	logger().Debug().Msg("[MCP] Client created, connecting...")
 
 	if err := client.Connect(ctx); err != nil {
 		return nil, fmt.Errorf("failed to connect to %s: %w", serverName, err)
 	}
 	defer client.Disconnect()
 
-	log.Printf("[MCP] Connected successfully, initializing MCP protocol...")
+	logger().Debug().Msg("[MCP] Connected successfully, initializing MCP protocol...")
 
 	if err := client.Initialize(ctx, mcp.ClientInfo{Name: "agentflow-mcp-client", Version: "1.0.0"}); err != nil {
 		return nil, fmt.Errorf("failed to initialize MCP session with %s: %w", serverName, err)
 	}
 
-	log.Printf("[MCP] Protocol initialized, listing tools...")
+	logger().Debug().Msg("[MCP] Protocol initialized, listing tools...")
 
 	tools, err := client.ListTools(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list tools from %s: %w", serverName, err)
 	}
 
-	log.Printf("[MCP] Received %d tools from %s", len(tools), serverName)
+	logger().Debug().Str("server", serverName).Int("toolCount", len(tools)).Msg("[MCP] Received tools")
 
 	var out []core.MCPToolInfo
 	for _, t := range tools {
-		log.Printf("[MCP] Tool: %s - %s", t.Name, t.Description)
+		logger().Debug().Str("name", t.Name).Str("description", t.Description).Msg("[MCP] Tool")
 		out = append(out, core.MCPToolInfo{
 			Name:        t.Name,
 			Description: t.Description,
@@ -915,7 +922,7 @@ func (m *unifiedMCPManager) createClientForServer(server *core.MCPServerConfig) 
 			authToken = os.Getenv("MCP_AUTH_TOKEN")
 		}
 
-		log.Printf("[Transport] Creating http_sse client: baseURL=%s, path=%s, hasAuth=%v", baseURL, ssePath, authToken != "")
+		logger().Debug().Str("baseURL", baseURL).Str("path", ssePath).Bool("hasAuth", authToken != "").Msg("[Transport] Creating http_sse client")
 
 		if authToken != "" {
 			// Use custom SSE transport with auth support
@@ -951,7 +958,7 @@ func (m *unifiedMCPManager) createClientForServer(server *core.MCPServerConfig) 
 			authToken = os.Getenv("MCP_AUTH_TOKEN")
 		}
 
-		log.Printf("[Transport] Creating http_streaming client: baseURL=%s, path=%s, hasAuth=%v", baseURL, streamPath, authToken != "")
+		logger().Debug().Str("baseURL", baseURL).Str("path", streamPath).Bool("hasAuth", authToken != "").Msg("[Transport] Creating http_streaming client")
 
 		if authToken != "" {
 			// Use custom transport with auth support
