@@ -158,6 +158,28 @@ Action Input: {"expression": "10*5"}`
 		assert.Equal(t, "calculate", calls[1].Name)
 		assert.Equal(t, "10*5", calls[1].Arguments["expression"])
 	})
+
+	t.Run("quoted json action input", func(t *testing.T) {
+		content := "Action: get_current_time\nAction Input: \"{\\\"timezone\\\":\\\"UTC\\\"}\""
+
+		calls := vnext.ParseToolCalls(content)
+		require.Len(t, calls, 1)
+		assert.Equal(t, "get_current_time", calls[0].Name)
+		assert.Equal(t, "UTC", calls[0].Arguments["timezone"])
+		_, hasInputWrapper := calls[0].Arguments["input"]
+		assert.False(t, hasInputWrapper)
+	})
+
+	t.Run("quoted json args line", func(t *testing.T) {
+		content := "tool_name: get_current_time\nargs: \"{\\\"timezone\\\":\\\"UTC\\\"}\""
+
+		calls := vnext.ParseToolCalls(content)
+		require.Len(t, calls, 1)
+		assert.Equal(t, "get_current_time", calls[0].Name)
+		assert.Equal(t, "UTC", calls[0].Arguments["timezone"])
+		_, hasInputWrapper := calls[0].Arguments["input"]
+		assert.False(t, hasInputWrapper)
+	})
 }
 
 func TestParseToolCalls_NoToolCalls(t *testing.T) {
@@ -229,6 +251,3 @@ func TestFormatToolResult(t *testing.T) {
 		assert.Contains(t, formatted, "invalid expression")
 	})
 }
-
-
-

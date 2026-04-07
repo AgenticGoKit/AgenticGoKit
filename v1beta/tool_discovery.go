@@ -164,6 +164,19 @@ func (m *mcpToolWrapper) Description() string {
 	return m.description
 }
 
+// JSONSchema implements ToolWithSchema so that the MCP tool's InputSchema
+// is passed to the LLM for proper function-calling parameter generation.
+func (m *mcpToolWrapper) JSONSchema() map[string]interface{} {
+	if m.parameters != nil {
+		return m.parameters
+	}
+	// Minimal fallback – no schema info returned from MCP server
+	return map[string]interface{}{
+		"type":       "object",
+		"properties": map[string]interface{}{},
+	}
+}
+
 func (m *mcpToolWrapper) Execute(ctx context.Context, args map[string]interface{}) (*ToolResult, error) {
 	// Create observability span for MCP tool execution
 	tracer := otel.Tracer("agenticgokit.mcp")

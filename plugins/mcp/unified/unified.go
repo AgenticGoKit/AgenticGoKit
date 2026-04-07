@@ -27,6 +27,48 @@ func logger() *zerolog.Logger {
 	return logging.GetLogger()
 }
 
+// normalizeToolArgs defensively unwraps arguments of the form:
+// {"input":"{\"k\":\"v\"}"} -> {"k":"v"}
+// This preserves direct JSON object arguments expected by many MCP tools.
+func normalizeToolArgs(args map[string]interface{}) map[string]interface{} {
+	if len(args) != 1 {
+		return args
+	}
+
+	rawInput, ok := args["input"]
+	if !ok {
+		return args
+	}
+
+	inputStr, ok := rawInput.(string)
+	if !ok {
+		return args
+	}
+
+	inputStr = strings.TrimSpace(inputStr)
+	if inputStr == "" {
+		return args
+	}
+
+	// Handle quoted JSON object payloads like "{\"timezone\":\"UTC\"}".
+	var unquoted string
+	if err := json.Unmarshal([]byte(inputStr), &unquoted); err == nil {
+		inputStr = strings.TrimSpace(unquoted)
+	}
+
+	if !strings.HasPrefix(inputStr, "{") || !strings.HasSuffix(inputStr, "}") {
+		return args
+	}
+
+	decoded := map[string]interface{}{}
+	if err := json.Unmarshal([]byte(inputStr), &decoded); err != nil {
+		return args
+	}
+
+	logger().Debug().Msg("[MCP] Normalized wrapped tool arguments from input JSON")
+	return decoded
+}
+
 // unifiedMCPManager supports multiple transport types: TCP, HTTP SSE, HTTP Streaming, WebSocket, STDIO
 type unifiedMCPManager struct {
 	config           core.MCPConfig
@@ -788,7 +830,8 @@ func (m *unifiedMCPManager) ExecuteTool(ctx context.Context, toolName string, ar
 		return core.MCPToolResult{}, fmt.Errorf("failed to initialize MCP session: %w", err)
 	}
 
-	res, err := client.CallTool(ctx, toolName, args)
+	normalizedArgs := normalizeToolArgs(args)
+	res, err := client.CallTool(ctx, toolName, normalizedArgs)
 	if err != nil {
 		return core.MCPToolResult{}, fmt.Errorf("tool execution failed: %w", err)
 	}

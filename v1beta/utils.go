@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/agenticgokit/agenticgokit/core"
@@ -813,13 +814,27 @@ func parseSimpleArgs(argsStr string) map[string]interface{} {
 func parseSimpleJSON(jsonStr string) map[string]interface{} {
 	args := make(map[string]interface{})
 
-	// Very simple JSON parser for basic objects
 	jsonStr = strings.TrimSpace(jsonStr)
+	if jsonStr == "" {
+		return args
+	}
+
+	// Handle JSON passed as a quoted/escaped string, e.g. "{\"timezone\":\"UTC\"}"
+	if unquoted, err := strconv.Unquote(jsonStr); err == nil {
+		jsonStr = strings.TrimSpace(unquoted)
+	}
+
+	// Parse valid JSON objects directly to preserve value types
+	if strings.HasPrefix(jsonStr, "{") && strings.HasSuffix(jsonStr, "}") {
+		if err := json.Unmarshal([]byte(jsonStr), &args); err == nil {
+			return args
+		}
+	}
+
+	// Very simple fallback parser for basic objects
 	if !strings.HasPrefix(jsonStr, "{") || !strings.HasSuffix(jsonStr, "}") {
 		// If not JSON, treat as single unnamed argument
-		if jsonStr != "" {
-			args["input"] = jsonStr
-		}
+		args["input"] = jsonStr
 		return args
 	}
 
