@@ -251,14 +251,22 @@ func initializeMCP(config *MCPConfig) error {
 			continue // Skip disabled servers
 		}
 
-		coreMCPConfig.Servers = append(coreMCPConfig.Servers, core.MCPServerConfig{
+		cfg := core.MCPServerConfig{
 			Name:    server.Name,
 			Type:    server.Type,
-			Host:    server.Address, // Map Address to Host
-			Port:    server.Port,
 			Command: server.Command,
 			Enabled: server.Enabled,
-		})
+		}
+
+		// Map Address field: if it looks like a full URL, use as Endpoint; otherwise use as Host
+		if strings.HasPrefix(server.Address, "http://") || strings.HasPrefix(server.Address, "https://") {
+			cfg.Endpoint = server.Address
+		} else {
+			cfg.Host = server.Address
+			cfg.Port = server.Port
+		}
+
+		coreMCPConfig.Servers = append(coreMCPConfig.Servers, cfg)
 	}
 
 	// Initialize MCP with cache if configured
