@@ -32,8 +32,7 @@ agent, err := vnext.NewBuilder("assistant").
 ```go
 import "github.com/agenticgokit/agenticgokit/v1beta"
 
-agent, err := v1beta.NewBuilder().
-    WithName("assistant").
+agent, err := v1beta.NewBuilder("assistant").
     WithLLM("ollama", "gemma3:1b").
     Build()
 ```
@@ -54,8 +53,7 @@ agent, err := v1beta.NewBuilder().
 ```diff
 - agent, err := vnext.NewBuilder("myagent").
 -     WithConfig(&vnext.Config{...}).
-+ agent, err := v1beta.NewBuilder().
-+     WithName("myagent").
++ agent, err := v1beta.NewBuilder("myagent").
 +     WithLLM("openai", "gpt-4").
       Build()
 ```
@@ -63,7 +61,7 @@ agent, err := v1beta.NewBuilder().
 **core → v1beta:**
 ```diff
 - agent, err := core.NewAgent(config)
-+ agent, err := v1beta.NewBuilder().
++ agent, err := v1beta.NewBuilder("myagent").
 +     WithLLM("openai", "gpt-4").
 +     Build()
 ```
@@ -79,8 +77,7 @@ agent, err := v1beta.NewBuilder().
 -         Model: "gpt-4",
 -     },
 - }
-+ agent, err := v1beta.NewBuilder().
-+     WithName("assistant").
++ agent, err := v1beta.NewBuilder("assistant").
 +     WithLLM("openai", "gpt-4").
 +     WithAPIKey(os.Getenv("OPENAI_API_KEY")).
 +     Build()
@@ -141,7 +138,7 @@ The v1beta API provides the same functionality as vnext:
 
 - [ ] Identify all uses of `core` or `core/vnext` imports
 - [ ] Update imports to `v1beta`
-- [ ] Update agent creation to use `v1beta.NewBuilder()`
+- [ ] Update agent creation to use `v1beta.NewBuilder(name)`
 - [ ] Update config structs to v1beta types
 - [ ] Update streaming code (minimal changes needed)
 - [ ] Update workflow code (minimal changes needed)
@@ -160,7 +157,7 @@ The v1beta API provides the same functionality as vnext:
 | Feature | core/vnext | v1beta | Notes |
 |---------|-----------|--------|-------|
 | Package | `core/vnext` | `v1beta` | Import path change |
-| Agent Creation | `NewBuilder(name)` | `NewBuilder().WithName(name)` | Builder pattern |
+| Agent Creation | `NewBuilder(name)` | `NewBuilder(name)` | Builder pattern |
 | Config | `WithConfig(&Config{...})` | Fluent methods | More ergonomic |
 | Streaming | `RunStream()` | `RunStream()` | Same API |
 | Workflows | `NewSequentialWorkflow()` | `NewSequentialWorkflow()` | Same API |
