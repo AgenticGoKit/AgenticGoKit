@@ -123,6 +123,7 @@ Native support for Images, Audio, and Video inputs. Works seamlessly with models
 ### [Tool Integration & MCP](docs/v1beta/tool-integration.md)
 Extend agents with tools using standard Go functions or the **Model Context Protocol (MCP)**.
 - **Dynamic Discovery**: Automatically find and register tools from MCP servers.
+- **You.com Search Provider**: Optional MCP setup helper for web search in agent workflows ([docs/youcom-search-mcp.md](docs/youcom-search-mcp.md)).
 - **Standardized**: Support for the emerging standard for LLM tool interoperability.
 
 ### [Observability & Tracing](docs/v1beta/observability.md)

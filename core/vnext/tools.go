@@ -266,6 +266,29 @@ func DefaultMCPConfig() *MCPConfig {
 	}
 }
 
+// NewYouDotComSearchMCPServer returns a default MCP stdio server config for You.com Search.
+func NewYouDotComSearchMCPServer() MCPServer {
+	return MCPServer{
+		Name:    "you-search",
+		Type:    "stdio",
+		Command: "youdotcom-search-mcp",
+		Enabled: true,
+	}
+}
+
+// WithYouDotComSearchMCP appends the You.com Search MCP server to tools config.
+func WithYouDotComSearchMCP(cfg *ToolsConfig) *ToolsConfig {
+	if cfg == nil {
+		cfg = &ToolsConfig{}
+	}
+	if cfg.MCP == nil {
+		cfg.MCP = DefaultMCPConfig()
+	}
+	cfg.MCP.Enabled = true
+	cfg.MCP.Servers = append(cfg.MCP.Servers, NewYouDotComSearchMCPServer())
+	return cfg
+}
+
 // DefaultCacheConfig returns a default cache configuration
 func DefaultCacheConfig() *CacheConfig {
 	return &CacheConfig{
