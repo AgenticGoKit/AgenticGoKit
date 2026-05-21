@@ -593,15 +593,11 @@ func (a *realAgent) storeInMemory(ctx context.Context, input, output string) err
 	sessionID := ctx.Value("session_id")
 	Logger().Info().Interface("session_id", sessionID).Msg("storeInMemory: Attempting to store interaction")
 
-	// Store as personal memory for RAG retrieval
-	// This allows the agent to recall facts and context from past conversations
+	// Store only the trusted user input in personal memory for RAG retrieval.
+	// Assistant output may contain model-injected text, so keep it out of the
+	// cross-request vector store and limit it to chat history below.
 	if err := a.memoryProvider.Store(ctx, input, "user_message", "conversation"); err != nil {
 		Logger().Warn().Err(err).Msg("Failed to store user message in memory")
-		// Don't return error - continue with chat history storage
-	}
-
-	if err := a.memoryProvider.Store(ctx, output, "agent_response", "conversation"); err != nil {
-		Logger().Warn().Err(err).Msg("Failed to store agent response in memory")
 		// Don't return error - continue with chat history storage
 	}
 
