@@ -2,17 +2,21 @@ package v1beta
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/agenticgokit/agenticgokit/core"
 )
 
 type storeRecordingMemory struct {
-	stored []string
+	stored       []string
+	storeCalls   []string
+	messageCalls []string
 }
 
 func (m *storeRecordingMemory) Store(ctx context.Context, content string, tags ...string) error {
 	m.stored = append(m.stored, content)
+	m.storeCalls = append(m.storeCalls, content)
 	return nil
 }
 
@@ -23,16 +27,20 @@ func (m *storeRecordingMemory) Query(ctx context.Context, query string, limit ..
 func (m *storeRecordingMemory) Remember(ctx context.Context, key string, value any) error { return nil }
 func (m *storeRecordingMemory) Recall(ctx context.Context, key string) (any, error)       { return nil, nil }
 func (m *storeRecordingMemory) AddMessage(ctx context.Context, role, content string) error {
-	m.stored = append(m.stored, role+":"+content)
+	entry := role + ":" + content
+	m.stored = append(m.stored, entry)
+	m.messageCalls = append(m.messageCalls, entry)
 	return nil
 }
 func (m *storeRecordingMemory) GetHistory(ctx context.Context, limit ...int) ([]core.Message, error) {
 	return nil, nil
 }
-func (m *storeRecordingMemory) NewSession() string                                        { return "session-1" }
-func (m *storeRecordingMemory) SetSession(ctx context.Context, sessionID string) context.Context { return ctx }
-func (m *storeRecordingMemory) ClearSession(ctx context.Context) error                     { return nil }
-func (m *storeRecordingMemory) Close() error                                               { return nil }
+func (m *storeRecordingMemory) NewSession() string { return "session-1" }
+func (m *storeRecordingMemory) SetSession(ctx context.Context, sessionID string) context.Context {
+	return ctx
+}
+func (m *storeRecordingMemory) ClearSession(ctx context.Context) error { return nil }
+func (m *storeRecordingMemory) Close() error                           { return nil }
 func (m *storeRecordingMemory) IngestDocument(ctx context.Context, doc core.Document) error {
 	return nil
 }
@@ -71,6 +79,40 @@ func TestStoreInMemoryStoresOnlyTrustedInputInPersonalMemory(t *testing.T) {
 
 	if mem.stored[2] != "assistant:assistant output" {
 		t.Fatalf("expected assistant output only in chat history, got %q", mem.stored[2])
+	}
+}
+
+func TestStoreInMemoryPromptInjectionPoCBlocksLLMOutputFromPersonalMemory(t *testing.T) {
+	preGuardMem := &storeRecordingMemory{}
+	mem := &storeRecordingMemory{}
+	agent := &realAgent{memoryProvider: mem}
+	payload := "POC_MARKER model output that must not reach personal memory"
+
+	if err := preGuardMem.Store(context.Background(), payload, "assistant_output", "conversation"); err != nil {
+		t.Fatalf("pre-guard fake memory store returned error: %v", err)
+	}
+	if len(preGuardMem.storeCalls) != 1 || !strings.Contains(preGuardMem.storeCalls[0], "POC_MARKER") {
+		t.Fatalf("PoC setup failed: fake DB recorder did not store model-controlled marker: %#v", preGuardMem.storeCalls)
+	}
+
+	if err := agent.storeInMemory(context.Background(), "trusted user prompt", payload); err != nil {
+		t.Fatalf("storeInMemory returned error: %v", err)
+	}
+
+	for _, stored := range mem.storeCalls {
+		if strings.Contains(stored, "POC_MARKER") {
+			t.Fatalf("fixed code sent model-controlled payload to personal memory DB sink: %#v", mem.storeCalls)
+		}
+	}
+	if len(mem.storeCalls) != 1 || mem.storeCalls[0] != "trusted user prompt" {
+		t.Fatalf("expected only trusted user input in personal memory, got %#v", mem.storeCalls)
+	}
+
+	if len(mem.messageCalls) != 2 {
+		t.Fatalf("expected chat history messages to be preserved, got %#v", mem.messageCalls)
+	}
+	if mem.messageCalls[1] != "assistant:"+payload {
+		t.Fatalf("expected assistant output to remain only in chat history, got %#v", mem.messageCalls)
 	}
 }
 
