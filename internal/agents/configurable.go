@@ -168,7 +168,11 @@ func (ca *ConfigAwareUnifiedAgent) ApplySystemPrompt(ctx context.Context, state 
 	}
 
 	workingState := state.Clone()
-	workingState.Set("system_prompt", ca.config.SystemPrompt)
+	rendered, err := core.FormatPromptString(ca.config.SystemPrompt, core.StateVars(state), core.FormatGoTemplate)
+	if err != nil {
+		return state, err
+	}
+	workingState.Set("system_prompt", rendered)
 	workingState.Set("system_prompt_applied", true)
 
 	// If we have an LLM capability, we can potentially use the system prompt
@@ -344,7 +348,11 @@ func (ca *ConfigAwareSequentialAgent) ApplySystemPrompt(ctx context.Context, sta
 	}
 
 	workingState := state.Clone()
-	workingState.Set("sequential_system_prompt", ca.config.SystemPrompt)
+	rendered, err := core.FormatPromptString(ca.config.SystemPrompt, core.StateVars(state), core.FormatGoTemplate)
+	if err != nil {
+		return state, err
+	}
+	workingState.Set("sequential_system_prompt", rendered)
 	return workingState, nil
 }
 
@@ -481,7 +489,11 @@ func (ca *ConfigAwareParallelAgent) ApplySystemPrompt(ctx context.Context, state
 	}
 
 	workingState := state.Clone()
-	workingState.Set("parallel_system_prompt", ca.config.SystemPrompt)
+	rendered, err := core.FormatPromptString(ca.config.SystemPrompt, core.StateVars(state), core.FormatGoTemplate)
+	if err != nil {
+		return state, err
+	}
+	workingState.Set("parallel_system_prompt", rendered)
 	return workingState, nil
 }
 

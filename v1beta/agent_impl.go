@@ -22,6 +22,14 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
+// APIStatusError is a re-export of internal/llm.APIStatusError — external
+// callers (Go's "internal" import rule blocks reaching internal/llm
+// directly from outside this module, even via a go.mod replace) can use
+// errors.As(err, &v1beta.APIStatusError{}) against a Run()/execute() error
+// to classify a non-200 LLM-endpoint response by its actual StatusCode
+// instead of matching substrings against the error text.
+type APIStatusError = llm.APIStatusError
+
 // addMultimodalDataToPrompt adds multimodal data from RunOptions to an llm.Prompt.
 // This is a helper to avoid code duplication between execute and streaming methods.
 func addMultimodalDataToPrompt(prompt *llm.Prompt, opts *RunOptions) {
@@ -80,6 +88,7 @@ type realAgent struct {
 	llmProvider    llm.ModelProvider // LLM provider (Ollama, OpenAI, Azure, etc.)
 	memoryProvider core.Memory       // Memory provider (optional, for context/RAG)
 	tools          []Tool            // Tools available to the agent (optional)
+	middlewares    []AgentMiddleware // Run around execute(); see AgentMiddleware doc comment
 
 	// Runtime state
 	initialized bool
@@ -147,6 +156,7 @@ func newRealAgent(config *Config, handler HandlerFunc) (Agent, error) {
 		handler:     handler,
 		initialized: false,
 		sessions:    make(map[string]*sessionState),
+		middlewares: config.Middlewares,
 		metrics: &agentMetrics{
 			totalRuns:     0,
 			totalErrors:   0,
@@ -173,14 +183,22 @@ func newRealAgent(config *Config, handler HandlerFunc) (Agent, error) {
 				KnowledgeWeight: 0.7,
 			},
 		}
-	} else {
-		// If MemoryConfig is provided, ensure it's Enabled by default unless explicitly false
-		// Actually, we should probably just treat a non-nil MemoryConfig as wanting memory.
-		// But follow the Enabled flag if it's there.
-		// Simple fix: if a config is there, we default Enabled to true if not specified.
-		// Since we can't tell if it's explicitly false or just default, we'll assume
-		// if they provided a config object, they probably want it enabled.
-		config.Memory.Enabled = true
+	} else if config.Memory.Enabled {
+		// Fixed 2026-07-10: this branch used to unconditionally force
+		// config.Memory.Enabled = true regardless of what the caller set,
+		// with a comment admitting it couldn't tell "explicitly false" from
+		// "unset" and just assumed true either way — meaning
+		// &MemoryConfig{Enabled: false} (the ONLY way to opt out of the
+		// nil-defaults-to-chromem behavior above) was silently overridden
+		// back to enabled. Confirmed live: a downstream agent that
+		// explicitly disables memory (it has its own memory-retrieval path
+		// and doesn't want this framework's automatic chromem-backed
+		// enrichment+auto-store) had every .Info() log line proving it was
+		// running anyway. A caller
+		// that provides a non-nil *MemoryConfig is explicit about intent by
+		// definition — trust config.Memory.Enabled as given; only fill in
+		// the embedding-provider smart-defaults below when they actually
+		// asked for memory.
 
 		// Smart Default: If no embedding provider is specified, try to use the LLM provider
 		if config.Memory.Options == nil {
@@ -227,6 +245,32 @@ func newRealAgent(config *Config, handler HandlerFunc) (Agent, error) {
 			return nil, fmt.Errorf("failed to create tools: %w", err)
 		}
 		agent.tools = tools
+
+		// Skills (declarative, TOML-loadable): ToolsConfig.Skills.Dir names a
+		// directory, but the actual frontmatter-parsing/loading logic lives
+		// in a separate plugin (e.g. plugins/skills) to avoid v1beta
+		// depending on it — see SkillsProvider's doc comment (skills_
+		// provider.go) for why this is a registered-factory hook, not a
+		// direct call, same shape as ToolManagerFactory just above it in
+		// spirit. A Dir set with no factory registered is logged, not
+		// treated as an error: config alone can't distinguish a missing
+		// blank-import from a stale leftover value.
+		if config.Tools.Skills != nil && config.Tools.Skills.Dir != "" {
+			if factory := GetSkillsProviderFactory(); factory != nil {
+				provider, serr := factory(config.Tools.Skills.Dir)
+				if serr != nil {
+					Logger().Warn().Err(serr).Str("dir", config.Tools.Skills.Dir).Msg("failed to load skills provider")
+				} else if provider != nil {
+					agent.tools = append(agent.tools, provider.Tool())
+					if catalog := provider.Catalog(); catalog != "" {
+						config.SystemPrompt = config.SystemPrompt + "\n\n[Available skills — call load_skill(name) to fetch one's full body on demand]\n" + catalog
+					}
+				}
+			} else {
+				Logger().Warn().Str("dir", config.Tools.Skills.Dir).
+					Msg("ToolsConfig.Skills.Dir set but no skills provider registered — blank-import a skills plugin (e.g. plugins/skills) to enable it")
+			}
+		}
 	}
 
 	// Mark as initialized
@@ -278,8 +322,70 @@ func (a *realAgent) Run(ctx context.Context, input string) (*Result, error) {
 	return a.execute(ctx, input, nil)
 }
 
-// execute contains the core execution logic, shared between Run and RunWithOptions
+// execute wraps executeInner with AgentMiddleware's BeforeRun/AfterRun (see
+// AgentMiddleware doc comment for ordering and scope). With no middlewares
+// registered (a.middlewares is nil — every existing caller, today) this is
+// behaviorally identical to calling executeInner directly.
 func (a *realAgent) execute(ctx context.Context, input string, opts *RunOptions) (*Result, error) {
+	ctx, input, err := a.runBeforeMiddleware(ctx, input, opts)
+	if err != nil {
+		return nil, err
+	}
+	result, err := a.executeInner(ctx, input, opts)
+	return a.runAfterMiddleware(ctx, input, result, err, opts)
+}
+
+// skippedMiddleware returns a lookup set built from opts.SkipMiddleware.
+// Safe to call with a nil opts or empty SkipMiddleware; the returned nil map
+// makes every lookup false, so callers don't need a separate nil check.
+func skippedMiddleware(opts *RunOptions) map[string]bool {
+	if opts == nil || len(opts.SkipMiddleware) == 0 {
+		return nil
+	}
+	skip := make(map[string]bool, len(opts.SkipMiddleware))
+	for _, name := range opts.SkipMiddleware {
+		skip[name] = true
+	}
+	return skip
+}
+
+// runBeforeMiddleware runs each non-skipped middleware's BeforeRun in
+// registration order, threading ctx/input through the chain. The first
+// error aborts the run before executeInner is called (no LLM call happens).
+func (a *realAgent) runBeforeMiddleware(ctx context.Context, input string, opts *RunOptions) (context.Context, string, error) {
+	skip := skippedMiddleware(opts)
+	for _, mw := range a.middlewares {
+		if skip[mw.Name()] {
+			continue
+		}
+		var err error
+		ctx, input, err = mw.BeforeRun(ctx, input)
+		if err != nil {
+			return ctx, input, NewAgentErrorWithError(ErrMiddlewareBeforeRun,
+				fmt.Sprintf("middleware %q BeforeRun failed", mw.Name()), err)
+		}
+	}
+	return ctx, input, nil
+}
+
+// runAfterMiddleware runs each non-skipped middleware's AfterRun in reverse
+// registration order (LIFO), each stage seeing the result/err the previous
+// stage (or executeInner) produced. See AgentMiddleware doc comment for why
+// AfterRun's returned error is passed through unwrapped.
+func (a *realAgent) runAfterMiddleware(ctx context.Context, input string, result *Result, runErr error, opts *RunOptions) (*Result, error) {
+	skip := skippedMiddleware(opts)
+	for i := len(a.middlewares) - 1; i >= 0; i-- {
+		mw := a.middlewares[i]
+		if skip[mw.Name()] {
+			continue
+		}
+		result, runErr = mw.AfterRun(ctx, input, result, runErr)
+	}
+	return result, runErr
+}
+
+// executeInner contains the core execution logic, shared between Run and RunWithOptions
+func (a *realAgent) executeInner(ctx context.Context, input string, opts *RunOptions) (*Result, error) {
 	startTime := time.Now()
 
 	tracer := observability.GetTracer("agk.v1beta.agent")
@@ -303,9 +409,17 @@ func (a *realAgent) execute(ctx context.Context, input string, opts *RunOptions)
 		return nil, fmt.Errorf("agent not properly initialized: LLM provider is nil")
 	}
 
-	// Step 1: Build the prompt with system context and user input
+	// Step 1: Build the prompt with system context and user input.
+	// SystemPrompt goes through core.FormatPromptString (GoTemplate syntax)
+	// before use — a plain-text prompt with no {{ }} directives passes
+	// through unchanged, but callers can now build SystemPrompt with
+	// {{.Input}} or other vars instead of "+=" string concatenation.
+	systemPrompt, err := core.FormatPromptString(a.config.SystemPrompt, map[string]any{"Input": input}, core.FormatGoTemplate)
+	if err != nil {
+		return nil, fmt.Errorf("agent %s: format system prompt: %w", a.config.Name, err)
+	}
 	prompt := llm.Prompt{
-		System: a.config.SystemPrompt,
+		System: systemPrompt,
 		User:   input,
 	}
 
@@ -313,7 +427,7 @@ func (a *realAgent) execute(ctx context.Context, input string, opts *RunOptions)
 	if observability.IsDetailedTracing() {
 		span.SetAttributes(
 			attribute.String(observability.AttrPromptUser, observability.TruncateForTrace(input, observability.MaxContentLength)),
-			attribute.String(observability.AttrPromptSystem, observability.TruncateForTrace(a.config.SystemPrompt, observability.MaxContentLength)),
+			attribute.String(observability.AttrPromptSystem, observability.TruncateForTrace(systemPrompt, observability.MaxContentLength)),
 		)
 	}
 
@@ -486,9 +600,21 @@ func (a *realAgent) execute(ctx context.Context, input string, opts *RunOptions)
 				}
 				return resp.Content, nil
 			},
-			// Tools and Memory would be provided here if available
-			// Tools:  a.tools,
-			// Memory: a.memoryProvider,
+			// Tools: real as of this fix (sliceToolManager, capabilities_tools.go)
+			// — reads a.tools fresh so RunWithOptions' per-call ToolMode
+			// filtering (see :776-796) is respected. nil only when no tools
+			// were configured, same contract docs/custom-handlers.md's own
+			// "Capability Checks" section already tells callers to expect.
+			//
+			// Memory: still nil. a.memoryProvider is core.Memory (legacy,
+			// different method signatures — Store(ctx,content,tags...) vs
+			// v1beta.Memory's Store(ctx,content,opts...StoreOption), and no
+			// IngestDocument/SearchKnowledge/BuildContext at all) — cannot be
+			// wired without either a lossy adapter or an interface-level
+			// decision, tracked separately, not bundled into this fix.
+		}
+		if len(a.tools) > 0 {
+			capabilities.Tools = newSliceToolManager(a.tools)
 		}
 
 		handlerResponse, err := a.handler(ctx, finalResponse, capabilities)
@@ -857,9 +983,22 @@ func (a *realAgent) RunStream(ctx context.Context, input string, opts ...StreamO
 
 		startTime := time.Now()
 
-		// Build prompt (similar to Run method)
+		// Build prompt (similar to Run method). SystemPrompt goes through
+		// core.FormatPromptString the same way the non-streaming path does —
+		// see executeInner for why.
+		systemPrompt, err := core.FormatPromptString(a.config.SystemPrompt, map[string]any{"Input": input}, core.FormatGoTemplate)
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+			writer.Write(&StreamChunk{
+				Type:  ChunkTypeError,
+				Error: fmt.Errorf("agent %s: format system prompt: %w", a.config.Name, err),
+			})
+			a.updateMetrics(startTime, true)
+			return
+		}
 		prompt := llm.Prompt{
-			System: a.config.SystemPrompt,
+			System: systemPrompt,
 			User:   input,
 			Parameters: llm.ModelParameters{
 				Temperature: convertFloat32ToFloat32Ptr(a.config.LLM.Temperature),
@@ -871,7 +1010,7 @@ func (a *realAgent) RunStream(ctx context.Context, input string, opts ...StreamO
 		if observability.IsDetailedTracing() {
 			span.SetAttributes(
 				attribute.String(observability.AttrPromptUser, observability.TruncateForTrace(input, observability.MaxContentLength)),
-				attribute.String(observability.AttrPromptSystem, observability.TruncateForTrace(a.config.SystemPrompt, observability.MaxContentLength)),
+				attribute.String(observability.AttrPromptSystem, observability.TruncateForTrace(systemPrompt, observability.MaxContentLength)),
 			)
 		}
 
@@ -1015,6 +1154,11 @@ func (a *realAgent) RunStream(ctx context.Context, input string, opts ...StreamO
 					}
 					return resp.Content, nil
 				},
+			}
+			// Mirrors execute()'s wiring above — see its comment for why
+			// Tools is real (sliceToolManager) and Memory is still nil.
+			if len(a.tools) > 0 {
+				capabilities.Tools = newSliceToolManager(a.tools)
 			}
 			handlerResponse, err := a.handler(streamCtx, finalContent, capabilities)
 			if err != nil {

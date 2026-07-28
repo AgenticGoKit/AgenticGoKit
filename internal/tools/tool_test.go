@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"sort"
 	"testing"
+
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // MockTool for testing registry
@@ -17,6 +19,10 @@ type MockTool struct {
 
 func (m *MockTool) Name() string {
 	return m.name
+}
+
+func (m *MockTool) Info(ctx context.Context) (*core.FunctionDefinition, error) {
+	return &core.FunctionDefinition{Name: m.name}, nil
 }
 
 func (m *MockTool) Call(ctx context.Context, args map[string]any) (map[string]any, error) {

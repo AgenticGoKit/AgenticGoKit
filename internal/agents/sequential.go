@@ -242,7 +242,11 @@ func (s *SequentialAgent) ApplySystemPrompt(ctx context.Context, state agenticgo
 	}
 
 	workingState := state.Clone()
-	workingState.Set("system_prompt", s.config.SystemPrompt)
+	rendered, err := core.FormatPromptString(s.config.SystemPrompt, internalStateVars(state), core.FormatGoTemplate)
+	if err != nil {
+		return state, err
+	}
+	workingState.Set("system_prompt", rendered)
 	workingState.Set("system_prompt_applied", true)
 	workingState.Set("system_prompt_source", "sequential_agent")
 

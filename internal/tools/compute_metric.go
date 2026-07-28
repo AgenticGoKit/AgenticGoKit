@@ -3,14 +3,39 @@ package tools
 import (
 	"context"
 	"fmt"
+
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // ComputeMetricTool performs simple calculations.
 type ComputeMetricTool struct{}
 
+// computeMetricArgs is the typed shape of ComputeMetricTool's arguments.
+// Info() reflects this struct into a JSON schema instead of hand-authoring
+// one, so the advertised schema can't drift from what Call() decodes.
+type computeMetricArgs struct {
+	Operation string  `json:"operation" jsonschema:"enum=add,enum=subtract,enum=multiply,enum=divide,description=The arithmetic operation to perform."`
+	A         float64 `json:"a" jsonschema:"description=The first operand."`
+	B         float64 `json:"b" jsonschema:"description=The second operand."`
+}
+
 // Name returns the tool's name.
 func (t *ComputeMetricTool) Name() string {
 	return "compute_metric"
+}
+
+// Info returns the tool's name, description, and JSON-schema parameters.
+// This implements the FunctionTool interface.
+func (t *ComputeMetricTool) Info(ctx context.Context) (*core.FunctionDefinition, error) {
+	params, err := InferSchema[computeMetricArgs]()
+	if err != nil {
+		return nil, fmt.Errorf("compute_metric: infer schema: %w", err)
+	}
+	return &core.FunctionDefinition{
+		Name:        t.Name(),
+		Description: "Performs a basic arithmetic calculation (add, subtract, multiply, divide) on two numbers.",
+		Parameters:  params,
+	}, nil
 }
 
 // getFloat is a helper function to safely extract a float64 from the arguments map.

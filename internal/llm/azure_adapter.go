@@ -34,10 +34,11 @@ type azureChatMessage struct {
 
 // Request structure for the Chat Completions API
 type azureChatCompletionsRequest struct {
-	Messages    []azureChatMessage `json:"messages"`
-	Stream      bool               `json:"stream,omitempty"`
-	Temperature *float32           `json:"temperature,omitempty"`
-	MaxTokens   *int32             `json:"max_tokens,omitempty"`
+	Messages       []azureChatMessage `json:"messages"`
+	Stream         bool               `json:"stream,omitempty"`
+	Temperature    *float32           `json:"temperature,omitempty"`
+	MaxTokens      *int32             `json:"max_tokens,omitempty"`
+	ResponseFormat interface{}        `json:"response_format,omitempty"`
 	// TODO: Add other parameters like top_p, stop, presence_penalty etc.
 }
 
@@ -112,6 +113,7 @@ type AzureOpenAIAdapter struct {
 	chatDeployment      string // Deployment name for chat models
 	embeddingDeployment string // Deployment name for embedding models
 	apiVersion          string
+	responseFormat      interface{} // Passed through verbatim as "response_format"; Azure OpenAI is the same wire API family as OpenAI
 }
 
 // AzureOpenAIAdapterOptions holds configuration options for the AzureOpenAIAdapter.
@@ -122,6 +124,7 @@ type AzureOpenAIAdapterOptions struct {
 	EmbeddingDeployment string       // Deployment name for embedding models
 	HTTPClient          *http.Client // Optional: Provide a custom client
 	APIVersion          string       // API version to use
+	ResponseFormat      interface{}  // Optional: passed through verbatim as the request body's "response_format" field
 }
 
 // NewAzureOpenAIAdapter creates a new adapter for Azure OpenAI using direct HTTP calls.
@@ -148,6 +151,7 @@ func NewAzureOpenAIAdapter(opts AzureOpenAIAdapterOptions) (*AzureOpenAIAdapter,
 		chatDeployment:      opts.ChatDeployment,
 		embeddingDeployment: opts.EmbeddingDeployment,
 		apiVersion:          opts.APIVersion,
+		responseFormat:      opts.ResponseFormat,
 	}, nil
 }
 
@@ -183,17 +187,25 @@ func (a *AzureOpenAIAdapter) doRequest(ctx context.Context, method, url string, 
 		return nil, fmt.Errorf("http request failed: %w", err)
 	}
 
-	// Check for non-success status codes
+	// Check for non-success status codes. Returned as *APIStatusError (the
+	// same type openai_adapter.go produces), not a plain fmt.Errorf, so
+	// CircuitBreakerProvider's DefaultIsRetryable (internal/llm/circuit_
+	// breaker_provider.go) can classify a 429/5xx gateway blip as retryable
+	// via errors.As instead of silently treating every Azure error as
+	// non-retryable — previously the exact transient-failure class MaxRetries
+	// exists to cover was skipped for this provider.
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		defer resp.Body.Close()
 		errorBodyBytes, _ := io.ReadAll(resp.Body)
 		apiError := azureErrorResponse{}
 		if json.Unmarshal(errorBodyBytes, &apiError) == nil && apiError.Error.Message != "" {
-			return nil, fmt.Errorf("api request failed: status %d, type %s, code %s, message: %s",
-				resp.StatusCode, apiError.Error.Type, apiError.Error.Code, apiError.Error.Message)
+			return nil, &APIStatusError{
+				StatusCode: resp.StatusCode,
+				Body: fmt.Sprintf("type %s, code %s, message: %s", apiError.Error.Type, apiError.Error.Code, apiError.Error.Message),
+			}
 		}
-		// Fallback error message
-		return nil, fmt.Errorf("api request failed: status %d, body: %s", resp.StatusCode, string(errorBodyBytes))
+		// Fallback: no parseable structured error body.
+		return nil, &APIStatusError{StatusCode: resp.StatusCode, Body: string(errorBodyBytes)}
 	}
 
 	return resp, nil
@@ -257,10 +269,11 @@ func (a *AzureOpenAIAdapter) Call(ctx context.Context, prompt Prompt) (Response,
 	}
 
 	apiReq := azureChatCompletionsRequest{
-		Messages:    mapInternalPrompt(prompt),
-		Stream:      false,
-		Temperature: prompt.Parameters.Temperature,
-		MaxTokens:   prompt.Parameters.MaxTokens,
+		Messages:       mapInternalPrompt(prompt),
+		Stream:         false,
+		Temperature:    prompt.Parameters.Temperature,
+		MaxTokens:      prompt.Parameters.MaxTokens,
+		ResponseFormat: a.responseFormat,
 	}
 
 	url := a.buildURL(a.chatDeployment, a.apiVersion, "chat/completions")
@@ -377,10 +390,11 @@ func (a *AzureOpenAIAdapter) Stream(ctx context.Context, prompt Prompt) (<-chan 
 	}
 
 	apiReq := azureChatCompletionsRequest{
-		Messages:    mapInternalPrompt(prompt),
-		Stream:      true, // Enable streaming
-		Temperature: prompt.Parameters.Temperature,
-		MaxTokens:   prompt.Parameters.MaxTokens,
+		Messages:       mapInternalPrompt(prompt),
+		Stream:         true, // Enable streaming
+		Temperature:    prompt.Parameters.Temperature,
+		MaxTokens:      prompt.Parameters.MaxTokens,
+		ResponseFormat: a.responseFormat,
 	}
 
 	url := a.buildURL(a.chatDeployment, a.apiVersion, "chat/completions")

@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"sync"
+
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // FunctionTool defines the interface for a callable tool that agents can use.
@@ -11,10 +13,14 @@ import (
 type FunctionTool interface {
 	// Name returns the unique identifier for the tool.
 	Name() string
+	// Info returns the tool's name, description, and JSON-schema parameters,
+	// letting a ChatModel decide whether and how to call the tool (mirrors
+	// eino's BaseTool.Info). Reuses core.FunctionDefinition since it's already
+	// the shape core.Prompt.Tools expects for native tool-calling.
+	Info(ctx context.Context) (*core.FunctionDefinition, error)
 	// Call executes the tool's logic with the given arguments.
 	// It returns a map containing the results or an error if the call fails.
 	Call(ctx context.Context, args map[string]any) (map[string]any, error)
-	// TODO: Add a Schema() method to describe parameters and return values for LLMs?
 }
 
 // ToolRegistry holds a collection of available FunctionTools.

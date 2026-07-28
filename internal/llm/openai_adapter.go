@@ -21,6 +21,21 @@ import (
 // DefaultOpenAIBaseURL is the default OpenAI API endpoint
 const DefaultOpenAIBaseURL = "https://api.openai.com/v1"
 
+// APIStatusError is returned when the OpenAI-compatible endpoint responds
+// with a non-200 status. StatusCode is preserved (previously discarded —
+// the error was a flat string built from the response body, giving callers
+// no structured way to classify e.g. a 502/503/524 gateway blip as
+// retry-worthy vs. a genuine 4xx client error) so downstream code can use
+// errors.As instead of matching substrings against the error text.
+type APIStatusError struct {
+	StatusCode int
+	Body       string
+}
+
+func (e *APIStatusError) Error() string {
+	return fmt.Sprintf("OpenAI API error (status %d): %s", e.StatusCode, e.Body)
+}
+
 // OpenAIAdapterConfig holds extended configuration for OpenAI-compatible adapters
 type OpenAIAdapterConfig struct {
 	APIKey       string
@@ -38,6 +53,19 @@ type OpenAIAdapterConfig struct {
 	FrequencyPenalty  float32
 	RepetitionPenalty float32
 	Stop              []string
+
+	// ResponseFormat, when non-nil, is passed through verbatim as the
+	// OpenAI-compatible "response_format" request field (e.g.
+	// map[string]interface{}{"type": "json_object"}). nil (the zero
+	// value) omits the field entirely — no behavior change for existing
+	// callers.
+	ResponseFormat interface{}
+
+	// CachePrompt, when true, sets the request body's "cache_prompt" field —
+	// llama.cpp's server flag to reuse a matching KV-cache prefix instead of
+	// re-prefilling it. false (the zero value) omits the field entirely, so
+	// non-llama.cpp OpenAI-compatible backends never see it.
+	CachePrompt bool
 }
 
 // OpenAIAdapter implements the ModelProvider interface for OpenAI-compatible APIs.
@@ -59,6 +87,9 @@ type OpenAIAdapter struct {
 	frequencyPenalty  float32
 	repetitionPenalty float32
 	stop              []string
+
+	responseFormat interface{}
+	cachePrompt    bool
 }
 
 // NewOpenAIAdapter creates a new OpenAIAdapter instance.
@@ -120,6 +151,8 @@ func NewOpenAIAdapterWithConfig(config OpenAIAdapterConfig) (*OpenAIAdapter, err
 		frequencyPenalty:  config.FrequencyPenalty,
 		repetitionPenalty: config.RepetitionPenalty,
 		stop:              config.Stop,
+		responseFormat:    config.ResponseFormat,
+		cachePrompt:       config.CachePrompt,
 	}, nil
 }
 
@@ -133,6 +166,22 @@ func (o *OpenAIAdapter) SetBaseURL(url string) {
 // SetExtraHeaders allows adding custom headers (e.g., for MLFlow Gateway)
 func (o *OpenAIAdapter) SetExtraHeaders(headers map[string]string) {
 	o.extraHeaders = headers
+}
+
+// setSessionHeader forwards a per-call session identifier as an outbound
+// X-Session-Id header, when the caller supplied one via
+// RunOptions.SessionID (agent_impl.go already threads this into ctx as
+// context.WithValue(ctx, "session_id", ...), but nothing previously read it
+// back out — every call looked session-less to the provider regardless of
+// what the caller passed). Several OpenAI-compatible gateways (session-aware
+// routers/caching proxies) use this header for sticky routing and cache
+// affinity; a static extraHeaders map (set once at adapter construction,
+// shared by every call for the adapter's lifetime) can't carry a value that
+// varies per call, so this reads it from ctx instead, per call.
+func setSessionHeader(req *http.Request, ctx context.Context) {
+	if sid, ok := ctx.Value("session_id").(string); ok && sid != "" {
+		req.Header.Set("X-Session-Id", sid)
+	}
 }
 
 // setHeaders sets common headers for requests
@@ -155,6 +204,53 @@ func (o *OpenAIAdapter) getBaseURL() string {
 }
 
 // Call implements the ModelProvider interface for a single request/response.
+// buildChatRequestBody assembles the Chat Completions request body shared by
+// Call (stream=false) and Stream (stream=true) — single source of truth so
+// the two call sites can't drift apart on it again. "stream" is always sent
+// explicitly, never omitted: some OpenAI-compatible gateways ignore an
+// absent field and default to SSE regardless (observed live against a real
+// gateway — a missing "stream" key on Call() made every response come back
+// as "data: {...}" chunks, which the non-streaming response parser then
+// failed to decode as a single JSON object, a json.SyntaxError on every
+// call). vLLM/MLFlow Gateway/BentoML/AI Foundry Local embed *OpenAIAdapter
+// for code reuse (see their own adapter files), so this fix covers them too
+// without touching each one individually.
+func (o *OpenAIAdapter) buildChatRequestBody(messages []map[string]interface{}, maxTokens int, temperature float32, stream bool) map[string]interface{} {
+	reqBody := map[string]interface{}{
+		"model":       o.model,
+		"messages":    messages,
+		"max_tokens":  maxTokens,
+		"temperature": temperature,
+		"stream":      stream,
+	}
+	// Extended sampling parameters, if set (for vLLM compatibility).
+	if o.topP > 0 {
+		reqBody["top_p"] = o.topP
+	}
+	if o.topK > 0 {
+		reqBody["top_k"] = o.topK
+	}
+	if o.presencePenalty != 0 {
+		reqBody["presence_penalty"] = o.presencePenalty
+	}
+	if o.frequencyPenalty != 0 {
+		reqBody["frequency_penalty"] = o.frequencyPenalty
+	}
+	if o.repetitionPenalty != 0 {
+		reqBody["repetition_penalty"] = o.repetitionPenalty
+	}
+	if len(o.stop) > 0 {
+		reqBody["stop"] = o.stop
+	}
+	if o.responseFormat != nil {
+		reqBody["response_format"] = o.responseFormat
+	}
+	if o.cachePrompt {
+		reqBody["cache_prompt"] = true
+	}
+	return reqBody
+}
+
 func (o *OpenAIAdapter) Call(ctx context.Context, prompt Prompt) (Response, error) {
 	// Create observability span
 	tracer := otel.Tracer("agenticgokit.llm")
@@ -219,33 +315,7 @@ func (o *OpenAIAdapter) Call(ctx context.Context, prompt Prompt) (Response, erro
 		"content": userContent,
 	})
 
-	// Build request body with extended parameters
-	reqBody := map[string]interface{}{
-		"model":       o.model,
-		"messages":    messages,
-		"max_tokens":  maxTokens,
-		"temperature": temperature,
-	}
-
-	// Add extended sampling parameters if set (for vLLM compatibility)
-	if o.topP > 0 {
-		reqBody["top_p"] = o.topP
-	}
-	if o.topK > 0 {
-		reqBody["top_k"] = o.topK
-	}
-	if o.presencePenalty != 0 {
-		reqBody["presence_penalty"] = o.presencePenalty
-	}
-	if o.frequencyPenalty != 0 {
-		reqBody["frequency_penalty"] = o.frequencyPenalty
-	}
-	if o.repetitionPenalty != 0 {
-		reqBody["repetition_penalty"] = o.repetitionPenalty
-	}
-	if len(o.stop) > 0 {
-		reqBody["stop"] = o.stop
-	}
+	reqBody := o.buildChatRequestBody(messages, maxTokens, temperature, false)
 
 	requestBody, err := json.Marshal(reqBody)
 	if err != nil {
@@ -261,6 +331,7 @@ func (o *OpenAIAdapter) Call(ctx context.Context, prompt Prompt) (Response, erro
 		return Response{}, err
 	}
 	o.setHeaders(req)
+	setSessionHeader(req, ctx)
 
 	resp, err := o.httpClient.Do(req)
 	if err != nil {
@@ -275,7 +346,7 @@ func (o *OpenAIAdapter) Call(ctx context.Context, prompt Prompt) (Response, erro
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		err := errors.New("OpenAI API error: " + string(body))
+		err := &APIStatusError{StatusCode: resp.StatusCode, Body: string(body)}
 		span.RecordError(err)
 		span.SetStatus(codes.Error, fmt.Sprintf("API error: status %d", resp.StatusCode))
 		return Response{}, err
@@ -407,34 +478,7 @@ func (o *OpenAIAdapter) Stream(ctx context.Context, prompt Prompt) (<-chan Token
 		"content": userContent,
 	})
 
-	// Build request body with extended parameters
-	reqBody := map[string]interface{}{
-		"model":       o.model,
-		"messages":    messages,
-		"max_tokens":  maxTokens,
-		"temperature": temperature,
-		"stream":      true, // Enable streaming
-	}
-
-	// Add extended sampling parameters if set (for vLLM compatibility)
-	if o.topP > 0 {
-		reqBody["top_p"] = o.topP
-	}
-	if o.topK > 0 {
-		reqBody["top_k"] = o.topK
-	}
-	if o.presencePenalty != 0 {
-		reqBody["presence_penalty"] = o.presencePenalty
-	}
-	if o.frequencyPenalty != 0 {
-		reqBody["frequency_penalty"] = o.frequencyPenalty
-	}
-	if o.repetitionPenalty != 0 {
-		reqBody["repetition_penalty"] = o.repetitionPenalty
-	}
-	if len(o.stop) > 0 {
-		reqBody["stop"] = o.stop
-	}
+	reqBody := o.buildChatRequestBody(messages, maxTokens, temperature, true)
 
 	requestBody, err := json.Marshal(reqBody)
 	if err != nil {
@@ -451,6 +495,7 @@ func (o *OpenAIAdapter) Stream(ctx context.Context, prompt Prompt) (<-chan Token
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 	o.setHeaders(req)
+	setSessionHeader(req, ctx)
 
 	// Make the request
 	resp, err := o.httpClient.Do(req)
@@ -464,9 +509,12 @@ func (o *OpenAIAdapter) Stream(ctx context.Context, prompt Prompt) (<-chan Token
 	span.SetAttributes(attribute.Int("http.status_code", resp.StatusCode))
 
 	if resp.StatusCode != http.StatusOK {
-		resp.Body.Close()
+		// Read before Close — reading an already-closed response body
+		// returns empty/error, which silently dropped the actual error body
+		// on every non-200 stream-setup failure before this fix.
 		body, _ := io.ReadAll(resp.Body)
-		err := fmt.Errorf("API error: %d - %s", resp.StatusCode, string(body))
+		resp.Body.Close()
+		err := &APIStatusError{StatusCode: resp.StatusCode, Body: string(body)}
 		span.RecordError(err)
 		span.SetStatus(codes.Error, fmt.Sprintf("API error: status %d", resp.StatusCode))
 		return nil, err
@@ -600,6 +648,7 @@ func (o *OpenAIAdapter) Embeddings(ctx context.Context, texts []string) ([][]flo
 		return nil, err
 	}
 	o.setHeaders(req)
+	setSessionHeader(req, ctx)
 
 	resp, err := o.httpClient.Do(req)
 	if err != nil {
@@ -609,7 +658,7 @@ func (o *OpenAIAdapter) Embeddings(ctx context.Context, texts []string) ([][]flo
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("embeddings API error: %s", string(body))
+		return nil, &APIStatusError{StatusCode: resp.StatusCode, Body: string(body)}
 	}
 
 	var response struct {

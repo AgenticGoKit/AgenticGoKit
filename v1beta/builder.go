@@ -117,6 +117,15 @@ func WithDebugMode(enabled bool) Option {
 	}
 }
 
+// WithMiddleware registers one or more AgentMiddleware, appended to any
+// already set. Order matters: BeforeRun runs in this order, AfterRun in
+// reverse (see AgentMiddleware doc comment).
+func WithMiddleware(mw ...AgentMiddleware) Option {
+	return func(c *Config) {
+		c.Middlewares = append(c.Middlewares, mw...)
+	}
+}
+
 // MemoryOption defines functional options for memory configuration
 type MemoryOption func(*MemoryConfig)
 
@@ -222,6 +231,27 @@ func WithMCPDiscovery(scanPorts ...int) ToolOption {
 func WithToolTimeout(timeout time.Duration) ToolOption {
 	return func(tc *ToolsConfig) {
 		tc.Timeout = timeout
+	}
+}
+
+// WithMCPConnectionTimeout overrides the MCP client's per-call timeout —
+// separate from WithToolTimeout's tc.Timeout, and separate from tc.MCP's own
+// ConnectionTimeout default (30s, set by WithMCP when tc.MCP is first
+// created). Call AFTER WithMCP so tc.MCP already exists. Confirmed live
+// 2026-07-15: plugins/mcp/unified.go hardcodes 30s in three places (the
+// mcp-navigator client's own response-wait timeout, and both the
+// authStreamingHTTPTransport/authSSETransport http.Client timeouts) with no
+// way to override from a consuming app — a legitimately slow-but-working MCP
+// tool call (e.g. a discovery tool probing many cubes/resources
+// sequentially) gets aborted at exactly 30s regardless of any other
+// configured timeout, surfacing as a confusing transport-level error instead
+// of a clean, expected timeout.
+func WithMCPConnectionTimeout(timeout time.Duration) ToolOption {
+	return func(tc *ToolsConfig) {
+		if tc.MCP == nil {
+			tc.MCP = &MCPConfig{Enabled: true}
+		}
+		tc.MCP.ConnectionTimeout = timeout
 	}
 }
 

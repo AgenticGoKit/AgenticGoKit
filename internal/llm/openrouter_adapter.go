@@ -29,6 +29,14 @@ type OpenRouterAdapter struct {
 	siteURL     string // Optional: for rankings (HTTP-Referer header)
 	siteName    string // Optional: for rankings (X-Title header)
 	httpClient  *http.Client
+
+	// responseFormat/cachePrompt are set directly by factory.go
+	// (createOpenRouterProvider), same package, rather than adding params
+	// to NewOpenRouterAdapter's constructor and breaking its existing
+	// positional-argument callers (e.g. wrappers.go's
+	// NewOpenRouterAdapterWrapped).
+	responseFormat interface{}
+	cachePrompt    bool
 }
 
 // NewOpenRouterAdapter creates a new OpenRouterAdapter instance.
@@ -93,6 +101,32 @@ func buildOpenRouterMessages(prompt Prompt) []map[string]interface{} {
 	return messages
 }
 
+// buildChatRequestBody assembles the Chat Completions request body shared by
+// Call (stream=false) and Stream (stream=true) — single source of truth so
+// the two call sites can't drift apart on it, mirroring OpenAIAdapter's own
+// buildChatRequestBody (openai_adapter.go). "stream" is always sent
+// explicitly, never omitted: some OpenAI-compatible gateways ignore an
+// absent field and default to SSE regardless (observed live — a missing
+// "stream" key on a non-streaming Call() made the gateway return
+// "data: {...}" chunks, which the non-streaming response parser then failed
+// to decode as a single JSON object).
+func (o *OpenRouterAdapter) buildChatRequestBody(messages []map[string]interface{}, maxTokens int, temperature float32, stream bool) map[string]interface{} {
+	reqBody := map[string]interface{}{
+		"model":       o.model,
+		"messages":    messages,
+		"max_tokens":  maxTokens,
+		"temperature": temperature,
+		"stream":      stream,
+	}
+	if o.responseFormat != nil {
+		reqBody["response_format"] = o.responseFormat
+	}
+	if o.cachePrompt {
+		reqBody["cache_prompt"] = true
+	}
+	return reqBody
+}
+
 // Call implements the ModelProvider interface for a single request/response.
 func (o *OpenRouterAdapter) Call(ctx context.Context, prompt Prompt) (Response, error) {
 	// Create observability span
@@ -143,12 +177,9 @@ func (o *OpenRouterAdapter) Call(ctx context.Context, prompt Prompt) (Response, 
 	// Build messages array for Chat Completions API
 	messages := buildOpenRouterMessages(prompt)
 
-	requestBody, err := json.Marshal(map[string]interface{}{
-		"model":       o.model,
-		"messages":    messages,
-		"max_tokens":  maxTokens,
-		"temperature": temperature,
-	})
+	reqBody := o.buildChatRequestBody(messages, maxTokens, temperature, false)
+
+	requestBody, err := json.Marshal(reqBody)
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, "failed to marshal request")
@@ -185,6 +216,10 @@ func (o *OpenRouterAdapter) Call(ctx context.Context, prompt Prompt) (Response, 
 	// Record HTTP status
 	span.SetAttributes(attribute.Int("http.status_code", resp.StatusCode))
 
+	// Returned as *APIStatusError (the same type openai_adapter.go/azure_
+	// adapter.go produce), not a plain fmt.Errorf, so CircuitBreakerProvider's
+	// DefaultIsRetryable can classify a 429/5xx as retryable via errors.As
+	// instead of silently treating every OpenRouter error as non-retryable.
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
 
@@ -198,13 +233,13 @@ func (o *OpenRouterAdapter) Call(ctx context.Context, prompt Prompt) (Response, 
 		}
 
 		if json.Unmarshal(body, &errorResp) == nil && errorResp.Error.Message != "" {
-			err := fmt.Errorf("OpenRouter API error [%s]: %s", errorResp.Error.Code, errorResp.Error.Message)
+			err := &APIStatusError{StatusCode: resp.StatusCode, Body: fmt.Sprintf("[%s]: %s", errorResp.Error.Code, errorResp.Error.Message)}
 			span.RecordError(err)
 			span.SetStatus(codes.Error, fmt.Sprintf("API error: %s", errorResp.Error.Code))
 			return Response{}, err
 		}
 
-		err := fmt.Errorf("OpenRouter API error: %d - %s", resp.StatusCode, string(body))
+		err := &APIStatusError{StatusCode: resp.StatusCode, Body: string(body)}
 		span.RecordError(err)
 		span.SetStatus(codes.Error, fmt.Sprintf("API error: status %d", resp.StatusCode))
 		return Response{}, err
@@ -322,13 +357,9 @@ func (o *OpenRouterAdapter) Stream(ctx context.Context, prompt Prompt) (<-chan T
 	messages := buildOpenRouterMessages(prompt)
 
 	// Create streaming request
-	requestBody, err := json.Marshal(map[string]interface{}{
-		"model":       o.model,
-		"messages":    messages,
-		"max_tokens":  maxTokens,
-		"temperature": temperature,
-		"stream":      true, // Enable streaming
-	})
+	streamReqBody := o.buildChatRequestBody(messages, maxTokens, temperature, true)
+
+	requestBody, err := json.Marshal(streamReqBody)
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, "failed to marshal request")
@@ -366,9 +397,15 @@ func (o *OpenRouterAdapter) Stream(ctx context.Context, prompt Prompt) (<-chan T
 	// Record HTTP status
 	span.SetAttributes(attribute.Int("http.status_code", resp.StatusCode))
 
+	// Read the body BEFORE closing it (previously closed first, the same
+	// bug this PR's openai_adapter.go fix addresses for the OpenAI adapter
+	// — left in place here meant a non-200 stream error came back with an
+	// empty body every time). Also returned as *APIStatusError so
+	// CircuitBreakerProvider's DefaultIsRetryable can classify a 429/5xx as
+	// retryable.
 	if resp.StatusCode != http.StatusOK {
-		resp.Body.Close()
 		body, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
 
 		// Try to parse OpenRouter error format
 		var errorResp struct {
@@ -380,13 +417,13 @@ func (o *OpenRouterAdapter) Stream(ctx context.Context, prompt Prompt) (<-chan T
 		}
 
 		if json.Unmarshal(body, &errorResp) == nil && errorResp.Error.Message != "" {
-			err := fmt.Errorf("OpenRouter API error [%s]: %s", errorResp.Error.Code, errorResp.Error.Message)
+			err := &APIStatusError{StatusCode: resp.StatusCode, Body: fmt.Sprintf("[%s]: %s", errorResp.Error.Code, errorResp.Error.Message)}
 			span.RecordError(err)
 			span.SetStatus(codes.Error, fmt.Sprintf("API error: %s", errorResp.Error.Code))
 			return nil, err
 		}
 
-		err := fmt.Errorf("OpenRouter API error: %d - %s", resp.StatusCode, string(body))
+		err := &APIStatusError{StatusCode: resp.StatusCode, Body: string(body)}
 		span.RecordError(err)
 		span.SetStatus(codes.Error, fmt.Sprintf("API error: status %d", resp.StatusCode))
 		return nil, err

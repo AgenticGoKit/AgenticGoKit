@@ -306,7 +306,11 @@ func (a *ParallelAgent) ApplySystemPrompt(ctx context.Context, state agenticgoki
 	}
 
 	workingState := state.Clone()
-	workingState.Set("system_prompt", a.agentConfig.SystemPrompt)
+	rendered, err := core.FormatPromptString(a.agentConfig.SystemPrompt, internalStateVars(state), core.FormatGoTemplate)
+	if err != nil {
+		return state, err
+	}
+	workingState.Set("system_prompt", rendered)
 	workingState.Set("system_prompt_applied", true)
 	workingState.Set("system_prompt_source", "parallel_agent")
 

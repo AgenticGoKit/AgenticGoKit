@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+
+	"github.com/agenticgokit/agenticgokit/core"
 )
 
 // HTTPClient is an interface for making HTTP requests.
@@ -48,6 +50,25 @@ func NewWebSearchTool() (*WebSearchTool, error) {
 // Name returns the tool's name.
 func (t *WebSearchTool) Name() string {
 	return "web_search"
+}
+
+// webSearchArgs is the typed shape of WebSearchTool's arguments.
+type webSearchArgs struct {
+	Query string `json:"query" jsonschema:"description=The search query."`
+}
+
+// Info returns the tool's name, description, and JSON-schema parameters.
+// This implements the FunctionTool interface.
+func (t *WebSearchTool) Info(ctx context.Context) (*core.FunctionDefinition, error) {
+	params, err := InferSchema[webSearchArgs]()
+	if err != nil {
+		return nil, fmt.Errorf("web_search: infer schema: %w", err)
+	}
+	return &core.FunctionDefinition{
+		Name:        t.Name(),
+		Description: "Searches the web using the Brave Search API and returns matching page titles, URLs, and snippets.",
+		Parameters:  params,
+	}, nil
 }
 
 // Call performs a web search using the Brave Search API.

@@ -27,6 +27,15 @@ func logger() *zerolog.Logger {
 	return logging.GetLogger()
 }
 
+// maxSSELineSize bounds bufio.Scanner's per-line buffer for SSE frame
+// parsing below — bufio.Scanner's own default (64KB) silently truncates
+// scanning (Scan() returns false, Err() becomes bufio.ErrTooLong) on a
+// single "data:" line beyond that size, with no error surfaced unless the
+// caller checks Err(). Confirmed live 2026-07-16: a real MCP tool response
+// (a full-schema discovery call covering many resources) measured ~107KB in
+// one such line — comfortably past the default, nowhere near this bound.
+const maxSSELineSize = 10 * 1024 * 1024 // 10MB
+
 // normalizeToolArgs defensively unwraps arguments of the form:
 // {"input":"{\"k\":\"v\"}"} -> {"k":"v"}
 // This preserves direct JSON object arguments expected by many MCP tools.
@@ -102,13 +111,13 @@ type authSSETransport struct {
 	sseConnection *http.Response
 }
 
-func newAuthStreamingHTTPTransport(baseURL, endpoint, token string) *authStreamingHTTPTransport {
+func newAuthStreamingHTTPTransport(baseURL, endpoint, token string, timeout time.Duration) *authStreamingHTTPTransport {
 	return &authStreamingHTTPTransport{
 		baseURL:   baseURL,
 		endpoint:  endpoint,
 		authToken: token,
 		client: &http.Client{
-			Timeout: 30 * time.Second,
+			Timeout: timeout,
 		},
 	}
 }
@@ -132,8 +141,17 @@ func (h *authStreamingHTTPTransport) Close() error {
 }
 
 func (h *authStreamingHTTPTransport) Send(message *mcp.Message) error {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
+	// Full write lock, not RLock: this mutates h.lastResponse and
+	// h.sessionID. Confirmed live 2026-07-11: this Go server is
+	// single-process, multi-session, and a single transport instance is
+	// shared across concurrent turns — RLock let two goroutines run
+	// Send/Receive concurrently and stomp on the shared lastResponse slot
+	// between each other's own Send/Receive pair (one call's stored
+	// response silently cleared or stolen by another call's Receive before
+	// its own Receive ran), surfacing as a bare "no response available"
+	// error with no corresponding request ever reaching the MCP server.
+	h.mu.Lock()
+	defer h.mu.Unlock()
 
 	if !h.connected {
 		return fmt.Errorf("transport not connected")
@@ -213,13 +231,36 @@ func (h *authStreamingHTTPTransport) Send(message *mcp.Message) error {
 		return nil
 	}
 
-	// Check if response is in SSE format (starts with "event:" or "data:")
+	// Check if response is in SSE format. Not just a prefix check: a
+	// streamable-HTTP connection can emit a leading keep-alive comment line
+	// (e.g. ": ping\n\n") before the real "event: message\ndata: {...}"
+	// frame — io.ReadAll captures both concatenated, so the real frame is
+	// no longer at byte 0. A strict HasPrefix("event:") here falls through
+	// to the plain-JSON branch below, which chokes on the leading ':' with
+	// "invalid character ':' looking for beginning of value". Checking
+	// Content-Type and/or scanning for the markers anywhere in the body
+	// (not just at the start) survives a leading comment line.
 	bodyStr := string(body)
-	if strings.HasPrefix(bodyStr, "event:") || strings.HasPrefix(bodyStr, "data:") {
+	looksLikeSSE := strings.Contains(resp.Header.Get("Content-Type"), "text/event-stream") ||
+		strings.HasPrefix(bodyStr, "event:") || strings.HasPrefix(bodyStr, "data:") ||
+		strings.Contains(bodyStr, "\nevent:") || strings.Contains(bodyStr, "\ndata:")
+	if looksLikeSSE {
 		logger().Debug().Msg("[Streaming] Response is in SSE format, parsing...")
 
-		// Parse SSE format to extract JSON data
+		// Parse SSE format to extract JSON data. bufio.Scanner defaults to a
+		// 64KB max token (line) size — confirmed live 2026-07-16: a
+		// describe_data response (full schema, every cube) can exceed that
+		// in one "data:" line. When it does, Scan() stops silently (returns
+		// false, sets Err() to bufio.ErrTooLong) with messageData still "",
+		// and the code below previously treated that identically to "no
+		// data line present" — Send() returned nil (no error), Receive()
+		// then found nothing stored and returned the misleading
+		// "no response available", with no hint the real cause was a
+		// too-long line. maxSSELineSize gives real payloads headroom; Err()
+		// is now checked so a genuine overflow surfaces as a real error
+		// instead of a silent empty response.
 		scanner := bufio.NewScanner(bytes.NewReader(body))
+		scanner.Buffer(make([]byte, 0, 64*1024), maxSSELineSize)
 		var currentEvent string
 		var messageData string
 
@@ -234,6 +275,9 @@ func (h *authStreamingHTTPTransport) Send(message *mcp.Message) error {
 					break
 				}
 			}
+		}
+		if err := scanner.Err(); err != nil {
+			return fmt.Errorf("SSE response line exceeded %d bytes (or scan failed): %w", maxSSELineSize, err)
 		}
 
 		if messageData == "" {
@@ -265,8 +309,10 @@ func (h *authStreamingHTTPTransport) Send(message *mcp.Message) error {
 }
 
 func (h *authStreamingHTTPTransport) Receive() (*mcp.Message, error) {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
+	// Write lock — mutates h.lastResponse (clears it after reading). See
+	// Send's comment above for why RLock was wrong here.
+	h.mu.Lock()
+	defer h.mu.Unlock()
 
 	if !h.connected {
 		return nil, fmt.Errorf("transport not connected")
@@ -297,13 +343,13 @@ func (h *authStreamingHTTPTransport) IsConnected() bool {
 }
 
 // SSE Transport implementation
-func newAuthSSETransport(baseURL, endpoint, token string) *authSSETransport {
+func newAuthSSETransport(baseURL, endpoint, token string, timeout time.Duration) *authSSETransport {
 	return &authSSETransport{
 		baseURL:   baseURL,
 		endpoint:  endpoint,
 		authToken: token,
 		client: &http.Client{
-			Timeout: 30 * time.Second,
+			Timeout: timeout,
 		},
 	}
 }
@@ -331,8 +377,12 @@ func (h *authSSETransport) Close() error {
 }
 
 func (h *authSSETransport) Send(message *mcp.Message) error {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
+	// Write lock, not RLock — same reasoning as authStreamingHTTPTransport's
+	// Send just above: this mutates h.lastResponse/h.sessionURL/
+	// h.sseConnection, shared across concurrent callers of one transport
+	// instance.
+	h.mu.Lock()
+	defer h.mu.Unlock()
 
 	if !h.connected {
 		return fmt.Errorf("transport not connected")
@@ -381,6 +431,7 @@ func (h *authSSETransport) sendInitializeRequest(message *mcp.Message) error {
 	// event: endpoint
 	// data: <session-url>
 	scanner := bufio.NewScanner(resp.Body)
+	scanner.Buffer(make([]byte, 0, 64*1024), maxSSELineSize)
 	var currentEvent string
 	var sessionEndpoint string
 
@@ -493,6 +544,7 @@ func (h *authSSETransport) sendMessageToSession(message *mcp.Message) error {
 
 		// Read events from SSE stream until we get a message response
 		scanner := bufio.NewScanner(h.sseConnection.Body)
+		scanner.Buffer(make([]byte, 0, 64*1024), maxSSELineSize)
 		var currentEvent string
 		var messageData string
 
@@ -561,8 +613,9 @@ func (h *authSSETransport) sendSessionRequest(message *mcp.Message) error {
 }
 
 func (h *authSSETransport) Receive() (*mcp.Message, error) {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
+	// Write lock — mutates h.lastResponse (clears it after reading).
+	h.mu.Lock()
+	defer h.mu.Unlock()
 
 	if !h.connected {
 		return nil, fmt.Errorf("transport not connected")
@@ -919,6 +972,17 @@ func (m *unifiedMCPManager) discoverToolsFromServer(ctx context.Context, serverN
 
 // createClientForServer creates appropriate client based on server type
 func (m *unifiedMCPManager) createClientForServer(server *core.MCPServerConfig) (*client.Client, error) {
+	// ConnectionTimeout doubles as the per-call response-wait timeout here —
+	// every call builds a fresh client/session (no connection reuse across
+	// ExecuteTool invocations), so there's no separate "connect vs. call"
+	// distinction to preserve. Falls back to 30s (the previous hardcoded
+	// value) when unset, so callers that never configure it keep today's
+	// behavior.
+	timeout := m.config.ConnectionTimeout
+	if timeout <= 0 {
+		timeout = 30 * time.Second
+	}
+
 	newClient := func(tr transport.Transport) *client.Client {
 		logger := log.New(io.Discard, "", 0)
 		if v := os.Getenv("MCP_NAVIGATOR_DEBUG"); v != "" && v != "0" {
@@ -928,7 +992,7 @@ func (m *unifiedMCPManager) createClientForServer(server *core.MCPServerConfig) 
 		cfg := client.ClientConfig{
 			Name:    "agentflow-mcp-client",
 			Version: "1.0.0",
-			Timeout: 30 * time.Second,
+			Timeout: timeout,
 			Logger:  logger,
 		}
 
@@ -969,7 +1033,7 @@ func (m *unifiedMCPManager) createClientForServer(server *core.MCPServerConfig) 
 
 		// Always use the custom SSE transport — it handles SSE-formatted responses
 		// and session IDs correctly. Pass empty token when no auth is needed.
-		sseTransport := newAuthSSETransport(baseURL, ssePath, authToken)
+		sseTransport := newAuthSSETransport(baseURL, ssePath, authToken, timeout)
 		return newClient(sseTransport), nil
 
 	case "http_streaming":
@@ -1001,7 +1065,7 @@ func (m *unifiedMCPManager) createClientForServer(server *core.MCPServerConfig) 
 
 		// Always use the custom streaming transport — it handles SSE-formatted responses
 		// and session IDs correctly. Pass empty token when no auth is needed.
-		streamingTransport := newAuthStreamingHTTPTransport(baseURL, streamPath, authToken)
+		streamingTransport := newAuthStreamingHTTPTransport(baseURL, streamPath, authToken, timeout)
 		return newClient(streamingTransport), nil
 
 	case "websocket":

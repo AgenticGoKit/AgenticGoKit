@@ -34,6 +34,18 @@ type ProviderConfig struct {
 	MaxTokens   int          `json:"max_tokens,omitempty" toml:"max_tokens,omitempty"`
 	Temperature float32      `json:"temperature,omitempty" toml:"temperature,omitempty"`
 
+	// ResponseFormat, when non-nil, is passed through to the OpenAI-compatible
+	// adapter's "response_format" request field (e.g. {"type":"json_object"}).
+	// Verified live 2026-07-10 against a real OpenAI-compatible endpoint:
+	// honored cleanly, valid JSON content with no markdown fencing.
+	ResponseFormat interface{} `json:"response_format,omitempty" toml:"response_format,omitempty"`
+
+	// CachePrompt, when true, sets the OpenAI-compatible adapter's
+	// "cache_prompt" request field — llama.cpp's server flag to reuse a
+	// matching KV-cache prefix instead of re-prefilling it. Not yet verified
+	// live (no reachable llama.cpp endpoint at the time this was added).
+	CachePrompt bool `json:"cache_prompt,omitempty" toml:"cache_prompt,omitempty"`
+
 	// Azure-specific fields
 	Endpoint            string `json:"endpoint,omitempty" toml:"endpoint,omitempty"`
 	ChatDeployment      string `json:"chat_deployment,omitempty" toml:"chat_deployment,omitempty"`
@@ -102,6 +114,19 @@ type ProviderConfig struct {
 
 	// HTTP client configuration
 	HTTPTimeout time.Duration `json:"http_timeout,omitempty" toml:"http_timeout,omitempty"`
+
+	// CircuitBreaker, when non-nil, gates every provider call (Call/Stream
+	// connection-setup/Embeddings) through it. Not TOML/JSON-serializable by
+	// design — construct the concrete breaker in the caller (see
+	// v1beta/provider_factory.go) and set it here; nil disables
+	// circuit-breaking entirely (zero behavior change for existing callers).
+	CircuitBreaker CircuitBreaker `json:"-" toml:"-"`
+
+	// RetryPolicy, when non-nil, wraps every provider call with retry logic.
+	// nil (the zero value) disables retry — zero behavior change for
+	// existing callers, matching every other adapter's current "no retry"
+	// behavior.
+	RetryPolicy *RetryPolicy `json:"-" toml:"-"`
 }
 
 // ProviderFactory creates LLM providers based on configuration
@@ -134,32 +159,53 @@ func (f *ProviderFactory) CreateProvider(config ProviderConfig) (ModelProvider, 
 		f.httpClient = NewOptimizedHTTPClient(config.HTTPTimeout)
 	}
 
+	var provider ModelProvider
+	var err error
+
 	switch config.Type {
 	case ProviderTypeOpenAI:
-		return f.createOpenAIProvider(config)
+		provider, err = f.createOpenAIProvider(config)
 	case ProviderTypeAzureOpenAI:
-		return f.createAzureProvider(config)
+		provider, err = f.createAzureProvider(config)
 	case ProviderTypeOllama:
-		return f.createOllamaProvider(config)
+		provider, err = f.createOllamaProvider(config)
 	case ProviderTypeOpenRouter:
-		return f.createOpenRouterProvider(config)
+		provider, err = f.createOpenRouterProvider(config)
 	case ProviderTypeHuggingFace:
-		return f.createHuggingFaceProvider(config)
+		provider, err = f.createHuggingFaceProvider(config)
 	case ProviderTypeVLLM:
-		return f.createVLLMProvider(config)
+		provider, err = f.createVLLMProvider(config)
 	case ProviderTypeMLFlowGateway:
-		return f.createMLFlowGatewayProvider(config)
+		provider, err = f.createMLFlowGatewayProvider(config)
 	case ProviderTypeBentoML:
-		return f.createBentoMLProvider(config)
+		provider, err = f.createBentoMLProvider(config)
 	case ProviderTypeAnthropic:
-		return f.createAnthropicProvider(config)
+		provider, err = f.createAnthropicProvider(config)
 	case ProviderTypeFoundryLocal:
-		return f.createFoundryLocalProvider(config)
+		provider, err = f.createFoundryLocalProvider(config)
 	case ProviderTypeMock:
-		return f.createMockProvider(config)
+		provider, err = f.createMockProvider(config)
 	default:
 		return nil, fmt.Errorf("unsupported provider type: %s", config.Type)
 	}
+	if err != nil {
+		return nil, err
+	}
+
+	// Wrap uniformly for every provider type above — circuit-breaking/retry
+	// is a cross-cutting concern, not a per-adapter one. Opt-in: a config
+	// with both fields nil (every existing caller, today) wraps into a
+	// CircuitBreakerProvider whose call() loop degenerates to exactly one
+	// attempt with no breaker check, i.e. behaviorally identical to
+	// returning provider directly.
+	if config.CircuitBreaker != nil || config.RetryPolicy != nil {
+		cbConfig := CircuitBreakerProviderConfig{Breaker: config.CircuitBreaker}
+		if config.RetryPolicy != nil {
+			cbConfig.Retry = *config.RetryPolicy
+		}
+		return NewCircuitBreakerProvider(provider, cbConfig), nil
+	}
+	return provider, nil
 }
 
 // createOpenAIProvider creates an OpenAI provider
@@ -176,12 +222,14 @@ func (f *ProviderFactory) createOpenAIProvider(config ProviderConfig) (ModelProv
 
 	// Use NewOpenAIAdapterWithConfig to support BaseURL and other options
 	adapterConfig := OpenAIAdapterConfig{
-		APIKey:      config.APIKey,
-		Model:       config.Model,
-		MaxTokens:   config.MaxTokens,
-		Temperature: config.Temperature,
-		BaseURL:     config.BaseURL,
-		HTTPTimeout: config.HTTPTimeout,
+		APIKey:         config.APIKey,
+		Model:          config.Model,
+		MaxTokens:      config.MaxTokens,
+		Temperature:    config.Temperature,
+		BaseURL:        config.BaseURL,
+		HTTPTimeout:    config.HTTPTimeout,
+		ResponseFormat: config.ResponseFormat,
+		CachePrompt:    config.CachePrompt,
 	}
 
 	return NewOpenAIAdapterWithConfig(adapterConfig)
@@ -220,6 +268,7 @@ func (f *ProviderFactory) createAzureProvider(config ProviderConfig) (ModelProvi
 		EmbeddingDeployment: config.EmbeddingDeployment,
 		HTTPClient:          f.httpClient,
 		APIVersion:          config.APIVersion,
+		ResponseFormat:      config.ResponseFormat,
 	}
 
 	return NewAzureOpenAIAdapter(options)
@@ -259,7 +308,7 @@ func (f *ProviderFactory) createOpenRouterProvider(config ProviderConfig) (Model
 		model = "openai/gpt-3.5-turbo" // Default model
 	}
 
-	return NewOpenRouterAdapter(
+	adapter, err := NewOpenRouterAdapter(
 		config.APIKey,
 		model,
 		baseURL,
@@ -268,6 +317,12 @@ func (f *ProviderFactory) createOpenRouterProvider(config ProviderConfig) (Model
 		config.SiteURL,
 		config.SiteName,
 	)
+	if err != nil {
+		return nil, err
+	}
+	adapter.responseFormat = config.ResponseFormat
+	adapter.cachePrompt = config.CachePrompt
+	return adapter, nil
 }
 
 // createHuggingFaceProvider creates a Hugging Face provider
@@ -350,6 +405,8 @@ func (f *ProviderFactory) createVLLMProvider(config ProviderConfig) (ModelProvid
 		IgnoreEOS:         config.VLLMIgnoreEOS,
 		Stop:              config.VLLMStop,
 		HTTPTimeout:       config.HTTPTimeout,
+		ResponseFormat:    config.ResponseFormat,
+		CachePrompt:       config.CachePrompt,
 	}
 
 	return NewVLLMAdapter(vllmConfig)
@@ -381,6 +438,8 @@ func (f *ProviderFactory) createMLFlowGatewayProvider(config ProviderConfig) (Mo
 		MaxRetries:       config.MLFlowMaxRetries,
 		RetryDelay:       config.MLFlowRetryDelay,
 		HTTPTimeout:      config.HTTPTimeout,
+		ResponseFormat:   config.ResponseFormat,
+		CachePrompt:      config.CachePrompt,
 	}
 
 	return NewMLFlowGatewayAdapter(mlflowConfig)
@@ -414,6 +473,8 @@ func (f *ProviderFactory) createBentoMLProvider(config ProviderConfig) (ModelPro
 		MaxRetries:       config.BentoMLMaxRetries,
 		RetryDelay:       config.BentoMLRetryDelay,
 		HTTPTimeout:      config.HTTPTimeout,
+		ResponseFormat:   config.ResponseFormat,
+		CachePrompt:      config.CachePrompt,
 	}
 
 	return NewBentoMLAdapter(bentomlConfig)

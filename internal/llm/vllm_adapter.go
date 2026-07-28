@@ -37,6 +37,14 @@ type VLLMConfig struct {
 
 	// HTTP configuration
 	HTTPTimeout time.Duration `json:"http_timeout,omitempty" toml:"http_timeout"`
+
+	// ResponseFormat, when non-nil, is passed through verbatim as the
+	// request body's "response_format" field. vLLM serves an
+	// OpenAI-compatible API, so this reuses OpenAIAdapterConfig's field.
+	ResponseFormat interface{} `json:"response_format,omitempty" toml:"response_format,omitempty"`
+
+	// CachePrompt, when true, sets the request body's "cache_prompt" field.
+	CachePrompt bool `json:"cache_prompt,omitempty" toml:"cache_prompt,omitempty"`
 }
 
 // VLLMAdapter wraps the OpenAI adapter for vLLM inference servers.
@@ -71,6 +79,8 @@ func NewVLLMAdapter(config VLLMConfig) (*VLLMAdapter, error) {
 		FrequencyPenalty:  config.FrequencyPenalty,
 		RepetitionPenalty: config.RepetitionPenalty,
 		Stop:              config.Stop,
+		ResponseFormat:    config.ResponseFormat,
+		CachePrompt:       config.CachePrompt,
 	}
 
 	openaiAdapter, err := NewOpenAIAdapterWithConfig(openaiConfig)

@@ -33,6 +33,12 @@ type Config struct {
 	Workflow  *WorkflowConfig  `toml:"workflow,omitempty"`
 	Tracing   *TracingConfig   `toml:"tracing,omitempty"`
 	Streaming *StreamingConfig `toml:"streaming,omitempty"`
+
+	// Middlewares run around every Run/RunWithOptions call, in registration
+	// order for BeforeRun and reverse order for AfterRun (see AgentMiddleware
+	// doc comment). Not TOML/JSON-serializable by design — set via
+	// WithMiddleware or directly. nil (the default) is zero behavior change.
+	Middlewares []AgentMiddleware `json:"-" toml:"-"`
 }
 
 // LLMConfig contains LLM provider configuration
@@ -55,6 +61,43 @@ type LLMConfig struct {
 	Modalities  []string `toml:"modalities,omitempty"`   // Supported modalities (text, image, audio, video)
 	OutputTypes []string `toml:"output_types,omitempty"` // Desired output types
 
+	// ResponseFormat, when non-nil, is passed through verbatim as the
+	// OpenAI-compatible "response_format" request field. nil (the zero
+	// value) omits the field entirely — no behavior change for existing
+	// callers. Use JSONObjectResponseFormat() for the common case.
+	ResponseFormat interface{} `toml:"response_format,omitempty"`
+
+	// CachePrompt, when true, sets the OpenAI-compatible adapter's
+	// "cache_prompt" request field — llama.cpp's server flag to reuse a
+	// matching KV-cache prefix instead of re-prefilling it. false (the zero
+	// value) omits the field entirely — no-op on non-llama.cpp backends.
+	// Not yet verified live (no reachable llama.cpp endpoint when this was
+	// added).
+	CachePrompt bool `toml:"cache_prompt,omitempty"`
+
+	// MaxRetries, when > 0, wraps every provider Call/Stream(connection
+	// setup)/Embeddings with retry on transient errors (context
+	// deadline/cancellation, net.Error — see llm.DefaultIsRetryable). Zero
+	// (the default) disables retry — no behavior change for existing
+	// callers. Distinct from RunOptions.MaxRetries, which is agent-run-level
+	// and, as of this field's addition, still metadata-only.
+	MaxRetries int `toml:"max_retries,omitempty"`
+
+	// CircuitBreaker, when non-nil and Enabled, gates every provider call
+	// through a circuit breaker (reuses the same CircuitBreakerConfig shape
+	// already declared for ToolsConfig.CircuitBreaker). nil (the default)
+	// disables circuit-breaking — no behavior change for existing callers.
+	CircuitBreaker *CircuitBreakerConfig `toml:"circuit_breaker,omitempty"`
+}
+
+// JSONObjectResponseFormat returns the OpenAI-compatible "loose JSON"
+// response_format value — the model must return valid JSON, no schema
+// required. Broadly supported across OpenAI-compatible providers;
+// verified live 2026-07-10 against a real OpenAI-compatible endpoint
+// (honored cleanly: valid JSON content, no markdown fencing). Prefer this
+// over hand-rolling the map literal at call sites.
+func JSONObjectResponseFormat() interface{} {
+	return map[string]interface{}{"type": "json_object"}
 }
 
 // MemoryConfig contains memory and RAG configuration
@@ -86,6 +129,22 @@ type ToolsConfig struct {
 	Cache            *CacheConfig          `toml:"cache,omitempty"`
 	CircuitBreaker   *CircuitBreakerConfig `toml:"circuit_breaker,omitempty"`
 	Reasoning        *ReasoningConfig      `toml:"reasoning,omitempty"` // Agent reasoning/continuation settings
+	Skills           *SkillsConfig         `toml:"skills,omitempty"`
+}
+
+// SkillsConfig declares a directory of on-demand-loadable skill packages
+// (SKILL.md files, frontmatter-indexed) for the load_skill internal tool.
+// Data only, same shape as MCPConfig.Servers — the actual frontmatter
+// parsing/loading logic lives in a separate plugin (e.g. plugins/skills),
+// not here, to avoid v1beta depending on that plugin (which itself imports
+// v1beta for Tool/ToolResult). Setting Dir has no effect unless a skills
+// plugin has registered a factory via SetSkillsProviderFactory (see
+// skills_provider.go) — createTools() logs a warning, not an error, if
+// Dir is set with no provider registered (config alone can't tell whether
+// that's a missing blank-import or a stale config left over from removing
+// one).
+type SkillsConfig struct {
+	Dir string `toml:"dir"`
 }
 
 // ReasoningConfig controls whether the agent uses continuation loops for reasoning

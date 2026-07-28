@@ -484,15 +484,47 @@ type AgentMetrics struct {
 	SessionsActive   int           `json:"sessions_active"`
 }
 
-// AgentMiddleware defines the interface for agent middleware
-// Middleware can intercept and modify the agent execution flow
+// AgentMiddleware defines the interface for agent middleware.
+// Middleware can intercept and modify the agent execution flow.
+//
+// Wired 2026-07-14: this interface was previously declared but never
+// invoked anywhere (zero call sites in agent_impl.go/builder.go, zero
+// implementations anywhere in the repo — confirmed before this change).
+// Register middleware via the WithMiddleware Option; realAgent.execute runs
+// BeforeRun in registration order, then AfterRun in reverse order (LIFO),
+// matching standard middleware chaining. RunOptions.SkipMiddleware disables
+// a middleware for one run by Name().
+//
+// Deliberately shallow: BeforeRun/AfterRun only wrap the single outer
+// execute() call. They do NOT see per-attempt state from
+// llm.CircuitBreakerProvider's internal retries (those
+// happen inside a.llmProvider.Call(), invisible here), nor per-iteration
+// state from the reasoning/tool-continuation loop
+// (executeNativeToolsAndContinue's local iteration/maxIterations, currently
+// never exposed via context). Threading either through is a real scope
+// increase with no current consumer; revisit if a middleware actually needs
+// it. Also only wired for Run/RunWithOptions (the execute() choke point) —
+// RunStream/RunStreamWithOptions do not go through execute() and do not
+// invoke middleware.
 type AgentMiddleware interface {
-	// BeforeRun is called before the agent execution
-	// It can modify the context and input, or cancel the execution
+	// Name identifies this middleware for RunOptions.SkipMiddleware.
+	Name() string
+
+	// BeforeRun is called before the agent execution, in registration
+	// order. It can modify the context and input, or abort the run by
+	// returning a non-nil error (wrapped as ErrMiddlewareBeforeRun; no
+	// LLM call happens for a run aborted this way).
 	BeforeRun(ctx context.Context, input string) (context.Context, string, error)
 
-	// AfterRun is called after the agent execution
-	// It can modify the result or handle errors
+	// AfterRun is called after the agent execution (or after a prior
+	// middleware's AfterRun), in reverse registration order. It receives
+	// whatever result/err the previous stage produced and returns what the
+	// next stage (or the caller) sees — it may pass both through unchanged,
+	// replace the result, or replace/clear the error. Unlike BeforeRun's
+	// error, AfterRun's returned error is NOT wrapped as
+	// ErrMiddlewareAfterRun: a middleware here is expected to make
+	// deliberate error-replacement decisions (e.g. eino's RewriteError
+	// pattern), not just report its own infra failures.
 	AfterRun(ctx context.Context, input string, result *Result, err error) (*Result, error)
 }
 

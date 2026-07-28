@@ -46,6 +46,16 @@ func (t *MCPTool) Name() string {
 	return fmt.Sprintf("mcp_%s_%s", t.serverName, t.name)
 }
 
+// Info returns the tool's name, description, and JSON-schema parameters.
+// This implements the FunctionTool interface.
+func (t *MCPTool) Info(ctx context.Context) (*core.FunctionDefinition, error) {
+	return &core.FunctionDefinition{
+		Name:        t.Name(),
+		Description: t.description,
+		Parameters:  t.schema,
+	}, nil
+}
+
 // Call executes the MCP tool with the given arguments.
 // This implements the FunctionTool interface.
 func (t *MCPTool) Call(ctx context.Context, args map[string]any) (map[string]any, error) {
