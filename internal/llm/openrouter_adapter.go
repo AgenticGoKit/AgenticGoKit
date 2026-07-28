@@ -216,6 +216,10 @@ func (o *OpenRouterAdapter) Call(ctx context.Context, prompt Prompt) (Response, 
 	// Record HTTP status
 	span.SetAttributes(attribute.Int("http.status_code", resp.StatusCode))
 
+	// Returned as *APIStatusError (the same type openai_adapter.go/azure_
+	// adapter.go produce), not a plain fmt.Errorf, so CircuitBreakerProvider's
+	// DefaultIsRetryable can classify a 429/5xx as retryable via errors.As
+	// instead of silently treating every OpenRouter error as non-retryable.
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
 
@@ -229,13 +233,13 @@ func (o *OpenRouterAdapter) Call(ctx context.Context, prompt Prompt) (Response, 
 		}
 
 		if json.Unmarshal(body, &errorResp) == nil && errorResp.Error.Message != "" {
-			err := fmt.Errorf("OpenRouter API error [%s]: %s", errorResp.Error.Code, errorResp.Error.Message)
+			err := &APIStatusError{StatusCode: resp.StatusCode, Body: fmt.Sprintf("[%s]: %s", errorResp.Error.Code, errorResp.Error.Message)}
 			span.RecordError(err)
 			span.SetStatus(codes.Error, fmt.Sprintf("API error: %s", errorResp.Error.Code))
 			return Response{}, err
 		}
 
-		err := fmt.Errorf("OpenRouter API error: %d - %s", resp.StatusCode, string(body))
+		err := &APIStatusError{StatusCode: resp.StatusCode, Body: string(body)}
 		span.RecordError(err)
 		span.SetStatus(codes.Error, fmt.Sprintf("API error: status %d", resp.StatusCode))
 		return Response{}, err
@@ -393,9 +397,15 @@ func (o *OpenRouterAdapter) Stream(ctx context.Context, prompt Prompt) (<-chan T
 	// Record HTTP status
 	span.SetAttributes(attribute.Int("http.status_code", resp.StatusCode))
 
+	// Read the body BEFORE closing it (previously closed first, the same
+	// bug this PR's openai_adapter.go fix addresses for the OpenAI adapter
+	// — left in place here meant a non-200 stream error came back with an
+	// empty body every time). Also returned as *APIStatusError so
+	// CircuitBreakerProvider's DefaultIsRetryable can classify a 429/5xx as
+	// retryable.
 	if resp.StatusCode != http.StatusOK {
-		resp.Body.Close()
 		body, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
 
 		// Try to parse OpenRouter error format
 		var errorResp struct {
@@ -407,13 +417,13 @@ func (o *OpenRouterAdapter) Stream(ctx context.Context, prompt Prompt) (<-chan T
 		}
 
 		if json.Unmarshal(body, &errorResp) == nil && errorResp.Error.Message != "" {
-			err := fmt.Errorf("OpenRouter API error [%s]: %s", errorResp.Error.Code, errorResp.Error.Message)
+			err := &APIStatusError{StatusCode: resp.StatusCode, Body: fmt.Sprintf("[%s]: %s", errorResp.Error.Code, errorResp.Error.Message)}
 			span.RecordError(err)
 			span.SetStatus(codes.Error, fmt.Sprintf("API error: %s", errorResp.Error.Code))
 			return nil, err
 		}
 
-		err := fmt.Errorf("OpenRouter API error: %d - %s", resp.StatusCode, string(body))
+		err := &APIStatusError{StatusCode: resp.StatusCode, Body: string(body)}
 		span.RecordError(err)
 		span.SetStatus(codes.Error, fmt.Sprintf("API error: status %d", resp.StatusCode))
 		return nil, err

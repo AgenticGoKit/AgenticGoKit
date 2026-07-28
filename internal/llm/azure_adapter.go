@@ -187,17 +187,25 @@ func (a *AzureOpenAIAdapter) doRequest(ctx context.Context, method, url string, 
 		return nil, fmt.Errorf("http request failed: %w", err)
 	}
 
-	// Check for non-success status codes
+	// Check for non-success status codes. Returned as *APIStatusError (the
+	// same type openai_adapter.go produces), not a plain fmt.Errorf, so
+	// CircuitBreakerProvider's DefaultIsRetryable (internal/llm/circuit_
+	// breaker_provider.go) can classify a 429/5xx gateway blip as retryable
+	// via errors.As instead of silently treating every Azure error as
+	// non-retryable — previously the exact transient-failure class MaxRetries
+	// exists to cover was skipped for this provider.
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		defer resp.Body.Close()
 		errorBodyBytes, _ := io.ReadAll(resp.Body)
 		apiError := azureErrorResponse{}
 		if json.Unmarshal(errorBodyBytes, &apiError) == nil && apiError.Error.Message != "" {
-			return nil, fmt.Errorf("api request failed: status %d, type %s, code %s, message: %s",
-				resp.StatusCode, apiError.Error.Type, apiError.Error.Code, apiError.Error.Message)
+			return nil, &APIStatusError{
+				StatusCode: resp.StatusCode,
+				Body: fmt.Sprintf("type %s, code %s, message: %s", apiError.Error.Type, apiError.Error.Code, apiError.Error.Message),
+			}
 		}
-		// Fallback error message
-		return nil, fmt.Errorf("api request failed: status %d, body: %s", resp.StatusCode, string(errorBodyBytes))
+		// Fallback: no parseable structured error body.
+		return nil, &APIStatusError{StatusCode: resp.StatusCode, Body: string(errorBodyBytes)}
 	}
 
 	return resp, nil
