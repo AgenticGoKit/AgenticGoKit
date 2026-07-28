@@ -119,7 +119,18 @@ func NewMLFlowGatewayAdapter(config MLFlowGatewayConfig) (*MLFlowGatewayAdapter,
 	}, nil
 }
 
-// Call delegates to the embedded OpenAI adapter with retry logic
+// Call delegates to the embedded OpenAI adapter with retry logic.
+//
+// Only retries errors DefaultIsRetryable classifies as transient (429/5xx,
+// timeouts, context deadline) — previously this retried unconditionally,
+// including a 4xx (bad request, auth failure) that retrying can never fix.
+// Also worth knowing when configuring MaxRetries here alongside
+// v1beta.LLMConfig.MaxRetries/CircuitBreaker: when both are set, this loop
+// runs INSIDE CircuitBreakerProvider's own retry loop (ProviderFactory.
+// CreateProvider wraps every provider type uniformly), so the effective
+// attempt count multiplies (outer attempts) × (this loop's attempts) rather
+// than adding. Set at most one of them for this provider to avoid surprising
+// retry counts under sustained failure.
 func (m *MLFlowGatewayAdapter) Call(ctx context.Context, prompt Prompt) (Response, error) {
 	var lastErr error
 	for attempt := 0; attempt < m.maxRetries; attempt++ {
@@ -136,7 +147,9 @@ func (m *MLFlowGatewayAdapter) Call(ctx context.Context, prompt Prompt) (Respons
 			return resp, nil
 		}
 		lastErr = err
-		// Continue retrying on error
+		if !DefaultIsRetryable(err) {
+			break
+		}
 	}
 	return Response{}, fmt.Errorf("max retries exceeded: %w", lastErr)
 }
