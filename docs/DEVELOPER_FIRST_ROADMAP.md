@@ -252,7 +252,47 @@ Prereq: honest cost/token accounting per run (fixes C9, #138/#153).
 
 ---
 
-## 5. What NOT to build (negative space from the research)
+## 5. Part IV — The ecosystem: agk CLI + template registry
+
+The framework does not ship alone: the `AgenticGoKit` org carries **agk** (developer CLI, ~78 files) and **agentic-examples**, and the **agk-templates** org carries a template registry plus community templates. Evaluated from the public repos (July 2026):
+
+### 5.1 What exists — and it's more than the framework docs let on
+
+| Asset | State |
+|---|---|
+| `agk init` scaffolding | Embedded quickstart + workflow templates (Go text/template + Sprig), variables for provider/model, post-create hooks |
+| Template registry | `agk template add/remove/list`, go-git fetcher, local cache, `agk-template.toml` manifest contract (variables, include/exclude, `min_agk_version`, hooks); registry = `agk-templates/registry/index.json` |
+| `agk trace list/show/view/mermaid` | A substantial **bubbletea TUI trace explorer** (52KB viewer + span tree) over `.agk/runs`, plus Mermaid export — a genuine differentiator no other Go framework ships |
+| `agk eval` | YAML test files → HTTP calls against the v1beta eval server (`AGK_EVAL_MODE`, `:8787`, `/invoke`, `/traces/{id}`), with **embedding, LLM-judge, and hybrid matchers**, thresholded confidence scores, markdown reports with progress bars and trace links, documented CI recipe |
+| Community templates | `test-agent`, `translate-workflow`, `flight-search-assistant`; templates already keep prompts as separate files (`prompts/*.system.txt`) — convergent with the dotprompt direction (E3) |
+
+This resolves an earlier finding: the eval server has no in-repo consumers (C10) because **its consumer lives in the agk repo**. The two are halves of one product, split across repositories.
+
+### 5.2 Ecosystem gaps and risks
+
+1. **Version skew by construction.** agk pins `agenticgokit v0.5.5`; every framework fix (including PR #156) reaches CLI users only after a framework release *and* an agk bump. There is no compatibility contract, no cross-repo CI, and `min_agk_version` exists in template manifests but nothing comparable binds agk↔framework.
+2. **The CLI is built on the framework's two least stable contracts.** `agk trace` parses `.agk/runs/trace.jsonl` — the OTel stdouttrace *debug* format (C8) that can break on any otel-go upgrade — and inherits the fabricated manifest stats (C9: 0 tokens, $0.00, 0 llm_calls in `agk trace show`). `agk eval`'s trace links point at eval-server traces that are empty shells, its multi-turn sessions don't actually feed history to the agent, and workflow evals report hardcoded success (C10). The CLI's flagship features silently degrade because their upstream contracts were never designed as contracts.
+3. **Templates scaffold the framework's known bugs into every new project.** Generated code blank-imports `plugins/llm/<provider>` — a **no-op for v1beta** (the dual-registry split, #141); `translate-workflow` imports three provider plugins it doesn't need. No template imports `plugins/embedding`, so any memory-enabled scaffold reproduced #137 pre-fix. The scaffolder is a bug amplifier: whatever the templates get wrong, every new user starts wrong.
+4. **The registry index is a bare name→repo map.** No versions, no checksums/signatures, no descriptions/categories, no enforcement of `min_agk_version` at resolve time; `agk template add` fetches a mutable default branch — unpinned, unreproducible, and a soft supply-chain risk the moment templates execute `post_create` hooks.
+5. **Three homes for examples** (framework `examples/`, `agentic-examples`, templates) with no shared CI — drift among them is already visible in the framework's own examples.
+6. **Residual fork confusion:** `AgenticGoKit/mcp-navigator-go` exists in the org, but the framework's go.mod still depends on the personal `kunalkushwaha/mcp-navigator-go` (superseded by #145 either way).
+
+### 5.3 Ecosystem roadmap items
+
+| # | Recommendation | Ties to |
+|---|---|---|
+| G1 | **A versioned contract between framework and CLI**: a stable, documented trace schema (fixes C8) and an OpenAPI-specified eval-server API, in a small shared module both repos import; nightly cross-repo CI (agk against framework master). | v0.6 |
+| G2 | **Fix the scaffolds**: remove no-op plugin imports (or make them real via #141), single provider per scaffold, embedding config for memory templates, generated `AGENTS.md` (E6) + a starter eval YAML in every template. | v0.6 |
+| G3 | **Registry v2**: index entries carry version, commit pin/checksum, description, `min_agk_version` (enforced at `agk init`); a published **template conformance action** (render × providers → `go build` → `go vet`) required for registry PRs. | v0.7 |
+| G4 | **`agk dev` absorbs the dev-loop pillar** (E1): the playground/launcher work should land in agk, upgrading the existing TUI investment — TUI for terminals, embedded web UI for browsers, one reflection protocol underneath. | v0.9 |
+| G5 | **Unify the eval stack**: the matchers (embedding/LLM-judge/hybrid) move into a framework `agkeval` package consumed by both `go test` (E4) and `agk eval` HTTP mode — one scorer implementation, two frontends; wire real trace IDs and honest workflow results (C10) underneath. | v0.9 |
+| G6 | **Distribution polish**: released binaries via the existing goreleaser (brew tap/scoop), `agk version --check` compatibility warnings against the project's framework version. | v0.7 |
+
+**Strategic read:** the ecosystem's *shape* is exactly right — CLI + registry + templates is what Genkit/Mastra/ADK all converged on — and the TUI trace viewer plus LLM-judge eval matchers are ahead of most Go competition. What's missing is *contracts*: the CLI consumes undocumented internals across a repo boundary, and the scaffolder amplifies framework bugs. Contract-first is cheaper than any new feature and multiplies the value of everything in Parts I–III.
+
+---
+
+## 6. What NOT to build (negative space from the research)
 
 1. **Don't port Python literally** — LangChainGo's `Chain.Call(ctx, map[string]any)` shape is the cautionary tale: pre-generics design, huge in-tree integration surface, single-maintainer burnout at v0.1.x. Keep interfaces tiny and contracts conformance-tested so the community owns backends.
 2. **Don't adopt Temporal's programming model** — event-history replay imposes determinism constraints (no goroutines/`time.Now`/map iteration) that would poison Go DX. Journal-skip gives 90% of the value with none of the constraints; offer a Temporal *adapter* for enterprises instead.
