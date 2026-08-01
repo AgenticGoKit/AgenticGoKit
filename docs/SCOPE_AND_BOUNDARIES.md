@@ -61,6 +61,67 @@ Build the interior model first and A2A becomes a **serialization** of it — a s
 
 ---
 
+## 2b. Agentic UI (AG-UI), and the unifying architecture
+
+The same reasoning applied to A2A generalizes, and it resolves the whole interop question at once.
+
+### One interior model, three exterior projections
+
+An agent has exactly three edges, and the industry has standardized one protocol per edge:
+
+| Edge | Protocol | What it carries |
+|---|---|---|
+| agent ↔ tools/data | **MCP** | capability invocation |
+| agent ↔ agent | **A2A** | task delegation across boundaries |
+| agent ↔ user interface | **AG-UI** | run events, shared state, user interaction |
+
+These look like three large integrations. They are not: **each is an encoder over the same interior state.** If the runtime owns a run identity, a lifecycle, an event stream, addressable state, and durable suspension, then every protocol module is a projection of that — a few hundred lines, addable or droppable without touching the core. Get the interior wrong and each protocol grows its own state machine, and they diverge forever.
+
+This is the single most consequential architectural decision in the project, and it is a v0.1 decision even though every protocol module ships later.
+
+### The finding that changes the core
+
+**Agentic UI needs something the current core does not have: addressable run state with deltas.**
+
+AG-UI is an event protocol over SSE (~17 event types) whose distinguishing feature is state synchronization: `STATE_SNAPSHOT` carries the full state, `STATE_DELTA` carries incremental updates as **JSON Patch (RFC 6902)** operations. That is what enables the interaction pattern chat streaming cannot express — an agent drafting a document, filling a form, or building a plan that the UI renders live and the user edits in place.
+
+Today `agentkit` has *messages*, not *state*. A message list is append-only prose; it cannot express "field 3 of the draft changed." Adding state later means either breaking the run API or bolting a parallel state channel beside it.
+
+**Recommendation:** give the run a typed state object with delta emission, decided before v0.1 freezes. **Do not add a third type parameter to `Agent`** — `Agent[D, S, O]` would tax every call site for a feature most agents don't use. State belongs to the *run/session*, reachable through the run context and snapshotted by the checkpointer, so `Agent[D, O]` stays intact and stateful runs opt in.
+
+### The second finding: four features are one primitive
+
+These all reduce to *durable suspension with a typed reason*:
+
+| Surface | Suspension reason |
+|---|---|
+| Human approval before a destructive tool | needs approval |
+| **Frontend tools** (executed in the browser, not the server) | needs client execution |
+| A2A `input-required` / `auth-required` | needs input |
+| AG-UI human-in-the-loop | needs input |
+
+A browser-executed tool is not a new concept — it is a tool call that suspends the run until an external party returns a result, which is exactly `Interrupt`/`Resume`. Build the primitive once and all four fall out.
+
+**Consequence for the roadmap:** durable execution (v0.2) is not merely a reliability feature. It is the keystone the entire interop story rests on — A2A, agentic UI, HITL, and frontend tools are all blocked behind it. That justifies its position ahead of workflows and multi-agent primitives more strongly than the reliability argument alone did.
+
+### Which wire format to emit
+
+AI SDK v5 and AG-UI are not competitors at the same layer, and the choice is not exclusive — both are encoders over one internal event stream.
+
+| | AI SDK v5 protocol | AG-UI |
+|---|---|---|
+| Reach | Very large — any `useChat` frontend | Growing, framework-neutral |
+| Shape | Chat-shaped | Agent-shaped: shared state, frontend tools, HITL, generative UI |
+| Go support | N/A (wire format only) | Go SDK exists but is **community-tier**, while TypeScript and Python are first-class |
+
+**Ship the AI SDK v5 encoder first** (v0.5): the largest install base, the shortest path to "my Go backend has a modern chat UI," and it needs nothing beyond the event stream. **Add the AG-UI encoder once run state lands**, because its distinguishing feature is precisely the thing that depends on state.
+
+### The Go opportunity
+
+AG-UI's Go SDK sitting in the community tier while TypeScript and Python are first-class is the same gap as MCP-server export: a protocol where Go is underserved and a well-built Go implementation is cheap differentiation. Worth targeting deliberately — but as a module, on the official protocol, and only after the interior model can feed it.
+
+---
+
 ## 3. What else the core should have (not yet in the roadmap)
 
 Five additions, ordered by how often a developer will feel their absence.
