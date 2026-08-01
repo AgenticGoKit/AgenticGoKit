@@ -90,6 +90,37 @@ type realAgent struct {
 	tracerShutdown func(context.Context) error
 	runID          string
 	runDir         string
+
+	// Non-fatal findings collected during construction; exposed via
+	// Diagnostics() / DiagnosticsOf and dispatched to the builder's
+	// DiagnosticHandler.
+	diagnostics []Diagnostic
+}
+
+// Diagnostics returns the non-fatal findings collected while building this
+// agent (see DiagnosticsOf).
+func (a *realAgent) Diagnostics() []Diagnostic {
+	return a.diagnostics
+}
+
+// addDiagnostic records a diagnostic and logs it at the matching level, so
+// the finding is visible both programmatically and in logs.
+func (a *realAgent) addDiagnostic(d Diagnostic) {
+	a.diagnostics = append(a.diagnostics, d)
+
+	evt := Logger().Info()
+	switch d.Severity {
+	case DiagWarning:
+		evt = Logger().Warn()
+	case DiagError:
+		evt = Logger().Error()
+	}
+	evt.Str("agent", a.config.Name).
+		Str("diagnostic_code", string(d.Code))
+	for k, v := range d.Details {
+		evt.Str(k, v)
+	}
+	evt.Msg(d.Message)
 }
 
 // sessionState tracks per-session information for the agent
@@ -173,29 +204,73 @@ func newRealAgent(config *Config, handler HandlerFunc) (Agent, error) {
 				KnowledgeWeight: 0.7,
 			},
 		}
-	} else {
-		// If MemoryConfig is provided, ensure it's Enabled by default unless explicitly false
-		// Actually, we should probably just treat a non-nil MemoryConfig as wanting memory.
-		// But follow the Enabled flag if it's there.
-		// Simple fix: if a config is there, we default Enabled to true if not specified.
-		// Since we can't tell if it's explicitly false or just default, we'll assume
-		// if they provided a config object, they probably want it enabled.
-		config.Memory.Enabled = true
-
-		// Smart Default: If no embedding provider is specified, try to use the LLM provider
-		if config.Memory.Options == nil {
-			config.Memory.Options = make(map[string]string)
+	}
+	// When a MemoryConfig is provided, its Enabled flag is honored as
+	// documented: Enabled=false disables memory. (A provided config used to
+	// be force-enabled, which made it impossible to disable memory through
+	// Config — see issue #137, additional finding B.)
+	if !config.Memory.Enabled {
+		// A config that sets provider/connection/RAG/options but leaves
+		// Enabled at its zero value almost always means the user forgot
+		// Enabled: true (it used to be implied), so warn loudly; a bare
+		// {Enabled: false} is a deliberate disable and only worth an Info.
+		if config.Memory.Provider != "" || config.Memory.Connection != "" ||
+			config.Memory.RAG != nil || len(config.Memory.Options) > 0 {
+			agent.addDiagnostic(Diagnostic{
+				Severity: DiagWarning,
+				Code:     DiagMemoryDisabledWithConfig,
+				Message: "MemoryConfig has settings but Enabled is false - memory is DISABLED. " +
+					"If you meant to enable it, set Enabled: true in MemoryConfig (it is no longer implied by presence).",
+				Details: map[string]string{"memory_provider": config.Memory.Provider},
+			})
+		} else {
+			Logger().Info().
+				Str("agent", config.Name).
+				Msg("Memory is disabled (Memory.Enabled=false).")
 		}
-		if _, ok := config.Memory.Options["embedding_provider"]; !ok {
-			config.Memory.Options["embedding_provider"] = config.LLM.Provider
-			if _, ok := config.Memory.Options["embedding_model"]; !ok {
-				config.Memory.Options["embedding_model"] = config.LLM.Model
-			}
-			if _, ok := config.Memory.Options["embedding_url"]; !ok {
-				config.Memory.Options["embedding_url"] = config.LLM.BaseURL
-			}
-			if _, ok := config.Memory.Options["embedding_api_key"]; !ok {
-				config.Memory.Options["embedding_api_key"] = config.LLM.APIKey
+	}
+
+	// Smart Default: derive embedding configuration from the LLM provider when
+	// the user did not configure embeddings explicitly. Only providers with a
+	// real embedding backend are mapped, and a proper embedding model is used
+	// (never the chat model — see issue #137).
+	if config.Memory.Enabled {
+		applyEmbeddingDefaults(config.Memory, &config.LLM)
+
+		// Surface degraded or risky embedding configurations as
+		// diagnostics the consumer can act on programmatically.
+		embeddingProvider := config.Memory.Options["embedding_provider"]
+		embeddingModel := config.Memory.Options["embedding_model"]
+		switch embeddingProvider {
+		case "":
+			agent.addDiagnostic(Diagnostic{
+				Severity: DiagError,
+				Code:     DiagEmbeddingFallbackDummy,
+				Message: "Memory is enabled but no embedding backend is configured or derivable from LLM provider \"" + config.LLM.Provider + "\" - " +
+					"falling back to dummy embeddings. Chat history will work; semantic search and RAG will return meaningless results. " +
+					"Fix: set Memory.Options[\"embedding_provider\"] to \"openai\" or \"ollama\" (with embedding_model / embedding_api_key / embedding_url as needed), " +
+					"or disable memory with Memory.Enabled=false.",
+				Details: map[string]string{
+					"llm_provider":   config.LLM.Provider,
+					"fix_option_key": "embedding_provider",
+				},
+			})
+		default:
+			if dims := config.Memory.Options["dimensions"]; dims != "" && embeddingModel != "" {
+				if known := dimensionsForEmbeddingModel(embeddingModel); known > 0 && dims != fmt.Sprintf("%d", known) {
+					agent.addDiagnostic(Diagnostic{
+						Severity: DiagWarning,
+						Code:     DiagEmbeddingDimensionMismatch,
+						Message: "Configured memory dimensions (" + dims + ") do not match embedding model \"" + embeddingModel + "\" (" + fmt.Sprintf("%d", known) + ") - " +
+							"vector-store writes may fail or similarity search may degrade. " +
+							"Set Memory.Options[\"dimensions\"] to match the model, and re-ingest data stored with different dimensions.",
+						Details: map[string]string{
+							"embedding_model":       embeddingModel,
+							"configured_dimensions": dims,
+							"model_dimensions":      fmt.Sprintf("%d", known),
+						},
+					})
+				}
 			}
 		}
 	}
@@ -303,10 +378,28 @@ func (a *realAgent) execute(ctx context.Context, input string, opts *RunOptions)
 		return nil, fmt.Errorf("agent not properly initialized: LLM provider is nil")
 	}
 
-	// Step 1: Build the prompt with system context and user input
+	// Step 1: Build the prompt with system context and user input.
+	// Sampling parameters are passed per-call so configured values and
+	// RunOptions overrides actually reach the provider (the provider was
+	// constructed at Build() time; mutating config afterwards has no effect
+	// on it). RunOptions.Temperature is a pointer and survives as-is, so an
+	// explicit 0 (deterministic sampling) is honored (see #143).
+	params := llm.ModelParameters{
+		Temperature: convertFloat32ToFloat32Ptr(a.config.LLM.Temperature),
+		MaxTokens:   convertIntToInt32Ptr(a.config.LLM.MaxTokens),
+	}
+	if opts != nil && opts.Temperature != nil {
+		t := float32(*opts.Temperature)
+		params.Temperature = &t
+	}
+	if opts != nil && opts.MaxTokens > 0 {
+		m := int32(opts.MaxTokens)
+		params.MaxTokens = &m
+	}
 	prompt := llm.Prompt{
-		System: a.config.SystemPrompt,
-		User:   input,
+		System:     a.config.SystemPrompt,
+		User:       input,
+		Parameters: params,
 	}
 
 	// Capture prompt content at detailed trace level for evaluation/debugging

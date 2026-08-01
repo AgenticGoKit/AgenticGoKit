@@ -7,18 +7,12 @@ import (
 
 func init() {
 	core.RegisterMemoryProviderFactory("chromem", func(config core.AgentMemoryConfig) (core.Memory, error) {
-		// Initialize embedding service
-		var embedder core.EmbeddingService
-		switch config.Embedding.Provider {
-		case "openai":
-			embedder = core.NewOpenAIEmbeddingService(config.Embedding.APIKey, config.Embedding.Model)
-		case "ollama":
-			embedder = core.NewOllamaEmbeddingService(config.Embedding.Model, config.Embedding.BaseURL)
-		case "dummy":
-			embedder = core.NewDummyEmbeddingService(config.Dimensions)
-		default:
-			// Default to dummy if not specified or unrecognized
-			embedder = core.NewDummyEmbeddingService(config.Dimensions)
+		// Initialize embedding service; fails loudly on unregistered factories
+		// or unknown providers instead of silently degrading to zero-vector
+		// embeddings (see issue #137).
+		embedder, err := core.NewEmbeddingServiceForConfig(config)
+		if err != nil {
+			return nil, err
 		}
 
 		return providers.NewChromemProvider(config, embedder)

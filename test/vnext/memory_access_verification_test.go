@@ -58,9 +58,15 @@ func TestAgentMemoryAccess(t *testing.T) {
 			Model:    "gemma:2b",
 		},
 		Memory: &vnext.MemoryConfig{
+			Enabled:  true,
 			Provider: "chromem",
-			RAG:      &vnext.RAGConfig{
-				// Enabled is implied by presence
+			RAG:      &vnext.RAGConfig{},
+			// This test verifies memory accessor wiring, not embedding
+			// quality. Use dummy embeddings explicitly so it does not
+			// require a running Ollama instance (real embedding providers
+			// are derived from the LLM config by default).
+			Options: map[string]string{
+				"embedding_provider": "dummy",
 			},
 		},
 	}
@@ -166,7 +172,6 @@ func (m *vnextMockMemory) BuildContext(ctx context.Context, query string, opts .
 func (m *vnextMockMemory) AddMessage(ctx context.Context, role, content string) error {
 	return nil
 }
-
 
 func TestResultMemoryContext(t *testing.T) {
 	// Verify we can populate MemoryContext

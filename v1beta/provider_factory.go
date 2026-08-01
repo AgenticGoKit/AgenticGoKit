@@ -9,6 +9,11 @@ import (
 	"github.com/agenticgokit/agenticgokit/core"
 	"github.com/agenticgokit/agenticgokit/internal/llm"
 
+	// Register real embedding factories (OpenAI, Ollama). Without this import
+	// the core registry has no factories and memory would degrade to the
+	// zero-vector no-op embedding stub (see issue #137).
+	_ "github.com/agenticgokit/agenticgokit/plugins/embedding"
+
 	// Register memory providers
 	_ "github.com/agenticgokit/agenticgokit/plugins/memory/chromem"
 )
@@ -49,6 +54,95 @@ func createLLMProvider(config LLMConfig) (llm.ModelProvider, error) {
 	// Use the internal/llm factory to create the provider
 	factory := llm.NewProviderFactory()
 	return factory.CreateProvider(llmConfig)
+}
+
+// Default embedding models used when deriving embedding configuration from
+// the agent's LLM provider. Chat models are NOT valid embedding models, so we
+// must not reuse config.LLM.Model here (see issue #137).
+const (
+	defaultOllamaEmbeddingModel = "nomic-embed-text"
+	defaultOpenAIEmbeddingModel = "text-embedding-3-small"
+)
+
+// embeddingModelDimensions maps well-known embedding models to their vector
+// dimensions so users don't have to specify Options["dimensions"] manually.
+// A model/dimension mismatch silently corrupts the vector column, so getting
+// this right by default matters.
+var embeddingModelDimensions = map[string]int{
+	// Ollama models
+	"nomic-embed-text":       768,
+	"mxbai-embed-large":      1024,
+	"all-minilm":             384,
+	"snowflake-arctic-embed": 1024,
+	"bge-m3":                 1024,
+	// OpenAI models
+	"text-embedding-3-small": 1536,
+	"text-embedding-3-large": 3072,
+	"text-embedding-ada-002": 1536,
+}
+
+// dimensionsForEmbeddingModel returns the vector dimensions for a known
+// embedding model (Ollama ":tag" suffixes are ignored), or 0 if unknown.
+func dimensionsForEmbeddingModel(model string) int {
+	name := strings.ToLower(strings.TrimSpace(model))
+	if idx := strings.Index(name, ":"); idx >= 0 {
+		name = name[:idx]
+	}
+	return embeddingModelDimensions[name]
+}
+
+// applyEmbeddingDefaults fills Options["embedding_*"] from the agent's LLM
+// configuration when the user did not configure embeddings explicitly.
+//
+// Only LLM providers with a real embedding backend are mapped (ollama,
+// openai); for everything else the provider is left unset so that memory
+// initialization applies its own loud fallback instead of silently producing
+// meaningless vectors. When an embedding provider is set (by the user or
+// here) without a model, a proper default embedding model is chosen — the
+// chat model is never reused as an embedding model.
+func applyEmbeddingDefaults(mem *MemoryConfig, llmCfg *LLMConfig) {
+	if mem == nil {
+		return
+	}
+	if mem.Options == nil {
+		mem.Options = make(map[string]string)
+	}
+
+	if _, ok := mem.Options["embedding_provider"]; !ok && llmCfg != nil {
+		switch strings.ToLower(strings.TrimSpace(llmCfg.Provider)) {
+		case "ollama":
+			mem.Options["embedding_provider"] = "ollama"
+			if llmCfg.BaseURL != "" {
+				if _, ok := mem.Options["embedding_url"]; !ok {
+					mem.Options["embedding_url"] = llmCfg.BaseURL
+				}
+			}
+		case "openai":
+			mem.Options["embedding_provider"] = "openai"
+			if llmCfg.APIKey != "" {
+				if _, ok := mem.Options["embedding_api_key"]; !ok {
+					mem.Options["embedding_api_key"] = llmCfg.APIKey
+				}
+			}
+		}
+	}
+
+	// Choose a default embedding model for the resolved provider.
+	if _, ok := mem.Options["embedding_model"]; !ok {
+		switch mem.Options["embedding_provider"] {
+		case "ollama":
+			mem.Options["embedding_model"] = defaultOllamaEmbeddingModel
+		case "openai":
+			mem.Options["embedding_model"] = defaultOpenAIEmbeddingModel
+		}
+	}
+
+	// Derive dimensions from the embedding model when not set explicitly.
+	if _, ok := mem.Options["dimensions"]; !ok {
+		if dims := dimensionsForEmbeddingModel(mem.Options["embedding_model"]); dims > 0 {
+			mem.Options["dimensions"] = fmt.Sprintf("%d", dims)
+		}
+	}
 }
 
 // createMemoryProvider creates a Memory instance from MemoryConfig.
@@ -114,15 +208,17 @@ func createMemoryProvider(config *MemoryConfig) (core.Memory, error) {
 			if _, err := fmt.Sscanf(dim, "%d", &d); err == nil {
 				agentMemoryConfig.Dimensions = d
 			}
+		} else if dims := dimensionsForEmbeddingModel(config.Options["embedding_model"]); dims > 0 {
+			// Derive dimensions from the configured embedding model. A wrong
+			// dimension count silently corrupts the vector store.
+			agentMemoryConfig.Dimensions = dims
 		} else {
 			// Infer dimensions based on provider if possible
 			switch config.Options["embedding_provider"] {
 			case "openai":
 				agentMemoryConfig.Dimensions = 1536
 			case "ollama":
-				// This is a guess, but most small ollama models use 768 or 1024 or 4096.
-				// For dummy/fallback, 1536 is okay but we should ideally let the provider handle it.
-				agentMemoryConfig.Dimensions = 1536
+				agentMemoryConfig.Dimensions = 768 // matches defaultOllamaEmbeddingModel
 			}
 		}
 		if ep, ok := config.Options["embedding_provider"]; ok {

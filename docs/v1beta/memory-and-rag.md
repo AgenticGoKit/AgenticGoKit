@@ -16,7 +16,8 @@ Add conversational memory and Retrieval-Augmented Generation (RAG) to v1beta age
 ## Defaults and options
 
 - Default: chromem is enabled when no memory config is provided. Imports register providers; no extra code needed.
-- Disable memory: set `memory.enabled = false` in TOML or skip `WithMemory` and provide a `Config` with memory disabled.
+- Disable memory: set `memory.enabled = false` in TOML, or `Memory: &MemoryConfig{Enabled: false}` in code.
+- When you provide a `MemoryConfig` yourself, set `Enabled: true` explicitly — the flag is honored as written (a zero-value `Enabled` means disabled).
 - MemoryOption helpers:
   - `WithMemoryProvider(provider string)` – "chromem" (embedded) or "pgvector" (PostgreSQL + pgvector).
   - `WithRAG(maxTokens int, personalWeight, knowledgeWeight float32)` – sets weights and a 10-message history window.
@@ -127,6 +128,86 @@ agent, _ := v1beta.NewBuilder(cfg.Name).
     }).
     Build()
 ```
+
+---
+
+## Embeddings
+
+Semantic memory and RAG are only as good as the embeddings backing them.
+
+**Defaults (batteries included):** the v1beta builder registers the real
+embedding providers automatically and derives a sensible embedding setup from
+your LLM provider when you don't configure one:
+
+| LLM provider | Embedding provider | Default model | Dimensions |
+|---|---|---|---|
+| `ollama` | `ollama` (same BaseURL) | `nomic-embed-text` | 768 |
+| `openai` | `openai` (same API key) | `text-embedding-3-small` | 1536 |
+| anything else | none derived | — | — |
+
+For Ollama, pull the embedding model first: `ollama pull nomic-embed-text`.
+
+**Explicit configuration** via memory `Options`:
+
+```go
+Memory: &v1beta.MemoryConfig{
+    Enabled:  true,
+    Provider: "pgvector",
+    Connection: dsn,
+    Options: map[string]string{
+        "embedding_provider": "ollama",
+        "embedding_model":    "mxbai-embed-large",
+        // "dimensions" is derived automatically for known models
+        // (nomic-embed-text=768, mxbai-embed-large=1024,
+        //  text-embedding-3-small=1536, text-embedding-3-large=3072, ...);
+        // set it explicitly for models the framework doesn't know.
+    },
+},
+```
+
+**Failure modes are consumable, not just loud:**
+
+Non-fatal findings (dummy-embedding fallback, dimension mismatch, memory
+disabled with settings) are surfaced as **values**, not only log lines:
+
+```go
+agent, err := v1beta.NewBuilder("bot").
+    WithConfig(cfg).
+    WithDiagnosticHandler(func(d v1beta.Diagnostic) {
+        if d.Code == v1beta.DiagEmbeddingFallbackDummy {
+            log.Fatalf("refusing to deploy with dummy embeddings: %s", d.Message)
+        }
+    }).
+    Build()
+
+// or inspect after the fact:
+for _, d := range v1beta.DiagnosticsOf(agent) { ... }
+```
+
+Fatal embedding configuration errors wrap typed sentinels, so you can branch
+without string-matching:
+
+```go
+if errors.Is(err, core.ErrEmbeddingFactoryNotRegistered) { ... }
+if errors.Is(err, core.ErrEmbeddingProviderUnsupported)  { ... }
+```
+
+**Failure modes:**
+
+- Requesting `openai`/`azure`/`ollama` embeddings when no embedding factory is
+  registered returns an error at build time (v1beta registers them for you; if
+  you construct memory through `core` directly, blank-import
+  `github.com/agenticgokit/agenticgokit/plugins/embedding`).
+- An unknown `embedding_provider` returns an error listing supported values.
+- If memory is enabled with no embedding provider at all (and none can be
+  derived from your LLM provider), the framework falls back to **dummy
+  embeddings and logs at Error level**: chat history still works, but semantic
+  search results are meaningless. Configure a real embedding provider or set
+  `memory.enabled = false`.
+
+The embedding model's dimensions must match the vector store column. The
+framework derives dimensions for well-known models automatically; a mismatch
+on an existing store requires re-ingesting your data.
 
 ---
 

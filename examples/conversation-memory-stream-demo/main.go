@@ -45,6 +45,7 @@ Be conversational and engaging while being helpful.`,
 				MaxTokens:   2000, // Allow detailed responses
 			},
 			Memory: &v1beta.MemoryConfig{
+				Enabled: true,
 				// Provider defaults to "chromem" - embedded vector database
 				RAG: &v1beta.RAGConfig{
 					MaxTokens:       1000,

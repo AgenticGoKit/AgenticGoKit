@@ -164,12 +164,17 @@ func NewMemory(config *MemoryConfig) (Memory, error) {
 
 	// Bridge to core memory factory (for plugins like chromem)
 	coreMem, err := createMemoryProvider(config)
-	if err == nil && coreMem != nil {
+	if err != nil {
+		// Fail loudly: silently returning a no-op memory here hides broken
+		// configuration (e.g. an unusable embedding provider) from the user.
+		return nil, fmt.Errorf("failed to create memory provider %q: %w", config.Provider, err)
+	}
+	if coreMem != nil {
 		// Wrap core.Memory with v1beta adapter
 		return &coreMemoryAdapter{mem: coreMem}, nil
 	}
 
-	// Fallback to no-op implementation
+	// Memory disabled by configuration
 	return &noOpMemory{}, nil
 }
 

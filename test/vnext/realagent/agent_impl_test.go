@@ -153,6 +153,7 @@ func TestAgentCapabilities(t *testing.T) {
 					BaseURL:  "http://localhost:11434",
 				},
 				Memory: &vnext.MemoryConfig{
+					Enabled:    true,
 					Provider:   "memory",
 					Connection: "memory",
 				},
@@ -397,6 +398,3 @@ func TestBuilderClone(t *testing.T) {
 	assert.Equal(t, "Original prompt", agent1.Config().SystemPrompt)
 	assert.Equal(t, "Cloned prompt", agent2.Config().SystemPrompt)
 }
-
-
-

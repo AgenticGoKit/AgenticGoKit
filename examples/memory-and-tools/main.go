@@ -31,6 +31,7 @@ Remember information from our conversation and provide personalized responses.`,
 				MaxTokens:   80, // Short responses for faster demo
 			},
 			Memory: &v1beta.MemoryConfig{
+				Enabled: true,
 				// Provider defaults to "chromem" - embedded vector database
 				RAG: &v1beta.RAGConfig{
 					MaxTokens:       500,

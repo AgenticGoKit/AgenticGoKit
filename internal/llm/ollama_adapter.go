@@ -97,7 +97,9 @@ func (o *OllamaAdapter) Call(ctx context.Context, prompt Prompt) (Response, erro
 	}
 
 	var finalTemperature float32
-	if prompt.Parameters.Temperature != nil && *prompt.Parameters.Temperature > 0 {
+	// A non-nil pointer is an explicit setting: temperature 0 (deterministic
+	// sampling) is valid and must not fall back to the adapter default.
+	if prompt.Parameters.Temperature != nil {
 		finalTemperature = *prompt.Parameters.Temperature
 	} else {
 		finalTemperature = o.temperature

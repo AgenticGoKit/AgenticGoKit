@@ -22,6 +22,7 @@ func main() {
 				BaseURL:  "http://localhost:11434",
 			},
 			Memory: &v1beta.MemoryConfig{
+				Enabled:  true,
 				Provider: "chromem",
 				Options: map[string]string{
 					"dimensions": "1536", // Dummy embedder dimensions

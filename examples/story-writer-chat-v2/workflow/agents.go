@@ -3,8 +3,8 @@ package workflow
 import (
 	"time"
 
-	vnext "github.com/agenticgokit/agenticgokit/v1beta"
 	"github.com/agenticgokit/agenticgokit/examples/story-writer-chat-v2/config"
+	vnext "github.com/agenticgokit/agenticgokit/v1beta"
 )
 
 // AgentConfig holds configuration for creating an agent
@@ -22,6 +22,7 @@ func CreateWriter(cfg *config.Config) (vnext.Agent, error) {
 		Timeout:      90 * time.Second,
 		Streaming:    &vnext.StreamingConfig{Enabled: true, BufferSize: 50, FlushInterval: 50},
 		Memory: &vnext.MemoryConfig{
+			Enabled:  true,
 			Provider: "memory", // In-memory provider
 			RAG: &vnext.RAGConfig{
 				MaxTokens:       2000, // Include up to 2000 tokens of conversation history
@@ -73,6 +74,3 @@ func CreatePublisher(cfg *config.Config) (vnext.Agent, error) {
 		},
 	})
 }
-
-
-

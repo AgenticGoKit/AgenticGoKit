@@ -121,14 +121,30 @@ func (f *ProviderFactory) SetHTTPClient(client *http.Client) {
 	f.httpClient = client
 }
 
+// Default sampling parameters applied when the corresponding ProviderConfig
+// field is left at its zero value. Because ProviderConfig uses plain (non
+// pointer) fields, a zero value means "unset" at this layer; explicit values
+// — including temperature 0 — can be passed per call via
+// Prompt.Parameters (see ModelParameters), which every adapter honors.
+const (
+	// DefaultMaxTokens is intentionally generous: agent, tool, and RAG
+	// responses are routinely longer than a chat one-liner, and a small
+	// silent cap truncates output mid-sentence (see issue #143; the old
+	// default was 150).
+	DefaultMaxTokens = 2048
+
+	// DefaultTemperature is applied when ProviderConfig.Temperature is 0.
+	DefaultTemperature float32 = 0.7
+)
+
 // CreateProvider creates a ModelProvider based on the configuration
 func (f *ProviderFactory) CreateProvider(config ProviderConfig) (ModelProvider, error) {
 	// Set defaults
 	if config.MaxTokens == 0 {
-		config.MaxTokens = 150
+		config.MaxTokens = DefaultMaxTokens
 	}
 	if config.Temperature == 0 {
-		config.Temperature = 0.7
+		config.Temperature = DefaultTemperature
 	}
 	if config.HTTPTimeout > 0 && f.httpClient.Timeout != config.HTTPTimeout {
 		f.httpClient = NewOptimizedHTTPClient(config.HTTPTimeout)

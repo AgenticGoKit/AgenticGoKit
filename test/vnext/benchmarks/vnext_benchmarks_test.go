@@ -118,6 +118,7 @@ func BenchmarkConfig_Complex(b *testing.B) {
 				MaxTokens:   2000,
 			},
 			Memory: &vnext.MemoryConfig{
+				Enabled:    true,
 				Provider:   "memory",
 				Connection: "local",
 				RAG: &vnext.RAGConfig{
@@ -309,6 +310,3 @@ func BenchmarkValidationError_Creation(b *testing.B) {
 		}
 	}
 }
-
-
-

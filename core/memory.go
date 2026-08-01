@@ -5,6 +5,8 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -358,6 +360,88 @@ func NewDummyEmbeddingService(dimensions int) EmbeddingService {
 		dimensions = 1536
 	}
 	return &noOpEmbeddingService{dimensions: dimensions}
+}
+
+// Sentinel errors for embedding configuration failures. They are wrapped
+// into the errors returned by NewEmbeddingServiceForConfig (and therefore
+// into memory/agent construction errors), so consumers can branch with
+// errors.Is instead of string-matching messages:
+//
+//	if errors.Is(err, core.ErrEmbeddingFactoryNotRegistered) { ... }
+var (
+	// ErrEmbeddingFactoryNotRegistered: a real embedding provider was
+	// requested but its factory was never registered (missing
+	// plugins/embedding import in the consumer binary).
+	ErrEmbeddingFactoryNotRegistered = errors.New("embedding factory not registered")
+
+	// ErrEmbeddingProviderUnsupported: the configured embedding provider
+	// name is not one of the supported values.
+	ErrEmbeddingProviderUnsupported = errors.New("unsupported embedding provider")
+)
+
+// NewEmbeddingServiceForConfig resolves the embedding service for a memory
+// provider configuration. Unlike the individual New*EmbeddingService helpers,
+// it fails loudly: requesting a provider whose factory has not been registered
+// returns an error instead of silently substituting the zero-vector no-op stub,
+// and an unknown provider name is an error instead of a silent dummy fallback.
+//
+// An empty provider keeps the historical dummy fallback (so zero-config memory
+// still constructs), but logs at Error level because semantic search over
+// dummy embeddings returns meaningless results.
+func NewEmbeddingServiceForConfig(cfg AgentMemoryConfig) (EmbeddingService, error) {
+	registrationHint := `register real embedding providers with: import _ "github.com/agenticgokit/agenticgokit/plugins/embedding"`
+
+	switch strings.ToLower(strings.TrimSpace(cfg.Embedding.Provider)) {
+	case "openai", "azure":
+		if openAIEmbeddingFactory == nil {
+			return nil, fmt.Errorf("%w: embedding provider %q requested but no OpenAI embedding factory is registered; %s", ErrEmbeddingFactoryNotRegistered, cfg.Embedding.Provider, registrationHint)
+		}
+		svc := openAIEmbeddingFactory(cfg.Embedding.APIKey, cfg.Embedding.Model)
+		warnOnDimensionMismatch(cfg, svc)
+		return svc, nil
+	case "ollama":
+		if ollamaEmbeddingFactory == nil {
+			return nil, fmt.Errorf("%w: embedding provider \"ollama\" requested but no Ollama embedding factory is registered; %s", ErrEmbeddingFactoryNotRegistered, registrationHint)
+		}
+		svc := ollamaEmbeddingFactory(cfg.Embedding.Model, cfg.Embedding.BaseURL)
+		warnOnDimensionMismatch(cfg, svc)
+		return svc, nil
+	case "dummy":
+		return NewDummyEmbeddingService(cfg.Dimensions), nil
+	case "":
+		Logger().Error().
+			Str("memory_provider", cfg.Provider).
+			Msg("Memory is enabled but no embedding provider is configured - falling back to dummy embeddings. " +
+				"Chat history will still work, but semantic search and RAG will return meaningless results. " +
+				"Fix: set embedding.provider to \"openai\" or \"ollama\" " +
+				"(v1beta: Memory.Options[\"embedding_provider\"], plus embedding_model / embedding_api_key / embedding_url as needed), " +
+				"or disable memory (v1beta: Memory.Enabled=false).")
+		return NewDummyEmbeddingService(cfg.Dimensions), nil
+	default:
+		return nil, fmt.Errorf("%w: %q (supported: openai, azure, ollama, dummy)", ErrEmbeddingProviderUnsupported, cfg.Embedding.Provider)
+	}
+}
+
+// warnOnDimensionMismatch logs when the configured vector dimensions disagree
+// with what the embedding service reports. This is a warning rather than an
+// error because service-reported dimensions are heuristic for unrecognized
+// models, but a real mismatch makes vector-store writes fail (or silently
+// corrupts similarity search), so it should be visible before the first write.
+func warnOnDimensionMismatch(cfg AgentMemoryConfig, svc EmbeddingService) {
+	if cfg.Dimensions <= 0 || svc == nil {
+		return
+	}
+	if got := svc.GetDimensions(); got > 0 && got != cfg.Dimensions {
+		Logger().Warn().
+			Str("embedding_provider", cfg.Embedding.Provider).
+			Str("embedding_model", cfg.Embedding.Model).
+			Int("configured_dimensions", cfg.Dimensions).
+			Int("model_dimensions", got).
+			Msg("Configured memory dimensions do not match the embedding model's dimensions - " +
+				"vector-store writes may fail or similarity search may degrade. " +
+				"Set dimensions to match the embedding model (v1beta: Memory.Options[\"dimensions\"]), " +
+				"and re-ingest existing data if the store was created with different dimensions.")
+	}
 }
 
 // Register embedding service factories

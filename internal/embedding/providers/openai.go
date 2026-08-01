@@ -119,7 +119,10 @@ func (s *OpenAIEmbeddingService) GenerateEmbeddings(ctx context.Context, texts [
 
 	// Check for errors
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("API error %d: %s", resp.StatusCode, string(responseBody))
+		if resp.StatusCode == http.StatusUnauthorized {
+			return nil, fmt.Errorf("OpenAI embeddings API rejected the API key (status 401: %s) — set OPENAI_API_KEY or Memory.Options[\"embedding_api_key\"]", string(responseBody))
+		}
+		return nil, fmt.Errorf("OpenAI embeddings API (model %q) error %d: %s", s.model, resp.StatusCode, string(responseBody))
 	}
 
 	// Parse response

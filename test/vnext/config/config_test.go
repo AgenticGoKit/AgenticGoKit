@@ -701,6 +701,7 @@ func TestConfigWithAllFeatures(t *testing.T) {
 			MaxTokens:   2000,
 		},
 		Memory: &vnext.MemoryConfig{
+			Enabled:  true,
 			Provider: "memory",
 			RAG: &vnext.RAGConfig{
 				MaxTokens:       1000,

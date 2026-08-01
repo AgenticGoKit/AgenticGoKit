@@ -79,7 +79,7 @@ func (s *OllamaEmbeddingService) GenerateEmbedding(ctx context.Context, text str
 	// Send request
 	resp, err := s.client.Do(httpReq)
 	if err != nil {
-		return nil, fmt.Errorf("failed to send request: %w", err)
+		return nil, fmt.Errorf("ollama embeddings request to %s failed: %w — is Ollama running? Start it with `ollama serve`, or point embedding_url at your Ollama instance", s.baseURL, err)
 	}
 	defer resp.Body.Close()
 
@@ -90,7 +90,11 @@ func (s *OllamaEmbeddingService) GenerateEmbedding(ctx context.Context, text str
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(responseBody))
+		body := string(responseBody)
+		if resp.StatusCode == http.StatusNotFound || strings.Contains(body, "not found") {
+			return nil, fmt.Errorf("ollama embedding model %q is not available (status %d: %s) — pull it first: `ollama pull %s`", s.model, resp.StatusCode, body, s.model)
+		}
+		return nil, fmt.Errorf("ollama embeddings API (model %q at %s) failed with status %d: %s", s.model, s.baseURL, resp.StatusCode, body)
 	}
 
 	// Parse response
