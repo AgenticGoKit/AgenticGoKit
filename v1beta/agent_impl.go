@@ -1367,6 +1367,7 @@ func (a *realAgent) generateManifest() error {
 		if spanName, ok := span["Name"].(string); ok {
 			if strings.Contains(spanName, "llm") {
 				manifest.LLMCalls++
+				manifest.TotalTokens += traceSpanTokenCount(span)
 			}
 		}
 
@@ -1411,6 +1412,47 @@ func (a *realAgent) generateManifest() error {
 	}
 
 	return ioutil.WriteFile(manifestPath, manifestData, 0644)
+}
+
+// traceSpanTokenCount extracts token usage from an LLM span in the format
+// written by the OpenTelemetry stdout exporter. Provider spans record the
+// total directly; the component fields are fallbacks for providers that do
+// not emit the total attribute. Non-LLM spans are filtered by the caller so
+// agent spans cannot double-count the same request.
+func traceSpanTokenCount(span map[string]interface{}) int {
+	attributes, ok := span["Attributes"].([]interface{})
+	if !ok {
+		return 0
+	}
+
+	values := make(map[string]int)
+	for _, rawAttribute := range attributes {
+		attribute, ok := rawAttribute.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		key, ok := attribute["Key"].(string)
+		if !ok {
+			continue
+		}
+		value, ok := attribute["Value"].(map[string]interface{})
+		if !ok || value["Type"] != "INT64" {
+			continue
+		}
+		number, ok := value["Value"].(float64)
+		if !ok {
+			continue
+		}
+		values[key] = int(number)
+	}
+
+	if total, ok := values[observability.AttrLLMTotalTokens]; ok {
+		return total
+	}
+	if prompt, ok := values[observability.AttrLLMPromptTokens]; ok {
+		return prompt + values[observability.AttrLLMCompletionTokens]
+	}
+	return values[observability.AttrLLMTokensIn] + values[observability.AttrLLMTokensOut]
 }
 
 // =============================================================================
