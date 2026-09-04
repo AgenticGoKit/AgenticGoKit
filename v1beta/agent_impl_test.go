@@ -2,6 +2,9 @@ package v1beta
 
 import (
 	"context"
+	"encoding/json"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -121,5 +124,72 @@ func TestStoreInMemoryReturnsNoErrorWithoutMemoryProvider(t *testing.T) {
 
 	if err := agent.storeInMemory(context.Background(), "user prompt", "assistant output"); err != nil {
 		t.Fatalf("expected nil error with no memory provider, got %v", err)
+	}
+}
+
+func TestGenerateManifestAggregatesLLMSpanTokens(t *testing.T) {
+	runDir := t.TempDir()
+	trace := []map[string]interface{}{
+		{
+			"Name":      "agk.agent.run",
+			"StartTime": "2026-01-01T00:00:00Z",
+			"EndTime":   "2026-01-01T00:00:01Z",
+			"Attributes": []map[string]interface{}{
+				{"Key": "agk.llm.tokens.input", "Value": map[string]interface{}{"Type": "INT64", "Value": 99}},
+				{"Key": "agk.llm.tokens.output", "Value": map[string]interface{}{"Type": "INT64", "Value": 101}},
+			},
+		},
+		{
+			"Name":      "llm.openai.call",
+			"StartTime": "2026-01-01T00:00:00Z",
+			"EndTime":   "2026-01-01T00:00:01Z",
+			"Attributes": []map[string]interface{}{
+				{"Key": "agk.llm.tokens.total", "Value": map[string]interface{}{"Type": "INT64", "Value": 7}},
+			},
+		},
+		{
+			"Name":      "llm.anthropic.call",
+			"StartTime": "2026-01-01T00:00:01Z",
+			"EndTime":   "2026-01-01T00:00:02Z",
+			"Attributes": []map[string]interface{}{
+				{"Key": "agk.llm.tokens.prompt", "Value": map[string]interface{}{"Type": "INT64", "Value": 4}},
+				{"Key": "agk.llm.tokens.completion", "Value": map[string]interface{}{"Type": "INT64", "Value": 6}},
+			},
+		},
+	}
+	var data []byte
+	for _, span := range trace {
+		encoded, err := json.Marshal(span)
+		if err != nil {
+			t.Fatalf("marshal trace fixture: %v", err)
+		}
+		data = append(data, encoded...)
+		data = append(data, '\n')
+	}
+	if err := os.WriteFile(filepath.Join(runDir, "trace.jsonl"), data, 0644); err != nil {
+		t.Fatalf("write trace fixture: %v", err)
+	}
+
+	agent := &realAgent{runDir: runDir, runID: "run-1", config: &Config{Name: "test-agent"}}
+	if err := agent.generateManifest(); err != nil {
+		t.Fatalf("generateManifest returned error: %v", err)
+	}
+
+	manifestData, err := os.ReadFile(filepath.Join(runDir, "manifest.json"))
+	if err != nil {
+		t.Fatalf("read generated manifest: %v", err)
+	}
+	var manifest struct {
+		LLMCalls    int `json:"llm_calls"`
+		TotalTokens int `json:"total_tokens"`
+	}
+	if err := json.Unmarshal(manifestData, &manifest); err != nil {
+		t.Fatalf("decode generated manifest: %v", err)
+	}
+	if manifest.LLMCalls != 2 {
+		t.Fatalf("expected 2 LLM calls, got %d", manifest.LLMCalls)
+	}
+	if manifest.TotalTokens != 17 {
+		t.Fatalf("expected 17 total tokens without root-span double counting, got %d", manifest.TotalTokens)
 	}
 }
