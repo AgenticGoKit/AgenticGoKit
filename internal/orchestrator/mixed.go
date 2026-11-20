@@ -264,4 +264,3 @@ func (o *MixedOrchestrator) Stop() {
 
 	core.Logger().Debug().Msg("MixedOrchestrator: Stopped and cleaned up")
 }
-

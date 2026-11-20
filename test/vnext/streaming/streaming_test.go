@@ -973,5 +973,3 @@ func TestStreamUtilities_RealOllamaIntegration(t *testing.T) {
 		t.Logf("StreamToChannel parts: %d, combined: %q", len(parts), combined)
 	})
 }
-
-

@@ -371,4 +371,3 @@ func NewBasicConfigurableAgentFactory(config *core.Config) core.ConfigurableAgen
 	}
 	return &basicConfigurableAgentFactory{config: config}
 }
-

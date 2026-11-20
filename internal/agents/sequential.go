@@ -253,4 +253,3 @@ func (s *SequentialAgent) ApplySystemPrompt(ctx context.Context, state agenticgo
 
 	return workingState, nil
 }
-

@@ -1064,4 +1064,3 @@ func (p *PgVectorProvider) batchIngestChunk(ctx context.Context, docs []core.Doc
 		return tx.Commit(ctx)
 	})
 }
-

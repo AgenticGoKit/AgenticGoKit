@@ -267,4 +267,3 @@ func (o *RouteOrchestrator) SetEmitter(emitter EventEmitter) {
 func (o *RouteOrchestrator) Stop() {
 	core.Logger().Debug().Msg("RouteOrchestrator stopping.")
 }
-

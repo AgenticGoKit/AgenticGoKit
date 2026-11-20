@@ -201,4 +201,3 @@ func (eri *ErrorRoutingImplementation) IncrementRetryCount(event core.Event) cor
 
 	return newEvent
 }
-

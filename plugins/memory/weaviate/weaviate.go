@@ -11,4 +11,3 @@ func init() {
 		return providers.NewWeaviateProvider(cfg)
 	})
 }
-

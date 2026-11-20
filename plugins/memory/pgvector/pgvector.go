@@ -29,4 +29,3 @@ func init() {
 		return providers.NewPgVectorProvider(cfg, embed)
 	})
 }
-

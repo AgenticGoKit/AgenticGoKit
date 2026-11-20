@@ -242,4 +242,3 @@ func initializeMCP(config *MCPConfig) error {
 
 	return nil
 }
-

@@ -353,4 +353,3 @@ func init() {
 		return NewDefaultAgentManager(factory)
 	})
 }
-

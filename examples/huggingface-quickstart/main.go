@@ -7,8 +7,8 @@ import (
 	"os"
 	"time"
 
-	vnext "github.com/agenticgokit/agenticgokit/v1beta"
 	_ "github.com/agenticgokit/agenticgokit/plugins/llm/huggingface"
+	vnext "github.com/agenticgokit/agenticgokit/v1beta"
 )
 
 func main() {
@@ -469,6 +469,3 @@ func containsWord(text, word string) bool {
 			fmt.Sprintf(" %s", word) != "" &&
 				len(text) > len(word))
 }
-
-
-

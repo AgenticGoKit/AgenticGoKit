@@ -428,4 +428,3 @@ func (r *ConfigResolver) ValidateResolvedConfig() []core.ValidationError {
 	validator := NewDefaultConfigValidator()
 	return validator.ValidateConfig(r.config)
 }
-

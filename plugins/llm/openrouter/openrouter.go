@@ -93,4 +93,3 @@ func factory(cfg core.LLMProviderConfig) (core.ModelProvider, error) {
 func init() {
 	core.RegisterModelProviderFactory("openrouter", factory)
 }
-

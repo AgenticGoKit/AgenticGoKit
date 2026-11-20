@@ -3,11 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/agenticgokit/agenticgokit/v1beta"
 	"log"
 	"os"
 	"strings"
 	"time"
-	"github.com/agenticgokit/agenticgokit/v1beta"
 )
 
 // CreateResearcherAgent creates a research agent

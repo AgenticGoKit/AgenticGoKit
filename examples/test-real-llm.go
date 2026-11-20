@@ -3,10 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+	_ "github.com/agenticgokit/agenticgokit/plugins/llm/ollama"
+	"github.com/agenticgokit/agenticgokit/v1beta"
 	"log"
 	"time"
-	"github.com/agenticgokit/agenticgokit/v1beta"
-	_ "github.com/agenticgokit/agenticgokit/plugins/llm/ollama"
 )
 
 func main() {
@@ -18,12 +18,12 @@ func main() {
 	fmt.Println("Building agent with real LLM integration...")
 	agent, err := v1beta.NewBuilder("test-agent").
 		WithConfig(&v1beta.Config{
-			Name:		 "test-agent",
+			Name:         "test-agent",
 			SystemPrompt: "You are a helpful assistant. Keep your answers very short and concise.",
-			Timeout:	  30 * time.Second,
+			Timeout:      30 * time.Second,
 			LLM: v1beta.LLMConfig{
-				Provider:   "ollama",
-				Model: 	"gemma3:1b", // Using available model
+				Provider:    "ollama",
+				Model:       "gemma3:1b", // Using available model
 				Temperature: 0.7,
 				MaxTokens:   100,
 				BaseURL:     "http://localhost:11434",
@@ -90,6 +90,3 @@ func main() {
 	fmt.Println("  ✨ Real LLM Integration Test PASSED! ✨")
 	fmt.Println("===========================================")
 }
-
-
-

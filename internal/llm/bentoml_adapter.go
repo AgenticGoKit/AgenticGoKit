@@ -14,10 +14,10 @@ import (
 // BentoMLConfig holds BentoML-specific configuration
 type BentoMLConfig struct {
 	// Base configuration
-	BaseURL     string `json:"base_url" toml:"base_url"`         // e.g., "http://localhost:3000"
-	APIKey      string `json:"api_key,omitempty" toml:"api_key"` // Optional - BentoML API token
-	Model       string `json:"model" toml:"model"`               // Model name/path
-	MaxTokens   int    `json:"max_tokens,omitempty" toml:"max_tokens"`
+	BaseURL     string  `json:"base_url" toml:"base_url"`         // e.g., "http://localhost:3000"
+	APIKey      string  `json:"api_key,omitempty" toml:"api_key"` // Optional - BentoML API token
+	Model       string  `json:"model" toml:"model"`               // Model name/path
+	MaxTokens   int     `json:"max_tokens,omitempty" toml:"max_tokens"`
 	Temperature float32 `json:"temperature,omitempty" toml:"temperature"`
 
 	// Sampling parameters (OpenAI-compatible)
@@ -28,8 +28,8 @@ type BentoMLConfig struct {
 	Stop             []string `json:"stop,omitempty" toml:"stop"`
 
 	// BentoML-specific options
-	ServiceName string            `json:"service_name,omitempty" toml:"service_name"` // BentoML service name
-	Runners     []string          `json:"runners,omitempty" toml:"runners"`           // Specific runners to use
+	ServiceName  string            `json:"service_name,omitempty" toml:"service_name"` // BentoML service name
+	Runners      []string          `json:"runners,omitempty" toml:"runners"`           // Specific runners to use
 	ExtraHeaders map[string]string `json:"extra_headers,omitempty" toml:"extra_headers"`
 
 	// Retry configuration

@@ -217,4 +217,3 @@ func init() {
 		return &echoTool{}
 	})
 }
-

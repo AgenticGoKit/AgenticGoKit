@@ -43,7 +43,7 @@ func (m *MockOrchestrator) Dispatch(ctx context.Context, event core.Event) (core
 	if event == nil {
 		return core.AgentResult{}, fmt.Errorf("mock orchestrator cannot handle nil event")
 	}
-	
+
 	targetID, ok := event.GetMetadataValue(core.RouteMetadataKey)
 	if !ok {
 		return core.AgentResult{}, fmt.Errorf("event has no route metadata")
@@ -67,8 +67,6 @@ func (m *MockOrchestrator) Stop() {}
 func (m *MockOrchestrator) GetCallbackRegistry() *core.CallbackRegistry {
 	return m.registry
 }
-
-
 
 // SpyAgentHandler implements AgentHandler for testing
 type SpyAgentHandler struct {
@@ -108,7 +106,7 @@ func (h *SpyAgentHandler) Run(ctx context.Context, event core.Event, state core.
 			return core.AgentResult{OutputState: state}, err
 		}
 	}
-	
+
 	// Return the configured result and error, ensuring OutputState is not nil
 	result := h.ReturnResult
 	if result.OutputState == nil {

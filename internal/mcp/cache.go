@@ -294,4 +294,3 @@ func (c *MemoryCache) cleanupRoutine() {
 		}
 	}
 }
-

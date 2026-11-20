@@ -6,8 +6,8 @@ import (
 	"log"
 	"time"
 
-	vnext "github.com/agenticgokit/agenticgokit/v1beta"
 	_ "github.com/agenticgokit/agenticgokit/plugins/llm/ollama"
+	vnext "github.com/agenticgokit/agenticgokit/v1beta"
 )
 
 func main() {
@@ -78,6 +78,3 @@ func createAgent(name, prompt string, temperature float32) vnext.Agent {
 	agent.Initialize(context.Background())
 	return agent
 }
-
-
-

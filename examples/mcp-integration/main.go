@@ -151,5 +151,3 @@ func exampleWithMCPDiscovery() error {
 
 	return nil
 }
-
-

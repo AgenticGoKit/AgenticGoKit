@@ -167,7 +167,6 @@ func (m *vnextMockMemory) AddMessage(ctx context.Context, role, content string) 
 	return nil
 }
 
-
 func TestResultMemoryContext(t *testing.T) {
 	// Verify we can populate MemoryContext
 	ctx := &vnext.RAGContext{

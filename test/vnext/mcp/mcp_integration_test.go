@@ -503,5 +503,3 @@ func TestMCPRealIntegration(t *testing.T) {
 		}
 	})
 }
-
-

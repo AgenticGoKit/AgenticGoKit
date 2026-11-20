@@ -609,4 +609,3 @@ func (a *MCPAwareAgent) updateStateWithResults(inputState core.State, results []
 
 	return outputState
 }
-

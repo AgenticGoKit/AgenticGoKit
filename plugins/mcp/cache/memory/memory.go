@@ -239,4 +239,3 @@ func init() {
 		return createRealMCPCacheManager(cfg)
 	})
 }
-

@@ -51,4 +51,3 @@ func init() {
 		return newSTDIOManager(cfg)
 	})
 }
-

@@ -195,4 +195,3 @@ type testLLMAdapter struct{}
 func (a *testLLMAdapter) Complete(ctx context.Context, systemPrompt string, userPrompt string) (string, error) {
 	return "test completion", nil
 }
-

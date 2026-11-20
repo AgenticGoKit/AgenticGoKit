@@ -6,8 +6,8 @@ import (
 	"log"
 	"time"
 
-	v1beta "github.com/agenticgokit/agenticgokit/v1beta"
 	_ "github.com/agenticgokit/agenticgokit/plugins/llm/ollama"
+	v1beta "github.com/agenticgokit/agenticgokit/v1beta"
 )
 
 func main() {
@@ -80,6 +80,3 @@ func main() {
 	fmt.Println("  QuickStart demo completed!")
 	fmt.Println("===========================================")
 }
-
-
-

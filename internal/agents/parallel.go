@@ -317,4 +317,3 @@ func (a *ParallelAgent) ApplySystemPrompt(ctx context.Context, state agenticgoki
 
 	return workingState, nil
 }
-

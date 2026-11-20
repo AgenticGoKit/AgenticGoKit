@@ -21,7 +21,7 @@ type DefaultConfigValidator struct {
 func NewDefaultConfigValidator() *DefaultConfigValidator {
 	return &DefaultConfigValidator{
 		knownCapabilities: map[string]bool{
-			"information_gathering":  true,
+			"information_gathering": true,
 			"fact_checking":         true,
 			"source_identification": true,
 			"pattern_recognition":   true,
@@ -820,9 +820,9 @@ func (v *DefaultConfigValidator) ValidateConfigCompleteness(config *core.Config)
 	}
 
 	// Check orchestration configuration
-	if len(config.Orchestration.SequentialAgents) == 0 && 
-	   len(config.Orchestration.CollaborativeAgents) == 0 && 
-	   config.Orchestration.LoopAgent == "" {
+	if len(config.Orchestration.SequentialAgents) == 0 &&
+		len(config.Orchestration.CollaborativeAgents) == 0 &&
+		config.Orchestration.LoopAgent == "" {
 		errors = append(errors, core.ValidationError{
 			Field:      "orchestration",
 			Value:      nil,

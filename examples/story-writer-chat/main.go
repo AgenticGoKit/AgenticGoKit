@@ -104,6 +104,3 @@ func ValidateAPIConnection(apiKey string) error {
 
 	return nil
 }
-
-
-
