@@ -628,4 +628,3 @@ func (h *HealthChecker) checkMetricsHealth(ctx context.Context) *HealthStatus {
 		},
 	}
 }
-

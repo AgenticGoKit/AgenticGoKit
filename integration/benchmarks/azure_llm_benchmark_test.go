@@ -86,4 +86,3 @@ func BenchmarkAzureEmbeddings(b *testing.B) {
 }
 
 // TODO: Add benchmarks for OpenAIAdapter and OllamaAdapter in their respective test files.
-

@@ -3,8 +3,8 @@ package workflow
 import (
 	"time"
 
-	vnext "github.com/agenticgokit/agenticgokit/v1beta"
 	"github.com/agenticgokit/agenticgokit/examples/story-writer-chat-v2/config"
+	vnext "github.com/agenticgokit/agenticgokit/v1beta"
 )
 
 // AgentConfig holds configuration for creating an agent
@@ -73,6 +73,3 @@ func CreatePublisher(cfg *config.Config) (vnext.Agent, error) {
 		},
 	})
 }
-
-
-

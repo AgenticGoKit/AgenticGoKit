@@ -195,4 +195,3 @@ func (m *noOpMemory) BuildContext(ctx context.Context, query string, options ...
 func init() {
 	core.RegisterMemoryFactory(NewMemory)
 }
-

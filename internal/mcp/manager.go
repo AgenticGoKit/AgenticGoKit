@@ -680,4 +680,3 @@ func (m *MCPManagerImpl) recordToolError(serverName string, startTime time.Time,
 	}
 	m.logger.Printf("MCP tool execution failed on server '%s': %v", serverName, err)
 }
-

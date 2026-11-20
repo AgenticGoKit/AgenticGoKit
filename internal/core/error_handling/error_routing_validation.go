@@ -230,7 +230,7 @@ type ErrorHandlingChain struct {
 // ErrorHandlerLink represents a single link in the error handling chain
 type ErrorHandlerLink struct {
 	Name        string             `json:"name"`
-	Handler     core.AgentHandler       `json:"-"`
+	Handler     core.AgentHandler  `json:"-"`
 	Condition   ErrorConditionFunc `json:"-"`
 	OnSuccess   ChainActionFunc    `json:"-"`
 	OnFailure   ChainActionFunc    `json:"-"`
@@ -432,4 +432,3 @@ func DefaultErrorChain(registry map[string]core.AgentHandler) *ErrorHandlingChai
 		Add().
 		Build()
 }
-

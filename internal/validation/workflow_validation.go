@@ -143,4 +143,3 @@ func (wv *simpleWorkflowValidator) ValidateWorkflowGraph(graph core.WorkflowGrap
 
 	return result
 }
-

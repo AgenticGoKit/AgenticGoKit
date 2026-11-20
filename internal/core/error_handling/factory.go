@@ -40,4 +40,3 @@ var defaultFactory = NewErrorHandlingFactory()
 func GetDefaultFactory() *ErrorHandlingFactory {
 	return defaultFactory
 }
-

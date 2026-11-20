@@ -672,4 +672,3 @@ func (wv *WorkflowValidatorImplementation) supportsCollaboration(handler core.Ag
 	// For now, we assume all handlers support collaboration unless proven otherwise
 	return true
 }
-

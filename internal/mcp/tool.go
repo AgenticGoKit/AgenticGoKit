@@ -520,4 +520,3 @@ func (t *MCPTool) JSONString() string {
 
 	return string(jsonData)
 }
-

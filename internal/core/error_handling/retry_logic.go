@@ -176,4 +176,3 @@ type retryResultInternal struct {
 	ErrorHistory  []string
 	TotalDuration time.Duration
 }
-

@@ -97,4 +97,3 @@ func init() {
 	RegisterOllamaFactory(providers.NewOllamaEmbeddingService)
 	RegisterDummyFactory(providers.NewDummyEmbeddingService)
 }
-

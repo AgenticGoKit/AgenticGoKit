@@ -166,4 +166,3 @@ func (cb *CircuitBreakerImplementation) GetMetrics() core.CircuitBreakerMetrics 
 		ConcurrentCalls: cb.concurrentCalls,
 	}
 }
-

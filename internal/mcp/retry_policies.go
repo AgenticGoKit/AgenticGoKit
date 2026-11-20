@@ -527,4 +527,3 @@ func (DefaultRetryPolicies) ThrottleRetry() RetryPolicy {
 
 	return policy
 }
-

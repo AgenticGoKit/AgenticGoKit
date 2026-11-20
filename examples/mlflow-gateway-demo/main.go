@@ -77,7 +77,7 @@ func main() {
 		}
 		fmt.Print(token.Content)
 	}
-	fmt.Println("\n")
+	fmt.Print("\n\n")
 
 	// Example 3: Generate embeddings (if embeddings route is configured)
 	fmt.Println("=== Example 3: Generate Embeddings ===")

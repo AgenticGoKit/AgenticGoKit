@@ -16,20 +16,20 @@ func generateID() string {
 func calculateScore(content, query string) float32 {
 	content = strings.ToLower(content)
 	query = strings.ToLower(query)
-	
+
 	if content == query {
 		return 1.0
 	}
-	
+
 	if strings.Contains(content, query) {
 		return 0.8
 	}
-	
+
 	// Simple word matching
 	queryWords := strings.Fields(query)
 	contentWords := strings.Fields(content)
 	matches := 0
-	
+
 	for _, qw := range queryWords {
 		for _, cw := range contentWords {
 			if strings.Contains(cw, qw) || strings.Contains(qw, cw) {
@@ -38,11 +38,11 @@ func calculateScore(content, query string) float32 {
 			}
 		}
 	}
-	
+
 	if len(queryWords) > 0 {
 		return float32(matches) / float32(len(queryWords)) * 0.6
 	}
-	
+
 	return 0.0
 }
 
@@ -69,14 +69,14 @@ func containsAnyTag(tags []string, searchTags []string) bool {
 func removeDuplicates(slice []string) []string {
 	keys := make(map[string]bool)
 	result := []string{}
-	
+
 	for _, item := range slice {
 		if !keys[item] {
 			keys[item] = true
 			result = append(result, item)
 		}
 	}
-	
+
 	return result
 }
 

@@ -11,9 +11,9 @@ func TestValidateAgentConfig(t *testing.T) {
 	validator := NewDefaultConfigValidator()
 
 	tests := []struct {
-		name          string
-		agentName     string
-		config        core.AgentConfig
+		name           string
+		agentName      string
+		config         core.AgentConfig
 		expectedErrors int
 		checkError     func([]core.ValidationError) bool
 	}{
@@ -170,11 +170,11 @@ func TestValidateAgentConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			errors := validator.ValidateAgentConfig(tt.agentName, &tt.config)
-			
+
 			if len(errors) != tt.expectedErrors {
 				t.Errorf("Expected %d errors, got %d: %v", tt.expectedErrors, len(errors), errors)
 			}
-			
+
 			if tt.checkError != nil && !tt.checkError(errors) {
 				t.Errorf("Error check failed for test %s: %v", tt.name, errors)
 			}
@@ -186,18 +186,18 @@ func TestValidateLLMConfig(t *testing.T) {
 	validator := NewDefaultConfigValidator()
 
 	tests := []struct {
-		name          string
-		config        core.AgentLLMConfig
+		name           string
+		config         core.AgentLLMConfig
 		expectedErrors int
 		checkError     func([]core.ValidationError) bool
 	}{
 		{
 			name: "valid_config",
 			config: core.AgentLLMConfig{
-				Provider:    "openai",
-				Model:       "gpt-4",
-				Temperature: 0.7,
-				MaxTokens:   800,
+				Provider:       "openai",
+				Model:          "gpt-4",
+				Temperature:    0.7,
+				MaxTokens:      800,
 				TimeoutSeconds: 30,
 			},
 			expectedErrors: 0,
@@ -279,8 +279,8 @@ func TestValidateLLMConfig(t *testing.T) {
 			name: "invalid_frequency_penalty",
 			config: core.AgentLLMConfig{
 				Provider:         "openai",
-				Temperature:     0.7,
-				MaxTokens:       800,
+				Temperature:      0.7,
+				MaxTokens:        800,
 				FrequencyPenalty: 3.0,
 			},
 			expectedErrors: 1,
@@ -292,8 +292,8 @@ func TestValidateLLMConfig(t *testing.T) {
 			name: "invalid_presence_penalty",
 			config: core.AgentLLMConfig{
 				Provider:        "openai",
-				Temperature:    0.7,
-				MaxTokens:      800,
+				Temperature:     0.7,
+				MaxTokens:       800,
 				PresencePenalty: -3.0,
 			},
 			expectedErrors: 1,
@@ -306,11 +306,11 @@ func TestValidateLLMConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			errors := validator.ValidateLLMConfig(&tt.config)
-			
+
 			if len(errors) != tt.expectedErrors {
 				t.Errorf("Expected %d errors, got %d: %v", tt.expectedErrors, len(errors), errors)
 			}
-			
+
 			if tt.checkError != nil && !tt.checkError(errors) {
 				t.Errorf("Error check failed for test %s: %v", tt.name, errors)
 			}
@@ -322,14 +322,14 @@ func TestValidateOrchestrationAgents(t *testing.T) {
 	validator := NewDefaultConfigValidator()
 
 	agents := map[string]core.AgentConfig{
-		"agent1": {Enabled: true},
-		"agent2": {Enabled: true},
+		"agent1":         {Enabled: true},
+		"agent2":         {Enabled: true},
 		"disabled_agent": {Enabled: false},
 	}
 
 	tests := []struct {
-		name          string
-		orchestration core.OrchestrationConfigToml
+		name           string
+		orchestration  core.OrchestrationConfigToml
 		expectedErrors int
 		checkError     func([]core.ValidationError) bool
 	}{
@@ -409,11 +409,11 @@ func TestValidateOrchestrationAgents(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			errors := validator.ValidateOrchestrationAgents(&tt.orchestration, agents)
-			
+
 			if len(errors) != tt.expectedErrors {
 				t.Errorf("Expected %d errors, got %d: %v", tt.expectedErrors, len(errors), errors)
 			}
-			
+
 			if tt.checkError != nil && !tt.checkError(errors) {
 				t.Errorf("Error check failed for test %s: %v", tt.name, errors)
 			}
@@ -485,7 +485,7 @@ func TestAddKnownCapabilityAndProvider(t *testing.T) {
 
 	// Test adding custom capability
 	validator.AddKnownCapability("custom_capability")
-	
+
 	config := core.AgentConfig{
 		Role:         "test_agent",
 		Description:  "A test agent",
@@ -504,7 +504,7 @@ func TestAddKnownCapabilityAndProvider(t *testing.T) {
 
 	// Test adding custom provider
 	validator.AddValidProvider("custom_provider")
-	
+
 	llmConfig := core.AgentLLMConfig{
 		Provider:    "custom_provider",
 		Temperature: 0.7,

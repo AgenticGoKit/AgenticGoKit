@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fsnotify/fsnotify"
 	"github.com/agenticgokit/agenticgokit/core"
+	"github.com/fsnotify/fsnotify"
 )
 
 // ConfigReloadCallback defines the callback function signature for configuration changes
@@ -17,25 +17,25 @@ type ConfigReloadCallback func(*core.Config, error)
 
 // DefaultConfigReloader implements the core.ConfigReloader interface
 type DefaultConfigReloader struct {
-	configPath      string
-	watcher         *fsnotify.Watcher
-	validator       core.ConfigValidator
-	agentManager    core.AgentManager
-	callbacks       []ConfigReloadCallback
-	currentConfig   *core.Config
-	lastReloadTime  time.Time
-	isWatching      bool
-	debounceTimer   *time.Timer
-	debouncePeriod  time.Duration
-	mutex           sync.RWMutex
-	ctx             context.Context
-	cancel          context.CancelFunc
+	configPath     string
+	watcher        *fsnotify.Watcher
+	validator      core.ConfigValidator
+	agentManager   core.AgentManager
+	callbacks      []ConfigReloadCallback
+	currentConfig  *core.Config
+	lastReloadTime time.Time
+	isWatching     bool
+	debounceTimer  *time.Timer
+	debouncePeriod time.Duration
+	mutex          sync.RWMutex
+	ctx            context.Context
+	cancel         context.CancelFunc
 }
 
 // NewConfigReloader creates a new configuration reloader
 func NewConfigReloader(validator core.ConfigValidator, agentManager core.AgentManager) *DefaultConfigReloader {
 	ctx, cancel := context.WithCancel(context.Background())
-	
+
 	return &DefaultConfigReloader{
 		validator:      validator,
 		agentManager:   agentManager,
@@ -183,7 +183,7 @@ func (r *DefaultConfigReloader) loadInitialConfig() error {
 		core.Logger().Warn().
 			Int("error_count", len(validationErrors)).
 			Msg("Initial configuration has validation warnings")
-		
+
 		for _, validationError := range validationErrors {
 			core.Logger().Warn().
 				Str("field", validationError.Field).
@@ -199,7 +199,7 @@ func (r *DefaultConfigReloader) loadInitialConfig() error {
 	if err != nil {
 		return fmt.Errorf("failed to resolve initial config: %w", err)
 	}
-	
+
 	resolvedConfig := resolver.GetResolvedConfig()
 
 	r.currentConfig = resolvedConfig
@@ -312,7 +312,7 @@ func (r *DefaultConfigReloader) handleConfigChange() error {
 		core.Logger().Warn().
 			Int("error_count", len(validationErrors)).
 			Msg("New configuration has validation warnings")
-		
+
 		for _, validationError := range validationErrors {
 			core.Logger().Warn().
 				Str("field", validationError.Field).
@@ -332,7 +332,7 @@ func (r *DefaultConfigReloader) handleConfigChange() error {
 		r.notifyCallbacks(nil, fmt.Errorf("failed to resolve configuration: %w", err))
 		return err
 	}
-	
+
 	resolvedConfig := resolver.GetResolvedConfig()
 
 	// Update agent configurations
@@ -400,4 +400,3 @@ func (r *DefaultConfigReloader) SetDebouncePeriod(period time.Duration) {
 
 	r.debouncePeriod = period
 }
-

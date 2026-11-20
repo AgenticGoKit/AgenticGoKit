@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	vnext "github.com/agenticgokit/agenticgokit/v1beta"
 	"github.com/agenticgokit/agenticgokit/examples/story-writer-chat-v2/config"
 	"github.com/agenticgokit/agenticgokit/examples/story-writer-chat-v2/infrastructure"
+	vnext "github.com/agenticgokit/agenticgokit/v1beta"
 )
 
 // StoryWriterWorkflow demonstrates NESTED SubWorkflowAgent composition with conditional loop termination
@@ -233,6 +233,3 @@ func (sw *StoryWriterWorkflow) Cleanup(ctx context.Context) error {
 	}
 	return nil
 }
-
-
-

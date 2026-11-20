@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/agenticgokit/agenticgokit/test/testutil"
 	vnext "github.com/agenticgokit/agenticgokit/v1beta"
 )
 
@@ -631,6 +632,7 @@ func TestStreamConcurrency(t *testing.T) {
 
 	t.Run("context cancellation", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
 		stream, writer := vnext.NewStreamBuilder().Build(ctx)
 
 		go func() {
@@ -670,10 +672,7 @@ func TestStreamConcurrency(t *testing.T) {
 // =============================================================================
 
 func TestRunStream_RealOllamaIntegration(t *testing.T) {
-	// Skip if no Ollama available
-	if testing.Short() {
-		t.Skip("Skipping streaming integration test in short mode")
-	}
+	testutil.SkipIfOllamaUnavailable(t, "gemma3:1b")
 
 	// Create a simple agent configuration
 	config := &vnext.Config{
@@ -738,6 +737,9 @@ func TestRunStream_RealOllamaIntegration(t *testing.T) {
 		result, err := stream.Wait()
 		if err != nil {
 			t.Fatalf("Stream wait failed: %v", err)
+		}
+		if result == nil {
+			t.Fatal("Stream wait returned a nil result")
 		}
 
 		// Verify we received streaming chunks
@@ -806,6 +808,9 @@ func TestRunStream_RealOllamaIntegration(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Stream wait failed: %v", err)
 		}
+		if result == nil {
+			t.Fatal("Stream wait returned a nil result")
+		}
 		if !result.Success {
 			t.Errorf("Result should be successful")
 		}
@@ -815,9 +820,7 @@ func TestRunStream_RealOllamaIntegration(t *testing.T) {
 }
 
 func TestRunStreamWithOptions_RealOllamaIntegration(t *testing.T) {
-	if testing.Short() {
-		t.Skip("Skipping streaming integration test in short mode")
-	}
+	testutil.SkipIfOllamaUnavailable(t, "gemma3:1b")
 
 	config := &vnext.Config{
 		Name:         "test-stream-options-agent",
@@ -861,6 +864,9 @@ func TestRunStreamWithOptions_RealOllamaIntegration(t *testing.T) {
 			t.Fatalf("Stream wait failed: %v", err)
 		}
 		if result == nil {
+			t.Fatal("Stream wait returned a nil result")
+		}
+		if result == nil {
 			t.Fatal("Result is nil")
 		}
 		if !result.Success {
@@ -888,6 +894,9 @@ func TestRunStreamWithOptions_RealOllamaIntegration(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Stream wait failed: %v", err)
 		}
+		if result == nil {
+			t.Fatal("Stream wait returned a nil result")
+		}
 		if !result.Success {
 			t.Errorf("Result should be successful")
 		}
@@ -897,9 +906,7 @@ func TestRunStreamWithOptions_RealOllamaIntegration(t *testing.T) {
 }
 
 func TestStreamUtilities_RealOllamaIntegration(t *testing.T) {
-	if testing.Short() {
-		t.Skip("Skipping streaming integration test in short mode")
-	}
+	testutil.SkipIfOllamaUnavailable(t, "gemma3:1b")
 
 	config := &vnext.Config{
 		Name:    "test-stream-utils-agent",
@@ -963,6 +970,9 @@ func TestStreamUtilities_RealOllamaIntegration(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Stream wait failed: %v", err)
 		}
+		if result == nil {
+			t.Fatal("Stream wait returned a nil result")
+		}
 
 		combined := strings.Join(parts, "")
 		if result.Content != combined {
@@ -972,5 +982,3 @@ func TestStreamUtilities_RealOllamaIntegration(t *testing.T) {
 		t.Logf("StreamToChannel parts: %d, combined: %q", len(parts), combined)
 	})
 }
-
-

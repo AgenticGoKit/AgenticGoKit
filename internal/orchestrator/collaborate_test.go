@@ -45,7 +45,7 @@ func TestCollaborateOrchestrator_ErrorAggregation(t *testing.T) {
 	handler1 := &SpyAgentHandler{AgentName: "handler-1"}
 	handler2 := &SpyAgentHandler{AgentName: "handler-2", failOn: "evt-fail"}
 	handler3 := &SpyAgentHandler{AgentName: "handler-3", failOn: "evt-fail"}
-	
+
 	err := o.RegisterAgent("handler-1", handler1)
 	require.NoError(t, err)
 	err = o.RegisterAgent("handler-2", handler2)
@@ -77,7 +77,7 @@ func TestCollaborateOrchestrator_PartialFailure(t *testing.T) {
 	o := NewCollaborativeOrchestrator(registry)
 	handlerOK := &SpyAgentHandler{AgentName: "handler-ok"}
 	handlerFail := &SpyAgentHandler{AgentName: "handler-fail", failOn: "evt-partial"}
-	
+
 	err := o.RegisterAgent("handler-ok", handlerOK)
 	require.NoError(t, err)
 	err = o.RegisterAgent("handler-fail", handlerFail)

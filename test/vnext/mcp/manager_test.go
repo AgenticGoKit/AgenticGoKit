@@ -553,6 +553,3 @@ func TestToolManagerDisabledServer(t *testing.T) {
 		t.Errorf("Expected 0 tools from disabled server, got %d", len(manager.Available()))
 	}
 }
-
-
-

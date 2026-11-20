@@ -227,4 +227,3 @@ func BenchmarkSequentialAgent_Run(b *testing.B) {
 		}
 	}
 }
-

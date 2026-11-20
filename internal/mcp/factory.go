@@ -69,4 +69,3 @@ func NewMCPManagerImpl(config core.MCPConfig, registry *tools.ToolRegistry, logg
 	// Call the original constructor that was renamed to avoid conflicts
 	return createMCPManager(config, registry, logger)
 }
-

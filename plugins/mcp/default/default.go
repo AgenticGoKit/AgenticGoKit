@@ -356,4 +356,3 @@ func (r *simpleToolRegistry) CallTool(ctx context.Context, name string, args map
 	}
 	return t.Call(ctx, args)
 }
-

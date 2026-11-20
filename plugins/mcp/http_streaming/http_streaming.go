@@ -337,4 +337,3 @@ func (m *httpStreamingMCPManager) GetMetrics() core.MCPMetrics {
 
 // Note: This plugin doesn't auto-register to avoid conflicts with other plugins.
 // Import it explicitly when needed for HTTP Streaming transport.
-

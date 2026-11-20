@@ -7,8 +7,8 @@ import (
 	"os"
 	"time"
 
-	v1beta "github.com/agenticgokit/agenticgokit/v1beta"
 	_ "github.com/agenticgokit/agenticgokit/plugins/llm/openrouter"
+	v1beta "github.com/agenticgokit/agenticgokit/v1beta"
 )
 
 func main() {

@@ -165,4 +165,3 @@ func (o *CollaborativeOrchestrator) GetCallbackRegistry() *core.CallbackRegistry
 func (o *CollaborativeOrchestrator) Stop() {
 	core.DebugLog(core.Logger(), "CollaborativeOrchestrator: Stopped")
 }
-

@@ -405,6 +405,3 @@ func createAzureAgent() (v1beta.Agent, error) {
 		WithPreset(v1beta.ChatAgent).
 		Build()
 }
-
-
-

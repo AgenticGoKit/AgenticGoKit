@@ -1,3 +1,7 @@
+//go:build ignore
+
+// Standalone program: run with `go run weather-profile.go`.
+
 package main
 
 import (

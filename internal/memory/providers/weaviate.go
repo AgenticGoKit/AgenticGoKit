@@ -79,4 +79,3 @@ func (w *WeaviateProvider) SearchAll(ctx context.Context, query string, options 
 func (w *WeaviateProvider) BuildContext(ctx context.Context, query string, options ...core.ContextOption) (*core.RAGContext, error) {
 	return nil, fmt.Errorf("Weaviate provider not yet implemented")
 }
-

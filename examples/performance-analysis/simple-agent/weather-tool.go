@@ -1,3 +1,7 @@
+//go:build ignore
+
+// Standalone program: run with `go run weather-tool.go`.
+
 package main
 
 import (
@@ -88,7 +92,7 @@ func Weathertool() {
 		fmt.Printf("   error: %v\n\n", err)
 		panic(err)
 	}
-	fmt.Printf("   Assistant: %s\n", res)
+	fmt.Printf("   Assistant: %s\n", res.Content)
 	//fmt.Printf("   Tools used: %v\n\n", res)
 }
 

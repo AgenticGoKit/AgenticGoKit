@@ -121,14 +121,14 @@ func TestConfigResolverEnvironmentOverrides(t *testing.T) {
 func TestConfigResolverLLMEnvironmentOverrides(t *testing.T) {
 	// Set up LLM environment variables
 	testEnvVars := map[string]string{
-		"AGENTFLOW_LLM_PROVIDER":                         "azure",
-		"AGENTFLOW_LLM_MODEL":                            "gpt-3.5-turbo",
-		"AGENTFLOW_LLM_TEMPERATURE":                      "0.5",
-		"AGENTFLOW_LLM_MAX_TOKENS":                       "1000",
-		"AGENTFLOW_AGENT_TEST_AGENT_LLM_PROVIDER":        "ollama",
-		"AGENTFLOW_AGENT_TEST_AGENT_LLM_MODEL":           "llama2",
-		"AGENTFLOW_AGENT_TEST_AGENT_LLM_TEMPERATURE":     "0.3",
-		"AGENTFLOW_AGENT_TEST_AGENT_LLM_MAX_TOKENS":      "1200",
+		"AGENTFLOW_LLM_PROVIDER":                     "azure",
+		"AGENTFLOW_LLM_MODEL":                        "gpt-3.5-turbo",
+		"AGENTFLOW_LLM_TEMPERATURE":                  "0.5",
+		"AGENTFLOW_LLM_MAX_TOKENS":                   "1000",
+		"AGENTFLOW_AGENT_TEST_AGENT_LLM_PROVIDER":    "ollama",
+		"AGENTFLOW_AGENT_TEST_AGENT_LLM_MODEL":       "llama2",
+		"AGENTFLOW_AGENT_TEST_AGENT_LLM_TEMPERATURE": "0.3",
+		"AGENTFLOW_AGENT_TEST_AGENT_LLM_MAX_TOKENS":  "1200",
 	}
 
 	// Set environment variables
@@ -211,9 +211,9 @@ func TestConfigResolverLLMEnvironmentOverrides(t *testing.T) {
 func TestConfigResolverApplyEnvironmentOverrides(t *testing.T) {
 	// Set up environment variables
 	testEnvVars := map[string]string{
-		"AGENTFLOW_LLM_PROVIDER":              "azure",
-		"AGENTFLOW_LLM_TEMPERATURE":           "0.5",
-		"AGENTFLOW_AGENT_TEST_AGENT_ROLE":     "env_role",
+		"AGENTFLOW_LLM_PROVIDER":          "azure",
+		"AGENTFLOW_LLM_TEMPERATURE":       "0.5",
+		"AGENTFLOW_AGENT_TEST_AGENT_ROLE": "env_role",
 	}
 
 	// Set environment variables

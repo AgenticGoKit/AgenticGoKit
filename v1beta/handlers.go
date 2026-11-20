@@ -680,4 +680,3 @@ Use pre-built handlers for common patterns:
 		WithHandler(ToolsFirst("You are a helpful assistant with tools.")).
 		Build()
 */
-

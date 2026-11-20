@@ -71,7 +71,7 @@ func main() {
 		}
 		fmt.Print(token.Content)
 	}
-	fmt.Println("\n")
+	fmt.Print("\n\n")
 
 	// Example 3: Code generation
 	fmt.Println("=== Example 3: Code Generation ===")

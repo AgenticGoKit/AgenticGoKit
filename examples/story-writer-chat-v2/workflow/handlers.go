@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	vnext "github.com/agenticgokit/agenticgokit/v1beta"
 	"github.com/agenticgokit/agenticgokit/examples/story-writer-chat-v2/infrastructure"
+	vnext "github.com/agenticgokit/agenticgokit/v1beta"
 )
 
 // StreamHandler processes streaming chunks from the workflow execution
@@ -272,6 +272,3 @@ func (h *StreamHandler) handleLoopExit(exitReason string, totalIter interface{})
 		},
 	})
 }
-
-
-

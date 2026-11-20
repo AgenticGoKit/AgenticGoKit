@@ -1,3 +1,7 @@
+//go:build ignore
+
+// Standalone program: run with `go run agent-stage-profiler.go`.
+
 package main
 
 import (
@@ -92,7 +96,7 @@ func AgentStageProfiler() {
 
 	ctx := context.Background()
 
-	fmt.Println("=== Go Agent - Stage-by-Stage Profiling ===\n")
+	fmt.Print("=== Go Agent - Stage-by-Stage Profiling ===\n\n")
 
 	// Build agent
 	timer := NewStageTimer()

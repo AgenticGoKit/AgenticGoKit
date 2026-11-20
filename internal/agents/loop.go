@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	agenticgokit "github.com/agenticgokit/agenticgokit/internal/core"
 	"github.com/agenticgokit/agenticgokit/core"
+	agenticgokit "github.com/agenticgokit/agenticgokit/internal/core"
 )
 
 // defaultMaxIterations is the default limit if LoopAgentConfig.MaxIterations is not set.
@@ -119,7 +119,7 @@ func (l *LoopAgent) Run(ctx context.Context, initialState agenticgokit.State) (a
 		currentState.Set("loop_agent_role", l.agentConfig.Role)
 		currentState.Set("loop_agent_description", l.agentConfig.Description)
 		currentState.Set("loop_agent_capabilities", l.agentConfig.Capabilities)
-		
+
 		// Apply system prompt if configured
 		if l.agentConfig.SystemPrompt != "" {
 			currentState.Set("loop_system_prompt", l.agentConfig.SystemPrompt)
@@ -185,7 +185,7 @@ func (l *LoopAgent) Run(ctx context.Context, initialState agenticgokit.State) (a
 					Str("agent", l.name).
 					Int("iteration", iteration).
 					Msg("LoopAgent: Condition met, stopping loop.")
-				
+
 				// Add execution metadata for successful completion
 				currentState.Set("executed_by", l.name)
 				if l.agentConfig != nil {
@@ -195,7 +195,7 @@ func (l *LoopAgent) Run(ctx context.Context, initialState agenticgokit.State) (a
 				currentState.Set("loop_execution_completed", true)
 				currentState.Set("loop_condition_met", true)
 				currentState.Set("loop_iterations", iteration)
-				
+
 				return currentState, nil // Condition met, loop succeeded
 			}
 		}
@@ -206,7 +206,7 @@ func (l *LoopAgent) Run(ctx context.Context, initialState agenticgokit.State) (a
 		Str("agent", l.name).
 		Int("max_iterations", l.config.MaxIterations).
 		Msg("LoopAgent: Reached max iterations without condition being met.")
-	
+
 	// Add execution metadata
 	currentState.Set("executed_by", l.name)
 	if l.agentConfig != nil {
@@ -216,7 +216,7 @@ func (l *LoopAgent) Run(ctx context.Context, initialState agenticgokit.State) (a
 	currentState.Set("loop_execution_completed", false)
 	currentState.Set("loop_max_iterations_reached", true)
 	currentState.Set("loop_iterations", iteration)
-	
+
 	return currentState, agenticgokit.ErrMaxIterationsReached
 }
 
@@ -296,14 +296,14 @@ func (l *LoopAgent) UpdateConfiguration(config *core.ResolvedAgentConfig) error 
 		return fmt.Errorf("configuration cannot be nil")
 	}
 	l.agentConfig = config
-	
+
 	agenticgokit.Logger().Debug().
 		Str("agent", l.name).
 		Str("role", config.Role).
 		Bool("enabled", config.Enabled).
 		Strs("capabilities", config.Capabilities).
 		Msg("LoopAgent configuration updated")
-	
+
 	return nil
 }
 
@@ -325,4 +325,3 @@ func (l *LoopAgent) ApplySystemPrompt(ctx context.Context, state agenticgokit.St
 
 	return workingState, nil
 }
-

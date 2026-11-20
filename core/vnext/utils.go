@@ -641,4 +641,3 @@ func FormatToolResult(toolName string, result *ToolResult) string {
 	}
 	return fmt.Sprintf("\nTool %s failed with error: %s\n", toolName, result.Error)
 }
-

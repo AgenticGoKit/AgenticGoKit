@@ -320,4 +320,3 @@ func TestParameterOverrides(t *testing.T) {
 
 	t.Logf("Response with parameter overrides: %s", response.Content)
 }
-

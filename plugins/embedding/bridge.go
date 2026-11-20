@@ -10,4 +10,3 @@ import (
 )
 
 // No additional code required; blank import triggers init in internal/embedding
-

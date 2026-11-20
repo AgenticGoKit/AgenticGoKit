@@ -346,4 +346,3 @@ func BenchmarkLoopAgent_Run(b *testing.B) {
 		}
 	}
 }
-

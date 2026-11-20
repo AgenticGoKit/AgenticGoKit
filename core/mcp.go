@@ -1651,4 +1651,3 @@ func (a *basicMCPAwareAgent) GetMCPManager() MCPManager {
 func (a *basicMCPAwareAgent) GetConfig() MCPAgentConfig {
 	return a.config
 }
-

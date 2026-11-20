@@ -1,3 +1,7 @@
+//go:build ignore
+
+// Standalone program: run with `go run agent-reasoning-toggle.go`.
+
 package main
 
 import (
@@ -57,7 +61,7 @@ func agentReasoning() {
 
 	ctx := context.Background()
 
-	fmt.Println("=== AgenticGOKit Reasoning Toggle Demo ===\n")
+	fmt.Print("=== AgenticGOKit Reasoning Toggle Demo ===\n\n")
 	fmt.Printf("Reasoning enabled: %v\n", *enableReasoning)
 	fmt.Printf("Query: will it rain in %s\n\n", *city)
 
@@ -105,7 +109,7 @@ func agentReasoning() {
 	fmt.Printf("Agent built in: %v\n\n", buildDuration)
 
 	// Run query with timing
-	fmt.Println("=== Executing Query ===\n")
+	fmt.Print("=== Executing Query ===\n\n")
 
 	runStart := time.Now()
 	query := fmt.Sprintf("will it rain in %s", *city)

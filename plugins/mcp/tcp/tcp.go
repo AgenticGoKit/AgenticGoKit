@@ -311,4 +311,3 @@ func init() {
 		return newTCPManager(cfg)
 	})
 }
-

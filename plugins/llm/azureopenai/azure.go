@@ -50,4 +50,3 @@ func init() {
 	core.RegisterModelProviderFactory("azureopenai", factory)
 	core.RegisterModelProviderFactory("azure", factory) // Also register as "azure" for compatibility
 }
-

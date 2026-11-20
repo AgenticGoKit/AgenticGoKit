@@ -97,4 +97,3 @@ func (o *SequentialOrchestrator) Stop() {
 	o.handlers = make(map[string]core.AgentHandler)
 	core.Logger().Debug().Msg("SequentialOrchestrator: Stopped")
 }
-

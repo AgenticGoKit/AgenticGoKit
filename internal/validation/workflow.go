@@ -490,4 +490,3 @@ func (wv *WorkflowValidatorImpl) detectOrphanedNodes(graph core.WorkflowGraph, r
 		}
 	}
 }
-

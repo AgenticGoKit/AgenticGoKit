@@ -87,7 +87,7 @@ func TestSimpleEventEdgeCases(t *testing.T) {
 			// This comparison is only valid if no type changes occur during marshal/unmarshal
 			// For cases like numbers in interface{}, a custom comparison like the one below is needed.
 			if !reflect.DeepEqual(c.event, &out) {
-				t.Errorf("round‑trip mismatch\ngot %#v\nwant %#v", out, c.event)
+				t.Errorf("round‑trip mismatch\ngot %#v\nwant %#v", &out, c.event)
 			}
 		})
 	}

@@ -266,4 +266,3 @@ type executorWrapper struct {
 func (w *executorWrapper) ExecuteTool(ctx context.Context, toolName string, args map[string]interface{}) (core.MCPToolResult, error) {
 	return w.executor.ExecuteTool(ctx, toolName, args)
 }
-

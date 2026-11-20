@@ -22,18 +22,18 @@ const (
 
 // OrchestratorConfig holds configuration for creating orchestrators
 type OrchestratorConfig struct {
-	Type                    OrchestratorType `json:"type" toml:"type"`
-	Timeout                 time.Duration    `json:"timeout,omitempty" toml:"timeout,omitempty"`
-	MaxConcurrency          int              `json:"max_concurrency,omitempty" toml:"max_concurrency,omitempty"`
-	FailureThreshold        float64          `json:"failure_threshold,omitempty" toml:"failure_threshold,omitempty"`
-	
+	Type             OrchestratorType `json:"type" toml:"type"`
+	Timeout          time.Duration    `json:"timeout,omitempty" toml:"timeout,omitempty"`
+	MaxConcurrency   int              `json:"max_concurrency,omitempty" toml:"max_concurrency,omitempty"`
+	FailureThreshold float64          `json:"failure_threshold,omitempty" toml:"failure_threshold,omitempty"`
+
 	// Sequential and Loop specific
-	AgentSequence           []string         `json:"agent_sequence,omitempty" toml:"agent_sequence,omitempty"`
-	MaxIterations           int              `json:"max_iterations,omitempty" toml:"max_iterations,omitempty"`
-	
+	AgentSequence []string `json:"agent_sequence,omitempty" toml:"agent_sequence,omitempty"`
+	MaxIterations int      `json:"max_iterations,omitempty" toml:"max_iterations,omitempty"`
+
 	// Mixed orchestrator specific
-	CollaborativeAgents     []string         `json:"collaborative_agents,omitempty" toml:"collaborative_agents,omitempty"`
-	SequentialAgents        []string         `json:"sequential_agents,omitempty" toml:"sequential_agents,omitempty"`
+	CollaborativeAgents []string `json:"collaborative_agents,omitempty" toml:"collaborative_agents,omitempty"`
+	SequentialAgents    []string `json:"sequential_agents,omitempty" toml:"sequential_agents,omitempty"`
 }
 
 // OrchestratorFactory creates orchestrators based on configuration
@@ -89,14 +89,14 @@ func (f *OrchestratorFactory) createLoopOrchestrator(config OrchestratorConfig) 
 	if len(config.AgentSequence) == 0 {
 		return nil, fmt.Errorf("loop orchestrator requires at least one agent")
 	}
-	
+
 	orchestrator := NewLoopOrchestrator(f.registry, config.AgentSequence)
-	
+
 	// Set max iterations if specified
 	if config.MaxIterations > 0 {
 		orchestrator.SetMaxIterations(config.MaxIterations)
 	}
-	
+
 	return orchestrator, nil
 }
 
@@ -160,12 +160,12 @@ func init() {
 			CollaborativeAgents: config.CollaborativeAgentNames,
 			SequentialAgents:    config.SequentialAgentNames,
 		}
-		
+
 		// Handle legacy field names
 		if len(internalConfig.AgentSequence) == 0 && len(config.SequentialAgentNames) > 0 {
 			internalConfig.AgentSequence = config.SequentialAgentNames
 		}
-		
+
 		// Create factory and orchestrator
 		factory := NewOrchestratorFactory(registry)
 		return factory.CreateOrchestrator(internalConfig)

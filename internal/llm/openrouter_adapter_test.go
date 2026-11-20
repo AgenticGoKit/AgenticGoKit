@@ -440,4 +440,3 @@ func TestBuildOpenRouterMessages(t *testing.T) {
 		})
 	}
 }
-

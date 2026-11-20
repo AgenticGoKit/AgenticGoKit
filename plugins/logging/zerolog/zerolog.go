@@ -34,10 +34,18 @@ type coreZeroLogger struct {
 	l *zerolog.Logger
 }
 
-func (c *coreZeroLogger) Debug() core.LogEvent { return &zeroEvent{logger: c.l, evt: c.l.Debug(), level: "debug"} }
-func (c *coreZeroLogger) Info() core.LogEvent  { return &zeroEvent{logger: c.l, evt: c.l.Info(), level: "info"} }
-func (c *coreZeroLogger) Warn() core.LogEvent  { return &zeroEvent{logger: c.l, evt: c.l.Warn(), level: "warn"} }
-func (c *coreZeroLogger) Error() core.LogEvent { return &zeroEvent{logger: c.l, evt: c.l.Error(), level: "error"} }
+func (c *coreZeroLogger) Debug() core.LogEvent {
+	return &zeroEvent{logger: c.l, evt: c.l.Debug(), level: "debug"}
+}
+func (c *coreZeroLogger) Info() core.LogEvent {
+	return &zeroEvent{logger: c.l, evt: c.l.Info(), level: "info"}
+}
+func (c *coreZeroLogger) Warn() core.LogEvent {
+	return &zeroEvent{logger: c.l, evt: c.l.Warn(), level: "warn"}
+}
+func (c *coreZeroLogger) Error() core.LogEvent {
+	return &zeroEvent{logger: c.l, evt: c.l.Error(), level: "error"}
+}
 func (c *coreZeroLogger) With() core.LogEvent {
 	return &zeroEvent{logger: c.l, fields: map[string]any{}}
 }
@@ -266,7 +274,7 @@ func setConfig(config core.LoggingConfig) {
 
 func updateLogger() {
 	var writers []io.Writer
-	
+
 	// Add console output unless file_only is true
 	if !currentConfig.FileOnly {
 		switch currentConfig.Format {
@@ -279,7 +287,7 @@ func updateLogger() {
 			})
 		}
 	}
-	
+
 	// Add file output if specified
 	if currentConfig.File != "" {
 		// Create directory if it doesn't exist
@@ -289,9 +297,9 @@ func updateLogger() {
 				return
 			}
 		}
-		
+
 		var fileWriter io.Writer
-		
+
 		// Use lumberjack for log rotation if any rotation settings are specified
 		if currentConfig.MaxSize > 0 || currentConfig.MaxBackups > 0 || currentConfig.MaxAge > 0 {
 			fileWriter = &lumberjack.Logger{
@@ -310,11 +318,11 @@ func updateLogger() {
 			}
 			fileWriter = file
 		}
-		
+
 		// File output is always JSON format for structured logging
 		writers = append(writers, fileWriter)
 	}
-	
+
 	// Create writer
 	var writer io.Writer
 	if len(writers) == 0 {
@@ -325,7 +333,6 @@ func updateLogger() {
 	} else {
 		writer = zerolog.MultiLevelWriter(writers...)
 	}
-	
+
 	zlog.Logger = zerolog.New(writer).With().Timestamp().Logger()
 }
-

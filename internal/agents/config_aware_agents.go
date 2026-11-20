@@ -23,4 +23,3 @@ type ConfigAwareAgent interface {
 	UpdateConfiguration(config *core.ResolvedAgentConfig) error
 	ApplySystemPrompt(ctx context.Context, state core.State) (core.State, error)
 }
-
