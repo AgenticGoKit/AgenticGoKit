@@ -6,6 +6,7 @@ import (
 	"time"
 
 	_ "github.com/agenticgokit/agenticgokit/plugins/llm/ollama"
+	"github.com/agenticgokit/agenticgokit/test/testutil"
 	vnext "github.com/agenticgokit/agenticgokit/v1beta"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -17,6 +18,8 @@ import (
 
 // createTestAgent creates a test agent with standard configuration
 func createTestAgent(t *testing.T, name string) vnext.Agent {
+	testutil.SkipIfOllamaUnavailable(t, "gemma3:1b")
+
 	agent, err := vnext.NewBuilder(name).
 		WithConfig(&vnext.Config{
 			Name:         name,
@@ -39,7 +42,9 @@ func createTestAgent(t *testing.T, name string) vnext.Agent {
 	require.NoError(t, err)
 
 	return agent
-} // =============================================================================
+}
+
+// =============================================================================
 // TESTS FOR RunWithOptions
 // =============================================================================
 
