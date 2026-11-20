@@ -126,7 +126,7 @@ func main() {
 	fmt.Println("\n" + strings.Repeat("=", 60))
 	fmt.Println("Usage Summary")
 	fmt.Println(strings.Repeat("=", 60))
-	fmt.Println(`
+	fmt.Print(`
 Multimodal Demo - AgenticGoKit
 
 This demo showcases multimodal capabilities:
@@ -156,6 +156,7 @@ Environment Variables:
 
 Note: Audio and video support is currently only available with OpenAI.
       Other providers will display a warning for unsupported modalities.
+
 `)
 }
 

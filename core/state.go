@@ -30,9 +30,9 @@ type State interface {
 
 // SimpleState is a basic thread-safe implementation of State using maps.
 type SimpleState struct {
-	mu   sync.RWMutex      `json:"-"`
-	data map[string]any    `json:"data"`
-	meta map[string]string `json:"meta"`
+	mu   sync.RWMutex
+	data map[string]any
+	meta map[string]string
 }
 
 // Compile-time check to ensure SimpleState implements State

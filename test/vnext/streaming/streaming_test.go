@@ -631,6 +631,7 @@ func TestStreamConcurrency(t *testing.T) {
 
 	t.Run("context cancellation", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
 		stream, writer := vnext.NewStreamBuilder().Build(ctx)
 
 		go func() {

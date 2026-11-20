@@ -12,7 +12,7 @@ import (
 func main() {
 	fmt.Println("===========================================")
 	fmt.Println("  Testing REAL LLM Integration - v1beta")
-	fmt.Println("===========================================\n")
+	fmt.Print("===========================================\n\n")
 
 	// Create a simple agent configuration using an available model
 	fmt.Println("Building agent with real LLM integration...")

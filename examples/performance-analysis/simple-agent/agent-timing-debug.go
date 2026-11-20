@@ -1,3 +1,7 @@
+//go:build ignore
+
+// Standalone program: run with `go run agent-timing-debug.go`.
+
 package main
 
 import (
@@ -56,7 +60,7 @@ func AgentTimingDebug() {
 
 	ctx := context.Background()
 
-	fmt.Println("=== Go Agent - Detailed Timing ===\n")
+	fmt.Print("=== Go Agent - Detailed Timing ===\n\n")
 
 	buildStart := time.Now()
 	agent, err := vnext.NewBuilder("weather-agent").

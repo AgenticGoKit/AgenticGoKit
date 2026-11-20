@@ -13,7 +13,7 @@ import (
 
 func main() {
 	fmt.Println("🤖 Personal Assistant with Memory (Conversation History)")
-	fmt.Println("=========================================================\n")
+	fmt.Print("=========================================================\n\n")
 
 	ctx := context.Background()
 
@@ -80,7 +80,7 @@ Remember information from our conversation and provide personalized responses.`,
 		},
 	}
 
-	fmt.Println("💬 Demonstration: Memory-Powered Personalized Responses\n")
+	fmt.Print("💬 Demonstration: Memory-Powered Personalized Responses\n\n")
 	fmt.Println("======================================================================")
 	fmt.Println()
 

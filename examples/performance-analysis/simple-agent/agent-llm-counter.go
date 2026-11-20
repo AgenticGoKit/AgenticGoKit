@@ -1,3 +1,7 @@
+//go:build ignore
+
+// Standalone program: run with `go run agent-llm-counter.go`.
+
 package main
 
 import (
@@ -116,7 +120,7 @@ func agentLLMCounter() {
 
 	ctx := context.Background()
 
-	fmt.Println("=== Instrumented LLM Call Counter ===\n")
+	fmt.Print("=== Instrumented LLM Call Counter ===\n\n")
 
 	// Build agent first to get its LLM provider, then wrap it
 	agentBuilder := vnext.NewBuilder("weather-agent").
